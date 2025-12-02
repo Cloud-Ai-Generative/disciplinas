@@ -34,13 +34,21 @@ Em Resumo:
     - (a) Um tipo de chá
     - (b) Protocolo da Web
     - (c) Linguagem de programação
-    → (a) Um tipo de chá  
-    → (b) Protocolo da Web
-    → (c) Linguagem de programação
-    
-2. ❓ **API funciona como:** (a) Garçom (b) Cozinheiro (c) Dono do restaurante
-3. ❓ **Flask é:** (a) Um copo (b) Microframework web (c) Linguagem de banco de dados
-4. ❓ **GET é usado para:** (a) Apagar dados (b) Buscar dados (c) Atualizar dados
+   
+2. ❓ **API funciona como:** 
+    - (a) Garçom
+    - (b) Cozinheiro 
+    - (c) Dono do restaurante
+
+3. ❓ **Flask é:** 
+    - (a) Um copo 
+    - (b) Microframework web 
+    - (c) Linguagem de banco de dados
+
+4. ❓ **GET é usado para:** 
+    - (a) Apagar dados 
+    - (b) Buscar dados 
+    - (c) Atualizar dados
 
 **Respostas:** 1(b), 2(a), 3(b), 4(b) ✅
 
