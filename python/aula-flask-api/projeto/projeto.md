@@ -1,4 +1,3 @@
-```markdown
 # 🐍 Projeto: Primeira API com Flask
 
 Este projeto é uma aplicação educativa desenvolvida em Python utilizando o framework Flask. O sistema simula uma API RESTful completa para o gerenciamento de uma turma de alunos, demonstrando conceitos fundamentais como rotas, métodos HTTP (GET, POST, PUT, DELETE) e respostas em JSON.
@@ -9,13 +8,11 @@ Além da API, o projeto inclui uma interface visual de boas-vindas e uma ferrame
 
 O projeto é composto por três arquivos principais, organizados da seguinte forma:
 
-```
 /meu-projeto-api
   ├── api.py
   ├── api_teste.py
   └── templates/
        └── home.html
-```
 
 ### 1. **api.py** (Core da Aplicação)
 Este é o arquivo principal que inicializa o servidor Flask.
