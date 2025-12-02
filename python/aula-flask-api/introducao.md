@@ -9,11 +9,13 @@ teste
 
 - [ 📡 2. **Protocolo HTTP - O que é?**](./http.md)
 
+---
+
 - [ 🤔 **O que é API?**](./api.md)
 
 ---
 
-## 🐍 **Flask no Python - O que é?** (./flask.md)
+- [ 🐍 **Flask no Python - O que é?**] (./flask.md)
 
 ### 🎯 **Resumo para a Aula Prática:**
 
