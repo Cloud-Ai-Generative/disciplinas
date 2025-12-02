@@ -1,6 +1,6 @@
 # 🐍 Aula Python: APIs e Flask
 
-*[← Voltar ao Guia Anterior](./aula-flask-api/python.md)*
+*[← Voltar ao Guia Anterior](./aula-flask-api/introducao.md)*
 
 ## 🌐 **Antes de falar de API, preciso falar de duas coisas fundamentais:**
 
