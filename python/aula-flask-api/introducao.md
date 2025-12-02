@@ -15,7 +15,7 @@ teste
 
 ---
 
-- [ 🐍 **Flask no Python - O que é?**] (./flask.md)
+- [ 🐍 **Flask no Python - O que é?**](./flask.md)
 
 ### 🎯 **Resumo para a Aula Prática:**
 
