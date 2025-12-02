@@ -7,9 +7,9 @@ teste
 
 -[ 🌍 1. **World Wide Web (WWW) - O que é?**](./web.md)
 
--[📡 2. **Protocolo HTTP - O que é?**] (./http.md)
+-[ 📡 2. **Protocolo HTTP - O que é?**] (./http.md)
 
--[🤔 **O que é API?**] (./api.md)
+-[ 🤔 **O que é API?**] (./api.md)
 
 ---
 
