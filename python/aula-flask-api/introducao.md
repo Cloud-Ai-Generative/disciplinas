@@ -38,7 +38,7 @@ Em Resumo:
 **Respostas:** 1(b), 2(a), 3(b), 4(b) ✅
 
 - [🐍 **Projeto: Primeira API com Flask**](./projeto/projeto.md)
-
+- [🐍 **Trabalho em grupo: API de cardápio de restaurante com Flask**](./projeto/desafio.md)
 
 **Pronto para codar?** Vamos lá! 🚀💻
 
