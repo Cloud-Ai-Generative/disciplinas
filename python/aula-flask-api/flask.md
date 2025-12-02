@@ -3,6 +3,8 @@
 ### 🎯 **Definição:**
 **Flask** é um **microframework web** escrito em Python. É chamado de "micro" não porque é pequeno em funcionalidades, mas porque mantém um **núcleo simples** enquanto permite extensões.
 
+### 🧩 **Em resumo com Flask você cria sites🌍 e APIs🔌 no Python**
+
 ### 🧩 **Pense no Flask como:**
 
 #### 1. **Kit de Ferramentas Básico** 🧰
