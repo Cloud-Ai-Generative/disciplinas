@@ -1,6 +1,7 @@
-*[← Voltar ao Guia Principal](./python.md)*
+*[← Voltar ao Guia Anterior](./python.md)*
 
 📋 O que é?
+
 Python é uma linguagem de programação de alto nível, interpretada, de tipagem dinâmica e fortemente tipada (a partir do 3.6+ com type hints). Criada por Guido van Rossum e lançada em 1991, é hoje a linguagem mais usada no mundo (Stack Overflow Survey 2024-2025).
 
 É conhecida por priorizar **legibilidade**, **simplicidade** e **produtividade** do desenvolvedor.
