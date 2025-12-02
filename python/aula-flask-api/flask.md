@@ -7,9 +7,6 @@
 
 ### 🧩 **Pense no Flask como:**
 
-Em Resumo:
-![api e flask](./images/api-analogia.png)
-
 #### 1. **Kit de Ferramentas Básico** 🧰
 - Tem o essencial para construir uma casa (app web)
 - Você adiciona só as ferramentas que precisa
