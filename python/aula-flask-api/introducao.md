@@ -31,6 +31,9 @@ Em Resumo:
 ## 🧠 **Quiz Rápido - Verifique seu Entendimento:**
 
 1. ❓ **HTTP é:** 
+    - (a) Um tipo de chá
+    - (b) Protocolo da Web
+    - (c) Linguagem de programação
     → (a) Um tipo de chá  
     → (b) Protocolo da Web
     → (c) Linguagem de programação
