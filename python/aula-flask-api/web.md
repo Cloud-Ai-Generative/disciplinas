@@ -21,4 +21,3 @@ Seu Navegador (Cliente) ←HTTP→ Servidor Web ←→ Banco de Dados
 
 🔗 **Saiba mais:** [World Wide Web na Wikipedia](https://pt.wikipedia.org/wiki/World_Wide_Web)
 
----

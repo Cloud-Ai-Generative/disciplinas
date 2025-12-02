@@ -43,4 +43,3 @@ Content-Type: application/json
 
 🔗 **Saiba mais:** [Protocolo HTTP na Wikipedia](https://pt.wikipedia.org/wiki/HTTP)
 
----
