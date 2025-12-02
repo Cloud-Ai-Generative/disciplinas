@@ -17,7 +17,7 @@
 - [ 🐍 **Flask no Python - O que é?**](./flask.md)
 
 Em Resumo:
-![api e flask](./images/api-analogia.png)
+![api e flask](./Images/api-analogia.png)
 
 ### 🎯 **Resumo para a Aula Prática:**
 
