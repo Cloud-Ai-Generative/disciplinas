@@ -37,17 +37,8 @@ Em Resumo:
 
 **Respostas:** 1(b), 2(a), 3(b), 4(b) ✅
 
----
+- [🐍 **Projeto: Primeira API com Flask**](./projeto/projeto.md)
 
-## ▶️ **Próximos Passos na Aula:**
-
-1. **Configurar ambiente** no Codespaces 🛠️
-2. **Criar primeira rota** com Flask 🐍
-3. **Testar API** com Thunder Client ⚡
-4. **Implementar CRUD** completo 📊
-5. **Preparar para projeto final** 🎓
-
----
 
 **Pronto para codar?** Vamos lá! 🚀💻
 
