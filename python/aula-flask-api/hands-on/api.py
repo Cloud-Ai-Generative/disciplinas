@@ -18,7 +18,11 @@ from api_teste import exibir_tela_teste
 # 1. INICIALIZAÇÃO DA APLICAÇÃO
 app = Flask(__name__)
 
-
+# Banco de dados em memória (para simplificação)
+alunos = [
+    {"id": 1, "nome": "Ana Silva", "turma": "3A", "nota": 8.5},
+    {"id": 2, "nome": "João Santos", "turma": "3B", "nota": 7.8},
+]
 
 #Hands on
 
