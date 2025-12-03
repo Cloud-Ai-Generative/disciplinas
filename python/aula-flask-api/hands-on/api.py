@@ -23,9 +23,9 @@ app = Flask(__name__)
 #Hands on
 
 
+
+
 # Fim do Hands On
-
-
 
 #10. ROTA DE TESTES DE API
 @app.route('/teste', methods=['GET'])
