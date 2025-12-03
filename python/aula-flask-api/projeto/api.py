@@ -22,7 +22,7 @@ from api_teste import exibir_tela_teste
 app = Flask(__name__)
 
 # --------------------------------------------------------------------------------
-# 4. BANCO DE DADOS SIMULADO
+# 3. BANCO DE DADOS SIMULADO
 # Em aplicações reais, usaríamos SQL (Postgres, MySQL) ou DynamoDB (AWS).
 # Aqui, usamos uma lista de dicionários Python simples para facilitar o aprendizado.
 alunos = [
@@ -35,7 +35,7 @@ alunos = [
 def home():
     return render_template("home.html")
 
-# 6. GET - Listar todos os alunos
+# 5. GET - Listar todos os alunos
 @app.route('/alunos', methods=['GET'])
 def listar_alunos():
     """Lista todos os alunos cadastrados"""
@@ -44,7 +44,7 @@ def listar_alunos():
         "alunos": alunos
     })
 
-# 7. GET - Buscar aluno específico
+# 6. GET - Buscar aluno específico
 @app.route('/alunos/<int:aluno_id>', methods=['GET'])
 def buscar_aluno(aluno_id):
     """Busca um aluno pelo ID"""
@@ -55,7 +55,7 @@ def buscar_aluno(aluno_id):
     else:
         return jsonify({"erro": "Aluno não encontrado"}), 404
 
-# 8. POST - Criar novo aluno
+# 7. POST - Criar novo aluno
 @app.route('/alunos', methods=['POST'])
 def criar_aluno():
     """Cria um novo aluno"""
@@ -84,7 +84,7 @@ def criar_aluno():
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
 
-# 9. PUT - Atualizar aluno (IMPLEMENTADO)
+# 8. PUT - Atualizar aluno (IMPLEMENTADO)
 @app.route('/alunos/<int:aluno_id>', methods=['PUT'])
 def atualizar_aluno(aluno_id):
     """Atualiza dados de um aluno"""
@@ -107,7 +107,7 @@ def atualizar_aluno(aluno_id):
         "aluno": aluno
     }), 200
 
-# 10. DELETE - Remover aluno (IMPLEMENTADO)
+# 9. DELETE - Remover aluno (IMPLEMENTADO)
 @app.route('/alunos/<int:aluno_id>', methods=['DELETE'])
 def remover_aluno(aluno_id):
     """Remove um aluno"""
@@ -124,7 +124,7 @@ def remover_aluno(aluno_id):
     
     return jsonify({"mensagem": "Aluno removido com sucesso!"}), 200
 
-# 11. ROTA DE STATUS
+# 10. ROTA DE STATUS
 @app.route('/status', methods=['GET'])
 def status_api():
     """Verifica status da API"""
@@ -134,13 +134,13 @@ def status_api():
         "mensagem": "API funcionando perfeitamente!"
     })
 
-#12. ROTA DE TESTES DE API
+#11. ROTA DE TESTES DE API
 @app.route('/teste', methods=['GET'])
 def teste_api():
 # Chamamos a função que está no outro arquivo
     return exibir_tela_teste()
 
-#13 Rota auxiliar que faz a "mágica" acontecer na rota de testes acima
+#12 Rota auxiliar que faz a "mágica" acontecer na rota de testes acima
 @app.route('/proxy', methods=['POST'])
 def proxy_request():
     data = request.get_json()
@@ -170,7 +170,7 @@ def proxy_request():
         return jsonify({'error': str(e)}), 500
 
 # --------------------------------------------------------------------------------
-# 14. EXECUÇÃO DA APLICAÇÃO (MAIN)
+# 13. EXECUÇÃO DA APLICAÇÃO (MAIN)
 # O 'if' abaixo garante que o servidor só inicie se você rodar este arquivo diretamente.
 # Se este arquivo fosse importado por outro, o servidor não iniciaria sozinho.
 if __name__ == '__main__':
