@@ -1,0 +1,59 @@
+# Rota root
+@app.route('/', methods=['GET'])
+def rota_root():
+    return "<H2> Bem vindo a aula de API <H2>"
+    #return "<H1> Bem vindo a aula de API <H1>"
+
+# Rota ola
+@app.route('/ola', methods=['GET'])
+def rota_root():
+    return "<H2> Ola! Sejam bem vindos a aula de python<H2>"
+
+# 3. GET - Listar todos os alunos
+@app.route('/alunos', methods=['GET'])
+def listar_alunos():
+    """Lista todos os alunos cadastrados"""
+    return jsonify({
+        "total": len(alunos),
+        "alunos": alunos
+    })
+
+# 4. GET - Buscar aluno específico
+@app.route('/alunos/<int:aluno_id>', methods=['GET'])
+def buscar_aluno(aluno_id):
+    """Busca um aluno pelo ID"""
+    aluno = next((a for a in alunos if a['id'] == aluno_id), None)
+    
+    if aluno:
+        return jsonify(aluno)
+    else:
+        return jsonify({"erro": "Aluno não encontrado"}), 404    
+
+# 5. POST - Criar novo aluno
+@app.route('/alunos', methods=['POST'])
+def criar_aluno():
+    """Cria um novo aluno"""
+    try:
+        dados = request.get_json()
+        
+        # Validação básica
+        if not dados.get('nome'):
+            return jsonify({"erro": "Nome é obrigatório"}), 400
+        
+        # Cria novo aluno
+        novo_aluno = {
+            "id": len(alunos) + 1,
+            "nome": dados['nome'],
+            "turma": dados.get('turma', '3A'),
+            "nota": dados.get('nota', 0.0)
+        }
+        
+        alunos.append(novo_aluno)
+        
+        return jsonify({
+            "mensagem": "Aluno criado com sucesso!",
+            "aluno": novo_aluno
+        }), 201
+        
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500        
