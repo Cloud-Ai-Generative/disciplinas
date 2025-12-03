@@ -1,6 +1,6 @@
 # 📚 Proposta de Trabalho: API de Cardápio para Restaurante
 
-*[← Voltar ao Guia Anterior](./introducao.md)*
+*[← Voltar ao Guia Anterior](../introducao.md)*
 
 ## 🎯 Objetivo
 Desenvolver uma **API RESTful completa** para gerenciamento de pratos em um restaurante, utilizando os conceitos aprendidos na aula sobre Flask.

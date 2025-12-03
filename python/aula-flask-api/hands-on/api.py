@@ -6,8 +6,25 @@ Data: [03/12/2025]
 
 from flask import Flask, jsonify, request, render_template
 import requests
-# Importamos a função do outro arquivo
-from projeto.api_teste import exibir_tela_teste
+from pathlib import Path
+import sys
+
+# Caminho absoluto para a pasta 'projeto'
+caminho_projeto = Path(__file__).parent.parent / 'projeto'
+sys.path.append(str(caminho_projeto))
+
+from api_teste import exibir_tela_teste
+
+# 1. INICIALIZAÇÃO DA APLICAÇÃO
+app = Flask(__name__)
+
+
+
+#Hands on
+
+
+# Fim do Hands On
+
 
 
 #10. ROTA DE TESTES DE API
@@ -45,3 +62,15 @@ def proxy_request():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
+# 11. EXECUÇÃO DA APLICAÇÃO
+if __name__ == '__main__':
+    print("=" * 50)
+    print("API Flask da Aula Iniciada!")
+    print("Acesse: http://localhost:5000")
+    print("Para testar as rotas:")
+    print("  • GET /alunos - Listar alunos")
+    print("  • POST /alunos - Criar aluno")
+    print("=" * 50)
+
+    app.run(host='0.0.0.0', port=5000, debug=True)
