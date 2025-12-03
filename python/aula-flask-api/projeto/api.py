@@ -3,28 +3,39 @@ AULA PRÁTICA: Criando sua primeira API com Flask
 Professor: [Wellington Dimas Cruz - Wells]
 Data: [03/12/2025]
 """
-
+# 1. IMPORTAÇÕES DE BIBLIOTECAS
+# Flask: O framework principal para criar a aplicação web.
+# jsonify: Converte dados Python (dicionários) para JSON (formato padrão de APIs).
+# request: Permite acessar dados enviados pelo usuário (ex: formulários, JSON).
+# render_template: Usado para enviar arquivos HTML prontos para o navegador.
 from flask import Flask, jsonify, request, render_template
 import requests
-# Importamos a função do outro arquivo
+# Importa a função 'exibir_tela_teste' do arquivo 'api_teste.py' 
 from api_teste import exibir_tela_teste
 
 
-# 1. INICIALIZAÇÃO DA APLICAÇÃO
+# --------------------------------------------------------------------------------
+# 2. INICIALIZAÇÃO DA APLICAÇÃO
+# Cria a "alma" do seu site.
+# __name__: É uma variável especial. Diz ao Flask onde procurar recursos (templates, estáticos)
+# relativos a este arquivo específico.
 app = Flask(__name__)
 
-# Banco de dados em memória (para simplificação)
+# --------------------------------------------------------------------------------
+# 4. BANCO DE DADOS SIMULADO
+# Em aplicações reais, usaríamos SQL (Postgres, MySQL) ou DynamoDB (AWS).
+# Aqui, usamos uma lista de dicionários Python simples para facilitar o aprendizado.
 alunos = [
     {"id": 1, "nome": "Ana Silva", "turma": "3A", "nota": 8.5},
     {"id": 2, "nome": "João Santos", "turma": "3B", "nota": 7.8},
 ]
 
-# 2. ROTAS BÁSICAS - CRUD de Alunos
+# 4. ROTAS BÁSICAS - CRUD de Alunos
 @app.route('/')
 def home():
     return render_template("home.html")
 
-# 3. GET - Listar todos os alunos
+# 6. GET - Listar todos os alunos
 @app.route('/alunos', methods=['GET'])
 def listar_alunos():
     """Lista todos os alunos cadastrados"""
@@ -33,7 +44,7 @@ def listar_alunos():
         "alunos": alunos
     })
 
-# 4. GET - Buscar aluno específico
+# 7. GET - Buscar aluno específico
 @app.route('/alunos/<int:aluno_id>', methods=['GET'])
 def buscar_aluno(aluno_id):
     """Busca um aluno pelo ID"""
@@ -44,7 +55,7 @@ def buscar_aluno(aluno_id):
     else:
         return jsonify({"erro": "Aluno não encontrado"}), 404
 
-# 5. POST - Criar novo aluno
+# 8. POST - Criar novo aluno
 @app.route('/alunos', methods=['POST'])
 def criar_aluno():
     """Cria um novo aluno"""
@@ -73,7 +84,7 @@ def criar_aluno():
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
 
-# 6. PUT - Atualizar aluno (IMPLEMENTADO)
+# 9. PUT - Atualizar aluno (IMPLEMENTADO)
 @app.route('/alunos/<int:aluno_id>', methods=['PUT'])
 def atualizar_aluno(aluno_id):
     """Atualiza dados de um aluno"""
@@ -96,7 +107,7 @@ def atualizar_aluno(aluno_id):
         "aluno": aluno
     }), 200
 
-# 7. DELETE - Remover aluno (IMPLEMENTADO)
+# 10. DELETE - Remover aluno (IMPLEMENTADO)
 @app.route('/alunos/<int:aluno_id>', methods=['DELETE'])
 def remover_aluno(aluno_id):
     """Remove um aluno"""
@@ -113,7 +124,7 @@ def remover_aluno(aluno_id):
     
     return jsonify({"mensagem": "Aluno removido com sucesso!"}), 200
 
-# 9. ROTA DE STATUS
+# 11. ROTA DE STATUS
 @app.route('/status', methods=['GET'])
 def status_api():
     """Verifica status da API"""
@@ -123,13 +134,13 @@ def status_api():
         "mensagem": "API funcionando perfeitamente!"
     })
 
-#10. ROTA DE TESTES DE API
+#12. ROTA DE TESTES DE API
 @app.route('/teste', methods=['GET'])
 def teste_api():
 # Chamamos a função que está no outro arquivo
     return exibir_tela_teste()
 
-#11 Rota auxiliar que faz a "mágica" acontecer na rota de testes acima
+#13 Rota auxiliar que faz a "mágica" acontecer na rota de testes acima
 @app.route('/proxy', methods=['POST'])
 def proxy_request():
     data = request.get_json()
@@ -158,7 +169,10 @@ def proxy_request():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# 11. EXECUÇÃO DA APLICAÇÃO
+# --------------------------------------------------------------------------------
+# 14. EXECUÇÃO DA APLICAÇÃO (MAIN)
+# O 'if' abaixo garante que o servidor só inicie se você rodar este arquivo diretamente.
+# Se este arquivo fosse importado por outro, o servidor não iniciaria sozinho.
 if __name__ == '__main__':
     print("=" * 50)
     print("API Flask da Aula Iniciada!")
@@ -167,5 +181,9 @@ if __name__ == '__main__':
     print("  • GET /alunos - Listar alunos")
     print("  • POST /alunos - Criar aluno")
     print("=" * 50)
-    
+
+    # Inicia o servidor web de desenvolvimento.
+    # host='0.0.0.0': Permite que outros computadores na mesma rede acessem sua API.
+    # port=5000: A porta padrão do Flask.
+    # debug=True: Se você salvar o arquivo com erros, ele reinicia sozinho e mostra o erro no navegador.
     app.run(host='0.0.0.0', port=5000, debug=True)
