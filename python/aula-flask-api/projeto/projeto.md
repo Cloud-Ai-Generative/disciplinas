@@ -55,6 +55,10 @@ Certifique-se de que a sua estrutura de pastas está organizada conforme mostrad
    source .venv/bin/activate
    ```
 
+2.1 **Desativar o ambiente virtual:**
+   ```bash
+   deactivate
+   ```
 3. **Instalar as dependências:**
    ```bash
    pip install flask requests
