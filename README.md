@@ -1,4 +1,4 @@
 # disciplinas
 Conteúdo de várias disciplinas e aulas ministradas
 
-- [🐍 Python](python.md)
+- [🐍 Python](python/python.mdpython.md)
