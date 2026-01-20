@@ -50,7 +50,7 @@ Certifique-se de que a sua estrutura de pastas está organizada conforme mostrad
    python3 -m venv .venv
    ```
 
-2. **Ativar o ambiente virtual:**
+2. **Ativar o ambiente virtual caso precise:**
    ```bash
    source .venv/bin/activate
    ```
@@ -123,5 +123,5 @@ Após executar o comando para rodar a aplicação, verá uma mensagem indicando 
 ## 📝 Créditos
 
 - **Professor:** Wellington Dimas Cruz - Wells
-- **Data:** 03/12/2025
+- **Data:** 20/01/2026
 ```

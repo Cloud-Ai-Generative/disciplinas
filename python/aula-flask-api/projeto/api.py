@@ -1,8 +1,9 @@
 """
 AULA PRÁTICA: Criando sua primeira API com Flask
 Professor: [Wellington Dimas Cruz - Wells]
-Data: [03/12/2025]
+Data: [20/01/2026]
 """
+
 # 1. IMPORTAÇÕES DE BIBLIOTECAS
 # Flask: O framework principal para criar a aplicação web.
 # jsonify: Converte dados Python (dicionários) para JSON (formato padrão de APIs).
@@ -33,12 +34,25 @@ alunos = [
 # 4. ROTAS BÁSICAS - CRUD de Alunos
 @app.route('/')
 def home():
+    """
+    Renderiza a página inicial da aplicação web usando um template HTML.
+    
+    Retorna:
+        Response: Arquivo 'home.html' renderizado pelo mecanismo de templates do Flask.
+    """
     return render_template("home.html")
 
 # 5. GET - Listar todos os alunos
 @app.route('/alunos', methods=['GET'])
 def listar_alunos():
-    """Lista todos os alunos cadastrados"""
+    """
+    Retorna uma lista com todos os alunos cadastrados no sistema.
+    
+    Resposta:
+        JSON contendo:
+        - "total": número total de alunos
+        - "alunos": lista completa de registros
+    """
     return jsonify({
         "total": len(alunos),
         "alunos": alunos
@@ -47,7 +61,16 @@ def listar_alunos():
 # 6. GET - Buscar aluno específico
 @app.route('/alunos/<int:aluno_id>', methods=['GET'])
 def buscar_aluno(aluno_id):
-    """Busca um aluno pelo ID"""
+    """
+    Busca um aluno pelo seu ID único.
+    
+    Parâmetro de rota:
+        aluno_id (int): identificador do aluno a ser buscado.
+    
+    Resposta:
+        - Se encontrado: JSON com os dados do aluno (status 200).
+        - Se não encontrado: JSON com mensagem de erro (status 404).
+    """
     aluno = next((a for a in alunos if a['id'] == aluno_id), None)
     
     if aluno:
@@ -58,12 +81,27 @@ def buscar_aluno(aluno_id):
 # 7. POST - Criar novo aluno
 @app.route('/alunos', methods=['POST'])
 def criar_aluno():
-    """Cria um novo aluno"""
+    """
+    Cria um novo registro de aluno com base nos dados enviados no corpo da requisição (JSON).
+    
+    Corpo esperado (JSON):
+        - "nome" (obrigatório): nome completo do aluno.
+        - "turma" (opcional): turma do aluno (padrão: "3A").
+        - "nota" (opcional): nota do aluno (padrão: 0.0).
+    
+    Comportamento:
+        - Gera automaticamente um novo ID sequencial (último ID + 1).
+        - Valida se o campo "nome" foi fornecido.
+    
+    Resposta:
+        - Sucesso: JSON com mensagem e dados do aluno criado (status 201).
+        - Erro: JSON com mensagem de erro (status 400 ou 500).
+    """
     try:
         dados = request.get_json()
         
         # Validação básica
-        if not dados.get('nome'):
+        if not dados or not dados.get('nome'):
             return jsonify({"erro": "Nome é obrigatório"}), 400
         
         # Cria novo aluno
@@ -71,7 +109,7 @@ def criar_aluno():
             "id": len(alunos) + 1,
             "nome": dados['nome'],
             "turma": dados.get('turma', '3A'),
-            "nota": dados.get('nota', 0.0)
+            "nota": float(dados.get('nota', 0.0))
         }
         
         alunos.append(novo_aluno)
@@ -87,7 +125,23 @@ def criar_aluno():
 # 8. PUT - Atualizar aluno (IMPLEMENTADO)
 @app.route('/alunos/<int:aluno_id>', methods=['PUT'])
 def atualizar_aluno(aluno_id):
-    """Atualiza dados de um aluno"""
+    """
+    Atualiza parcialmente os dados de um aluno existente.
+    
+    Parâmetro de rota:
+        aluno_id (int): ID do aluno a ser atualizado.
+    
+    Corpo esperado (JSON, campos opcionais):
+        - "nome", "turma", "nota" (qualquer combinação).
+    
+    Comportamento:
+        - Mantém os valores antigos para campos não enviados.
+        - Não altera o ID do aluno.
+    
+    Resposta:
+        - Sucesso: JSON com mensagem e dados atualizados (status 200).
+        - Erro: JSON com mensagem de erro (status 404 se aluno não existir).
+    """
     # Busca o aluno na lista
     aluno = next((a for a in alunos if a['id'] == aluno_id), None)
 
@@ -100,7 +154,7 @@ def atualizar_aluno(aluno_id):
     # Atualiza os campos (mantém o antigo se não vier o novo)
     aluno['nome'] = dados.get('nome', aluno['nome'])
     aluno['turma'] = dados.get('turma', aluno['turma'])
-    aluno['nota'] = dados.get('nota', aluno['nota'])
+    aluno['nota'] = float(dados.get('nota', aluno['nota']))
 
     return jsonify({
         "mensagem": "Aluno atualizado com sucesso!",
@@ -110,7 +164,19 @@ def atualizar_aluno(aluno_id):
 # 9. DELETE - Remover aluno (IMPLEMENTADO)
 @app.route('/alunos/<int:aluno_id>', methods=['DELETE'])
 def remover_aluno(aluno_id):
-    """Remove um aluno"""
+    """
+    Remove permanentemente um aluno do banco de dados simulado.
+    
+    Parâmetro de rota:
+        aluno_id (int): ID do aluno a ser removido.
+    
+    Comportamento:
+        - Recria a lista global 'alunos' sem o registro especificado.
+    
+    Resposta:
+        - Sucesso: JSON com mensagem de confirmação (status 200).
+        - Erro: JSON com mensagem de erro (status 404 se aluno não existir).
+    """
     global alunos
     
     # Verifica se o aluno existe antes de tentar deletar
@@ -127,22 +193,58 @@ def remover_aluno(aluno_id):
 # 10. ROTA DE STATUS
 @app.route('/status', methods=['GET'])
 def status_api():
-    """Verifica status da API"""
+    """
+    Verifica se a API está operacional e retorna métricas básicas.
+    
+    Resposta:
+        JSON com:
+        - "status": "online"
+        - "total_alunos": número atual de registros
+        - "mensagem": confirmação de funcionamento
+    """
     return jsonify({
         "status": "online",
         "total_alunos": len(alunos),
         "mensagem": "API funcionando perfeitamente!"
     })
 
-#11. ROTA DE TESTES DE API
+# 11. ROTA DE TESTES DE API
 @app.route('/teste', methods=['GET'])
 def teste_api():
-# Chamamos a função que está no outro arquivo
+    """
+    Carrega uma interface de teste externa (definida em outro módulo).
+    
+    Utilidade:
+        - Permite testar endpoints da API via interface web interativa.
+    
+    Retorno:
+        - O que for retornado pela função 'exibir_tela_teste()' do módulo 'api_teste'.
+    """
+    # Chamamos a função que está no outro arquivo
     return exibir_tela_teste()
 
-#12 Rota auxiliar que faz a "mágica" acontecer na rota de testes acima
+# 12. Rota auxiliar que faz a "mágica" acontecer na rota de testes acima
 @app.route('/proxy', methods=['POST'])
 def proxy_request():
+    """
+    Atua como proxy HTTP para permitir que a interface de teste faça requisições a APIs externas.
+    
+    Motivo:
+        - Evita problemas de CORS (Cross-Origin Resource Sharing) no navegador.
+    
+    Corpo esperado (JSON):
+        - "method": método HTTP ("GET", "POST", etc.)
+        - "url": URL completa do endpoint alvo
+        - "headers": dicionário de cabeçalhos (opcional)
+        - "body": corpo da requisição (opcional, para POST/PUT)
+    
+    Resposta:
+        - JSON com:
+            - "status": código HTTP da resposta real
+            - "status_text": motivo (ex: "OK", "Not Found")
+            - "body": conteúdo da resposta
+        - Ou erro com status 500 em caso de falha na requisição.
+    """
     data = request.get_json()
     
     # Pega os dados enviados pelo Javascript
