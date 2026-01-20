@@ -91,7 +91,7 @@ meu_app_flask/
 └── venv/              # Ambiente virtual (opcional)
 ```
 
-### 🔗 **Exemplo de API Simples com Flask:**
+### 🔗 **Exemplo de API Simples com Flask e DocStrings (Documentação):**
 
 ```python
 from flask import Flask, jsonify, request
@@ -104,14 +104,40 @@ alunos = [
     {"id": 2, "nome": "João", "nota": 8.0}
 ]
 
+# Rota principal (estática) - Página inicial da API
+@app.route('/', methods=['GET'])
+def home():
+   """
+   Rota estática: Página inicial da API.
+   Retorna uma mensagem de boas-vindas e informações básicas.
+   """
+   return jsonify({
+       "mensagem": "Bem-vindo à API de Alunos!",
+       "versao": "1.0",
+       "rotas_disponiveis": {
+           "GET /alunos": "Lista todos os alunos",
+           "GET /alunos/<id>": "Busca aluno por ID",
+           "POST /alunos": "Cria um novo aluno"
+       }
+   })
+
 # Rota GET - Listar todos os alunos
 @app.route('/alunos', methods=['GET'])
 def listar_alunos():
+   """
+   Rota dinâmica: Lista todos os alunos.
+   Retorna: json com os alunos.
+   """
     return jsonify(alunos)
 
 # Rota GET - Buscar aluno por ID
 @app.route('/alunos/<int:id>', methods=['GET'])
 def buscar_aluno(id):
+   """
+   Rota dinâmica: Lista aluno por seu identificador.
+   Parâmetro: id (int) – id do aluno.
+   Retorna: json com um aluno apenas ou erro 404.
+   """
     for aluno in alunos:
         if aluno['id'] == id:
             return jsonify(aluno)
@@ -120,6 +146,11 @@ def buscar_aluno(id):
 # Rota POST - Criar novo aluno
 @app.route('/alunos', methods=['POST'])
 def criar_aluno():
+   """
+   Rota dinâmica: Insere um novo aluno no cadastro.
+   Espera JSON com campos: id, nome, nota.
+   Retorna: mensagem de sucesso e status 201.
+   """
     novo_aluno = request.get_json()
     alunos.append(novo_aluno)
     return jsonify({"mensagem": "Aluno criado!"}), 201
