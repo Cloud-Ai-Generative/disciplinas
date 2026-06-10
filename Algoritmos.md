@@ -3,7 +3,7 @@
 ```pseudocode
 INÍCIO
     ENQUANTO tempo de atividade for menor que 10 minutos FAÇA
-        O aluno analisa as opções do Ponto de Partida e faz sua escolha.
+        O aluno analisa as opções do Ponto de Partida e faz sua escolha(Quadro 1A localizado na Folha 1 (Centro)).
         
         ESCOLHA tema selecionado pelo aluno
             CASO Computação em nuvem
