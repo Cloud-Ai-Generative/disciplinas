@@ -180,3 +180,68 @@ class JogoRamificacoes
     }
 }
 ```
+
+## **O que são Algoritmos?**
+
+Um **algoritmo** é uma sequência finita e organizada de instruções passo a passo, projetada para resolver um problema específico ou executar uma tarefa.
+
+### Características principais:
+- **Precisão**: Cada instrução deve ser clara e inequívoca
+- **Finito**: Deve ter um início e um fim definidos
+- **Eficiência**: Deve resolver o problema usando recursos adequados
+- **Generalidade**: Pode ser aplicado a diferentes conjuntos de dados de entrada
+
+### Exemplo prático:
+Uma receita de bolo é um algoritmo:
+1. Separe os ingredientes
+2. Misture a farinha com o açúcar
+3. Adicione os ovos e o leite
+4. Leve ao forno por 40 minutos
+5. Espere esfriar e sirva
+
+> No contexto da computação, algoritmos são a base de todos os programas e sistemas, desde um simples cálculo até redes neurais complexas.
+
+---
+
+## **O que é Linguagem de Programação?**
+
+Uma **linguagem de programação** é um sistema formal de comunicação utilizado para escrever instruções (algoritmos) que podem ser executadas por um computador. Ela funciona como um **intermediário** entre o pensamento humano e o hardware da máquina.
+
+### Níveis das linguagens:
+
+| Tipo | Exemplos | Características |
+|------|----------|-----------------|
+| **Baixo nível** | Assembly, Código de máquina | Próximo ao hardware, mais rápido, difícil para humanos |
+| **Alto nível** | Python, Java, C#, JavaScript | Mais próximo da linguagem humana, mais produtivo |
+| **Médio nível** | C, C++ | Equilíbrio entre controle e abstração |
+
+### Paradigmas principais:
+- **Imperativo**: Como fazer passo a passo (C, Python)
+- **Orientado a objetos**: Baseado em objetos e classes (Java, C#)
+- **Funcional**: Baseado em funções puras (Haskell, Lisp)
+- **Declarativo**: O que fazer, não como fazer (SQL, HTML)
+
+> Cada linguagem é como uma "ferramenta especializada" — algumas são melhores para desenvolvimento web, outras para inteligência artificial, outras para sistemas embarcados.
+
+---
+
+## **O que são Bugs?**
+
+Um **bug** é um erro, falha ou defeito em um programa de computador que produz um resultado incorreto ou inesperado. O termo ficou famoso em 1947, quando um inseto (mariposa) ficou preso em um relé do computador Mark II, causando uma falha — literalmente um "bug" (bicho) no sistema.
+
+### Tipos comuns de bugs:
+
+| Tipo | Descrição | Exemplo |
+|------|-----------|---------|
+| **Sintaxe** | Erro nas regras da linguagem | Esquecer um ponto e vírgula em C# |
+| **Lógica** | O programa roda mas dá resultado errado | Calcular média como soma/quantidade-1 |
+| **Runtime** | Só aparece durante a execução | Dividir um número por zero |
+| **Semântico** | Instrução válida mas com sentido errado | Usar `=` ao invés de `==` em condicionais |
+
+### Como evitar e corrigir:
+- **Debugging**: Processo de encontrar e corrigir bugs
+- **Testes unitários**: Verificar pequenas partes do código isoladamente
+- **Revisão de código**: Outro programador analisa o código
+- **Tratamento de exceções**: Prever situações de erro no código
+
+> Um famoso ditado na programação: *"Não existem programas sem bugs, apenas bugs ainda não descobertos."*
