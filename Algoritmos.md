@@ -43,7 +43,7 @@ INÍCIO
 FIM
 ```
 
-#python
+# python
 ```
 INICIO = True
 
@@ -97,7 +97,7 @@ while INICIO:
     break
 ```
 
-#csharp (C#)
+# csharp (C#)
 ```
 using System;
 
