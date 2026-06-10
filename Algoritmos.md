@@ -44,6 +44,7 @@ FIM
 ```
 
 #python
+```
 INICIO = True
 
 while INICIO:
@@ -94,8 +95,10 @@ while INICIO:
     print("Tempo encerrado. Interrompa a movimentação dos alunos e abra espaço para debate coletivo.")
     print("Fala de fechamento: palavra-chave ALGORITMO.")
     break
+```
 
 #csharp (C#)
+```
 using System;
 
 class JogoRamificacoes
@@ -176,3 +179,4 @@ class JogoRamificacoes
         Console.WriteLine("Fala de fechamento: palavra-chave ALGORITMO.");
     }
 }
+```
