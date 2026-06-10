@@ -41,9 +41,9 @@ INÍCIO
         
     FIM ENQUANTO
 FIM
+```
 
-
-##python
+#python
 INICIO = True
 
 while INICIO:
@@ -95,7 +95,7 @@ while INICIO:
     print("Fala de fechamento: palavra-chave ALGORITMO.")
     break
 
-##csharp (C#)
+#csharp (C#)
 using System;
 
 class JogoRamificacoes
