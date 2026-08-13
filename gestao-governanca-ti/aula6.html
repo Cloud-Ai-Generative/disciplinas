@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auditoria de TI — Aula 6 (Unidade 3)</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:system-ui,sans-serif;background:#f4f7f6;margin:0;padding:18px;color:#1d1d1f}
+h1{font-size:1.25rem} h2{margin-top:0}
+nav{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.tab{border:2px solid #1d1d1f;background:#fff;border-radius:10px;padding:8px 12px;cursor:pointer;box-shadow:3px 3px 0 #d4a017;font-weight:600}
+.tab.active{background:#d4a017;color:#fff}
+.demo{display:none;background:#fff;border:2px solid #1d1d1f;border-radius:14px;padding:16px;box-shadow:5px 5px 0 #d4a017}
+.demo.active{display:block}
+button{border:2px solid #1d1d1f;border-radius:8px;background:#fff;padding:6px 10px;cursor:pointer;font-weight:600}
+button:hover{background:#fff8dc}
+details{margin:10px 0;border-radius:10px;padding:8px 12px;border:2px solid #1d1d1f}
+summary{cursor:pointer;font-weight:700}
+.info{background:#eaf4ff}.steps{background:#fff8dc}.links{background:#f2f2f2}.real{background:#eaffe8}.tool{background:#f5eaff}.quiz{background:#ffe8f0}
+.links a{color:#0a66c2;display:inline-block;margin:2px 12px 2px 0}
+.q{margin:2px}.q.ok{background:#b9f6ca}.q.bad{background:#ffb3b3}
+.fb{font-size:.85rem;background:#fff;border-radius:6px;padding:4px 8px;margin:4px 0}
+.pdca{display:inline-block;padding:10px 16px;border:2px solid #1d1d1f;border-radius:8px;margin:3px;cursor:pointer;font-weight:600}
+.pdca.on{background:#d4a017;color:#fff}
+.step{border:2px solid #1d1d1f;border-radius:10px;padding:10px;margin:6px 0;background:#f0f4ff;cursor:pointer}
+.step.on{background:#2dd4a7}
+.step .num{display:inline-block;width:28px;height:28px;background:#1d1d1f;color:#fff;border-radius:50%;text-align:center;line-height:28px;margin-right:8px;font-weight:700}
+.blok{display:inline-block;border:2px solid #1d1d1f;border-radius:8px;padding:8px 14px;margin:4px;cursor:pointer;font-weight:600;background:#fff}
+.blok.on{background:#2dd4a7}
+.area{display:inline-block;border:2px solid #1d1d1f;border-radius:8px;padding:8px 12px;margin:3px;cursor:pointer;background:#fff}
+.area.on{background:#ffb86b}
+.capa{border:2px solid #1d1d1f;border-radius:10px;padding:10px;margin:8px 0;background:#fff8dc}
+#out,#pdca-out,#step-out,#blok-out,#nc-out,#capa-out{background:#fff;border:2px dashed #999;border-radius:8px;padding:10px;margin:8px 0;min-height:36px}
+.rv{display:none;margin-left:6px}
+body.aposta .sig{display:none}
+body.aposta .sig.shown{display:inline}
+body.aposta .rv{display:inline-block}
+body.aposta .rv.off{display:none}
+#apBtn{box-shadow:3px 3px 0 #2dd4a7}
+</style>
+</head>
+<body>
+<h1>🕵️ Auditoria de TI — Aula 6 (Unidade 3, págs. 12–27)</h1>
+<button id="apBtn" onclick="aposta()">🎲 Modo aposta: OFF</button>
+<p>Mesma estrutura das aulas anteriores: 🌍 → 🛠️ → 🔤 → 📖 → 🎤 plano de testes → demo → 🧠 quiz → 🔗. Com 🎲 ligado, a turma aposta antes de você revelar.</p>
+
+<details class="tool"><summary>🧰 Glossário de ferramentas (leia uma vez antes das abas!)</summary><ul>
+  <li><b>ISO 19011:</b> norma internacional que dá as diretrizes de como conduzir auditorias (de qualquer tipo — qualidade, TI, ambiental). É o “manual” dos auditores.</li>
+  <li><b>IIA (The Institute of Internal Auditors):</b> o instituto mundial que define o que é auditoria interna, publica padrões e certifica auditores (CIA = Certified Internal Auditor).</li>
+  <li><b>COBIT / ISO 27001 / NIST:</b> frameworks de governança e segurança de TI — são os “referenciais” que a auditoria usa para comparar “como deveria ser” com “como está”.</li>
+  <li><b>ACL / TeamMate / SAP Audit Management:</b> softwares especializados em auditoria; guardam achados, geram relatórios e acompanham planos de ação.</li>
+  <li><b>PDCA:</b> ciclo Plan–Do–Check–Act (planejar, fazer, checar, agir) — base da melhoria contínua usada em gestão.</li>
+  <li><b>CAPA:</b> Corrective And Preventive Action — ação corretiva (conserta o que quebrou) + preventiva (evita que volte a quebrar).</li>
+</ul></details>
+
+<nav>
+  <button class="tab active" data-t="d1">01 Auditoria de TI</button>
+  <button class="tab" data-t="d2">02 Auditoria interna (IIA)</button>
+  <button class="tab" data-t="d3">03 Áreas e autoavaliação</button>
+  <button class="tab" data-t="d4">04 Não conformidade e PDCA</button>
+  <button class="tab" data-t="d5">05 Blocos de construção</button>
+  <button class="tab" data-t="d6">06 CAPA e feedback</button>
+</nav>
+
+<!-- 01 -->
+<section id="d1" class="demo active">
+  <h2>01 — Auditoria de TI: conceito e objetivos</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Vistoria do carro antes da compra:</b> você leva um mecânico de confiança para olhar motor, lataria, documentação. Ele não conserta, só <b>avalia</b> — é exatamente o papel do auditor.</li>
+    <li><b>Auditoria externa (independente):</b> o mecânico de outra oficina, sem vínculo com o vendedor — dá mais credibilidade.</li>
+    <li><b>Auditoria interna:</b> o mecânico da própria concessionária, que avalia para corrigir antes que o cliente reclame.</li>
+  </ul></details>
+  <details class="tool"><summary>🛠️ Nas ferramentas</summary><ul>
+    <li><b>ISO 19011:</b> a norma que define “o que é auditar”, os tipos, as etapas e as competências do auditor.</li>
+    <li><b>COBIT:</b> referencial usado como “régua” para auditar processos de TI (governança, segurança, entrega de valor).</li>
+    <li><b>Excel / planilha de auditoria:</b> ainda é o instrumento mais usado — lista de verificação (checklist) + evidências + achados.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Auditoria:</b> exame sistemático, independente e documentado para obter evidências e avaliar se critérios são atendidos.</li>
+    <li><b>Evidência:</b> prova concreta (log, documento, entrevista) de que algo aconteceu ou está assim.</li>
+    <li><b>Conformidade:</b> estar de acordo com o critério (lei, política, norma). <b>Não conformidade:</b> estar fora do critério.</li>
+    <li><b>Auditoria de TI:</b> a auditoria aplicada aos sistemas, processos, segurança e governança de tecnologia da informação.</li>
+  </ul></details>
+  <details class="info"><summary>📖 Conceitos + analogias</summary><ul>
+    <li><b>Conceito:</b> auditoria de TI é o exame independente e documentado dos processos, sistemas e controles de tecnologia de uma organização, comparando “como está” com “como deveria estar” (a norma, a política, a lei).</li>
+    <li><b>Objetivos principais:</b>
+      <ul>
+        <li><b>Confiabilidade:</b> os sistemas entregam o que prometem e os dados são íntegros.</li>
+        <li><b>Segurança:</b> ativos de informação estão protegidos contra acesso indevido, perda e desastre.</li>
+        <li><b>Eficiência:</b> recursos de TI (hardware, software, pessoas) são bem usados.</li>
+        <li><b>Conformidade legal:</b> a empresa respeita LGPD, leis setoriais e contratos.</li>
+        <li><b>Alinhamento ao negócio:</b> TI entrega valor, não é um “centro de custo desconectado”.</li>
+      </ul>
+    </li>
+    <li>💡 <i>Analogia da saúde:</i> TI é o corpo da empresa; a auditoria é o check-up — mede pressão, sangue, coração, aponta riscos e recomenda mudança de hábito <b>antes</b> do infarto.</li>
+  </ul></details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> uma lista de situações típicas de TI. Você classifica cada uma como “auditoria” ou “não é auditoria” clicando.</li>
+    <li><b>Teste 1 — classificar.</b> <i>Clicar:</i> em cada linha. <span class="sig"><i>Vê:</i> a tela diz se é ou não auditoria e o porquê. <i>Significa:</i> auditar é <b>examinar e comparar com critério</b>; consertar, programar ou operar não é auditar — são papéis diferentes. Confundir auditor com operador quebra a independência.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — objetivo.</b> <i>Clicar:</i> nos 5 objetivos da direita. <span class="sig"><i>Vê:</i> exemplos concretos de cada objetivo. <i>Significa:</i> a auditoria de TI não existe “por existir” — ela sempre mira um desses cinco alvos; sem objetivo claro, vira burocracia.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  <div id="out">Clique nas situações para classificar.</div>
+  <div id="situations"></div>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u11"><p>1) Auditoria de TI é um exame…</p>
+      <button class="q" data-ok="1">sistemático, independente e documentado</button><button class="q">rápido e informal</button><p class="fb"></p></div>
+    <div class="qq" id="u12"><p>2) O auditor, durante a auditoria, deve…</p>
+      <button class="q" data-ok="1">coletar evidências e avaliar contra critérios</button><button class="q">consertar o que encontrar errado</button><p class="fb"></p></div>
+    <div class="qq" id="u13"><p>3) NÃO é objetivo típico da auditoria de TI:</p>
+      <button class="q">segurança dos ativos</button><button class="q">conformidade legal</button><button class="q" data-ok="1">desenvolver o software da empresa</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (em português)</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Auditoria">Auditoria — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Auditoria_de_tecnologia_da_informa%C3%A7%C3%A3o">Auditoria de TI — Wikipédia</a>
+    <a target="_blank" href="https://www.isaca.org/resources/cobit">COBIT — ISACA (referencial global)</a>
+  </details>
+</section>
+
+<!-- 02 -->
+<section id="d2" class="demo">
+  <h2>02 — Auditoria interna (conceito IIA, 7 passos, postura)</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Pequena empresa:</b> o dono acha que “não tem estrutura” para auditoria — mas é justamente a que mais sofre com fraude de funcionário ou falha de backup. Auditoria interna simples vale ouro.</li>
+    <li><b>Grande empresa:</b> tem equipe dedicada que reporta ao conselho, não ao gerente auditado — é o segredo da independência.</li>
+    <li><b>Por que fazer?</b> descobrir problemas <b>antes</b> que o cliente, o regulador ou o hacker descubram.</li>
+  </ul></details>
+  <details class="tool"><summary>🛠️ Nas ferramentas</summary><ul>
+    <li><b>IIA (The Institute of Internal Auditors):</b> define a auditoria interna como “atividade independente e objetiva de avaliação e consultoria, desenhada para agregar valor e melhorar as operações”.</li>
+    <li><b>TeamMate / ACL:</b> sistemas que guiam o auditor pelos passos da auditoria e guardam evidências.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Auditoria interna:</b> conduzida por pessoas da própria organização (ou contratadas para esse papel), com foco em melhoria e risco.</li>
+    <li><b>Independência:</b> o auditor não se reporta a quem ele audita; responde a um nível hierárquico acima (conselho, diretoria).</li>
+    <li><b>Postura prospectiva:</b> o auditor olha para a frente, identificando riscos <b>emergentes</b>, não só falhas passadas.</li>
+  </ul></details>
+  <details class="info"><summary>📖 Conceitos — os 7 passos da auditoria interna</summary>
+    <ol>
+      <li><b>Planejamento:</b> definir escopo, objetivos e equipe.</li>
+      <li><b>Levantamento de riscos:</b> identificar onde pode dar errado.</li>
+      <li><b>Elaboração do programa de auditoria:</b> o “roteiro” de testes a executar.</li>
+      <li><b>Execução dos testes:</b> coletar evidências (entrevistas, logs, documentos).</li>
+      <li><b>Documentação (papéis de trabalho):</b> registrar tudo, de forma que outro auditor consiga refazer.</li>
+      <li><b>Relatório:</b> comunicar achados, causas, riscos e recomendações.</li>
+      <li><b>Acompanhamento (follow-up):</b> verificar se as recomendações foram implementadas.</li>
+    </ol>
+  </details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> os 7 passos numerados. Clique em cada um para ver o detalhe e a armadilha comum.</li>
+    <li><b>Teste 1 — percorrer os passos.</b> <i>Clicar:</i> do 1 ao 7, na ordem. <span class="sig"><i>Vê:</i> descrição, armadilha e deliverable de cada passo. <i>Significa:</i> os passos não são “burocracia” — são a sequência lógica que garante que o relatório final tenha base. Pular o planejamento é auditar às cegas; pular o follow-up é desperdiçar todo o trabalho anterior.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — postura prospectiva.</b> <i>Clicar:</i> no botão “postura prospectiva”. <span class="sig"><i>Vê:</i> a diferença entre postura reativa e prospectiva. <i>Significa:</i> o auditor moderno não é “fiscal do passado”, é “radar do futuro”: identifica IA mal governada, shadow IT, risco de LGPD <b>antes</b> de virarem problema.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  <div id="step-list"></div>
+  <button onclick="showProspect()">🔭 postura prospectiva</button>
+  <div id="step-out">Clique em um passo para ver o detalhe.</div>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u21"><p>1) O conceito IIA de auditoria interna enfatiza…</p>
+      <button class="q" data-ok="1">independência, objetividade e agregar valor</button><button class="q">fiscalizar e punir</button><p class="fb"></p></div>
+    <div class="qq" id="u22"><p>2) Pular o passo de follow-up faz com que…</p>
+      <button class="q" data-ok="1">as recomendações podem nunca ser implementadas</button><button class="q">a auditoria fique mais barata</button><p class="fb"></p></div>
+    <div class="qq" id="u23"><p>3) Postura prospectiva é…</p>
+      <button class="q" data-ok="1">antecipar riscos emergentes</button><button class="q">auditar só o passado</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (em português)</summary>
+    <a target="_blank" href="https://www.theiia.org/en/">IIA — The Institute of Internal Auditors (site oficial)</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Auditoria_interna">Auditoria interna — Wikipédia</a>
+    <a target="_blank" href="https://www.isaca.org/resources/cobit">COBIT — ISACA</a>
+  </details>
+</section>
+
+<!-- 03 -->
+<section id="d3" class="demo">
+  <h2>03 — Áreas a auditar e autoavaliação</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Onde começar?</b> empresa com 500 sistemas não consegue auditar tudo; escolhe-se pelo <b>risco × impacto</b>.</li>
+    <li><b>Autoavaliação:</b> antes do auditor chegar, a própria equipe faz um checklist honesto — economiza tempo e revela o que realmente importa.</li>
+    <li><b>Matriz de risco:</b> ferramenta simples que prioriza o que auditar.</li>
+  </ul></details>
+  <details class="tool"><summary>🛠️ Nas ferramentas</summary><ul>
+    <li><b>Matriz de risco (Excel):</b> linhas = áreas de TI; colunas = probabilidade × impacto; células coloridas mostram prioridade.</li>
+    <li><b>Questionário de autoavaliação:</b> Google Forms ou planilha com perguntas “sim/não/parcial” sobre controles.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Área de auditoria:</b> um pedaço da TI a ser examinado — ex.: segurança da informação, infraestrutura, projetos, contratos.</li>
+    <li><b>Autoavaliação (CSA — Control Self-Assessment):</b> os próprios donos do processo avaliam seus controles antes da auditoria formal.</li>
+    <li><b>Matriz de risco:</b> ferramenta que combina probabilidade e impacto para priorizar o que auditar.</li>
+  </ul></details>
+  <details class="info"><summary>📖 Conceitos</summary>
+    <p>As <b>principais áreas de TI</b> que uma auditoria costuma cobrir são: <b>governança de TI</b>, <b>segurança da informação</b>, <b>infraestrutura e operações</b>, <b>desenvolvimento de sistemas</b>, <b>continuidade de negócios / DRP</b>, <b>terceiros e contratos</b>, <b>conformidade legal (LGPD)</b>, <b>gestão de dados e privacidade</b>.</p>
+    <p>A <b>autoavaliação</b> serve para (1) mapear controles, (2) reduzir o tempo de auditoria, (3) engajar a equipe — e para funcionar precisa ser <b>honesta</b>, não “de fachada”.</p>
+  </details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> matriz 3×3 com áreas típicas de TI; clique em cada célula para ver o porquê da prioridade.</li>
+    <li><b>Teste 1 — priorizar.</b> <i>Clicar:</i> na célula “alta probabilidade × alto impacto”. <span class="sig"><i>Vê:</i> a célula acende e a descrição mostra o risco. <i>Significa:</i> é onde o auditor deve gastar mais tempo — um problema aqui afeta a empresa inteira. É o quadrante “audite primeiro”.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — autoavaliação.</b> <i>Clicar:</i> nas perguntas de autoavaliação. <span class="sig"><i>Vê:</i> respostas sim/não/parcial com pontuação. <i>Significa:</i> um checklist honesto feito pela própria equipe revela 80% dos achados antes mesmo da auditoria; o papel do auditor passa a ser validar e aprofundar.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  <div id="matrix"></div>
+  <h3>Autoavaliação rápida (5 controles)</h3>
+  <div id="csa"></div>
+  <div id="csa-score"></div>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u31"><p>1) Para decidir onde auditar primeiro, usa-se…</p>
+      <button class="q" data-ok="1">matriz de risco (probabilidade × impacto)</button><button class="q">ordem alfabética</button><p class="fb"></p></div>
+    <div class="qq" id="u32"><p>2) Autoavaliação (CSA) é feita por…</p>
+      <button class="q" data-ok="1">os próprios donos do processo, antes da auditoria</button><button class="q">o auditor externo</button><p class="fb"></p></div>
+    <div class="qq" id="u33"><p>3) Área de TI que NÃO costuma ser auditada:</p>
+      <button class="q">segurança da informação</button><button class="q">continuidade de negócios</button><button class="q" data-ok="1">nenhuma das anteriores — todas são auditáveis</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (em português)</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Gest%C3%A3o_de_riscos">Gestão de riscos — Wikipédia</a>
+    <a target="_blank" href="https://www.ibgrc.com.br/">IBGC — Instituto Brasileiro de Governança Corporativa</a>
+    <a target="_blank" href="https://www.gov.br/anpd/pt-br">ANPD — LGPD e governança de dados</a>
+  </details>
+</section>
+
+<!-- 04 -->
+<section id="d4" class="demo">
+  <h2>04 — Não conformidade e ciclo PDCA</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Não conformidade:</b> “o backup diário não roda desde março”. É um <b>achado</b>, não um insulto.</li>
+    <li><b>Benefícios de gerenciar NC:</b> (1) saber onde a empresa está fraca, (2) evitar multas, (3) evitar incidentes, (4) mostrar maturidade para clientes e investidores.</li>
+    <li><b>PDCA:</b> a roda que nunca para de girar: <b>Plan</b> (planejar) → <b>Do</b> (executar) → <b>Check</b> (checar) → <b>Act</b> (agir sobre o resultado).</li>
+  </ul></details>
+  <details class="tool"><summary>🛠️ Nas ferramentas</summary><ul>
+    <li><b>Planilha de NC:</b> colunas = achado, causa, impacto, responsável, prazo, status.</li>
+    <li><b>Software CAPA:</b> TeamMate, MasterControl, Qualtrax — automatizam o ciclo PDCA e cobram follow-up.</li>
+    <li><b>ISO 9001 / ISO 27001:</b> exigem gestão formal de não conformidades com PDCA.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Não conformidade:</b> descumprimento de um requisito (norma, política, contrato, lei).</li>
+    <li><b>PDCA:</b> ciclo Plan–Do–Check–Act; espinha dorsal da melhoria contínua.</li>
+    <li><b>Impacto:</b> o tamanho do prejuízo se nada for feito (financeiro, operacional, reputacional).</li>
+    <li><b>Potencial:</b> o que pode acontecer no futuro se a NC não for tratada (pior que o impacto imediato).</li>
+  </ul></details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> 4 botões (P, D, C, A) do ciclo PDCA. Clique em cada um para ver o que acontece naquela fase.</li>
+    <li><b>Teste 1 — percorrer o PDCA.</b> <i>Clicar:</i> P → D → C → A na ordem. <span class="sig"><i>Vê:</i> a descrição de cada fase aplicada ao caso “backup diário não roda”. <i>Significa:</i> o ciclo é uma <b>espiral</b>, não uma linha reta: ao final do A, começa um novo P com o aprendizado — é isso que transforma “apagar incêndio” em “melhoria contínua”.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — impacto × potencial.</b> <i>Clicar:</i> em “ver impacto e potencial”. <span class="sig"><i>Vê:</i> dois textos diferentes para a mesma NC. <i>Significa:</i> <b>impacto</b> é o que já dói hoje (ex.: perda de 2 dias de dados); <b>potencial</b> é o que pode acontecer se persistir (ex.: ransomware destruindo tudo). O relatório mostra os dois para dar peso à recomendação.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  <button onclick="pdca('P')" class="pdca">P — Plan</button>
+  <button onclick="pdca('D')" class="pdca">D — Do</button>
+  <button onclick="pdca('C')" class="pdca">C — Check</button>
+  <button onclick="pdca('A')" class="pdca">A — Act</button>
+  <button onclick="impact()">ver impacto e potencial</button>
+  <div id="pdca-out">Clique nas fases do PDCA para ver cada etapa aplicada.</div>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u41"><p>1) O ciclo PDCA serve para…</p>
+      <button class="q" data-ok="1">melhoria contínua de processos</button><button class="q">demitir funcionários</button><p class="fb"></p></div>
+    <div class="qq" id="u42"><p>2) No PDCA, a fase em que se mede o resultado é…</p>
+      <button class="q">Plan</button><button class="q">Do</button><button class="q" data-ok="1">Check</button><button class="q">Act</button><p class="fb"></p></div>
+    <div class="qq" id="u43"><p>3) “Potencial” de uma NC é…</p>
+      <button class="q" data-ok="1">o que pode acontecer no futuro se persistir</button><button class="q">o que já aconteceu</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (em português)</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Ciclo_PDCA">Ciclo PDCA — Wikipédia</a>
+    <a target="_blank" href="https://www.fundacao_vanzolini.org.br">Fundação Vanzolini — certificação ISO</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/ISO_9001">ISO 9001 — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 05 -->
+<section id="d5" class="demo">
+  <h2>05 — Blocos de construção do sistema de gestão</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Construir uma casa:</b> projeto → fundação → paredes → telhado → inspeção → reforma. Gestão é a mesma coisa: blocos empilhados em ordem.</li>
+    <li><b>POP (Procedimento Operacional Padrão):</b> a “receita de bolo” escrita — se dois funcionários fizerem a mesma tarefa, farão do mesmo jeito.</li>
+    <li><b>Sem bloco, a casa cai:</b> empresa que só implementa sem documentar esquece; que só audita sem melhorar vira burocracia.</li>
+  </ul></details>
+  <details class="tool"><summary>🛠️ Nas ferramentas</summary><ul>
+    <li><b>SGI (Sistema de Gestão Integrado):</b> junta qualidade (ISO 9001), ambiental (ISO 14001) e segurança da informação (ISO 27001) nos mesmos blocos.</li>
+    <li><b>Confluence / Google Docs / SharePoint:</b> repositório dos POPs.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Design:</b> desenhar o sistema — quais processos, quais controles, quem é responsável.</li>
+    <li><b>Documentação / POP:</b> escrever “como se faz” de forma padronizada.</li>
+    <li><b>Implementação:</b> colocar em prática, treinar as pessoas.</li>
+    <li><b>Auditoria:</b> checar se o implementado bate com o documentado.</li>
+    <li><b>Melhoria contínua:</b> agir sobre o que a auditoria encontrou e recomeçar.</li>
+  </ul></details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> os 5 blocos fora de ordem. Arraste (ou clique) para empilhá-los na ordem correta.</li>
+    <li><b>Teste 1 — montar o sistema.</b> <i>Clicar:</i> nos blocos na ordem: Design → Documentação → Implementação → Auditoria → Melhoria. <span class="sig"><i>Vê:</i> os blocos empilhando e cada um com a descrição ao ser selecionado. <i>Significa:</i> essa é a sequência lógica — pular documentação = implementar no “jeitinho”; pular auditoria = implementar às cegas; pular melhoria = virar museu.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — ordem errada.</b> <i>Clicar:</i> em “implementação” antes de “documentação”. <span class="sig"><i>Vê:</i> alerta de risco. <i>Significa:</i> implementar sem documentar cria dependência da cabeça de quem sabe; quando a pessoa sai, o processo morre.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  <div id="bloks"></div>
+  <button onclick="resetBloks()">↺ reiniciar</button>
+  <div id="blok-out">Clique nos blocos na ordem correta: Design → Documentação → Implementação → Auditoria → Melhoria.</div>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u51"><p>1) O bloco que vem ANTES de implementar é…</p>
+      <button class="q" data-ok="1">documentação (POP)</button><button class="q">auditoria</button><p class="fb"></p></div>
+    <div class="qq" id="u52"><p>2) POP significa…</p>
+      <button class="q" data-ok="1">Procedimento Operacional Padrão</button><button class="q">Plano Oficial de Projeto</button><p class="fb"></p></div>
+    <div class="qq" id="u53"><p>3) Pular o bloco “melhoria contínua” faz o sistema…</p>
+      <button class="q" data-ok="1">estagnar e virar burocracia</button><button class="q">funcionar melhor</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (em português)</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Sistema_de_gest%C3%A3o">Sistema de gestão — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/ISO_27001">ISO 27001 (segurança da informação) — Wikipédia</a>
+    <a target="_blank" href="https://www.qualyteam.com.br/blog/o-que-e-pop">O que é POP — artigo didático</a>
+  </details>
+</section>
+
+<!-- 06 -->
+<section id="d6" class="demo">
+  <h2>06 — CAPA e importância do feedback</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Corretiva:</b> “o pneu furou → troco o pneu”. Resolve o problema de agora.</li>
+    <li><b>Preventiva:</b> “os pneus estão carecas → troco <b>todos</b> antes de furar na estrada”. Evita o problema futuro.</li>
+    <li><b>Feedback:</b> o auditor volta na área 6 meses depois — se a ação funcionou, ótimo; se não, o ciclo recomeça. Sem feedback, a auditoria morre na gaveta.</li>
+  </ul></details>
+  <details class="tool"><summary>🛠️ Nas ferramentas</summary><ul>
+    <li><b>CAPA (Corrective And Preventive Action):</b> processo formal documentado, exigido por normas ISO e boas práticas.</li>
+    <li><b>Feedback loop:</b> agendamento de follow-up + indicadores que provam se a ação funcionou.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Causa raiz:</b> o motivo mais profundo do problema — não o sintoma. Ex.: backup falhou porque <b>ninguém checa</b> (causa) — não porque “o servidor deu erro” (sintoma).</li>
+    <li><b>Ação corretiva:</b> elimina a causa raiz de uma NC <b>já ocorrida</b>.</li>
+    <li><b>Ação preventiva:</b> elimina a causa de uma NC <b>potencial</b> (que ainda não aconteceu).</li>
+    <li><b>Feedback:</b> retorno de informação que alimenta o próximo ciclo.</li>
+  </ul></details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> um achado de auditoria (ex.: “backup não roda”). Dois botões: “ação corretiva” e “ação preventiva”.</li>
+    <li><b>Teste 1 — corretiva.</b> <i>Clicar:</i> em “ação corretiva”. <span class="sig"><i>Vê:</i> a descrição da ação focada em resolver o problema de agora. <i>Significa:</i> é o “trocar o pneu furado” — necessário, mas sozinho deixa a empresa exposta a novos furos.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — preventiva.</b> <i>Clicar:</i> em “ação preventiva”. <span class="sig"><i>Vê:</i> a descrição focada em evitar que volte a acontecer. <i>Significa:</i> é o “trocar todos os pneus e criar checklist de inspeção” — ataca a causa raiz e evita o próximo incidente.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 3 — feedback.</b> <i>Clicar:</i> em “ver feedback”. <span class="sig"><i>Vê:</i> o que acontece 6 meses depois, com e sem follow-up. <i>Significa:</i> o feedback é o que <b>fecha o ciclo</b>; sem ele, a auditoria gera papel, não mudança. Por isso o step 7 da auditoria interna é justamente o follow-up.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  <button onclick="capa('c')">🔧 ação corretiva</button>
+  <button onclick="capa('p')">🛡️ ação preventiva</button>
+  <button onclick="feedback()">💬 ver feedback</button>
+  <div id="capa-out">Clique para ver a diferença entre ação corretiva e preventiva aplicadas ao achado “backup não roda desde março”.</div>
+  <details class="info"><summary>🗺️ Mapa da aula (visão geral)</summary>
+    <p><b>Auditoria de TI</b> (exame independente com objetivos: confiabilidade, segurança, eficiência, conformidade, valor) →  <b>Auditoria interna</b> (IIA, 7 passos, postura prospectiva) →  <b>Priorização</b> (matriz de risco + autoavaliação) →  <b>Não conformidade</b> (impacto × potencial, PDCA) →  <b>Sistema de gestão</b> (Design → POP → Implementação → Auditoria → Melhoria) →  <b>CAPA + feedback</b> (corretiva + preventiva + follow-up fecha o ciclo).</p>
+  </details>
+  <details class="info"><summary>📝 Cola rápida (uma linha por termo)</summary><ul>
+    <li><b>Auditoria de TI:</b> exame sistemático, independente, documentado.</li>
+    <li><b>Objetivos:</b> confiabilidade, segurança, eficiência, conformidade, alinhamento.</li>
+    <li><b>IIA:</b> auditoria interna independente, objetiva, que agrega valor.</li>
+    <li><b>7 passos:</b> planejamento, riscos, programa, execução, documentação, relatório, follow-up.</li>
+    <li><b>Postura prospectiva:</b> olhar riscos emergentes, não só falhas passadas.</li>
+    <li><b>Matriz de risco:</b> probabilidade × impacto → onde auditar primeiro.</li>
+    <li><b>Autoavaliação (CSA):</b> os donos do processo avaliam antes da auditoria.</li>
+    <li><b>Não conformidade:</b> descumprir requisito; impacto = hoje, potencial = amanhã.</li>
+    <li><b>PDCA:</b> Plan, Do, Check, Act — espiral da melhoria contínua.</li>
+    <li><b>Blocos:</b> Design → POP → Implementação → Auditoria → Melhoria.</li>
+    <li><b>CAPA:</b> Corretiva (conserta agora) + Preventiva (evita no futuro).</li>
+    <li><b>Feedback/follow-up:</b> fecha o ciclo; sem ele, auditoria vira papel.</li>
+  </ul></details>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u61"><p>1) Ação que elimina a causa raiz de um problema JÁ ocorrido é…</p>
+      <button class="q" data-ok="1">corretiva</button><button class="q">preventiva</button><p class="fb"></p></div>
+    <div class="qq" id="u62"><p>2) Ação que evita um problema que AINDA NÃO aconteceu é…</p>
+      <button class="q">corretiva</button><button class="q" data-ok="1">preventiva</button><p class="fb"></p></div>
+    <div class="qq" id="u63"><p>3) Sem feedback (follow-up), a auditoria…</p>
+      <button class="q" data-ok="1">gera papel, não mudança</button><button class="q">funciona melhor</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (em português)</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/A%C3%A7%C3%A3o_corretiva_e_preventiva">Ação corretiva e preventiva — Wikipédia</a>
+    <a target="_blank" href="https://www.qualyteam.com.br/blog/acao-corretiva-e-preventiva">CAPA explicada — artigo didático</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/ISO_9001">ISO 9001 (base do CAPA) — Wikipédia</a>
+  </details>
+</section>
+
+<script>
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.demo').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); document.getElementById(b.dataset.t).classList.add('active');
+  if(b.dataset.t=='d1') drawS(); if(b.dataset.t=='d2') drawSteps();
+  if(b.dataset.t=='d3') drawMx(); if(b.dataset.t=='d5') drawBloks();
+});
+function aposta(){ document.body.classList.toggle('aposta');
+  document.getElementById('apBtn').textContent='🎲 Modo aposta: '+(document.body.classList.contains('aposta')?'ON':'OFF'); }
+function rev(b){ b.previousElementSibling.classList.add('shown'); b.classList.add('off'); }
+const EXP={
+ u11:{ok:'✅ Isso! Auditoria é sistemática (tem método), independente (sem conflito) e documentada (com evidência).',bad:'❌ Auditoria rápida e informal vira “olhômetro” — não é auditoria de verdade.'},
+ u12:{ok:'✅ Isso! O papel do auditor é coletar evidências e avaliar; consertar é papel do auditado, senão quebra a independência.',bad:'❌ Se o auditor conserta, ele vira parte do problema — perde independência.'},
+ u13:{ok:'✅ Isso! Desenvolver software é papel da equipe de TI, não do auditor.',bad:'❌ Segurança e conformidade são objetivos clássicos; desenvolver software não.'},
+ u21:{ok:'✅ Isso! O IIA define auditoria interna como atividade independente, objetiva, que agrega valor.',bad:'❌ Fiscalizar e punir é papel de corregedoria, não de auditoria interna moderna.'},
+ u22:{ok:'✅ Isso! Sem follow-up, a recomendação pode ser esquecida e o problema continua.',bad:'❌ Follow-up dá trabalho, mas é o que garante que a auditoria teve efeito.'},
+ u23:{ok:'✅ Isso! Prospectiva = olhar para riscos emergentes, não só os passados.',bad:'❌ Só passado é postura reativa; prospectiva é antecipar.'},
+ u31:{ok:'✅ Isso! Risco = probabilidade × impacto; é o critério racional para priorizar.',bad:'❌ Ordem alfabética ignora o tamanho do problema.'},
+ u32:{ok:'✅ Isso! CSA = os próprios donos do processo se avaliam antes do auditor chegar.',bad:'❌ O auditor externo audita; a autoavaliação é feita pela equipe.'},
+ u33:{ok:'✅ Isso! Qualquer área de TI é auditável; a prioridade é que varia.',bad:'❌ Todas as áreas listadas (segurança, continuidade, LGPD etc.) são auditáveis.'},
+ u41:{ok:'✅ Isso! PDCA é a espiral da melhoria contínua.',bad:'❌ Demissão é decisão de RH; PDCA é melhoria de processo.'},
+ u42:{ok:'✅ Isso! Check = medir se o Do funcionou como planejado.',bad:'❌ Plan planeja, Do executa, Act age sobre o resultado. Checar é o C.'},
+ u43:{ok:'✅ Isso! Potencial é o que PODE acontecer se a NC persistir; impacto é o que JÁ dói.',bad:'❌ O que já aconteceu é impacto; potencial é futuro.'},
+ u51:{ok:'✅ Isso! Implementar sem POP é implementar no “jeitinho” — cria dependência de pessoas.',bad:'❌ Auditoria vem DEPOIS de implementar, para checar.'},
+ u52:{ok:'✅ Isso! POP = Procedimento Operacional Padrão, a “receita de bolo” escrita.',bad:'❌ POP não é plano de projeto; é procedimento.'},
+ u53:{ok:'✅ Isso! Sem melhoria contínua, o sistema estagna e vira burocracia.',bad:'❌ Melhoria contínua é o bloco que mantém o sistema vivo.'},
+ u61:{ok:'✅ Isso! Corretiva ataca o problema que JÁ aconteceu.',bad:'❌ Preventiva é para evitar o que ainda não aconteceu.'},
+ u62:{ok:'✅ Isso! Preventiva antecipa; evita que a NC aconteça.',bad:'❌ Corretiva reage ao problema já ocorrido.'},
+ u63:{ok:'✅ Isso! Sem follow-up, o relatório vira gaveta e o problema persiste.',bad:'❌ É justamente o feedback que transforma auditoria em mudança.'}
+};
+document.addEventListener('click',e=>{
+  const b=e.target.closest('.q'); if(!b) return;
+  const qq=b.closest('.qq'), fb=qq.querySelector('.fb'), ok=b.dataset.ok=='1';
+  b.classList.add(ok?'ok':'bad');
+  fb.textContent=ok?EXP[qq.id].ok:EXP[qq.id].bad;
+});
+// 01 - situações
+const SIT=[
+ ['Revisar logs de acesso do sistema financeiro','SIM','O auditor examina registros (evidência) para avaliar se o controle de acesso segue a política.'],
+ ['Instalar um novo servidor na empresa','NÃO','É operação de TI — o auditor não instala, ele audita quem instala.'],
+ ['Comparar a política de backup com o que realmente é feito','SIM','É exatamente o “estado real × estado esperado” — o cerne da auditoria.'],
+ ['Programar um novo módulo do ERP','NÃO','É desenvolvimento, papel da equipe de software, não do auditor.'],
+ ['Entrevistar o gerente de TI sobre o processo de compras','SIM','Entrevista é técnica clássica de coleta de evidência.'],
+ ['Responder a um chamado de help desk','NÃO','É suporte ao usuário, não auditoria.']
+];
+function drawS(){
+ const w=document.getElementById('situations'); w.innerHTML='';
+ SIT.forEach((s,i)=>{
+  const d=document.createElement('div'); d.className='step';
+  d.innerHTML='<b>“'+s[0]+'”</b> — é auditoria?';
+  d.onclick=()=>{ document.getElementById('out').innerHTML='<b>Resposta: '+s[1]+'</b> — '+s[2]; };
+  w.appendChild(d);
+ });
+}
+// 02 - 7 passos
+const STEPS=[
+ ['Planejamento','Definir escopo (o que será auditado), objetivos, equipe e cronograma.','Armadilha: começar sem escopo = auditar “tudo e nada” ao mesmo tempo.','Deliverable: plano de auditoria aprovado.'],
+ ['Levantamento de riscos','Mapear os riscos da área auditada e priorizar.','Armadilha: listar riscos sem avaliar probabilidade × impacto.','Deliverable: matriz de riscos.'],
+ ['Programa de auditoria','Detalhar os testes a executar: o quê, como, quem, quando.','Armadilha: testes vagos, sem critérios claros de aceitação.','Deliverable: programa de testes.'],
+ ['Execução','Aplicar os testes e coletar evidências (entrevistas, logs, documentos).','Armadilha: aceitar “depoimento” sem evidência documental.','Deliverable: evidências coletadas.'],
+ ['Documentação','Registrar tudo em papéis de trabalho de forma reprodutível.','Armadilha: anotações soltas que ninguém entende depois.','Deliverable: papéis de trabalho.'],
+ ['Relatório','Comunicar achados, causas, riscos e recomendações à gestão.','Armadilha: relatório técnico demais, sem linguagem para o gestor.','Deliverable: relatório de auditoria.'],
+ ['Follow-up','Verificar se as recomendações foram implementadas e funcionaram.','Armadilha: não fazer follow-up = auditoria vira gaveta.','Deliverable: status das ações.']
+];
+function drawSteps(){
+ const w=document.getElementById('step-list'); w.innerHTML='';
+ STEPS.forEach((s,i)=>{
+  const d=document.createElement('div'); d.className='step';
+  d.innerHTML='<span class="num">'+(i+1)+'</span><b>'+s[0]+'</b>';
+  d.onclick=()=>{ document.getElementById('step-out').innerHTML='<b>'+s[0]+':</b> '+s[1]+'<br><b>Armadilha:</b> '+s[2]+'<br><b>Entrega:</b> '+s[3]; };
+  w.appendChild(d);
+ });
+}
+function showProspect(){
+ document.getElementById('step-out').innerHTML='<b>Postura prospectiva:</b> em vez de só olhar falhas do passado, o auditor mapeia riscos emergentes: uso não governado de IA, shadow IT, novas ameaças cibernéticas, mudanças regulatórias (LGPD em evolução). Pergunta-chave: “o que PODE dar errado nos próximos 12 meses que ainda não deu?”';
+}
+// 03 - matriz
+const AREAS=[
+ ['Governança de TI','Alta','Alto','Alta probabilidade + alto impacto: falhas aqui afetam o negócio inteiro.'],
+ ['Segurança da informação','Alta','Crítico','Vazamento de dados = multa LGPD + perda de reputação.'],
+ ['Infraestrutura e operações','Média','Alto','Servidores parados = empresa parada.'],
+ ['Desenvolvimento de sistemas','Média','Médio','Software mal feito = retrabalho e falhas de segurança.'],
+ ['Continuidade de negócios (DRP)','Baixa','Crítico','Pouco provável de acontecer, mas se acontecer é catastrófico.'],
+ ['Terceiros e contratos','Média','Alto','Fornecedor parado = serviço parado.'],
+ ['Conformidade LGPD','Alta','Crítico','Multa de até 2% do faturamento + dano reputacional.'],
+ ['Gestão de dados','Média','Médio','Dados inconsistentes = decisões erradas.']
+];
+function drawMx(){
+ const w=document.getElementById('matrix');
+ w.innerHTML='<p><b>Matriz de risco (probabilidade × impacto):</b></p>';
+ AREAS.forEach((a,i)=>{
+  const d=document.createElement('span'); d.className='area';
+  d.textContent=a[0]+' ('+a[1]+'/'+a[2]+')';
+  d.onclick=()=>{ document.getElementById('csa-score').innerHTML='<b>'+a[0]+':</b> probabilidade '+a[1]+', impacto '+a[2]+'. <i>'+a[3]+'</i>'; };
+  w.appendChild(d);
+ });
+ const c=document.getElementById('csa'); c.innerHTML='';
+ const Q=[
+  'Existe política de backup documentada e conhecida por todos?',
+  'Os backups são testados periodicamente (restore real)?',
+  'Há controle de acesso baseado em função (RBAC)?',
+  'Existe inventário atualizado de ativos de TI?',
+  'Incidentes são registrados e analisados?'
+ ];
+ Q.forEach((q,i)=>{
+  const d=document.createElement('div'); d.style.margin='4px 0';
+  d.innerHTML=q+' ';
+  ['Sim','Parcial','Não'].forEach(v=>{
+   const b=document.createElement('button'); b.textContent=v;
+   b.onclick=()=>updateCSA(i,v==='Sim'?2:v==='Parcial'?1:0);
+   d.appendChild(b);
+  });
+  c.appendChild(d);
+ });
+ window._csa=[null,null,null,null,null];
+}
+function updateCSA(i,v){ window._csa[i]=v;
+ const s=window._csa.reduce((a,b)=>a+(b||0),0);
+ const t=window._csa.filter(x=>x!==null).length;
+ document.getElementById('csa-score').innerHTML='<b>Pontuação:</b> '+s+'/'+(t*2)+' — '+(s>=8?'Excelente: poucos pontos fracos.':s>=5?'Razoável: há controles a melhorar.':'Crítico: muitos controles frágeis — prioridade alta de auditoria.');
+}
+// 04 - PDCA
+function pdca(f){
+ document.querySelectorAll('.pdca').forEach(b=>b.classList.remove('on'));
+ const map={
+  P:'<b>Plan (Planejar):</b> achamos que o backup diário não roda. Planejamos: (1) investigar a causa raiz, (2) definir uma solução, (3) designar responsável e prazo, (4) definir como vamos medir se funcionou.',
+  D:'<b>Do (Executar):</b> implementamos a solução no prazo. Ex.: configuramos o agendamento correto, treinamos o responsável, documentamos no POP.',
+  C:'<b>Check (Checar):</b> medimos: o backup rodou todos os dias nos últimos 30 dias? Os logs mostram sucesso? O restore de teste funcionou? Aqui comparamos o planejado com o realizado.',
+  A:'<b>Act (Agir):</b> se funcionou, padronizamos e atualizamos o POP; se não funcionou, analisamos por quê e começamos um NOVO ciclo PDCA. É aqui que a espiral sobe.'
+ };
+ document.querySelectorAll('.pdca').forEach(b=>{if(b.textContent.startsWith(f))b.classList.add('on');});
+ document.getElementById('pdca-out').innerHTML=map[f];
+}
+function impact(){
+ document.getElementById('pdca-out').innerHTML='<b>💥 Impacto imediato:</b> perda de 2 dias de dados de produção caso o servidor pare — retrabalho de ~40 horas da equipe.<br><br><b>🔮 Potencial futuro:</b> se persistir, um ransomware pode destruir tudo sem recuperação — paralisa a empresa por dias, gera multa regulatória e perde clientes.';
+}
+// 05 - blocos
+const BLKS=[
+ ['Design','Desenhar o sistema: processos, responsáveis, controles.'],
+ ['Documentação (POP)','Escrever como se faz: procedimentos, formulários, políticas.'],
+ ['Implementação','Treinar pessoas, colocar em prática.'],
+ ['Auditoria','Checar se o implementado bate com o documentado.'],
+ ['Melhoria contínua','Agir sobre achados, corrigir, aprimorar.']
+];
+let curOrder=[];
+function drawBloks(){
+ const w=document.getElementById('bloks'); w.innerHTML='';
+ const shuffled=[...BLKS].sort(()=>Math.random()-.5);
+ shuffled.forEach((b,i)=>{
+  const d=document.createElement('span'); d.className='blok';
+  d.textContent=b[0];
+  d.onclick=()=>pickBlk(d,b);
+  w.appendChild(d);
+ });
+ curOrder=[]; document.getElementById('blok-out').textContent='Clique nos blocos na ordem: Design → Documentação → Implementação → Auditoria → Melhoria.';
+}
+function pickBlk(el,b){
+ const expected=BLKS[curOrder.length];
+ if(b[0]!==expected[0]){
+  document.getElementById('blok-out').innerHTML='<b>⚠️ Ordem errada!</b> Você clicou em “'+b[0]+'”, mas o próximo bloco esperado é “'+expected[0]+'” — '+expected[1]+'<br><i>Implementar antes de documentar, por exemplo, cria “jeitinho” e dependência de pessoas.</i>';
+  return;
+ }
+ el.classList.add('on'); curOrder.push(b);
+ document.getElementById('blok-out').innerHTML='<b>'+b[0]+':</b> '+b[1]+(curOrder.length<BLKS.length?'<br>Próximo: '+BLKS[curOrder.length][0]+'.':'<br><b>✅ Sistema completo montado!</b>');
+}
+function resetBloks(){ drawBloks(); }
+// 06 - CAPA
+function capa(t){
+ const m={
+  c:'<div class="capa"><b>🔧 Ação corretiva aplicada:</b><br>Achado: backup diário não roda desde março.<br><b>Ação corretiva:</b> configurar o agendamento correto, testar o restore, treinar o operador.<br><i>Resolve o problema de agora — o backup volta a rodar hoje.</i></div>',
+  p:'<div class="capa"><b>🛡️ Ação preventiva aplicada:</b><br>Mesmo achado: backup diário não roda desde março.<br><b>Ação preventiva:</b> criar checklist diário de verificação, automatizar alerta de falha, revisar todos os outros agendamentos da empresa, adicionar auditoria trimestral.<br><i>Ataca a causa raiz (“ninguém checa”) e evita que VOLTE a acontecer — inclusive em outros sistemas.</i></div>'
+ };
+ document.getElementById('capa-out').innerHTML=m[t];
+}
+function feedback(){
+ document.getElementById('capa-out').innerHTML='<div class="capa"><b>💬 Feedback após 6 meses:</b><br><br><b>COM follow-up:</b> auditor volta, verifica logs dos últimos 180 dias: backup rodou 179 (99,4%). A ação funcionou — o ciclo PDCA recomeça em nível superior.<br><br><b>SEM follow-up:</b> o relatório foi para a gaveta. Ninguém mudou nada. O backup continua sem rodar. Próximo incidente = prejuízo enorme. A auditoria gerou papel, não mudança.<br><br><i>É por isso que o step 7 da auditoria interna existe: sem feedback, todo o esforço anterior se perde.</i></div>';
+}
+drawS(); drawSteps(); drawMx(); drawBloks();
+</script>
+</body>
+</html>
