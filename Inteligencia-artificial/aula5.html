@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IA Interativa — Aula 5 (Unidade 2)</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:system-ui,sans-serif;background:#f4f7f6;margin:0;padding:18px;color:#1d1d1f}
+h1{font-size:1.25rem} h2{margin-top:0}
+nav{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.tab{border:2px solid #1d1d1f;background:#fff;border-radius:10px;padding:8px 12px;cursor:pointer;box-shadow:3px 3px 0 #ff8c42;font-weight:600}
+.tab.active{background:#ff8c42;color:#fff}
+.demo{display:none;background:#fff;border:2px solid #1d1d1f;border-radius:14px;padding:16px;box-shadow:5px 5px 0 #ff8c42}
+.demo.active{display:block}
+button{border:2px solid #1d1d1f;border-radius:8px;background:#fff;padding:6px 10px;cursor:pointer;font-weight:600}
+button:hover{background:#fff1e6}
+details{margin:10px 0;border-radius:10px;padding:8px 12px;border:2px solid #1d1d1f}
+summary{cursor:pointer;font-weight:700}
+.info{background:#eaf4ff}.steps{background:#fff8dc}.links{background:#f2f2f2}.real{background:#eaffe8}.tool{background:#f5eaff}.quiz{background:#ffe8f0}
+.links a{color:#0a66c2;display:inline-block;margin:2px 12px 2px 0}
+.q{margin:2px}.q.ok{background:#b9f6ca}.q.bad{background:#ffb3b3}
+.fb{font-size:.85rem;background:#fff;border-radius:6px;padding:4px 8px;margin:4px 0}
+#ind,#lpv,#tt,#hp,#mmsg,#eur,#ndv,#rwr{background:#fff;border:2px dashed #999;border-radius:8px;padding:8px;margin:8px 0;min-height:24px}
+.day{margin:2px}
+.day.on{background:#2dd4a7}
+.day.fut{border-style:dashed;background:#eee}
+.bar{display:inline-block;height:12px;background:#2dd4a7;border:1px solid #1d1d1f;margin:1px;vertical-align:middle}
+.nd{display:inline-block;padding:10px 16px;border:2px solid #1d1d1f;margin:6px;cursor:pointer;background:#fff;font-weight:600}
+.nd.ch{border-radius:50%;background:#cde8ff}
+.nd.de{border-radius:6px;background:#ffe0b3}
+.nd.ut{border-radius:6px;background:#b9f6ca;transform:rotate(45deg);margin:16px}
+.rv{display:none;margin-left:6px}
+body.aposta .sig{display:none}
+body.aposta .sig.shown{display:inline}
+body.aposta .rv{display:inline-block}
+body.aposta .rv.off{display:none}
+#apBtn{box-shadow:3px 3px 0 #2dd4a7}
+</style>
+</head>
+<body>
+<h1>🎲 IA — Aula 5 (Unidade 2, págs. 31–48): Markov oculto e tomada de decisão</h1>
+<button id="apBtn" onclick="aposta()">🎲 Modo aposta: OFF</button>
+<p>Mesma estrutura das aulas anteriores: 🌍 → 🛠️ → 🔤 → 📖 → 🎤 plano de testes → demo → 🧠 quiz → 🔗 (PT). Com 🎲 ligado, a turma aposta antes de você revelar.</p>
+
+<details class="tool"><summary>🧰 Glossário de ferramentas (leia uma vez!)</summary><ul>
+  <li><b>Linguagem de programação (Python, Java):</b> o “idioma” do código. <b>Python</b> domina IA/dados; <b>Java</b> é outra linguagem.</li>
+  <li><b>Biblioteca:</b> código pronto reaproveitável. 💡 Mistura de bolo pronta.</li>
+  <li><b>Modelo:</b> a “maquete matemática” do mundo: tabelas de probabilidades que dizem como o mundo muda e o que os sensores veem.</li>
+  <li><b>hmmlearn / pomegranate (Python):</b> bibliotecas com HMM pronto: você entrega os dados e elas fazem filtragem/aprendizagem.</li>
+  <li><b>GeNIe:</b> programa <b>grátis com janelas e botões</b> para desenhar redes de decisão (sem código).</li>
+</ul></details>
+
+<nav>
+  <button class="tab active" data-t="d1">01 Probabilidade e incerteza</button>
+  <button class="tab" data-t="d2">02 Inferência no tempo</button>
+  <button class="tab" data-t="d3">03 Modelo oculto de Markov</button>
+  <button class="tab" data-t="d4">04 Decisão simples</button>
+  <button class="tab" data-t="d5">05 Redes de decisão</button>
+  <button class="tab" data-t="d6">06 Decisão complexa</button>
+</nav>
+
+<!-- 01 -->
+<section id="d1" class="demo active">
+  <h2>01 — Probabilidade: indiferença, lógica e o tempo</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Cara ou coroa “justo”:</b> ninguém tem motivo para achar um lado mais provável → 50/50. Isso é o princípio da indiferença em ação.</li>
+    <li><b>Previsão do tempo:</b> “70% de chuva” não é lógica sim/não — é um <b>grau de crença</b>.</li>
+    <li><b>No tempo, a incerteza cresce:</b> amanhã você até arrisca; daqui a 30 dias, quase chute — o futuro é mais incerto que o presente.</li>
+  </ul></details>
+  <details class="tool"><summary>🛠️ Nas ferramentas — explicado</summary><ul>
+    <li><b>Python:</b> a linguagem; o módulo <code>random</code> sorteia; bibliotecas de probabilidade fazem as contas.</li>
+    <li><b>Lógica de primeira ordem em ferramentas:</b> linguagens de regras/“SE–ENTÃO” (sistemas especialistas); já a probabilidade vive em bibliotecas de IA (hmmlearn etc.).</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Princípio da indiferença:</b> sem motivo para diferenciar resultados, atribua probabilidades <b>iguais</b> (dado justo: 1/6 cada).</li>
+    <li><b>Lógica de primeira ordem:</b> raciocínio com verdades SIM/NÃO (“todo homem é mortal; Sócrates é homem → mortal”) — sem “talvez”.</li>
+    <li><b>Incerteza:</b> o agente não tem acesso completo ao mundo; por isso troca o “é/não é” pelo “quão provável”.</li>
+  </ul></details>
+  <details class="info"><summary>📖 Conceitos + analogias</summary><ul>
+    <li><b>Lógica vs probabilidade:</b> a lógica garante conclusões certas a partir de premissas certas; a probabilidade administra o <b>meio-termo</b> (0 a 1) quando falta informação. 💡 Lógica: “se chove, molha”. Probabilidade: “70% de chover”.</li>
+    <li><b>Tempo + incerteza:</b> o mundo muda enquanto o agente observa aos poucos; modelar “o que acontece em seguida” é o coração dos <b>modelos temporais</b>. 💡 Filme visto por janelas: você só vê pedaços e precisa adivinhar a história.</li>
+  </ul></details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> dois painéis: cenários de indiferença (moeda/dado/urna) e o comparativo lógica × probabilidade.</li>
+    <li><b>Teste 1 — indiferença.</b> <i>Clicar:</i> moeda, dado e urna. <span class="sig"><i>Vê:</i> P = 1/n para cada resultado (50%, 16,7%, 25%). <i>Significa:</i> como não há NENHUM motivo para favorecer um resultado, o princípio da indiferença manda dividir igualmente — é a probabilidade “antes dos dados”, o ponto de partida justo.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — lógica vs probabilidade.</b> <i>Clicar:</i> ➡️ lógica e ⬅️ probabilidade. <span class="sig"><i>Vê:</i> uma frase SIM/NÃO e uma frase com %. <i>Significa:</i> a lógica de primeira ordem é ótima com certeza total, mas o mundo real raramente a oferece; a probabilidade é a “lógica do talvez” que a IA usa quando o mundo é incerto.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  <button onclick="cen('moeda')">🪙 moeda</button><button onclick="cen('dado')">🎲 dado</button><button onclick="cen('urna')">⚱️ urna</button>
+  <div id="ind"></div>
+  <button onclick="lp('log')">➡️ lógica de 1ª ordem</button><button onclick="lp('prob')">⬅️ probabilidade</button>
+  <div id="lpv"></div>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u11"><p>1) O princípio da indiferença manda atribuir…</p>
+      <button class="q" data-ok="1">probabilidades iguais sem motivo para diferenciar</button><button class="q">probabilidades diferentes</button><p class="fb"></p></div>
+    <div class="qq" id="u12"><p>2) A lógica de primeira ordem trabalha com…</p>
+      <button class="q" data-ok="1">verdadeiro/falso, sem graus</button><button class="q">percentuais</button><p class="fb"></p></div>
+    <div class="qq" id="u13"><p>3) Em modelos temporais, há incerteza porque…</p>
+      <button class="q" data-ok="1">o agente não vê tudo (observação parcial)</button><button class="q">o mundo nunca muda</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (PT)</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Probabilidade">Probabilidade — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Princ%C3%ADpio_da_indiferen%C3%A7a">Princípio da indiferença — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/L%C3%B3gica_de_primeira_ordem">Lógica de primeira ordem — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 02 -->
+<section id="d2" class="demo">
+  <h2>02 — IA e inferência em modelos temporais</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>O vigia e o guarda-chuva (clássico):</b> um vigia só vê se o diretor chega com guarda-chuva; a partir disso, adivinha se <b>choveu</b> — a chuva é o “estado oculto”, o guarda-chuva é a “evidência”.</li>
+    <li><b>App de clima:</b> estima agora (filtragem), amanhã (previsão) e “como estava ontem?” (suavização).</li>
+  </ul></details>
+  <details class="tool"><summary>🛠️ Nas ferramentas — explicado</summary><ul>
+    <li><b>hmmlearn / pomegranate (Python):</b> fazem essas cinco tarefas prontas: você entrega a sequência de evidências e recebe filtragem/previsão/suavização etc.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Estado oculto:</b> o que o agente não vê (chuva). <b>Evidência/observação:</b> o que ele vê (guarda-chuva).</li>
+    <li><b>Filtragem:</b> estimar o <b>agora</b> com o passado+agora. <b>Previsão:</b> estimar o <b>futuro</b>. <b>Suavização:</b> estimar o <b>passado</b> com TODA a evidência.</li>
+    <li><b>Explicação mais provável:</b> a melhor <b>sequência</b> de estados que explica as observações. <b>Aprendizagem:</b> ajustar os números do modelo a partir de dados.</li>
+  </ul></details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> 5 dias clicáveis (☔ = diretor com guarda-chuva) + o dia 6 tracejado (“agora/futuro”). Clique nos dias para mudar as evidências.</li>
+    <li><b>Teste 1 — filtragem.</b> <i>Clicar:</i> “filtragem”. <span class="sig"><i>Vê:</i> os dias 1–5 acendem e a pergunta é “chove AGORA?”. <i>Significa:</i> é o que fazemos ao vivo: juntar as pistas até agora e estimar o presente — o app de clima fazendo “chance de chuva agora”.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — previsão.</b> <i>Clicar:</i> “previsão”. <span class="sig"><i>Vê:</i> o dia tracejado (futuro) acende. <i>Significa:</i> projetamos o presente para a frente só com o modelo de transição; quanto mais longe, mais a evidência “evapora” — por isso previsão de 15 dias é chute.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 3 — suavização.</b> <i>Clicar:</i> “suavização”. <span class="sig"><i>Vê:</i> tudo acende e a pergunta volta ao dia 2. <i>Significa:</i> olhar o passado com MAIS pistas do que tínhamos na época — “será que choveu terça?” respondido com os dados de hoje: a estimativa fica “suave”, melhor.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 4 — explicação mais provável.</b> <i>Clicar:</i> “explicação”. <span class="sig"><i>Vê:</i> a linha inteira acende como uma história só. <i>Significa:</i> não é dia a dia: é a melhor sequência completa (chuva/chuva/seca…) que explica TODOS os guarda-chuvas vistos — como montar a melhor “trama” do filme vendo só janelas.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 5 — aprendizagem.</b> <i>Clicar:</i> “aprendizagem”. <span class="sig"><i>Vê:</i> o texto explica ajustar o modelo. <i>Significa:</i> se o vigia anota muitos dias, ele descobre sozinho os números (“70% de chover de novo”, “90% leva guarda-chuva quando chove”) — o modelo aprende com dados.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  <button onclick="task('fil')">filtragem</button><button onclick="task('pre')">previsão</button><button onclick="task('smo')">suavização</button><button onclick="task('emv')">explicação</button><button onclick="task('lea')">aprendizagem</button>
+  <div id="days"></div><div id="tt"></div>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u21"><p>1) Estimar o AGORA com as evidências até agora é…</p>
+      <button class="q" data-ok="1">filtragem</button><button class="q">suavização</button><p class="fb"></p></div>
+    <div class="qq" id="u22"><p>2) Estimar o PASSADO usando toda a evidência de hoje é…</p>
+      <button class="q" data-ok="1">suavização</button><button class="q">previsão</button><p class="fb"></p></div>
+    <div class="qq" id="u23"><p>3) A explicação mais provável busca…</p>
+      <button class="q" data-ok="1">a melhor sequência de estados</button><button class="q">um único dia isolado</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (PT)</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Modelo_oculto_de_Markov">Modelo oculto de Markov — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Cadeia_de_Markov">Cadeia de Markov — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 03 -->
+<section id="d3" class="demo">
+  <h2>03 — O modelo oculto de Markov (HMM)</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>“O tempo de hoje só depende do de ontem”:</b> a suposição de Markov — para adivinhar amanhã, o hoje basta (aproximadamente).</li>
+    <li><b>Sensor falível:</b> o diretor às vezes leva guarda-chuva sem chuva (vaias do sensor) — por isso a observação é uma <b>pista</b>, não uma certeza.</li>
+  </ul></details>
+  <details class="tool"><summary>🛠️ Nas ferramentas — explicado</summary><ul>
+    <li><b>hmmlearn (Python):</b> você dá a sequência de observações e ele roda o HMM: <code>model.predict(seq)</code> devolve a sequência de estados mais provável.</li>
+    <li><b>As “matrizes”:</b> são tabelas 2×2 guardadas dentro do modelo: transição, sensor e a mensagem que caminha no tempo.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Modelo de transição:</b> P(estado de amanhã | estado de hoje) — ex.: choveu hoje → 70% de chover amanhã.</li>
+    <li><b>Modelo de sensores:</b> P(observação | estado) — ex.: chovendo → 90% leva guarda-chuva.</li>
+    <li><b>Matriz de mensagens:</b> o “bilhete” numérico que cada dia manda ao seguinte na filtragem (a crença atual resumida).</li>
+  </ul></details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> o número grande é a “crença” de que chove hoje; os botões registram o que o vigia VIU (☔ ou nada); as barrinhas guardam o histórico.</li>
+    <li><b>Teste 1 — ver guarda-chuva.</b> <i>Clicar:</i> “☔ viu guarda-chuva” algumas vezes. <span class="sig"><i>Vê:</i> a crença de chuva sobe a cada clique. <i>Significa:</i> cada evidência empurra a crença; o cálculo usa o modelo de sensores (90%/20%) para pesar o quanto confiar na pista.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — não ver.</b> <i>Clicar:</i> “nada” algumas vezes. <span class="sig"><i>Vê:</i> a crença cai, mas não zera. <i>Significa:</i> ausência de guarda-chuva é pista de seca, mas o sensor mente 10% das vezes quando chove — a incerteza nunca some por completo.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 3 — a mensagem.</b> <i>Clicar:</i> alterne ☔/nada e veja as barrinhas. <span class="sig"><i>Vê:</i> cada barrinha é a crença de um dia. <i>Significa:</i> a filtragem funciona como um telefone-sem-fio do tempo: cada dia resume tudo o que sabe num número (a <b>mensagem</b>) e o passa adiante; a transição (70%) “dilui” e o sensor “corrige”.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  <button onclick="passo(1)">☔ viu guarda-chuva</button><button onclick="passo(0)">😎 nada</button><button onclick="resetH()">↺ reiniciar</button>
+  <div id="hp"></div><div id="bars"></div><div id="mmsg"></div>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u31"><p>1) O modelo de transição dá P(…)</p>
+      <button class="q" data-ok="1">estado de amanhã | estado de hoje</button><button class="q">observação | estado</button><p class="fb"></p></div>
+    <div class="qq" id="u32"><p>2) O modelo de sensores dá P(…)</p>
+      <button class="q" data-ok="1">observação | estado</button><button class="q">estado futuro | estado atual</button><p class="fb"></p></div>
+    <div class="qq" id="u33"><p>3) Na filtragem, a mensagem caminha…</p>
+      <button class="q" data-ok="1">do passado para o futuro</button><button class="q">do futuro para o passado</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (PT)</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Modelo_oculto_de_Markov">Modelo oculto de Markov — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Cadeia_de_Markov">Cadeia de Markov — Wikipédia</a>
+    <a target="_blank" href="https://developers.google.com/machine-learning/crash-course?hl=pt-br">Curso intensivo de ML — Google (PT-BR)</a>
+  </details>
+</section>
+
+<!-- 04 -->
+<section id="d4" class="demo">
+  <h2>04 — Agentes de decisão simples</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Levar ou não o guarda-chuva?</b> você pesa mentalmente: “e se chover sem guarda-chuva? e se eu carregar à toa?” — é utilidade esperada na cabeça.</li>
+    <li><b>Seguro do celular:</b> pagar o seguro (custo certo) vs arriscar o prejuízo (custo improvável mas grande).</li>
+  </ul></details>
+  <details class="tool"><summary>🛠️ Nas ferramentas — explicado</summary><ul>
+    <li><b>Retomando o raciocínio computacional:</b> transformar a decisão em <b>conta</b> (probabilidades × utilidades) que o computador executa — decidir vira calcular.</li>
+    <li><b>Python:</b> duas linhas de código fazem a média ponderada (a utilidade esperada).</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Utilidade:</b> o “quanto isso me agrada/desagrada” em número (ganhar = positivo, se molhar = negativo).</li>
+    <li><b>Utilidade esperada:</b> a média das utilidades pesada pelas probabilidades — o critério do agente simples.</li>
+    <li><b>Agente de decisão simples:</b> decide olhando só o agora: calcula a utilidade esperada de cada ação e escolhe a maior.</li>
+  </ul></details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> o controle muda a chance de chuva; a tela mostra a utilidade esperada de LEVAR e de NÃO LEVAR e a escolha do agente.</li>
+    <li><b>Teste 1 — céu limpo.</b> <i>Clicar:</i> chance de chuva em 10%. <span class="sig"><i>Vê:</i> o agente escolhe NÃO levar. <i>Significa:</i> com chuva improvável, o incômodo de carregar o guarda-chuva à toa pesa mais que o risco pequeno de se molhar.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — céu fechado.</b> <i>Clicar:</i> chance em 60–70%. <span class="sig"><i>Vê:</i> a escolha vira LEVAR. <i>Significa:</i> quando a probabilidade de chuva cresce, o prejuízo grande (se molhar, −10) passa a dominar a média — o agente “se previne”.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 3 — o ponto de virada.</b> <i>Clicar:</i> arraste devagar de 10% a 90%. <span class="sig"><i>Vê:</i> existe um % em que a escolha troca. <i>Significa:</i> a decisão muda exatamente quando as utilidades esperadas se empatam — decidir é comparar médias ponderadas, não “achismos”.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  <input type="range" id="pr" min="0" max="100" value="30" oninput="eu()">
+  <div id="eur"></div>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u41"><p>1) O agente simples escolhe a ação com…</p>
+      <button class="q" data-ok="1">maior utilidade esperada</button><button class="q">maior sorte</button><p class="fb"></p></div>
+    <div class="qq" id="u42"><p>2) Utilidade esperada combina…</p>
+      <button class="q" data-ok="1">probabilidades e utilidades</button><button class="q">só probabilidades</button><p class="fb"></p></div>
+    <div class="qq" id="u43"><p>3) “Raciocínio computacional” aqui significa…</p>
+      <button class="q" data-ok="1">transformar a decisão em cálculo executável</button><button class="q">decidir no feeling</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (PT)</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Teoria_da_decis%C3%A3o">Teoria da decisão — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Intelig%C3%AAncia_artificial">Inteligência artificial — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 05 -->
+<section id="d5" class="demo">
+  <h2>05 — Redes de decisão (diagramas de influência)</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Mapa da decisão:</b> antes de decidir “fazer intercâmbio?”, você desenha o que é incerto (câmbio, vaga), o que você escolhe (cidade, curso) e o que importa (dinheiro, experiência) — a rede é esse mapa formal.</li>
+  </ul></details>
+  <details class="tool"><summary>🛠️ Nas ferramentas — explicado</summary><ul>
+    <li><b>GeNIe (grátis, com botões):</b> você DESENHA elipses, retângulos e losangos, liga as setas e ele calcula a melhor decisão — sem código.</li>
+    <li><b>pgmpy (Python):</b> biblioteca que faz o mesmo por código.</li>
+  </details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Nó de acaso (elipse):</b> o que você não controla, com probabilidades (“chove?” 70/30).</li>
+    <li><b>Nó de decisão (retângulo):</b> o que o agente escolhe (“levar guarda-chuva?”).</li>
+    <li><b>Nó de utilidade (losango):</b> o objetivo em número; setas chegam nele.</li>
+    <li><b>Diagrama de influência:</b> o desenho completo: quem influencia quem.</li>
+  </ul></details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> três formas desenhadas (elipse azul, retângulo laranja, losango verde) = os três tipos de nó; clique em cada uma.</li>
+    <li><b>Teste 1 — acaso.</b> <i>Clicar:</i> na elipse. <span class="sig"><i>Vê:</i> a explicação do nó de acaso. <i>Significa:</i> é a parte do mundo que “joga dados”: entra na rede com probabilidades, não com certezas.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — decisão e utilidade.</b> <i>Clicar:</i> no retângulo e no losango. <span class="sig"><i>Vê:</i> as explicações. <i>Significa:</i> o retângulo é a alavanca do agente; o losango é o “placar” que junta acaso+decisão num número a maximizar — a seta “chuva e decisão → utilidade” diz que o resultado depende dos dois.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  <span class="nd ch" onclick="nd('ch')">Chuva? ☔</span>
+  <span class="nd de" onclick="nd('de')">Levar guarda-chuva?</span>
+  <span class="nd ut" onclick="nd('ut')"> </span>
+  <div id="ndv">Clique nas formas para ver o papel de cada nó.</div>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u51"><p>1) O nó de ACASO (elipse) representa…</p>
+      <button class="q" data-ok="1">incerteza, com probabilidades</button><button class="q">a escolha do agente</button><p class="fb"></p></div>
+    <div class="qq" id="u52"><p>2) O nó de UTILIDADE (losango) representa…</p>
+      <button class="q" data-ok="1">o objetivo em número, a maximizar</button><button class="q">um sorteio</button><p class="fb"></p></div>
+    <div class="qq" id="u53"><p>3) O diagrama de influência é…</p>
+      <button class="q" data-ok="1">a rede de nós de acaso, decisão e utilidade</button><button class="q">uma tabela de dados</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (PT)</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Diagrama_de_influ%C3%AAncia">Diagrama de influência — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Teoria_da_decis%C3%A3o">Teoria da decisão — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 06 -->
+<section id="d6" class="demo">
+  <h2>06 — Decisão complexa: sequências e recompensas</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Xadrez:</b> cada lance muda o tabuleiro seguinte — decisão <b>sequencial</b>: o “agora” hipoteca o “depois”.</li>
+    <li><b>Dinheiro hoje vs amanhã:</b> R$ 100 hoje valem mais que R$ 100 em 10 anos — é o <b>desconto</b> da vida real.</li>
+  </ul></details>
+  <details class="tool"><summary>🛠️ Nas ferramentas — explicado</summary><ul>
+    <li><b>gymnasium (Python):</b> biblioteca com “mundinhos” (como o grid 4×3 clássico) para treinar agentes que decidem em sequência — a porta de entrada do aprendizado por reforço.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Problema sequencial:</b> decisões em cadeia, em que cada estado leva ao próximo.</li>
+    <li><b>Recompensas aditivas:</b> soma simples de tudo. <b>Descontadas:</b> o futuro vale γ (0–1) vezes menos a cada passo. <b>Médias:</b> soma dividida pelos passos.</li>
+  </ul></details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> três recompensas fixas [10, −2, 3] (hoje, amanhã, depois) e o controle γ (o “quanto o futuro vale”).</li>
+    <li><b>Teste 1 — agente impaciente.</b> <i>Clicar:</i> γ em 0–0,3. <span class="sig"><i>Vê:</i> o total descontado fica perto de 10. <i>Significa:</i> com γ baixo, o futuro “evapora”: o agente vive o agora — ignora o −2 e o +3 que virão.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — agente paciente.</b> <i>Clicar:</i> γ em 0,9–1. <span class="sig"><i>Vê:</i> o descontado se aproxima do aditivo (11). <i>Significa:</i> com γ≈1 o futuro vale quase o presente: o agente planeja de olho na sequência toda — é o que diferencia a decisão complexa da simples.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 3 — comparar critérios.</b> <i>Clicar:</i> veja os três números. <span class="sig"><i>Vê:</i> aditivo 11, descontado variável, médio ≈ 3,7. <i>Significa:</i> cada critério responde uma pergunta: “quanto somei?”, “quanto vale hoje considerando o futuro?”, “quanto ganho por passo?” — o designer do agente escolhe o critério conforme o problema.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  <input type="range" id="gam" min="0" max="100" value="50" oninput="rew()">
+  <div id="rwr"></div>
+  <details class="info"><summary>🗺️ Mapa da aula (visão geral)</summary>
+    <p><b>Incerteza</b> (indiferença; lógica não basta) → ⏰ <b>tempo</b> (modelos temporais) →  <b>HMM</b> (transição + sensores + mensagens) → 🔎 <b>inferência</b> (filtragem/previsão/suavização/EMV/aprendizagem) → ⚖️ <b>decisão</b> (simples: utilidade esperada | rede: acaso/decisão/utilidade | complexa: sequências com recompensas aditivas/descontadas/médias).</p>
+  </details>
+  <details class="info"><summary>📝 Cola rápida (uma linha por termo)</summary><ul>
+    <li><b>Indiferença:</b> sem motivo → probabilidades iguais.</li>
+    <li><b>Filtragem/previsão/suavização:</b> agora / futuro / passado.</li>
+    <li><b>EMV:</b> a melhor história completa; <b>aprendizagem:</b> ajustar o modelo com dados.</li>
+    <li><b>HMM:</b> transição (mundo muda) + sensores (pistas falíveis) + mensagens (crença que caminha).</li>
+    <li><b>Decisão simples:</b> maior utilidade esperada.</li>
+    <li><b>Rede de decisão:</b> elipse = acaso, retângulo = decisão, losango = utilidade.</li>
+    <li><b>Complexa:</b> sequencial; aditiva soma, descontada γ·futuro, média por passo.</li>
+  </ul></details>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u61"><p>1) Na decisão sequencial, a escolha de agora…</p>
+      <button class="q" data-ok="1">afeta os estados futuros</button><button class="q">não afeta nada</button><p class="fb"></p></div>
+    <div class="qq" id="u62"><p>2) Recompensa descontada trata o futuro como…</p>
+      <button class="q" data-ok="1">menos valioso que o presente (γ)</button><button class="q">mais valioso</button><p class="fb"></p></div>
+    <div class="qq" id="u63"><p>3) Recompensa média é…</p>
+      <button class="q" data-ok="1">a soma dividida pelos passos</button><button class="q">só o primeiro passo</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (PT)</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Processo_de_decis%C3%A3o_de_Markov">Processo de decisão de Markov — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Teoria_da_decis%C3%A3o">Teoria da decisão — Wikipédia</a>
+    <a target="_blank" href="https://developers.google.com/machine-learning/crash-course?hl=pt-br">Curso intensivo de ML — Google (PT-BR)</a>
+  </details>
+</section>
+
+<script>
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.demo').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); document.getElementById(b.dataset.t).classList.add('active');
+  if(b.dataset.t=='d2') drawT(); if(b.dataset.t=='d3') drawH(); if(b.dataset.t=='d4') eu(); if(b.dataset.t=='d6') rew();
+});
+function aposta(){ document.body.classList.toggle('aposta');
+  document.getElementById('apBtn').textContent='🎲 Modo aposta: '+(document.body.classList.contains('aposta')?'ON':'OFF'); }
+function rev(b){ b.previousElementSibling.classList.add('shown'); b.classList.add('off'); }
+const EXP={
+ u11:{ok:'✅ Isso! Sem motivo para diferenciar, o justo é dividir igual.',bad:'❌ Diferenciar sem motivo viola o princípio; sem motivo = iguais.'},
+ u12:{ok:'✅ Isso! Lógica de 1ª ordem: verdadeiro/falso, sem “talvez”.',bad:'❌ Percentuais são da probabilidade; a lógica é binária.'},
+ u13:{ok:'✅ Isso! O agente vê só pedaços do mundo (observação parcial).',bad:'❌ Se o agente visse tudo, não haveria incerteza; o mundo também muda.'},
+ u21:{ok:'✅ Isso! Filtragem = estimar o agora com o passado+agora.',bad:'❌ Suavização olha o passado; previsão, o futuro. Agora = filtragem.'},
+ u22:{ok:'✅ Isso! Suavização = reestimar o passado com toda a evidência.',bad:'❌ Previsão é futuro; suavização é passado com mais dados.'},
+ u23:{ok:'✅ Isso! É a melhor sequência (a “história” completa).',bad:'❌ Dia isolado é filtragem/suavização; EMV é a sequência inteira.'},
+ u31:{ok:'✅ Isso! Transição: como o estado muda no tempo.',bad:'❌ Observação|estado é o modelo de sensores.'},
+ u32:{ok:'✅ Isso! Sensores: quão confiável é a pista em cada estado.',bad:'❌ Estado futuro|atual é a transição.'},
+ u33:{ok:'✅ Isso! A filtragem empurra a mensagem para a frente.',bad:'❌ Do futuro para o passado é a suavização.'},
+ u41:{ok:'✅ Isso! O agente simples maximiza a utilidade esperada.',bad:'❌ Sorte não é critério; é a média ponderada que decide.'},
+ u42:{ok:'✅ Isso! Probabilidades pesando as utilidades.',bad:'❌ Só probabilidades não dizem o que você prefere; precisa das utilidades.'},
+ u43:{ok:'✅ Isso! Decidir vira calcular — executável pela máquina.',bad:'❌ “Feeling” não é computável; o raciocínio computacional transforma decisão em conta.'},
+ u51:{ok:'✅ Isso! A elipse guarda o que é incerto, com probabilidades.',bad:'❌ A escolha do agente é o retângulo (decisão).'},
+ u52:{ok:'✅ Isso! O losango é o placar a maximizar.',bad:'❌ Sorteio é o nó de acaso; utilidade é o objetivo.'},
+ u53:{ok:'✅ Isso! O diagrama liga acaso, decisão e utilidade.',bad:'❌ Tabela não mostra as influências; a rede sim.'},
+ u61:{ok:'✅ Isso! Cada decisão muda o tabuleiro seguinte.',bad:'❌ Se não afetasse o futuro, seria decisão simples, não sequencial.'},
+ u62:{ok:'✅ Isso! γ < 1 “evapora” o valor do futuro.',bad:'❌ Descontar é valer MENOS que o presente.'},
+ u63:{ok:'✅ Isso! Média = soma ÷ nº de passos.',bad:'❌ Só o primeiro passo ignoraria o resto da sequência.'}
+};
+document.addEventListener('click',e=>{
+  const b=e.target.closest('.q'); if(!b) return;
+  const qq=b.closest('.qq'), fb=qq.querySelector('.fb'), ok=b.dataset.ok=='1';
+  b.classList.add(ok?'ok':'bad');
+  fb.textContent=ok?EXP[qq.id].ok:EXP[qq.id].bad;
+});
+// 01
+function cen(c){
+ const m={moeda:['cara','coroa'],dado:['1','2','3','4','5','6'],urna:['bola A','bola B','bola C','bola D']};
+ const n=m[c].length;
+ document.getElementById('ind').innerHTML='<b>'+c+'</b>: nenhum resultado é favorecido → P = 1/'+n+' ≈ '+(100/n).toFixed(1)+'% cada ('+m[c].join(', ')+').';
+}
+function lp(t){ document.getElementById('lpv').innerHTML = t=='log'
+ ? '<b>Lógica de 1ª ordem:</b> “Se chove, a rua molha; está chovendo → a rua molha.” — conclusão SIM/NÃO, sem “talvez”.'
+ : '<b>Probabilidade:</b> “70% de chance de chover.” — um GRAU de crença entre 0 e 1 para quando falta informação.'; }
+// 02
+let obs=[1,0,1,1,0], curTask='fil';
+function drawT(){
+ const w=document.getElementById('days'); w.innerHTML='';
+ for(let i=0;i<5;i++){ const d=document.createElement('button'); d.className='day';
+  d.textContent='Dia '+(i+1)+' '+(obs[i]?'☔':'—');
+  d.onclick=()=>{obs[i]=!obs[i];drawT();}; w.appendChild(d); }
+ const f=document.createElement('span'); f.className='day fut'; f.textContent=' Dia 6 (alvo)'; w.appendChild(f);
+ task(curTask);
+}
+function task(t){ curTask=t;
+ const txt={
+ fil:'<b>Filtragem:</b> estimar o AGORA (dia 6): usa as evidências dos dias 1–5 para calcular “chove hoje?” — como o app de clima dizendo “chance de chuva agora”.',
+ pre:'<b>Previsão:</b> estimar o FUTURO (dia 7+): projeta a crença atual só com o modelo de transição — quanto mais longe, mais a evidência “evapora”.',
+ smo:'<b>Suavização:</b> estimar o PASSADO (dia 2) com TODA a evidência até hoje — “choveu terça?” respondido com os dados de agora: a estimativa fica melhor.',
+ emv:'<b>Explicação mais provável:</b> achar a SEQUÊNCIA chuva/seca dos 6 dias que melhor explica os guarda-chuvas vistos — a melhor “história” completa, não dia a dia.',
+ lea:'<b>Aprendizagem:</b> com muitos dias anotados, o próprio agente ajusta os números do modelo (transição e sensores) — aprende as “regras do jogo” com dados.'};
+ document.getElementById('tt').innerHTML=txt[t];
+ document.querySelectorAll('#days .day').forEach((d,i)=>d.classList.toggle('on',
+  (t=='fil'&&i<5)||(t=='smo')||(t=='emv')||(t=='pre'&&i==5)));
+}
+// 03
+let p=.5, hist=[];
+function passo(u){
+ const pp=.7*p+.3*(1-p);
+ const [l1,l2]= u? [.9,.2] : [.1,.8];
+ const a=l1*pp, b=l2*(1-pp); p=a/(a+b);
+ hist.push(p); drawH();
+}
+function drawH(){
+ document.getElementById('hp').innerHTML='Crença de que chove hoje: <b>'+(p*100).toFixed(1)+'%</b>';
+ document.getElementById('bars').innerHTML=hist.map(v=>'<span class="bar" style="width:'+Math.max(4,v*120)+'px"></span>').join(' ');
+ document.getElementById('mmsg').textContent=hist.length?'Cada barrinha é a “mensagem” que um dia passou ao seguinte: filtragem = mensagem para a frente (transição dilui, sensor corrige).':'';
+}
+function resetH(){ p=.5; hist=[]; drawH(); }
+// 04
+function eu(){
+ const pr=+document.getElementById('pr').value/100;
+ const lev=pr*(-2)+(1-pr)*(-1), nlev=pr*(-10);
+ document.getElementById('eur').innerHTML='P(chuva)='+(pr*100).toFixed(0)+'% → EU(levar)='+lev.toFixed(2)+' | EU(não levar)='+nlev.toFixed(2)+' → o agente escolhe: <b>'+(lev>=nlev?'LEVAR ☂':'NÃO LEVAR 😎')+'</b>';
+}
+// 05
+function nd(t){ const m={
+ ch:'NÓ DE ACASO (elipse): o que você NÃO controla — “chove?”, com probabilidades (70%/30%). Entra na rede como incerteza.',
+ de:'NÓ DE DECISÃO (retângulo): a alavanca do agente — “levar guarda-chuva?”. É aqui que ele escolhe.',
+ ut:'NÓ DE UTILIDADE (losango): o placar — junta acaso+decisão num número (conforto/prejuízo); o agente quer MAXIMIZÁ-lo.',
+ lk:''};
+ document.getElementById('ndv').textContent=m[t]; }
+// 06
+function rew(){
+ const g=+document.getElementById('gam').value/100;
+ const add=10-2+3, des=10+(-2)*g+3*g*g, med=add/3;
+ document.getElementById('rwr').innerHTML='Recompensas [10, −2, 3] com γ='+g.toFixed(2)+' → ADITIVA = '+add+' | DESCONTADA = '+des.toFixed(2)+' | MÉDIA = '+med.toFixed(2)+
+ (g<0.5?' — γ baixo: agente “impaciente”, o futuro quase não conta.':' — γ alto: agente “paciente”, planeja a sequência toda.');
+}
+drawT(); drawH(); eu(); rew();
+</script>
+</body>
+</html>
