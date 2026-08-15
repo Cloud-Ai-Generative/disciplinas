@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SO Interativo — Aula 6 (Unidade 2)</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:system-ui,sans-serif;background:#f4f7f6;margin:0;padding:18px;color:#1d1d1f}
+h1{font-size:1.25rem} h2{margin-top:0}
+nav{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.tab{border:2px solid #1d1d1f;background:#fff;border-radius:10px;padding:8px 12px;cursor:pointer;box-shadow:3px 3px 0 #0ca678;font-weight:600}
+.tab.active{background:#0ca678;color:#fff}
+.demo{display:none;background:#fff;border:2px solid #1d1d1f;border-radius:14px;padding:16px;box-shadow:5px 5px 0 #0ca678}
+.demo.active{display:block}
+button{border:2px solid #1d1d1f;border-radius:8px;background:#fff;padding:6px 10px;cursor:pointer;font-weight:600}
+button:hover{background:#e6fcf5}
+details{margin:10px 0;border-radius:10px;padding:8px 12px;border:2px solid #1d1d1f}
+summary{cursor:pointer;font-weight:700}
+.info{background:#eaf4ff}.steps{background:#fff8dc}.links{background:#f2f2f2}.real{background:#eaffe8}.tool{background:#f5eaff}.quiz{background:#ffe8f0}
+.links a{color:#0a66c2;display:inline-block;margin:2px 12px 2px 0}
+.q{margin:2px}.q.ok{background:#b9f6ca}.q.bad{background:#ffb3b3}
+.fb{font-size:.85rem;background:#fff;border-radius:6px;padding:4px 8px;margin:4px 0}
+#out1,#out2,#out3,#out4,#out5,#out6{background:#fff;border:2px dashed #999;border-radius:8px;padding:10px;margin:8px 0;min-height:40px}
+.boxp{display:inline-block;border:2px solid #1d1d1f;border-radius:10px;padding:6px 10px;margin:3px;background:#f0f4ff;font-weight:600}
+.pg{display:inline-block;border:2px solid #1d1d1f;border-radius:6px;padding:4px 8px;margin:2px;background:#fff;font-weight:700}
+.pg.fault{background:#ffb3b3}.pg.hit{background:#b9f6ca}.pg.disk{background:#eee;color:#888}
+.pg.comp{background:#ffe0b3;font-size:.7rem}
+.rv{display:none;margin-left:6px}
+body.aposta .sig{display:none}
+body.aposta .sig.shown{display:inline}
+body.aposta .rv{display:inline-block}
+body.aposta .rv.off{display:none}
+#apBtn{box-shadow:3px 3px 0 #f76707}
+</style>
+</head>
+<body>
+<h1>🧠 SO — Aula 6 (Unidade 2, págs. 24–40): gerenciamento de memória e substituição de páginas</h1>
+<button id="apBtn" onclick="aposta()">🎲 Modo aposta: OFF</button>
+<p>Mesma estrutura das aulas anteriores: 🌍 → ️ → 🔤 →  → 🎤 plano de testes → demo → 🧠 quiz (3 alternativas, embaralhadas) → 🔗 (PT). Com 🎲 ligado, a turma aposta antes de revelar.</p>
+
+<details class="tool"><summary>🧰 Glossário de ferramentas (leia uma vez!)</summary><ul>
+  <li><b>RAM:</b> a memória física, rápida e volátil (apaga sem energia).</li>
+  <li><b>Memória virtual:</b> a “ilusão” que o SO cria: cada processo acha que tem uma memória enorme e só sua; por trás, o SO traduz (pagina) para a RAM real.</li>
+  <li><b>Página:</b> o “pacote” fixo (ex.: 4 KB) em que a memória é dividida para ir e vir entre RAM e disco.</li>
+  <li><b>Hipervisor:</b> o “síndico” que roda várias máquinas virtuais (VMs) no mesmo hardware.</li>
+  <li><b>Gerenciador de tarefas / htop:</b> onde você vê RAM, swap e compressão acontecendo no seu computador.</li>
+</ul></details>
+
+<nav>
+  <button class="tab active" data-t="d1">01 RAM e memória virtual</button>
+  <button class="tab" data-t="d2">02 Hipervisor, overcommit, ballooning</button>
+  <button class="tab" data-t="d3">03 Swap e compressão</button>
+  <button class="tab" data-t="d4">04 FIFO, Belady, LRU, OPT</button>
+  <button class="tab" data-t="d5">05 Demais algoritmos (Clock…)</button>
+  <button class="tab" data-t="d6">06 Espaço variável (WS, PFF, VMIN)</button>
+</nav>
+
+<!-- 01 -->
+<section id="d1" class="demo active">
+  <h2>01 — Atribuições do gerenciamento: RAM e memória virtual</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Prédio com apartamentos:</b> a RAM é o prédio físico; a memória virtual dá a cada morador (processo) a <b>ilusão</b> de que ele tem o prédio inteiro só para si — o síndico (SO) traduz o “apartamento imaginário” para o real.</li>
+    <li><b>Gerenciador de tarefas:</b> mostra “8 GB de RAM” e, por processo, um uso “virtual” muito maior — a ilusão em números.</li>
+  </ul></details>
+  <details class="tool"><summary>🛠️ Nas ferramentas — explicado</summary><ul>
+    <li><b>Windows/Linux:</b> Gerenciador de Tarefas / <code>htop</code> mostram RAM física × “memória virtual” comprometida.</li>
+    <li><b>MMU + tabela de páginas:</b> o hardware+SO que traduz endereço virtual → físico a cada acesso.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Atribuições do gerenciamento:</b> (1) proteger/isolar processos, (2) compartilhar quando preciso, (3) dar a ilusão de memória grande (virtual), (4) decidir quem mora na RAM e quem espera, (5) traduzir endereços.</li>
+    <li><b>RAM:</b> rápida, volátil, limitada. <b>Memória virtual:</b> abstração que estende a RAM usando disco e dá espaço próprio a cada processo.</li>
+  </ul></details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> RAM física de 8 GB; cada app aberto “acha” que tem 4 GB só para si.</li>
+    <li><b>Teste 1 — abrir apps.</b> <i>Clicar:</i> “abrir app” várias vezes. <span class="sig"><i>Vê:</i> o total VIRTUAL passa dos 8 GB físicos sem ninguém reclamar. <i>Significa:</i> é a memória virtual: cada processo vive na sua bolha de endereços; o SO só coloca na RAM o que está sendo usado agora.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — o papel do SO.</b> <i>Clicar:</i> “ver as atribuições”. <span class="sig"><i>Vê:</i> a lista de deveres. <i>Significa:</i> proteger, compartilhar, iludir (no bom sentido), traduzir e decidir quem fica na RAM — esse é o emprego do gerenciador de memória.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  <button onclick="addP()">abrir app</button><button onclick="resetP()">fechar todos</button>
+  <button onclick="atrib()">ver as atribuições do SO</button>
+  <div id="out1">RAM física: 8 GB. Abra apps e veja a “ilusão” virtual crescer.</div>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u11"><p>1) A atribuição central do gerenciamento de memória é…</p>
+      <button class="q" data-ok="1">decidir quem usa o quê, protegendo e traduzindo endereços</button><button class="q">desenhar a tela</button><button class="q">compilar programas</button><p class="fb"></p></div>
+    <div class="qq" id="u12"><p>2) Memória virtual é…</p>
+      <button class="q" data-ok="1">abstração que dá a cada processo um espaço grande e próprio</button><button class="q">o mesmo que RAM</button><button class="q">um tipo de disco</button><p class="fb"></p></div>
+    <div class="qq" id="u13"><p>3) A RAM é…</p>
+      <button class="q" data-ok="1">rápida e volátil</button><button class="q">lenta e permanente</button><button class="q">um cache de disco</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (em português)</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Mem%C3%B3ria_de_acesso_aleat%C3%B3rio">Memória RAM — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Mem%C3%B3ria_virtual">Memória virtual — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 02 -->
+<section id="d2" class="demo">
+  <h2>02 — Hipervisores, overcommit e ballooning</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Companhia aérea:</b> vende MAIS passagens que assentos apostando que nem todos embarcam — isso é <b>overcommit</b>.</li>
+    <li><b>Balão no balde:</b> encher o balão dentro de um balde desloca a água para outro — o <b>ballooning</b> “infla” dentro de uma VM para devolver memória ao hipervisor.</li>
+  </ul></details>
+  <details class="tool"><summary>🛠️ Nas ferramentas — explicado</summary><ul>
+    <li><b>VMware vSphere / Hyper-V / KVM:</b> hipervisores com overcommit e balloon driver nas VMs.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Hipervisor:</b> camada que divide um hardware em várias VMs e gerencia a memória delas.</li>
+    <li><b>Overcommit:</b> prometer às VMs mais memória do que existe fisicamente — funciona enquanto todas não usam tudo ao mesmo tempo.</li>
+    <li><b>Ballooning:</b> o hipervisor “infla” um driver dentro da VM ociosa para recuperar memória e dá à VM necessitada.</li>
+  </ul></details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> servidor com 8 GB físicos; crie 3 VMs de 4 GB (12 GB prometidos!).</li>
+    <li><b>Teste 1 — overcommit.</b> <i>Clicar:</i> “criar 3 VMs (4 GB cada)”. <span class="sig"><i>Vê:</i> 12 GB prometidos em 8 GB físicos. <i>Significa:</i> a aposta da companhia aérea: estatisticamente as VMs não usam tudo ao mesmo tempo — o hipervisor gerencia a diferença.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — ballooning.</b> <i>Clicar:</i> no controle do balão. <span class="sig"><i>Vê:</i> o balão tira da VM ociosa e entrega à VM sob carga. <i>Significa:</i> em vez de deixar uma VM “sentada” em memória parada, o hipervisor redistribui dinamicamente — memória vai para onde gera valor.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  <button onclick="vms()">criar 3 VMs (4 GB cada)</button>
+  Balão: <input type="range" id="bal" min="0" max="4" value="0" oninput="baloon()">
+  <div id="out2">Servidor físico: 8 GB. Crie as VMs e depois use o balão.</div>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u21"><p>1) O hipervisor é…</p>
+      <button class="q" data-ok="1">o software que gerencia VMs no mesmo hardware</button><button class="q">um antivírus</button><button class="q">um navegador</button><p class="fb"></p></div>
+    <div class="qq" id="u22"><p>2) Overcommit é…</p>
+      <button class="q" data-ok="1">prometer mais memória do que existe fisicamente</button><button class="q">um erro de RAM</button><button class="q">compressão de páginas</button><p class="fb"></p></div>
+    <div class="qq" id="u23"><p>3) Ballooning serve para…</p>
+      <button class="q" data-ok="1">tirar memória de uma VM ociosa e dar a outra</button><button class="q">causar vazamento</button><button class="q">trocar páginas no disco</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (em português)</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Hipervisor">Hipervisor — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Mem%C3%B3ria_virtual">Memória virtual — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 03 -->
+<section id="d3" class="demo">
+  <h2>03 — Swap e Memory Compression</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Geladeira × despensa:</b> a RAM é a geladeira (pequena, rápida); o swap é a despensa (grande, lenta) — você manda para lá o que não usa agora.</li>
+    <li><b>Compressão = malas a vácuo:</b> antes de mandar para a despensa, você comprime — cabe mais e volta mais rápido.</li>
+  </ul></details>
+  <details class="tool"><summary>🛠️ Nas ferramentas — explicado</summary><ul>
+    <li><b>Windows:</b> “Compactação de memória” nativa; <b>Linux:</b> <code>zram/zswap</code>; <b>macOS:</b> memória comprimida.</li>
+    <li><b>Arquivo/partição de swap:</b> a “despensa” no disco.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Swap:</b> mover páginas frias da RAM para o disco para abrir espaço; salva capacidade, custa velocidade (disco é ~milhões de vezes mais lento).</li>
+    <li><b>Memory Compression:</b> comprimir páginas ANTES de descartar/swapar — RAM “rende” mais com custo pequeno de CPU.</li>
+  </ul></details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> 6 páginas na RAM; clique “pressão!” e escolha a estratégia.</li>
+    <li><b>Teste 1 — swap.</b> <i>Clicar:</i> “pressão! → swap”. <span class="sig"><i>Vê:</i> 2 páginas indo para o “disco” (cinza). <i>Significa:</i> liberou RAM, mas quando essas páginas voltarem o acesso será LENTO — swap é o último recurso.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — compressão.</b> <i>Clicar:</i> “pressão! → comprimir”. <span class="sig"><i>Vê:</i> as páginas encolhem e FICAM na RAM. <i>Significa:</i> gasta um pouco de CPU para comprimir/descomprimir, mas evita o disco — por isso os SOs modernos comprimem antes de swapar.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  <button onclick="press('swap')">pressão! → swap</button><button onclick="press('comp')">pressão! → comprimir</button><button onclick="press('ok')">RAM tranquila</button>
+  <div id="out3">6 páginas na RAM. Simule pressão de memória.</div>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u31"><p>1) Swap é…</p>
+      <button class="q" data-ok="1">mover páginas frias da RAM para o disco</button><button class="q">comprimir a RAM</button><button class="q">matar processos</button><p class="fb"></p></div>
+    <div class="qq" id="u32"><p>2) Memory Compression…</p>
+      <button class="q" data-ok="1">comprime páginas para adiar/evitar o swap</button><button class="q">zipa arquivos do usuário</button><button class="q">desfragmenta o disco</button><p class="fb"></p></div>
+    <div class="qq" id="u33"><p>3) Comparado à RAM, o disco é…</p>
+      <button class="q" data-ok="1">muito mais lento</button><button class="q">mais rápido</button><button class="q">igual</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (em português)</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Mem%C3%B3ria_virtual">Memória virtual (swap) — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Compress%C3%A3o_de_dados">Compressão de dados — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 04 -->
+<section id="d4" class="demo">
+  <h2>04 — Substituição de páginas: FIFO, Belady, LRU, OPT</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Mesa pequena:</b> só cabem 3 livros abertos; quando chega o 4º, você guarda um — QUAL? O mais antigo (FIFO), o que você não usa há mais tempo (LRU) ou o que só vai precisar daqui a muito (OPT, “vidente”).</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>FIFO:</b> substitui a página que chegou PRIMEIRO (fila). Simples, mas pode punir páginas vitais.</li>
+    <li><b>Anomalia de Belady:</b> no FIFO, MAIS quadros podem causar MAIS faltas — o “paradoxo” que mostra que FIFO não é ótimo.</li>
+    <li><b>LRU:</b> substitui a menos recentemente usada (aposta: passado recente prevê o futuro).</li>
+    <li><b>OPT:</b> substitui a que demorará MAIS a ser usada de novo — ótima, mas exige vidência (é o limite teórico).</li>
+  </ul></details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> sequência clássica 1,2,3,4,1,2,5,1,2,3,4,5; escolha algoritmo e nº de quadros; o simulador conta as faltas.</li>
+    <li><b>Teste 1 — FIFO 3 × 4.</b> <i>Clicar:</i> FIFO com 3 e depois com 4 quadros. <span class="sig"><i>Vê:</i> 9 faltas com 3 e 10 com 4! <i>Significa:</i> é a <b>anomalia de Belady</b>: mais memória, PIOR resultado — FIFO não respeita o uso real das páginas.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — LRU e OPT.</b> <i>Clicar:</i> LRU e OPT com 3 quadros. <span class="sig"><i>Vê:</i> LRU e OPT empatam ou OPT vence; ambos melhores que FIFO aqui. <i>Significa:</i> usar o passado (LRU) ou o futuro (OPT) bate a fila cega — por isso os SOs aproximam LRU.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  <button onclick="run4('fifo')">FIFO</button><button onclick="run4('lru')">LRU</button><button onclick="run4('opt')">OPT</button>
+  Quadros: <button onclick="setF(3)">3</button><button onclick="setF(4)">4</button>
+  <button onclick="belady()">👀 ver anomalia de Belady</button>
+  <div id="out4">Escolha algoritmo e quadros. Sequência: 1 2 3 4 1 2 5 1 2 3 4 5</div>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u41"><p>1) O FIFO substitui…</p>
+      <button class="q" data-ok="1">a que chegou primeiro</button><button class="q">a menos usada recentemente</button><button class="q">a mais usada</button><p class="fb"></p></div>
+    <div class="qq" id="u42"><p>2) A anomalia de Belady é…</p>
+      <button class="q" data-ok="1">mais quadros → mais faltas (no FIFO)</button><button class="q">menos quadros → menos faltas sempre</button><button class="q">um bug do LRU</button><p class="fb"></p></div>
+    <div class="qq" id="u43"><p>3) O OPT substitui…</p>
+      <button class="q" data-ok="1">a que demorará mais a ser usada de novo</button><button class="q">a última que chegou</button><button class="q">aleatoriamente</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (em português)</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Mem%C3%B3ria_virtual">Memória virtual — Wikipédia</a>
+    <a target="_blank" href="https://en.wikipedia.org/wiki/Page_replacement_algorithm">Algoritmos de substituição de páginas (EN) — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 05 -->
+<section id="d5" class="demo">
+  <h2>05 — LRU-K, 2Q, MRU-n, Clock, NRU, LFU, MFU</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Relógio de ponto giratório (Clock):</b> o ponteiro gira; quem “bateu ponto” (bit 1) ganha outra volta; quem não bateu (bit 0) sai.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>LRU-K:</b> usa a K-ésima referência passada (mais histórico → decisão melhor que LRU puro).</li>
+    <li><b>2Q:</b> duas filas: páginas novas entram numa; só quem se prova útil vai para a fila “quente” (LRU).</li>
+    <li><b>MRU-n:</b> em certos padrões cíclicos, substituir a MAIS recentemente usada funciona melhor que LRU.</li>
+    <li><b>Clock:</b> aproximação barata do LRU com bit de referência e ponteiro circular.</li>
+    <li><b>NRU:</b> “não usadas recentemente”: classes por bits (referida/modificada) e sorteio entre as piores.</li>
+    <li><b>LFU / MFU:</b> substitui a de MENOR / MAIOR frequência de uso (contadores).</li>
+  </ul></details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> cartões dos algoritmos + um mini-Clock com 4 páginas e bits.</li>
+    <li><b>Teste 1 — cartões.</b> <i>Clicar:</i> em cada algoritmo. <span class="sig"><i>Vê:</i> a “personalidade” de cada um. <i>Significa:</i> todos tentam adivinhar o futuro com pistas diferentes (recência, frequência, histórico, bits) — não existe mágica, existe custo/benefício.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — o Clock girando.</b> <i>Clicar:</i> “girar ponteiro”. <span class="sig"><i>Vê:</i> o ponteiro pula páginas com bit 1 (zerando-as) e substitui a primeira com bit 0. <i>Significa:</i> é o LRU “de pobre”: 1 bit por página, O(1) por passo — por isso é tão usado na prática.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  <button onclick="alg5('lrk')">LRU-K</button><button onclick="alg5('q2')">2Q</button><button onclick="alg5('mru')">MRU-n</button><button onclick="alg5('nru')">NRU</button><button onclick="alg5('lfu')">LFU</button><button onclick="alg5('mfu')">MFU</button>
+  <div id="out5">Clique nos cartões; abaixo, o mini-Clock.</div>
+  <div id="clk"></div>
+  <button onclick="clock()">girar ponteiro ⏰</button>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u51"><p>1) O LRU substitui…</p>
+      <button class="q" data-ok="1">a que não é usada há mais tempo</button><button class="q">a que chegou primeiro</button><button class="q">a mais frequente</button><p class="fb"></p></div>
+    <div class="qq" id="u52"><p>2) O algoritmo Clock usa…</p>
+      <button class="q" data-ok="1">bit de referência e ponteiro circular</button><button class="q">contadores de frequência</button><button class="q">uma fila FIFO dupla</button><p class="fb"></p></div>
+    <div class="qq" id="u53"><p>3) O LFU substitui…</p>
+      <button class="q" data-ok="1">a de menor frequência de uso</button><button class="q">a de maior frequência</button><button class="q">a mais nova</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (em português)</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Mem%C3%B3ria_virtual">Memória virtual — Wikipédia</a>
+    <a target="_blank" href="https://en.wikipedia.org/wiki/Page_replacement_algorithm">Page replacement algorithms (EN) — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 06 -->
+<section id="d6" class="demo">
+  <h2>06 — Espaço variável: WS, PFF, VMIN</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Mesa que cresce/encolhe:</b> nas políticas de espaço FIXO cada processo tem N cadeiras; no espaço VARIÁVEL, a mesa do processo cresce quando ele precisa e encolhe quando sobra.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>WS (Working Set):</b> dá ao processo as páginas que ele usou numa janela de tempo recente — o “conjunto de trabalho” que evita thrashing.</li>
+    <li><b>PFF (Page Fault Frequency):</b> mede a frequência de faltas: alta → dá mais quadros; baixa → tira.</li>
+    <li><b>VMIN:</b> escolhe, a cada instante, o tamanho que minimiza o custo total (faltas + memória alocada).</li>
+    <li><b>Thrashing:</b> quando todos paginam demais e o sistema só “troca página” — o pesadelo que essas políticas evitam.</li>
+  </ul></details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> um processo com quadros ajustáveis; botões simulam “faltou página!” e “fase tranquila”.</li>
+    <li><b>Teste 1 — PFF na prática.</b> <i>Clicar:</i> “page fault!” algumas vezes. <span class="sig"><i>Vê:</i> os quadros aumentam. Depois “fase tranquila” e eles diminuem. <i>Significa:</i> o SO observa a FREQUÊNCIA de faltas e redimensiona a mesa dinamicamente — espaço variável na veia.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — fechar a aula.</b> <i>Clicar:</i> 🗺️ mapa e 📝 cola rápida. <span class="sig"><i>Vê:</i> o fio condutor. <i>Significa:</i> gerenciar memória = criar a ilusão certa (virtual), apostar com segurança (overcommit/ballooning), esticar a RAM (swap/compressão) e escolher QUEM SAI quando falta lugar (algoritmos) — sempre equilibrando velocidade e espaço.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  Quadros do processo: <b id="fr">3</b>
+  <button onclick="pf()">page fault! ❌</button><button onclick="calm()">fase tranquila ✅</button>
+  <div id="out6">Simule a frequência de faltas e veja o espaço variar (PFF).</div>
+  <details class="info"><summary>🗺️ Mapa da aula (visão geral)</summary>
+    <p><b>Gerenciar memória</b> (proteger, compartilhar, traduzir) → <b>virtual</b> (ilusão de espaço grande) → <b>hipervisor</b> (overcommit + ballooning) → <b>estender RAM</b> (swap + compressão) → <b>falta lugar?</b> substituição de páginas: espaço fixo (FIFO/Belady, LRU, OPT, Clock, NRU, LFU/MFU, LRU-K/2Q/MRU-n) e espaço variável (WS, PFF, VMIN) → sempre evitando <b>thrashing</b>.</p>
+  </details>
+  <details class="info"><summary>📝 Cola rápida (uma linha por termo)</summary><ul>
+    <li><b>RAM:</b> rápida/volátil; <b>virtual:</b> ilusão de espaço grande e próprio.</li>
+    <li><b>Overcommit:</b> vender mais assentos que existem; <b>ballooning:</b> redistribuir entre VMs.</li>
+    <li><b>Swap:</b> páginas frias no disco (lento); <b>compressão:</b> malas a vácuo na RAM.</li>
+    <li><b>FIFO:</b> fila cega (sofre Belady); <b>LRU:</b> passado recente; <b>OPT:</b> vidente (teórico).</li>
+    <li><b>Clock/NRU:</b> bits baratos; <b>LFU/MFU:</b> frequência; <b>LRU-K/2Q:</b> histórico + filas.</li>
+    <li><b>WS/PFF/VMIN:</b> espaço variável — a mesa cresce/encolhe conforme o uso.</li>
+    <li><b>Thrashing:</b> sistema só pagina; o inimigo nº 1.</li>
+  </ul></details>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u61"><p>1) Working Set (WS) é…</p>
+      <button class="q" data-ok="1">o conjunto de páginas usadas recentemente pelo processo</button><button class="q">todas as páginas no disco</button><button class="q">o arquivo de swap</button><p class="fb"></p></div>
+    <div class="qq" id="u62"><p>2) O PFF observa…</p>
+      <button class="q" data-ok="1">a frequência de faltas para dar/tirar quadros</button><button class="q">a CPU</button><button class="q">a rede</button><p class="fb"></p></div>
+    <div class="qq" id="u63"><p>3) VMIN busca…</p>
+      <button class="q" data-ok="1">o tamanho que minimiza custo (faltas + memória)</button><button class="q">espaço fixo FIFO</button><button class="q">um cache de disco</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (em português)</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Mem%C3%B3ria_virtual">Memória virtual — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Localidade_(ci%C3%AAncia_da_computa%C3%A7%C3%A3o)">Localidade / conjunto de trabalho — Wikipédia</a>
+  </details>
+</section>
+
+<script>
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.demo').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); document.getElementById(b.dataset.t).classList.add('active');
+});
+function aposta(){ document.body.classList.toggle('aposta');
+  document.getElementById('apBtn').textContent='🎲 Modo aposta: '+(document.body.classList.contains('aposta')?'ON':'OFF'); }
+function rev(b){ b.previousElementSibling.classList.add('shown'); b.classList.add('off'); }
+document.querySelectorAll('.qq').forEach(qq=>{
+ const btns=[...qq.querySelectorAll('button.q')];
+ const fb=qq.querySelector('.fb');
+ for(let i=btns.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [btns[i],btns[j]]=[btns[j],btns[i]]; }
+ btns.forEach(b=>qq.insertBefore(b,fb));
+});
+const EXP={
+ u11:{ok:'✅ Isso! Proteger, compartilhar, traduzir e decidir o uso da RAM.',bad:'❌ Tela e compilação não são do gerenciador de memória.'},
+ u12:{ok:'✅ Isso! Virtual = abstração de espaço grande e próprio por processo.',bad:'❌ RAM é a física; virtual é a ilusão por cima dela.'},
+ u13:{ok:'✅ Isso! RAM = rápida e volátil.',bad:'❌ Lenta/permanente é o disco; cache é outra camada.'},
+ u21:{ok:'✅ Isso! Hipervisor = síndico das VMs.',bad:'❌ Antivírus e navegador são apps comuns.'},
+ u22:{ok:'✅ Isso! Prometer além do físico, apostando no não-uso simultâneo.',bad:'❌ Não é erro nem compressão: é aposta estatística gerida.'},
+ u23:{ok:'✅ Isso! Balão recupera da ociosa e entrega à necessitada.',bad:'❌ Vazamento é bug; swap é disco — ballooning é redistribuição entre VMs.'},
+ u31:{ok:'✅ Isso! Swap = RAM→disco das páginas frias.',bad:'❌ Comprimir é outra coisa; matar processos não é swap.'},
+ u32:{ok:'✅ Isso! Comprimir páginas para render a RAM e evitar o disco.',bad:'❌ Zip de arquivos e desfragmentação são do usuário/disco.'},
+ u33:{ok:'✅ Isso! Disco é ordens de grandeza mais lento que a RAM.',bad:'❌ Mais rápido/igual contraria a física do hardware.'},
+ u41:{ok:'✅ Isso! FIFO = fila: o primeiro a chegar sai primeiro.',bad:'❌ Recência é LRU; frequência é LFU/MFU.'},
+ u42:{ok:'✅ Isso! No FIFO, mais quadros podem PIORAR as faltas.',bad:'❌ Belady é o paradoxo do FIFO, não do LRU.'},
+ u43:{ok:'✅ Isso! OPT “vê o futuro”: tira a que demora a voltar.',bad:'❌ Última chegada/aleatório não é OPT.'},
+ u51:{ok:'✅ Isso! LRU = least recently used.',bad:'❌ FIFO é chegada; LFU é frequência.'},
+ u52:{ok:'✅ Isso! Bit de referência + ponteiro circular = Clock.',bad:'❌ Contadores = LFU; fila dupla = 2Q.'},
+ u53:{ok:'✅ Isso! LFU = least frequently used.',bad:'❌ Maior frequência é o MFU que substitui (o oposto).'},
+ u61:{ok:'✅ Isso! WS = páginas da janela recente de uso.',bad:'❌ Disco todo e swap não são o conjunto de trabalho.'},
+ u62:{ok:'✅ Isso! PFF = page fault frequency: alta→dá, baixa→tira.',bad:'❌ CPU e rede são outros subsistemas.'},
+ u63:{ok:'✅ Isso! VMIN minimiza custo total (faltas + alocação).',bad:'❌ FIFO fixo e cache de disco não são VMIN.'}
+};
+document.addEventListener('click',e=>{
+  const b=e.target.closest('.q'); if(!b) return;
+  const qq=b.closest('.qq'), fb=qq.querySelector('.fb'), ok=b.dataset.ok=='1';
+  b.classList.add(ok?'ok':'bad');
+  fb.textContent=ok?EXP[qq.id].ok:EXP[qq.id].bad;
+});
+// 01
+let nP=0;
+function addP(){ nP++; draw1(); }
+function resetP(){ nP=0; draw1(); }
+function draw1(){
+ const virt=nP*4, real=Math.min(8, nP*1.5);
+ document.getElementById('out1').innerHTML='<b>Apps abertos:</b> '+nP+' | <b>Virtual comprometido:</b> '+virt+' GB | <b>RAM física em uso:</b> '+real.toFixed(1)+'/8 GB<br><i>Cada app “acha” que tem 4 GB só para si — o SO só coloca na RAM o que está em uso agora.</i>';
+}
+function atrib(){ document.getElementById('out1').innerHTML='<b>Atribuições do gerenciamento de memória:</b> 1) proteger/isolar processos; 2) compartilhar quando preciso; 3) dar a ilusão de memória grande (virtual); 4) traduzir endereços (MMU/tabelas); 5) decidir quem mora na RAM e quem espera (substituição/swap).'; }
+// 02
+let hasVM=false;
+function vms(){ hasVM=true; baloon(); }
+function baloon(){
+ const b=+document.getElementById('bal').value;
+ if(!hasVM){ document.getElementById('out2').textContent='Crie as 3 VMs primeiro.'; return; }
+ document.getElementById('out2').innerHTML='<b>Físico:</b> 8 GB | <b>Prometido:</b> 12 GB (overcommit ✅)<br>'+
+  '<span class="boxp">VM1 ociosa: '+(4-b)+' GB</span> 🎈 balão: '+b+' GB → <span class="boxp">VM2 sob carga: '+(4+b)+' GB</span> VM3: 4 GB<br>'+
+  '<i>O balão “infla” na ociosa e devolve memória ao hipervisor, que a entrega à necessitada.</i>';
+}
+// 03
+function press(m){
+ const o=document.getElementById('out3');
+ const pages=['A','B','C','D','E','F'];
+ if(m=='ok'){ o.innerHTML=pages.map(p=>'<span class="pg">'+p+'</span>').join('')+'<br>RAM tranquila: ninguém sai.'; return; }
+ if(m=='swap'){ o.innerHTML=pages.map((p,i)=> i<4?'<span class="pg">'+p+'</span>':'<span class="pg disk">'+p+' 💾 (disco, lento)</span>').join('')+'<br>E e F foram para o swap: liberou RAM, mas o retorno será LENTO.'; return; }
+ o.innerHTML=pages.map((p,i)=> i<4?'<span class="pg">'+p+'</span>':'<span class="pg comp">'+p+'🗜 (½ tamanho, na RAM)</span>').join('')+'<br>E e F comprimidas e MANTIDAS na RAM: custa um pouco de CPU, evita o disco.';
+}
+// 04
+const REF=[1,2,3,4,1,2,5,1,2,3,4,5];
+let NF=3;
+function setF(n){ NF=n; document.getElementById('out4').innerHTML='Quadros = '+n+'. Escolha o algoritmo.'; }
+function simFIFO(nf){ let f=[],q=[],fa=0,log=[];
+ for(const p of REF){ if(f.includes(p)){log.push('<span class="pg hit">'+p+'</span>');}
+  else{ fa++; log.push('<span class="pg fault">'+p+'</span>');
+   if(f.length<nf){f.push(p);q.push(p);} else {const v=q.shift(); f[f.indexOf(v)]=p; q.push(p);} } }
+ return {fa,log}; }
+function simLRU(nf){ let f=[],fa=0,log=[];
+ for(const p of REF){ if(f.includes(p)){ f.splice(f.indexOf(p),1); f.push(p); log.push('<span class="pg hit">'+p+'</span>'); }
+  else{ fa++; log.push('<span class="pg fault">'+p+'</span>'); if(f.length<nf) f.push(p); else {f.shift(); f.push(p);} } }
+ return {fa,log}; }
+function simOPT(nf){ let f=[],fa=0,log=[];
+ for(let i=0;i<REF.length;i++){ const p=REF[i];
+  if(f.includes(p)){ log.push('<span class="pg hit">'+p+'</span>'); continue; }
+  fa++; log.push('<span class="pg fault">'+p+'</span>');
+  if(f.length<nf) f.push(p);
+  else{ let worst=-1,wi=0; f.forEach((x,j)=>{ const nx=REF.indexOf(x,i+1); const d=nx==-1?9999:nx; if(d>worst){worst=d;wi=j;} }); f[wi]=p; } }
+ return {fa,log}; }
+function run4(alg){
+ const r= alg=='fifo'?simFIFO(NF): alg=='lru'?simLRU(NF):simOPT(NF);
+ document.getElementById('out4').innerHTML='<b>'+alg.toUpperCase()+' com '+NF+' quadros:</b> '+r.fa+' faltas<br>'+r.log.join(' ')+'<br><i>vermelho = falta (traz página); verde = acerto.</i>';
+}
+function belady(){
+ const a=simFIFO(3).fa, b=simFIFO(4).fa;
+ document.getElementById('out4').innerHTML='<b>Anomalia de Belady (FIFO):</b> 3 quadros → '+a+' faltas | 4 quadros → '+b+' faltas.<br>Mais memória e MAIS faltas?! Só o FIFO faz isso nesta sequência — por isso ele é considerado ingênuo.';
+}
+// 05
+const A5={
+ lrk:'<b>LRU-K:</b> decide pela K-ésima referência passada. Mais histórico = menos “acidentes” do LRU puro (que vê só a última).',
+ q2:'<b>2Q:</b> fila de probation + fila quente. Página nova entra na primeira; só quem é referida de novo é promovida — protege contra varreduras (scans).',
+ mru:'<b>MRU-n:</b> em acessos cíclicos (varrer um arquivo maior que a memória), substituir a MAIS recente funciona melhor que LRU — nadar contra a maré certa.',
+ nru:'<b>NRU:</b> duas marcas (referida, modificada) criam 4 classes; substitui aleatoriamente dentro da pior classe. Simples e “bom o bastante”.',
+ lfu:'<b>LFU:</b> contadores de uso; sai a de MENOR frequência. Problema: páginas velhas e inúteis acumulam contagem alta.',
+ mfu:'<b>MFU:</b> sai a de MAIOR frequência (ideia: o muito usado já está em cache de novo rápido). Raramente bate o LRU na prática.'
+};
+function alg5(k){ document.getElementById('out5').innerHTML=A5[k]; }
+let bits=[1,0,1,0], ptr=0;
+function drawClk(){
+ document.getElementById('clk').innerHTML='⏰ Clock: '+bits.map((b,i)=>'<span class="pg'+(i==ptr?' fault':'')+'">P'+i+' bit='+b+(i==ptr?' ←':'')+'</span>').join(' ');
+}
+function clock(){
+ for(let k=0;k<5;k++){
+  if(bits[ptr]==0){ const old=ptr; bits[ptr]=1; ptr=(ptr+1)%4;
+   document.getElementById('out5').innerHTML='⏰ Ponteiro substituiu P'+old+' (bit 0) e trouxe página nova com bit 1.';
+   drawClk(); return; }
+  bits[ptr]=0; ptr=(ptr+1)%4;
+ }
+ drawClk();
+}
+drawClk();
+// 06
+let fr=3;
+function pf(){ if(fr<8) fr++; draw6('❌ Faltou página: frequência alta → PFF dá MAIS um quadro.'); }
+function calm(){ if(fr>1) fr--; draw6('✅ Fase tranquila: frequência baixa → PFF tira um quadro (devolve ao sistema).'); }
+function draw6(m){ document.getElementById('fr').textContent=fr;
+ document.getElementById('out6').innerHTML=m+'<br><b>Quadros do processo:</b> '+fr+' — a “mesa” cresce e encolhe com o uso (espaço variável).'; }
+</script>
+</body>
+</html>
