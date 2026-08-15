@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SO Interativo — Aula 7 (Unidade 3)</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:system-ui,sans-serif;background:#f4f7f6;margin:0;padding:18px;color:#1d1d1f}
+h1{font-size:1.25rem} h2{margin-top:0}
+nav{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.tab{border:2px solid #1d1d1f;background:#fff;border-radius:10px;padding:8px 12px;cursor:pointer;box-shadow:3px 3px 0 #d6336c;font-weight:600}
+.tab.active{background:#d6336c;color:#fff}
+.demo{display:none;background:#fff;border:2px solid #1d1d1f;border-radius:14px;padding:16px;box-shadow:5px 5px 0 #d6336c}
+.demo.active{display:block}
+button{border:2px solid #1d1d1f;border-radius:8px;background:#fff;padding:6px 10px;cursor:pointer;font-weight:600}
+button:hover{background:#fff0f6}
+details{margin:10px 0;border-radius:10px;padding:8px 12px;border:2px solid #1d1d1f}
+summary{cursor:pointer;font-weight:700}
+.info{background:#eaf4ff}.steps{background:#fff8dc}.links{background:#f2f2f2}.real{background:#eaffe8}.tool{background:#f5eaff}.quiz{background:#ffe8f0}
+.links a{color:#0a66c2;display:inline-block;margin:2px 12px 2px 0}
+.q{margin:2px}.q.ok{background:#b9f6ca}.q.bad{background:#ffb3b3}
+.fb{font-size:.85rem;background:#fff;border-radius:6px;padding:4px 8px;margin:4px 0}
+#out1,#out2,#out3,#out4,#out5,#kout{background:#fff;border:2px dashed #999;border-radius:8px;padding:10px;margin:8px 0;min-height:40px}
+.boxp{display:inline-block;border:2px solid #1d1d1f;border-radius:10px;padding:6px 10px;margin:3px;background:#f0f4ff;font-weight:600}
+.boxp.dead{background:#ffb3b3;text-decoration:line-through}
+.pg{display:inline-block;border:2px solid #1d1d1f;border-radius:6px;padding:4px 8px;margin:2px;background:#fff;font-weight:700}
+.pg.hit{background:#b9f6ca}.pg.miss{background:#ffb3b3}
+table{border-collapse:collapse;margin:6px 0}
+td,th{border:1px solid #999;padding:4px 10px}
+.rv{display:none;margin-left:6px}
+body.aposta .sig{display:none}
+body.aposta .sig.shown{display:inline}
+body.aposta .rv{display:inline-block}
+body.aposta .rv.off{display:none}
+#apBtn{box-shadow:3px 3px 0 #0ca678}
+</style>
+</head>
+<body>
+<h1>📁 SO — Aula 7 (Unidade 3, págs. 10–28): arquivos, diretórios e desempenho</h1>
+<button id="apBtn" onclick="aposta()">🎲 Modo aposta: OFF</button>
+<p>Mesma estrutura das aulas anteriores: 🌍 → ️ → 🔤 →  → 🎤 plano de testes → demo → 🧠 quiz (3 alternativas, embaralhadas) → 🔗 (PT). Com 🎲 ligado, a turma aposta antes de revelar.</p>
+
+<details class="tool"><summary>🧰 Glossário de ferramentas (leia uma vez!)</summary><ul>
+  <li><b>Arquivo:</b> unidade lógica de armazenamento: conteúdo + <b>metadados</b> (a “ficha” do arquivo).</li>
+  <li><b>Diretório:</b> a “pasta” que organiza e nomeia arquivos — uma agenda telefônica de nomes → endereços.</li>
+  <li><b>Sistema de arquivos:</b> o conjunto de regras/estruturas que o SO usa para guardar e achar tudo (NTFS, ext4, APFS).</li>
+  <li><b>Bloco:</b> o “pacote” fixo que o disco lê/escreve de uma vez.</li>
+  <li><b>Explorador de Arquivos / <code>ls</code>:</b> onde você VE diretórios e metadados no dia a dia.</li>
+</ul></details>
+
+<nav>
+  <button class="tab active" data-t="d1">01 Metadados e atributos</button>
+  <button class="tab" data-t="d2">02 Estruturas de diretórios</button>
+  <button class="tab" data-t="d3">03 Braço do disco</button>
+  <button class="tab" data-t="d4">04 Cache e leitura antecipada</button>
+  <button class="tab" data-t="d5">05 Paralelo e tolerância a falhas</button>
+  <button class="tab" data-t="d6">06 Centralizado × distribuído</button>
+</nav>
+
+<!-- 01 -->
+<section id="d1" class="demo active">
+  <h2>01 — Arquivos: metadados e atributos</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>“Propriedades” do arquivo:</b> botão direito → Propriedades mostra nome, tamanho, tipo, dono, datas, permissões — tudo isso é <b>metadado</b>: dados SOBRE o dado.</li>
+    <li><b>Ficha de biblioteca:</b> o livro é o conteúdo; a fichinha (autor, ano, prateleira) é o metadado que faz você ACHAR o livro.</li>
+  </ul></details>
+  <details class="tool"><summary>🛠️ Nas ferramentas — explicado</summary><ul>
+    <li><b>Windows:</b> Propriedades / aba Detalhes. <b>Linux:</b> <code>ls -l</code> e <code>stat</code> mostram metadados no terminal.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Metadados:</b> a ficha do arquivo: nome, identificador, tipo, tamanho, localização, datas (criação/modificação), dono.</li>
+    <li><b>Atributos:</b> propriedades que controlam o uso: somente leitura, oculto, sistema, permissões (ler/escrever/executar).</li>
+  </ul></details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> três arquivos; clique para abrir a “ficha” (como um Propriedades).</li>
+    <li><b>Teste 1 — abrir as fichas.</b> <i>Clicar:</i> em cada arquivo. <span class="sig"><i>Vê:</i> a tabela de metadados e atributos. <i>Significa:</i> o SO guarda MUITA informação além do conteúdo — é ela que permite achar, proteger e organizar; sem metadados, o disco seria um saco de bytes sem nome.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — atributos em ação.</b> <i>Clicar:</i> no arquivo “oculto/somente leitura”. <span class="sig"><i>Vê:</i> os atributos marcados. <i>Significa:</i> atributos são interruptores de comportamento: “oculto” some da lista; “somente leitura” impede alteração — o SO consulta esses bits a cada acesso.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  <button onclick="meta('foto')">📷 foto.jpg</button><button onclick="meta('doc')">📄 tese.docx</button><button onclick="meta('sys')">🔒 config.sys</button>
+  <div id="out1">Clique em um arquivo para ver a “ficha” (metadados + atributos).</div>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u11"><p>1) Metadados são…</p>
+      <button class="q" data-ok="1">dados sobre o arquivo (tamanho, datas, dono)</button><button class="q">o conteúdo binário</button><button class="q">um tipo de vírus</button><p class="fb"></p></div>
+    <div class="qq" id="u12"><p>2) Atributos de arquivo são…</p>
+      <button class="q" data-ok="1">propriedades como permissões, oculto, somente leitura</button><button class="q">pastas</button><button class="q">discos</button><p class="fb"></p></div>
+    <div class="qq" id="u13"><p>3) “Botão direito → Propriedades” exibe…</p>
+      <button class="q" data-ok="1">os metadados</button><button class="q">a RAM usada</button><button class="q">o código-fonte</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (em português)</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Metadados">Metadados — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Sistema_de_arquivos">Sistema de arquivos — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 02 -->
+<section id="d2" class="demo">
+  <h2>02 — Diretórios: nível único, dois níveis (MFD/UFD) e árvore</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Sala única cheia de arquivos (nível único):</b> dois “notas.txt” não cabem — colisão de nomes.</li>
+    <li><b>Um escaninho por pessoa (dois níveis):</b> cada um tem sua caixa; nomes podem repetir.</li>
+    <li><b>Arquivo de cartório (árvore):</b> salas → estantes → caixas → pastas.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Nível único:</b> UM diretório para todos os usuários — simples, mas colide nomes e não organiza.</li>
+    <li><b>Dois níveis (MFD/UFD):</b> <b>MFD</b> = Master File Directory (índice dos usuários); <b>UFD</b> = User File Directory (a pasta de cada um).</li>
+    <li><b>Múltiplos níveis (árvore):</b> diretórios dentro de diretórios, com caminhos (/home/ana/docs) — o padrão de hoje.</li>
+  </ul></details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> simule Ana e Beto criando “notas.txt” nas três estruturas.</li>
+    <li><b>Teste 1 — nível único.</b> <i>Clicar:</i> “nível único”. <span class="sig"><i>Vê:</i> Ana cria OK; Beto recebe ❌ colisão. <i>Significa:</i> com um diretório só, o nome é o endereço — dois arquivos não podem ter o mesmo nome, e a busca vira caça-agulha.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — dois níveis.</b> <i>Clicar:</i> “dois níveis (MFD/UFD)”. <span class="sig"><i>Vê:</i> MFD aponta para UFD-Ana e UFD-Beto; os dois “notas.txt” coexistem. <i>Significa:</i> o endereço vira “usuário + nome” — resolve a colisão e isola usuários, mas ainda não organiza DENTRO de cada um.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 3 — árvore.</b> <i>Clicar:</i> “múltiplos níveis”. <span class="sig"><i>Vê:</i> a árvore /home/ana/docs/… <i>Significa:</i> caminhos aninhados dão organização infinita e compartilhamento por caminho — é por isso que todo SO moderno usa árvore.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  <button onclick="niv(1)">nível único</button><button onclick="niv(2)">dois níveis (MFD/UFD)</button><button onclick="niv(3)">múltiplos níveis (árvore)</button>
+  <div id="out2">Ana e Beto querem criar “notas.txt”. Teste nas três estruturas.</div>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u21"><p>1) O grande problema do diretório de nível único é…</p>
+      <button class="q" data-ok="1">colisão de nomes e falta de organização</button><button class="q">ser lento demais</button><button class="q">gastar RAM</button><p class="fb"></p></div>
+    <div class="qq" id="u22"><p>2) MFD/UFD é a estrutura de…</p>
+      <button class="q" data-ok="1">um diretório mestre + um diretório por usuário</button><button class="q">árvore infinita</button><button class="q">nível único</button><p class="fb"></p></div>
+    <div class="qq" id="u23"><p>3) A estrutura de múltiplos níveis é…</p>
+      <button class="q" data-ok="1">uma árvore de diretórios aninhados</button><button class="q">uma lista única</button><button class="q">duas listas fixas</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (em português)</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Diret%C3%B3rio_(computa%C3%A7%C3%A3o)">Diretório — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Sistema_de_arquivos">Sistema de arquivos — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 03 -->
+<section id="d3" class="demo">
+  <h2>03 — Desempenho: o braço do disco</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Toca-discos:</b> a agulha (braço) precisa VIAJAR até a trilha certa — cada viagem leva tempo; muitas viagens = disco “lento”.</li>
+    <li><b>Elevador inteligente:</b> atende os andares “na passada”, sem ziguezague — o escalonador do disco faz o mesmo.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Braço/cabeçote:</b> a peça mecânica que se move até a trilha; o movimento (seek) é a parte MAIS LENTA do acesso.</li>
+    <li><b>Ordenar pedidos (SCAN/elevador):</b> atender as trilhas na ordem do caminho reduz o percurso total → mais IOPS.</li>
+  </ul></details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> pedidos nas trilhas [5, 28, 15, 3, 40], braço começa em 0.</li>
+    <li><b>Teste 1 — ordem de chegada.</b> <i>Clicar:</i> “atender na chegada”. <span class="sig"><i>Vê:</i> o ziguezague e o total de 90 trilhas percorridas. <i>Significa:</i> atender sem pensar faz o braço ir e voltar — tempo desperdiçado em movimento.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — elevador.</b> <i>Clicar:</i> “atender tipo elevador”. <span class="sig"><i>Vê:</i> percurso de 40 trilhas, menos da metade! <i>Significa:</i> ordenar o caminho corta o seek — por isso o SO reordena a fila de I/O; e por isso SSDs (sem braço) mudaram o jogo.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  <button onclick="arm('fcfs')">atender na chegada</button><button onclick="arm('scan')">atender tipo elevador</button>
+  <div id="out3">Pedidos: 5, 28, 15, 3, 40 (braço em 0). Compare os percursos.</div>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u31"><p>1) O braço do disco pesa no desempenho porque…</p>
+      <button class="q" data-ok="1">o movimento mecânico (seek) leva tempo</button><button class="q">ele aquece o disco</button><button class="q">comprime os dados</button><p class="fb"></p></div>
+    <div class="qq" id="u32"><p>2) Atender “tipo elevador”…</p>
+      <button class="q" data-ok="1">reduz o percurso total do braço</button><button class="q">aumenta o percurso</button><button class="q">não muda nada</button><p class="fb"></p></div>
+    <div class="qq" id="u33"><p>3) Acesso sequencial é mais rápido porque…</p>
+      <button class="q" data-ok="1">quase não há movimento e a leitura antecipada ajuda</button><button class="q">é aleatório</button><button class="q">usa a rede</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (em português)</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Disco_r%C3%ADgido">Disco rígido — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Sistema_de_arquivos">Sistema de arquivos — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 04 -->
+<section id="d4" class="demo">
+  <h2>04 — Cache de blocos (HIT/MISS) e leitura antecipada</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Mochila vs biblioteca:</b> o caderno na mochila (cache) é HIT — imediato; ir à biblioteca buscar (disco) é MISS — lento.</li>
+    <li><b>Leitura antecipada = pegar o capítulo inteiro:</b> você vai buscar a página 5 e já traz 6 e 7 — se a leitura for sequencial, as próximas já estão na mochila.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Cache de blocos:</b> cópias dos blocos recentes na RAM; <b>HIT</b> = achou na RAM (rápido); <b>MISS</b> = teve que ir ao disco (lento).</li>
+    <li><b>Leitura antecipada (read-ahead/prefetch):</b> ao ler um bloco, traz também os vizinhos seguintes — aposta na localidade sequencial.</li>
+    <li><b>Taxa de acerto (hit rate):</b> quanto maior, menos disco — mais rápido o sistema.</li>
+  </ul></details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> sequência de acessos 5,6,7,8,5,6,9,10; cache pequeno; rode com e sem leitura antecipada.</li>
+    <li><b>Teste 1 — sem antecipação.</b> <i>Clicar:</i> “sem read-ahead”. <span class="sig"><i>Vê:</i> vários MISS vermelhos. <i>Significa:</i> cada bloco novo custa uma viagem ao disco — a mochila só tem o que você pediu, exatamente.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — com antecipação.</b> <i>Clicar:</i> “com read-ahead”. <span class="sig"><i>Vê:</i> o primeiro acesso traz 5,6,7 e os seguintes viram HIT verdes. <i>Significa:</i> como acesso a arquivos tende a ser sequencial (localidade), trazer vizinhos de uma vez transforma MISS em HIT — a viagem cara vira vários acessos grátis.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  <button onclick="cachSim(false)">sem read-ahead</button><button onclick="cachSim(true)">com read-ahead</button>
+  <div id="out4">Acessos: 5 6 7 8 5 6 9 10 — cache de 4 blocos.</div>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u41"><p>1) Um HIT de cache é…</p>
+      <button class="q" data-ok="1">quando o bloco já está na RAM</button><button class="q">quando vai ao disco</button><button class="q">um erro</button><p class="fb"></p></div>
+    <div class="qq" id="u42"><p>2) Leitura antecipada é…</p>
+      <button class="q" data-ok="1">trazer blocos vizinhos antes de serem pedidos</button><button class="q">apagar blocos</button><button class="q">comprimir blocos</button><p class="fb"></p></div>
+    <div class="qq" id="u43"><p>3) Hit rate alta significa…</p>
+      <button class="q" data-ok="1">poucas idas ao disco lento</button><button class="q">muitos misses</button><button class="q">cache lento</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (em português)</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Cache">Cache — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Disco_r%C3%ADgido">Disco rígido — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 05 -->
+<section id="d5" class="demo">
+  <h2>05 — Processamento paralelo e tolerância a falhas</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Mutirão:</b> 4 pessoas lavando 12 carros = 3 rodadas; 1 pessoa = 12. CPUs múltiplas = mutirão.</li>
+    <li><b>Cópias da chave:</b> se a chave some, as cópias salvam — replicação é tolerância a falhas.</li>
+  </ul></details>
+  <details class="tool"><summary>🛠️ Nas ferramentas — explicado</summary><ul>
+    <li><b>RAID:</b> vários discos funcionando como um: espelho (RAID 1) ou paridade (RAID 5) = tolerância a falhas de disco.</li>
+    <li><b>Clusters/nuvem:</b> réplicas em máquinas diferentes; se uma cai, outra assume.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>CPUs múltiplas:</b> dividir a carga em núcleos/máquinas → mais throughput; exige sincronizar o trabalho.</li>
+    <li><b>Tolerância a falhas:</b> o sistema CONTINUA funcionando mesmo com componente quebrado (réplicas, RAID, redundância).</li>
+  </ul></details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> tarefa de 12 unidades; e um serviço com 3 réplicas.</li>
+    <li><b>Teste 1 — mutirão.</b> <i>Clicar:</i> “1 CPU” e “4 CPUs”. <span class="sig"><i>Vê:</i> 12 rodadas vs 3. <i>Significa:</i> paralelo divide o trabalho — mas só até o limite da parte que não se divide (lei de Amdahl).</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — derrubar réplicas.</b> <i>Clicar:</i> “matar nó 1”, “matar nó 2”… <span class="sig"><i>Vê:</i> com 1 ou 2 nós mortos o serviço CONTINUA; só morre se todos caírem. <i>Significa:</i> redundância compra disponibilidade: a falha vira inconveniente, não desastre.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  <button onclick="par(1)">1 CPU</button><button onclick="par(4)">4 CPUs</button>
+  <button onclick="kill(0)">matar nó 1</button><button onclick="kill(1)">matar nó 2</button><button onclick="kill(2)">matar nó 3</button>
+  <button onclick="revive()">restaurar todos</button>
+  <div id="out5">Tarefa: 12 unidades. Serviço: 3 réplicas.</div>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u51"><p>1) CPUs múltiplas permitem…</p>
+      <button class="q" data-ok="1">executar trabalho em paralelo</button><button class="q">aumentar a RAM</button><button class="q">evitar vírus</button><p class="fb"></p></div>
+    <div class="qq" id="u52"><p>2) Tolerância a falhas é…</p>
+      <button class="q" data-ok="1">continuar funcionando mesmo com componente falho</button><button class="q">nunca ter erros</button><button class="q">só fazer backup</button><p class="fb"></p></div>
+    <div class="qq" id="u53"><p>3) Replicação é…</p>
+      <button class="q" data-ok="1">manter cópias em vários nós</button><button class="q">comprimir dados</button><button class="q">criptografar</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (em português)</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/RAID">RAID — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Sistema_distribu%C3%ADdo">Sistema distribuído — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 06 -->
+<section id="d6" class="demo">
+  <h2>06 — Sistemas centralizados × distribuídos</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Centralizado = matriz única:</b> tudo decide e guarda num lugar só — simples, mas um raio derruba tudo.</li>
+    <li><b>Distribuído = rede de agências:</b> várias máquinas cooperam parecendo uma só — o WhatsApp, a nuvem, o BitTorrent.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Centralizado:</b> um nó concentra dados/decisão; fácil gerenciar; ponto único de falha; gargalo de escala.</li>
+    <li><b>Distribuído:</b> muitos nós cooperam pela rede; tolera falhas e escala; mas é MAIS complexo (consistência, latência).</li>
+  </ul></details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> jogo de classificar: aparece o sistema, diga se é centralizado ou distribuído.</li>
+    <li><b>Teste 1 — jogar as rodadas.</b> <i>Clicar:</i> na resposta. <span class="sig"><i>Vê:</i> acerto/erro com o porquê. <i>Significa:</i> a escolha é um trade-off: simplicidade × robustez/escala — e o mundo moderno pende para o distribuído, pagando o preço da complexidade.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — fechar a aula.</b> <i>Clicar:</i> 🗺️ mapa e 📝 cola rápida. <span class="sig"><i>Vê:</i> o fio condutor. <i>Significa:</i> arquivo bem descrito (metadados) + bem organizado (árvore) + acessado com inteligência (braço, cache, read-ahead) + servido com músculo e redundância (paralelo/distribuído) = sistema de arquivos que voa e não cai.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  <div id="kout"></div>
+  <details class="info"><summary>🗺️ Mapa da aula (visão geral)</summary>
+    <p><b>Arquivo</b> (conteúdo + metadados/atributos) → <b>Diretórios</b> (único → MFD/UFD → árvore) → <b>Desempenho</b> (braço/seek → ordenar pedidos; cache HIT/MISS → read-ahead) → <b>Escala</b> (CPUs múltiplas, tolerância a falhas, réplicas/RAID) → <b>Arquitetura</b> (centralizado × distribuído).</p>
+  </details>
+  <details class="info"><summary>📝 Cola rápida (uma linha por termo)</summary><ul>
+    <li><b>Metadados:</b> a ficha do arquivo; <b>atributos:</b> oculto, só leitura, permissões.</li>
+    <li><b>Nível único:</b> colide nomes; <b>MFD/UFD:</b> mestre + usuário; <b>árvore:</b> caminhos aninhados.</li>
+    <li><b>Braço:</b> seek é o gargalo; ordenar pedidos = elevador.</li>
+    <li><b>HIT:</b> está na RAM; <b>MISS:</b> vai ao disco; <b>read-ahead:</b> traz vizinhos juntos.</li>
+    <li><b>Paralelo:</b> mutirão de CPUs; <b>tolerância:</b> réplicas/RAID seguram a falha.</li>
+    <li><b>Centralizado:</b> simples, ponto único de falha; <b>distribuído:</b> robusto e escalável, mais complexo.</li>
+  </ul></details>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u61"><p>1) Um sistema centralizado…</p>
+      <button class="q" data-ok="1">concentra dados/decisão em um ponto</button><button class="q">tem muitos nós cooperando</button><button class="q">é sempre P2P</button><p class="fb"></p></div>
+    <div class="qq" id="u62"><p>2) Um sistema distribuído é…</p>
+      <button class="q" data-ok="1">várias máquinas cooperando como uma só</button><button class="q">um mainframe único</button><button class="q">um disco só</button><p class="fb"></p></div>
+    <div class="qq" id="u63"><p>3) Vantagem do distribuído:</p>
+      <button class="q" data-ok="1">sem ponto único de falha e escala</button><button class="q">sempre mais simples</button><button class="q">não precisa de rede</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (em português)</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Sistema_distribu%C3%ADdo">Sistema distribuído — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Cliente%E2%80%93servidor">Modelo cliente–servidor — Wikipédia</a>
+  </details>
+</section>
+
+<script>
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.demo').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); document.getElementById(b.dataset.t).classList.add('active');
+  if(b.dataset.t=='d6') drawK();
+});
+function aposta(){ document.body.classList.toggle('aposta');
+  document.getElementById('apBtn').textContent='🎲 Modo aposta: '+(document.body.classList.contains('aposta')?'ON':'OFF'); }
+function rev(b){ b.previousElementSibling.classList.add('shown'); b.classList.add('off'); }
+document.querySelectorAll('.qq').forEach(qq=>{
+ const btns=[...qq.querySelectorAll('button.q')];
+ const fb=qq.querySelector('.fb');
+ for(let i=btns.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [btns[i],btns[j]]=[btns[j],btns[i]]; }
+ btns.forEach(b=>qq.insertBefore(b,fb));
+});
+const EXP={
+ u11:{ok:'✅ Isso! Metadados = dados sobre o arquivo.',bad:'❌ Conteúdo é o dado em si; metadado é a ficha.'},
+ u12:{ok:'✅ Isso! Atributos controlam o uso (permissões, oculto…).',bad:'❌ Pastas e discos são outras estruturas.'},
+ u13:{ok:'✅ Isso! Propriedades = a ficha de metadados.',bad:'❌ RAM e código-fonte não aparecem ali.'},
+ u21:{ok:'✅ Isso! Um nome = um endereço: colisões e bagunça.',bad:'❌ Velocidade e RAM não são o problema do nível único.'},
+ u22:{ok:'✅ Isso! Mestre (MFD) + pasta por usuário (UFD).',bad:'❌ Árvore é múltiplos níveis; único é uma lista só.'},
+ u23:{ok:'✅ Isso! Diretórios dentro de diretórios, com caminhos.',bad:'❌ Listas únicas/duplas são os níveis anteriores.'},
+ u31:{ok:'✅ Isso! Seek mecânico = parte mais lenta do acesso.',bad:'❌ Aquecer/comprimir não é o papel do braço.'},
+ u32:{ok:'✅ Isso! Ordenar o caminho corta o ziguezague.',bad:'❌ Aumentar ou não mudar desperdiçaria o elevador.'},
+ u33:{ok:'✅ Isso! Pouco movimento + prefetch = velocidade.',bad:'❌ Sequencial é o oposto de aleatório; rede não entra aqui.'},
+ u41:{ok:'✅ Isso! HIT = servido da RAM, rapidinho.',bad:'❌ Ir ao disco é MISS; erro é outra coisa.'},
+ u42:{ok:'✅ Isso! Prefetch aposta na localidade sequencial.',bad:'❌ Apagar/comprimir não é antecipar.'},
+ u43:{ok:'✅ Isso! Muitos HITs = poucas viagens lentas ao disco.',bad:'❌ Muitos misses = hit rate BAIXA.'},
+ u51:{ok:'✅ Isso! Mutirão de núcleos = mais throughput.',bad:'❌ RAM e vírus não têm relação direta.'},
+ u52:{ok:'✅ Isso! Falhou um pedaço, o todo continua.',bad:'❌ “Nunca errar” é impossível; backup sozinho não segura o serviço no ar.'},
+ u53:{ok:'✅ Isso! Cópias em vários nós = redundância.',bad:'❌ Comprimir/criptografar são outras proteções.'},
+ u61:{ok:'✅ Isso! Um ponto concentra tudo.',bad:'❌ Muitos nós cooperando = distribuído.'},
+ u62:{ok:'✅ Isso! Muitas máquinas, uma cara só.',bad:'❌ Mainframe/disco único = centralizado.'},
+ u63:{ok:'✅ Isso! Robustez e escala são o trunfo do distribuído.',bad:'❌ Distribuído EXIGE rede e é mais complexo.'}
+};
+document.addEventListener('click',e=>{
+  const b=e.target.closest('.q'); if(!b) return;
+  const qq=b.closest('.qq'), fb=qq.querySelector('.fb'), ok=b.dataset.ok=='1';
+  b.classList.add(ok?'ok':'bad');
+  fb.textContent=ok?EXP[qq.id].ok:EXP[qq.id].bad;
+});
+// 01
+const META={
+ foto:['📷 foto.jpg','Imagem JPEG','2,4 MB','Ana','12/03/2024','15/08/2024','normal (visível, leitura/escrita)'],
+ doc:['📄 tese.docx','Documento Word','1,1 MB','Ana','02/01/2023','hoje','somente leitura 🔒'],
+ sys:['🔒 config.sys','Arquivo de sistema','4 KB','Sistema','10/10/2020','10/10/2020','oculto + sistema 👁️‍🗨️']
+};
+function meta(k){
+ const m=META[k];
+ document.getElementById('out1').innerHTML='<table><tr><th>nome</th><th>tipo</th><th>tamanho</th><th>dono</th><th>criação</th><th>modificação</th><th>atributos</th></tr>'+
+ '<tr><td>'+m[0]+'</td><td>'+m[1]+'</td><td>'+m[2]+'</td><td>'+m[3]+'</td><td>'+m[4]+'</td><td>'+m[5]+'</td><td>'+m[6]+'</td></tr></table>'+
+ '<i>Tudo isso é metadado: o SO guarda a ficha para achar, proteger e organizar — o conteúdo é só uma parte do arquivo.</i>';
+}
+// 02
+function niv(n){
+ const o=document.getElementById('out2');
+ if(n==1) o.innerHTML='<span class="boxp">📁 TUDO: notas.txt(Ana) ❌ notas.txt(Beto) → COLISÃO!</span><br><i>Um diretório só: o nome é o endereço — Beto fica sem o arquivo dele.</i>';
+ if(n==2) o.innerHTML='<span class="boxp">MFD</span> → <span class="boxp">UFD Ana: notas.txt ✅</span> + <span class="boxp">UFD Beto: notas.txt ✅</span><br><i>Endereço = usuário + nome: sem colisão, mas cada usuário ainda é uma “sala única”.</i>';
+ if(n==3) o.innerHTML='<span class="boxp">/</span> → <span class="boxp">home</span> → <span class="boxp">ana</span> → <span class="boxp">docs</span> → <span class="boxp">notas.txt ✅</span><br><i>Árvore: caminhos aninhados organizam infinitamente e permitem compartilhar por caminho — o padrão de todo SO moderno.</i>';
+}
+// 03
+function arm(m){
+ const req=[5,28,15,3,40];
+ let path, dist=0;
+ if(m=='fcfs'){ path=[0,...req]; }
+ else { path=[0,...[...req].sort((a,b)=>a-b)]; }
+ for(let i=1;i<path.length;i++) dist+=Math.abs(path[i]-path[i-1]);
+ document.getElementById('out3').innerHTML='<b>Percurso:</b> '+path.join(' → ')+' | <b>total: '+dist+' trilhas</b><br>'+
+ (m=='fcfs'?'<i>Ziguezague: o braço vai e volta — tempo queimado em movimento.</i>':'<i>Elevador: uma passada só — menos da metade do caminho! (E é por isso que SSD, sem braço, mudou tudo.)</i>');
+}
+// 04
+function cachSim(ra){
+ const acc=[5,6,7,8,5,6,9,10];
+ let cache=[], hits=0, log=[];
+ for(const p of acc){
+  if(cache.includes(p)){ hits++; log.push('<span class="pg hit">'+p+' HIT</span>'); }
+  else{
+   log.push('<span class="pg miss">'+p+' MISS</span>');
+   cache.push(p);
+   if(ra){ for(const q of [p+1,p+2]) if(!cache.includes(q)&&acc.includes(q)) cache.push(q); }
+   if(cache.length>4) cache.shift();
+  }
+ }
+ document.getElementById('out4').innerHTML=log.join(' ')+'<br><b>HITs: '+hits+'/'+acc.length+'</b> — '+(ra?'com read-ahead, a viagem cara trouxe vizinhos e virou vários HITs.':'sem read-ahead, cada bloco novo custou uma viagem ao disco.');
+}
+// 05
+function par(n){ document.getElementById('out5').innerHTML='<b>'+n+' CPU(s):</b> tarefa de 12 unidades → '+Math.ceil(12/n)+' rodadas. <i>Mutirão: paralelo divide o trabalho (até o limite da parte inseparável — lei de Amdahl).</i>'; }
+let dead=[false,false,false];
+function kill(i){ dead[i]=true; drawN(); }
+function revive(){ dead=[false,false,false]; drawN(); }
+function drawN(){
+ const alive=dead.filter(d=>!d).length;
+ document.getElementById('out5').innerHTML=dead.map((d,i)=>'<span class="boxp'+(d?' dead':'')+'">nó '+(i+1)+(d?' 💀':' 🟢')+'</span>').join(' ')+
+ '<br><b>Serviço:</b> '+(alive>0?'NO AR ✅ (as réplicas vivas assumiram)':'FORA DO AR ❌ (todas as cópias caíram)')+
+ '<br><i>Tolerância a falhas: a queda de um nó vira inconveniente, não desastre — só a perda de TODAS as réplicas derruba o serviço.</i>';
+}
+// 06
+const KROUNDS=[
+ {s:'Um mainframe único processa tudo de todas as filiais.',ok:0},
+ {s:'WhatsApp com servidores espalhados pelo mundo cooperando.',ok:1},
+ {s:'Rede P2P (BitTorrent): cada participante é cliente e servidor.',ok:1},
+ {s:'Empresa com UM servidor onde mora todo o banco de dados.',ok:0}
+];
+let kI=0;
+function drawK(){
+ const r=KROUNDS[kI];
+ document.getElementById('kout').innerHTML='<b>Rodada '+(kI+1)+'/'+KROUNDS.length+':</b> '+r.s+'<br>'+
+  ['Centralizado','Distribuído'].map((o,i)=>'<button onclick="pickK('+i+')">'+o+'</button>').join(' ');
+}
+function pickK(i){
+ const r=KROUNDS[kI];
+ const msg = i==r.ok ? '✅ Isso! '+['Um ponto só concentra tudo.','Vários nós cooperam como um sistema só.'][i] : '❌ Na verdade é '+['centralizado','distribuído'][r.ok]+'.';
+ kI=(kI+1)%KROUNDS.length;
+ document.getElementById('kout').innerHTML=msg+'<br><button onclick="drawK()">próxima rodada ▶</button>';
+}
+drawK();
+</script>
+</body>
+</html>
