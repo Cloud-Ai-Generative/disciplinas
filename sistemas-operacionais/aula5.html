@@ -357,4 +357,44 @@ function gt(t){
 // 04
 function ipc(t){
  document.getElementById('ipcout').innerHTML = t=='m'
- ? '<span class="boxp">P1</span> ⇄ <span class="boxp" style="background:#b9f6ca">🧠 região compartilhada</span> ⇄ <span class="boxp">P2</span><br><i>Depois de configur
+ ? '<span class="boxp">P1</span> ⇄ <span class="boxp" style="background:#b9f6ca">🧠 região compartilhada</span> ⇄ <span class="boxp">P2</span><br><i>Depois de configurada, o kernel fica de fora: leitura/escrita DIRETA = velocíssima; mas os dois precisam sincronizar (senão, race).</i>'
+ : '<span class="boxp">P1</span> → <span class="boxp" style="background:#ffe0b3"> kernel (confere, copia, entrega)</span> → <span class="boxp">P2</span><br><i>Tudo passa pelo carteiro: mais lento, porém sincronizado, seguro e funciona até entre máquinas (rede).</i>';
+}
+// 05
+let spinT=null;
+function lockDemo(mode){
+ clearInterval(spinT);
+ const out=document.getElementById('lockout');
+ let wasted=0,t=0;
+ out.innerHTML = mode=='spin' ? '🔄 Thread girando: “livre? livre? livre?…” — consumindo o CPU à toa…' : '😴 Thread DORMIU; o CPU ficou LIVRE para outros processos…';
+ spinT=setInterval(()=>{
+  t++;
+  if(mode=='spin') wasted+=137;
+  if(t==3){ clearInterval(spinT);
+   out.innerHTML += '<br>🔓 Lock liberado após 3 s! '+(mode=='spin'
+    ? 'Ciclos queimados girando: <b>'+wasted+'</b>. Spinlock só compensa em esperas CURTÍSSIMAS.'
+    : 'Nenhum ciclo desperdiçado: o SO acordou a thread só quando liberou. Bloquear compensa em esperas LONGAS.');
+  }
+ },1000);
+}
+// 06
+function sched6(){
+ const q=+document.getElementById('quant').value;
+ const P=[{n:'P1',r:7},{n:'P2',r:3}]; let seq=[];
+ while(P.some(x=>x.r>0)) for(const x of P) for(let k=0;k<q&&x.r>0;k++){seq.push(x.n);x.r--;}
+ const w=document.getElementById('ssteps'); w.innerHTML='';
+ const out=document.getElementById('sout'); out.textContent='';
+ let tr=0;
+ seq.forEach((n,i)=>{
+  if(i&&seq[i-1]!==n) tr++;
+  setTimeout(()=>{
+   const c=document.createElement('span'); c.className='cell '+n.toLowerCase(); c.textContent=n; w.appendChild(c);
+   out.innerHTML='tick '+(i+1)+': '+n+' usa a CPU'+(i&&seq[i-1]!==n?' — ⏰ timer! <b>preempção</b> + troca de contexto':'');
+  },i*300);
+ });
+ setTimeout(()=>{ out.innerHTML+=' <br><b>Fatia='+q+':</b> '+tr+' trocas de contexto. '+(q>=3?'Fatia grande: poucas trocas, mas quem chega atrás espera.':'Fatia pequena: resposta rápida para todos, mas MUITAS trocas (custo).'); },seq.length*300);
+}
+sched6();
+</script>
+</body>
+</html>
