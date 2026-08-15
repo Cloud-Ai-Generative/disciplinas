@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SO Interativo — Aula 5 (Unidade 2)</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:system-ui,sans-serif;background:#f4f7f6;margin:0;padding:18px;color:#1d1d1f}
+h1{font-size:1.25rem} h2{margin-top:0}
+nav{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.tab{border:2px solid #1d1d1f;background:#fff;border-radius:10px;padding:8px 12px;cursor:pointer;box-shadow:3px 3px 0 #f76707;font-weight:600}
+.tab.active{background:#f76707;color:#fff}
+.demo{display:none;background:#fff;border:2px solid #1d1d1f;border-radius:14px;padding:16px;box-shadow:5px 5px 0 #f76707}
+.demo.active{display:block}
+button{border:2px solid #1d1d1f;border-radius:8px;background:#fff;padding:6px 10px;cursor:pointer;font-weight:600}
+button:hover{background:#fff1e6}
+details{margin:10px 0;border-radius:10px;padding:8px 12px;border:2px solid #1d1d1f}
+summary{cursor:pointer;font-weight:700}
+.info{background:#eaf4ff}.steps{background:#fff8dc}.links{background:#f2f2f2}.real{background:#eaffe8}.tool{background:#f5eaff}.quiz{background:#ffe8f0}
+.links a{color:#0a66c2;display:inline-block;margin:2px 12px 2px 0}
+.q{margin:2px}.q.ok{background:#b9f6ca}.q.bad{background:#ffb3b3}
+.fb{font-size:.85rem;background:#fff;border-radius:6px;padding:4px 8px;margin:4px 0}
+#tout,#dout,#gout,#ipcout,#lockout,#sout{background:#fff;border:2px dashed #999;border-radius:8px;padding:10px;margin:8px 0;min-height:40px}
+.boxp{display:inline-block;border:2px solid #1d1d1f;border-radius:10px;padding:8px 12px;margin:4px;background:#f0f4ff;font-weight:600}
+.cell{display:inline-block;padding:8px 12px;border:2px solid #1d1d1f;border-radius:8px;font-weight:700;margin:2px}
+.p1{background:#ffb86b}.p2{background:#8ecae6}
+.frame{background:#cde8ff;border:1px solid #1d1d1f;border-radius:6px;padding:4px;margin:2px;text-align:center}
+.blk{display:inline-block;background:#ffe0b3;border:1px solid #1d1d1f;border-radius:4px;padding:4px 8px;margin:2px}
+.rv{display:none;margin-left:6px}
+body.aposta .sig{display:none}
+body.aposta .sig.shown{display:inline}
+body.aposta .rv{display:inline-block}
+body.aposta .rv.off{display:none}
+#apBtn{box-shadow:3px 3px 0 #12b886}
+</style>
+</head>
+<body>
+<h1>⚙️ SO — Aula 5 (Unidade 2, págs. 10–23): processos, threads, IPC e escalonamento</h1>
+<button id="apBtn" onclick="aposta()">🎲 Modo aposta: OFF</button>
+<p>Mesma estrutura das aulas anteriores: 🌍 → ️ → 🔤 →  → 🎤 plano de testes → demo → 🧠 quiz (3 alternativas, embaralhadas) → 🔗 (PT). Com 🎲 ligado, a turma aposta antes de revelar.</p>
+
+<details class="tool"><summary>🧰 Glossário de ferramentas (leia uma vez!)</summary><ul>
+  <li><b>Processo:</b> um programa em execução, com memória e recursos próprios. <b>Thread:</b> linha de execução dentro do processo.</li>
+  <li><b>DLL (Dynamic-Link Library):</b> biblioteca de código que vários processos carregam e COMPARTILHAM — não precisa copiar o mesmo código em cada processo.</li>
+  <li><b>Green threads:</b> threads gerenciadas pelo PRÓPRIO APLICATIVO (no espaço do usuário), não pelo kernel — o SO “enxerga” um processo só.</li>
+  <li><b>Kernel threads:</b> threads gerenciadas pelo sistema operacional, que as escala de verdade (inclusive em vários núcleos).</li>
+  <li><b>htop / Gerenciador de Tarefas:</b> onde você VE processos e threads vivos no seu computador.</li>
+</ul></details>
+
+<nav>
+  <button class="tab active" data-t="d1">01 Processos × Threads</button>
+  <button class="tab" data-t="d2">02 DLL, Stack e Heap</button>
+  <button class="tab" data-t="d3">03 Green threads</button>
+  <button class="tab" data-t="d4">04 IPC: memória × mensagens</button>
+  <button class="tab" data-t="d5">05 Spinlock × Bloqueante</button>
+  <button class="tab" data-t="d6">06 Escalonamento</button>
+</nav>
+
+<!-- 01 -->
+<section id="d1" class="demo active">
+  <h2>01 — Processos e threads na dinâmica do SO</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Chrome:</b> cada aba é um processo (se uma trava, o navegador vive); dentro de cada um, várias threads (tela, rede, áudio).</li>
+    <li><b>Cozinha:</b> processo = a cozinha inteira (espaço, ingredientes); threads = os cozinheiros trabalhando na mesma cozinha.</li>
+  </ul></details>
+  <details class="tool"><summary>🛠️ Nas ferramentas — explicado</summary><ul>
+    <li><b>htop (Linux) / Gerenciador de Tarefas (Windows):</b> mostram PID, threads e CPU de cada processo — a “dinâmica do SO” ao vivo.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Processo:</b> programa em execução + seu “mundo” (memória, arquivos, PID).</li>
+    <li><b>Thread:</b> unidade de execução que o escalonador põe na CPU; threads do mesmo processo compartilham código e dados.</li>
+    <li><b>Troca de contexto:</b> salvar o estado de um e carregar o de outro — mais CARA entre processos do que entre threads.</li>
+  </ul></details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> a tabela comparativa processo × thread; clique em cada linha para abrir a explicação.</li>
+    <li><b>Teste 1 — percorrer a tabela.</b> <i>Clicar:</i> nas linhas (criação, memória, comunicação, troca, falha). <span class="sig"><i>Vê:</i> o comparativo com o porquê. <i>Significa:</i> thread é “processo leve”: compartilhar o mesmo mundo torna criar, trocar e comunicar muito mais barato — por isso todo app moderno é multithread.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — o preço do isolamento.</b> <i>Clicar:</i> na linha “falha”. <span class="sig"><i>Vê:</i> processo morre sozinho; thread pode derrubar o processo inteiro. <i>Significa:</i> isolamento (processo) dá segurança; compartilhamento (thread) dá velocidade — o SO vive esse trade-off.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  <button onclick="cmp('cri')">criação</button><button onclick="cmp('mem')">memória</button><button onclick="cmp('com')">comunicação</button><button onclick="cmp('tro')">troca de contexto</button><button onclick="cmp('fal')">falha</button>
+  <div id="tout">Clique nas linhas da comparação.</div>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u11"><p>1) Um processo é…</p>
+      <button class="q" data-ok="1">um programa em execução, com memória própria</button><button class="q">um arquivo parado no disco</button><button class="q">uma tabela do banco</button><p class="fb"></p></div>
+    <div class="qq" id="u12"><p>2) Threads do mesmo processo compartilham…</p>
+      <button class="q" data-ok="1">código e memória</button><button class="q">memórias totalmente separadas</button><button class="q">nada</button><p class="fb"></p></div>
+    <div class="qq" id="u13"><p>3) A troca de contexto é…</p>
+      <button class="q" data-ok="1">mais cara entre processos do que entre threads</button><button class="q">mais cara entre threads</button><button class="q">igual nos dois</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (em português)</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Processo_(computa%C3%A7%C3%A3o)">Processo — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Thread_(computa%C3%A7%C3%A3o)">Thread — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 02 -->
+<section id="d2" class="demo">
+  <h2>02 — DLL, Stack e Heap na memória do processo</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>DLL = biblioteca pública:</b> um livro só, na estante, que todas as cozinhas da cidade consultam — cada cozinha não precisa imprimir sua cópia.</li>
+    <li><b>Stack = bancada da tarefa;</b> <b>Heap = depósito do app</b> (como nas aulas anteriores).</li>
+  </ul></details>
+  <details class="tool"><summary>🛠️ Nas ferramentas — explicado</summary><ul>
+    <li><b>Windows:</b> arquivos <code>.dll</code> em <code>C:\Windows\System32</code> — centenas de bibliotecas compartilhadas por todos os apps.</li>
+    <li><b>Linux:</b> o equivalente são as <code>.so</code> (shared objects).</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>DLL:</b> código carregado UMA vez e usado por muitos processos (economiza memória e atualiza num lugar só).</li>
+    <li><b>Stack:</b> memória automática por thread (variáveis locais, retorno), LIFO, limitada.</li>
+    <li><b>Heap:</b> memória dinâmica (malloc/free), gerida pelo programa, qualquer ordem.</li>
+  </ul></details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> botões DLL / stack / heap com mini-visuais.</li>
+    <li><b>Teste 1 — DLL.</b> <i>Clicar:</i> “ver DLL”. <span class="sig"><i>Vê:</i> P1 e P2 apontando para o MESMO bloco de código. <i>Significa:</i> o código da DLL existe uma vez só na memória; cada processo tem seus DADOS, mas compartilha as instruções — por isso atualizar uma DLL muda todos os apps que a usam.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — stack/heap.</b> <i>Clicar:</i> “chamar func()” / “malloc()”. <span class="sig"><i>Vê:</i> frames empilhando (LIFO) e blocos surgindo em qualquer ordem. <i>Significa:</i> stack se limpa sozinha no return; heap fica até o free — cada região tem seu papel na memória do processo.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  <button onclick="vdll()">ver DLL</button>
+  <button onclick="pushS()">chamar func()</button><button onclick="popS()">return</button>
+  <button onclick="malH()">malloc()</button>
+  <div><b>Stack:</b> <span id="stk"></span> | <b>Heap:</b> <span id="hp2"></span></div>
+  <div id="dout">Clique nos botões para montar a memória.</div>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u21"><p>1) Uma DLL é…</p>
+      <button class="q" data-ok="1">biblioteca de código compartilhada por vários processos</button><button class="q">um processo especial</button><button class="q">um núcleo da CPU</button><p class="fb"></p></div>
+    <div class="qq" id="u22"><p>2) Variáveis locais de uma função vivem na…</p>
+      <button class="q" data-ok="1">stack</button><button class="q">heap</button><button class="q">DLL</button><p class="fb"></p></div>
+    <div class="qq" id="u23"><p>3) A heap é…</p>
+      <button class="q" data-ok="1">memória dinâmica alocada pelo programa</button><button class="q">memória automática da função</button><button class="q">código compartilhado</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (em português)</summary>
+    <a target="_blank" href="https://learn.microsoft.com/pt-br/windows/win32/dlls/">DLLs — Microsoft Docs (PT)</a>
+    <a target="_blank" href="https://learn.microsoft.com/pt-br/cpp/cpp/stack-and-heap">Stack & Heap — Microsoft Docs (PT)</a>
+  </details>
+</section>
+
+<!-- 03 -->
+<section id="d3" class="demo">
+  <h2>03 — Green threads × kernel threads</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Teatro de fantoches:</b> por trás da cortina (o processo) vários fantoches (green threads) se mexem, mas o público (o SO) vê UM boneco só.</li>
+    <li><b>Kernel threads:</b> cada ator tem seu crachá próprio e o diretor (o SO) os escala em palcos diferentes (núcleos).</li>
+  </ul></details>
+  <details class="tool"><summary>🛠️ Nas ferramentas — explicado</summary><ul>
+    <li><b>Máquinas virtuais antigas (ex.: primeiras JVM):</b> usavam green threads — portáteis, mas sem paralelismo real.</li>
+    <li><b>SOs modernos:</b> usam kernel threads (Linux: NPTL; Windows: threads nativas).</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Green threads:</b> escalonadas pelo APLICATIVO em espaço do usuário; o kernel vê 1 thread só. Prós: leves e portáteis. Contra: não usam vários núcleos ao mesmo tempo.</li>
+    <li><b>Kernel threads:</b> escalonadas pelo SO; podem rodar em paralelo em vários núcleos; criar/trocar custa mais.</li>
+  </ul></details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> dois diagramas: green threads e kernel threads, com 2 CPUs.</li>
+    <li><b>Teste 1 — green.</b> <i>Clicar:</i> “green threads”. <span class="sig"><i>Vê:</i> as 2 threads dentro de 1 processo, usando 1 CPU só; a CPU 2 fica ociosa. <i>Significa:</i> o SO não sabe que existem 2 threads — logo não pode pô-las em núcleos diferentes: sem paralelismo real.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — kernel.</b> <i>Clicar:</i> “kernel threads”. <span class="sig"><i>Vê:</i> T1 na CPU 1 e T2 na CPU 2 ao mesmo tempo. <i>Significa:</i> o SO escala cada thread de verdade — paralelismo real, ao preço de trocas de contexto mais caras.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  <button onclick="gt('g')">green threads</button><button onclick="gt('k')">kernel threads</button>
+  <div id="gout">Escolha o modelo para ver o diagrama com 2 CPUs.</div>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u31"><p>1) Green threads são gerenciadas…</p>
+      <button class="q" data-ok="1">pelo aplicativo, no espaço do usuário</button><button class="q">pelo kernel</button><button class="q">pela CPU</button><p class="fb"></p></div>
+    <div class="qq" id="u32"><p>2) A grande limitação das green threads é…</p>
+      <button class="q" data-ok="1">não usar vários núcleos em paralelo</button><button class="q">serem lentas para criar</button><button class="q">não compartilharem memória</button><p class="fb"></p></div>
+    <div class="qq" id="u33"><p>3) Kernel threads são escalonadas…</p>
+      <button class="q" data-ok="1">pelo sistema operacional</button><button class="q">pelo aplicativo</button><button class="q">pelo compilador</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (em português)</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Thread_(computa%C3%A7%C3%A3o)">Thread — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Processo_(computa%C3%A7%C3%A3o)">Processo — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 04 -->
+<section id="d4" class="demo">
+  <h2>04 — IPC: memória compartilhada × troca de mensagens</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Memória compartilhada = quadro branco:</b> os dois veem e escrevem direto — rapidíssimo, mas sem combinar, um apaga o do outro.</li>
+    <li><b>Troca de mensagens = correio:</b> tudo passa pelo carteiro (kernel) — mais lento, porém organizado e seguro.</li>
+  </ul></details>
+  <details class="tool"><summary>🛠️ Nas ferramentas — explicado</summary><ul>
+    <li><b>Shared memory (shmget/mmap no Linux):</b> APIs que criam a região comum.</li>
+    <li><b>Pipes/sockets/filas:</b> APIs de troca de mensagens mediadas pelo kernel.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>IPC:</b> mecanismos de comunicação entre processos.</li>
+    <li><b>Memória compartilhada:</b> região mapeada em 2+ processos; velocidade máxima; EXIGE sincronização.</li>
+    <li><b>Troca de mensagens:</b> send/receive via kernel; portável e sincronizada; mais lenta (cópias e trocas de contexto).</li>
+  </ul></details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> dois modos de IPC animados entre P1 e P2.</li>
+    <li><b>Teste 1 — memória compartilhada.</b> <i>Clicar:</i> “memória compartilhada”. <span class="sig"><i>Vê:</i> os dois processos ligados direto no mesmo bloco. <i>Significa:</i> depois de configurada, a troca é LEITURA/ESCRITA direta, sem o kernel no meio — por isso é a mais rápida; o preço é combinar o acesso (senão, race condition).</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — mensagens.</b> <i>Clicar:</i> “troca de mensagens”. <span class="sig"><i>Vê:</i> o pacote passando pelo kernel. <i>Significa:</i> o kernel confere, copia e entrega — sincronização e segurança de graça; o custo é a velocidade. É o modelo natural entre máquinas diferentes (rede).</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  <button onclick="ipc('m')">memória compartilhada</button><button onclick="ipc('t')">troca de mensagens</button>
+  <div id="ipcout">Escolha o mecanismo para ver o caminho dos dados.</div>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u41"><p>1) Na memória compartilhada, os processos se comunicam…</p>
+      <button class="q" data-ok="1">lendo e escrevendo a mesma região</button><button class="q">enviando mensagens pelo kernel</button><button class="q">por arquivos de texto</button><p class="fb"></p></div>
+    <div class="qq" id="u42"><p>2) A troca de mensagens é vantajosa porque…</p>
+      <button class="q" data-ok="1">sincroniza e não exige memória comum</button><button class="q">é sempre a mais rápida</button><button class="q">não usa o kernel</button><p class="fb"></p></div>
+    <div class="qq" id="u43"><p>3) Memória compartilhada exige…</p>
+      <button class="q" data-ok="1">sincronização para evitar races</button><button class="q">nada</button><button class="q">rede</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (em português)</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Comunica%C3%A7%C3%A3o_entre_processos">Comunicação entre processos — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Mem%C3%B3ria_compartilhada">Memória compartilhada — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 05 -->
+<section id="d5" class="demo">
+  <h2>05 — Espera: spinlock (ociosa) × bloqueante</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Spinlock = ficar refrescando o e-mail:</b> “chegou? chegou? chegou?” — gasta sua atenção (CPU) à toa.</li>
+    <li><b>Bloqueante = ativar a notificação:</b> você dorme/trabalha e o sistema te acorda quando chegar.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Espera ociosa (spinlock):</b> a thread fica em loop perguntando se o recurso liberou — consome CPU, mas responde NA HORA.</li>
+    <li><b>Espera bloqueante:</b> a thread DORME; o SO a acorda quando o recurso libera — libera o CPU para outros.</li>
+    <li><b>Regra prática:</b> espera curtíssima → spinlock; espera longa → bloqueante.</li>
+  </ul></details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> o lock fica ocupado por 3 s; escolha como a thread espera e veja o custo.</li>
+    <li><b>Teste 1 — spinlock.</b> <i>Clicar:</i> “usar spinlock”. <span class="sig"><i>Vê:</i> o contador de ciclos girando subir sem parar. <i>Significa:</i> a thread “queima” CPU perguntando — útil só quando a espera é de microssegundos (trocar de contexto custaria mais).</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — bloqueante.</b> <i>Clicar:</i> “usar bloqueante”. <span class="sig"><i>Vê:</i> a thread 😴 e o CPU livre; ao liberar, o SO a acorda. <i>Significa:</i> enquanto ela dorme, outros processos usam o núcleo — é a escolha certa para esperas longas; o custo é a própria troca de contexto.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  <button onclick="lockDemo('spin')">usar spinlock 🔄</button><button onclick="lockDemo('block')">usar bloqueante 😴</button>
+  <div id="lockout">Escolha a estratégia de espera (o lock libera em 3 s).</div>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u51"><p>1) Spinlock é…</p>
+      <button class="q" data-ok="1">espera em loop que consome CPU</button><button class="q">dormir até ser acordado</button><button class="q">uma operação de E/S</button><p class="fb"></p></div>
+    <div class="qq" id="u52"><p>2) Na espera bloqueante, a thread…</p>
+      <button class="q" data-ok="1">dorme e libera o CPU para outros</button><button class="q">gira em loop</button><button class="q">é terminada</button><p class="fb"></p></div>
+    <div class="qq" id="u53"><p>3) Spinlock compensa quando…</p>
+      <button class="q" data-ok="1">a espera é curtíssima</button><button class="q">a espera é longa</button><button class="q">nunca</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (em português)</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Comunica%C3%A7%C3%A3o_entre_processos">Comunicação entre processos — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Thread_(computa%C3%A7%C3%A3o)">Thread — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 06 -->
+<section id="d6" class="demo">
+  <h2>06 — Escalonamento: time-sharing, time-slice e preempção</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Caixa único rodízio:</b> o atendente dedica 1 minuto a cada cliente da fila e chama o próximo — ninguém monopoliza. Isso é time-sharing com time-slice.</li>
+    <li><b>O timer é o despertador:</b> quando o minuto acaba, o SO toma o atendimento “sem pedir licença” = preempção.</li>
+  </details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Time-sharing:</b> muitos processos/usuários alternando na CPU, cada um com a sensação de exclusividade.</li>
+    <li><b>Time-slice (quantum):</b> a fatia de tempo que cada processo recebe por vez.</li>
+    <li><b>Preempção:</b> o SO interrompe o processo no fim da fatia e troca — essencial para justiça e resposta rápida.</li>
+  </ul></details>
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> P1 (7 ticks) e P2 (3); o controle muda o tamanho da fatia (time-slice).</li>
+    <li><b>Teste 1 — fatia grande (4).</b> <i>Clicar:</i> fatia 4 e rodar. <span class="sig"><i>Vê:</i> poucas trocas; P2 espera mais. <i>Significa:</i> fatia grande = menos trocas de contexto, mas quem chega atrás espera — o “atendente” demora a voltar.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — fatia pequena (1).</b> <i>Clicar:</i> fatia 1 e rodar. <span class="sig"><i>Vê:</i> as cores alternando a cada tick e o narrador gritando “⏰ preempção!”. <i>Significa:</i> fatia pequena = resposta rápida para todos, mas MUITAS trocas de contexto (custo). O escalonador vive desse equilíbrio.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+  Fatia (time-slice): <input type="range" id="quant" min="1" max="4" value="2" oninput="sched6()">
+  <button onclick="sched6()">rodar ▶</button>
+  <div id="ssteps"></div>
+  <div id="sout">Ajuste a fatia e rode para ver o time-sharing.</div>
+  <details class="info"><summary>🗺️ Mapa da aula (visão geral)</summary>
+    <p><b>Processo</b> (mundo próprio) → <b>threads</b> (leves, compartilham; green = app gerencia; kernel = SO gerencia) → <b>memória</b> (DLL compartilhada, stack automática, heap dinâmica) → <b>IPC</b> (memória compartilhada rápida × mensagens seguras) → <b>espera</b> (spinlock × bloqueante) → <b>escalonamento</b> (time-sharing + time-slice + preempção).</p>
+  </details>
+  <details class="info"><summary>📝 Cola rápida (uma linha por termo)</summary><ul>
+    <li><b>Processo:</b> programa em execução com mundo próprio; <b>thread:</b> linha leve que compartilha esse mundo.</li>
+    <li><b>DLL:</b> código 1×, usado por muitos processos.</li>
+    <li><b>Stack:</b> bancada LIFO automática; <b>heap:</b> depósito dinâmico (malloc/free).</li>
+    <li><b>Green threads:</b> app gerencia, 1 núcleo só; <b>kernel threads:</b> SO gerencia, paralelismo real.</li>
+    <li><b>Memória compartilhada:</b> rápida + exige sincronização; <b>mensagens:</b> kernel no meio, segura.</li>
+    <li><b>Spinlock:</b> gira e gasta CPU (espera curta); <b>bloqueante:</b> dorme e libera CPU (espera longa).</li>
+    <li><b>Time-sharing:</b> alternância com sensação de exclusividade; <b>time-slice:</b> a fatia; <b>preempção:</b> tomar a CPU no fim da fatia.</li>
+  </ul></details>
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u61"><p>1) Time-sharing é…</p>
+      <button class="q" data-ok="1">vários processos alternando na CPU</button><button class="q">um processo para sempre</button><button class="q">execução em lote sem alternância</button><p class="fb"></p></div>
+    <div class="qq" id="u62"><p>2) Time-slice (quantum) é…</p>
+      <button class="q" data-ok="1">a fatia de tempo de cada processo na CPU</button><button class="q">a velocidade do clock</button><button class="q">o tamanho da memória</button><p class="fb"></p></div>
+    <div class="qq" id="u63"><p>3) Preempção é quando…</p>
+      <button class="q" data-ok="1">o SO toma a CPU sem pedir licença</button><button class="q">o processo cede por vontade própria</button><button class="q">o processo termina</button><p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar (em português)</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Escalonamento_(computa%C3%A7%C3%A3o)">Escalonamento — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Preemp%C3%A7%C3%A3o">Preempção — Wikipédia</a>
+  </details>
+</section>
+
+<script>
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.demo').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); document.getElementById(b.dataset.t).classList.add('active');
+});
+function aposta(){ document.body.classList.toggle('aposta');
+  document.getElementById('apBtn').textContent='🎲 Modo aposta: '+(document.body.classList.contains('aposta')?'ON':'OFF'); }
+function rev(b){ b.previousElementSibling.classList.add('shown'); b.classList.add('off'); }
+document.querySelectorAll('.qq').forEach(qq=>{
+ const btns=[...qq.querySelectorAll('button.q')];
+ const fb=qq.querySelector('.fb');
+ for(let i=btns.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [btns[i],btns[j]]=[btns[j],btns[i]]; }
+ btns.forEach(b=>qq.insertBefore(b,fb));
+});
+const EXP={
+ u11:{ok:'✅ Isso! Processo = programa rodando com memória e recursos próprios.',bad:'❌ Arquivo parado não é processo; falta a execução e o “mundo” próprio.'},
+ u12:{ok:'✅ Isso! Threads irmãs compartilham código e dados do processo.',bad:'❌ Memórias separadas é entre PROCESSOS; threads compartilham.'},
+ u13:{ok:'✅ Isso! Trocar processos troca o “mundo” inteiro (tabelas de memória) — mais caro.',bad:'❌ Threads compartilham o mundo, então a troca é mais barata.'},
+ u21:{ok:'✅ Isso! DLL = código carregado uma vez, usado por muitos.',bad:'❌ DLL não é processo nem CPU; é biblioteca compartilhada.'},
+ u22:{ok:'✅ Isso! Stack guarda os rascunhos da função (LIFO).',bad:'❌ Heap é dinâmica; DLL é código. Locais = stack.'},
+ u23:{ok:'✅ Isso! Heap = malloc/free, qualquer ordem.',bad:'❌ Automática da função é a stack; código compartilhado é a DLL.'},
+ u31:{ok:'✅ Isso! Green threads = escalonadas pelo aplicativo.',bad:'❌ Pelo kernel são as kernel threads.'},
+ u32:{ok:'✅ Isso! O SO vê 1 thread só → não distribui em núcleos.',bad:'❌ Elas são LEVES para criar; o problema é o paralelismo.'},
+ u33:{ok:'✅ Isso! O SO escala kernel threads, inclusive em vários núcleos.',bad:'❌ Aplicativo gerencia green threads; compilador não escala.'},
+ u41:{ok:'✅ Isso! Leitura/escrita direta na região comum.',bad:'❌ Mensagens pelo kernel é o OUTRO modelo.'},
+ u42:{ok:'✅ Isso! O kernel media: sincroniza e protege, sem memória comum.',bad:'❌ Ela é mais LENTA (cópias); e usa o kernel, sim.'},
+ u43:{ok:'✅ Isso! Sem combinar acessos, vira race condition.',bad:'❌ Justamente por ser direta, exige sincronização.'},
+ u51:{ok:'✅ Isso! Loop “livre? livre?” queimando CPU.',bad:'❌ Dormir é o bloqueante; E/S é outra coisa.'},
+ u52:{ok:'✅ Isso! Dorme e o SO acorda — CPU livre para outros.',bad:'❌ Girar é o spinlock; terminar não é espera.'},
+ u53:{ok:'✅ Isso! Se a espera é curta, girar custa menos que trocar de contexto.',bad:'❌ Espera longa girando = desperdício; “nunca” ignora kernels multiprocessados.'},
+ u61:{ok:'✅ Isso! Alternância rápida com sensação de exclusividade.',bad:'❌ Um para sempre é monopólio; lote sem alternância não é time-sharing.'},
+ u62:{ok:'✅ Isso! Fatia de tempo por vez na CPU.',bad:'❌ Clock e memória são outros conceitos.'},
+ u63:{ok:'✅ Isso! O timer dispara e o SO troca — sem pedir licença.',bad:'❌ Ceder por vontade é cooperação; terminar não é preempção.'}
+};
+document.addEventListener('click',e=>{
+  const b=e.target.closest('.q'); if(!b) return;
+  const qq=b.closest('.qq'), fb=qq.querySelector('.fb'), ok=b.dataset.ok=='1';
+  b.classList.add(ok?'ok':'bad');
+  fb.textContent=ok?EXP[qq.id].ok:EXP[qq.id].bad;
+});
+// 01
+const CMP={
+ cri:['Criação','Processo: caro (copiar o “mundo” inteiro — fork). Thread: barato (compartilha o mundo).','Por isso um app abre dezenas de threads, mas poucos processos.'],
+ mem:['Memória','Processos: mundos separados (isolamento). Threads: mesmo código e dados, stacks próprias.','Compartilhar = cooperar rápido; separar = segurança.'],
+ com:['Comunicação','Entre processos: precisa de IPC (pipe, shm, mensagens). Entre threads: leitura/escrita direta na memória comum.','A facilidade das threads é também seu perigo (races).'],
+ tro:['Troca de contexto','Trocar processos = trocar tabelas de memória, caches etc. (caro). Trocar threads do mesmo processo = quase só registradores (barato).','Sistemas multithread ganham desempenho aqui.'],
+ fal:['Falha','Um processo ruim morre sozinho (aba do Chrome). Uma thread ruim pode corromper a memória de TODAS as irmãs e derrubar o processo.','Isolamento protege; compartilhamento expõe.']
+};
+function cmp(k){ document.getElementById('tout').innerHTML='<b>'+CMP[k][0]+':</b> '+CMP[k][1]+' <i>'+CMP[k][2]+'</i>'; }
+// 02
+let sn=0, hn=0;
+function pushS(){ if(sn<5){sn++; drawMem();} }
+function popS(){ if(sn>0){sn--; drawMem();} }
+function malH(){ hn++; drawMem(); }
+function drawMem(){
+ document.getElementById('stk').innerHTML=Array.from({length:sn},(_,i)=>'<span class="frame">func'+(i+1)+'</span>').join('')||'(vazia)';
+ document.getElementById('hp2').innerHTML=Array.from({length:hn},(_,i)=>'<span class="blk">bloco'+(i+1)+'</span>').join('')||'(vazia)';
+}
+function vdll(){
+ document.getElementById('dout').innerHTML='<span class="boxp">P1 (dados próprios)</span>↘<br><span class="boxp" style="background:#b9f6ca">📚 DLL — código ÚNICO compartilhado</span><br><span class="boxp">P2 (dados próprios)</span>↗<br><i>Cada processo tem seus DADOS, mas as INSTRUÇÕES da DLL existem uma vez só na memória.</i>';
+}
+// 03
+function gt(t){
+ document.getElementById('gout').innerHTML = t=='g'
+ ? '<span class="boxp">CPU 1: [P1 → T1⇄T2 (app alterna)]</span> <span class="boxp" style="background:#eee">CPU 2: ociosa 💤</span><br><i>O kernel vê UM processo só: as 2 threads nunca rodam ao mesmo tempo em núcleos diferentes.</i>'
+ : '<span class="boxp">CPU 1: T1</span> <span class="boxp">CPU 2: T2</span> <i>(SO escalando as duas AO MESMO TEMPO)</i><br><i>Kernel threads têm crachá próprio: paralelismo real em vários núcleos.</i>';
+}
+// 04
+function ipc(t){
+ document.getElementById('ipcout').innerHTML = t=='m'
+ ? '<span class="boxp">P1</span> ⇄ <span class="boxp" style="background:#b9f6ca">🧠 região compartilhada</span> ⇄ <span class="boxp">P2</span><br><i>Depois de configur
