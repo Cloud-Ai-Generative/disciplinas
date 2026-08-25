@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SO Interativo — Aula 8 (Unidade 3)</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:system-ui,sans-serif;background:#f4f7f6;margin:0;padding:18px;color:#1d1d1f}
+h1{font-size:1.25rem} h2{margin-top:0}
+nav{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.tab{border:2px solid #1d1d1f;background:#fff;border-radius:10px;padding:8px 12px;cursor:pointer;box-shadow:3px 3px 0 #dc2626;font-weight:600}
+.tab.active{background:#dc2626;color:#fff}
+.demo{display:none;background:#fff;border:2px solid #1d1d1f;border-radius:14px;padding:16px;box-shadow:5px 5px 0 #dc2626}
+.demo.active{display:block}
+button{border:2px solid #1d1d1f;border-radius:8px;background:#fff;padding:6px 10px;cursor:pointer;font-weight:600}
+button:hover{background:#fee2e2}
+details{margin:10px 0;border-radius:10px;padding:8px 12px;border:2px solid #1d1d1f}
+summary{cursor:pointer;font-weight:700}
+.info{background:#eaf4ff}.steps{background:#fff8dc}.links{background:#f2f2f2}.real{background:#eaffe8}.tool{background:#f5eaff}.quiz{background:#ffe8f0}
+.links a{color:#0a66c2;display:inline-block;margin:2px 12px 2px 0}
+.q{margin:2px}.q.ok{background:#b9f6ca}.q.bad{background:#ffb3b3}
+.fb{font-size:.85rem;background:#fff;border-radius:6px;padding:4px 8px;margin:4px 0}
+#out1,#out2,#out3,#out4,#out5,#out6{background:#fff;border:2px dashed #999;border-radius:8px;padding:10px;margin:8px 0;min-height:40px}
+.blok{display:inline-block;border:2px solid #1d1d1f;border-radius:8px;padding:8px 14px;margin:4px;cursor:pointer;font-weight:600;background:#fff}
+.blok.on{background:#2dd4a7}
+.rv{display:none;margin-left:6px}
+.instrucao{background:#fff3cd;border:2px solid #ffc107;border-radius:8px;padding:10px;margin:8px 0}
+.instrucao b{color:#856404}
+body.aposta .sig{display:none}
+body.aposta .sig.shown{display:inline}
+body.aposta .rv{display:inline-block}
+body.aposta .rv.off{display:none}
+#apBtn{box-shadow:3px 3px 0 #d4a017}
+</style>
+</head>
+<body>
+<h1>🔒 SO — Aula 8 (Unidade 3, págs. 29–41): segurança em sistemas de arquivos</h1>
+<button id="apBtn" onclick="aposta()">🎲 Modo aposta: OFF</button>
+<p>Mesma estrutura das aulas anteriores: 🌍 → 🔤 → 🎤 plano de testes → demo → 🧠 quiz (3 alternativas embaralhadas, cada uma com a própria explicação, tudo por extenso) → 🔗 Aprofundar. Com 🎲 ligado, a turma aposta antes de revelar.</p>
+
+<details class="tool"><summary>🧰 Glossário de ferramentas (leia uma vez!)</summary><ul>
+  <li><b>Criptografia:</b> transformar dados legíveis em ilegíveis para proteger — só quem tem a chave consegue ler de volta.</li>
+  <li><b>Hash:</b> "impressão digital" de um arquivo — um código único que muda se o arquivo for alterado.</li>
+  <li><b>Firewall:</b> "porteiro" que filtra o que entra e sai da rede.</li>
+  <li><b>Antimalware:</b> programa que detecta e remove vírus, ransomware e outras ameaças.</li>
+  <li><b>Backup:</b> cópia de segurança dos dados para recuperar em caso de perda.</li>
+</ul></details>
+
+<nav>
+  <button class="tab active" data-t="d1">01 Ameaças on-line × off-line</button>
+  <button class="tab" data-t="d2">02 Criptografia simétrica</button>
+  <button class="tab" data-t="d3">03 Criptografia assimétrica</button>
+  <button class="tab" data-t="d4">04 Funções Hash</button>
+  <button class="tab" data-t="d5">05 CIA + Não-repúdio + Autenticação</button>
+  <button class="tab" data-t="d6">06 Firewall, Antimalware, Backups</button>
+</nav>
+
+<!-- 01 -->
+<section id="d1" class="demo active">
+  <h2>01 — Ameaças on-line × off-line</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>On-line:</b> hacker tentando invadir seu computador pela internet agora mesmo.</li>
+    <li><b>Off-line:</b> alguém roubando seu HD do notebook enquanto você não está olhando.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Ameaça on-line:</b> ataque que acontece pela rede, em tempo real, enquanto o sistema está conectado.</li>
+    <li><b>Ameaça off-line:</b> ataque que acontece quando o atacante tem acesso físico ao dispositivo ou aos dados armazenados.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> jogo de classificar 6 ameaças como on-line ou off-line.</li>
+    <li><b>Teste 1 — classificar.</b> <i>Clicar:</i> em "🌐 On-line" ou " Off-line" para cada ameaça. <span class="sig"><i>Vê:</i> acerto/erro com o porquê. <i>Significa:</i> saber o tipo de ameaça ajuda a escolher a defesa certa — firewall para on-line, criptografia de disco para off-line.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b> INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Abaixo aparece uma <b>ameaça à segurança</b>.<br>
+    <b>Passo 2:</b> Clique em <b>🌐 On-line</b> (se acontece pela rede) ou <b> Off-line</b> (se envolve acesso físico/disco).<br>
+    <b>Passo 3:</b> Se acertar, avança. Se errar, tenta de novo.<br>
+    <b>Passo 4:</b> São 6 ameaças. Ao final, clique em "🔄 Jogar de novo" para refazer.<br><br>
+    <b>Dica:</b> on-line = pela rede em tempo real; off-line = acesso físico ou dados armazenados.
+  </div>
+
+  <div id="out1"></div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u11"><p>1) Ameaça on-line é aquela que…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! On-line = ataque pela rede, em tempo real.">acontece pela rede enquanto o sistema está conectado</button>
+      <button class="q" data-fb="❌ Acesso físico ao disco é ameaça off-line.">envolve acesso físico ao dispositivo">
+      <button class="q" data-fb="❌ Dados armazenados são alvo de ameaças off-line.">ataca dados armazenados em disco">
+      <p class="fb"></p></div>
+    <div class="qq" id="u12"><p>2) Ameaça off-line é aquela que…</p>
+      <button class="q" data-fb="❌ Ataque pela rede em tempo real é on-line.">acontece pela rede em tempo real</button>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Off-line = acesso físico ou dados armazenados.">envolve acesso físico ao dispositivo ou dados armazenados</button>
+      <button class="q" data-fb="❌ Tentativa de invasão remota é on-line.">é uma tentativa de invasão remota">
+      <p class="fb"></p></div>
+    <div class="qq" id="u13"><p>3) Um hacker tentando invadir seu computador pela internet é…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Invasão pela rede em tempo real = on-line.">ameaça on-line</button>
+      <button class="q" data-fb="❌ Off-line seria se ele roubasse seu HD fisicamente.">ameaça off-line</button>
+      <button class="q" data-fb="❌ Não é inofensivo — é uma ameaça real.">inofensivo</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Seguran%C3%A7a_da_informa%C3%A7%C3%A3o">Segurança da informação — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Amea%C3%A7a_cibern%C3%A9tica">Ameaça cibernética — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 02 -->
+<section id="d2" class="demo">
+  <h2>02 — Criptografia simétrica</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Cadeado com uma chave:</b> você e seu amigo têm a MESMA chave — um tranca, o outro destranca. Se alguém roubar a chave, lê tudo.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Criptografia simétrica:</b> usa a MESMA chave para criptografar e descriptografar. Rápida, mas exige que ambos tenham a chave em segredo.</li>
+    <li><b>Chave:</b> sequência secreta que transforma o texto legível em ilegível e vice-versa.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> simulação de criptografia simétrica com uma chave única.</li>
+    <li><b>Teste 1 — criptografar.</b> <i>Clicar:</i> em "Criptografar" para ver o texto virar código. <span class="sig"><i>Vê:</i> o texto legível vira caracteres estranhos. <i>Significa:</i> a chave única transforma o conteúdo — só quem tem a mesma chave consegue ler de volta.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — descriptografar.</b> <i>Clicar:</i> em "Descriptografar" para voltar ao original. <span class="sig"><i>Vê:</i> o código vira texto legível de novo. <i>Significa:</i> a mesma chave que trancou, destranca — por isso é "simétrica" (igual dos dois lados).</span><button class="rv" onclick="rev(this)"> revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Digite uma mensagem no campo de texto.<br>
+    <b>Passo 2:</b> Clique em "🔒 Criptografar" para ver a mensagem virar código.<br>
+    <b>Passo 3:</b> Clique em "🔓 Descriptografar" para voltar ao original.<br>
+    <b>Passo 4:</b> Observe: a mesma "chave" faz os dois processos.<br><br>
+    <b>Dica:</b> criptografia simétrica = uma chave única para trancar e destrancar.
+  </div>
+
+  <div>
+    <input type="text" id="msgSim" placeholder="Digite sua mensagem aqui..." style="width:60%;padding:6px;border:2px solid #1d1d1f;border-radius:8px">
+  </div>
+  <div style="margin:10px 0">
+    <button onclick="criptSim()">🔒 Criptografar</button>
+    <button onclick="descriptSim()">🔓 Descriptografar</button>
+    <button onclick="resetSim()">🔄 Limpar</button>
+  </div>
+  <div id="out2">Digite uma mensagem e clique em "Criptografar" para ver a criptografia simétrica em ação.</div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u21"><p>1) Criptografia simétrica usa…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Uma única chave para criptografar e descriptografar.">uma única chave para criptografar e descriptografar</button>
+      <button class="q" data-fb="❌ Duas chaves diferentes é criptografia assimétrica.">duas chaves diferentes">
+      <button class="q" data-fb="❌ Sem chave não há criptografia.">nenhuma chave">
+      <p class="fb"></p></div>
+    <div class="qq" id="u22"><p>2) A principal vantagem da criptografia simétrica é…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Uma chave só = processo mais rápido.">ser mais rápida que a assimétrica</button>
+      <button class="q" data-fb="❌ Na verdade, distribuir a chave com segurança é o desafio.">ter distribuição de chave mais fácil">
+      <button class="q" data-fb="❌ Não é mais segura — é mais rápida.">ser mais segura que a assimétrica">
+      <p class="fb"></p></div>
+    <div class="qq" id="u23"><p>3) O principal problema da criptografia simétrica é…</p>
+      <button class="q" data-fb="❌ Ela é rápida, não lenta.">ser muito lenta</button>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Como compartilhar a chave secreta com segurança?">distribuir a chave de forma segura entre as partes</button>
+      <button class="q" data-fb="❌ Usa uma chave só, não várias.">usar muitas chaves diferentes">
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Criptografia_sim%C3%A9trica">Criptografia simétrica — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Criptografia">Criptografia — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 03 -->
+<section id="d3" class="demo">
+  <h2>03 — Criptografia assimétrica</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Caixa de correio:</b> qualquer um pode depositar carta (chave pública), mas só você tem a chave para abrir e ler (chave privada).</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Criptografia assimétrica:</b> usa DUAS chaves: uma pública (para criptografar) e uma privada (para descriptografar).</li>
+    <li><b>Chave pública:</b> pode ser compartilhada com todos — usada para criptografar.</li>
+    <li><b>Chave privada:</b> fica só com o dono — usada para descriptografar.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> simulação de criptografia assimétrica com par de chaves.</li>
+    <li><b>Teste 1 — criptografar com chave pública.</b> <i>Clicar:</i> em "Criptografar (chave pública)". <span class="sig"><i>Vê:</i> o texto vira código. <i>Significa:</i> qualquer um pode criptografar usando a chave pública — como depositar carta na caixa de correio.</span><button class="rv" onclick="rev(this)"> revelar</button></li>
+    <li><b>Teste 2 — descriptografar com chave privada.</b> <i>Clicar:</i> em "Descriptografar (chave privada)". <span class="sig"><i>Vê:</i> o código volta ao texto original. <i>Significa:</i> só o dono da chave privada consegue ler — como só você abre sua caixa de correio.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Digite uma mensagem no campo de texto.<br>
+    <b>Passo 2:</b> Clique em "🔒 Criptografar (chave pública)" para ver a mensagem virar código.<br>
+    <b>Passo 3:</b> Clique em " Descriptografar (chave privada)" para voltar ao original.<br>
+    <b>Passo 4:</b> Observe: chaves diferentes para trancar e destrancar.<br><br>
+    <b>Dica:</b> criptografia assimétrica = chave pública (trancar) + chave privada (destrancar).
+  </div>
+
+  <div>
+    <input type="text" id="msgAssim" placeholder="Digite sua mensagem aqui..." style="width:60%;padding:6px;border:2px solid #1d1d1f;border-radius:8px">
+  </div>
+  <div style="margin:10px 0">
+    <button onclick="criptAssim()">🔒 Criptografar (chave pública)</button>
+    <button onclick="descriptAssim()">🔓 Descriptografar (chave privada)</button>
+    <button onclick="resetAssim()">🔄 Limpar</button>
+  </div>
+  <div id="out3">Digite uma mensagem e clique em "Criptografar (chave pública)" para ver a criptografia assimétrica em ação.</div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u31"><p>1) Criptografia assimétrica usa…</p>
+      <button class="q" data-fb="❌ Uma chave só é criptografia simétrica.">uma única chave</button>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Chave pública para criptografar, chave privada para descriptografar.">duas chaves: uma pública e uma privada</button>
+      <button class="q" data-fb="❌ Sem chaves não há criptografia.">nenhuma chave</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u32"><p>2) A chave pública serve para…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Qualquer um usa a chave pública para criptografar.">criptografar a mensagem</button>
+      <button class="q" data-fb="❌ Descriptografar é função da chave privada.">descriptografar a mensagem</button>
+      <button class="q" data-fb="❌ A chave pública não apaga nada.">apagar a mensagem</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u33"><p>3) A chave privada deve…</p>
+      <button class="q" data-fb="❌ Se compartilhar, perde a segurança.">ser compartilhada com todos</button>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Só o dono deve ter acesso à chave privada.">ficar em segredo com o dono</button>
+      <button class="q" data-fb="❌ Publicar a chave privada destrói a segurança.">ser publicada na internet</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Criptografia_assim%C3%A9trica">Criptografia assimétrica — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Criptografia_de_chave_p%C3%BAblica">Criptografia de chave pública — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 04 -->
+<section id="d4" class="demo">
+  <h2>04 — Funções Hash</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Impressão digital:</b> cada pessoa tem uma única — se mudar algo, muda a impressão. Hash é a "impressão digital" do arquivo.</li>
+    <li><b>Lacre de envelope:</b> se o lacre está rompido, alguém mexeu no conteúdo.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Função Hash:</b> transforma qualquer arquivo em um código fixo (hash) — se o arquivo mudar, o hash muda completamente.</li>
+    <li><b>Integridade:</b> garantia de que o arquivo não foi alterado — verificada comparando hashes.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> simulação de função hash com verificação de integridade.</li>
+    <li><b>Teste 1 — gerar hash.</b> <i>Clicar:</i> em "Gerar Hash" para ver o código único do texto. <span class="sig"><i>Vê:</i> um código estranho aparece. <i>Significa:</i> esse código é único para este texto — como uma impressão digital.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — alterar e verificar.</b> <i>Clicar:</i> mude uma letra do texto e clique em "Verificar Integridade". <span class="sig"><i>Vê:</i> o hash mudou completamente. <i>Significa:</i> qualquer alteração, por menor que seja, muda o hash — por isso detectamos adulterações.</span><button class="rv" onclick="rev(this)"> revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Digite uma mensagem no campo de texto.<br>
+    <b>Passo 2:</b> Clique em "🔐 Gerar Hash" para ver o código único.<br>
+    <b>Passo 3:</b> Anote o hash gerado.<br>
+    <b>Passo 4:</b> Mude UMA letra da mensagem e clique em "🔐 Gerar Hash" de novo.<br>
+    <b>Passo 5:</b> Compare: o hash mudou completamente!<br><br>
+    <b>Dica:</b> hash = impressão digital do arquivo; qualquer alteração muda o hash.
+  </div>
+
+  <div>
+    <input type="text" id="msgHash" placeholder="Digite uma mensagem..." style="width:60%;padding:6px;border:2px solid #1d1d1f;border-radius:8px">
+  </div>
+  <div style="margin:10px 0">
+    <button onclick="gerarHash()">🔐 Gerar Hash</button>
+    <button onclick="resetHash()">🔄 Limpar</button>
+  </div>
+  <div id="out4">Digite uma mensagem e clique em "Gerar Hash" para ver a função hash em ação.</div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u41"><p>1) Função Hash serve para…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Hash = impressão digital para verificar integridade.">verificar se um arquivo foi alterado</button>
+      <button class="q" data-fb="❌ Hash não criptografa — só gera código único.">criptografar o arquivo">
+      <button class="q" data-fb="❌ Hash não comprime — gera código de tamanho fixo.">comprimir o arquivo">
+      <p class="fb"></p></div>
+    <div class="qq" id="u42"><p>2) Se um arquivo é alterado, o hash…</p>
+      <button class="q" data-fb="❌ Hash muda completamente com qualquer alteração.">permanece o mesmo</button>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Qualquer alteração muda o hash completamente.">muda completamente</button>
+      <button class="q" data-fb="❌ Hash não desaparece — muda.">desaparece</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u43"><p>3) Hash é comparável a…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Cada arquivo tem seu hash único, como impressão digital.">impressão digital do arquivo</button>
+      <button class="q" data-fb="❌ Chave criptográfica é diferente de hash.">chave criptográfica</button>
+      <button class="q" data-fb="❌ Backup é cópia, não hash.">cópia de segurança</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Fun%C3%A7%C3%A3o_hash">Função hash — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/SHA-2">SHA-2 (família de funções hash) — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 05 -->
+<section id="d5" class="demo">
+  <h2>05 — CIA + Não-repúdio + Autenticação</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Confidencialidade:</b> carta em envelope fechado — só o destinatário lê.</li>
+    <li><b>Integridade:</b> lacre no envelope — se romperam, você sabe.</li>
+    <li><b>Disponibilidade:</b> correio funcionando todo dia — você recebe cartas quando precisa.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Confidencialidade:</b> só pessoas autorizadas podem acessar os dados.</li>
+    <li><b>Integridade:</b> os dados não foram alterados indevidamente.</li>
+    <li><b>Disponibilidade:</b> os dados estão acessíveis quando necessários.</li>
+    <li><b>Não-repúdio:</b> quem enviou não pode negar que enviou.</li>
+    <li><b>Autenticação:</b> verificar a identidade de quem está acessando.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> jogo de classificar 6 situações nos 5 princípios de segurança.</li>
+    <li><b>Teste 1 — classificar.</b> <i>Clicar:</i> no princípio correto para cada situação. <span class="sig"><i>Vê:</i> acerto/erro com o porquê. <i>Significa:</i> os 5 princípios formam a base da segurança — cada mecanismo de proteção defende um ou mais princípios.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Abaixo aparece uma <b>situação de segurança</b>.<br>
+    <b>Passo 2:</b> Clique no <b>princípio</b> que está sendo protegido (Confidencialidade, Integridade, Disponibilidade, Não-repúdio ou Autenticação).<br>
+    <b>Passo 3:</b> Se acertar, avança. Se errar, tenta de novo.<br>
+    <b>Passo 4:</b> São 6 situações. Ao final, clique em "🔄 Jogar de novo".<br><br>
+    <b>Dica:</b> confidencialidade = segredo; integridade = não alterado; disponibilidade = acessível; não-repúdio = não pode negar; autenticação = verificar identidade.
+  </div>
+
+  <div id="out5"></div>
+
+  <details class="quiz"><summary> Quiz</summary>
+    <div class="qq" id="u51"><p>1) Confidencialidade significa…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Só autorizados podem acessar.">apenas pessoas autorizadas podem acessar os dados</button>
+      <button class="q" data-fb="❌ Dados disponíveis para todos é o oposto de confidencialidade.">os dados estão disponíveis para todos</button>
+      <button class="q" data-fb="❌ Não alterar é integridade, não confidencialidade.">os dados não podem ser alterados</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u52"><p>2) Não-repúdio significa…</p>
+      <button class="q" data-fb="❌ Dados disponíveis é disponibilidade.">os dados estão sempre disponíveis</button>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Quem agiu não pode negar que agiu.">quem enviou uma mensagem não pode negar o envio</button>
+      <button class="q" data-fb="❌ Verificar identidade é autenticação.">verificar a identidade do usuário</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u53"><p>3) Autenticação serve para…</p>
+      <button class="q" data-fb="❌ Criptografar dados é confidencialidade.">criptografar os dados</button>
+      <button class="q" data-fb="❌ Fazer backup é disponibilidade.">fazer cópia de segurança dos dados</button>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Autenticação = verificar quem você diz ser.">verificar a identidade de quem está acessando</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Seguran%C3%A7a_da_informa%C3%A7%C3%A3o">Segurança da informação — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Triade_CID">Tríade CID (Confidencialidade, Integridade, Disponibilidade) — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 06 -->
+<section id="d6" class="demo">
+  <h2>06 — Firewall, Antimalware, Backups e Políticas de Segurança</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Firewall:</b> porteiro do prédio — decide quem entra e quem sai.</li>
+    <li><b>Antimalware:</b> segurança que revista as pessoas procurando armas.</li>
+    <li><b>Backup:</b> cópia das chaves do carro — se perder a original, tem reserva.</li>
+    <li><b>Políticas de segurança:</b> regras do condomínio — o que pode e o que não pode.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Firewall:</b> sistema que filtra o tráfego de rede, bloqueando acessos não autorizados.</li>
+    <li><b>Antimalware:</b> software que detecta, previne e remove malware (vírus, ransomware, spyware).</li>
+    <li><b>Backup:</b> cópia de segurança dos dados para recuperação em caso de perda.</li>
+    <li><b>Políticas de segurança:</b> conjunto de regras que definem como a segurança deve ser implementada e mantida.</li>
+  </ul></details>
+
+  <details class="steps"><summary> Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> jogo de classificar 6 situações nos 4 mecanismos de proteção.</li>
+    <li><b>Teste 1 — classificar.</b> <i>Clicar:</i> no mecanismo correto para cada situação. <span class="sig"><i>Vê:</i> acerto/erro com o porquê. <i>Significa:</i> cada mecanismo defende contra tipos diferentes de ameaça — usar todos juntos cria defesa em camadas.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Abaixo aparece uma <b>situação de proteção</b>.<br>
+    <b>Passo 2:</b> Clique no <b>mecanismo</b> correto (Firewall, Antimalware, Backup ou Políticas de Segurança).<br>
+    <b>Passo 3:</b> Se acertar, avança. Se errar, tenta de novo.<br>
+    <b>Passo 4:</b> São 6 situações. Ao final, clique em "🔄 Jogar de novo".<br><br>
+    <b>Dica:</b> firewall = filtra rede; antimalware = remove vírus; backup = cópia de segurança; políticas = regras.
+  </div>
+
+  <div id="out6"></div>
+
+  <details class="info"><summary>️ Mapa da aula (visão geral)</summary>
+    <p><b>Ameaças</b> (on-line × off-line) → <b>Criptografia</b> (simétrica × assimétrica) → <b>Hash</b> (integridade) → <b>Princípios</b> (CIA + não-repúdio + autenticação) → <b>Mecanismos</b> (firewall, antimalware, backup, políticas).</p>
+  </details>
+  <details class="info"><summary>📝 Cola rápida (uma linha por termo)</summary><ul>
+    <li><b>On-line:</b> ataque pela rede; <b>off-line:</b> acesso físico.</li>
+    <li><b>Simétrica:</b> uma chave para trancar e destrancar.</li>
+    <li><b>Assimétrica:</b> chave pública (trancar) + chave privada (destrancar).</li>
+    <li><b>Hash:</b> impressão digital do arquivo — muda se o arquivo mudar.</li>
+    <li><b>CIA:</b> confidencialidade, integridade, disponibilidade.</li>
+    <li><b>Não-repúdio:</b> não pode negar que agiu.</li>
+    <li><b>Autenticação:</b> verificar identidade.</li>
+    <li><b>Firewall:</b> filtra tráfego de rede.</li>
+    <li><b>Antimalware:</b> detecta e remove malware.</li>
+    <li><b>Backup:</b> cópia de segurança.</li>
+    <li><b>Políticas:</b> regras de segurança.</li>
+  </ul></details>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u61"><p>1) Firewall serve para…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Firewall filtra o que entra e sai da rede.">filtrar o tráfego de rede e bloquear acessos não autorizados</button>
+      <button class="q" data-fb="❌ Remover vírus é função do antimalware.">remover vírus do computador</button>
+      <button class="q" data-fb="❌ Fazer cópia de dados é backup.">fazer cópia de segurança dos dados</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u62"><p>2) Antimalware serve para…</p>
+      <button class="q" data-fb="❌ Filtrar rede é firewall.">filtrar o tráfego de rede</button>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Antimalware detecta e remove malware.">detectar, prevenir e remover malware</button>
+      <button class="q" data-fb="❌ Definir regras é política de segurança.">definir regras de segurança da empresa</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u63"><p>3) Backup serve para…</p>
+      <button class="q" data-fb="❌ Detectar vírus é antimalware.">detectar vírus no sistema</button>
+      <button class="q" data-fb="❌ Bloquear acessos é firewall.">bloquear acessos não autorizados</button>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Backup = cópia de segurança para recuperar dados perdidos.">fazer cópia de segurança dos dados para recuperação</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Firewall">Firewall — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Antiv%C3%ADrus">Antivírus — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Backup">Backup — Wikipédia</a>
+  </details>
+</section>
+
+<script>
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.demo').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); document.getElementById(b.dataset.t).classList.add('active');
+  if(b.dataset.t=='d1') draw1();
+  if(b.dataset.t=='d5') draw5();
+  if(b.dataset.t=='d6') draw6();
+});
+function aposta(){ document.body.classList.toggle('aposta');
+  document.getElementById('apBtn').textContent='🎲 Modo aposta: '+(document.body.classList.contains('aposta')?'ON':'OFF'); }
+function rev(b){ b.previousElementSibling.classList.add('shown'); b.classList.add('off'); }
+document.querySelectorAll('.qq').forEach(qq=>{
+ const btns=[...qq.querySelectorAll('button.q')];
+ const fb=qq.querySelector('.fb');
+ for(let i=btns.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [btns[i],btns[j]]=[btns[j],btns[i]]; }
+ btns.forEach(b=>qq.insertBefore(b,fb));
+});
+document.addEventListener('click',e=>{
+  const b=e.target.closest('.q'); if(!b) return;
+  const fb=b.closest('.qq').querySelector('.fb');
+  b.classList.add(b.dataset.ok=='1'?'ok':'bad');
+  fb.textContent=b.dataset.fb||'';
+});
+
+// 01 - AMEAÇAS ON-LINE × OFF-LINE
+const S1=[
+ {t:'Hacker tentando invadir seu computador pela internet',ok:'on',fb:'✅ Invasão pela rede em tempo real = ameaça on-line.'},
+ {t:'Alguém roubando o HD do seu notebook',ok:'off',fb:'✅ Acesso físico ao dispositivo = ameaça off-line.'},
+ {t:'Vírus sendo enviado por e-mail',ok:'on',fb:'✅ Vírus pela rede = ameaça on-line.'},
+ {t:'Pessoa lendo documentos do seu computador desligado',ok:'off',fb:'✅ Acesso físico aos dados armazenados = off-line.'},
+ {t:'Ataque de negação de serviço (DDoS) contra seu servidor',ok:'on',fb:'✅ Ataque pela rede para derrubar serviço = on-line.'},
+ {t:'Alguém copiando arquivos do seu pendrive perdido',ok:'off',fb:'✅ Acesso físico a dispositivo de armazenamento = off-line.'}
+];
+let i1=0, s1=0;
+function draw1(){
+ if(i1>=S1.length){
+  document.getElementById('out1').innerHTML='<b> Fim do jogo!</b> Você acertou '+s1+' de '+S1.length+' ameaças.<br><button onclick="i1=0;s1=0;draw1()" style="margin-top:8px;font-size:1rem">🔄 Jogar de novo</button>';
+  return;
+ }
+ const s=S1[i1];
+ document.getElementById('out1').innerHTML='<b>Ameaça '+(i1+1)+' de '+S1.length+':</b> "'+s.t+'"<br>É on-line ou off-line?<br>'+
+  '<button onclick="pick1(\'on\')">🌐 On-line</button><button onclick="pick1(\'off\')"> Off-line</button>';
+}
+function pick1(v){
+ const s=S1[i1];
+ if(v===s.ok){
+  s1++;
+  document.getElementById('out1').innerHTML=s.fb+'<br><button onclick="i1++;draw1()" style="margin-top:6px">próxima ▶</button>';
+ } else {
+  document.getElementById('out1').innerHTML='❌ Tente de novo. Pense: é pela REDE em tempo real (on-line) ou envolve ACESSO FÍSICO/dados armazenados (off-line)?<br><b>Ameaça '+(i1+1)+' de '+S1.length+':</b> "'+s.t+'"<br><button onclick="pick1(\'on\')">🌐 On-line</button><button onclick="pick1(\'off\')">💾 Off-line</button>';
+ }
+}
+
+// 02 - CRIPTOGRAFIA SIMÉTRICA
+function criptSim(){
+ const msg=document.getElementById('msgSim').value;
+ if(!msg){ document.getElementById('out2').innerHTML='⚠️ Digite uma mensagem primeiro!'; return; }
+ const cript=msg.split('').map(c=>String.fromCharCode(c.charCodeAt(0)+3)).join('');
+ document.getElementById('out2').innerHTML='<b>Texto original:</b> '+msg+'<br><b>Texto criptografado:</b> '+cript+'<br><i>A mesma chave que criptografou vai descriptografar.</i>';
+}
+function descriptSim(){
+ const msg=document.getElementById('msgSim').value;
+ if(!msg){ document.getElementById('out2').innerHTML='⚠️ Digite uma mensagem primeiro!'; return; }
+ const cript=msg.split('').map(c=>String.fromCharCode(c.charCodeAt(0)+3)).join('');
+ const descript=cript.split('').map(c=>String.fromCharCode(c.charCodeAt(0)-3)).join('');
+ document.getElementById('out2').innerHTML='<b>Texto criptografado:</b> '+cript+'<br><b>Texto descriptografado:</b> '+descript+'<br><i>A mesma chave fez os dois processos — por isso é "simétrica".</i>';
+}
+function resetSim(){
+ document.getElementById('msgSim').value='';
+ document.getElementById('out2').textContent='Digite uma mensagem e clique em "Criptografar" para ver a criptografia simétrica em ação.';
+}
+
+// 03 - CRIPTOGRAFIA ASSIMÉTRICA
+function criptAssim(){
+ const msg=document.getElementById('msgAssim').value;
+ if(!msg){ document.getElementById('out3').innerHTML='⚠️ Digite uma mensagem primeiro!'; return; }
+ const cript=msg.split('').map(c=>String.fromCharCode(c.charCodeAt(0)+5)).join('');
+ document.getElementById('out3').innerHTML='<b>Texto original:</b> '+msg+'<br><b>Texto criptografado (chave pública):</b> '+cript+'<br><i>Agora só a chave privada consegue descriptografar.</i>';
+}
+function descriptAssim(){
+ const msg=document.getElementById('msgAssim').value;
+ if(!msg){ document.getElementById('out3').innerHTML='⚠️ Digite uma mensagem primeiro!'; return; }
+ const cript=msg.split('').map(c=>String.fromCharCode(c.charCodeAt(0)+5)).join('');
+ const descript=cript.split('').map(c=>String.fromCharCode(c.charCodeAt(0)-5)).join('');
+ document.getElementById('out3').innerHTML='<b>Texto criptografado:</b> '+cript+'<br><b>Texto descriptografado (chave privada):</b> '+descript+'<br><i>Chaves diferentes: pública (trancar) + privada (destrancar) — por isso é "assimétrica".</i>';
+}
+function resetAssim(){
+ document.getElementById('msgAssim').value='';
+ document.getElementById('out3').textContent='Digite uma mensagem e clique em "Criptografar (chave pública)" para ver a criptografia assimétrica em ação.';
+}
+
+// 04 - FUNÇÃO HASH
+function gerarHash(){
+ const msg=document.getElementById('msgHash').value;
+ if(!msg){ document.getElementById('out4').innerHTML='⚠️ Digite uma mensagem primeiro!'; return; }
+ let hash=0;
+ for(let i=0;i<msg.length;i++){ hash=((hash<<5)-hash)+msg.charCodeAt(i); hash|=0; }
+ const hashHex=Math.abs(hash).toString(16).padStart(8,'0')+'a3f9c2e1';
+ document.getElementById('out4').innerHTML='<b>Mensagem:</b> '+msg+'<br><b>Hash gerado:</b> '+hashHex+'<br><i>Este hash é único para esta mensagem. Mude UMA letra e gere de novo — o hash mudará completamente!</i>';
+}
+function resetHash(){
+ document.getElementById('msgHash').value='';
+ document.getElementById('out4').textContent='Digite uma mensagem e clique em "Gerar Hash" para ver a função hash em ação.';
+}
+
+// 05 - CIA + NÃO-REPÚDIO + AUTENTICAÇÃO
+const S5=[
+ {t:'Sistema exige senha para acessar documentos confidenciais',ok:'Confidencialidade',fb:'✅ Exigir senha para acessar = confidencialidade (só autorizados veem).'},
+ {t:'Hash do arquivo é verificado antes de abrir',ok:'Integridade',fb:'✅ Verificar hash = garantir que o arquivo não foi alterado (integridade).'},
+ {t:'Servidor funciona 24 horas por dia, 7 dias por semana',ok:'Disponibilidade',fb:'✅ Funcionar sempre que necessário = disponibilidade.'},
+ {t:'Assinatura digital em contrato eletrônico',ok:'Não-repúdio',fb:'✅ Assinatura digital = quem assinou não pode negar (não-repúdio).'},
+ {t:'Sistema pede biometria (digital) para entrar',ok:'Autenticação',fb:'✅ Biometria verifica quem você é = autenticação.'},
+ {t:'Dados são criptografados antes de enviar pela internet',ok:'Confidencialidade',fb:'✅ Criptografar = proteger o conteúdo de quem não deve ver (confidencialidade).'}
+];
+let i5=0, s5=0;
+function draw5(){
+ if(i5>=S5.length){
+  document.getElementById('out5').innerHTML='<b>🏁 Fim do jogo!</b> Você acertou '+s5+' de '+S5.length+' situações.<br><button onclick="i5=0;s5=0;draw5()" style="margin-top:8px;font-size:1rem">🔄 Jogar de novo</button>';
+  return;
+ }
+ const s=S5[i5];
+ document.getElementById('out5').innerHTML='<b>Situação '+(i5+1)+' de '+S5.length+':</b> "'+s.t+'"<br>Qual princípio de segurança está sendo protegido?<br>'+
+  ['Confidencialidade','Integridade','Disponibilidade','Não-repúdio','Autenticação'].map((o,i)=>'<button onclick="pick5(\''+o+'\')">'+o+'</button>').join(' ');
+}
+function pick5(v){
+ const s=S5[i5];
+ if(v===s.ok){
+  s5++;
+  document.getElementById('out5').innerHTML=s.fb+'<br><button onclick="i5++;draw5()" style="margin-top:6px">próxima ▶</button>';
+ } else {
+  document.getElementById('out5').innerHTML='❌ Tente de novo. Pense: é segredo (confidencialidade), não alterado (integridade), acessível (disponibilidade), não pode negar (não-repúdio) ou verificar identidade (autenticação)?<br><b>Situação '+(i5+1)+' de '+S5.length+':</b> "'+s.t+'"<br>'+
+  ['Confidencialidade','Integridade','Disponibilidade','Não-repúdio','Autenticação'].map((o,i)=>'<button onclick="pick5(\''+o+'\')">'+o+'</button>').join(' ');
+ }
+}
+
+// 06 - FIREWALL, ANTIMALWARE, BACKUP, POLÍTICAS
+const S6=[
+ {t:'Sistema bloqueia tentativas de acesso não autorizado à rede',ok:'Firewall',fb:'✅ Bloquear acessos não autorizados à rede = firewall.'},
+ {t:'Programa detecta e remove vírus do computador',ok:'Antimalware',fb:'✅ Detectar e remover vírus = antimalware.'},
+ {t:'Cópia dos dados é armazenada em local seguro',ok:'Backup',fb:'✅ Cópia de segurança dos dados = backup.'},
+ {t:'Regras definem quem pode acessar quais sistemas',ok:'Políticas de Segurança',fb:'✅ Regras de acesso = políticas de segurança.'},
+ {t:'Sistema filtra pacotes de dados que entram e saem da rede',ok:'Firewall',fb:'✅ Filtrar pacotes de rede = firewall.'},
+ {t:'Cópias dos arquivos são feitas diariamente para recuperação em caso de desastre',ok:'Backup',fb:'✅ Cópias diárias para recuperação = backup.'}
+];
+let i6=0, s6=0;
+function draw6(){
+ if(i6>=S6.length){
+  document.getElementById('out6').innerHTML='<b>🏁 Fim do jogo!</b> Você acertou '+s6+' de '+S6.length+' situações.<br><button onclick="i6=0;s6=0;draw6()" style="margin-top:8px;font-size:1rem">🔄 Jogar de novo</button>';
+  return;
+ }
+ const s=S6[i6];
+ document.getElementById('out6').innerHTML='<b>Situação '+(i6+1)+' de '+S6.length+':</b> "'+s.t+'"<br>Qual mecanismo de proteção é este?<br>'+
+  ['Firewall','Antimalware','Backup','Políticas de Segurança'].map((o,i)=>'<button onclick="pick6(\''+o+'\')">'+o+'</button>').join(' ');
+}
+function pick6(v){
+ const s=S6[i6];
+ if(v===s.ok){
+  s6++;
+  document.getElementById('out6').innerHTML=s.fb+'<br><button onclick="i6++;draw6()" style="margin-top:6px">próxima ▶</button>';
+ } else {
+  document.getElementById('out6').innerHTML='❌ Tente de novo. Pense: filtra rede (firewall), remove vírus (antimalware), cópia de segurança (backup) ou regras (políticas)?<br><b>Situação '+(i6+1)+' de '+S6.length+':</b> "'+s.t+'"<br>'+
+  ['Firewall','Antimalware','Backup','Políticas de Segurança'].map((o,i)=>'<button onclick="pick6(\''+o+'\')">'+o+'</button>').join(' ');
+ }
+}
+
+draw1(); draw5(); draw6();
+</script>
+</body>
+</html>
