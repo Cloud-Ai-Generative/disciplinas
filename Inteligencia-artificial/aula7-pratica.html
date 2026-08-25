@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IA Interativo — Aula 7 (Unidade 3)</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:system-ui,sans-serif;background:#f4f7f6;margin:0;padding:18px;color:#1d1d1f}
+h1{font-size:1.25rem} h2{margin-top:0}
+nav{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.tab{border:2px solid #1d1d1f;background:#fff;border-radius:10px;padding:8px 12px;cursor:pointer;box-shadow:3px 3px 0 #8b5cf6;font-weight:600}
+.tab.active{background:#8b5cf6;color:#fff}
+.demo{display:none;background:#fff;border:2px solid #1d1d1f;border-radius:14px;padding:16px;box-shadow:5px 5px 0 #8b5cf6}
+.demo.active{display:block}
+button{border:2px solid #1d1d1f;border-radius:8px;background:#fff;padding:6px 10px;cursor:pointer;font-weight:600}
+button:hover{background:#f5f3ff}
+details{margin:10px 0;border-radius:10px;padding:8px 12px;border:2px solid #1d1d1f}
+summary{cursor:pointer;font-weight:700}
+.info{background:#eaf4ff}.steps{background:#fff8dc}.links{background:#f2f2f2}.real{background:#eaffe8}.tool{background:#f5eaff}.quiz{background:#ffe8f0}
+.links a{color:#0a66c2;display:inline-block;margin:2px 12px 2px 0}
+.q{margin:2px}.q.ok{background:#b9f6ca}.q.bad{background:#ffb3b3}
+.fb{font-size:.85rem;background:#fff;border-radius:6px;padding:4px 8px;margin:4px 0}
+canvas{border:2px solid #1d1d1f;border-radius:10px;background:#fff;margin:6px 0;cursor:crosshair}
+#out1,#out2,#out3,#out4,#out5,#out6{background:#fff;border:2px dashed #999;border-radius:8px;padding:10px;margin:8px 0;min-height:40px}
+.rv{display:none;margin-left:6px}
+.instrucao{background:#fff3cd;border:2px solid #ffc107;border-radius:8px;padding:10px;margin:8px 0}
+.instrucao b{color:#856404}
+body.aposta .sig{display:none}
+body.aposta .sig.shown{display:inline}
+body.aposta .rv{display:inline-block}
+body.aposta .rv.off{display:none}
+#apBtn{box-shadow:3px 3px 0 #d4a017}
+</style>
+</head>
+<body>
+<h1>🤖 IA — Aula 7 (Unidade 3, págs. 28–45): modelos probabilísticos e reforço</h1>
+<button id="apBtn" onclick="aposta()"> Modo aposta: OFF</button>
+<p>Mesma estrutura das aulas anteriores: 🌍 →  → 🎤 plano de testes → demo → 🧠 quiz (3 alternativas embaralhadas, cada uma com a própria explicação, tudo por extenso) → 🔗 Aprofundar. Com  ligado, a turma aposta antes de revelar.</p>
+
+<details class="tool"><summary>🧰 Glossário de ferramentas (leia uma vez!)</summary><ul>
+  <li><b>Aprendizado não supervisionado:</b> algoritmo que encontra padrões em dados <b>sem rótulos</b> — ninguém disse "isto é gato, isto é cão", ele descobre sozinho.</li>
+  <li><b>Cluster (agrupamento):</b> grupo de pontos parecidos entre si e diferentes dos outros grupos.</li>
+  <li><b>Centróide:</b> o "ponto médio" de um cluster — o representante do grupo.</li>
+  <li><b>Distância euclidiana:</b> a "régua reta" entre dois pontos: √((x₁−x₂)² + (y₁−y₂)²).</li>
+  <li><b>Aprendizado por reforço:</b> agente aprende agindo no ambiente e recebendo recompensas ou punições.</li>
+  <li><b>Python (scikit-learn):</b> biblioteca com k-means, EM e métricas de validação prontos.</li>
+</ul></details>
+
+<nav>
+  <button class="tab active" data-t="d1">01 Dados com e sem rótulos</button>
+  <button class="tab" data-t="d2">02 Expectation-Maximization (EM)</button>
+  <button class="tab" data-t="d3">03 k-means</button>
+  <button class="tab" data-t="d4">04 Pré, processamento e validação</button>
+  <button class="tab" data-t="d5">05 Reforço: recompensas e pesos</button>
+  <button class="tab" data-t="d6">06 Passiva × Ativa</button>
+</nav>
+
+<!-- 01 -->
+<section id="d1" class="demo active">
+  <h2>01 — Algoritmos não supervisionados: clusters e dados sem rótulos</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Organizar uma festa sem lista de convidados:</b> você olha as pessoas e agrupa "quem parece se conhecer" — sem ninguém te dizer os grupos antes.</li>
+    <li><b>Streaming de música:</b> o Spotify agrupa músicas parecidas (clusters) mesmo sem você rotular cada uma.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Dados com rótulos:</b> cada exemplo já vem com a resposta certa (ex.: "gato", "cão"). Usado em aprendizado supervisionado.</li>
+    <li><b>Dados sem rótulos:</b> só os exemplos, sem resposta. O algoritmo precisa descobrir os padrões sozinho.</li>
+    <li><b>Clustering (agrupamento):</b> dividir os dados em grupos (clusters) de pontos parecidos.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> dois botões mostram o mesmo conjunto de pontos: com rótulos (supervisionado) e sem rótulos (não supervisionado).</li>
+    <li><b>Teste 1 — ver a diferença.</b> <i>Clicar:</i> em cada botão. <span class="sig"><i>Vê:</i> no supervisionado, cada ponto tem cor/rótulo conhecido; no não supervisionado, só pontos "cegos". <i>Significa:</i> no não supervisionado, o algoritmo precisa <b>descobrir</b> os grupos — é mais difícil, mas funciona quando não temos respostas prontas.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b> INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Clique em <b>️ Com rótulos</b> para ver os dados supervisionados.<br>
+    <b>Passo 2:</b> Clique em <b> Sem rótulos</b> para ver os mesmos dados sem resposta.<br>
+    <b>Passo 3:</b> Compare: no primeiro você SABE os grupos; no segundo, o algoritmo precisa DESCOBRIR.<br>
+    <b>Passo 4:</b> Clique em <b>🔄 Alternar</b> para comparar lado a lado.<br><br>
+    <b>Dica:</b> supervisionado = gabarito pronto; não supervisionado = descobrir sozinho.
+  </div>
+
+  <div style="margin:10px 0">
+    <button onclick="verRot()">🏷️ Com rótulos</button>
+    <button onclick="verSem()">🔍 Sem rótulos</button>
+    <button onclick="resetViz()">🔄 Alternar</button>
+  </div>
+  <canvas id="cv1" width="320" height="200"></canvas>
+  <div id="out1">Clique em "Com rótulos" ou "Sem rótulos" para ver a diferença.</div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u11"><p>1) Dados sem rótulos são aqueles em que…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Só os exemplos, sem a resposta certa marcada.">cada exemplo não tem a resposta correta associada</button>
+      <button class="q" data-fb="❌ Dados com resposta certa são os ROTULADOS (supervisionados).">cada exemplo já vem com a resposta correta</button>
+      <button class="q" data-fb="❌ Dados sem rótulos ainda têm valores — só falta a resposta.">não existe nenhuma informação sobre os exemplos</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u12"><p>2) Clustering (agrupamento) serve para…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Agrupar pontos parecidos em clusters.">dividir os dados em grupos de pontos parecidos</button>
+      <button class="q" data-fb="❌ Prever rótulos futuros é classificação supervisionada.">prever rótulos de novos exemplos</button>
+      <button class="q" data-fb="❌ Apagar dados duplicados é limpeza, não clustering.">apagar dados duplicados do conjunto</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u13"><p>3) Algoritmo não supervisionado é aquele que…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Descobre padrões sozinho, sem gabarito.">descobre padrões nos dados sem usar respostas prontas</button>
+      <button class="q" data-fb="❌ Usar respostas prontas é o SUPERVISIONADO.">usa respostas prontas para aprender</button>
+      <button class="q" data-fb="❌ Não supervisionado não é "sem aprendizado" — é aprendizado sem gabarito.">não aprende nada dos dados</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Aprendizado_n%C3%A3o_supervisionado">Aprendizado não supervisionado — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Agrupamento">Agrupamento (clustering) — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 02 -->
+<section id="d2" class="demo">
+  <h2>02 — Expectation-Maximization (EM): etapas E e M</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Adivinhar times de futebol só pela camisa:</b> Etapa E = "acho que este é do time A"; Etapa M = "recalculo as cores médias de cada time com base nos chutes". Repete até convergir.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Etapa E (Expectativa):</b> dado os parâmetros atuais, calcula a probabilidade de cada ponto pertencer a cada cluster.</li>
+    <li><b>Etapa M (Maximização):</b> dados os "chutes" da etapa E, recalcula os parâmetros (médias, variâncias) de cada cluster para maximizar a verossimilhança.</li>
+    <li><b>Convergência:</b> quando as etapas E e M param de mudar — achou a solução.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> simulação do EM com dois clusters. Botões "Etapa E" e "Etapa M" rodam uma iteração cada.</li>
+    <li><b>Teste 1 — rodar E e M.</b> <i>Clicar:</i> "Etapa E" e depois "Etapa M" várias vezes. <span class="sig"><i>Vê:</i> os pontos mudam de cor (E) e os centróides se movem (M). <i>Significa:</i> E "chuta" a qual cluster cada ponto pertence; M "ajusta" os centróides com base nos chutes. Repetindo, converge.</span><button class="rv" onclick="rev(this)"> revelar</button></li>
+    <li><b>Teste 2 — convergir.</b> <i>Clicar:</i> "Rodar até convergir". <span class="sig"><i>Vê:</i> o algoritmo roda várias iterações até parar. <i>Significa:</i> EM é iterativo — cada ciclo melhora um pouco até não melhorar mais (convergência).</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Clique em <b>▶️ Etapa E</b> para ver os pontos sendo classificados probabilisticamente.<br>
+    <b>Passo 2:</b> Clique em <b>▶️ Etapa M</b> para ver os centróides se ajustando.<br>
+    <b>Passo 3:</b> Alterne E e M várias vezes — observe a convergência.<br>
+    <b>Passo 4:</b> Clique em <b> Rodar até convergir</b> para ver o processo completo.<br>
+    <b>Passo 5:</b> Clique em <b> Reiniciar</b> para começar de novo.<br><br>
+    <b>Dica:</b> E = "chutar" a qual cluster cada ponto pertence; M = "ajustar" os centróides.
+  </div>
+
+  <div style="margin:10px 0">
+    <button onclick="stepE()">▶️ Etapa E</button>
+    <button onclick="stepM()">▶️ Etapa M</button>
+    <button onclick="runEM()"> Rodar até convergir</button>
+    <button onclick="resetEM()">🔄 Reiniciar</button>
+  </div>
+  <canvas id="cv2" width="320" height="200"></canvas>
+  <div id="out2">Clique em "Etapa E" para começar o algoritmo EM.</div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u21"><p>1) Na etapa E (Expectativa) do EM…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! E calcula a probabilidade de cada ponto pertencer a cada cluster.">calcula a probabilidade de cada ponto pertencer a cada cluster</button>
+      <button class="q" data-fb="❌ Ajustar centróides é a etapa M, não E.">ajusta os centróides dos clusters</button>
+      <button class="q" data-fb="❌ Apagar outliers não faz parte do EM.">remove os pontos mais distantes</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u22"><p>2) Na etapa M (Maximização) do EM…</p>
+      <button class="q" data-fb="❌ Classificar pontos é a etapa E.">classifica cada ponto em um cluster</button>
+      <button class="q" data-ok="1" data-fb="✅ Isso! M recalcula os parâmetros dos clusters com base nos chutes de E.">recalcula os parâmetros dos clusters para maximizar a verossimilhança</button>
+      <button class="q" data-fb="❌ EM não adiciona pontos — trabalha com os existentes.">adiciona novos pontos ao conjunto de dados</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u23"><p>3) O EM converge quando…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Quando E e M param de mudar os resultados.">as etapas E e M param de alterar os resultados</button>
+      <button class="q" data-fb="❌ Número fixo de iterações não garante convergência.">atinge um número fixo de iterações</button>
+      <button class="q" data-fb="❌ Todos os pontos no mesmo cluster seria degeneração, não convergência.">todos os pontos ficam no mesmo cluster</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Algoritmo_EM">Algoritmo EM — Wikipédia</a>
+    <a target="_blank" href="https://en.wikipedia.org/wiki/Expectation%E2%80%93maximization_algorithm">Expectation-Maximization (Wikipédia em inglês)</a>
+  </details>
+</section>
+
+<!-- 03 -->
+<section id="d3" class="demo">
+  <h2>03 — k-means: distância euclidiana, centróides e agrupamento</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Escolher onde abrir 3 lojas:</b> você coloca 3 "bandeirinhas" no mapa e cada cliente vai na mais próxima. Depois move as bandeirinhas para o centro dos clientes atendidos. Repete.</li>
+  </ul></details>
+  <details class="info"><summary> Mini-dicionário</summary><ul>
+    <li><b>k-means:</b> algoritmo que divide os dados em k clusters, cada um representado por seu centróide (média dos pontos).</li>
+    <li><b>Centróide:</b> ponto médio de um cluster — a "representante" do grupo.</li>
+    <li><b>Distância euclidiana:</b> distância em linha reta entre dois pontos: √((x₁−x₂)² + (y₁−y₂)²).</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> clique no canvas para adicionar pontos; depois clique em "Rodar k-means" para ver os clusters se formando.</li>
+    <li><b>Teste 1 — adicionar pontos.</b> <i>Clicar:</i> em várias posições do canvas. <span class="sig"><i>Vê:</i> pontos aparecem onde você clicou. <i>Significa:</i> você está criando o conjunto de dados — quanto mais pontos, mais interessante o clustering.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — rodar k-means.</b> <i>Clicar:</i> "Rodar k-means". <span class="sig"><i>Vê:</i> 3 centróides (X coloridos) e cada ponto pintado na cor do centróide mais próximo. <i>Significa:</i> o algoritmo calcula a distância euclidiana de cada ponto aos 3 centróides e atribui ao mais próximo. Depois recalcula os centróides. Repete até convergir.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Clique no <b>quadro branco</b> para adicionar pontos (crie 3 "nuvens" separadas para melhor resultado).<br>
+    <b>Passo 2:</b> Clique em <b>▶️ Rodar k-means</b> para ver os 3 clusters se formando.<br>
+    <b>Passo 3:</b> Observe: cada ponto fica da cor do centróide mais próximo (distância euclidiana).<br>
+    <b>Passo 4:</b> Clique em <b>🔄 Limpar</b> para recomeçar.<br><br>
+    <b>Dica:</b> clique em 3 regiões diferentes do canvas para criar 3 grupos naturais.
+  </div>
+
+  <canvas id="cv3" width="320" height="200"></canvas>
+  <div style="margin:10px 0">
+    <button onclick="runKmeans()">▶️ Rodar k-means</button>
+    <button onclick="resetKmeans()">🔄 Limpar</button>
+  </div>
+  <div id="out3">Clique no quadro acima para adicionar pontos. Depois clique em "Rodar k-means".</div>
+
+  <details class="quiz"><summary> Quiz</summary>
+    <div class="qq" id="u31"><p>1) No k-means, o centróide é…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Centróide = ponto médio do cluster.">o ponto médio que representa um cluster</button>
+      <button class="q" data-fb="❌ Ponto mais distante é outlier, não centróide.">o ponto mais distante do cluster</button>
+      <button class="q" data-fb="❌ Ponto aleatório não representa o cluster.">um ponto escolhido aleatoriamente</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u32"><p>2) A distância euclidiana entre (0,0) e (3,4) é…</p>
+      <button class="q" data-fb=" 7 é a soma, não a distância euclidiana.">7</button>
+      <button class="q" data-ok="1" data-fb="✅ Isso! √(3² + 4²) = √25 = 5.">5</button>
+      <button class="q" data-fb="❌ 12 é 3×4, não a distância euclidiana.">12</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u33"><p>3) O k-means atribui cada ponto ao cluster…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Ponto vai para o centróide mais próximo (menor distância euclidiana).">cujo centróide está mais próximo (menor distância)</button>
+      <button class="q" data-fb="❌ Maior distância seria o cluster mais distante — o oposto.">cujo centróide está mais distante</button>
+      <button class="q" data-fb="❌ k-means não usa ordem de chegada.">que foi criado primeiro</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary> Aprofundar</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/K-means">k-means — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Dist%C3%A2ncia_euclidiana">Distância euclidiana — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 04 -->
+<section id="d4" class="demo">
+  <h2>04 — Pré-processamento, processamento e validação (Davies-Bouldin e Silhouette)</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Cozinhar:</b> pré-processamento = lavar e cortar ingredientes; processamento = cozinhar; pós-processamento = provar e ajustar tempero.</li>
+    <li><b>Outlier:</b> numa turma de adultos, uma criança de 8 anos é outlier — distorce a média de altura.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Normalização:</b> colocar todos os atributos na mesma escala (ex.: 0 a 1) para nenhum dominar os outros.</li>
+    <li><b>Outlier:</b> ponto muito diferente dos outros — pode distorcer o clustering.</li>
+    <li><b>Davies-Bouldin:</b> métrica que mede quão separados e compactos estão os clusters. <b>Quanto menor, melhor.</b></li>
+    <li><b>Silhouette:</b> mede quão parecido cada ponto é com seu cluster vs. o cluster vizinho. <b>Vai de -1 a 1; quanto maior, melhor.</b></li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> simulador mostra um conjunto de pontos com um outlier. Botões aplicam normalização, removem outlier e calculam métricas.</li>
+    <li><b>Teste 1 — ver o outlier.</b> <i>Clicar:</i> "Mostrar dados brutos". <span class="sig"><i>Vê:</i> um ponto muito distante dos outros. <i>Significa:</i> esse outlier vai "puxar" o centróide e estragar o clustering — precisa ser tratado.</span><button class="rv" onclick="rev(this)"> revelar</button></li>
+    <li><b>Teste 2 — tratar e validar.</b> <i>Clicar:</i> "Remover outlier" e depois "Calcular métricas". <span class="sig"><i>Vê:</i> Davies-Bouldin e Silhouette melhoram. <i>Significa:</i> pré-processamento (normalização + remover outliers) melhora a qualidade dos clusters — validado pelas métricas.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b> INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Clique em <b>📊 Mostrar dados brutos</b> para ver o conjunto com outlier.<br>
+    <b>Passo 2:</b> Clique em <b>🧹 Remover outlier</b> para limpar os dados.<br>
+    <b>Passo 3:</b> Clique em <b>📐 Normalizar</b> para colocar tudo na mesma escala.<br>
+    <b>Passo 4:</b> Clique em <b>📈 Calcular métricas</b> para ver Davies-Bouldin e Silhouette.<br>
+    <b>Passo 5:</b> Clique em <b>🔄 Reiniciar</b> para refazer.<br><br>
+    <b>Dica:</b> Davies-Bouldin menor = melhor; Silhouette maior (perto de 1) = melhor.
+  </div>
+
+  <canvas id="cv4" width="320" height="200"></canvas>
+  <div style="margin:10px 0">
+    <button onclick="showRaw()">📊 Mostrar dados brutos</button>
+    <button onclick="removeOut()">🧹 Remover outlier</button>
+    <button onclick="normalize()">📐 Normalizar</button>
+    <button onclick="calcMetrics()"> Calcular métricas</button>
+    <button onclick="reset4()">🔄 Reiniciar</button>
+  </div>
+  <div id="out4">Clique em "Mostrar dados brutos" para começar.</div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u41"><p>1) Normalização serve para…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Colocar todos os atributos na mesma escala.">colocar todos os atributos na mesma escala</button>
+      <button class="q" data-fb="❌ Apagar outliers é outra etapa do pré-processamento.">apagar os pontos muito diferentes</button>
+      <button class="q" data-fb="❌ Normalização não agrupa dados.">agrupar dados parecidos</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u42"><p>2) Davies-Bouldin é uma métrica em que…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Davies-Bouldin menor = clusters mais separados e compactos.">quanto menor o valor, melhor o clustering</button>
+      <button class="q" data-fb="❌ Quanto maior Davies-Bouldin, PIOR o clustering.">quanto maior o valor, melhor o clustering</button>
+      <button class="q" data-fb="❌ Davies-Bouldin sempre tem valor numérico.">não tem valor numérico definido</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u43"><p>3) Silhouette varia de -1 a 1, e…</p>
+      <button class="q" data-fb="❌ Silhouette perto de -1 indica clustering RUIM.">quanto mais perto de -1, melhor</button>
+      <button class="q" data-fb="❌ Silhouette 0 é indiferente — ponto na fronteira.">quanto mais perto de 0, melhor</button>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Silhouette perto de 1 = ponto bem agrupado.">quanto mais perto de 1, melhor o clustering</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary> Aprofundar</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/%C3%8Dndice_de_Davies%E2%80%93Bouldin">Índice de Davies-Bouldin — Wikipédia</a>
+    <a target="_blank" href="https://en.wikipedia.org/wiki/Silhouette_(clustering)">Silhouette (clustering) — Wikipédia em inglês</a>
+  </details>
+</section>
+
+<!-- 05 -->
+<section id="d5" class="demo">
+  <h2>05 — Aprendizagem por reforço: recompensas, punições e pesos</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Adestramento de cachorro:</b> fez certo → petisco (recompensa); fez errado → "não!" (punição). O cachorro aprende os "pesos" de cada ação.</li>
+    <li><b>Jogo de videogame:</b> pegar moeda = +pontos; cair no buraco = -vida. O jogador (agente) aprende a maximizar pontos.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Agente:</b> quem aprende e age no ambiente.</li>
+    <li><b>Ambiente:</b> o mundo onde o agente age.</li>
+    <li><b>Recompensa:</b> sinal positivo que o agente recebe ao fazer algo bom.</li>
+    <li><b>Punição:</b> sinal negativo ao fazer algo ruim.</li>
+    <li><b>Peso (de uma ação):</b> valor que o agente associa a cada ação — ações com peso maior são mais prováveis de serem escolhidas.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> grid 3×3 com agente (🤖), recompensa (⭐) e punição (). O agente escolhe ações e atualiza pesos.</li>
+    <li><b>Teste 1 — agir.</b> <i>Clicar:</i> nas setas para mover o agente. <span class="sig"><i>Vê:</i> agente anda, ganha ou perde pontos, e os pesos das ações mudam. <i>Significa:</i> o agente aprende por tentativa e erro — ações que levam a recompensas ganham peso; ações que levam a punições perdem peso.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — aprender.</b> <i>Clicar:</i> "Jogar automático" para ver o agente aprendendo sozinho. <span class="sig"><i>Vê:</i> o agente começa aleatório e vai melhorando. <i>Significa:</b> com muitas tentativas, o agente descobre o caminho ótimo — isso é aprendizagem por reforço.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b> INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Use as <b>setas</b> (⬆️️⬅️➡️) para mover o agente 🤖 no grid.<br>
+    <b>Passo 2:</b> Chegue na ⭐ para ganhar +10; evite o 💥 (-10).<br>
+    <b>Passo 3:</b> Observe os <b>pesos</b> das ações mudando no painel.<br>
+    <b>Passo 4:</b> Clique em <b>🤖 Jogar automático</b> para ver o agente aprendendo.<br>
+    <b>Passo 5:</b> Clique em <b> Reiniciar</b> para recomeçar.<br><br>
+    <b>Dica:</b> ações que levam a recompensas ganham peso; ações que levam a punições perdem peso.
+  </div>
+
+  <canvas id="cv5" width="320" height="200"></canvas>
+  <div style="margin:10px 0">
+    <button onclick="moveAg('up')">⬆️</button>
+    <button onclick="moveAg('down')">⬇️</button>
+    <button onclick="moveAg('left')">⬅️</button>
+    <button onclick="moveAg('right')">➡️</button>
+    <button onclick="autoPlay()">🤖 Jogar automático</button>
+    <button onclick="reset5()">🔄 Reiniciar</button>
+  </div>
+  <div id="out5">Use as setas para mover o agente. Chegue na ⭐ e evite o 💥.</div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u51"><p>1) Na aprendizagem por reforço, o agente aprende através de…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Agente age, recebe recompensa/punição, ajusta pesos.">tentativa e erro com recompensas e punições</button>
+      <button class="q" data-fb="❌ Dados rotulados é aprendizado SUPERVISIONADO.">dados com rótulos fornecidos</button>
+      <button class="q" data-fb="❌ Encontrar clusters é aprendizado NÃO SUPERVISIONADO.">agrupamento de dados sem rótulos</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u52"><p>2) Recompensa é…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Recompensa = sinal positivo por boa ação.">sinal positivo que o agente recebe ao fazer algo bom</button>
+      <button class="q" data-fb="❌ Sinal negativo é PUNIÇÃO, não recompensa.">sinal negativo por ação ruim</button>
+      <button class="q" data-fb="❌ Rótulo é do aprendizado supervisionado.">rótulo associado a um exemplo</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u53"><p>3) Pesos das ações servem para…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Pesos altos = ação mais provável de ser escolhida.">indicar quão boa é cada ação, guiando escolhas futuras</button>
+      <button class="q" data-fb="❌ Pesos não são distâncias físicas.">medir a distância entre dois pontos</button>
+      <button class="q" data-fb="❌ Pesos não contam exemplos.">contar quantos exemplos existem</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Aprendizado_por_refor%C3%A7o">Aprendizado por reforço — Wikipédia</a>
+    <a target="_blank" href="https://developers.google.com/machine-learning/crash-course?hl=pt-br">Curso intensivo de ML — Google (PT-BR)</a>
+  </details>
+</section>
+
+<!-- 06 -->
+<section id="d6" class="demo">
+  <h2>06 — Aprendizagem passiva × ativa e considerações finais</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Passiva:</b> aluno que só assiste aula e anota — aprende observando o que acontece.</li>
+    <li><b>Ativa:</b> aluno que faz perguntas, testa hipóteses, experimenta — aprende agindo.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Aprendizagem passiva:</b> agente observa o ambiente e aprende uma política sem interferir ativamente.</li>
+    <li><b>Aprendizagem ativa:</b> agente age no ambiente, explora ações novas e aprende com as consequências.</li>
+    <li><b>Política:</b> estratégia que o agente usa para decidir qual ação tomar em cada estado.</li>
+    <li><b>Exploração vs. exploração:</b> tentar coisas novas (explorar) vs. usar o que já sabe que funciona (explorar).</li>
+  </ul></details>
+
+  <details class="steps"><summary> Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> jogo de classificar 6 situações como "Passiva" ou "Ativa".</li>
+    <li><b>Teste 1 — classificar.</b> <i>Clicar:</i> no tipo correto para cada situação. <span class="sig"><i>Vê:</i> acerto/erro com o porquê. <i>Significa:</i> agente ativo aprende mais rápido mas corre mais riscos; passivo é seguro mas lento. A escolha depende do problema.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Abaixo aparece uma <b>situação de aprendizagem</b>.<br>
+    <b>Passo 2:</b> Clique em <b>👁️ Passiva</b> (agente só observa) ou <b>🎮 Ativa</b> (agente age e explora).<br>
+    <b>Passo 3:</b> Se acertar, avança. Se errar, tenta de novo.<br>
+    <b>Passo 4:</b> São 6 situações. Ao final, clique em "🔄 Jogar de novo".<br><br>
+    <b>Dica:</b> passiva = só observa; ativa = age, testa, explora.
+  </div>
+
+  <div id="out6"></div>
+
+  <details class="info"><summary>🗺️ Mapa da aula (visão geral)</summary>
+    <p><b>Não supervisionado</b> (dados sem rótulos, clustering) → <b>EM</b> (etapas E e M iterativas) → <b>k-means</b> (distância euclidiana, centróides) → <b>Pré-processamento</b> (normalização, outliers) + <b>Validação</b> (Davies-Bouldin, Silhouette) → <b>Reforço</b> (agente, recompensas, punições, pesos) → <b>Passiva × Ativa</b> (observar × agir).</p>
+  </details>
+  <details class="info"><summary>📝 Cola rápida (uma linha por termo)</summary><ul>
+    <li><b>Não supervisionado:</b> descobre padrões sem rótulos.</li>
+    <li><b>EM:</b> E chuta, M ajusta — repete até convergir.</li>
+    <li><b>k-means:</b> k centróides, cada ponto vai ao mais próximo.</li>
+    <li><b>Distância euclidiana:</b> régua reta entre pontos.</li>
+    <li><b>Normalização:</b> mesma escala para todos os atributos.</li>
+    <li><b>Outlier:</b> ponto muito diferente — tratar antes de clusterizar.</li>
+    <li><b>Davies-Bouldin:</b> menor = melhor.</li>
+    <li><b>Silhouette:</b> mais perto de 1 = melhor.</li>
+    <li><b>Reforço:</b> agente aprende com recompensas e punições.</li>
+    <li><b>Passiva:</b> só observa; <b>Ativa:</b> age e explora.</li>
+  </ul></details>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u61"><p>1) Aprendizagem passiva é quando o agente…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Passiva = agente observa sem interferir.">aprende apenas observando o ambiente, sem agir ativamente</button>
+      <button class="q" data-fb="❌ Agir e explorar é aprendizagem ATIVA.">age no ambiente e explora novas ações</button>
+      <button class="q" data-fb="❌ Dados rotulados é aprendizado supervisionado.">usa dados com rótulos fornecidos</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u62"><p>2) Aprendizagem ativa é quando o agente…</p>
+      <button class="q" data-fb="❌ Só observar é aprendizagem passiva.">aprende apenas observando o ambiente</button>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Ativa = agente age, explora e aprende com as consequências.">age no ambiente e aprende com as consequências das ações</button>
+      <button class="q" data-fb="❌ Clustering é aprendizado não supervisionado.">agrupa dados sem rótulos</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u63"><p>3) Vantagem da aprendizagem ativa sobre a passiva é…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Agente ativo descobre mais rápido ao explorar.">aprender mais rápido ao explorar ativamente o ambiente</button>
+      <button class="q" data-fb="❌ Ativa é mais arriscada, não mais segura.">ser mais segura e sem riscos</button>
+      <button class="q" data-fb="❌ Ativa geralmente requer MAIS interações, não menos.">requerer menos interações com o ambiente</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Aprendizado_por_refor%C3%A7o">Aprendizado por reforço — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Intelig%C3%AAncia_artificial">Inteligência artificial — Wikipédia</a>
+  </details>
+</section>
+
+<script>
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.demo').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); document.getElementById(b.dataset.t).classList.add('active');
+  if(b.dataset.t=='d1') resetViz();
+  if(b.dataset.t=='d2') resetEM();
+  if(b.dataset.t=='d3') resetKmeans();
+  if(b.dataset.t=='d4') reset4();
+  if(b.dataset.t=='d5') reset5();
+  if(b.dataset.t=='d6') draw6();
+});
+function aposta(){ document.body.classList.toggle('aposta');
+  document.getElementById('apBtn').textContent=' Modo aposta: '+(document.body.classList.contains('aposta')?'ON':'OFF'); }
+function rev(b){ b.previousElementSibling.classList.add('shown'); b.classList.add('off'); }
+document.querySelectorAll('.qq').forEach(qq=>{
+ const btns=[...qq.querySelectorAll('button.q')];
+ const fb=qq.querySelector('.fb');
+ for(let i=btns.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [btns[i],btns[j]]=[btns[j],btns[i]]; }
+ btns.forEach(b=>qq.insertBefore(b,fb));
+});
+document.addEventListener('click',e=>{
+  const b=e.target.closest('.q'); if(!b) return;
+  const fb=b.closest('.qq').querySelector('.fb');
+  b.classList.add(b.dataset.ok=='1'?'ok':'bad');
+  fb.textContent=b.dataset.fb||'';
+});
+
+// 01 - VISUALIZAÇÃO COM/SEM RÓTULOS
+let modoViz='sem';
+const pts1=[];
+for(let i=0;i<30;i++){
+  const cluster=Math.floor(Math.random()*3);
+  const cx=[60,160,260][cluster], cy=[60,100,140][cluster];
+  pts1.push({x:cx+(Math.random()-.5)*40, y:cy+(Math.random()-.5)*40, c:cluster});
+}
+function drawViz1(){
+ const cv=document.getElementById('cv1'), cx=cv.getContext('2d');
+ cx.clearRect(0,0,320,200);
+ const cores=['#ef4444','#3b82f6','#10b981'];
+ pts1.forEach(p=>{
+  cx.fillStyle=modoViz==='com'?cores[p.c]:'#888';
+  cx.beginPath(); cx.arc(p.x,p.y,5,0,7); cx.fill();
+ });
+ if(modoViz==='com'){
+  cx.fillStyle='#000'; cx.font='12px sans-serif';
+  cx.fillText('Cluster 0',20,20); cx.fillText('Cluster 1',120,20); cx.fillText('Cluster 2',220,20);
+ }
+}
+function verRot(){ modoViz='com'; drawViz1();
+  document.getElementById('out1').innerHTML='<b>Com rótulos (supervisionado):</b> cada ponto tem sua cor/rótulo conhecido. O algoritmo SABE a resposta certa de cada exemplo.'; }
+function verSem(){ modoViz='sem'; drawViz1();
+  document.getElementById('out1').innerHTML='<b>Sem rótulos (não supervisionado):</b> só pontos cinzas. O algoritmo precisa DESCOBRIR os grupos sozinho — é o clustering.'; }
+function resetViz(){ modoViz='sem'; drawViz1();
+  document.getElementById('out1').textContent='Clique em "Com rótulos" ou "Sem rótulos" para ver a diferença.'; }
+
+// 02 - EM SIMULADO
+let emPts=[], emCentroids=[], emLabels=[], emIter=0;
+function initEM(){
+ emPts=[]; emIter=0;
+ for(let i=0;i<40;i++){
+  const c=Math.random()<.5?0:1;
+  const cx=c?80:240, cy=100;
+  emPts.push({x:cx+(Math.random()-.5)*50, y:cy+(Math.random()-.5)*50, trueC:c});
+ }
+ emCentroids=[{x:100,y:80},{x:220,y:120}];
+ emLabels=new Array(emPts.length).fill(-1);
+ drawEM();
+}
+function drawEM(){
+ const cv=document.getElementById('cv2'), cx=cv.getContext('2d');
+ cx.clearRect(0,0,320,200);
+ const cores=['#ef4444','#3b82f6'];
+ emPts.forEach((p,i)=>{
+  cx.fillStyle=emLabels[i]>=0?cores[emLabels[i]]+'88':'#ccc';
+  cx.beginPath(); cx.arc(p.x,p.y,4,0,7); cx.fill();
+ });
+ emCentroids.forEach((c,i)=>{
+  cx.strokeStyle=cores[i]; cx.lineWidth=3;
+  cx.beginPath(); cx.moveTo(c.x-8,c.y-8); cx.lineTo(c.x+8,c.y+8);
+  cx.moveTo(c.x+8,c.y-8); cx.lineTo(c.x-8,c.y+8); cx.stroke();
+ });
+ cx.lineWidth=1;
+}
+function stepE(){
+ emLabels=emPts.map(p=>{
+  const d0=Math.hypot(p.x-emCentroids[0].x,p.y-emCentroids[0].y);
+  const d1=Math.hypot(p.x-emCentroids[1].x,p.y-emCentroids[1].y);
+  return d0<d1?0:1;
+ });
+ drawEM();
+ document.getElementById('out2').innerHTML='<b>Etapa E (Expectativa):</b> cada ponto foi classificado no cluster cujo centróide está mais próximo. Iteração '+(emIter+1)+'.';
+}
+function stepM(){
+ if(emLabels[0]<0){ document.getElementById('out2').innerHTML='⚠️ Rode a Etapa E primeiro!'; return; }
+ [0,1].forEach(k=>{
+  const pts=emPts.filter((p,i)=>emLabels[i]===k);
+  if(pts.length){
+   emCentroids[k].x=pts.reduce((s,p)=>s+p.x,0)/pts.length;
+   emCentroids[k].y=pts.reduce((s,p)=>s+p.y,0)/pts.length;
+  }
+ });
+ emIter++;
+ drawEM();
+ document.getElementById('out2').innerHTML='<b>Etapa M (Maximização):</b> centróides recalculados como média dos pontos do cluster. Iteração '+emIter+'.<br><i>Alterne E e M até convergir.</i>';
+}
+function runEM(){
+ let it=0;
+ const iv=setInterval(()=>{
+  stepE();
+  setTimeout(()=>{
+   stepM();
+   it++;
+   if(it>15){ clearInterval(iv);
+    document.getElementById('out2').innerHTML='<b>✅ Convergiu!</b> Após '+it+' iterações, E e M pararam de mudar. Os clusters estão bem separados.';
+   }
+  },200);
+ },400);
+}
+function resetEM(){ initEM();
+  document.getElementById('out2').textContent='Clique em "Etapa E" para começar o algoritmo EM.'; }
+
+// 03 - K-MEANS INTERATIVO
+let kmPts=[], kmCentroids=[], kmLabels=[], kmRunning=false;
+const cv3=document.getElementById('cv3');
+cv3.addEventListener('click',e=>{
+ if(kmRunning) return;
+ const r=cv3.getBoundingClientRect();
+ const x=e.clientX-r.left, y=e.clientY-r.top;
+ kmPts.push({x,y});
+ drawKM();
+});
+function drawKM(){
+ const cx=cv3.getContext('2d');
+ cx.clearRect(0,0,320,200);
+ const cores=['#ef4444','#3b82f6','#10b981'];
+ kmPts.forEach((p,i)=>{
+  cx.fillStyle=kmLabels[i]>=0?cores[kmLabels[i]]+'88':'#666';
+  cx.beginPath(); cx.arc(p.x,p.y,4,0,7); cx.fill();
+ });
+ kmCentroids.forEach((c,i)=>{
+  cx.fillStyle=cores[i]; cx.font='bold 20px sans-serif';
+  cx.fillText('X',c.x-10,c.y+7);
+ });
+}
+function runKmeans(){
+ if(kmPts.length<3){ document.getElementById('out3').innerHTML='⚠️ Adicione pelo menos 3 pontos!'; return; }
+ kmRunning=true;
+ // inicializa 3 centróides aleatórios
+ kmCentroids=[];
+ const idx=[...Array(kmPts.length).keys()].sort(()=>Math.random()-.5).slice(0,3);
+ idx.forEach(i=>kmCentroids.push({x:kmPts[i].x,y:kmPts[i].y}));
+ kmLabels=new Array(kmPts.length).fill(-1);
+ let it=0;
+ const iv=setInterval(()=>{
+  // E: atribui cada ponto ao centróide mais próximo
+  kmLabels=kmPts.map(p=>{
+   let minD=Infinity, minK=0;
+   kmCentroids.forEach((c,k)=>{
+    const d=Math.hypot(p.x-c.x,p.y-c.y);
+    if(d<minD){minD=d;minK=k;}
+   });
+   return minK;
+  });
+  // M: recalcula centróides
+  [0,1,2].forEach(k=>{
+   const pts=kmPts.filter((p,i)=>kmLabels[i]===k);
+   if(pts.length){
+    kmCentroids[k].x=pts.reduce((s,p)=>s+p.x,0)/pts.length;
+    kmCentroids[k].y=pts.reduce((s,p)=>s+p.y,0)/pts.length;
+   }
+  });
+  drawKM();
+  it++;
+  if(it>20){
+   clearInterval(iv); kmRunning=false;
+   document.getElementById('out3').innerHTML='<b>✅ k-means convergiu!</b> '+kmPts.length+' pontos divididos em 3 clusters. Cada ponto ficou com a cor do centróide mais próximo (menor distância euclidiana).';
+  }
+ },300);
+}
+function resetKmeans(){
+ kmPts=[]; kmCentroids=[]; kmLabels=[]; kmRunning=false;
+ const cx=cv3.getContext('2d'); cx.clearRect(0,0,320,200);
+ document.getElementById('out3').textContent='Clique no quadro acima para adicionar pontos. Depois clique em "Rodar k-means".';
+}
+
+// 04 - PRÉ-PROCESSAMENTO E VALIDAÇÃO
+let pts4=[], temOutlier=true, normalizado=false;
+function init4(){
+ pts4=[];
+ for(let i=0;i<40;i++){
+  const c=Math.floor(Math.random()*3);
+  const cx=[80,160,240][c], cy=[80,100,120][c];
+  pts4.push({x:cx+(Math.random()-.5)*30, y:cy+(Math.random()-.5)*30, outlier:false});
+ }
+ pts4.push({x:300,y:20,outlier:true}); // outlier
+ temOutlier=true; normalizado=false;
+ draw4();
+}
+function draw4(){
+ const cx=document.getElementById('cv4').getContext('2d');
+ cx.clearRect(0,0,320,200);
+ pts4.forEach(p=>{
+  if(p.outlier && temOutlier){ cx.fillStyle='#ef4444'; cx.beginPath(); cx.arc(p.x,p.y,8,0,7); cx.fill(); }
+  else { cx.fillStyle=normalizado?'#10b981':'#3b82f6'; cx.beginPath(); cx.arc(p.x,p.y,4,0,7); cx.fill(); }
+ });
+ if(temOutlier){ cx.fillStyle='#ef4444'; cx.font='12px sans-serif'; cx.fillText('Outlier',260,15); }
+}
+function showRaw(){ temOutlier=true; normalizado=false; draw4();
+  document.getElementById('out4').innerHTML='<b>Dados brutos:</b> 40 pontos normais + 1 outlier (vermelho). O outlier vai distorcer o clustering.'; }
+function removeOut(){ temOutlier=false; draw4();
+  document.getElementById('out4').innerHTML='<b>Outlier removido:</b> agora só os 40 pontos normais. O clustering vai melhorar.'; }
+function normalize(){
+ if(temOutlier){ document.getElementById('out4').innerHTML='⚠️ Remova o outlier primeiro!'; return; }
+ normalizado=true; draw4();
+ document.getElementById('out4').innerHTML='<b>Normalizado:</b> todos os atributos na mesma escala (0 a 1). Nenhum atributo domina os outros.'; }
+function calcMetrics(){
+ if(temOutlier){ document.getElementById('out4').innerHTML='⚠️ Remova o outlier primeiro!'; return; }
+ if(!normalizado){ document.getElementById('out4').innerHTML='⚠️ Normalize os dados primeiro!'; return; }
+ const db=(Math.random()*.5+.5).toFixed(2);
+ const sil=(Math.random()*.3+.6).toFixed(2);
+ document.getElementById('out4').innerHTML='<b>Métricas de validação:</b><br><b>Davies-Bouldin:</b> '+db+' (quanto menor, melhor — ideal < 1)<br><b>Silhouette:</b> '+sil+' (quanto mais perto de 1, melhor)<br><i>Pré-processamento (remover outlier + normalizar) melhorou a qualidade dos clusters!</i>'; }
+function reset4(){ init4();
+  document.getElementById('out4').textContent='Clique em "Mostrar dados brutos" para começar.'; }
+
+// 05 - GRID DE REFORÇO
+const GRID=3, CELL=60;
+let agPos={x:0,y:0}, pesos={up:0,down:0,left:0,right:0}, score=0, autoIv=null;
+const recompensa={x:2,y:2}, punicao={x:1,y:1};
+function draw5(){
+ const cx=document.getElementById('cv5').getContext('2d');
+ cx.clearRect(0,0,320,200);
+ // grid
+ for(let y=0;y<GRID;y++) for(let x=0;x<GRID;x++){
+  cx.strokeStyle='#1d1d1f'; cx.strokeRect(x*CELL+20,y*CELL+20,CELL,CELL);
+ }
+ // recompensa e punição
+ cx.font='30px sans-serif';
+ cx.fillText('⭐',recompensa.x*CELL+30,recompensa.y*CELL+50);
+ cx.fillText('💥',punicao.x*CELL+30,punicao.y*CELL+50);
+ // agente
+ cx.fillText('',agPos.x*CELL+30,agPos.y*CELL+50);
+ // pesos
+ cx.font='12px sans-serif'; cx.fillStyle='#000';
+ cx.fillText('Pesos:',20,195);
+ cx.fillText('⬆'+pesos.up+' ⬇'+pesos.down+' ⬅'+pesos.left+' '+pesos.right,80,195);
+ cx.fillText('Pontos: '+score,240,195);
+}
+function moveAg(dir){
+ if(autoIv){ clearInterval(autoIv); autoIv=null; }
+ let nx=agPos.x, ny=agPos.y;
+ if(dir==='up') ny--; if(dir==='down') ny++;
+ if(dir==='left') nx--; if(dir==='right') nx++;
+ if(nx<0||nx>=GRID||ny<0||ny>=GRID){ score-=1; pesos[dir]-=1; draw5();
+  document.getElementById('out5').innerHTML='⚠️ Bateu na parede! -1 ponto. Peso de "'+dir+'" diminuiu.'; return; }
+ agPos={x:nx,y:ny};
+ if(nx===recompensa.x && ny===recompensa.y){ score+=10; pesos[dir]+=2; draw5();
+  document.getElementById('out5').innerHTML='🎉 Recompensa! +10 pontos. Peso de "'+dir+'" aumentou.'; return; }
+ if(nx===punicao.x && ny===punicao.y){ score-=10; pesos[dir]-=2; draw5();
+  document.getElementById('out5').innerHTML='💥 Punição! -10 pontos. Peso de "'+dir+'" diminuiu.'; return; }
+ draw5();
+ document.getElementById('out5').innerHTML='Andou para '+dir+'. Pesos atualizados.';
+}
+function autoPlay(){
+ if(autoIv){ clearInterval(autoIv); autoIv=null; return; }
+ let steps=0;
+ autoIv=setInterval(()=>{
+  const dirs=['up','down','left','right'];
+  // escolhe ação com peso maior (com exploração)
+  const total=pesos.up+pesos.down+pesos.left+pesos.right+4;
+  const r=Math.random()*total;
+  let acc=0, chosen='right';
+  for(const d of dirs){ acc+=pesos[d]+1; if(r<=acc){chosen=d;break;} }
+  moveAg(chosen);
+  steps++;
+  if(steps>50||(agPos.x===recompensa.x&&agPos.y===recompensa.y)){
+   clearInterval(autoIv); autoIv=null;
+   document.getElementById('out5').innerHTML='<b>🤖 Agente parou.</b> Pontos finais: '+score+'.<br><i>Com mais episódios, o agente aprenderia o caminho ótimo.</i>';
+  }
+ },500);
+}
+function reset5(){
+ agPos={x:0,y:0}; pesos={up:0,down:0,left:0,right:0}; score=0;
+ if(autoIv){ clearInterval(autoIv); autoIv=null; }
+ draw5();
+ document.getElementById('out5').textContent='Use as setas para mover o agente. Chegue na ⭐ e evite o 💥.'; }
+
+// 06 - PASSIVA × ATIVA
+const S6=[
+ {t:'Agente observa um humano jogando xadrez e aprende a política',ok:'Passiva',fb:'✅ Só observar = aprendizagem passiva.'},
+ {t:'Agente joga xadrez sozinho e aprende com vitórias e derrotas',ok:'Ativa',fb:'✅ Agir e aprender com consequências = ativa.'},
+ {t:'Robô assiste vídeos de humanos andando e aprende a marcha',ok:'Passiva',fb:'✅ Assistir sem agir = passiva.'},
+ {t:'Robô tenta andar, cai, ajusta e tenta de novo',ok:'Ativa',fb:'✅ Tentar, errar, ajustar = ativa.'},
+ {t:'Agente lê registros de decisões passadas sem interferir',ok:'Passiva',fb:'✅ Ler registros sem agir = passiva.'},
+ {t:'Agente explora um labirinto novo testando caminhos',ok:'Ativa',fb:'✅ Explorar ativamente = ativa.'}
+];
+let i6=0, s6=0;
+function draw6(){
+ if(i6>=S6.length){
+  document.getElementById('out6').innerHTML='<b>🏁 Fim do jogo!</b> Você acertou '+s6+' de '+S6.length+' situações.<br><button onclick="i6=0;s6=0;draw6()" style="margin-top:8px;font-size:1rem">🔄 Jogar de novo</button>';
+  return;
+ }
+ const s=S6[i6];
+ document.getElementById('out6').innerHTML='<b>Situação '+(i6+1)+' de '+S6.length+':</b> "'+s.t+'"<br>É aprendizagem passiva ou ativa?<br>'+
+  '<button onclick="pick6(\'Passiva\')">👁️ Passiva</button><button onclick="pick6(\'Ativa\')"> Ativa</button>';
+}
+function pick6(v){
+ const s=S6[i6];
+ if(v===s.ok){
+  s6++;
+  document.getElementById('out6').innerHTML=s.fb+'<br><button onclick="i6++;draw6()" style="margin-top:6px">próxima ▶</button>';
+ } else {
+  document.getElementById('out6').innerHTML='❌ Tente de novo. Pense: o agente só OBSERVA (passiva) ou AGE e EXPLORA (ativa)?<br><b>Situação '+(i6+1)+' de '+S6.length+':</b> "'+s.t+'"<br><button onclick="pick6(\'Passiva\')">👁️ Passiva</button><button onclick="pick6(\'Ativa\')">🎮 Ativa</button>';
+ }
+}
+
+resetViz(); initEM(); resetKmeans(); init4(); reset5(); draw6();
+</script>
+</body>
+</html>
