@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SO Interativo — Aula 9 (Unidade 4)</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:system-ui,sans-serif;background:#f4f7f6;margin:0;padding:18px;color:#1d1d1f}
+h1{font-size:1.25rem} h2{margin-top:0}
+nav{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.tab{border:2px solid #1d1d1f;background:#fff;border-radius:10px;padding:8px 12px;cursor:pointer;box-shadow:3px 3px 0 #6366f1;font-weight:600}
+.tab.active{background:#6366f1;color:#fff}
+.demo{display:none;background:#fff;border:2px solid #1d1d1f;border-radius:14px;padding:16px;box-shadow:5px 5px 0 #6366f1}
+.demo.active{display:block}
+button{border:2px solid #1d1d1f;border-radius:8px;background:#fff;padding:6px 10px;cursor:pointer;font-weight:600}
+button:hover{background:#eef2ff}
+details{margin:10px 0;border-radius:10px;padding:8px 12px;border:2px solid #1d1d1f}
+summary{cursor:pointer;font-weight:700}
+.info{background:#eaf4ff}.steps{background:#fff8dc}.links{background:#f2f2f2}.real{background:#eaffe8}.tool{background:#f5eaff}.quiz{background:#ffe8f0}
+.links a{color:#0a66c2;display:inline-block;margin:2px 12px 2px 0}
+.q{margin:2px}.q.ok{background:#b9f6ca}.q.bad{background:#ffb3b3}
+.fb{font-size:.85rem;background:#fff;border-radius:6px;padding:4px 8px;margin:4px 0}
+#o1,#o2,#o3,#o4,#o5,#o6,#painel1{background:#fff;border:2px dashed #999;border-radius:8px;padding:10px;margin:8px 0;min-height:40px}
+.bar{display:inline-block;border:2px solid #1d1d1f;border-radius:8px;padding:6px 12px;margin:3px;cursor:pointer;background:#fff;font-weight:600}
+.layer{display:block;border:2px solid #1d1d1f;border-radius:10px;padding:10px;margin:6px 0;cursor:pointer;background:#fff;font-weight:600}
+.layer.on{background:#6366f1;color:#fff}
+.disk{display:inline-block;border:2px solid #1d1d1f;border-radius:8px;padding:8px;margin:3px;font-weight:600;background:#fff}
+.disk.dead{background:#ffb3b3;text-decoration:line-through}
+.rv{display:none;margin-left:6px}
+.instrucao{background:#fff3cd;border:2px solid #ffc107;border-radius:8px;padding:10px;margin:8px 0}
+.instrucao b{color:#856404}
+body.aposta .sig{display:none}
+body.aposta .sig.shown{display:inline}
+body.aposta .rv{display:inline-block}
+body.aposta .rv.off{display:none}
+#apBtn{box-shadow:3px 3px 0 #d4a017}
+</style>
+</head>
+<body>
+<h1>💽 SO — Aula 9 (Unidade 4, págs. 10–24): hardware/software e gerenciamento de discos</h1>
+<button id="apBtn" onclick="aposta()">🎲 Modo aposta: OFF</button>
+<p>Mesma estrutura das aulas anteriores: 🌍 → 🔤 → 🎤 plano de testes → demo → 🧠 quiz (3 alternativas embaralhadas, cada uma com a própria explicação, tudo por extenso) → 🔗 Aprofundar. Com 🎲 ligado, a turma aposta antes de revelar.</p>
+
+<details class="tool"><summary>🧰 Glossário de ferramentas (leia uma vez!)</summary><ul>
+  <li><b>ULA (ALU):</b> a "calculadora" do processador — soma, compara e decide.</li>
+  <li><b>UC (Unidade de Controle):</b> o "maestro" — busca, decodifica e comanda as instruções.</li>
+  <li><b>Clock:</b> o "metrônomo" do chip — marca o ritmo em ciclos por segundo (Hz).</li>
+  <li><b>MIPS:</b> milhões de instruções por segundo — uma régua de velocidade do processador.</li>
+  <li><b>Partição:</b> "divisão" lógica de um disco físico — como apartar uma casa em unidades C:, D:…</li>
+  <li><b>VHD:</b> arquivo que se comporta como um disco inteiro (disco virtual).</li>
+  <li><b>RAID:</b> combinar vários discos físicos em um lógico, por velocidade (0) ou segurança (1, 5).</li>
+</ul></details>
+
+<nav>
+  <button class="tab active" data-t="d1">01 CPU: ULA, UC, clock, MIPS</button>
+  <button class="tab" data-t="d2">02 E/S e as 4 camadas</button>
+  <button class="tab" data-t="d3">03 Partições</button>
+  <button class="tab" data-t="d4">04 VHDs e discos dinâmicos</button>
+  <button class="tab" data-t="d5">05 RAID 0, 1 e 5</button>
+  <button class="tab" data-t="d6">06 O disco por inteiro</button>
+</nav>
+
+<!-- 01 -->
+<section id="d1" class="demo active">
+  <h2>01 — Princípios de hardware: ULA, UC, clock e MIPS</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Cozinha de restaurante:</b> a UC é o chef que lê o pedido e comanda; a ULA é o cozinheiro que executa; o clock é o ritmo da esteira; MIPS é quantos pratos saem por minuto.</li>
+    <li><b>Calculadora:</b> ao somar 7 + 5, a UC busca a instrução "somar" e a ULA faz a conta — exatamente o ciclo que você vai simular.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>ULA:</b> Unidade Lógica e Aritmética — executa cálculos e comparações.</li>
+    <li><b>UC:</b> Unidade de Controle — busca, decodifica e coordena as instruções.</li>
+    <li><b>Clock:</b> sinal que sincroniza tudo; 3 GHz = 3 bilhões de ciclos por segundo.</li>
+    <li><b>MIPS:</b> Milhões de Instruções Por Segundo — velocidade de processamento.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> um mini-processador com UC, ULA, clock ajustável e contador de MIPS.</li>
+    <li><b>Teste 1 — executar uma instrução.</b> <i>Clicar:</i> "Executar 1 instrução". <span class="sig"><i>Vê:</i> a UC buscar e decodificar, depois a ULA calcular 7 mais 5 igual 12. <i>Significa:</i> todo programa é isso bilhões de vezes por segundo: buscar, decodificar, executar — o ciclo que a UC comanda e a ULA realiza.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — mexer no clock.</b> <i>Clicar:</i> no controle de clock e ver os MIPS mudarem. <span class="sig"><i>Vê:</i> clock maior e mais instruções por ciclo elevam os MIPS. <i>Significa:</i> MIPS igual clock vezes instruções por ciclo — por isso um chip "mais rápido" entrega mais trabalho no mesmo tempo.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Clique em <b>▶️ Executar 1 instrução</b> e acompanhe UC e ULA acenderem.<br>
+    <b>Passo 2:</b> Mova o controle de <b>clock</b> e o de <b>instruções por ciclo</b> — os MIPS mudam na hora.<br>
+    <b>Passo 3:</b> Clique em <b>🔄 Reiniciar</b> para zerar.<br><br>
+    <b>Dica:</b> MIPS = clock (em milhões de ciclos por segundo) vezes instruções por ciclo.
+  </div>
+
+  <div style="margin:10px 0">
+    <button onclick="runInstr()">▶️ Executar 1 instrução</button>
+    <button onclick="reset1()">🔄 Reiniciar</button><br>
+    Clock: <input type="range" id="clk" min="500" max="4000" step="100" value="3000" oninput="updMips()">
+    Instruções por ciclo: <input type="range" id="ipc" min="1" max="4" value="2" oninput="updMips()">
+  </div>
+  <div id="painel1"></div>
+  <div id="o1">Clique em "Executar 1 instrução" para ver o ciclo buscar-decodificar-executar.</div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u11"><p>1) O componente que executa cálculos e comparações lógicas é a…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! A ULA é a calculadora do processador — como o cozinheiro que executa o prato.">ULA (Unidade Lógica e Aritmética)</button>
+      <button class="q" data-fb="❌ A UC comanda, mas quem calcula é a ULA.">UC (Unidade de Controle)</button>
+      <button class="q" data-fb="❌ O clock marca o ritmo, não faz contas.">clock</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u12"><p>2) Quem busca, decodifica e comanda a execução das instruções é a…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! A UC é o maestro: lê o pedido e comanda a ULA.">UC (Unidade de Controle)</button>
+      <button class="q" data-fb="❌ A ULA executa; a UC comanda.">ULA</button>
+      <button class="q" data-fb="❌ VHD é disco virtual, não parte da CPU.">VHD</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u13"><p>3) MIPS mede…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Milhões de Instruções Por Segundo — a régua de velocidade da CPU.">milhões de instruções por segundo</button>
+      <button class="q" data-fb="❌ Megabytes por segundo é taxa de transferência.">megabytes por segundo</button>
+      <button class="q" data-fb="❌ Rotações por minuto é o disco (RPM).">rotações por minuto do disco</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Unidade_l%C3%B3gica_e_aritm%C3%A9tica">Unidade lógica e aritmética — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Unidade_de_controle">Unidade de controle — Wikipédia</a>
+    <a target="_blank" href="https://en.wikipedia.org/wiki/Million_instructions_per_second">MIPS (Wikipédia, em inglês)</a>
+  </details>
+</section>
+
+<!-- 02 -->
+<section id="d2" class="demo">
+  <h2>02 — Entrada/saída e as 4 camadas</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Prédio de 4 andares:</b> Aplicativos (4º) → Utilitários (3º) → Sistema Operacional (2º) → Hardware (térreo). O pedido desce andar por andar até virar ação física no disco.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Aplicativos:</b> programas do usuário (editor, navegador).</li>
+    <li><b>Utilitários:</b> ferramentas de apoio (antivírus, compactador, backup).</li>
+    <li><b>Sistema Operacional:</b> gerencia o hardware e atende os programas.</li>
+    <li><b>Hardware:</b> a parte física — discos, placas, memória.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> as 4 camadas empilhadas; clique em cada uma para ver o papel e um exemplo real.</li>
+    <li><b>Teste 1 — simular uma ação.</b> <i>Clicar:</i> "Simular: extrair um ZIP". <span class="sig"><i>Vê:</i> a ação descendo camada por camada até o disco gravar os bits. <i>Significa:</i> cada camada traduz o pedido para a de baixo — o usuário não precisa saber de hardware, as camadas escondem a complexidade.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Clique em cada <b>camada</b> para ver o papel dela com um exemplo real.<br>
+    <b>Passo 2:</b> Clique em <b>📦 Simular: extrair um ZIP</b> e veja a ação descer as camadas.<br>
+    <b>Passo 3:</b> Clique em <b>🔄 Reiniciar</b> para refazer.<br><br>
+    <b>Dica:</b> o pedido nasce no aplicativo e vira física no hardware.
+  </div>
+
+  <span class="layer" id="L0" onclick="verLayer(0)">4º — Aplicativos</span>
+  <span class="layer" id="L1" onclick="verLayer(1)">3º — Utilitários</span>
+  <span class="layer" id="L2" onclick="verLayer(2)">2º — Sistema Operacional</span>
+  <span class="layer" id="L3" onclick="verLayer(3)">1º — Hardware</span>
+  <div style="margin:10px 0">
+    <button onclick="simZip()">📦 Simular: extrair um ZIP</button>
+    <button onclick="reset2()">🔄 Reiniciar</button>
+  </div>
+  <div id="o2">Clique nas camadas ou simule a ação.</div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u21"><p>1) A ordem correta das camadas, de cima para baixo, é…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Aplicativos, Utilitários, Sistema Operacional e Hardware — como andares de um prédio.">aplicativos, utilitários, sistema operacional, hardware</button>
+      <button class="q" data-fb="❌ Hardware é a base, fica por último.">hardware, sistema operacional, utilitários, aplicativos</button>
+      <button class="q" data-fb="❌ Utilitários ficam acima do sistema operacional.">aplicativos, sistema operacional, utilitários, hardware</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u22"><p>2) Um compactador de arquivos (como o WinZip) é um exemplo de…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Ferramenta de apoio entre o aplicativo e o SO = utilitário.">utilitário</button>
+      <button class="q" data-fb="❌ Hardware é a parte física.">hardware</button>
+      <button class="q" data-fb="❌ O SO gerencia; o compactador é um utilitário.">sistema operacional</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u23"><p>3) Quem gerencia o hardware diretamente e o oferece aos programas é…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! O SO transforma o hardware bruto em recursos usáveis.">o sistema operacional</button>
+      <button class="q" data-fb="❌ Aplicativos usam os recursos; não os gerenciam.">o aplicativo</button>
+      <button class="q" data-fb="❌ Utilitários apoiam; quem gerencia é o SO.">o utilitário</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Sistema_operacional">Sistema operacional — Wikipédia</a>
+    <a target="_blank" href="https://en.wikipedia.org/wiki/Utility_software">Utilitários (Wikipédia, em inglês)</a>
+  </details>
+</section>
+
+<!-- 03 -->
+<section id="d3" class="demo">
+  <h2>03 — Partições: primária, estendida, ativa, boot, recuperação e EFI</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Casa dividida em kitnets:</b> o disco é o terreno; as partições são as kitnets. A "ativa" é a que o síndico (BIOS/UEFI) manda procurar primeiro; a "boot" guarda as chaves do sistema.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Partição primária:</b> pode receber o SO e letra de unidade (C:).</li>
+    <li><b>Partição estendida:</b> um "contêiner" que se divide em unidades lógicas (D:, E:).</li>
+    <li><b>Partição ativa:</b> marcada para o firmware iniciar o boot.</li>
+    <li><b>Partição boot:</b> contém os arquivos de sistema do SO.</li>
+    <li><b>Recuperação/EFI:</b> ferramentas de reparo de fábrica; firmware e gerenciador de boot em máquinas UEFI.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> jogo de classificar 6 descrições no tipo de partição.</li>
+    <li><b>Teste 1 — classificar.</b> <i>Clicar:</i> no tipo correto. <span class="sig"><i>Vê:</i> acerto/erro com o porquê e exemplo real. <i>Significa:</i> cada partição tem um papel no boot e na organização — saber qual é qual evita apagar a errada e "matar" o sistema.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Abaixo aparece uma <b>descrição de partição</b>.<br>
+    <b>Passo 2:</b> Clique no <b>tipo</b> correto.<br>
+    <b>Passo 3:</b> Se acertar, avança. Se errar, tenta de novo.<br>
+    <b>Passo 4:</b> São 6 descrições. Ao final, clique em "🔄 Jogar de novo".<br><br>
+    <b>Dica:</b> firma o boot = ativa; guarda o SO = boot; contêiner = estendida; fábrica = recuperação; UEFI = EFI.
+  </div>
+  <div id="o3"></div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u31"><p>1) A partição marcada para o firmware saber onde começar o boot é a…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! A ativa é a sinalizada para iniciar o boot — como a kitnet que o síndico manda procurar primeiro.">partição ativa</button>
+      <button class="q" data-fb="❌ A estendida é um contêiner de unidades lógicas.">partição estendida</button>
+      <button class="q" data-fb="❌ A lógica fica dentro da estendida.">unidade lógica</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u32"><p>2) A partição que funciona como contêiner e pode ser dividida em unidades lógicas é a…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! A estendida "contém" as unidades lógicas D:, E:…">partição estendida</button>
+      <button class="q" data-fb="❌ A primária recebe o SO, não vira contêiner.">partição primária</button>
+      <button class="q" data-fb="❌ A boot guarda arquivos de sistema.">partição boot</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u33"><p>3) Em computadores modernos com UEFI, a partição que guarda o firmware e o gerenciador de boot é a…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! A partição EFI guarda o firmware e o boot manager nas máquinas UEFI.">partição EFI</button>
+      <button class="q" data-fb="❌ A recuperação é para reparo de fábrica.">partição de recuperação</button>
+      <button class="q" data-fb="❌ A ativa é um sinalizador, não o repositório UEFI.">partição ativa</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Parti%C3%A7%C3%A3o_de_disco">Partição de disco — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/UEFI">UEFI — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 04 -->
+<section id="d4" class="demo">
+  <h2>04 — VHDs e discos dinâmicos</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Box de armazenamento:</b> o VHD fixo é alugar um box inteiro vazio; o dinâmico é pagar só pelo espaço que você realmente enche.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>VHD:</b> arquivo que emula um disco rígido — usado em máquinas virtuais e backups.</li>
+    <li><b>VHD fixo:</b> reserva todo o tamanho desde a criação.</li>
+    <li><b>VHD dinâmico:</b> cresce conforme os dados chegam.</li>
+    <li><b>Disco dinâmico (Windows):</b> permite volumes que atravessam vários discos e recursos avançados.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> um VHD de 100 GB; o controle define quantos GB de dados há dentro.</li>
+    <li><b>Teste 1 — comparar fixo e dinâmico.</b> <i>Clicar:</i> no controle de dados e ver as duas barras. <span class="sig"><i>Vê:</i> o fixo sempre ocupa 100 GB no disco físico; o dinâmico ocupa só o que há de dados. <i>Significa:</i> fixo = desempenho previsível e espaço reservado; dinâmico = economia de espaço, como pagar só pelo box que você enche.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Mova o controle de <b>dados dentro do VHD</b> (0 a 100 GB).<br>
+    <b>Passo 2:</b> Compare as barras <b>fixo</b> e <b>dinâmico</b> no painel.<br>
+    <b>Passo 3:</b> Clique em <b>🔄 Reiniciar</b> para refazer.<br><br>
+    <b>Dica:</b> fixo reserva tudo; dinâmico cresce com os dados.
+  </div>
+
+  Dados no VHD: <input type="range" id="vhd" min="0" max="100" value="10" oninput="updVhd()"> GB
+  <div id="o4"></div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u41"><p>1) Um VHD de tamanho fixo, mesmo vazio, ocupa no disco físico…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! O fixo reserva todo o espaço desde a criação — como alugar o box inteiro.">todo o tamanho reservado</button>
+      <button class="q" data-fb="❌ Só o usado é o dinâmico.">apenas o espaço usado</button>
+      <button class="q" data-fb="❌ Ele reserva espaço mesmo vazio.">nada</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u42"><p>2) Um VHD dinâmico…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Cresce conforme os dados chegam — economiza espaço.">cresce conforme os dados chegam</button>
+      <button class="q" data-fb="❌ Ele cresce, não encolhe ao desligar.">encolhe ao desligar o computador</button>
+      <button class="q" data-fb="❌ Tamanho fixo é o VHD fixo.">tem tamanho fixo desde a criação</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u43"><p>3) Discos dinâmicos no Windows permitem…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Volumes que atravessam vários discos e recursos avançados.">volumes que atravessam vários discos e recursos avançados</button>
+      <button class="q" data-fb="❌ Eles habilitam MAIS recursos, não menos.">apenas partições primárias</button>
+      <button class="q" data-fb="❌ Eles existem justamente para criar volumes.">nenhum volume</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://en.wikipedia.org/wiki/VHD_(file_format)">VHD (Wikipédia, em inglês)</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Parti%C3%A7%C3%A3o_de_disco">Partição de disco — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 05 -->
+<section id="d5" class="demo">
+  <h2>05 — RAID 0, 1 e 5</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>RAID 0 = dois cadernos escrevendo ao mesmo tempo:</b> mais rápido, mas se um caderno se perder, perde tudo.</li>
+    <li><b>RAID 1 = fotocópia:</b> tudo gravado em dobro — seguro, mas "caro" em espaço.</li>
+    <li><b>RAID 5 = quebra-cabeça com paridade:</b> distribui dados e paridade; se uma peça faltar, o resto reconstrói.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>RAID 0:</b> striping puro — máxima velocidade, zero redundância.</li>
+    <li><b>RAID 1:</b> espelhamento — cópia integral em outro disco.</li>
+    <li><b>RAID 5:</b> striping com paridade distribuída — tolera a perda de 1 disco.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> 3 discos de 100 GB; escolha o RAID e veja espaço útil e tolerância.</li>
+    <li><b>Teste 1 — perder um disco.</b> <i>Clicar:</i> no RAID e depois em "Perder 1 disco". <span class="sig"><i>Vê:</i> RAID 0 perde tudo; RAID 1 e 5 sobrevivem. <i>Significa:</i> velocidade (0) e segurança (1, 5) são escolhas de projeto — estúdio de vídeo usa 0; hospital usa 1 ou 5.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Clique em <b>RAID 0</b>, <b>RAID 1</b> ou <b>RAID 5</b>.<br>
+    <b>Passo 2:</b> Veja espaço útil e tolerância no painel.<br>
+    <b>Passo 3:</b> Clique em <b>💥 Perder 1 disco</b> e veja o resultado.<br>
+    <b>Passo 4:</b> Clique em <b>🔄 Restaurar discos</b> para refazer.<br><br>
+    <b>Dica:</b> 0 = velocidade sem proteção; 1 = espelho; 5 = paridade distribuída.
+  </div>
+
+  <div style="margin:10px 0">
+    <button onclick="setRaid(0)">RAID 0</button>
+    <button onclick="setRaid(1)">RAID 1</button>
+    <button onclick="setRaid(5)">RAID 5</button>
+    <button onclick="loseDisk()">💥 Perder 1 disco</button>
+    <button onclick="restore5()">🔄 Restaurar discos</button>
+  </div>
+  <div id="o5"></div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u51"><p>1) O RAID 0 prioriza…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Striping puro: máxima velocidade, nenhuma redundância.">desempenho, distribuindo os dados sem redundância</button>
+      <button class="q" data-fb="❌ Espelho é RAID 1.">segurança por espelhamento</button>
+      <button class="q" data-fb="❌ Paridade é RAID 5.">redundância por paridade</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u52"><p>2) O RAID 1 protege os dados por…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Espelhamento: cópia integral em outro disco.">espelhamento dos discos</button>
+      <button class="q" data-fb="❌ Dividir em faixas é striping (RAID 0).">divisão em faixas</button>
+      <button class="q" data-fb="❌ Paridade distribuída é RAID 5.">paridade distribuída</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u53"><p>3) O RAID 5 combina…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Striping com paridade distribuída — tolera perder 1 disco.">striping com paridade distribuída, tolerando 1 disco</button>
+      <button class="q" data-fb="❌ Espelho sem paridade é RAID 1.">espelho sem paridade</button>
+      <button class="q" data-fb="❌ Striping sem paridade é RAID 0.">striping sem paridade</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/RAID">RAID — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Disco_r%C3%ADgido">Disco rígido — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 06 -->
+<section id="d6" class="demo">
+  <h2>06 — O disco por inteiro: revisão</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Checklist do técnico:</b> antes de entregar a máquina, ele confere CPU, camadas, partições, VHD e RAID — exatamente o que este jogo revisa.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> jogo de classificar 6 afirmações no tópico da aula.</li>
+    <li><b>Teste 1 — classificar.</b> <i>Clicar:</i> no tópico correto. <span class="sig"><i>Vê:</i> acerto/erro com o porquê. <i>Significa:</i> revisar conectando os conceitos fixa o mapa mental da aula inteira.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — fechar a aula.</b> <i>Clicar:</i> 🗺️ mapa e 📝 cola rápida. <span class="sig"><i>Vê:</i> o fio condutor. <i>Significa:</i> hardware executa, camadas traduzem, partições organizam, VHDs virtualizam e RAID protege — o gerenciamento de discos é a soma disso.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Abaixo aparece uma <b>afirmação</b>.<br>
+    <b>Passo 2:</b> Clique no <b>tópico</b> correto (CPU, Camadas, Partições, VHD, RAID).<br>
+    <b>Passo 3:</b> Se acertar, avança. Se errar, tenta de novo.<br>
+    <b>Passo 4:</b> Ao final, clique em "🔄 Jogar de novo".<br><br>
+    <b>Dica:</b> pensa em "quem faz o quê" de cada conceito.
+  </div>
+  <div id="o6"></div>
+
+  <details class="info"><summary>🗺️ Mapa da aula (visão geral)</summary>
+    <p><b>CPU</b> (UC busca/comanda, ULA executa, clock ritma, MIPS mede) → <b>Camadas</b> (Aplicativos → Utilitários → SO → Hardware) → <b>Partições</b> (primária, estendida, ativa, boot, recuperação/EFI) → <b>VHDs</b> (fixo × dinâmico) e discos dinâmicos → <b>RAID</b> (0 velocidade, 1 espelho, 5 paridade).</p>
+  </details>
+  <details class="info"><summary>📝 Cola rápida (uma linha por termo)</summary><ul>
+    <li><b>ULA:</b> calcula e compara. <b>UC:</b> busca, decodifica, comanda.</li>
+    <li><b>Clock:</b> ritmo (Hz). <b>MIPS:</b> milhões de instruções por segundo.</li>
+    <li><b>Camadas:</b> Aplicativos, Utilitários, SO, Hardware.</li>
+    <li><b>Primária:</b> recebe o SO. <b>Estendida:</b> contêiner de lógicas.</li>
+    <li><b>Ativa:</b> sinaliza o boot. <b>Boot:</b> arquivos do sistema.</li>
+    <li><b>Recuperação/EFI:</b> reparo de fábrica; firmware UEFI.</li>
+    <li><b>VHD fixo:</b> reserva tudo. <b>Dinâmico:</b> cresce com os dados.</li>
+    <li><b>RAID 0:</b> velocidade sem proteção. <b>1:</b> espelho. <b>5:</b> paridade, tolera 1 disco.</li>
+  </ul></details>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u61"><p>1) No RAID 0, perder um disco significa…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Sem redundância, perder 1 disco perde tudo — como perder um dos cadernos escritos pela metade.">perder todos os dados, pois não há redundância</button>
+      <button class="q" data-fb="❌ Sem redundância não há como sobreviver.">não perder nada</button>
+      <button class="q" data-fb="❌ RAID 0 não tem paridade.">perder apenas a paridade</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u62"><p>2) Com três discos de 100 GB em RAID 5, o espaço útil é…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! RAID 5 usa um disco "equivalente" para paridade: 3 menos 1 vezes 100 igual 200 GB.">200 GB</button>
+      <button class="q" data-fb="❌ 300 GB seria RAID 0, sem paridade.">300 GB</button>
+      <button class="q" data-fb="❌ 100 GB seria RAID 1 (espelho).">100 GB</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u63"><p>3) A partição que contém os arquivos de sistema do SO é chamada de…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! A partição boot guarda os arquivos de sistema.">partição boot</button>
+      <button class="q" data-fb="❌ A ativa sinaliza onde começar, não guarda o SO.">partição ativa</button>
+      <button class="q" data-fb="❌ A EFI guarda firmware/gerenciador UEFI.">partição EFI</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Disco_r%C3%ADgido">Disco rígido — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/RAID">RAID — Wikipédia</a>
+  </details>
+</section>
+
+<script>
+// Trocar de aba NÃO reseta as demos (progresso mantido)
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.demo').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); document.getElementById(b.dataset.t).classList.add('active');
+});
+function aposta(){ document.body.classList.toggle('aposta');
+  document.getElementById('apBtn').textContent='🎲 Modo aposta: '+(document.body.classList.contains('aposta')?'ON':'OFF'); }
+function rev(b){ b.previousElementSibling.classList.add('shown'); b.classList.add('off'); }
+document.querySelectorAll('.qq').forEach(qq=>{
+ const btns=[...qq.querySelectorAll('button.q')];
+ const fb=qq.querySelector('.fb');
+ for(let i=btns.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [btns[i],btns[j]]=[btns[j],btns[i]]; }
+ btns.forEach(b=>qq.insertBefore(b,fb));
+});
+document.addEventListener('click',e=>{
+  const b=e.target.closest('.q'); if(!b) return;
+  const fb=b.closest('.qq').querySelector('.fb');
+  b.classList.add(b.dataset.ok=='1'?'ok':'bad');
+  fb.textContent=b.dataset.fb||'';
+});
+
+// Fábrica de jogos de classificação
+function makeGame(outId, opts, items, realEx){
+ const g={i:0,s:0};
+ g.draw=function(){
+  const out=document.getElementById(outId);
+  if(g.i>=items.length){
+   out.innerHTML='<b>🏁 Fim!</b> Você acertou '+g.s+' de '+items.length+'. <b>Exemplo real:</b> '+realEx+'<br><button id="rg_'+outId+'" style="margin-top:8px;font-size:1rem">🔄 Jogar de novo</button>';
+   document.getElementById('rg_'+outId).onclick=function(){g.i=0;g.s=0;g.draw();};
+   return;
+  }
+  const it=items[g.i];
+  out.innerHTML='<b>Situação '+(g.i+1)+' de '+items.length+':</b> "'+it.t+'"<br>'+
+   opts.map(o=>'<button class="bar" data-o="'+o+'">'+o+'</button>').join(' ');
+  out.querySelectorAll('button').forEach(btn=>{ btn.onclick=function(){ g.pick(btn.getAttribute('data-o')); }; });
+ };
+ g.pick=function(v){
+  const it=items[g.i];
+  if(v===it.ok){
+   g.s++;
+   document.getElementById(outId).innerHTML=it.fb+'<br><button id="nx_'+outId+'" style="margin-top:6px">próxima ▶</button>';
+   document.getElementById('nx_'+outId).onclick=function(){g.i++;g.draw();};
+  } else {
+   document.getElementById(outId).innerHTML='❌ Tente de novo. <b>Dica:</b> '+it.hint+'<br><b>Situação '+(g.i+1)+' de '+items.length+':</b> "'+it.t+'"<br>'+
+    opts.map(o=>'<button class="bar" data-o="'+o+'">'+o+'</button>').join(' ');
+   document.getElementById(outId).querySelectorAll('button').forEach(btn=>{ btn.onclick=function(){ g.pick(btn.getAttribute('data-o')); }; });
+  }
+ };
+ return g;
+}
+
+// 01 - CPU
+function updMips(){
+ const clk=+document.getElementById('clk').value, ipc=+document.getElementById('ipc').value;
+ document.getElementById('painel1').innerHTML=
+  '<b>UC:</b> pronta | <b>ULA:</b> pronta | <b>Clock:</b> '+clk+' MHz | <b>Instruções por ciclo:</b> '+ipc+'<br>'+
+  '<b>MIPS:</b> '+(clk*ipc)+' — <b>Exemplo real:</b> um chip de 3000 MHz executando 2 instruções por ciclo entrega 6000 MIPS, como um processador de notebook atual.';
+}
+function runInstr(){
+ const out=document.getElementById('o1');
+ out.innerHTML='<b>UC:</b> buscando a instrução na memória…';
+ setTimeout(()=>{ out.innerHTML='<b>UC:</b> decodificando… é uma SOMA.'; },700);
+ setTimeout(()=>{ out.innerHTML='<b>ULA:</b> executando 7 mais 5… resultado <b>12</b>.<br><b>Exemplo real:</b> é exatamente o que acontece ao somar dois preços no caixa do mercado — bilhões de vezes por segundo.'; },1400);
+}
+function reset1(){ document.getElementById('o1').textContent='Clique em "Executar 1 instrução" para ver o ciclo buscar-decodificar-executar.'; updMips(); }
+
+// 02 - Camadas
+const LAYS=[
+ {n:'Aplicativos',fb:'<b>Aplicativos:</b> programas do usuário. <b>Exemplo real:</b> o editor de texto onde você escreve.'},
+ {n:'Utilitários',fb:'<b>Utilitários:</b> ferramentas de apoio. <b>Exemplo real:</b> o antivírus e o compactador ZIP.'},
+ {n:'Sistema Operacional',fb:'<b>Sistema Operacional:</b> gerencia o hardware. <b>Exemplo real:</b> o Windows decidindo onde gravar o arquivo.'},
+ {n:'Hardware',fb:'<b>Hardware:</b> a parte física. <b>Exemplo real:</b> o disco que grava os bits.'}
+];
+function verLayer(i){
+ [0,1,2,3].forEach(k=>document.getElementById('L'+k).classList.remove('on'));
+ document.getElementById('L'+i).classList.add('on');
+ document.getElementById('o2').innerHTML=LAYS[i].fb;
+}
+function simZip(){
+ const out=document.getElementById('o2');
+ [0,1,2,3].forEach(k=>document.getElementById('L'+k).classList.remove('on'));
+ const msgs=[
+  '<b>Aplicativos:</b> você clica em "extrair ZIP" no programa.',
+  '<b>Utilitários:</b> o compactador interpreta o arquivo e prepara os dados.',
+  '<b>Sistema Operacional:</b> o SO decide onde gravar e organiza o acesso.',
+  '<b>Hardware:</b> o disco grava os bits fisicamente. Pronto!'
+ ];
+ msgs.forEach((m,i)=>{
+  setTimeout(()=>{ document.getElementById('L'+i).classList.add('on'); out.innerHTML=m+'<br><b>Exemplo real:</b> o pedido nasce no aplicativo e vira física no hardware — cada camada traduz para a de baixo.'; }, i*800);
+ });
+}
+function reset2(){
+ [0,1,2,3].forEach(k=>document.getElementById('L'+k).classList.remove('on'));
+ document.getElementById('o2').textContent='Clique nas camadas ou simule a ação.';
+}
+
+// 03 - Partições
+const g3=makeGame('o3',['Primária','Estendida','Ativa','Boot','Recuperação','EFI'],[
+ {t:'Partição sinalizada para o firmware saber onde começar o boot',ok:'Ativa',hint:'firma o início do boot',fb:'✅ Ativa: a marcada para o firmware iniciar o boot.'},
+ {t:'Partição que contém os arquivos de sistema do Windows',ok:'Boot',hint:'guarda o SO',fb:'✅ Boot: guarda os arquivos de sistema do SO.'},
+ {t:'Partição com ferramentas de reparo de fábrica',ok:'Recuperação',hint:'reparo de fábrica',fb:'✅ Recuperação: ferramentas de reparo de fábrica.'},
+ {t:'Partição em máquina UEFI que guarda o firmware e o gerenciador de boot',ok:'EFI',hint:'UEFI',fb:'✅ EFI: firmware e boot manager nas máquinas UEFI.'},
+ {t:'Partição que pode receber o SO e letra de unidade C:',ok:'Primária',hint:'recebe o SO',fb:'✅ Primária: recebe o SO e letra de unidade.'},
+ {t:'Contêiner que pode ser dividido em unidades lógicas D: e E:',ok:'Estendida',hint:'contêiner de lógicas',fb:'✅ Estendida: contêiner de unidades lógicas.'}
+],'no disco de um notebook típico convivem C: (primária/boot), uma EFI, uma de recuperação e uma estendida com D:.');
+g3.draw();
+
+// 04 - VHD
+function updVhd(){
+ const d=+document.getElementById('vhd').value;
+ document.getElementById('o4').innerHTML=
+  '<b>VHD fixo (100 GB):</b> ocupa sempre 100 GB no disco físico.<br>'+
+  '<b>VHD dinâmico:</b> ocupa '+d+' GB (só os dados).<br>'+
+  '<b>Exemplo real:</b> com 10 GB de dados, o fixo "desperdiça" 90 GB reservados; o dinâmico economiza — mas o fixo tem desempenho mais previsível.';
+}
+
+// 05 - RAID
+let raid=0, dead=false;
+function setRaid(r){ raid=r; dead=false; draw5(); }
+function loseDisk(){ dead=true; draw5(); }
+function restore5(){ dead=false; draw5(); }
+function draw5(){
+ const out=document.getElementById('o5');
+ const info={
+  0:{esp:'300 GB',tol:'nenhuma (0 discos)',lose:'PERDE TUDO — sem redundância, como perder o único caderno.'},
+  1:{esp:'100 GB',tol:'até 2 discos (espelho triplo)',lose:'SOBREVIVE — os espelhos mantêm os dados, como uma fotocópia.'},
+  5:{esp:'200 GB',tol:'1 disco',lose:'SOBREVIVE (degradado) — a paridade reconstrói a peça perdida.'}
+ }[raid];
+ let html='<b>RAID '+raid+':</b> espaço útil '+info.esp+' | tolerância: '+info.tol+'<br>';
+ html+='<span class="disk'+(dead?' dead':'')+'">Disco 1</span><span class="disk">Disco 2</span><span class="disk">Disco 3</span><br>';
+ if(dead) html+='<b>Resultado ao perder 1 disco:</b> '+info.lose;
+ else html+='<b>Exemplo real:</b> estúdio de vídeo usa RAID 0 pela velocidade; hospital usa RAID 1 ou 5 para não perder prontuários.';
+ out.innerHTML=html;
+}
+draw5();
+
+// 06 - Revisão
+const g6=makeGame('o6',['CPU','Camadas','Partições','VHD','RAID'],[
+ {t:'Executa a soma 7 mais 5 durante um cálculo',ok:'CPU',hint:'quem calcula',fb:'✅ CPU: a ULA executa o cálculo.'},
+ {t:'Um compactador ZIP que apoia o editor de textos',ok:'Camadas',hint:'utilitário',fb:'✅ Camadas: o compactador é um utilitário entre o app e o SO.'},
+ {t:'A divisão do disco que guarda os arquivos de sistema',ok:'Partições',hint:'boot',fb:'✅ Partições: a partição boot guarda os arquivos do SO.'},
+ {t:'Arquivo que emula um disco e cresce conforme os dados',ok:'VHD',hint:'disco virtual dinâmico',fb:'✅ VHD: disco virtual que cresce com os dados.'},
+ {t:'Três discos trabalhando como um, com paridade distribuída',ok:'RAID',hint:'RAID 5',fb:'✅ RAID: striping com paridade distribuída (RAID 5).'},
+ {t:'O "metrônomo" que marca o ritmo do processador',ok:'CPU',hint:'clock',fb:'✅ CPU: o clock marca o ritmo em ciclos por segundo.'}
+],'um técnico de manutenção usa tudo isso junto ao montar um servidor: CPU, camadas, partições, VHD e RAID.');
+g6.draw();
+
+updMips(); updVhd();
+</script>
+</body>
+</html>
