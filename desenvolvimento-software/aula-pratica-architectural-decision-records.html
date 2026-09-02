@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aula Interativa: Documentos ADR (Architectural Decision Records)</title>
+  <style>
+    :root {
+      --bg-body: #090d16;
+      --bg-card: #131b2e;
+      --bg-card-hover: #1e293b;
+      --bg-inset: #0a0f1d;
+      --border-color: #24324f;
+      --border-focus: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-hover: #0284c7;
+      --accent: #818cf8;
+      --adr-purple: #c084fc;
+      --aws-orange: #ff9900;
+      --terminal-bg: #030712;
+      --success: #22c55e;
+      --success-bg: rgba(34, 197, 94, 0.15);
+      --warning: #f59e0b;
+      --warning-bg: rgba(245, 158, 11, 0.15);
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.15);
+      --badge-bg: #1e1b4b;
+      --badge-text: #a5b4fc;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+      --radius: 12px;
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    [data-theme="light"] {
+      --bg-body: #f1f5f9;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f8fafc;
+      --bg-inset: #f1f5f9;
+      --border-color: #cbd5e1;
+      --border-focus: #0284c7;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --primary: #0284c7;
+      --primary-hover: #0369a1;
+      --accent: #4f46e5;
+      --adr-purple: #7e22ce;
+      --aws-orange: #d97706;
+      --terminal-bg: #0f172a;
+      --success: #16a34a;
+      --success-bg: rgba(22, 163, 74, 0.12);
+      --warning: #d97706;
+      --warning-bg: rgba(217, 119, 6, 0.12);
+      --danger: #dc2626;
+      --danger-bg: rgba(220, 38, 38, 0.12);
+      --badge-bg: #e0e7ff;
+      --badge-text: #3730a3;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease; }
+    body { font-family: var(--font-sans); background-color: var(--bg-body); color: var(--text-main); line-height: 1.6; padding-bottom: 60px; }
+    .container { max-width: 1180px; margin: 0 auto; padding: 20px; }
+
+    header {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .header-info h1 { font-size: 1.6rem; font-weight: 800; display: flex; align-items: center; gap: 10px; color: var(--primary); }
+    .header-info p { color: var(--text-muted); font-size: 0.95rem; margin-top: 4px; }
+    .header-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .progress-box { background: var(--bg-inset); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 9999px; display: flex; align-items: center; gap: 12px; }
+    .progress-bar-wrap { width: 110px; height: 8px; background: var(--border-color); border-radius: 9999px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--aws-orange), var(--primary), var(--success)); border-radius: 9999px; transition: width 0.4s ease; }
+    .progress-text { font-size: 0.85rem; font-weight: 700; color: var(--primary); min-width: 38px; }
+    .btn-theme { background: var(--bg-inset); border: 1px solid var(--border-color); color: var(--text-main); padding: 8px 14px; border-radius: var(--radius); cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+    .btn-theme:hover { background: var(--bg-card-hover); border-color: var(--border-focus); }
+
+    .tabs-nav { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 24px; border-bottom: 2px solid var(--border-color); scrollbar-width: thin; }
+    .tab-btn { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-muted); padding: 12px 18px; border-radius: var(--radius) var(--radius) 0 0; cursor: pointer; font-weight: 700; font-size: 0.92rem; white-space: nowrap; display: flex; align-items: center; gap: 8px; transition: all 0.2s; }
+    .tab-btn:hover { color: var(--text-main); background: var(--bg-card-hover); }
+    .tab-btn.active { background: var(--primary); color: #ffffff; border-color: var(--primary); box-shadow: 0 4px 12px rgba(56, 189, 248, 0.35); }
+
+    .tab-panel { display: none; animation: fadeIn 0.3s ease; }
+    .tab-panel.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 24px; margin-bottom: 24px; box-shadow: var(--shadow); }
+    .card-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; color: var(--primary); }
+    .concept-box { background: var(--bg-inset); border-left: 4px solid var(--primary); padding: 16px 20px; border-radius: 0 var(--radius) var(--radius) 0; margin-bottom: 16px; }
+    .concept-box p { margin-bottom: 10px; font-size: 1rem; }
+    .concept-box p:last-child { margin-bottom: 0; }
+    .analogy-highlight { background: var(--badge-bg); color: var(--badge-text); padding: 12px 16px; border-radius: 8px; font-weight: 500; margin-top: 12px; display: flex; align-items: flex-start; gap: 10px; border: 1px solid rgba(129, 140, 248, 0.3); }
+
+    .lab-container { background: var(--bg-inset); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 20px; margin-top: 16px; }
+    .lab-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+    .btn-reset { background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+    .btn-reset:hover { color: var(--text-main); border-color: var(--primary); background: var(--bg-card); }
+    .btn-action { background: var(--primary); color: #ffffff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-size: 0.95rem; box-shadow: 0 4px 10px rgba(56, 189, 248, 0.25); }
+    .btn-action:hover { background: var(--primary-hover); transform: translateY(-1px); }
+
+    /* ADR Viewer & Simulator Styles */
+    .adr-paper {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+
+    .adr-status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-weight: 800;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      font-family: var(--font-mono);
+    }
+
+    .status-proposed { background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning); }
+    .status-accepted { background: var(--success-bg); color: var(--success); border: 1px solid var(--success); }
+    .status-superseded { background: rgba(148, 163, 184, 0.15); color: var(--text-muted); border: 1px solid var(--border-color); }
+    .status-deprecated { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger); }
+
+    .adr-section-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin-top: 14px;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .challenge-card {
+      background: var(--bg-card);
+      border: 2px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-top: 24px;
+      position: relative;
+    }
+
+    .challenge-badge {
+      position: absolute;
+      top: -12px;
+      left: 20px;
+      background: var(--accent);
+      color: #ffffff;
+      padding: 2px 12px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .challenge-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+      font-weight: 700;
+      padding: 10px 14px;
+      border-radius: 8px;
+    }
+
+    .challenge-unlocked { background: var(--success-bg); color: var(--success); border: 1px solid var(--success); }
+    .challenge-locked { background: var(--bg-inset); color: var(--text-muted); border: 1px dashed var(--border-color); }
+
+    /* Quiz Styling */
+    .quiz-card { margin-top: 24px; }
+    .quiz-question { background: var(--bg-inset); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 18px; margin-bottom: 16px; }
+    .quiz-question h4 { font-size: 1rem; margin-bottom: 14px; color: var(--text-main); }
+    .quiz-options { display: flex; flex-direction: column; gap: 10px; }
+    .quiz-opt-btn { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px 16px; border-radius: 8px; cursor: pointer; text-align: left; font-size: 0.95rem; display: flex; align-items: center; gap: 10px; }
+    .quiz-opt-btn:hover:not(:disabled) { border-color: var(--primary); background: var(--bg-card-hover); }
+    .quiz-opt-btn.correct { background: var(--success-bg) !important; border-color: var(--success) !important; color: var(--success) !important; font-weight: 700; }
+    .quiz-opt-btn.wrong { background: var(--danger-bg) !important; border-color: var(--danger) !important; color: var(--danger) !important; }
+    .quiz-feedback { margin-top: 10px; padding: 12px; border-radius: 8px; font-size: 0.9rem; display: none; line-height: 1.5; }
+
+    .code-editor {
+      width: 100%;
+      height: 280px;
+      background: var(--terminal-bg);
+      color: #38bdf8;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 14px;
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    .badge-code { font-family: var(--font-mono); font-weight: 700; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; }
+    .search-bar { width: 100%; padding: 12px 18px; background: var(--bg-inset); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-main); font-size: 1rem; margin-bottom: 16px; }
+    .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border-color); }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem; }
+    th, td { padding: 12px 16px; border-bottom: 1px solid var(--border-color); }
+    th { background: var(--bg-inset); font-weight: 800; color: var(--primary); }
+    tr:hover td { background: var(--bg-card-hover); }
+
+    .select-ctrl {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.92rem;
+      width: 100%;
+    }
+    .select-ctrl:focus { outline: none; border-color: var(--primary); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-info">
+        <h1>📜 Dominando ADRs (Architectural Decision Records)</h1>
+        <p>Governança de Arquitetura &bull; Padrão Michael Nygard, Modelo AWS & Pesquisa API-First &bull; 100% Offline</p>
+      </div>
+      <div class="header-actions">
+        <div class="progress-box">
+          <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Progresso:</span>
+          <div class="progress-bar-wrap"><div class="progress-bar-fill" id="global-progress-bar"></div></div>
+          <span class="progress-text" id="global-progress-text">0%</span>
+        </div>
+        <button class="btn-theme" id="theme-toggle"><span>🌓</span> Tema</button>
+      </div>
+    </header>
+
+    <nav class="tabs-nav">
+      <button class="tab-btn active" data-tab="tab1"><span>📑</span> 1. O que é uma ADR?</button>
+      <button class="tab-btn" data-tab="tab2"><span>☁️</span> 2. Formato Nygard vs AWS</button>
+      <button class="tab-btn" data-tab="tab3"><span>🚀</span> 3. ADR API-First (Pesquisa)</button>
+      <button class="tab-btn" data-tab="tab4"><span>🧱</span> 4. Decisões de Stack Técnica</button>
+      <button class="tab-btn" data-tab="tab5"><span>💻</span> 5. Live ADR Studio & Linter</button>
+      <button class="tab-btn" data-tab="tab6"><span>🗺️</span> 6. Ciclo de Vida & Cheat Sheet</button>
+    </nav>
+
+    <!-- ABA 1: FUNDAMENTOS -->
+    <section class="tab-panel active" id="tab1">
+      <div class="card">
+        <h2 class="card-title">💡 Conceito em 60 Segundos: O Diário de Bordo da Engenharia</h2>
+        <div class="concept-box">
+          <p>
+            Um <strong>ADR (Architectural Decision Record)</strong> é um documento de texto curto (geralmente em Markdown) que captura uma <strong>decisão arquitetural de peso</strong> tomada pela equipe, acompanhada do seu <strong>contexto</strong>, da <strong>justificativa de negócio</strong> e de suas <strong>consequências (positivas e negativas)</strong>.
+          </p>
+          <p>
+            Sem ADRs, equipes caem na armadilha do <em>"Efeito Arqueologia de Software"</em>: ninguém sabe por que o sistema escolheu DynamoDB em vez de PostgreSQL ou por que abandonou microsserviços por um monolito modular três anos atrás, gerando refatorações redundantes e discussões circulares.
+          </p>
+          <div class="analogy-highlight">
+            <span style="font-size: 1.5rem;">✈️</span>
+            <div>
+              <strong>Analogia da Caixa-Preta da Aviação:</strong> Quando engenheiros alteram a rota de voo ou mudam uma peça crítica da aeronave, registram na ata de voo o motivo da manobra e o clima do momento. Se o próximo piloto assumir os controles, não precisa adivinhar o porquê daquela rota alternativa!
+            </div>
+          </div>
+        </div>
+
+        <div class="lab-container">
+          <div class="lab-header">
+            <h3 style="display:flex; align-items:center; gap:8px;">
+              <span>🧪</span> Laboratório: Decisão Arquitetural vs Decisão de Implementação
+            </h3>
+            <button class="btn-reset" onclick="resetLab1()">↺ Reiniciar Teste</button>
+          </div>
+          <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:14px;">
+            Nem tudo merece uma ADR! Registrar coisas triviais cria burocracia inútil. Avalie os cenários abaixo e classifique o que é <strong>Decisão Arquitetural (Exige ADR)</strong> ou apenas <strong>Detalhe de Código / Trivial</strong>:
+          </p>
+
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:14px;">
+            <div style="background:var(--bg-card); padding:14px; border-radius:8px; border:1px solid var(--border-color);">
+              <strong>Cenário 1: Trocar Monolito por Microsserviços com Kafka</strong>
+              <div style="font-size:0.82rem; color:var(--text-muted); margin:6px 0 10px;">Impacta 10 squads, custo de infraestrutura na nuvem e modelo de consistência de dados.</div>
+              <div style="display:flex; gap:6px;">
+                <button class="btn-reset" onclick="judgeAdrScenario(1, 'adr')">Exige ADR ✅</button>
+                <button class="btn-reset" onclick="judgeAdrScenario(1, 'trivial')">É Trivial ❌</button>
+              </div>
+              <div id="scen-fb-1" style="margin-top:6px; font-size:0.82rem;"></div>
+            </div>
+
+            <div style="background:var(--bg-card); padding:14px; border-radius:8px; border:1px solid var(--border-color);">
+              <strong>Cenário 2: Renomear variável interna de um método de 'x' para 'total'</strong>
+              <div style="font-size:0.82rem; color:var(--text-muted); margin:6px 0 10px;">Refatoração local restrita a uma classe privada sem impacto em outros componentes.</div>
+              <div style="display:flex; gap:6px;">
+                <button class="btn-reset" onclick="judgeAdrScenario(2, 'adr')">Exige ADR ❌</button>
+                <button class="btn-reset" onclick="judgeAdrScenario(2, 'trivial')">É Trivial ✅</button>
+              </div>
+              <div id="scen-fb-2" style="margin-top:6px; font-size:0.82rem;"></div>
+            </div>
+
+            <div style="background:var(--bg-card); padding:14px; border-radius:8px; border:1px solid var(--border-color);">
+              <strong>Cenário 3: Migrar de Sessão em Cookie para Tokens JWT Descentralizados</strong>
+              <div style="font-size:0.82rem; color:var(--text-muted); margin:6px 0 10px;">Muda todo o fluxo de segurança, políticas de revogação de acesso e APIs móveis.</div>
+              <div style="display:flex; gap:6px;">
+                <button class="btn-reset" onclick="judgeAdrScenario(3, 'adr')">Exige ADR ✅</button>
+                <button class="btn-reset" onclick="judgeAdrScenario(3, 'trivial')">É Trivial ❌</button>
+              </div>
+              <div id="scen-fb-3" style="margin-top:6px; font-size:0.82rem;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-badge">Missão 1</div>
+          <h3 style="font-size:1.1rem; margin-top:6px;">🎯 Desafio Prático: O Filtro da Relevância Arquitetural</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">
+            Classifique corretamente os 3 cenários do laboratório para calibrar o critério de quando registrar uma ADR.
+          </p>
+          <div id="challenge1-box" class="challenge-status challenge-locked">
+            <span id="challenge1-icon">🔒</span>
+            <span id="challenge1-msg">Aguardando você classificar todos os 3 cenários...</span>
+          </div>
+        </div>
+
+        <div class="quiz-card">
+          <h3 class="card-title">🧠 Mini-Quiz de Fixação</h3>
+          <div class="quiz-question" data-qid="adr_q1_1">
+            <h4>1. Qual é a finalidade precípua de uma equipe de desenvolvimento manter um histórico de ADRs no repositório?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Correto! Preserva a memória técnica, explicita motivações de negócio e trade-offs, acelerando onboarding e prevenindo retrabalho.">Preservar o contexto e a justificativa de decisões críticas, facilitando o onboarding e evitando refatorações cegas no futuro.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. ADRs não substituem código ou compilação de binários.">Substituir o compilador de linguagens como Java ou C#.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. ADRs são orientadas a texto leve e colaborativo no Git.">Aumentar a burocracia para impedir que desenvolvedores façam commits.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <div class="quiz-question" data-qid="adr_q1_2">
+            <h4>2. Por que as ADRs são versionadas em texto simples (Markdown) junto ao código no Git em vez de ficarem soltas em planilhas ou murais?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Exatamente! O Markdown no Git passa por Pull Requests, branches e evolui no mesmo ritmo do software.">Para garantir histórico atômico, rastreabilidade via Pull Requests e proximidade direta com o código-fonte.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. O formato Markdown não afeta a memória RAM de execução da aplicação.">Porque o formato Markdown reduz o consumo de memória RAM do banco de dados.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Porque sistemas operacionais não conseguem ler arquivos de texto fora do Git.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABA 2: FORMATOS NYGARD VS AWS -->
+    <section class="tab-panel" id="tab2">
+      <div class="card">
+        <h2 class="card-title">💡 Conceito em 60 Segundos: Michael Nygard vs AWS Prescriptive Guidance</h2>
+        <div class="concept-box">
+          <p>
+            Embora qualquer ADR capture decisões, a indústria adota dois formatos proeminentes com diferentes graus de maturidade:
+          </p>
+          <ul style="margin-left: 20px; font-size: 0.95rem; line-height: 1.7; margin-top:8px;">
+            <li><strong>Formato Clássico de Michael Nygard (2011):</strong> Minimalista e ágil. Composto por 5 seções obrigatórias: <em>Title</em>, <em>Status</em>, <em>Context</em>, <em>Decision</em> e <em>Consequences</em>.</li>
+            <li><strong>Formato Enterprise da AWS (Prescriptive Guidance):</strong> Projetado para grandes organizações em nuvem. Acrescenta seções formais como <em>Compliance (Auditoria)</em>, <em>Validation / Test Scenario</em> e <em>Considered Options (Análise de Alternativas Rejeitadas)</em> com justificativas de custo e governança.</li>
+          </ul>
+        </div>
+
+        <div class="lab-container">
+          <div class="lab-header">
+            <h3 style="display:flex; align-items:center; gap:8px;">
+              <span>🧪</span> Laboratório: Comparador Visual de Estrutura de ADR
+            </h3>
+            <span style="font-size:0.85rem; color:var(--text-muted);">Selecione o modelo para comparar as seções:</span>
+          </div>
+
+          <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;">
+            <button class="btn-action" id="btn-tmpl-nygard" onclick="switchAdrTemplate('nygard')">📄 Modelo Clássico Nygard (Ágil)</button>
+            <button class="btn-reset" id="btn-tmpl-aws" onclick="switchAdrTemplate('aws')">☁️ Modelo AWS Prescriptive Guidance (Enterprise)</button>
+          </div>
+
+          <div id="adr-template-viewer" class="adr-paper"></div>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-badge">Missão 2</div>
+          <h3 style="font-size:1.1rem; margin-top:6px;">🎯 Desafio Prático: Conhecer a Seção de Compliance da AWS</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">
+            Alterne para o modelo da <strong>AWS Prescriptive Guidance</strong> e confira como a conformidade (Compliance) é auditada em nuvem.
+          </p>
+          <div id="challenge2-box" class="challenge-status challenge-locked">
+            <span id="challenge2-icon">🔒</span>
+            <span id="challenge2-msg">Aguardando você inspecionar o formato AWS...</span>
+          </div>
+        </div>
+
+        <div class="quiz-card">
+          <h3 class="card-title">🧠 Mini-Quiz de Fixação</h3>
+          <div class="quiz-question" data-qid="adr_q2_1">
+            <h4>1. O que diferencia primordialmente o formato de ADR recomendado pela AWS do formato enxuto de Nygard?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Correto! O modelo da AWS enfatiza critérios auditáveis de compliance em nuvem e comparação sistemática das opções descartadas.">A inclusão de seções obrigatórias para Opções Consideradas (trade-offs detalhados) e Validação de Conformidade (Compliance). </button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. ADRs da AWS são documentos conceituais de arquitetura agnósticos de linguagem.">O formato da AWS só pode ser escrito em código Python compilado.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. Ambos os modelos registram o contexto do problema.">O modelo Nygard proíbe descrever o contexto do problema.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <div class="quiz-question" data-qid="adr_q2_2">
+            <h4>2. Por que a seção de 'Consequências' em uma ADR DEVE listar tanto aspectos positivos quanto negativos?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Perfeito! Na arquitetura de software não existe solução mágica sem ônus; toda decisão é um trade-off consciente.">Porque nenhuma decisão de engenharia é perfeita; explicitar desvantagens prepara o time para os custos operacionais assumidos.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. Consequências negativas não anulam a validade da ADR.">Porque listar desvantagens cancela automaticamente a decisão arquitetural.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Apenas para preencher linhas de documentação.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABA 3: PESQUISA API-FIRST EM FORMATO ADR -->
+    <section class="tab-panel" id="tab3">
+      <div class="card">
+        <h2 class="card-title">💡 Conceito em 60 Segundos: Pesquisa & Caso de Uso - Adoção API-First em Formato ADR</h2>
+        <div class="concept-box">
+          <p>
+            O conceito <strong>API-First</strong> estabelece que a interface de comunicação do sistema é modelada, validada e acordada como um contrato (OpenAPI / Swagger) <em>antes</em> de qualquer implementação de código.
+          </p>
+          <p>
+            Quando uma empresa adota API-First, ela toma uma <strong>decisão arquitetural de alto impacto</strong> que afeta a cultura de entrega, o ritmo dos times frontend/backend e o fluxo de CI/CD. Abaixo está a pesquisa técnica estruturada dessa decisão no formato formal de ADR.
+          </p>
+        </div>
+
+        <div class="lab-container">
+          <div class="lab-header">
+            <h3 style="display:flex; align-items:center; gap:8px;">
+              <span>🚀</span> Laboratório: Documento Oficial ADR-001 - Adoção da Abordagem API-First
+            </h3>
+            <button class="btn-reset" onclick="simulateAdrStatusChange()">↺ Alternar Status da Decisão</button>
+          </div>
+
+          <!-- Documento ADR Vivo -->
+          <div class="adr-paper">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px;">
+              <div>
+                <h3 style="font-size:1.2rem; color:var(--text-main);">ADR-001: Adoção da Estratégia API-First com OpenAPI 3.0</h3>
+                <div style="font-size:0.82rem; color:var(--text-muted); margin-top:2px;">Data: 02 de Setembro de 2026 &bull; Autor: Equipe de Arquitetura de Plataforma</div>
+              </div>
+              <span id="adr001-status" class="adr-status-badge status-accepted">ACCEPTED / APROVADO</span>
+            </div>
+
+            <div class="adr-section-title"><span>📋</span> 1. Contexto e Declaração do Problema</div>
+            <p style="font-size:0.9rem; color:var(--text-muted);">
+              Nossas squads de desenvolvimento enfrentam frequentes atrasos no ciclo de entrega (Time-to-Market): as equipes de Frontend (Web e Mobile) ficam paradas esperando o time de Backend concluir e subir os endpoints em homologação. Além disso, surgem quebras constantes de comunicação em produção devido a alterações inesperadas em payloads JSON sem aviso prévio.
+            </p>
+
+            <div class="adr-section-title"><span>⚖️</span> 2. Opções Consideradas (Trade-off Analysis)</div>
+            <ul style="margin-left:20px; font-size:0.88rem; color:var(--text-muted); line-height:1.7;">
+              <li><strong>Opção 1: Code-First com anotações de código (Status Quo):</strong> Escrever controladores Java/C# primeiro e gerar Swagger dinâmico via reflexão. (Rejeitada: mantém o bloqueio temporal entre frontend e backend).</li>
+              <li><strong>Opção 2: API-First com OpenAPI 3.0 e Servidores Mock:</strong> Desenhar o contrato YAML antes do código, gerar mocks automáticos e testes de conformidade. (Opção Escolhida).</li>
+              <li><strong>Opção 3: Migração Total para gRPC/Protobuf:</strong> (Rejeitada neste momento: alta complexidade de adoção para clientes web e parceiros externos de negócio).</li>
+            </ul>
+
+            <div class="adr-section-title"><span>🎯</span> 3. Decisão Arquitetural</div>
+            <p style="font-size:0.9rem; color:var(--text-main); font-weight:600; background:var(--bg-inset); padding:10px; border-left:4px solid var(--primary); border-radius:4px;">
+              Adotaremos a metodologia API-First para todos os novos serviços e integrações da organização. Toda nova funcionalidade deve iniciar com a submissão de um arquivo `openapi.yaml` via Pull Request no repositório central de contratos antes de qualquer implementação de código.
+            </p>
+
+            <div class="adr-section-title"><span>📊</span> 4. Consequências</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:6px;">
+              <div style="background:rgba(34, 197, 94, 0.08); border:1px solid var(--success); padding:10px; border-radius:6px; font-size:0.85rem;">
+                <strong style="color:var(--success);">✅ Consequências Positivas:</strong>
+                <ul style="margin-left:16px; margin-top:4px;">
+                  <li>Paralelismo real: Frontend inicia desenvolvimento imediatamente usando Mocks gerados pelo contrato.</li>
+                  <li>Contratos estáveis: O PR do contrato funciona como fórum de debate prévio de requisitos.</li>
+                  <li>Geração automática de clientes SDKs e documentação viva sincronizada.</li>
+                </ul>
+              </div>
+              <div style="background:rgba(239, 68, 68, 0.08); border:1px solid var(--danger); padding:10px; border-radius:6px; font-size:0.85rem;">
+                <strong style="color:var(--danger);">⚠️ Consequências Negativas / Custos:</strong>
+                <ul style="margin-left:16px; margin-top:4px;">
+                  <li>Curva de aprendizado: Necessidade de treinamento dos desenvolvedores na sintaxe OpenAPI 3.0.</li>
+                  <li>Custo de governança: Exige pipeline de CI/CD para linting de schema e validação de compatibilidade retroativa.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="adr-section-title"><span>🔒</span> 5. Conformidade e Validação (Critério AWS Prescriptive)</div>
+            <p style="font-size:0.85rem; color:var(--text-muted);">
+              A conformidade desta ADR será garantida no pipeline de CI/CD através de ferramentas automatizadas de linting (Spectral) que reprovam o build caso o contrato contenha quebras de versão (Breaking Changes) ou não respeite o guia de estilo corporativo.
+            </p>
+          </div>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-badge">Missão 3</div>
+          <h3 style="font-size:1.1rem; margin-top:6px;">🎯 Desafio Prático: Gerenciar o Ciclo de Vida da ADR-001</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">
+            Clique no botão <strong>"Alternar Status da Decisão"</strong> no laboratório para transitar o estado entre <em>PROPOSED</em> e <em>ACCEPTED</em>, simulando a aprovação pelo conselho de arquitetura.
+          </p>
+          <div id="challenge3-box" class="challenge-status challenge-locked">
+            <span id="challenge3-icon">🔒</span>
+            <span id="challenge3-msg">Aguardando você alternar o status da ADR...</span>
+          </div>
+        </div>
+
+        <div class="quiz-card">
+          <h3 class="card-title">🧠 Mini-Quiz de Fixação</h3>
+          <div class="quiz-question" data-qid="adr_q3_1">
+            <h4>1. Na ADR-001 de API-First, qual foi o principal fator de negócio que motivou a rejeição do modelo 'Code-First'?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Correto! O Code-First forçava os times frontend a esperar a conclusão do backend, atrasando entregas e quebrando contratos.">O bloqueio temporal dos times de Frontend e Mobile enquanto esperavam o backend subir os endpoints.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. O Java compila normalmente em abordagens Code-First.">O fato de a linguagem Java não compilar mais anotações em 2026.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">A recusa das equipes em usar computadores portáteis.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <div class="quiz-question" data-qid="adr_q3_2">
+            <h4>2. Por que a ADR lista 'necessidade de treinamento e governança' como consequência negativa?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Exatamente! Toda decisão envolve trade-offs conscientes; documentar os custos previne surpresas operacionais.">Para demonstrar honestidade técnica e registrar que a equipe terá custos de transição antes de colher os benefícios.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. A ADR não tem poder de punição trabalhista.">Para demitir os desenvolvedores que não conhecem YAML.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Porque a diretoria proíbe cursos de capacitação.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABA 4: DECISÕES DE STACK TÉCNICA -->
+    <section class="tab-panel" id="tab4">
+      <div class="card">
+        <h2 class="card-title">💡 Conceito em 60 Segundos: Como Justificar Decisões de Stack em ADRs</h2>
+        <div class="concept-box">
+          <p>
+            Uma das aplicações mais comuns de ADRs é selar a <strong>escolha da stack tecnológica da aplicação</strong>:
+          </p>
+          <ul style="margin-left: 20px; font-size: 0.95rem; line-height: 1.7; margin-top:8px;">
+            <li><strong>Tipo de Aplicação:</strong> API REST/GraphQL, CLI interno de automação ou Desktop multi-plataforma.</li>
+            <li><strong>Topologia:</strong> Monolito Modular (simplicidade operacional) vs Arquitetura Distribuída / Microsserviços (escalabilidade independente).</li>
+            <li><strong>Banco de Dados:</strong> Relacional ACID (PostgreSQL / MySQL) vs Não-Relacional Schemaless (DynamoDB / MongoDB).</li>
+            <li><strong>Autenticação & Segurança:</strong> Stateless JWT com OAuth2 vs Sessão Statefull com Cookies HTTP-Only.</li>
+          </ul>
+        </div>
+
+        <div class="lab-container">
+          <div class="lab-header">
+            <h3 style="display:flex; align-items:center; gap:8px;">
+              <span>🧱</span> Laboratório: Construtor Dinâmico de ADR de Stack Tecnológica
+            </h3>
+            <button class="btn-reset" onclick="resetStackLab()">↺ Resetar Seleções</button>
+          </div>
+          <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:14px;">
+            Monte as peças da sua nova aplicação. Observe como o gerador sintetiza o <strong>Contexto</strong> e as <strong>Consequências de Engenharia</strong> em tempo real:
+          </p>
+
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:12px; margin-bottom:16px;">
+            <div>
+              <label style="font-size:0.85rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">1. Tipo de Aplicação:</label>
+              <select id="stack-app" class="select-ctrl" onchange="generateStackAdr()">
+                <option value="api">API RESTful para E-commerce</option>
+                <option value="cli">CLI Tool para Automação DevOps</option>
+                <option value="desktop">App Desktop para Terminal Financeiro</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:0.85rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">2. Topologia de Sistema:</label>
+              <select id="stack-topo" class="select-ctrl" onchange="generateStackAdr()">
+                <option value="monolito">Monolito Modular (Single Deploy)</option>
+                <option value="distribuido">Microsserviços Distribuídos com Eventos</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:0.85rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">3. Banco de Dados:</label>
+              <select id="stack-db" class="select-ctrl" onchange="generateStackAdr()">
+                <option value="sql">PostgreSQL 16 (Relacional ACID)</option>
+                <option value="nosql">MongoDB / DynamoDB (Documental)</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:0.85rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">4. Autenticação:</label>
+              <select id="stack-auth" class="select-ctrl" onchange="generateStackAdr()">
+                <option value="jwt">OAuth2 + JWT (Stateless Token)</option>
+                <option value="session">Session Cookie Seguro em Redis (Stateful)</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="stack-adr-output" class="adr-paper"></div>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-badge">Missão 4</div>
+          <h3 style="font-size:1.1rem; margin-top:6px;">🎯 Desafio Prático: Justificar uma Ferramenta CLI</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">
+            Altere o seletor para <strong>CLI Tool para Automação DevOps</strong> e veja a ADR adaptar a justificativa de distribuição binária.
+          </p>
+          <div id="challenge4-box" class="challenge-status challenge-locked">
+            <span id="challenge4-icon">🔒</span>
+            <span id="challenge4-msg">Aguardando você gerar uma ADR para ferramenta CLI...</span>
+          </div>
+        </div>
+
+        <div class="quiz-card">
+          <h3 class="card-title">🧠 Mini-Quiz de Fixação</h3>
+          <div class="quiz-question" data-qid="adr_q4_1">
+            <h4>1. Ao escolher um Monolito Modular em vez de Microsserviços para uma aplicação inicial, qual é o principal argumento a ser registrado na ADR?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Correto! Monolitos reduzem a sobrecarga de rede, dispensam orquestração complexa de containers e facilitam transações ACID no início do projeto.">Menor complexidade operacional, deploy único simplificado e facilidade de refatoração sem custo de rede entre processos.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. O número de programadores não proíbe a escrita de código.">Porque monolitos proíbem que mais de duas pessoas programem ao mesmo tempo.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. Monolitos usam memória e CPU convencionais.">Porque microsserviços não conseguem rodar em computadores com menos de 100 terabytes.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <div class="quiz-question" data-qid="adr_q4_2">
+            <h4>2. Se uma ADR adota 'Autenticação Stateless com JWT', qual consequência operacional negativa DEVE constar no documento?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Exatamente! Tokens JWT autocontidos não podem ser invalidados antes do vencimento sem uma blacklist centralizada ou expiração muito curta.">Dificuldade de revogação imediata de tokens emitidos antes do seu tempo de expiração.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. JWT é amplamente suportado na web moderna.">Incompatibilidade total com navegadores web.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Aumento automático do custo da conta de energia do data center em 80%.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABA 5: STUDIO & LINTER SINTÁTICO COM LINHA DE ERRO -->
+    <section class="tab-panel" id="tab5">
+      <div class="card">
+        <h2 class="card-title">💡 Conceito em 60 Segundos: Live ADR Studio & Linter de Qualidade</h2>
+        <div class="concept-box">
+          <p>
+            Uma ADR incompleta (que omite consequências ou que não define status) é tão perigosa quanto a falta de documentação. Ferramentas de CI/CD como o <code>adr-tools</code> validam se os documentos respeitam a estrutura de seções obrigatórias.
+          </p>
+        </div>
+
+        <div class="lab-container">
+          <div class="lab-header">
+            <h3 style="display:flex; align-items:center; gap:8px;">
+              <span>💻</span> Laboratório: Editor Markdown com Validador de Sintaxe em Tempo Real
+            </h3>
+            <button class="btn-reset" onclick="resetStudioLab()">↺ Resetar Editor</button>
+          </div>
+          <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:12px;">
+            Digite ou edite sua ADR abaixo em Markdown. Ao clicar em <strong>Validar e Renderizar ADR</strong>, o parser verifica a existência do título, status válido e seções estruturais. Se houver erro, <strong>o número da linha será apontado</strong> com orientações de correção!
+          </p>
+
+          <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center;">
+            <button class="btn-reset" style="border-color:var(--primary); color:var(--primary);" onclick="loadStudioTmpl('nygard')">📄 Template: Nygard Markdown</button>
+            <button class="btn-reset" style="border-color:var(--aws-orange); color:var(--aws-orange);" onclick="loadStudioTmpl('aws')">☁️ Template: AWS Guidance</button>
+            
+            <div style="display:inline-flex; gap:8px; margin-left:auto; flex-wrap:wrap;">
+              <a href="https://docs.aws.amazon.com/prescriptive-guidance/latest/architectural-decision-records/welcome.html" target="_blank" rel="noopener noreferrer" class="btn-reset" style="border-color:var(--aws-orange); color:var(--aws-orange); text-decoration:none;">
+                <span>📖</span> Guia Oficial ADR da AWS ↗
+              </a>
+              <a href="https://adr.github.io/" target="_blank" rel="noopener noreferrer" class="btn-reset" style="border-color:var(--primary); color:var(--primary); text-decoration:none;">
+                <span>🛠️</span> ADR GitHub Organization ↗
+              </a>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+            <div>
+              <div style="padding:8px 12px; background:var(--bg-inset); border:1px solid var(--border-color); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--font-mono); font-size:0.82rem; font-weight:700; color:var(--text-muted);">
+                ADR-002.md (Markdown Declarativo)
+              </div>
+              <textarea id="studio-editor" class="code-editor" style="border-radius:0 0 8px 8px;"># ADR-002: Adoção do PostgreSQL como Banco de Dados Principal
+
+## Status
+Accepted
+
+## Context
+Nossa aplicação requer integridade estrita de transações financeiras, suporte a consultas relacionais complexas e suporte a colunas em formato JSON para metadados dinâmicos de pagamento.
+
+## Decision
+Utilizaremos o PostgreSQL versão 16 como nosso banco de dados relacional oficial corporativo.
+
+## Consequences
+- Positivas: Plena conformidade ACID, ecossistema maduro de extensões e drivers eficientes para Go e Java.
+- Negativas: Necessidade de gerenciar migrações de schema com cuidado e escalabilidade de escrita vertical limitada.</textarea>
+              <div style="margin-top:10px; text-align:right;">
+                <button class="btn-action" onclick="validateAndRenderAdrStudio()"><span>⚡</span> Validar e Renderizar ADR</button>
+              </div>
+            </div>
+
+            <div>
+              <div style="padding:8px 12px; background:var(--bg-inset); border:1px solid var(--border-color); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--font-mono); font-size:0.82rem; font-weight:700; color:var(--primary);">
+                Preview Renderizado & Linter de Conformidade
+              </div>
+              <div id="studio-preview" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:0 0 8px 8px; padding:16px; min-height:280px; max-height:350px; overflow-y:auto;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-badge">Missão 5</div>
+          <h3 style="font-size:1.1rem; margin-top:6px;">🎯 Desafio Prático: Detectar Erro de Status no Linter</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">
+            Altere a seção <code>## Status</code> para um status inválido (ex: <code>Em andamento</code> ou deixe vazio) e clique em validar para observar o apontamento de erro com número da linha. Em seguida, corrija para <code>Accepted</code> ou <code>Proposed</code>.
+          </p>
+          <div id="challenge5-box" class="challenge-status challenge-locked">
+            <span id="challenge5-icon">🔒</span>
+            <span id="challenge5-msg">Aguardando você testar o linter de erro de status...</span>
+          </div>
+        </div>
+
+        <div class="quiz-card">
+          <h3 class="card-title">🧠 Mini-Quiz de Fixação</h3>
+          <div class="quiz-question" data-qid="adr_q5_1">
+            <h4>1. Quais são os 4 status padronizados e oficiais mais aceitos para o ciclo de vida de uma ADR?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Correto! Uma ADR começa proposta (Proposed), é aceita (Accepted) e pode ser substituída por uma mais nova (Superseded) ou descontinuada (Deprecated).">Proposed (Proposta), Accepted (Aceita), Superseded (Substituída) e Deprecated (Obsoleta).</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. Status de software não é o status de uma decisão arquitetural.">Alpha, Beta, Release Candidate e Gold.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">To-do, In Progress, Code Review e Done.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <div class="quiz-question" data-qid="adr_q5_2">
+            <h4>2. Quando uma nova decisão de arquitetura invalida uma decisão antiga já tomada (ex: trocar Kafka por RabbitMQ), o que se deve fazer com a ADR antiga?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Exatamente! NUNCA apague ou edite a decisão histórica; marque a antiga como 'Superseded by ADR-xxx' e crie a nova ADR apontando para ela.">Mudar o status da ADR antiga para 'Superseded' (referenciando a nova) e NUNCA apagar o arquivo do histórico.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. Deletar arquivos apaga a memória técnica do projeto e comete o crime da arqueologia de software.">Apagar permanentemente o arquivo Markdown do repositório no Git.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Editar o texto antigo para fingir que a decisão anterior nunca existiu.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABA 6: MAPA MENTAL & CHEAT SHEET -->
+    <section class="tab-panel" id="tab6">
+      <div class="card">
+        <h2 class="card-title">🗺️ Mapa Mental Interativo: O Ciclo de Vida de uma Decisão Arquitetural</h2>
+        <p style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 16px;">
+          Clique em cada estágio do ciclo de vida para entender as regras de governança e transição de estado:
+        </p>
+
+        <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:10px; padding:20px;">
+          <svg viewBox="0 0 900 160" style="max-width: 100%; height: auto;">
+            <line x1="80" y1="80" x2="820" y2="80" stroke="#24324f" stroke-width="4" stroke-dasharray="6,6" />
+
+            <g class="flow-node" style="cursor:pointer;" onclick="showAdrStage('proposed')">
+              <rect x="20" y="40" width="150" height="80" rx="10" fill="#131b2e" stroke="var(--warning)" stroke-width="3"/>
+              <text x="95" y="75" fill="#f8fafc" font-size="12" font-weight="bold" text-anchor="middle">1. PROPOSED</text>
+              <text x="95" y="95" fill="#94a3b8" font-size="11" text-anchor="middle">Debate em PR no Git</text>
+            </g>
+
+            <g class="flow-node" style="cursor:pointer;" onclick="showAdrStage('accepted')">
+              <rect x="240" y="40" width="160" height="80" rx="10" fill="#131b2e" stroke="var(--success)" stroke-width="3"/>
+              <text x="320" y="75" fill="#f8fafc" font-size="12" font-weight="bold" text-anchor="middle">2. ACCEPTED</text>
+              <text x="320" y="95" fill="#94a3b8" font-size="11" text-anchor="middle">Aprovado pelo Time</text>
+            </g>
+
+            <g class="flow-node" style="cursor:pointer;" onclick="showAdrStage('superseded')">
+              <rect x="470" y="40" width="170" height="80" rx="10" fill="#131b2e" stroke="var(--primary)" stroke-width="3"/>
+              <text x="555" y="75" fill="#f8fafc" font-size="12" font-weight="bold" text-anchor="middle">3. SUPERSEDED</text>
+              <text x="555" y="95" fill="#94a3b8" font-size="11" text-anchor="middle">Substituída por Nova</text>
+            </g>
+
+            <g class="flow-node" style="cursor:pointer;" onclick="showAdrStage('deprecated')">
+              <rect x="710" y="40" width="150" height="80" rx="10" fill="#131b2e" stroke="var(--danger)" stroke-width="3"/>
+              <text x="785" y="75" fill="#f8fafc" font-size="12" font-weight="bold" text-anchor="middle">4. DEPRECATED</text>
+              <text x="785" y="95" fill="#94a3b8" font-size="11" text-anchor="middle">Obsoleta sem Sucessora</text>
+            </g>
+          </svg>
+        </div>
+
+        <div id="stage-info-box" class="concept-box" style="margin-top:16px; display:none;">
+          <h4 id="stage-title" style="color:var(--primary); margin-bottom:6px;">Estágio</h4>
+          <p id="stage-desc" style="font-size:0.95rem;"></p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">📋 Cola Rápida (ADR Terminology & AWS Cheat Sheet)</h2>
+        <input type="text" id="cheat-search" class="search-bar" placeholder="🔍 Filtrar termos (ex: Status, Nygard, AWS, Compliance, Context, Decision, Superseded, API-First)..." oninput="filterCheat()">
+
+        <div class="table-wrap">
+          <table id="cheat-table">
+            <thead>
+              <tr>
+                <th>Termo / Seção</th>
+                <th>Padrão</th>
+                <th>Finalidade na Arquitetura</th>
+                <th>Exemplo / Conteúdo</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge-code status-proposed">PROPOSED</span></td>
+                <td>Ciclo de Vida</td>
+                <td>A decisão está sob avaliação e debate aberto via Pull Request no Git.</td>
+                <td>ADR aberta para debater migração para Kafka.</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code status-accepted">ACCEPTED</span></td>
+                <td>Ciclo de Vida</td>
+                <td>Decisão aprovada pelo conselho de arquitetura / tech leads; vinculante.</td>
+                <td>Todos os novos serviços devem usar OpenAPI 3.0.</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code status-superseded">SUPERSEDED</span></td>
+                <td>Ciclo de Vida</td>
+                <td>A decisão histórica foi superada e substituída formalmente por outra.</td>
+                <td>ADR-002 superada pela ADR-015 (migrou para DynamoDB).</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code" style="background:var(--aws-orange); color:#fff;">Considered Options</span></td>
+                <td>AWS Guidance</td>
+                <td>Quadro comparativo detalhado com todas as tecnologias avaliadas e rejeitadas.</td>
+                <td>Avaliamos RabbitMQ, SQS e Kafka; escolhemos SQS por custo.</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code" style="background:var(--aws-orange); color:#fff;">Compliance</span></td>
+                <td>AWS Guidance</td>
+                <td>Mecanismo automatizado no pipeline que audita e garante que a decisão é cumprida.</td>
+                <td>Regra de CI/CD que bloqueia build se faltar tag obrigatória.</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code" style="background:var(--primary); color:#fff;">Consequences</span></td>
+                <td>Nygard & AWS</td>
+                <td>Lista obrigatória dos benefícios colhidos e dos custos / riscos assumidos.</td>
+                <td>Trade-off explícito: menor latência vs maior custo de storage.</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code" style="background:var(--adr-purple); color:#fff;">API-First</span></td>
+                <td>Metodologia</td>
+                <td>Modelar e pactuar contratos OpenAPI antes de programar front ou back.</td>
+                <td>Gera contratos versionados e mocks paralelos.</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code" style="background:var(--accent); color:#fff;">Monolito Modular</span></td>
+                <td>Topologia</td>
+                <td>Código modular em um único deployable; alternativa preferida no início.</td>
+                <td>Evita sobrecarga de rede e consistência eventual precoce.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const appState = {
+      completedMissions: { m1: false, m2: false, m3: false, m4: false, m5: false },
+      completedQuizzes: {},
+      m1Votes: {},
+      adr001Accepted: true,
+      m5TriggeredError: false
+    };
+
+    function updateProgress() {
+      const m = Object.values(appState.completedMissions).filter(Boolean).length;
+      const q = Object.keys(appState.completedQuizzes).length;
+      let score = (m * 10) + (q * 5);
+      const finalScore = Math.min(100, Math.round(score));
+      document.getElementById('global-progress-bar').style.width = finalScore + '%';
+      document.getElementById('global-progress-text').innerText = finalScore + '%';
+    }
+
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      const cur = document.documentElement.getAttribute('data-theme');
+      document.documentElement.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+    });
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.getAttribute('data-tab');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(target).classList.add('active');
+      });
+    });
+
+    // ABA 1
+    function judgeAdrScenario(id, type) {
+      const fb = document.getElementById('scen-fb-' + id);
+      if (id === 1) {
+        if (type === 'adr') {
+          fb.innerHTML = '<span style="color:var(--success); font-weight:bold;">Correto! Mudar topologia para microsserviços é uma decisão arquitetural clássica.</span>';
+          appState.m1Votes[1] = true;
+        } else {
+          fb.innerHTML = '<span style="color:var(--danger); font-weight:bold;">Incorreto. Isso impacta múltiplos times e custo; exige ADR!</span>';
+        }
+      } else if (id === 2) {
+        if (type === 'trivial') {
+          fb.innerHTML = '<span style="color:var(--success); font-weight:bold;">Correto! Renomear variável interna é detalhe de código; NUNCA crie ADR para isso.</span>';
+          appState.m1Votes[2] = true;
+        } else {
+          fb.innerHTML = '<span style="color:var(--danger); font-weight:bold;">Incorreto. Documentar renomeação de variáveis gera burocracia inútil.</span>';
+        }
+      } else if (id === 3) {
+        if (type === 'adr') {
+          fb.innerHTML = '<span style="color:var(--success); font-weight:bold;">Correto! Mudar a estratégia de segurança para JWT impacta todos os clientes e sessões.</span>';
+          appState.m1Votes[3] = true;
+        } else {
+          fb.innerHTML = '<span style="color:var(--danger); font-weight:bold;">Incorreto. A política de autenticação afeta toda a aplicação; exige ADR.</span>';
+        }
+      }
+
+      if (appState.m1Votes[1] && appState.m1Votes[2] && appState.m1Votes[3] && !appState.completedMissions.m1) {
+        appState.completedMissions.m1 = true;
+        document.getElementById('challenge1-box').className = 'challenge-status challenge-unlocked';
+        document.getElementById('challenge1-icon').innerText = '🎉';
+        document.getElementById('challenge1-msg').innerText = 'Missão Concluída! Você identificou as decisões de real peso arquitetural.';
+        updateProgress();
+      }
+    }
+
+    function resetLab1() {
+      appState.m1Votes = {};
+      document.getElementById('scen-fb-1').innerHTML = '';
+      document.getElementById('scen-fb-2').innerHTML = '';
+      document.getElementById('scen-fb-3').innerHTML = '';
+    }
+
+    // ABA 2
+    const adrTemplateContent = {
+      nygard: `
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h3 style="font-size:1.15rem; color:var(--text-main);">Modelo Nygard (Markdown Enxuto - 5 Seções)</h3>
+          <span class="adr-status-badge status-accepted">ACCEPTED</span>
+        </div>
+        <div class="adr-section-title"># 1. Title</div>
+        <p style="color:var(--text-muted);">Frase curta no presente (ex: 'ADR-004: Usar RabbitMQ para Mensageria Assíncrona').</p>
+        <div class="adr-section-title">## 2. Status</div>
+        <p style="color:var(--text-muted);">Proposed, Accepted, Superseded ou Deprecated.</p>
+        <div class="adr-section-title">## 3. Context</div>
+        <p style="color:var(--text-muted);">Explica as forças em jogo, problemas técnicos e pressões de negócio.</p>
+        <div class="adr-section-title">## 4. Decision</div>
+        <p style="color:var(--text-muted);">Ação firme e direta no presente: 'Nós usaremos/adotaremos...'.</p>
+        <div class="adr-section-title">## 5. Consequences</div>
+        <p style="color:var(--text-muted);">O que fica mais fácil e o que fica mais difícil após essa decisão (Trade-offs).</p>
+      `,
+      aws: `
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h3 style="font-size:1.15rem; color:var(--aws-orange);">Modelo AWS Prescriptive Guidance (Enterprise & Cloud)</h3>
+          <span class="adr-status-badge status-accepted" style="border-color:var(--aws-orange); color:var(--aws-orange);">AWS ENTERPRISE</span>
+        </div>
+        <div class="adr-section-title" style="color:var(--aws-orange);">1. Title & Metadata</div>
+        <p style="color:var(--text-muted);">Identificador, Data, Stakeholders envolvidos e Versão.</p>
+        <div class="adr-section-title" style="color:var(--aws-orange);">2. Status</div>
+        <p style="color:var(--text-muted);">Proposed, Accepted, Superseded, Deprecated.</p>
+        <div class="adr-section-title" style="color:var(--aws-orange);">3. Context & Problem Statement</div>
+        <p style="color:var(--text-muted);">Qual problema na nuvem precisamos resolver? Limitações de escala, latência ou custos AWS.</p>
+        <div class="adr-section-title" style="color:var(--aws-orange);">4. Considered Options (Análise de Alternativas)</div>
+        <p style="color:var(--text-muted);">Tabela com todas as opções avaliadas (ex: Amazon Aurora vs DynamoDB) com prós e contras de cada uma.</p>
+        <div class="adr-section-title" style="color:var(--aws-orange);">5. Decision Outcome</div>
+        <p style="color:var(--text-muted);">A escolha oficial justificada com base em Well-Architected Framework.</p>
+        <div class="adr-section-title" style="color:var(--aws-orange);">6. Consequences & Operational Costs</div>
+        <p style="color:var(--text-muted);">Impactos na equipe, custos na fatura AWS e novos componentes de monitoramento.</p>
+        <div class="adr-section-title" style="color:var(--aws-orange);">7. Compliance & Validation</div>
+        <p style="color:var(--text-muted);">Como a decisão será auditada: regras de AWS Config, testes de carga automatizados e validações no pipeline.</p>
+      `
+    };
+
+    function switchAdrTemplate(tmpl) {
+      document.getElementById('btn-tmpl-nygard').className = tmpl === 'nygard' ? 'btn-action' : 'btn-reset';
+      document.getElementById('btn-tmpl-aws').className = tmpl === 'aws' ? 'btn-action' : 'btn-reset';
+      document.getElementById('adr-template-viewer').innerHTML = adrTemplateContent[tmpl];
+
+      if (tmpl === 'aws' && !appState.completedMissions.m2) {
+        appState.completedMissions.m2 = true;
+        document.getElementById('challenge2-box').className = 'challenge-status challenge-unlocked';
+        document.getElementById('challenge2-icon').innerText = '🎉';
+        document.getElementById('challenge2-msg').innerText = 'Missão Concluída! Você comparou os formatos e compreendeu a auditoria de compliance da AWS.';
+        updateProgress();
+      }
+    }
+
+    // ABA 3
+    function simulateAdrStatusChange() {
+      appState.adr001Accepted = !appState.adr001Accepted;
+      const badge = document.getElementById('adr001-status');
+      if (appState.adr001Accepted) {
+        badge.className = 'adr-status-badge status-accepted';
+        badge.innerText = 'ACCEPTED / APROVADO';
+      } else {
+        badge.className = 'adr-status-badge status-proposed';
+        badge.innerText = 'PROPOSED / EM DEBATE';
+      }
+
+      if (!appState.completedMissions.m3) {
+        appState.completedMissions.m3 = true;
+        document.getElementById('challenge3-box').className = 'challenge-status challenge-unlocked';
+        document.getElementById('challenge3-icon').innerText = '🎉';
+        document.getElementById('challenge3-msg').innerText = 'Missão Concluída! Você simulou a governança e transição de estado da ADR-001.';
+        updateProgress();
+      }
+    }
+
+    // ABA 4
+    function generateStackAdr() {
+      const appType = document.getElementById('stack-app').value;
+      const topo = document.getElementById('stack-topo').value;
+      const db = document.getElementById('stack-db').value;
+      const auth = document.getElementById('stack-auth').value;
+
+      const appLabels = {
+        api: "API RESTful de Alta Disponibilidade",
+        cli: "Ferramenta CLI para Automação Interna de DevOps",
+        desktop: "Aplicação Desktop de Alta Performance"
+      };
+
+      const topoDesc = topo === 'monolito'
+        ? "Monolito Modular em repositório único para priorizar velocidade de entrega e custo mínimo operacional."
+        : "Arquitetura Distribuída em Microsserviços para permitir que squads escalem e façam deploys de forma isolada.";
+
+      const dbDesc = db === 'sql'
+        ? "PostgreSQL 16 com forte consistência transacional ACID para evitar perdas financeiras."
+        : "Banco Não-Relacional para suportar alta volumetria de escrita flexível sem esquema rígido.";
+
+      const authDesc = auth === 'jwt'
+        ? "Tokens JWT auto-contidos via OAuth2 para manter os serviços do backend stateless."
+        : "Sessões seguras salvas em cache Redis com cookies HTTP-Only para controle instantâneo de revogação.";
+
+      const out = document.getElementById('stack-adr-output');
+      out.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h3 style="color:var(--primary); font-size:1.15rem;">ADR-010: Definição da Stack Tecnológica Oficial</h3>
+          <span class="adr-status-badge status-accepted">ACCEPTED</span>
+        </div>
+        <div class="adr-section-title">1. Contexto de Negócio</div>
+        <p style="color:var(--text-muted);">Estamos iniciando a concepção do produto classificado como <strong>${appLabels[appType]}</strong>. Precisamos de uma stack técnica coesa que garanta confiabilidade e facilidade de manutenção.</p>
+        <div class="adr-section-title">2. Decisão Arquitetural Consolidada</div>
+        <ul style="margin-left:20px; color:var(--text-main); font-weight:600; line-height:1.7;">
+          <li>Topologia: ${topoDesc}</li>
+          <li>Camada de Dados: ${dbDesc}</li>
+          <li>Segurança: ${authDesc}</li>
+        </ul>
+        <div class="adr-section-title">3. Consequências de Engenharia</div>
+        <p style="color:var(--text-muted);">
+          ${topo === 'monolito' ? '✔ Menor latência interna e deploys atômicos.' : '✔ Escalabilidade independente para cada serviço.'} 
+          ${db === 'sql' ? '✔ Suporte a junções relacionais complexas.' : '✔ Facilidade de particionamento horizontal.'}
+          ${auth === 'jwt' ? '⚠️ Exigirá políticas de expiração curta para mitigar riscos de revogação.' : '⚠️ Exigirá manutenção de cluster Redis com alta disponibilidade para armazenar as sessões.'}
+        </p>
+      `;
+
+      if (appType === 'cli' && !appState.completedMissions.m4) {
+        appState.completedMissions.m4 = true;
+        document.getElementById('challenge4-box').className = 'challenge-status challenge-unlocked';
+        document.getElementById('challenge4-icon').innerText = '🎉';
+        document.getElementById('challenge4-msg').innerText = 'Missão Concluída! Você gerou e justificou a arquitetura para ferramentas CLI.';
+        updateProgress();
+      }
+    }
+
+    function resetStackLab() {
+      document.getElementById('stack-app').value = 'api';
+      document.getElementById('stack-topo').value = 'monolito';
+      document.getElementById('stack-db').value = 'sql';
+      document.getElementById('stack-auth').value = 'jwt';
+      generateStackAdr();
+    }
+
+    // ABA 5: STUDIO & LINTER SINTÁTICO COM LINHA DE ERRO
+    const studioTemplates = {
+      nygard: `# ADR-002: Adoção do PostgreSQL como Banco de Dados Principal
+
+## Status
+Accepted
+
+## Context
+Nossa aplicação requer integridade estrita de transações financeiras, suporte a consultas relacionais complexas e suporte a colunas em formato JSON para metadados dinâmicos de pagamento.
+
+## Decision
+Utilizaremos o PostgreSQL versão 16 como nosso banco de dados relacional oficial corporativo.
+
+## Consequences
+- Positivas: Plena conformidade ACID, ecossistema maduro de extensões e drivers eficientes para Go e Java.
+- Negativas: Necessidade de gerenciar migrações de schema com cuidado e escalabilidade de escrita vertical limitada.`,
+      aws: `# ADR-003: Armazenamento em Nuvem usando Amazon S3 e CloudFront
+
+## Status
+Accepted
+
+## Context
+Precisamos disponibilizar downloads de relatórios fiscais em PDF para milhares de clientes simultâneos sem sobrecarregar as instâncias dos servidores da nossa API.
+
+## Considered Options
+- Opção 1: Gravar PDFs no disco local dos containers EC2 (Inviável: containers são efêmeros e o disco é volátil).
+- Opção 2: Amazon S3 com distribuição global Amazon CloudFront (Opção Escolhida).
+
+## Decision
+Armazenaremos todos os documentos exportados no Amazon S3 com URLs pré-assinadas e CDN CloudFront.
+
+## Consequences
+- Positivas: Desonera a CPU dos servidores de aplicação, armazenamento elástico praticamente infinito e alta segurança.
+- Negativas: Custo de transferência de dados externa e necessidade de configurar políticas de ciclo de vida para deletar arquivos velhos.
+
+## Compliance
+Validado via teste de carga automático no pipeline e política AWS IAM de privilégio mínimo aplicada via Terraform.`
+    };
+
+    function loadStudioTmpl(t) {
+      document.getElementById('studio-editor').value = studioTemplates[t];
+      validateAndRenderAdrStudio();
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function validateAndRenderAdrStudio() {
+      const text = document.getElementById('studio-editor').value;
+      const preview = document.getElementById('studio-preview');
+      const lines = text.split('\n');
+
+      let hasTitle = false;
+      let statusLine = null;
+      let statusValue = null;
+      let hasContext = false;
+      let hasDecision = false;
+      let hasConsequences = false;
+
+      const validStatuses = ['proposed', 'accepted', 'superseded', 'deprecated', 'rejected'];
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+
+        if (line.startsWith('# ')) {
+          hasTitle = true;
+        } else if (line.toLowerCase() === '## status') {
+          for (let j = i + 1; j < lines.length; j++) {
+            const nextL = lines[j].trim();
+            if (nextL) {
+              statusLine = j + 1;
+              statusValue = nextL.toLowerCase();
+              break;
+            }
+          }
+        } else if (line.toLowerCase().startsWith('## context')) {
+          hasContext = true;
+        } else if (line.toLowerCase().startsWith('## decision')) {
+          hasDecision = true;
+        } else if (line.toLowerCase().startsWith('## consequences')) {
+          hasConsequences = true;
+        }
+      }
+
+      if (!hasTitle) {
+        preview.innerHTML = `
+          <div style="background:rgba(239,68,68,0.15); border:2px solid var(--danger); border-radius:8px; padding:14px; color:#fca5a5;">
+            <strong>❌ Erro Estrutural na Linha 1:</strong><br>
+            Falta o título da ADR com cabeçalho de nível 1.<br>
+            <em>Exemplo esperado: <code># ADR-001: Título da Decisão</code></em>
+          </div>`;
+        appState.m5TriggeredError = true;
+        return;
+      }
+
+      if (!statusValue || !validStatuses.includes(statusValue)) {
+        const errLine = statusLine || lines.findIndex(l => l.trim().toLowerCase() === '## status') + 1 || 3;
+        preview.innerHTML = `
+          <div style="background:rgba(239,68,68,0.15); border:2px solid var(--danger); border-radius:8px; padding:14px; color:#fca5a5;">
+            <strong>❌ Erro de Linter na Linha ${errLine}:</strong><br>
+            Status inválido: "<code>${escapeHtml(statusValue || 'Vazio')}</code>".<br>
+            <em>Os únicos status aceitos pelo padrão são: <code>Proposed</code>, <code>Accepted</code>, <code>Superseded</code>, <code>Deprecated</code> ou <code>Rejected</code>.</em>
+          </div>`;
+        appState.m5TriggeredError = true;
+        return;
+      }
+
+      if (!hasContext || !hasDecision || !hasConsequences) {
+        preview.innerHTML = `
+          <div style="background:rgba(239,68,68,0.15); border:2px solid var(--danger); border-radius:8px; padding:14px; color:#fca5a5;">
+            <strong>❌ Seções Obrigatórias Ausentes:</strong><br>
+            Uma ADR válida exige rigorosamente as seções:<br>
+            &bull; <code>## Context</code> (${hasContext ? '✔ OK' : '❌ Faltando'})<br>
+            &bull; <code>## Decision</code> (${hasDecision ? '✔ OK' : '❌ Faltando'})<br>
+            &bull; <code>## Consequences</code> (${hasConsequences ? '✔ OK' : '❌ Faltando'})
+          </div>`;
+        appState.m5TriggeredError = true;
+        return;
+      }
+
+      let formattedHtml = text
+        .replace(/^# (.*$)/gim, '<h3 style="color:var(--primary); font-size:1.15rem; margin-bottom:4px;">$1</h3>')
+        .replace(/^## Status\n(.*$)/gim, '<div class="adr-status-badge status-accepted" style="margin:6px 0;">$1</div>')
+        .replace(/^## (.*$)/gim, '<div class="adr-section-title">$1</div>')
+        .replace(/^\- (.*$)/gim, '<li style="margin-left:16px; font-size:0.88rem; color:var(--text-muted);">$1</li>')
+        .replace(/\n/g, '<br>');
+
+      preview.innerHTML = `
+        <div style="font-size:0.75rem; color:var(--success); font-weight:bold; margin-bottom:8px;">✔ ADR Validada com Sucesso pelo Linter</div>
+        <div class="adr-paper" style="padding:12px; font-size:0.88rem;">${formattedHtml}</div>
+      `;
+
+      if (appState.m5TriggeredError && !appState.completedMissions.m5) {
+        appState.completedMissions.m5 = true;
+        document.getElementById('challenge5-box').className = 'challenge-status challenge-unlocked';
+        document.getElementById('challenge5-icon').innerText = '🎉';
+        document.getElementById('challenge5-msg').innerText = 'Missão Concluída! Você utilizou o linter e aprovou a ADR com estrutura impecável.';
+        updateProgress();
+      }
+    }
+
+    function resetStudioLab() {
+      document.getElementById('studio-editor').value = studioTemplates.nygard;
+      validateAndRenderAdrStudio();
+    }
+
+    // ABA 6: MAPA & CHEAT SHEET
+    const stageDetails = {
+      proposed: {
+        title: "1. PROPOSED (Proposta em Avaliação)",
+        desc: "A decisão foi rascunhada por um desenvolvedor ou arquiteto e aberta como Pull Request no repositório. O time debate viabilidade, impactos e alternativas nos comentários."
+      },
+      accepted: {
+        title: "2. ACCEPTED (Aprovada e Vinculante)",
+        desc: "O conselho de arquitetura / tech leads aprovaram o PR. A decisão torna-se padrão oficial e vinculante para toda a engenharia a partir desta data."
+      },
+      superseded: {
+        title: "3. SUPERSEDED (Substituída por uma Nova Decisão)",
+        desc: "Com o passar dos anos, os requisitos mudaram. A ADR antiga NUNCA é apagada: seu status muda para 'Superseded' e ela adiciona um link apontando para a nova ADR que a substituiu."
+      },
+      deprecated: {
+        title: "4. DEPRECATED (Descontinuada sem Sucessora Direta)",
+        desc: "A funcionalidade ou integração foi desativada completamente e a decisão não se aplica mais à arquitetura ativa do negócio."
+      }
+    };
+
+    function showAdrStage(stg) {
+      const box = document.getElementById('stage-info-box');
+      const item = stageDetails[stg];
+      box.style.display = 'block';
+      document.getElementById('stage-title').innerText = item.title;
+      document.getElementById('stage-desc').innerText = item.desc;
+    }
+
+    function filterCheat() {
+      const term = document.getElementById('cheat-search').value.toLowerCase();
+      document.querySelectorAll('#cheat-table tbody tr').forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+      });
+    }
+
+    // QUIZZES FISHER-YATES
+    function initQuizzes() {
+      document.querySelectorAll('.quiz-question').forEach(qBlock => {
+        const qid = qBlock.getAttribute('data-qid');
+        const optContainer = qBlock.querySelector('.quiz-options');
+        const feedbackBox = qBlock.querySelector('.quiz-feedback');
+
+        const options = Array.from(optContainer.children);
+        for (let i = options.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          optContainer.appendChild(options[j]);
+        }
+
+        optContainer.querySelectorAll('.quiz-opt-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const isCorrect = btn.getAttribute('data-correct') === 'true';
+            const feedbackText = btn.getAttribute('data-fb');
+
+            optContainer.querySelectorAll('.quiz-opt-btn').forEach(b => {
+              b.disabled = true;
+              if (b.getAttribute('data-correct') === 'true') b.classList.add('correct');
+            });
+
+            if (!isCorrect) {
+              btn.classList.add('wrong');
+              feedbackBox.style.display = 'block';
+              feedbackBox.style.background = 'var(--danger-bg)';
+              feedbackBox.style.color = 'var(--danger)';
+              feedbackBox.style.border = '1px solid var(--danger)';
+              feedbackBox.innerHTML = `<strong>Resposta Incorreta:</strong> ${feedbackText}`;
+            } else {
+              feedbackBox.style.display = 'block';
+              feedbackBox.style.background = 'var(--success-bg)';
+              feedbackBox.style.color = 'var(--success)';
+              feedbackBox.style.border = '1px solid var(--success)';
+              feedbackBox.innerHTML = `<strong>Correto!</strong> ${feedbackText}`;
+
+              if (!appState.completedQuizzes[qid]) {
+                appState.completedQuizzes[qid] = true;
+                updateProgress();
+              }
+            }
+          });
+        });
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      switchAdrTemplate('nygard');
+      generateStackAdr();
+      validateAndRenderAdrStudio();
+      initQuizzes();
+      updateProgress();
+    });
+  </script>
+</body>
+</html>
