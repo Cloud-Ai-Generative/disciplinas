@@ -1,0 +1,1951 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aula Interativa: APIs, REST & Design API-First com OpenAPI</title>
+  <style>
+    :root {
+      --bg-body: #0f172a;
+      --bg-card: #1e293b;
+      --bg-card-hover: #334155;
+      --bg-inset: #090d16;
+      --border-color: #334155;
+      --border-focus: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-hover: #0284c7;
+      --accent: #818cf8;
+      --swagger-green: #49cc90;
+      --swagger-blue: #4990e2;
+      --swagger-orange: #fca130;
+      --swagger-red: #f93e3e;
+      --success: #22c55e;
+      --success-bg: rgba(34, 197, 94, 0.15);
+      --warning: #f59e0b;
+      --warning-bg: rgba(245, 158, 11, 0.15);
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.15);
+      --badge-bg: #1e1b4b;
+      --badge-text: #a5b4fc;
+      --code-bg: #030712;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+      --radius: 12px;
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    [data-theme="light"] {
+      --bg-body: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f1f5f9;
+      --bg-inset: #f1f5f9;
+      --border-color: #e2e8f0;
+      --border-focus: #0284c7;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --primary: #0284c7;
+      --primary-hover: #0369a1;
+      --accent: #6366f1;
+      --swagger-green: #10a37f;
+      --swagger-blue: #2563eb;
+      --swagger-orange: #d97706;
+      --swagger-red: #dc2626;
+      --success: #16a34a;
+      --success-bg: rgba(22, 163, 74, 0.12);
+      --warning: #d97706;
+      --warning-bg: rgba(217, 119, 6, 0.12);
+      --danger: #dc2626;
+      --danger-bg: rgba(220, 38, 38, 0.12);
+      --badge-bg: #e0e7ff;
+      --badge-text: #3730a3;
+      --code-bg: #1e293b;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 60px;
+    }
+
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .header-info h1 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--primary);
+    }
+
+    .header-info p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-top: 4px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .progress-box {
+      background: var(--bg-inset);
+      border: 1px solid var(--border-color);
+      padding: 8px 16px;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .progress-bar-wrap {
+      width: 110px;
+      height: 8px;
+      background: var(--border-color);
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--primary), var(--success));
+      border-radius: 9999px;
+      transition: width 0.4s ease;
+    }
+
+    .progress-text {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--primary);
+      min-width: 38px;
+    }
+
+    .btn-theme {
+      background: var(--bg-inset);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 8px 14px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-theme:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-focus);
+    }
+
+    /* Tabs Navigation */
+    .tabs-nav {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 24px;
+      border-bottom: 2px solid var(--border-color);
+      scrollbar-width: thin;
+    }
+
+    .tab-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 12px 18px;
+      border-radius: var(--radius) var(--radius) 0 0;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.95rem;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: var(--bg-card-hover);
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+    }
+
+    .tab-panel {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--primary);
+    }
+
+    .concept-box {
+      background: var(--bg-inset);
+      border-left: 4px solid var(--primary);
+      padding: 16px 20px;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      margin-bottom: 16px;
+    }
+
+    .concept-box p {
+      margin-bottom: 10px;
+      font-size: 1rem;
+    }
+
+    .concept-box p:last-child {
+      margin-bottom: 0;
+    }
+
+    .analogy-highlight {
+      background: var(--badge-bg);
+      color: var(--badge-text);
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-weight: 500;
+      margin-top: 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      border: 1px solid rgba(129, 140, 248, 0.3);
+    }
+
+    /* Interactive Labs */
+    .lab-container {
+      background: var(--bg-inset);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-top: 16px;
+    }
+
+    .lab-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .btn-reset {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-reset:hover {
+      color: var(--text-main);
+      border-color: var(--primary);
+      background: var(--bg-card);
+    }
+
+    .btn-action {
+      background: var(--primary);
+      color: #ffffff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.95rem;
+      box-shadow: 0 4px 10px rgba(56, 189, 248, 0.25);
+    }
+
+    .btn-action:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    /* HTTP Simulator UI */
+    .http-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .method-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+
+    .url-input {
+      flex: 1;
+      min-width: 240px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+    }
+
+    .url-input:focus, .method-select:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+    }
+
+    .code-editor {
+      width: 100%;
+      height: 140px;
+      background: var(--code-bg);
+      color: #38bdf8;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      resize: vertical;
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+
+    .http-response-view {
+      margin-top: 16px;
+      background: var(--code-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      overflow-x: auto;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-weight: 800;
+      font-size: 0.85rem;
+      margin-bottom: 10px;
+    }
+
+    .status-2xx { background: var(--success-bg); color: var(--success); border: 1px solid var(--success); }
+    .status-4xx { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger); }
+    .status-5xx { background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning); }
+
+    .traffic-visualizer {
+      height: 70px;
+      background: var(--bg-card);
+      border: 1px dashed var(--border-color);
+      border-radius: 8px;
+      margin: 16px 0;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      overflow: hidden;
+    }
+
+    .traffic-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 0.85rem;
+      font-weight: 700;
+      z-index: 2;
+    }
+
+    .traffic-packet {
+      position: absolute;
+      top: 50%;
+      left: 15%;
+      transform: translateY(-50%);
+      background: var(--primary);
+      color: #ffffff;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      opacity: 0;
+      z-index: 1;
+    }
+
+    @keyframes sendRequest {
+      0% { left: 15%; opacity: 1; background: var(--primary); }
+      45% { left: 80%; opacity: 1; background: var(--primary); }
+      55% { left: 80%; opacity: 1; background: var(--accent); }
+      100% { left: 15%; opacity: 1; background: var(--success); }
+    }
+
+    .anim-active {
+      animation: sendRequest 1.2s ease-in-out forwards;
+    }
+
+    /* OpenAPI / Swagger UI Styles */
+    .swagger-studio {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 14px;
+    }
+
+    @media (max-width: 860px) {
+      .swagger-studio {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .swagger-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .swagger-endpoint {
+      border: 1px solid rgba(73, 204, 144, 0.4);
+      background: rgba(73, 204, 144, 0.08);
+      border-radius: 6px;
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    .swagger-endpoint.method-post {
+      border-color: rgba(73, 144, 226, 0.4);
+      background: rgba(73, 144, 226, 0.08);
+    }
+
+    .swagger-ep-header {
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .badge-method {
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-weight: 800;
+      font-size: 0.8rem;
+      color: #ffffff;
+      font-family: var(--font-mono);
+    }
+
+    .badge-get { background: var(--swagger-green); }
+    .badge-post { background: var(--swagger-blue); }
+
+    .swagger-ep-body {
+      padding: 14px;
+      background: var(--bg-inset);
+      border-top: 1px solid var(--border-color);
+      font-size: 0.88rem;
+    }
+
+    /* Challenge Box */
+    .challenge-card {
+      background: var(--bg-card);
+      border: 2px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-top: 24px;
+      position: relative;
+    }
+
+    .challenge-badge {
+      position: absolute;
+      top: -12px;
+      left: 20px;
+      background: var(--accent);
+      color: #ffffff;
+      padding: 2px 12px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .challenge-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+      font-weight: 700;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    .challenge-unlocked {
+      background: var(--success-bg);
+      color: var(--success);
+      border: 1px solid var(--success);
+    }
+
+    .challenge-locked {
+      background: var(--bg-inset);
+      color: var(--text-muted);
+      border: 1px dashed var(--border-color);
+    }
+
+    /* Quiz Styling */
+    .quiz-card {
+      margin-top: 24px;
+    }
+
+    .quiz-question {
+      background: var(--bg-inset);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .quiz-question h4 {
+      font-size: 1rem;
+      margin-bottom: 14px;
+      color: var(--text-main);
+    }
+
+    .quiz-options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .quiz-opt-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 12px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: left;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .quiz-opt-btn:hover:not(:disabled) {
+      border-color: var(--primary);
+      background: var(--bg-card-hover);
+    }
+
+    .quiz-opt-btn.correct {
+      background: var(--success-bg) !important;
+      border-color: var(--success) !important;
+      color: var(--success) !important;
+      font-weight: 700;
+    }
+
+    .quiz-opt-btn.wrong {
+      background: var(--danger-bg) !important;
+      border-color: var(--danger) !important;
+      color: var(--danger) !important;
+    }
+
+    .quiz-feedback {
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      display: none;
+      line-height: 1.5;
+    }
+
+    /* Interactive SVG Map */
+    .flow-diagram {
+      width: 100%;
+      background: var(--bg-inset);
+      border-radius: var(--radius);
+      border: 1px solid var(--border-color);
+      padding: 20px;
+      text-align: center;
+    }
+
+    .flow-node {
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .flow-node:hover rect {
+      stroke: var(--primary);
+      stroke-width: 3;
+      filter: drop-shadow(0 0 8px var(--primary));
+    }
+
+    .flow-node text {
+      pointer-events: none;
+    }
+
+    /* Cheat Sheet & Search */
+    .search-bar {
+      width: 100%;
+      padding: 12px 18px;
+      background: var(--bg-inset);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-main);
+      font-size: 1rem;
+      margin-bottom: 16px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.95rem;
+    }
+
+    th, td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+      background: var(--bg-inset);
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    tr:hover td {
+      background: var(--bg-card-hover);
+    }
+
+    .badge-code {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .header-actions {
+        justify-content: space-between;
+      }
+      .http-bar {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="header-info">
+        <h1>🌐 Dominando APIs, REST & Design API-First</h1>
+        <p>Engenharia de Software &bull; Aula Prática Interativa &bull; 100% Offline</p>
+      </div>
+      <div class="header-actions">
+        <div class="progress-box">
+          <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Progresso:</span>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" id="global-progress-bar"></div>
+          </div>
+          <span class="progress-text" id="global-progress-text">0%</span>
+        </div>
+        <button class="btn-theme" id="theme-toggle" title="Alternar tema claro/escuro">
+          <span>🌓</span> Tema
+        </button>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="tabs-nav">
+      <button class="tab-btn active" data-tab="tab1"><span>🔌</span> 1. O que é API?</button>
+      <button class="tab-btn" data-tab="tab2"><span>🚦</span> 2. Métodos HTTP</button>
+      <button class="tab-btn" data-tab="tab3"><span>🏷️</span> 3. Status & Headers</button>
+      <button class="tab-btn" data-tab="tab4"><span>🏛️</span> 4. Princípios REST</button>
+      <button class="tab-btn" data-tab="tab5"><span>📜</span> 5. API-First & OpenAPI</button>
+      <button class="tab-btn" data-tab="tab6"><span>🗺️</span> 6. Mapa & Cheat Sheet</button>
+    </nav>
+
+    <!-- TAB 1: O que é uma API? -->
+    <section class="tab-panel active" id="tab1">
+      <div class="card">
+        <h2 class="card-title">💡 Conceito em 60 Segundos: A Ponte Digital</h2>
+        <div class="concept-box">
+          <p>
+            Uma <strong>API (Application Programming Interface)</strong> é um conjunto de regras, contratos e protocolos que permite que dois sistemas de software diferentes conversem e troquem dados de forma padronizada, sem precisar saber como o outro foi construído internamente.
+          </p>
+          <div class="analogy-highlight">
+            <span style="font-size: 1.5rem;">🍽️</span>
+            <div>
+              <strong>Analogia do Restaurante:</strong> Você é o <em>Cliente (Frontend)</em>, a cozinha é o <em>Servidor/Banco de Dados (Backend)</em> e o <strong>Garçom é a API</strong>. Você lê o <em>Cardápio (Contrato da API)</em>, faz seu pedido ao garçom (<em>Request</em>), o garçom leva até a cozinha, que prepara o prato e o garçom traz a comida quentinha até sua mesa (<em>Response</em>). Você não entra na cozinha nem mexe nos fogões!
+            </div>
+          </div>
+        </div>
+
+        <div class="lab-container">
+          <div class="lab-header">
+            <h3 style="display:flex; align-items:center; gap:8px;">
+              <span>🧪</span> Laboratório: O Simulador do Garçom (Request & Response)
+            </h3>
+            <button class="btn-reset" onclick="resetLab1()">↺ Resetar Laboratório</button>
+          </div>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 12px;">
+            Escolha um item do cardápio e dispare o pedido. Acompanhe a viagem do pacote HTTP do Cliente até a Cozinha e veja a resposta retornada.
+          </p>
+          <div style="display:flex; gap: 12px; flex-wrap:wrap; margin-bottom: 14px;">
+            <select id="lab1-select" class="method-select" style="flex:1;">
+              <option value="pizza">🍕 Pedir: Pizza Margherita (Item Válido do Menu)</option>
+              <option value="burger">🍔 Pedir: Hambúrguer Artesanal (Item Válido do Menu)</option>
+              <option value="sushi">🍣 Pedir: Combinado de Sushi (Item Esgotado / Erro)</option>
+              <option value="caviar">👑 Pedir: Caviar Imperial (Fora do Cardápio - 404)</option>
+            </select>
+            <button class="btn-action" onclick="runLab1()">
+              <span>🚀</span> Enviar Pedido (Fazer Request)
+            </button>
+          </div>
+          <div class="traffic-visualizer">
+            <div class="traffic-node"><span>📱</span><span>Cliente (Você)</span></div>
+            <div id="lab1-packet" class="traffic-packet">GET /cardapio/item</div>
+            <div class="traffic-node"><span>👨‍🍳</span><span>Cozinha (Servidor)</span></div>
+          </div>
+          <div id="lab1-response" class="http-response-view" style="display:none;"></div>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-badge">Missão 1</div>
+          <h3 style="font-size:1.1rem; margin-top:6px;">🎯 Desafio Prático: Pedido com Sucesso & Item Inexistente</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">
+            Complete duas ações: (1) Faça um pedido válido (200 OK) e (2) Faça um pedido fora do cardápio para provocar um erro 404.
+          </p>
+          <div id="challenge1-box" class="challenge-status challenge-locked">
+            <span id="challenge1-icon">🔒</span>
+            <span id="challenge1-msg">Aguardando você testar um pedido com sucesso e um com erro 404...</span>
+          </div>
+        </div>
+
+        <div class="quiz-card">
+          <h3 class="card-title">🧠 Mini-Quiz de Fixação</h3>
+          <div class="quiz-question" data-qid="q1_1">
+            <h4>1. Qual é a função primordial de uma API no desenvolvimento de software moderno?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-fb="Incorreto. A API não substitui o design da tela.">Criar automaticamente o design visual da tela.</button>
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Exatamente! A API padroniza a troca de dados desacoplada.">Servir como intermediário padronizado que permite a comunicação e troca de dados entre sistemas distintos.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. A API não exclui bancos de dados.">Excluir o banco de dados do servidor.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <div class="quiz-question" data-qid="q1_2">
+            <h4>2. A resposta que a cozinha devolve para o cliente após preparar o prato equivale a:</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Perfeito! O Response é o pacote com os dados e status.">Ao HTTP Response, que entrega os dados solicitados acompanhados de um código de status.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. O Request é o pedido inicial.">Ao HTTP Request, que é o pedido inicial.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. A URL é o endereço de destino.">À URL do servidor.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: Métodos HTTP -->
+    <section class="tab-panel" id="tab2">
+      <div class="card">
+        <h2 class="card-title">💡 Conceito em 60 Segundos: Os Verbos HTTP (CRUD)</h2>
+        <div class="concept-box">
+          <p>
+            No protocolo HTTP, os <strong>Métodos (ou Verbos)</strong> indicam a intenção semântica sobre um <em>Recurso</em> (como <code>/api/users</code>), mapeando as operações fundamentais do <strong>CRUD</strong>:
+          </p>
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 10px;">
+            <div style="background:var(--bg-card); padding:10px; border-radius:8px; border-left:4px solid #22c55e;">
+              <strong>GET (Read)</strong><br><span style="font-size:0.85rem; color:var(--text-muted);">Buscar/consultar dados sem alterar o estado do servidor.</span>
+            </div>
+            <div style="background:var(--bg-card); padding:10px; border-radius:8px; border-left:4px solid #38bdf8;">
+              <strong>POST (Create)</strong><br><span style="font-size:0.85rem; color:var(--text-muted);">Criar um novo recurso enviando dados no corpo (Body).</span>
+            </div>
+            <div style="background:var(--bg-card); padding:10px; border-radius:8px; border-left:4px solid #f59e0b;">
+              <strong>PUT / PATCH (Update)</strong><br><span style="font-size:0.85rem; color:var(--text-muted);">Atualizar dados de um recurso existente.</span>
+            </div>
+            <div style="background:var(--bg-card); padding:10px; border-radius:8px; border-left:4px solid #ef4444;">
+              <strong>DELETE (Delete)</strong><br><span style="font-size:0.85rem; color:var(--text-muted);">Remover definitivamente um recurso.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="lab-container">
+          <div class="lab-header">
+            <h3 style="display:flex; align-items:center; gap:8px;">
+              <span>🧪</span> Laboratório: Mini-Postman Interativo de Usuários
+            </h3>
+            <button class="btn-reset" onclick="resetLab2()">↺ Resetar Banco de Dados</button>
+          </div>
+          <div class="http-bar">
+            <select id="lab2-method" class="method-select" onchange="onLab2MethodChange()">
+              <option value="GET">GET</option>
+              <option value="POST">POST</option>
+              <option value="PUT">PUT</option>
+              <option value="DELETE">DELETE</option>
+            </select>
+            <input type="text" id="lab2-url" class="url-input" value="/api/users">
+            <button class="btn-action" onclick="runLab2()"><span>⚡</span> Disparar Requisição</button>
+          </div>
+          <div id="lab2-body-wrap" style="display:none; margin-bottom: 12px;">
+            <label style="font-size:0.85rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">📦 Request Body (JSON):</label>
+            <textarea id="lab2-body" class="code-editor">{
+  "nome": "Carla Mendes",
+  "cargo": "Tech Lead"
+}</textarea>
+          </div>
+          <div class="table-wrap">
+            <table id="lab2-db-table">
+              <thead><tr><th>ID</th><th>Nome</th><th>Cargo</th></tr></thead>
+              <tbody id="lab2-db-body"></tbody>
+            </table>
+          </div>
+          <div id="lab2-response" class="http-response-view" style="display:none;"></div>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-badge">Missão 2</div>
+          <h3 style="font-size:1.1rem; margin-top:6px;">🎯 Desafio Prático: Criar um Usuário e Deletar com Sucesso</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">Cadastre um usuário com POST (201 Created) e depois delete-o usando DELETE /api/users/:id.</p>
+          <div id="challenge2-box" class="challenge-status challenge-locked">
+            <span id="challenge2-icon">🔒</span><span id="challenge2-msg">Aguardando você cadastrar (POST) e depois deletar (DELETE)...</span>
+          </div>
+        </div>
+
+        <div class="quiz-card">
+          <h3 class="card-title">🧠 Mini-Quiz de Fixação</h3>
+          <div class="quiz-question" data-qid="q2_1">
+            <h4>1. Qual método HTTP é estritamente recomendado para criar um novo registro enviando dados no corpo?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-fb="Incorreto. GET é apenas para leitura.">GET com parâmetros na URL.</button>
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Correto! POST encapsula o payload no body.">POST, enviando os dados encapsulados no corpo (Request Body) em JSON.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. DELETE é para remoção.">DELETE.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <div class="quiz-question" data-qid="q2_2">
+            <h4>2. Qual é a principal diferença conceitual entre PUT e PATCH?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Exato! PUT substitui o recurso todo; PATCH aplica atualizações pontuais.">O PUT substitui o recurso completo, enquanto o PATCH atualiza apenas campos específicos.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. Nenhum dos dois reinicia o servidor.">O PUT atualiza o banco e o PATCH reinicia o servidor.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. Ambos funcionam em qualquer conexão.">O PATCH só funciona via Wi-Fi.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: Status Codes & Headers -->
+    <section class="tab-panel" id="tab3">
+      <div class="card">
+        <h2 class="card-title">💡 Conceito em 60 Segundos: O Semáforo e os Metadados da Web</h2>
+        <div class="concept-box">
+          <p>
+            O <strong>Status Code</strong> de 3 dígitos resume o desfecho da requisição (2xx Sucesso, 4xx Erro do Cliente, 5xx Erro do Servidor), enquanto os <strong>Headers</strong> carregam metadados cruciais (como autorização e formato JSON).
+          </p>
+        </div>
+
+        <div class="lab-container">
+          <div class="lab-header">
+            <h3 style="display:flex; align-items:center; gap:8px;">
+              <span>🧪</span> Laboratório: Inspetor de Headers e Falhas
+            </h3>
+            <button class="btn-reset" onclick="resetLab3()">↺ Resetar Laboratório</button>
+          </div>
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 14px;">
+            <div>
+              <label style="font-size:0.85rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">🔑 Header 'Authorization':</label>
+              <select id="lab3-auth" class="method-select" style="width:100%;">
+                <option value="none">Nenhum (Sem Token)</option>
+                <option value="invalid">Bearer token_invalido_999</option>
+                <option value="valid">Bearer secret_master_key_2026</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:0.85rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">⚙️ Estado do Servidor:</label>
+              <select id="lab3-server-state" class="method-select" style="width:100%;">
+                <option value="healthy">Servidor Saudável (100% Operacional)</option>
+                <option value="db_down">Banco de Dados Offline (Simular Queda 500)</option>
+                <option value="overload">Sobrecarga de Tráfego (503 Service Unavailable)</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn-action" onclick="runLab3()"><span>🔍</span> Inspecionar Resposta HTTP</button>
+          <div id="lab3-response" class="http-response-view" style="display:none;"></div>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-badge">Missão 3</div>
+          <h3 style="font-size:1.1rem; margin-top:6px;">🎯 Desafio Prático: Destravar o Painel Secreto (200 OK)</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">Envie o token Bearer válido com o servidor saudável para liberar o acesso ao painel de administração.</p>
+          <div id="challenge3-box" class="challenge-status challenge-locked">
+            <span id="challenge3-icon">🔒</span><span id="challenge3-msg">Aguardando você autenticar com sucesso...</span>
+          </div>
+        </div>
+
+        <div class="quiz-card">
+          <h3 class="card-title">🧠 Mini-Quiz de Fixação</h3>
+          <div class="quiz-question" data-qid="q3_1">
+            <h4>1. Ao buscar uma rota inexistente no servidor, qual código deve retornar?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-fb="Incorreto. 200 indica sucesso.">200 OK</button>
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Correto! 404 Not Found é o padrão para recursos não encontrados.">404 Not Found</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. 500 é falha interna do código do backend.">500 Internal Server Error</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <div class="quiz-question" data-qid="q3_2">
+            <h4>2. Qual é a utilidade do cabeçalho 'Content-Type: application/json'?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Exato! Avisa ao receptor que o corpo está estruturado como JSON.">Informar que os dados no corpo estão estruturados no formato JSON.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. Não tem relação com criptografia de senhas.">Criptografar senhas.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. Não afeta a largura de banda.">Aumentar a velocidade da rede.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: Princípios REST -->
+    <section class="tab-panel" id="tab4">
+      <div class="card">
+        <h2 class="card-title">💡 Conceito em 60 Segundos: O que torna uma API RESTful?</h2>
+        <div class="concept-box">
+          <p>
+            O modelo <strong>REST (Representational State Transfer)</strong> estabelece princípios essenciais para a web: <em>Cliente-Servidor</em>, <em>Stateless</em> (sem guardar sessão de usuário na memória do servidor), <em>Cacheable</em> e <em>Interface Uniforme</em> baseada em substantivos no plural.
+          </p>
+        </div>
+
+        <div class="lab-container">
+          <div class="lab-header">
+            <h3 style="display:flex; align-items:center; gap:8px;">
+              <span>🧪</span> Laboratório: O Auditor de Design RESTful
+            </h3>
+            <button class="btn-reset" onclick="resetLab4()">↺ Resetar Auditor</button>
+          </div>
+          <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px;">
+            <select id="lab4-candidate" class="method-select" style="flex:1;">
+              <option value="bad1">❌ POST /salvarNovoClienteNoBanco (Verbo na URL)</option>
+              <option value="bad2">❌ GET /clientes/deletar?id=45 (Deletando via GET)</option>
+              <option value="bad3">❌ POST /login (Guardando sessão em variável de memória - Stateful)</option>
+              <option value="good1">✅ POST /clientes (Criando recurso com método semântico e URI limpa)</option>
+              <option value="good2">✅ DELETE /clientes/45 (Deletando recurso via identificador e método correto)</option>
+            </select>
+            <button class="btn-action" onclick="runLab4()"><span>🧐</span> Auditar Endpoint</button>
+          </div>
+          <div id="lab4-audit-result" class="http-response-view" style="display:none;"></div>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-badge">Missão 4</div>
+          <h3 style="font-size:1.1rem; margin-top:6px;">🎯 Desafio Prático: Obter Aprovação 100% RESTful</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">Audite uma das opções com padrão correto (✅) para alcançar 100% de conformidade.</p>
+          <div id="challenge4-box" class="challenge-status challenge-locked">
+            <span id="challenge4-icon">🔒</span><span id="challenge4-msg">Aguardando você auditar um design 100% RESTful...</span>
+          </div>
+        </div>
+
+        <div class="quiz-card">
+          <h3 class="card-title">🧠 Mini-Quiz de Fixação</h3>
+          <div class="quiz-question" data-qid="q4_1">
+            <h4>1. O que significa uma API ser 'Stateless'?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-fb="Incorreto. O servidor possui banco de dados persistente.">O servidor é proibido de ter banco de dados.</button>
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Perfeito! Cada requisição é autocontida e independente.">Cada requisição contém todas as informações necessárias para ser processada de forma independente.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">A aplicação só roda sem eletricidade.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <div class="quiz-question" data-qid="q4_2">
+            <h4>2. Qual URI segue rigorosamente as boas práticas de design RESTful para ler comentários do post 12?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-fb="Incorreto. Verbos não devem estar no path.">GET /buscarComentariosDoPost?post=12</button>
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Excelente! Hierarquia limpa e substantiva.">GET /posts/12/comentarios</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. POST não deve ser usado para leituras simples.">POST /executar_leitura_comentarios_12</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: API-First & OpenAPI (NOVO MÓDULO) -->
+    <section class="tab-panel" id="tab5">
+      <div class="card">
+        <h2 class="card-title">💡 Conceito em 60 Segundos: O Contrato Antes do Código</h2>
+        <div class="concept-box">
+          <p>
+            Na abordagem <strong>API-First</strong>, a interface de programação é tratada como um produto de primeira classe: o <strong>Contrato da API</strong> é planejado, documentado e validado <em>antes</em> de escrever qualquer linha de código backend ou frontend.
+          </p>
+          <p>
+            A especificação <strong>OpenAPI (antigo Swagger)</strong> é o padrão global da indústria (em YAML ou JSON) para descrever esse contrato de forma legível tanto para humanos quanto para computadores.
+          </p>
+          <div class="analogy-highlight">
+            <span style="font-size: 1.5rem;">📐</span>
+            <div>
+              <strong>Analogia da Planta Arquitetônica:</strong> Ninguém constrói um prédio colocando tijolos aleatórios para só depois descobrir onde vai passar o cano. O arquiteto desenha a <em>Planta Baixa (Contrato OpenAPI)</em>. O encanador e o eletricista trabalham em paralelo com base na mesma planta, sem pisar no pé um do outro!
+            </div>
+          </div>
+        </div>
+
+        <!-- Lab 5: OpenAPI & Swagger UI Studio -->
+        <div class="lab-container">
+          <div class="lab-header">
+            <h3 style="display:flex; align-items:center; gap:8px;">
+              <span>🧪</span> Laboratório: OpenAPI Studio & Swagger Live Renderer
+            </h3>
+            <button class="btn-reset" onclick="resetLab5()">↺ Resetar Contrato</button>
+          </div>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 12px;">
+            Escolha um modelo de especificação OpenAPI (YAML) à esquerda ou edite os campos. Clique em <strong>Renderizar Swagger UI</strong> para ver a documentação interativa ser gerada dinamicamente!
+          </p>
+
+          <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
+            <button class="btn-reset" style="border-color:var(--primary); color:var(--primary);" onclick="loadOpenApiTemplate('pedidos')">📄 Template: API de Pedidos (E-commerce)</button>
+            <button class="btn-reset" style="border-color:var(--accent); color:var(--accent);" onclick="loadOpenApiTemplate('produtos')">📄 Template: API de Catálogo de Produtos</button>
+          </div>
+
+          <div class="swagger-studio">
+            <!-- Coluna 1: Editor de Contrato OpenAPI -->
+            <div class="swagger-card">
+              <div style="padding:10px 14px; background:var(--bg-inset); border-bottom:1px solid var(--border-color); font-weight:700; font-size:0.85rem; display:flex; justify-content:space-between;">
+                <span>📝 Contrato OpenAPI 3.0 (YAML)</span>
+                <span style="color:var(--primary);">openapi.yaml</span>
+              </div>
+              <textarea id="openapi-editor" class="code-editor" style="height:260px; margin-bottom:0; border:none; border-radius:0;">openapi: 3.0.0
+info:
+  title: API de Pedidos
+  version: 1.0.0
+  description: Gestão de pedidos e entregas
+paths:
+  /pedidos:
+    get:
+      summary: Listar todos os pedidos
+      responses:
+        '200':
+          description: Lista recuperada com sucesso
+    post:
+      summary: Criar um novo pedido
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cliente:
+                  type: string
+                valorTotal:
+                  type: number
+      responses:
+        '201':
+          description: Pedido criado com sucesso</textarea>
+              <div style="padding:10px; background:var(--bg-inset); border-top:1px solid var(--border-color); text-align:right;">
+                <button class="btn-action" onclick="renderSwaggerUI()">
+                  <span>⚡</span> Renderizar Swagger UI
+                </button>
+              </div>
+            </div>
+
+            <!-- Coluna 2: Swagger UI Live Preview -->
+            <div class="swagger-card">
+              <div style="padding:10px 14px; background:var(--bg-inset); border-bottom:1px solid var(--border-color); font-weight:700; font-size:0.85rem; display:flex; justify-content:space-between;">
+                <span>🖥️ Swagger UI Preview (Documentação Viva)</span>
+                <span class="badge-code" style="background:#49cc90; color:#fff;">OAS 3.0</span>
+              </div>
+              <div id="swagger-preview" style="padding:14px; max-height:308px; overflow-y:auto;">
+                <!-- Gerado dinamicamente -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Mock Tester Integrado ao Contrato -->
+          <div id="mock-tester" style="margin-top:16px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px; padding:16px; display:none;">
+            <h4 style="color:var(--primary); font-size:0.95rem; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+              <span>🧪</span> Teste de Conformidade de Schema (Mock Validator)
+            </h4>
+            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:10px;">
+              O Swagger permite gerar um Servidor Mock automaticamente a partir do contrato OpenAPI para o time Frontend já começar a programar.
+            </p>
+            <div style="display:flex; gap:10px;">
+              <button class="btn-action" style="background:var(--swagger-blue);" onclick="testContractMock()">
+                <span>🚀</span> Disparar Request de Teste contra o Mock
+              </button>
+            </div>
+            <div id="mock-response" class="http-response-view" style="display:none; margin-top:10px;"></div>
+          </div>
+        </div>
+
+        <!-- Desafio 5 -->
+        <div class="challenge-card">
+          <div class="challenge-badge">Missão 5</div>
+          <h3 style="font-size:1.1rem; margin-top:6px;">🎯 Desafio Prático: Publicar Contrato OpenAPI e Testar Mock</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">
+            Renderize a documentação interativa Swagger a partir do contrato OpenAPI e execute um teste contra o Servidor Mock para validar a conformidade do schema.
+          </p>
+          <div id="challenge5-box" class="challenge-status challenge-locked">
+            <span id="challenge5-icon">🔒</span>
+            <span id="challenge5-msg">Aguardando você renderizar o Swagger e disparar o teste do Mock...</span>
+          </div>
+        </div>
+
+        <!-- Quiz 5 -->
+        <div class="quiz-card">
+          <h3 class="card-title">🧠 Mini-Quiz de Fixação</h3>
+          <div class="quiz-question" data-qid="q5_1">
+            <h4>1. Qual é o principal benefício estratégico de adotar a abordagem 'API-First' em uma equipe de engenharia?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-fb="Incorreto. A abordagem API-First não dispensa a codificação do backend; ela organiza o planejamento prévio.">
+                Eliminar para sempre a necessidade de escrever código no backend da aplicação.
+              </button>
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Exatamente! Com o contrato OpenAPI pronto, os times Frontend e Backend trabalham em paralelo usando Mocks gerados sem bloqueios.">
+                Permitir que equipes de frontend e backend trabalhem em paralelo a partir de um contrato acordado, reduzindo retrabalho e inconsistências.
+              </button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. O contrato define a interface de rede, não a cor dos botões.">
+                Definir a paleta de cores CSS oficial que o aplicativo deve utilizar.
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question" data-qid="q5_2">
+            <h4>2. Qual é o papel da especificação OpenAPI (Swagger) no ecossistema de APIs?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Perfeito! O OpenAPI descreve endpoints, payloads, respostas e tipos de dados em um formato padronizado e legível por ferramentas.">
+                Padronizar a descrição formal de rotas, parâmetros, tipos de dados e respostas de uma API em formato YAML ou JSON.
+              </button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. O OpenAPI é um formato de especificação de contrato, não um banco de dados relacional.">
+                Substituir bancos de dados relacionais como PostgreSQL e MySQL.
+              </button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. O OpenAPI é agnóstico de hardware e não interfere na velocidade do cabo de rede.">
+                Aumentar fisicamente a velocidade da placa de rede do servidor.
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 6: Mapa, Sandbox & Cheat Sheet -->
+    <section class="tab-panel" id="tab6">
+      <div class="card">
+        <h2 class="card-title">🗺️ Mapa Mental Interativo: Do Contrato OpenAPI ao Response</h2>
+        <p style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 16px;">
+          Clique em qualquer etapa do fluxo abaixo para inspecionar a arquitetura moderna de ponta a ponta:
+        </p>
+
+        <div class="flow-diagram">
+          <svg viewBox="0 0 920 160" style="max-width: 100%; height: auto;">
+            <line x1="80" y1="80" x2="840" y2="80" stroke="#334155" stroke-width="4" stroke-dasharray="6,6" />
+
+            <!-- Nó 0: Contrato OpenAPI -->
+            <g class="flow-node" onclick="showFlowInfo('contrato')">
+              <rect x="15" y="40" width="140" height="80" rx="10" fill="#1e293b" stroke="#10a37f" stroke-width="2"/>
+              <text x="85" y="75" fill="#f8fafc" font-size="12" font-weight="bold" text-anchor="middle">0. Contrato OpenAPI</text>
+              <text x="85" y="95" fill="#94a3b8" font-size="11" text-anchor="middle">Design API-First</text>
+            </g>
+
+            <!-- Nó 1: Cliente -->
+            <g class="flow-node" onclick="showFlowInfo('cliente')">
+              <rect x="195" y="40" width="130" height="80" rx="10" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
+              <text x="260" y="75" fill="#f8fafc" font-size="12" font-weight="bold" text-anchor="middle">1. Cliente HTTP</text>
+              <text x="260" y="95" fill="#94a3b8" font-size="11" text-anchor="middle">Dispara Request</text>
+            </g>
+
+            <!-- Nó 2: Roteamento & Auth -->
+            <g class="flow-node" onclick="showFlowInfo('roteamento')">
+              <rect x="365" y="40" width="150" height="80" rx="10" fill="#1e293b" stroke="#818cf8" stroke-width="2"/>
+              <text x="440" y="75" fill="#f8fafc" font-size="12" font-weight="bold" text-anchor="middle">2. Roteador & Auth</text>
+              <text x="440" y="95" fill="#94a3b8" font-size="11" text-anchor="middle">Valida Headers/Schema</text>
+            </g>
+
+            <!-- Nó 3: Controller & DB -->
+            <g class="flow-node" onclick="showFlowInfo('controller')">
+              <rect x="555" y="40" width="150" height="80" rx="10" fill="#1e293b" stroke="#f59e0b" stroke-width="2"/>
+              <text x="630" y="75" fill="#f8fafc" font-size="12" font-weight="bold" text-anchor="middle">3. Controller & DB</text>
+              <text x="630" y="95" fill="#94a3b8" font-size="11" text-anchor="middle">Executa CRUD</text>
+            </g>
+
+            <!-- Nó 4: Response HTTP -->
+            <g class="flow-node" onclick="showFlowInfo('response')">
+              <rect x="745" y="40" width="130" height="80" rx="10" fill="#1e293b" stroke="#22c55e" stroke-width="2"/>
+              <text x="810" y="75" fill="#f8fafc" font-size="12" font-weight="bold" text-anchor="middle">4. Response</text>
+              <text x="810" y="95" fill="#94a3b8" font-size="11" text-anchor="middle">Status + JSON</text>
+            </g>
+          </svg>
+        </div>
+
+        <div id="flow-info-box" class="concept-box" style="margin-top: 16px; display:none;">
+          <h4 id="flow-info-title" style="color:var(--primary); margin-bottom:6px;">Detalhes da Etapa</h4>
+          <p id="flow-info-desc" style="font-size:0.95rem;"></p>
+        </div>
+      </div>
+
+      <!-- Cheat Sheet com Filtro Instantâneo -->
+      <div class="card">
+        <h2 class="card-title">📋 Cola Rápida (Cheat Sheet Interativo)</h2>
+        <p style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 14px;">
+          Digite qualquer termo, método, código ou conceito OpenAPI para filtrar a tabela em tempo real:
+        </p>
+
+        <input type="text" id="cheatsheet-search" class="search-bar" placeholder="🔍 Ex: OpenAPI, Swagger, API-First, 201, POST, DELETE, 404, Stateless, Idempotência..." oninput="filterCheatSheet()">
+
+        <div class="table-wrap">
+          <table id="cheatsheet-table">
+            <thead>
+              <tr>
+                <th>Termo / Código</th>
+                <th>Categoria</th>
+                <th>Significado Prático</th>
+                <th>Exemplo / Uso</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge-code" style="background:#10a37f; color:#fff;">API-First</span></td>
+                <td>Metodologia</td>
+                <td>Desenhar e validar o contrato antes de iniciar o código backend.</td>
+                <td>Especificar schemas no OpenAPI antes dos endpoints.</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code" style="background:#4990e2; color:#fff;">OpenAPI 3.0</span></td>
+                <td>Especificação</td>
+                <td>Formato padrão aberto (YAML/JSON) para descrever contratos de API.</td>
+                <td>Documento openapi.yaml com paths, schemas e responses.</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code" style="background:#fca130; color:#fff;">Swagger UI</span></td>
+                <td>Ferramenta</td>
+                <td>Interface gráfica que gera documentação viva e interativa via OpenAPI.</td>
+                <td>Botão 'Try it out' para testar requisições no navegador.</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code status-2xx">200 OK</span></td>
+                <td>Status 2xx</td>
+                <td>Requisição executada com sucesso pleno.</td>
+                <td>GET /api/produtos retornando a lista.</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code status-2xx">201 Created</span></td>
+                <td>Status 2xx</td>
+                <td>Novo recurso criado com sucesso no banco.</td>
+                <td>POST /api/usuarios após cadastrar conta.</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code status-2xx">204 No Content</span></td>
+                <td>Status 2xx</td>
+                <td>Sucesso, mas sem corpo de resposta para devolver.</td>
+                <td>DELETE /api/tarefas/10 concluído.</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code status-4xx">400 Bad Request</span></td>
+                <td>Status 4xx</td>
+                <td>Corpo da requisição inválido ou JSON mal formatado.</td>
+                <td>Enviar campo obrigatório faltando no schema.</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code status-4xx">401 Unauthorized</span></td>
+                <td>Status 4xx</td>
+                <td>Cliente não autenticado (falta token ou login).</td>
+                <td>Acessar rota privada sem Bearer Token.</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code status-4xx">403 Forbidden</span></td>
+                <td>Status 4xx</td>
+                <td>Cliente autenticado, mas sem permissão de acesso.</td>
+                <td>Usuário comum tentando deletar outro usuário.</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code status-4xx">404 Not Found</span></td>
+                <td>Status 4xx</td>
+                <td>Rota ou recurso inexistente no servidor.</td>
+                <td>GET /api/clientes/999999 (não cadastrado).</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code status-5xx">500 Internal Error</span></td>
+                <td>Status 5xx</td>
+                <td>Exceção não tratada no código do servidor.</td>
+                <td>Crash do backend ou falha de conexão com BD.</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code status-5xx">503 Service Unavail</span></td>
+                <td>Status 5xx</td>
+                <td>Servidor temporariamente sobrecarregado ou em manutenção.</td>
+                <td>Queda de servidor em Black Friday.</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code" style="background:#0284c7; color:#fff;">Idempotência</span></td>
+                <td>Conceito REST</td>
+                <td>Executar a mesma requisição N vezes gera o mesmo efeito no estado final.</td>
+                <td>GET, PUT e DELETE são idempotentes; POST não.</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code" style="background:#6366f1; color:#fff;">Stateless</span></td>
+                <td>Conceito REST</td>
+                <td>O servidor não guarda estado de sessão entre requisições.</td>
+                <td>Token JWT trafega em cada chamada.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    /* ==========================================================
+       1. ESTADO GLOBAL E PROGRESSO
+    ========================================================== */
+    const appState = {
+      completedMissions: {
+        m1: false,
+        m2: false,
+        m3: false,
+        m4: false,
+        m5: false
+      },
+      completedQuizzes: {},
+      totalQuizCount: 10,
+      lab2Database: [
+        { id: 1, nome: "Lucas Silva", cargo: "Desenvolvedor Backend" },
+        { id: 2, nome: "Beatriz Costa", cargo: "Product Designer" }
+      ],
+      mission1State: { success: false, notFound: false },
+      mission2State: { created: false, deleted: false },
+      mission5State: { rendered: false, mocked: false }
+    };
+
+    function updateProgress() {
+      // 5 Missões = 50% (10% cada)
+      const missionsDone = Object.values(appState.completedMissions).filter(Boolean).length;
+      let score = missionsDone * 10;
+
+      // 10 Quizzes = 50% (5% cada)
+      const quizzesDone = Object.keys(appState.completedQuizzes).length;
+      score += quizzesDone * 5;
+
+      const finalScore = Math.min(100, Math.round(score));
+      document.getElementById('global-progress-bar').style.width = finalScore + '%';
+      document.getElementById('global-progress-text').innerText = finalScore + '%';
+    }
+
+    // Alternador de tema
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      document.documentElement.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+    });
+
+    // Abas de navegação
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.getAttribute('data-tab');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(target).classList.add('active');
+      });
+    });
+
+    /* ==========================================================
+       LAB 1: O SIMULADOR DO GARÇOM
+    ========================================================== */
+    function runLab1() {
+      const item = document.getElementById('lab1-select').value;
+      const packet = document.getElementById('lab1-packet');
+      const resView = document.getElementById('lab1-response');
+      packet.classList.remove('anim-active');
+      void packet.offsetWidth;
+      packet.innerText = `GET /cardapio/${item}`;
+      packet.classList.add('anim-active');
+      resView.style.display = 'block';
+      resView.innerHTML = '<span style="color:var(--text-muted);">⏳ Enviando requisição ao servidor da cozinha...</span>';
+
+      setTimeout(() => {
+        if (item === 'pizza' || item === 'burger') {
+          resView.innerHTML = `
+<div class="status-badge status-2xx">HTTP/1.1 200 OK</div>
+<div style="color:var(--text-muted); margin-bottom:8px;">// Pedido entregue na mesa com sucesso!</div>
+<pre style="color:#38bdf8;">{
+  "status": "sucesso",
+  "prato": "${item === 'pizza' ? 'Pizza Margherita' : 'Hambúrguer Artesanal'}",
+  "tempo_preparo": "${item === 'pizza' ? '18 minutos' : '12 minutos'}"
+}</pre>`;
+          appState.mission1State.success = true;
+        } else if (item === 'sushi') {
+          resView.innerHTML = `
+<div class="status-badge status-4xx">HTTP/1.1 409 Conflict (Esgotado)</div>
+<div style="color:var(--text-muted); margin-bottom:8px;">// A cozinha tentou preparar, mas faltou salmão fresco.</div>
+<pre style="color:#ef4444;">{
+  "erro": "ESTOQUE_ESGOTADO",
+  "mensagem": "Infelizmente os ingredientes para Sushi acabaram."
+}</pre>`;
+        } else {
+          resView.innerHTML = `
+<div class="status-badge status-4xx">HTTP/1.1 404 Not Found</div>
+<div style="color:var(--text-muted); margin-bottom:8px;">// O garçom procurou no cardápio e não encontrou esse item.</div>
+<pre style="color:#ef4444;">{
+  "erro": "RECURSO_NAO_ENCONTRADO",
+  "mensagem": "O item 'caviar' não existe no cardápio."
+}</pre>`;
+          appState.mission1State.notFound = true;
+        }
+
+        if (appState.mission1State.success && appState.mission1State.notFound && !appState.completedMissions.m1) {
+          appState.completedMissions.m1 = true;
+          const box = document.getElementById('challenge1-box');
+          box.className = 'challenge-status challenge-unlocked';
+          document.getElementById('challenge1-icon').innerText = '🎉';
+          document.getElementById('challenge1-msg').innerText = 'Missão Concluída! Você experimentou o ciclo 200 OK e o 404 Not Found.';
+          updateProgress();
+        }
+      }, 1200);
+    }
+
+    function resetLab1() {
+      document.getElementById('lab1-select').value = 'pizza';
+      document.getElementById('lab1-response').style.display = 'none';
+      document.getElementById('lab1-packet').classList.remove('anim-active');
+    }
+
+    /* ==========================================================
+       LAB 2: MINI-POSTMAN & BANCO DE DADOS
+    ========================================================== */
+    function renderLab2DB() {
+      const tbody = document.getElementById('lab2-db-body');
+      tbody.innerHTML = appState.lab2Database.map(u => `
+        <tr>
+          <td><strong>#${u.id}</strong></td>
+          <td>${u.nome}</td>
+          <td><span class="badge-code" style="background:var(--badge-bg); color:var(--badge-text);">${u.cargo}</span></td>
+        </tr>
+      `).join('') || '<tr><td colspan="3" style="text-align:center; color:var(--text-muted);">Banco de dados vazio.</td></tr>';
+    }
+
+    function onLab2MethodChange() {
+      const m = document.getElementById('lab2-method').value;
+      document.getElementById('lab2-body-wrap').style.display = (m === 'POST' || m === 'PUT') ? 'block' : 'none';
+      document.getElementById('lab2-url').value = (m === 'DELETE' || m === 'PUT') ? '/api/users/1' : '/api/users';
+    }
+
+    function runLab2() {
+      const m = document.getElementById('lab2-method').value;
+      const url = document.getElementById('lab2-url').value.trim();
+      const res = document.getElementById('lab2-response');
+      res.style.display = 'block';
+
+      if (m === 'GET') {
+        if (url === '/api/users') {
+          res.innerHTML = `
+<div class="status-badge status-2xx">HTTP/1.1 200 OK</div>
+<pre style="color:#38bdf8;">${JSON.stringify(appState.lab2Database, null, 2)}</pre>`;
+        } else if (url.startsWith('/api/users/')) {
+          const id = parseInt(url.split('/')[3]);
+          const user = appState.lab2Database.find(u => u.id === id);
+          if (user) {
+            res.innerHTML = `<div class="status-badge status-2xx">HTTP/1.1 200 OK</div><pre style="color:#38bdf8;">${JSON.stringify(user, null, 2)}</pre>`;
+          } else {
+            res.innerHTML = `<div class="status-badge status-4xx">HTTP/1.1 404 Not Found</div><pre style="color:#ef4444;">{"erro": "Usuário #${id} não encontrado."}</pre>`;
+          }
+        } else {
+          res.innerHTML = `<div class="status-badge status-4xx">HTTP/1.1 404 Not Found</div>`;
+        }
+      } else if (m === 'POST') {
+        try {
+          const body = JSON.parse(document.getElementById('lab2-body').value);
+          const newId = appState.lab2Database.length > 0 ? Math.max(...appState.lab2Database.map(u => u.id)) + 1 : 1;
+          const newUser = { id: newId, nome: body.nome, cargo: body.cargo };
+          appState.lab2Database.push(newUser);
+          renderLab2DB();
+          res.innerHTML = `<div class="status-badge status-2xx">HTTP/1.1 201 Created</div><pre style="color:#22c55e;">${JSON.stringify(newUser, null, 2)}</pre>`;
+          appState.mission2State.created = true;
+        } catch (e) {
+          res.innerHTML = `<div class="status-badge status-4xx">HTTP/1.1 400 Bad Request (JSON inválido)</div>`;
+        }
+      } else if (m === 'DELETE') {
+        const id = parseInt(url.split('/')[3]);
+        const idx = appState.lab2Database.findIndex(u => u.id === id);
+        if (idx !== -1) {
+          appState.lab2Database.splice(idx, 1);
+          renderLab2DB();
+          res.innerHTML = `<div class="status-badge status-2xx">HTTP/1.1 204 No Content</div><div style="color:var(--text-muted);">// Registro #${id} excluído com sucesso.</div>`;
+          appState.mission2State.deleted = true;
+        } else {
+          res.innerHTML = `<div class="status-badge status-4xx">HTTP/1.1 404 Not Found (ID #${id} não existe)</div>`;
+        }
+      } else if (m === 'PUT') {
+        const id = parseInt(url.split('/')[3]);
+        const user = appState.lab2Database.find(u => u.id === id);
+        if (user) {
+          try {
+            const body = JSON.parse(document.getElementById('lab2-body').value);
+            user.nome = body.nome || user.nome;
+            user.cargo = body.cargo || user.cargo;
+            renderLab2DB();
+            res.innerHTML = `<div class="status-badge status-2xx">HTTP/1.1 200 OK</div><pre style="color:#38bdf8;">${JSON.stringify(user, null, 2)}</pre>`;
+          } catch(e) { res.innerHTML = `<div class="status-badge status-4xx">400 Bad Request</div>`; }
+        } else {
+          res.innerHTML = `<div class="status-badge status-4xx">HTTP/1.1 404 Not Found</div>`;
+        }
+      }
+
+      if (appState.mission2State.created && appState.mission2State.deleted && !appState.completedMissions.m2) {
+        appState.completedMissions.m2 = true;
+        const box = document.getElementById('challenge2-box');
+        box.className = 'challenge-status challenge-unlocked';
+        document.getElementById('challenge2-icon').innerText = '🎉';
+        document.getElementById('challenge2-msg').innerText = 'Missão Concluída! Você dominou o ciclo POST (201) e DELETE (204).';
+        updateProgress();
+      }
+    }
+
+    function resetLab2() {
+      appState.lab2Database = [
+        { id: 1, nome: "Lucas Silva", cargo: "Desenvolvedor Backend" },
+        { id: 2, nome: "Beatriz Costa", cargo: "Product Designer" }
+      ];
+      renderLab2DB();
+      document.getElementById('lab2-method').value = 'GET';
+      onLab2MethodChange();
+      document.getElementById('lab2-response').style.display = 'none';
+    }
+
+    /* ==========================================================
+       LAB 3: HEADERS & FALHAS
+    ========================================================== */
+    function runLab3() {
+      const auth = document.getElementById('lab3-auth').value;
+      const state = document.getElementById('lab3-server-state').value;
+      const res = document.getElementById('lab3-response');
+      res.style.display = 'block';
+
+      if (state === 'overload') {
+        res.innerHTML = `<div class="status-badge status-5xx">HTTP/1.1 503 Service Unavailable</div><pre style="color:#f59e0b;">Retry-After: 30
+{"erro": "Servidor sobrecarregado. Tente em 30s."}</pre>`;
+      } else if (state === 'db_down') {
+        res.innerHTML = `<div class="status-badge status-5xx">HTTP/1.1 500 Internal Server Error</div><pre style="color:#ef4444;">{"erro": "Falha na conexão com o banco de dados."}</pre>`;
+      } else if (auth !== 'valid') {
+        res.innerHTML = `<div class="status-badge status-4xx">${auth === 'none' ? '401 Unauthorized' : '403 Forbidden'}</div><pre style="color:#ef4444;">{"erro": "Acesso negado. Token ausente ou inválido."}</pre>`;
+      } else {
+        res.innerHTML = `<div class="status-badge status-2xx">HTTP/1.1 200 OK</div><pre style="color:#22c55e;">{
+  "acesso": "LIBERADO",
+  "usuario": "SuperAdmin",
+  "status": "Token verificado com sucesso via Header."
+}</pre>`;
+        if (!appState.completedMissions.m3) {
+          appState.completedMissions.m3 = true;
+          document.getElementById('challenge3-box').className = 'challenge-status challenge-unlocked';
+          document.getElementById('challenge3-icon').innerText = '🎉';
+          document.getElementById('challenge3-msg').innerText = 'Missão Concluída! Você autenticou com sucesso via Header Bearer Token.';
+          updateProgress();
+        }
+      }
+    }
+
+    function resetLab3() {
+      document.getElementById('lab3-auth').value = 'none';
+      document.getElementById('lab3-server-state').value = 'healthy';
+      document.getElementById('lab3-response').style.display = 'none';
+    }
+
+    /* ==========================================================
+       LAB 4: AUDITOR RESTFUL
+    ========================================================== */
+    function runLab4() {
+      const val = document.getElementById('lab4-candidate').value;
+      const res = document.getElementById('lab4-audit-result');
+      res.style.display = 'block';
+
+      if (val.startsWith('good')) {
+        res.innerHTML = `<div class="status-badge status-2xx">AUDITORIA: 100% APROVADO RESTful</div><p style="color:var(--success); font-weight:700;">✅ Padrão Impecável:</p><p style="font-size:0.9rem;">Utiliza substantivo no plural e método semântico apropriado sem acoplamento.</p>`;
+        if (!appState.completedMissions.m4) {
+          appState.completedMissions.m4 = true;
+          document.getElementById('challenge4-box').className = 'challenge-status challenge-unlocked';
+          document.getElementById('challenge4-icon').innerText = '🎉';
+          document.getElementById('challenge4-msg').innerText = 'Missão Concluída! Você dominou as regras de design RESTful.';
+          updateProgress();
+        }
+      } else {
+        res.innerHTML = `<div class="status-badge status-4xx">AUDITORIA: REPROVADO</div><p style="color:var(--danger); font-weight:700;">❌ Violação de Princípios REST:</p><p style="font-size:0.9rem;">Verbos na rota, quebra de arquitetura Stateless ou deleção via GET comprometem a estabilidade da API.</p>`;
+      }
+    }
+
+    function resetLab4() {
+      document.getElementById('lab4-candidate').value = 'bad1';
+      document.getElementById('lab4-audit-result').style.display = 'none';
+    }
+
+    /* ==========================================================
+       LAB 5: OPENAPI STUDIO & SWAGGER UI RENDERER
+    ========================================================== */
+    const openApiTemplates = {
+      pedidos: `openapi: 3.0.0
+info:
+  title: API de Pedidos (E-commerce)
+  version: 1.0.0
+  description: Gestão completa de pedidos e entregas
+paths:
+  /pedidos:
+    get:
+      summary: Listar todos os pedidos
+      responses:
+        '200':
+          description: Lista recuperada com sucesso
+    post:
+      summary: Criar um novo pedido
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cliente:
+                  type: string
+                valorTotal:
+                  type: number
+      responses:
+        '201':
+          description: Pedido criado com sucesso`,
+      produtos: `openapi: 3.0.0
+info:
+  title: API de Catálogo de Produtos
+  version: 2.1.0
+  description: Endpoints para consulta e gestão de estoque
+paths:
+  /produtos:
+    get:
+      summary: Buscar catálogo de itens
+      responses:
+        '200':
+          description: Catálogo retornado com sucesso
+  /produtos/{id}:
+    get:
+      summary: Obter detalhes do produto
+      responses:
+        '200':
+          description: Produto localizado
+        '404':
+          description: Produto não encontrado`
+    };
+
+    function loadOpenApiTemplate(type) {
+      document.getElementById('openapi-editor').value = openApiTemplates[type];
+      renderSwaggerUI();
+    }
+
+    function renderSwaggerUI() {
+      const code = document.getElementById('openapi-editor').value;
+      const preview = document.getElementById('swagger-preview');
+      const mockTester = document.getElementById('mock-tester');
+
+      // Extrai título e versão
+      const titleMatch = code.match(/title:\s*(.+)/);
+      const title = titleMatch ? titleMatch[1] : "Minha API";
+      const verMatch = code.match(/version:\s*(.+)/);
+      const version = verMatch ? verMatch[1] : "1.0.0";
+
+      let endpointsHtml = '';
+
+      if (code.includes('/pedidos')) {
+        endpointsHtml += `
+          <div class="swagger-endpoint">
+            <div class="swagger-ep-header">
+              <span class="badge-method badge-get">GET</span>
+              <strong style="font-family:var(--font-mono); font-size:0.9rem;">/pedidos</strong>
+              <span style="color:var(--text-muted); font-size:0.8rem; margin-left:auto;">Listar todos os pedidos</span>
+            </div>
+            <div class="swagger-ep-body">
+              <strong>Responses:</strong> <span class="badge-code status-2xx">200 OK</span> - Lista recuperada com sucesso.
+            </div>
+          </div>
+          <div class="swagger-endpoint method-post">
+            <div class="swagger-ep-header">
+              <span class="badge-method badge-post">POST</span>
+              <strong style="font-family:var(--font-mono); font-size:0.9rem;">/pedidos</strong>
+              <span style="color:var(--text-muted); font-size:0.8rem; margin-left:auto;">Criar um novo pedido</span>
+            </div>
+            <div class="swagger-ep-body">
+              <div style="margin-bottom:6px;"><strong>Request Body:</strong> <span class="badge-code" style="background:#1e293b;">application/json</span></div>
+              <pre style="background:var(--code-bg); padding:6px; border-radius:4px; font-size:0.75rem; color:#38bdf8;">{
+  "cliente": "string",
+  "valorTotal": 0.00
+}</pre>
+              <div style="margin-top:6px;"><strong>Responses:</strong> <span class="badge-code status-2xx">201 Created</span></div>
+            </div>
+          </div>
+        `;
+      } else {
+        endpointsHtml += `
+          <div class="swagger-endpoint">
+            <div class="swagger-ep-header">
+              <span class="badge-method badge-get">GET</span>
+              <strong style="font-family:var(--font-mono); font-size:0.9rem;">/produtos</strong>
+              <span style="color:var(--text-muted); font-size:0.8rem; margin-left:auto;">Buscar catálogo de itens</span>
+            </div>
+            <div class="swagger-ep-body">
+              <strong>Responses:</strong> <span class="badge-code status-2xx">200 OK</span>
+            </div>
+          </div>
+          <div class="swagger-endpoint">
+            <div class="swagger-ep-header">
+              <span class="badge-method badge-get">GET</span>
+              <strong style="font-family:var(--font-mono); font-size:0.9rem;">/produtos/{id}</strong>
+              <span style="color:var(--text-muted); font-size:0.8rem; margin-left:auto;">Obter detalhes</span>
+            </div>
+            <div class="swagger-ep-body">
+              <strong>Responses:</strong> <span class="badge-code status-2xx">200 OK</span>, <span class="badge-code status-4xx">404 Not Found</span>
+            </div>
+          </div>
+        `;
+      }
+
+      preview.innerHTML = `
+        <div style="margin-bottom:12px;">
+          <h3 style="font-size:1.1rem; color:var(--text-main);">${title} <span class="badge-code" style="background:var(--badge-bg); color:var(--badge-text);">${version}</span></h3>
+          <p style="font-size:0.8rem; color:var(--text-muted);">Servidor de Origem: <code>https://api.empresa.com/v1</code></p>
+        </div>
+        ${endpointsHtml}
+      `;
+
+      mockTester.style.display = 'block';
+      appState.mission5State.rendered = true;
+    }
+
+    function testContractMock() {
+      const mockRes = document.getElementById('mock-response');
+      mockRes.style.display = 'block';
+      mockRes.innerHTML = '<span style="color:var(--text-muted);">⏳ Gerando resposta a partir dos Schemas do OpenAPI...</span>';
+
+      setTimeout(() => {
+        mockRes.innerHTML = `
+<div class="status-badge status-2xx">MOCK SERVER 200 OK (Gerado via Schema OpenAPI)</div>
+<div style="color:var(--text-muted); margin-bottom:6px;">// Resposta gerada automaticamente sem precisar de backend pronto!</div>
+<pre style="color:#22c55e;">[
+  {
+    "id": 101,
+    "cliente": "Empresa Alpha Ltda",
+    "valorTotal": 450.90,
+    "status": "APROVADO",
+    "data_criacao": "2026-09-01T15:30:00Z"
+  }
+]</pre>`;
+        appState.mission5State.mocked = true;
+
+        if (appState.mission5State.rendered && appState.mission5State.mocked && !appState.completedMissions.m5) {
+          appState.completedMissions.m5 = true;
+          const box = document.getElementById('challenge5-box');
+          box.className = 'challenge-status challenge-unlocked';
+          document.getElementById('challenge5-icon').innerText = '🎉';
+          document.getElementById('challenge5-msg').innerText = 'Missão Concluída! Você publicou o contrato OpenAPI e testou o Mock com sucesso.';
+          updateProgress();
+        }
+      }, 700);
+    }
+
+    function resetLab5() {
+      document.getElementById('openapi-editor').value = openApiTemplates.pedidos;
+      document.getElementById('mock-response').style.display = 'none';
+      renderSwaggerUI();
+    }
+
+    /* ==========================================================
+       MAPA MENTAL INTERATIVO
+    ========================================================== */
+    const flowDescriptions = {
+      contrato: {
+        title: "0. Definição do Contrato OpenAPI (API-First)",
+        desc: "Antes de programar, o time especifica no Swagger/OpenAPI os endpoints, formatos JSON esperados e status codes de retorno. Serve como guia único para Frontend e Backend."
+      },
+      cliente: {
+        title: "1. Disparo da Requisição pelo Cliente (Frontend / App)",
+        desc: "O cliente encapsula Método HTTP, URL, Headers (Authorization) e Body JSON em um pacote e o envia pela rede."
+      },
+      roteamento: {
+        title: "2. Servidor Web, Roteador & Middleware de Validação",
+        desc: "O gateway valida se o token Bearer é legítimo e se o payload enviado bate rigorosamente com o schema OpenAPI antes de repassar à lógica."
+      },
+      controller: {
+        title: "3. Controller, Regras de Negócio & Banco de Dados",
+        desc: "O Controller processa a regra, executa operações no banco de dados (CRUD) e prepara o JSON de retorno."
+      },
+      response: {
+        title: "4. Emissão do HTTP Response",
+        desc: "O servidor responde enviando o código de status HTTP adequado (ex: 200 OK ou 201 Created), os cabeçalhos e o JSON para o cliente."
+      }
+    };
+
+    function showFlowInfo(key) {
+      const infoBox = document.getElementById('flow-info-box');
+      const titleEl = document.getElementById('flow-info-title');
+      const descEl = document.getElementById('flow-info-desc');
+      const data = flowDescriptions[key];
+
+      if (data) {
+        titleEl.innerText = data.title;
+        descEl.innerText = data.desc;
+        infoBox.style.display = 'block';
+      }
+    }
+
+    /* ==========================================================
+       FILTRO DO CHEAT SHEET
+    ========================================================== */
+    function filterCheatSheet() {
+      const term = document.getElementById('cheatsheet-search').value.toLowerCase();
+      document.querySelectorAll('#cheatsheet-table tbody tr').forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+      });
+    }
+
+    /* ==========================================================
+       SISTEMA DE QUIZZES COM FISHER-YATES
+    ========================================================== */
+    function initQuizzes() {
+      document.querySelectorAll('.quiz-question').forEach(qBlock => {
+        const qid = qBlock.getAttribute('data-qid');
+        const optContainer = qBlock.querySelector('.quiz-options');
+        const feedbackBox = qBlock.querySelector('.quiz-feedback');
+        
+        // Fisher-Yates
+        const options = Array.from(optContainer.children);
+        for (let i = options.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          optContainer.appendChild(options[j]);
+        }
+
+        optContainer.querySelectorAll('.quiz-opt-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const isCorrect = btn.getAttribute('data-correct') === 'true';
+            const feedbackText = btn.getAttribute('data-fb');
+
+            optContainer.querySelectorAll('.quiz-opt-btn').forEach(b => {
+              b.disabled = true;
+              if (b.getAttribute('data-correct') === 'true') b.classList.add('correct');
+            });
+
+            if (!isCorrect) {
+              btn.classList.add('wrong');
+              feedbackBox.style.display = 'block';
+              feedbackBox.style.background = 'var(--danger-bg)';
+              feedbackBox.style.color = 'var(--danger)';
+              feedbackBox.style.border = '1px solid var(--danger)';
+              feedbackBox.innerHTML = `<strong>Resposta Incorreta:</strong> ${feedbackText}`;
+            } else {
+              feedbackBox.style.display = 'block';
+              feedbackBox.style.background = 'var(--success-bg)';
+              feedbackBox.style.color = 'var(--success)';
+              feedbackBox.style.border = '1px solid var(--success)';
+              feedbackBox.innerHTML = `<strong>Correto!</strong> ${feedbackText}`;
+              
+              if (!appState.completedQuizzes[qid]) {
+                appState.completedQuizzes[qid] = true;
+                updateProgress();
+              }
+            }
+          });
+        });
+      });
+    }
+
+    // Inicialização ao carregar
+    window.addEventListener('DOMContentLoaded', () => {
+      renderLab2DB();
+      renderSwaggerUI();
+      initQuizzes();
+      updateProgress();
+    });
+  </script>
+</body>
+</html>
