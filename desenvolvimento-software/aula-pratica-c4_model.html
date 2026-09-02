@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aula Interativa: Diagramas C4 - Arquitetura de Software</title>
+  <style>
+    :root {
+      --bg-body: #090d16;
+      --bg-card: #131b2e;
+      --bg-card-hover: #1e293b;
+      --bg-inset: #0a0f1d;
+      --border-color: #24324f;
+      --border-focus: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #0284c7;
+      --primary-hover: #0369a1;
+      --accent: #6366f1;
+      --c4-person: #08427b;
+      --c4-system-internal: #1168bd;
+      --c4-system-external: #999999;
+      --c4-container: #438dd5;
+      --c4-component: #85bbf0;
+      --c4-database: #2b70b5;
+      --terminal-bg: #030712;
+      --success: #22c55e;
+      --success-bg: rgba(34, 197, 94, 0.15);
+      --warning: #f59e0b;
+      --warning-bg: rgba(245, 158, 11, 0.15);
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.15);
+      --badge-bg: #1e1b4b;
+      --badge-text: #a5b4fc;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+      --radius: 12px;
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    [data-theme="light"] {
+      --bg-body: #f1f5f9;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f8fafc;
+      --bg-inset: #f1f5f9;
+      --border-color: #cbd5e1;
+      --border-focus: #0284c7;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --primary: #0284c7;
+      --primary-hover: #0369a1;
+      --accent: #4f46e5;
+      --terminal-bg: #0f172a;
+      --success: #16a34a;
+      --success-bg: rgba(22, 163, 74, 0.12);
+      --warning: #d97706;
+      --warning-bg: rgba(217, 119, 6, 0.12);
+      --danger: #dc2626;
+      --danger-bg: rgba(220, 38, 38, 0.12);
+      --badge-bg: #e0e7ff;
+      --badge-text: #3730a3;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease; }
+    body { font-family: var(--font-sans); background-color: var(--bg-body); color: var(--text-main); line-height: 1.6; padding-bottom: 60px; }
+    .container { max-width: 1180px; margin: 0 auto; padding: 20px; }
+
+    header {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .header-info h1 { font-size: 1.6rem; font-weight: 800; display: flex; align-items: center; gap: 10px; color: #38bdf8; }
+    .header-info p { color: var(--text-muted); font-size: 0.95rem; margin-top: 4px; }
+    .header-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .progress-box { background: var(--bg-inset); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 9999px; display: flex; align-items: center; gap: 12px; }
+    .progress-bar-wrap { width: 110px; height: 8px; background: var(--border-color); border-radius: 9999px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #38bdf8, var(--accent), var(--success)); border-radius: 9999px; transition: width 0.4s ease; }
+    .progress-text { font-size: 0.85rem; font-weight: 700; color: #38bdf8; min-width: 38px; }
+    .btn-theme { background: var(--bg-inset); border: 1px solid var(--border-color); color: var(--text-main); padding: 8px 14px; border-radius: var(--radius); cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+    .btn-theme:hover { background: var(--bg-card-hover); border-color: var(--border-focus); }
+
+    .tabs-nav { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 24px; border-bottom: 2px solid var(--border-color); scrollbar-width: thin; }
+    .tab-btn { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-muted); padding: 12px 18px; border-radius: var(--radius) var(--radius) 0 0; cursor: pointer; font-weight: 700; font-size: 0.92rem; white-space: nowrap; display: flex; align-items: center; gap: 8px; transition: all 0.2s; }
+    .tab-btn:hover { color: var(--text-main); background: var(--bg-card-hover); }
+    .tab-btn.active { background: #0284c7; color: #ffffff; border-color: #0284c7; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35); }
+
+    .tab-panel { display: none; animation: fadeIn 0.3s ease; }
+    .tab-panel.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 24px; margin-bottom: 24px; box-shadow: var(--shadow); }
+    .card-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; color: #38bdf8; }
+    .concept-box { background: var(--bg-inset); border-left: 4px solid #0284c7; padding: 16px 20px; border-radius: 0 var(--radius) var(--radius) 0; margin-bottom: 16px; }
+    .concept-box p { margin-bottom: 10px; font-size: 1rem; }
+    .concept-box p:last-child { margin-bottom: 0; }
+    .analogy-highlight { background: var(--badge-bg); color: var(--badge-text); padding: 12px 16px; border-radius: 8px; font-weight: 500; margin-top: 12px; display: flex; align-items: flex-start; gap: 10px; border: 1px solid rgba(99, 102, 241, 0.3); }
+
+    .lab-container { background: var(--bg-inset); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 20px; margin-top: 16px; }
+    .lab-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+    .btn-reset { background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+    .btn-reset:hover { color: var(--text-main); border-color: var(--primary); background: var(--bg-card); }
+    .btn-action { background: #0284c7; color: #ffffff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-size: 0.95rem; box-shadow: 0 4px 10px rgba(2, 132, 199, 0.3); }
+    .btn-action:hover { background: #0369a1; transform: translateY(-1px); }
+
+    /* C4 Canvas & Diagram styling */
+    .c4-canvas-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 20px;
+      position: relative;
+      min-height: 380px;
+      overflow-x: auto;
+    }
+
+    .c4-diagram-grid {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      width: 100%;
+      min-width: 600px;
+    }
+
+    .c4-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 30px;
+      width: 100%;
+      position: relative;
+    }
+
+    .c4-element {
+      padding: 14px 18px;
+      border-radius: 8px;
+      color: #ffffff;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.2s, box-shadow 0.2s;
+      min-width: 170px;
+      max-width: 220px;
+    }
+
+    .c4-element:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+    }
+
+    .c4-el-person { background: #08427b; border: 2px solid #06315c; border-radius: 20px; }
+    .c4-el-system-int { background: #1168bd; border: 2px solid #0b4884; }
+    .c4-el-system-ext { background: #64748b; border: 2px solid #475569; }
+    .c4-el-container { background: #438dd5; border: 2px solid #2873bd; }
+    .c4-el-db { background: #2b70b5; border: 2px solid #1a4f85; border-radius: 8px 8px 18px 18px; }
+
+    .c4-el-tag { font-size: 0.72rem; opacity: 0.85; text-transform: uppercase; font-family: var(--font-mono); letter-spacing: 0.5px; }
+    .c4-el-title { font-size: 0.95rem; font-weight: 800; margin: 4px 0; }
+    .c4-el-tech { font-size: 0.75rem; font-style: italic; opacity: 0.9; }
+    .c4-el-desc { font-size: 0.75rem; opacity: 0.85; margin-top: 4px; line-height: 1.3; }
+
+    .c4-arrow-line {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      font-family: var(--font-mono);
+    }
+
+    .c4-arrow-line svg {
+      width: 24px;
+      height: 32px;
+      fill: none;
+      stroke: var(--text-muted);
+      stroke-width: 2;
+    }
+
+    /* Challenge Box */
+    .challenge-card {
+      background: var(--bg-card);
+      border: 2px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-top: 24px;
+      position: relative;
+    }
+
+    .challenge-badge {
+      position: absolute;
+      top: -12px;
+      left: 20px;
+      background: var(--accent);
+      color: #ffffff;
+      padding: 2px 12px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .challenge-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+      font-weight: 700;
+      padding: 10px 14px;
+      border-radius: 8px;
+    }
+
+    .challenge-unlocked { background: var(--success-bg); color: var(--success); border: 1px solid var(--success); }
+    .challenge-locked { background: var(--bg-inset); color: var(--text-muted); border: 1px dashed var(--border-color); }
+
+    /* Quiz Styling */
+    .quiz-card { margin-top: 24px; }
+    .quiz-question { background: var(--bg-inset); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 18px; margin-bottom: 16px; }
+    .quiz-question h4 { font-size: 1rem; margin-bottom: 14px; color: var(--text-main); }
+    .quiz-options { display: flex; flex-direction: column; gap: 10px; }
+    .quiz-opt-btn { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px 16px; border-radius: 8px; cursor: pointer; text-align: left; font-size: 0.95rem; display: flex; align-items: center; gap: 10px; }
+    .quiz-opt-btn:hover:not(:disabled) { border-color: var(--primary); background: var(--bg-card-hover); }
+    .quiz-opt-btn.correct { background: var(--success-bg) !important; border-color: var(--success) !important; color: var(--success) !important; font-weight: 700; }
+    .quiz-opt-btn.wrong { background: var(--danger-bg) !important; border-color: var(--danger) !important; color: var(--danger) !important; }
+    .quiz-feedback { margin-top: 10px; padding: 12px; border-radius: 8px; font-size: 0.9rem; display: none; line-height: 1.5; }
+
+    .code-editor {
+      width: 100%;
+      height: 240px;
+      background: var(--terminal-bg);
+      color: #38bdf8;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 14px;
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    .badge-code { font-family: var(--font-mono); font-weight: 700; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; }
+    .search-bar { width: 100%; padding: 12px 18px; background: var(--bg-inset); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-main); font-size: 1rem; margin-bottom: 16px; }
+    .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border-color); }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem; }
+    th, td { padding: 12px 16px; border-bottom: 1px solid var(--border-color); }
+    th { background: var(--bg-inset); font-weight: 800; color: #38bdf8; }
+    tr:hover td { background: var(--bg-card-hover); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-info">
+        <h1>📐 Modelo C4: Arquitetura de Software Descomplicada</h1>
+        <p>Modelagem Visual &bull; Contexto, Contêineres & Exemplos Práticos &bull; 100% Offline</p>
+      </div>
+      <div class="header-actions">
+        <div class="progress-box">
+          <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Progresso:</span>
+          <div class="progress-bar-wrap"><div class="progress-bar-fill" id="global-progress-bar"></div></div>
+          <span class="progress-text" id="global-progress-text">0%</span>
+        </div>
+        <button class="btn-theme" id="theme-toggle"><span>🌓</span> Tema</button>
+      </div>
+    </header>
+
+    <nav class="tabs-nav">
+      <button class="tab-btn active" data-tab="tab1"><span>🔭</span> 1. Os 4 Níveis & Zoom</button>
+      <button class="tab-btn" data-tab="tab2"><span>🌍</span> 2. Nível 1: Contexto</button>
+      <button class="tab-btn" data-tab="tab3"><span>📦</span> 3. Nível 2: Contêineres</button>
+      <button class="tab-btn" data-tab="tab4"><span>🏢</span> 4. Galeria de Exemplos Reais</button>
+      <button class="tab-btn" data-tab="tab5"><span>💻</span> 5. Diagrams as Code (C4-DSL)</button>
+      <button class="tab-btn" data-tab="tab6"><span>🗺️</span> 6. Mapa Mental & Cheat Sheet</button>
+    </nav>
+
+    <!-- ABA 1: OS 4 NÍVEIS & ZOOM -->
+    <section class="tab-panel active" id="tab1">
+      <div class="card">
+        <h2 class="card-title">💡 Conceito em 60 Segundos: O Google Maps da Arquitetura</h2>
+        <div class="concept-box">
+          <p>
+            Criado por Simon Brown, o <strong>Modelo C4</strong> resolve o caos dos diagramas de caixas e setas sem padrão (onde ninguém sabe o que uma linha pontilhada significa).
+          </p>
+          <p>
+            Ele organiza a arquitetura em 4 níveis hierárquicos de zoom:
+            <strong>1. Contexto (Context)</strong> &rarr;
+            <strong>2. Contêineres (Containers)</strong> &rarr;
+            <strong>3. Componentes (Components)</strong> &rarr;
+            <strong>4. Código (Code)</strong>.
+          </p>
+          <div class="analogy-highlight">
+            <span style="font-size: 1.5rem;">🗺️</span>
+            <div>
+              <strong>Analogia do Google Maps:</strong> No nível 1 você vê o continente ou país (Contexto). Ao dar zoom, você vê a cidade e as rodovias principais (Contêineres). Mais zoom revela as ruas e quarteirões (Componentes). No zoom máximo, você vê a planta do imóvel (Código). Cada audiência olha o mapa no zoom apropriado!
+            </div>
+          </div>
+        </div>
+
+        <div class="lab-container">
+          <div class="lab-header">
+            <h3 style="display:flex; align-items:center; gap:8px;">
+              <span>🧪</span> Laboratório: O Simulador de Zoom Arquitetural C4
+            </h3>
+            <span style="font-size:0.85rem; color:var(--text-muted);">Clique nos níveis de zoom para inspecionar a audiência e o objetivo:</span>
+          </div>
+
+          <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;">
+            <button class="btn-action" id="zoom-btn-1" onclick="setZoomLevel(1)">🔍 Nível 1: Contexto</button>
+            <button class="btn-reset" id="zoom-btn-2" onclick="setZoomLevel(2)">🔍 Nível 2: Contêineres</button>
+            <button class="btn-reset" id="zoom-btn-3" onclick="setZoomLevel(3)">🔍 Nível 3: Componentes</button>
+            <button class="btn-reset" id="zoom-btn-4" onclick="setZoomLevel(4)">🔍 Nível 4: Código</button>
+          </div>
+
+          <div id="zoom-details-box" style="background:var(--bg-card); padding:18px; border-radius:8px; border:1px solid var(--border-color);"></div>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-badge">Missão 1</div>
+          <h3 style="font-size:1.1rem; margin-top:6px;">🎯 Desafio Prático: Explorar Todos os Graus de Zoom</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">
+            Navegue pelos 4 níveis de zoom do simulador para descobrir a qual tipo de público (executivos, desenvolvedores ou operadores) cada diagrama se destina.
+          </p>
+          <div id="challenge1-box" class="challenge-status challenge-locked">
+            <span id="challenge1-icon">🔒</span>
+            <span id="challenge1-msg">Aguardando você inspecionar todos os 4 níveis de zoom...</span>
+          </div>
+        </div>
+
+        <div class="quiz-card">
+          <h3 class="card-title">🧠 Mini-Quiz de Fixação</h3>
+          <div class="quiz-question" data-qid="c4_q1_1">
+            <h4>1. Por que o Modelo C4 é frequentemente comparado ao funcionamento do Google Maps?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-fb="Incorreto. O C4 não depende de dados de satélite nem de mapas terrestres.">Porque ele exige o uso de satélites para rastrear os servidores em nuvem.</button>
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Exatamente! Cada nível de diagrama fornece um zoom progressivo, permitindo navegar da visão executiva macro até a estrutura técnica detalhada.">Porque permite navegar por níveis progressivos de zoom, desde a visão global de contexto até o detalhe fino de código.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. O C4 foi desenhado para modelar qualquer sistema de software.">Porque só funciona para empresas de aplicativo de transporte e GPS.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <div class="quiz-question" data-qid="c4_q1_2">
+            <h4>2. Ao apresentar a arquitetura para o Product Owner e a diretoria de negócios, qual nível do C4 é estritamente o mais adequado?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Perfeito! O Nível 1 (Contexto) mostra apenas quem usa o sistema e quais integrações externas existem, omitindo qualquer jargão de infraestrutura.">Nível 1 (Contexto), pois omite detalhes de implementação técnica e foca nos usuários e integrações de negócio.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. Nível 4 (Código) traz classes e métodos detalhados que confundem stakeholders não técnicos.">Nível 4 (Código), para mostrar se os métodos Java estão limpos.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. Contêineres (Nível 2) já trazem tecnologias (React, PostgreSQL) que não interessam à visão estratégica de negócios.">Nível 2 (Contêineres), para discutir o tamanho do cluster de banco de dados.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABA 2: NÍVEL 1 - CONTEXTO -->
+    <section class="tab-panel" id="tab2">
+      <div class="card">
+        <h2 class="card-title">💡 Conceito em 60 Segundos: Nível 1 - Diagrama de Contexto</h2>
+        <div class="concept-box">
+          <p>
+            O <strong>Diagrama de Contexto</strong> desenha a fronteira máxima entre o seu sistema e o mundo externo. Ele responde a 3 perguntas essenciais:
+          </p>
+          <ul style="margin-left: 20px; font-size: 0.95rem; line-height: 1.7; margin-top:8px;">
+            <li><strong>Quem são os atores/usuários?</strong> (Representados pelo elemento <em>Person</em>, em azul escuro).</li>
+            <li><strong>Qual é o sistema em foco?</strong> (O bloco central que sua equipe constrói, em azul marinho).</li>
+            <li><strong>Quais sistemas externos conversam com ele?</strong> (Gateway de pagamento, SEFAZ, Sistema Legado, serviços de e-mail - em cinza).</li>
+          </ul>
+        </div>
+
+        <div class="lab-container">
+          <div class="lab-header">
+            <h3 style="display:flex; align-items:center; gap:8px;">
+              <span>🧪</span> Laboratório: Construtor Interativo de Diagrama de Contexto
+            </h3>
+            <button class="btn-reset" onclick="resetContextLab()">↺ Resetar Diagrama</button>
+          </div>
+          <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:14px;">
+            Ative ou desative os blocos abaixo para montar o Diagrama de Contexto de uma <strong>Plataforma de Internet Banking</strong>:
+          </p>
+
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px;">
+            <button class="btn-reset" id="tg-user" onclick="toggleContextElement('user')">👤 Alternar: Cliente Correntista</button>
+            <button class="btn-reset" id="tg-ext-email" onclick="toggleContextElement('email')">✉️ Alternar: Sistema de E-mail Externo</button>
+            <button class="btn-reset" id="tg-ext-bacen" onclick="toggleContextElement('bacen')">🏦 Alternar: PIX / Banco Central</button>
+          </div>
+
+          <div class="c4-canvas-box">
+            <div class="c4-diagram-grid">
+              <div class="c4-row" id="row-actor">
+                <div class="c4-element c4-el-person" id="c4-person-box">
+                  <div class="c4-el-tag">[Person]</div>
+                  <div class="c4-el-title">Cliente Correntista</div>
+                  <div class="c4-el-desc">Pessoa física que acessa sua conta, faz transferências e paga contas.</div>
+                </div>
+              </div>
+
+              <div class="c4-arrow-line" id="arrow-actor">
+                <span>Acessa saldo e faz PIX via</span>
+                <svg viewBox="0 0 24 32"><path d="M12 0v28m0 0l-5-5m5 5l5-5"/></svg>
+              </div>
+
+              <div class="c4-row">
+                <div class="c4-element c4-el-system-int" style="min-width:240px;">
+                  <div class="c4-el-tag">[Software System]</div>
+                  <div class="c4-el-title">Sistema de Internet Banking</div>
+                  <div class="c4-el-desc">Permite aos clientes consultar extratos, contratar empréstimos e transferir dinheiro.</div>
+                </div>
+              </div>
+
+              <div class="c4-arrow-line" id="arrow-ext">
+                <span>Integrações externas com</span>
+                <svg viewBox="0 0 24 32"><path d="M12 0v28m0 0l-5-5m5 5l5-5"/></svg>
+              </div>
+
+              <div class="c4-row" id="row-ext">
+                <div class="c4-element c4-el-system-ext" id="c4-ext-email-box">
+                  <div class="c4-el-tag">[Software System: Externo]</div>
+                  <div class="c4-el-title">Gateway de Notificações</div>
+                  <div class="c4-el-desc">Serviço terceiro de envio de e-mails transacionais e SMS.</div>
+                </div>
+                <div class="c4-element c4-el-system-ext" id="c4-ext-bacen-box">
+                  <div class="c4-el-tag">[Software System: Externo]</div>
+                  <div class="c4-el-title">SPI / Banco Central</div>
+                  <div class="c4-el-desc">Processa liquidação instantânea de pagamentos via PIX.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-badge">Missão 2</div>
+          <h3 style="font-size:1.1rem; margin-top:6px;">🎯 Desafio Prático: Estabelecer Todas as Fronteiras</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">
+            Mantenha todos os atores e sistemas externos ativados simultaneamente no laboratório para compor o diagrama de contexto completo.
+          </p>
+          <div id="challenge2-box" class="challenge-status challenge-locked">
+            <span id="challenge2-icon">🔒</span>
+            <span id="challenge2-msg">Aguardando você ligar todos os elementos do contexto...</span>
+          </div>
+        </div>
+
+        <div class="quiz-card">
+          <h3 class="card-title">🧠 Mini-Quiz de Fixação</h3>
+          <div class="quiz-question" data-qid="c4_q2_1">
+            <h4>1. No Diagrama de Contexto do C4, qual é a convenção padrão de cores recomendada para distinguir seu sistema dos sistemas de terceiros?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Exatamente! O sistema em foco ganha cor azul viva, enquanto sistemas externos de outras empresas/equipes ficam em cinza neutro.">Azul para o sistema interno sob sua responsabilidade e Cinza para sistemas externos pertencentes a terceiros.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. O C4 não utiliza verde e vermelho para denotar fronteiras de sistema.">Verde para sistemas rápidos e Vermelho para sistemas com lentidão.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Todas as caixas devem ser brancas sem cores.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <div class="quiz-question" data-qid="c4_q2_2">
+            <h4>2. Uma das regras primordiais do Diagrama de Contexto é que as setas entre os blocos devem:</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Perfeito! Setas no C4 nunca devem ser anônimas; devem sempre indicar a intenção (verbo) e a tecnologia/protocolo quando couber.">Ter rótulos claros com verbos descrevendo a relação de uso (ex: 'Consulta saldo via', 'Envia e-mails usando').</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. Setas sem texto geram ambiguidade e quebram a comunicação.">Ser sempre mudas e sem nenhum texto explicativo.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Apontar sempre para os dois lados simultaneamente em 100% dos casos.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABA 3: NÍVEL 2 - CONTÊINERES -->
+    <section class="tab-panel" id="tab3">
+      <div class="card">
+        <h2 class="card-title">💡 Conceito em 60 Segundos: Nível 2 - Diagrama de Contêineres</h2>
+        <div class="concept-box">
+          <p>
+            <strong>Cuidado:</strong> No C4, um <strong>"Contêiner" NÃO significa Docker!</strong>
+          </p>
+          <p>
+            Para Simon Brown, um contêiner é qualquer <strong>unidade implantável e executável que roda código ou armazena dados</strong> de forma independente.
+          </p>
+          <p>
+            Exemplos legítimos de contêineres: Uma Single-Page Application (React), um aplicativo móvel (Flutter/iOS), uma API Backend (Go / Node.js / Java Spring), um Banco de Dados Relacional (PostgreSQL) ou uma Fila de Mensagens (RabbitMQ).
+          </p>
+        </div>
+
+        <div class="lab-container">
+          <div class="lab-header">
+            <h3 style="display:flex; align-items:center; gap:8px;">
+              <span>🧪</span> Laboratório: Desmontando o Monólito em Contêineres
+            </h3>
+            <button class="btn-reset" onclick="resetContainerLab()">↺ Resetar Arquitetura</button>
+          </div>
+          <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:14px;">
+            Clique nas caixas de contêiner para inspecionar as tecnologias, protocolos de comunicação e responsabilidades de cada componente:
+          </p>
+
+          <div class="c4-canvas-box">
+            <div class="c4-diagram-grid">
+              <div class="c4-row">
+                <div class="c4-element c4-el-container" onclick="inspectContainer('spa')">
+                  <div class="c4-el-tag">[Container: SPA]</div>
+                  <div class="c4-el-title">Web Application</div>
+                  <div class="c4-el-tech">TypeScript & React</div>
+                  <div class="c4-el-desc">Interface no navegador do cliente com carrinho e catálogo.</div>
+                </div>
+
+                <div class="c4-element c4-el-container" onclick="inspectContainer('mobile')">
+                  <div class="c4-el-tag">[Container: Mobile App]</div>
+                  <div class="c4-el-title">App Mobile</div>
+                  <div class="c4-el-tech">Kotlin & Swift</div>
+                  <div class="c4-el-desc">Aplicativo nativo instalado no smartphone do usuário.</div>
+                </div>
+              </div>
+
+              <div class="c4-arrow-line">
+                <span>Disparam requisições JSON via [HTTPS / REST]</span>
+                <svg viewBox="0 0 24 32"><path d="M12 0v28m0 0l-5-5m5 5l5-5"/></svg>
+              </div>
+
+              <div class="c4-row">
+                <div class="c4-element c4-el-container" style="background:#2873bd; min-width:240px;" onclick="inspectContainer('api')">
+                  <div class="c4-el-tag">[Container: API Application]</div>
+                  <div class="c4-el-title">API de Checkout & Pedidos</div>
+                  <div class="c4-el-tech">Go / Gin Engine</div>
+                  <div class="c4-el-desc">Orquestra criação de pedidos, autenticação JWT e regras de negócio.</div>
+                </div>
+              </div>
+
+              <div class="c4-arrow-line">
+                <span>Lê e grava dados via [TCP / TLS - Porta 5432]</span>
+                <svg viewBox="0 0 24 32"><path d="M12 0v28m0 0l-5-5m5 5l5-5"/></svg>
+              </div>
+
+              <div class="c4-row">
+                <div class="c4-element c4-el-db" onclick="inspectContainer('db')">
+                  <div class="c4-el-tag">[Container: Database]</div>
+                  <div class="c4-el-title">Banco de Dados Principal</div>
+                  <div class="c4-el-tech">PostgreSQL 16</div>
+                  <div class="c4-el-desc">Armazena clientes, histórico de compras e estoque.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="container-inspector-card" style="margin-top:16px; background:var(--bg-card); padding:16px; border-radius:8px; border:1px solid var(--border-color); display:none;"></div>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-badge">Missão 3</div>
+          <h3 style="font-size:1.1rem; margin-top:6px;">🎯 Desafio Prático: Inspecionar o Contêiner de Dados</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">
+            Clique sobre a caixa do <strong>Banco de Dados Principal (PostgreSQL)</strong> no diagrama acima para inspecionar os detalhes de persistência e liberar a conquista.
+          </p>
+          <div id="challenge3-box" class="challenge-status challenge-locked">
+            <span id="challenge3-icon">🔒</span>
+            <span id="challenge3-msg">Aguardando você clicar no container do banco de dados...</span>
+          </div>
+        </div>
+
+        <div class="quiz-card">
+          <h3 class="card-title">🧠 Mini-Quiz de Fixação</h3>
+          <div class="quiz-question" data-qid="c4_q3_1">
+            <h4>1. No contexto da metodologia C4, o que é a definição exata de um 'Contêiner'?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Correto! Contêiner no C4 é uma unidade executável ou armazenamento de dados implantável, independente de usar Docker ou não.">Qualquer unidade implantável que executa código ou armazena dados de forma autônoma.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. O C4 foi criado antes do Docker se tornar padrão e independe de ferramentas específicas.">Estritamente uma imagem construída através de um Dockerfile.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Uma caixa física de papelão no almoxarifado de TI.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <div class="quiz-question" data-qid="c4_q3_2">
+            <h4>2. Qual detalhe técnico é OBRIGATÓRIO constar em cada caixa de contêiner para que o diagrama seja informativo?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Perfeito! Simon Brown frisa que caixas sem tecnologia (ex: apenas escrito 'API') não ajudam o time de engenharia.">A tecnologia empregada (ex: TypeScript & React, Go, PostgreSQL).</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. O salário do programador não faz parte do modelo C4.">O salário do desenvolvedor que programou o serviço.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">A cor do cabo de rede do servidor.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABA 4: GALERIA DE CASOS REAIS -->
+    <section class="tab-panel" id="tab4">
+      <div class="card">
+        <h2 class="card-title">💡 Conceito em 60 Segundos: Galeria de Casos Reais</h2>
+        <div class="concept-box">
+          <p>
+            A melhor forma de dominar C4 é analisando <strong>sistemas do mundo real</strong>. Dependendo do segmento de mercado (Fintech, Streaming, E-commerce), a topologia dos contêineres e as fronteiras de contexto mudam radicalmente.
+          </p>
+        </div>
+
+        <div class="lab-container">
+          <div class="lab-header">
+            <h3 style="display:flex; align-items:center; gap:8px;">
+              <span>🏢</span> Laboratório: Mostruário de Arquiteturas Comerciais
+            </h3>
+            <span style="font-size:0.85rem; color:var(--text-muted);">Escolha o cenário para carregar o diagrama interativo:</span>
+          </div>
+
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px;">
+            <button class="btn-action" id="gal-btn-uber" onclick="loadGalleryCase('uber')">🚗 App de Carona & Delivery (Uber-like)</button>
+            <button class="btn-reset" id="gal-btn-stream" onclick="loadGalleryCase('stream')">🎬 Plataforma de Streaming (Netflix-like)</button>
+            <button class="btn-reset" id="gal-btn-ecom" onclick="loadGalleryCase('ecom')">🛍️ E-commerce com Microsserviços</button>
+          </div>
+
+          <div id="gallery-render-target"></div>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-badge">Missão 4</div>
+          <h3 style="font-size:1.1rem; margin-top:6px;">🎯 Desafio Prático: Explorar Todos os Cenários Reais</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">
+            Alterne entre os 3 cenários (App de Carona, Streaming e E-commerce) para comparar como a escolha de mensageria e bancos varia entre negócios.
+          </p>
+          <div id="challenge4-box" class="challenge-status challenge-locked">
+            <span id="challenge4-icon">🔒</span>
+            <span id="challenge4-msg">Aguardando você visualizar os 3 cenários comerciais...</span>
+          </div>
+        </div>
+
+        <div class="quiz-card">
+          <h3 class="card-title">🧠 Mini-Quiz de Fixação</h3>
+          <div class="quiz-question" data-qid="c4_q4_1">
+            <h4>1. Em uma arquitetura de caronas/entregas (como o Uber), por que o Google Maps API é modelado como [Software System: Externo] no Nível 1?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Exatamente! Não está sob a governança da equipe da empresa; é um serviço de terceiro consumido via API.">Porque é uma dependência externa operada por terceiros fora da governança da equipe.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. O Google Maps não roda dentro do seu contêiner.">Porque roda dentro do mesmo banco de dados PostgreSQL.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Porque sistemas em nuvem não podem ter nomes próprios.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <div class="quiz-question" data-qid="c4_q4_2">
+            <h4>2. Quando um sistema utiliza filas como Kafka ou RabbitMQ para desacoplar tarefas assíncronas, como elas devem ser representadas no Nível 2 (Contêineres)?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Perfeito! O broker de mensageria é uma unidade implantável autônoma que recebe e entrega dados.">Como um [Container: Message Broker], indicando a tecnologia e o protocolo de mensageria.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. Filas de mensagens são peças centrais da infraestrutura e devem ser mostradas no Nível 2.">Elas devem ser ocultadas para não assustar o time.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Como uma pessoa física [Person].</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABA 5: DIAGRAMS AS CODE (C4-DSL) -->
+    <section class="tab-panel" id="tab5">
+      <div class="card">
+        <h2 class="card-title">💡 Conceito em 60 Segundos: Diagrams as Code (C4-DSL)</h2>
+        <div class="concept-box">
+          <p>
+            Desenhar diagramas em ferramentas de desenho livre (Visio, Miro, PowerPoint) gera <strong>diagramas mortos</strong>: eles ficam desatualizados na primeira semana e ninguém consegue versionar no Git.
+          </p>
+          <p>
+            A abordagem moderna recomendada por Simon Brown é <strong>Diagrams as Code</strong> através da <strong>C4-DSL (Structurizr)</strong> ou <strong>C4-PlantUML</strong>: você escreve o modelo em texto declarativo puro, versiona com seu código no Git e renderiza os gráficos automaticamente nas pipelines de CI/CD.
+          </p>
+        </div>
+
+        <div class="lab-container">
+          <div class="lab-header">
+            <h3 style="display:flex; align-items:center; gap:8px;">
+              <span>💻</span> Laboratório: Live Parser e Renderizador C4-DSL
+            </h3>
+            <button class="btn-reset" onclick="resetDslLab()">↺ Resetar Código</button>
+          </div>
+          <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:12px;">
+            Edite a especificação em texto abaixo (C4-DSL / PlantUML style). Clique em <strong>Renderizar Diagrama</strong> para ver o compilador gerar as caixas e conexões instantaneamente:
+          </p>
+
+          <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center;">
+            <button class="btn-reset" style="border-color:#38bdf8; color:#38bdf8;" onclick="loadDslTemplate('context')">📄 Template: Contexto</button>
+            <button class="btn-reset" style="border-color:var(--accent); color:var(--accent);" onclick="loadDslTemplate('container')">📄 Template: Contêineres</button>
+            <div style="display:inline-flex; gap:8px; margin-left:auto; flex-wrap:wrap;">
+              <a href="https://c4model.com/" target="_blank" rel="noopener noreferrer" class="btn-reset" style="border-color:#38bdf8; color:#38bdf8; text-decoration:none;">
+                <span>📖</span> Site Oficial C4Model ↗
+              </a>
+              <a href="https://structurizr.com/dsl" target="_blank" rel="noopener noreferrer" class="btn-reset" style="border-color:#10a37f; color:#10a37f; text-decoration:none;">
+                <span>🛠️</span> Guia Structurizr DSL ↗
+              </a>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+            <div>
+              <div style="padding:8px 12px; background:var(--bg-inset); border:1px solid var(--border-color); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--font-mono); font-size:0.82rem; font-weight:700; color:var(--text-muted);">
+                workspace.dsl (Código Textual Declarativo)
+              </div>
+              <textarea id="c4-dsl-editor" class="code-editor" style="border-radius:0 0 8px 8px;">workspace {
+  model {
+    user = person "Cliente Web" "Usuário que realiza compras online"
+    
+    ecommerce = softwareSystem "Plataforma E-commerce" {
+      spa = container "Single Page App" "React & Vite" "Interface de compra no navegador"
+      api = container "API de Pedidos" "Node.js & Express" "Lógica de negócio e checkout"
+      db = container "Banco Relacional" "PostgreSQL 16" "Armazena catálogo e pedidos"
+    }
+
+    user -> spa "Navega e compra produtos usando [HTTPS]"
+    spa -> api "Envia pedido via [JSON/REST]"
+    api -> db "Grava transação usando [TCP/SQL]"
+  }
+}</textarea>
+              <div style="margin-top:10px; text-align:right;">
+                <button class="btn-action" onclick="renderDslPreview()"><span>⚡</span> Renderizar Diagrama</button>
+              </div>
+            </div>
+
+            <div>
+              <div style="padding:8px 12px; background:var(--bg-inset); border:1px solid var(--border-color); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--font-mono); font-size:0.82rem; font-weight:700; color:#38bdf8;">
+                Visualização Gráfica do Diagrama Compilado
+              </div>
+              <div id="dsl-render-preview" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:0 0 8px 8px; padding:16px; min-height:280px; max-height:350px; overflow-y:auto;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-badge">Missão 5</div>
+          <h3 style="font-size:1.1rem; margin-top:6px;">🎯 Desafio Prático: Adicionar um Container de Cache</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">
+            No editor de código acima, adicione um container de cache (ex: <code>cache = container "Cache Redis" "Redis 7" "Sessões e carrinhos"</code>) e clique em <strong>Renderizar Diagrama</strong>.
+          </p>
+          <div id="challenge5-box" class="challenge-status challenge-locked">
+            <span id="challenge5-icon">🔒</span>
+            <span id="challenge5-msg">Aguardando você adicionar um novo contêiner no código e renderizar...</span>
+          </div>
+        </div>
+
+        <div class="quiz-card">
+          <h3 class="card-title">🧠 Mini-Quiz de Fixação</h3>
+          <div class="quiz-question" data-qid="c4_q5_1">
+            <h4>1. Qual é a principal vantagem de adotar 'Diagrams as Code' (como C4-DSL ou PlantUML) em vez de arquivos visuais de desenho livre?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Correto! O texto é versionado no repositório com o código da aplicação e atualizado via pull requests.">Permite versionar a arquitetura no Git junto com o código-fonte e automatizar a geração de imagens.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">O desenho manual no Paint é mais rápido e nunca desatualiza.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Porque sistemas operacionais não abrem imagens PNG.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <div class="quiz-question" data-qid="c4_q5_2">
+            <h4>2. Na ferramenta Structurizr e no C4-DSL, o que significa definir um 'Workspace'?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Perfeito! O Workspace é a raiz que encapsula o modelo (pessoas, sistemas, contêineres) e as diferentes visões (views) geradas a partir dele.">O invólucro principal que contém a definição completa do modelo arquitetural e as visões desejadas.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Um comando que compila o código em C++.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Um tipo de licença de software pago.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABA 6: MAPA MENTAL & CHEAT SHEET -->
+    <section class="tab-panel" id="tab6">
+      <div class="card">
+        <h2 class="card-title">🗺️ Mapa Mental Interativo: Como Escolher o Nível C4 Certo</h2>
+        <p style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 16px;">
+          Clique nas etapas para entender a árvore de decisão na hora de documentar sua aplicação:
+        </p>
+
+        <div class="flow-diagram" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:10px; padding:20px;">
+          <svg viewBox="0 0 900 160" style="max-width: 100%; height: auto;">
+            <line x1="80" y1="80" x2="820" y2="80" stroke="#24324f" stroke-width="4" stroke-dasharray="6,6" />
+
+            <g class="flow-node" onclick="showC4Decision('context')">
+              <rect x="20" y="40" width="140" height="80" rx="10" fill="#131b2e" stroke="#08427b" stroke-width="3"/>
+              <text x="90" y="75" fill="#f8fafc" font-size="12" font-weight="bold" text-anchor="middle">1. Contexto</text>
+              <text x="90" y="95" fill="#94a3b8" font-size="11" text-anchor="middle">Para: Negócio / PO</text>
+            </g>
+
+            <g class="flow-node" onclick="showC4Decision('container')">
+              <rect x="230" y="40" width="150" height="80" rx="10" fill="#131b2e" stroke="#438dd5" stroke-width="3"/>
+              <text x="305" y="75" fill="#f8fafc" font-size="12" font-weight="bold" text-anchor="middle">2. Contêineres</text>
+              <text x="305" y="95" fill="#94a3b8" font-size="11" text-anchor="middle">Para: Devs / DevOps</text>
+            </g>
+
+            <g class="flow-node" onclick="showC4Decision('component')">
+              <rect x="450" y="40" width="150" height="80" rx="10" fill="#131b2e" stroke="#85bbf0" stroke-width="3"/>
+              <text x="525" y="75" fill="#f8fafc" font-size="12" font-weight="bold" text-anchor="middle">3. Componentes</text>
+              <text x="525" y="95" fill="#94a3b8" font-size="11" text-anchor="middle">Para: Squads / Módulos</text>
+            </g>
+
+            <g class="flow-node" onclick="showC4Decision('code')">
+              <rect x="670" y="40" width="140" height="80" rx="10" fill="#131b2e" stroke="#22c55e" stroke-width="3"/>
+              <text x="740" y="75" fill="#f8fafc" font-size="12" font-weight="bold" text-anchor="middle">4. Código</text>
+              <text x="740" y="95" fill="#94a3b8" font-size="11" text-anchor="middle">Para: IDE / Autogerado</text>
+            </g>
+          </svg>
+        </div>
+
+        <div id="decision-info-box" class="concept-box" style="margin-top:16px; display:none;">
+          <h4 id="decision-title" style="color:#38bdf8; margin-bottom:6px;">Detalhes do Nível</h4>
+          <p id="decision-desc" style="font-size:0.95rem;"></p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">📋 Cola Rápida (C4 Model Cheat Sheet)</h2>
+        <input type="text" id="cheat-search" class="search-bar" placeholder="🔍 Filtrar termos (ex: Person, Container, Component, System, Protocol, Structurizr, DSL)..." oninput="filterCheat()">
+
+        <div class="table-wrap">
+          <table id="cheat-table">
+            <thead>
+              <tr>
+                <th>Elemento / Conceito</th>
+                <th>Nível</th>
+                <th>Finalidade Principal</th>
+                <th>Exemplo Típico</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge-code" style="background:#08427b; color:#fff;">Person</span></td>
+                <td>Nível 1 &bull; Contexto</td>
+                <td>Usuário humano, cliente, administrador ou operador que interage com o sistema.</td>
+                <td>Cliente do Banco, Médico, Motorista</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code" style="background:#1168bd; color:#fff;">Software System</span></td>
+                <td>Nível 1 &bull; Contexto</td>
+                <td>O sistema de mais alto nível que entrega valor aos usuários.</td>
+                <td>Sistema de E-commerce, Internet Banking</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code" style="background:#64748b; color:#fff;">External System</span></td>
+                <td>Nível 1 &bull; Contexto</td>
+                <td>Sistema fora do seu controle de desenvolvimento (terceiros / legados).</td>
+                <td>Gateway Stripe, API do WhatsApp, SEFAZ</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code" style="background:#438dd5; color:#fff;">Container</span></td>
+                <td>Nível 2 &bull; Contêineres</td>
+                <td>Unidade implantável independente (código ou armazenamento). Não é só Docker!</td>
+                <td>Single-Page App, API Gateway, Worker Go</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code" style="background:#2b70b5; color:#fff;">Database Container</span></td>
+                <td>Nível 2 &bull; Contêineres</td>
+                <td>Armazenamento estruturado, relacional, documental ou em cache.</td>
+                <td>PostgreSQL, MongoDB, Redis, S3 Bucket</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code" style="background:#85bbf0; color:#0f172a;">Component</span></td>
+                <td>Nível 3 &bull; Componentes</td>
+                <td>Agrupamento de classes e módulos que formam a lógica de um único contêiner.</td>
+                <td>SecurityFilter, OrderController, EmailSender</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code" style="background:#22c55e; color:#fff;">Code</span></td>
+                <td>Nível 4 &bull; Código</td>
+                <td>Detalhe de implementação de classes, interfaces e funções (geralmente dispensável).</td>
+                <td>Diagrama de Classes UML, Diagrama ER</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code" style="background:#6366f1; color:#fff;">Relationship</span></td>
+                <td>Todos os Níveis</td>
+                <td>Seta rotulada explicitamente com intenção e tecnologia/protocolo de transporte.</td>
+                <td>"Consulta saldo usando [HTTPS/REST]"</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const appState = {
+      completedMissions: { m1: false, m2: false, m3: false, m4: false, m5: false },
+      completedQuizzes: {},
+      m1LevelsVisited: { 1: false, 2: false, 3: false, 4: false },
+      m2Elements: { user: true, email: true, bacen: true },
+      m4CasesVisited: { uber: false, stream: false, ecom: false }
+    };
+
+    function updateProgress() {
+      const missionsDone = Object.values(appState.completedMissions).filter(Boolean).length;
+      const quizzesDone = Object.keys(appState.completedQuizzes).length;
+      let score = (missionsDone * 10) + (quizzesDone * 5);
+      const finalScore = Math.min(100, Math.round(score));
+      document.getElementById('global-progress-bar').style.width = finalScore + '%';
+      document.getElementById('global-progress-text').innerText = finalScore + '%';
+    }
+
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      const cur = document.documentElement.getAttribute('data-theme');
+      document.documentElement.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+    });
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.getAttribute('data-tab');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(target).classList.add('active');
+      });
+    });
+
+    // ABA 1: ZOOM
+    const zoomInfo = {
+      1: {
+        title: "Nível 1: Contexto do Sistema (System Context)",
+        publico: "Diretoria de Negócios, Product Owners, Usuários e novos membros de equipe.",
+        objetivo: "Mostrar quem usa o sistema e como ele se conecta ao ecossistema exterior (sem detalhes técnicos de banco ou servidor).",
+        analogia: "Visão de satélite de um continente inteiro."
+      },
+      2: {
+        title: "Nível 2: Contêineres (Containers)",
+        publico: "Engenheiros de Software, Arquitetos de Solução e equipes de DevOps/SRE.",
+        objetivo: "Descrever as aplicações que compõem o sistema (SPAs, Microserviços, Apps, Bancos) e as tecnologias e protocolos que eles usam para conversar.",
+        analogia: "Visão dos bairros e rodovias de uma metrópole."
+      },
+      3: {
+        title: "Nível 3: Componentes (Components)",
+        publico: "Desenvolvedores e Líderes Técnicos da Squad responsável pelo contêiner.",
+        objetivo: "Descrever como um contêiner específico é estruturado internamente em módulos funcionais (Controllers, Serviços de Domínio, Repositórios).",
+        analogia: "Visão das quadras e das ruas de um bairro."
+      },
+      4: {
+        title: "Nível 4: Código (Code)",
+        publico: "Desenvolvedores trabalhando diretamente na linha de código daquela classe.",
+        objetivo: "Diagrama de classes UML ou diagramas relacionais. O criador do C4 recomenda não desenhar manualmente este nível, gerando-o via IDE apenas se for crítico.",
+        analogia: "Planta arquitetônica detalhada com as vigas e tubulações da casa."
+      }
+    };
+
+    function setZoomLevel(lvl) {
+      for (let i = 1; i <= 4; i++) {
+        const b = document.getElementById(`zoom-btn-${i}`);
+        if (b) b.className = (i === lvl) ? 'btn-action' : 'btn-reset';
+      }
+      const data = zoomInfo[lvl];
+      document.getElementById('zoom-details-box').innerHTML = `
+        <h4 style="color:#38bdf8; font-size:1.1rem; margin-bottom:8px;">${data.title}</h4>
+        <div style="font-size:0.92rem; margin-bottom:6px;"><strong>👥 Público-Alvo:</strong> ${data.publico}</div>
+        <div style="font-size:0.92rem; margin-bottom:6px;"><strong>🎯 Objetivo:</strong> ${data.objetivo}</div>
+        <div style="font-size:0.85rem; color:var(--text-muted); margin-top:8px;">💡 <strong>Metáfora:</strong> ${data.analogia}</div>
+      `;
+
+      appState.m1LevelsVisited[lvl] = true;
+      if (appState.m1LevelsVisited[1] && appState.m1LevelsVisited[2] && appState.m1LevelsVisited[3] && appState.m1LevelsVisited[4] && !appState.completedMissions.m1) {
+        appState.completedMissions.m1 = true;
+        document.getElementById('challenge1-box').className = 'challenge-status challenge-unlocked';
+        document.getElementById('challenge1-icon').innerText = '🎉';
+        document.getElementById('challenge1-msg').innerText = 'Missão Concluída! Todos os níveis de zoom compreendidos.';
+        updateProgress();
+      }
+    }
+
+    // ABA 2: CONTEXTO INTERATIVO
+    function toggleContextElement(el) {
+      appState.m2Elements[el] = !appState.m2Elements[el];
+      const isVisible = appState.m2Elements[el];
+
+      if (el === 'user') {
+        document.getElementById('c4-person-box').style.display = isVisible ? 'block' : 'none';
+        document.getElementById('arrow-actor').style.display = isVisible ? 'flex' : 'none';
+        document.getElementById('tg-user').style.borderColor = isVisible ? 'var(--primary)' : 'var(--border-color)';
+      } else if (el === 'email') {
+        document.getElementById('c4-ext-email-box').style.display = isVisible ? 'block' : 'none';
+        document.getElementById('tg-ext-email').style.borderColor = isVisible ? 'var(--primary)' : 'var(--border-color)';
+      } else if (el === 'bacen') {
+        document.getElementById('c4-ext-bacen-box').style.display = isVisible ? 'block' : 'none';
+        document.getElementById('tg-ext-bacen').style.borderColor = isVisible ? 'var(--primary)' : 'var(--border-color)';
+      }
+
+      const hasAnyExt = appState.m2Elements.email || appState.m2Elements.bacen;
+      document.getElementById('arrow-ext').style.display = hasAnyExt ? 'flex' : 'none';
+
+      if (appState.m2Elements.user && appState.m2Elements.email && appState.m2Elements.bacen && !appState.completedMissions.m2) {
+        appState.completedMissions.m2 = true;
+        document.getElementById('challenge2-box').className = 'challenge-status challenge-unlocked';
+        document.getElementById('challenge2-icon').innerText = '🎉';
+        document.getElementById('challenge2-msg').innerText = 'Missão Concluída! Fronteiras completas configuradas.';
+        updateProgress();
+      }
+    }
+
+    function resetContextLab() {
+      appState.m2Elements = { user: true, email: true, bacen: true };
+      toggleContextElement('user'); toggleContextElement('user');
+      toggleContextElement('email'); toggleContextElement('email');
+      toggleContextElement('bacen'); toggleContextElement('bacen');
+    }
+
+    // ABA 3: CONTÊINERES
+    const containerDetails = {
+      spa: {
+        title: "Single-Page Application (SPA)",
+        tech: "React 18, TypeScript, TailwindCSS",
+        desc: "Fornece a interface rica e responsiva onde o cliente final realiza compras, pesquisa produtos e interage com o carrinho."
+      },
+      mobile: {
+        title: "Mobile Application",
+        tech: "Flutter / Kotlin & Swift Nativo",
+        desc: "App portátil para smartphone com notificações push e autenticação biométrica do usuário."
+      },
+      api: {
+        title: "API de Checkout & Pedidos",
+        tech: "Golang (Gin Framework) / REST / JSON",
+        desc: "Microserviço central de alta performance que recebe pedidos, valida regras de estoque e calcula taxas."
+      },
+      db: {
+        title: "Banco de Dados Principal",
+        tech: "PostgreSQL 16 com Replicação Read-Replica",
+        desc: "Armazena tabelas de clientes, produtos, pedidos e logs de auditoria em disco seguro."
+      }
+    };
+
+    function inspectContainer(k) {
+      const c = containerDetails[k];
+      const card = document.getElementById('container-inspector-card');
+      card.style.display = 'block';
+      card.innerHTML = `
+        <h4 style="color:#38bdf8; font-size:1.1rem; margin-bottom:4px;">🔍 Detalhes: ${c.title}</h4>
+        <div style="font-size:0.88rem; color:var(--text-muted); margin-bottom:4px;"><strong>Stack Tecnológica:</strong> <code>${c.tech}</code></div>
+        <p style="font-size:0.9rem; margin-top:6px;">${c.desc}</p>
+      `;
+
+      if (k === 'db' && !appState.completedMissions.m3) {
+        appState.completedMissions.m3 = true;
+        document.getElementById('challenge3-box').className = 'challenge-status challenge-unlocked';
+        document.getElementById('challenge3-icon').innerText = '🎉';
+        document.getElementById('challenge3-msg').innerText = 'Missão Concluída! Você inspecionou o contêiner de dados.';
+        updateProgress();
+      }
+    }
+
+    function resetContainerLab() {
+      document.getElementById('container-inspector-card').style.display = 'none';
+    }
+
+    // ABA 4: GALERIA DE CASOS
+    const galleryCases = {
+      uber: {
+        title: "🚗 Plataforma de Mobilidade Urbana & Caronas (Estilo Uber)",
+        html: `
+          <div class="c4-canvas-box">
+            <div class="c4-diagram-grid">
+              <div class="c4-row">
+                <div class="c4-element c4-el-person"><div class="c4-el-tag">[Person]</div><div class="c4-el-title">Passageiro</div><div class="c4-el-desc">Pede corrida e paga pelo app.</div></div>
+                <div class="c4-element c4-el-person" style="background:#0e7490;"><div class="c4-el-tag">[Person]</div><div class="c4-el-title">Motorista Parceiro</div><div class="c4-el-desc">Aceita chamados e dirige.</div></div>
+              </div>
+              <div class="c4-arrow-line"><span>WebSocket bidirecional & HTTPS</span><svg viewBox="0 0 24 32"><path d="M12 0v28m0 0l-5-5m5 5l5-5"/></svg></div>
+              <div class="c4-row">
+                <div class="c4-element c4-el-container"><div class="c4-el-tag">[Container]</div><div class="c4-el-title">Matching Engine</div><div class="c4-el-tech">Go / gRPC</div><div class="c4-el-desc">Calcula distância e faz match motorista-passageiro.</div></div>
+                <div class="c4-element c4-el-container"><div class="c4-el-tag">[Container: Broker]</div><div class="c4-el-title">Event Streaming</div><div class="c4-el-tech">Apache Kafka</div><div class="c4-el-desc">Eventos de GPS em tempo real.</div></div>
+              </div>
+              <div class="c4-arrow-line"><span>Consulta rotas e mapa em tempo real</span><svg viewBox="0 0 24 32"><path d="M12 0v28m0 0l-5-5m5 5l5-5"/></svg></div>
+              <div class="c4-row">
+                <div class="c4-element c4-el-system-ext"><div class="c4-el-tag">[Software System: Externo]</div><div class="c4-el-title">Google Maps Platform</div><div class="c4-el-desc">Geocodificação e cálculo de tráfego.</div></div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      stream: {
+        title: "🎬 Plataforma de Streaming de Alta Escala (Estilo Netflix)",
+        html: `
+          <div class="c4-canvas-box">
+            <div class="c4-diagram-grid">
+              <div class="c4-row">
+                <div class="c4-element c4-el-person"><div class="c4-el-tag">[Person]</div><div class="c4-el-title">Assinante</div><div class="c4-el-desc">Assiste filmes na Smart TV e celular.</div></div>
+              </div>
+              <div class="c4-arrow-line"><span>Baixa pedaços de vídeo HLS via [HTTPS]</span><svg viewBox="0 0 24 32"><path d="M12 0v28m0 0l-5-5m5 5l5-5"/></svg></div>
+              <div class="c4-row">
+                <div class="c4-element c4-el-container" style="background:#059669;"><div class="c4-el-tag">[Container: CDN]</div><div class="c4-el-title">Edge Cache Network</div><div class="c4-el-tech">OpenConnect CDN</div><div class="c4-el-desc">Entrega o vídeo a partir do provedor local mais próximo.</div></div>
+                <div class="c4-element c4-el-container"><div class="c4-el-tag">[Container: API]</div><div class="c4-el-title">Catalog API</div><div class="c4-el-tech">Java / Spring Boot</div><div class="c4-el-desc">Recomendações e busca de catálogo.</div></div>
+              </div>
+              <div class="c4-arrow-line"><span>Persistência distribuída</span><svg viewBox="0 0 24 32"><path d="M12 0v28m0 0l-5-5m5 5l5-5"/></svg></div>
+              <div class="c4-row">
+                <div class="c4-element c4-el-db"><div class="c4-el-tag">[Container: NoSQL]</div><div class="c4-el-title">Cluster de Metadados</div><div class="c4-el-tech">Apache Cassandra</div><div class="c4-el-desc">Armazena histórico de visualização por segundo.</div></div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      ecom: {
+        title: "🛍️ E-commerce com Arquitetura de Microsserviços",
+        html: `
+          <div class="c4-canvas-box">
+            <div class="c4-diagram-grid">
+              <div class="c4-row">
+                <div class="c4-element c4-el-person"><div class="c4-el-tag">[Person]</div><div class="c4-el-title">Comprador Web</div><div class="c4-el-desc">Busca produtos e fecha carrinho.</div></div>
+              </div>
+              <div class="c4-arrow-line"><span>API Gateway Proxy [HTTPS/JSON]</span><svg viewBox="0 0 24 32"><path d="M12 0v28m0 0l-5-5m5 5l5-5"/></svg></div>
+              <div class="c4-row">
+                <div class="c4-element c4-el-container"><div class="c4-el-tag">[Container]</div><div class="c4-el-title">Serviço de Carrinho</div><div class="c4-el-tech">Node.js & Redis</div><div class="c4-el-desc">Sessão temporária de itens selecionados.</div></div>
+                <div class="c4-element c4-el-container"><div class="c4-el-tag">[Container]</div><div class="c4-el-title">Serviço de Pagamento</div><div class="c4-el-tech">.NET 8 WebAPI</div><div class="c4-el-desc">Comunica com Adquirentes e antifraude.</div></div>
+              </div>
+              <div class="c4-arrow-line"><span>Transação de Cartão</span><svg viewBox="0 0 24 32"><path d="M12 0v28m0 0l-5-5m5 5l5-5"/></svg></div>
+              <div class="c4-row">
+                <div class="c4-element c4-el-system-ext"><div class="c4-el-tag">[Software System: Externo]</div><div class="c4-el-title">Gateway Stone / Cielo</div><div class="c4-el-desc">Processadora de pagamentos com cartão de crédito.</div></div>
+              </div>
+            </div>
+          </div>
+        `
+      }
+    };
+
+    function loadGalleryCase(type) {
+      document.getElementById('gal-btn-uber').className = type === 'uber' ? 'btn-action' : 'btn-reset';
+      document.getElementById('gal-btn-stream').className = type === 'stream' ? 'btn-action' : 'btn-reset';
+      document.getElementById('gal-btn-ecom').className = type === 'ecom' ? 'btn-action' : 'btn-reset';
+
+      const data = galleryCases[type];
+      document.getElementById('gallery-render-target').innerHTML = `
+        <h4 style="color:#38bdf8; font-size:1.1rem; margin-bottom:12px;">${data.title}</h4>
+        ${data.html}
+      `;
+
+      appState.m4CasesVisited[type] = true;
+      if (appState.m4CasesVisited.uber && appState.m4CasesVisited.stream && appState.m4CasesVisited.ecom && !appState.completedMissions.m4) {
+        appState.completedMissions.m4 = true;
+        document.getElementById('challenge4-box').className = 'challenge-status challenge-unlocked';
+        document.getElementById('challenge4-icon').innerText = '🎉';
+        document.getElementById('challenge4-msg').innerText = 'Missão Concluída! Todos os cenários comerciais comparados.';
+        updateProgress();
+      }
+    }
+
+    // ABA 5: C4-DSL LIVE PARSER
+    const dslTemplates = {
+      context: `workspace {
+  model {
+    user = person "Cliente do Banco" "Pessoa física titular de conta"
+    bank = softwareSystem "Internet Banking" "Permite transferências e consultas financeiras"
+    bacen = softwareSystem "Banco Central" "Liquidante de transferências PIX"
+
+    user -> bank "Consulta saldo e faz transferências usando [HTTPS]"
+    bank -> bacen "Liquida operações PIX via [mTLS / API]"
+  }
+}`,
+      container: `workspace {
+  model {
+    user = person "Cliente Web" "Comprador de produtos online"
+
+    ecommerce = softwareSystem "Plataforma E-commerce" {
+      spa = container "Single Page App" "React 18" "Interface no navegador"
+      api = container "API de Pedidos" "Go Gin" "Processa regras de negócio"
+      db = container "Banco Principal" "PostgreSQL 16" "Guarda catálogo e compras"
+    }
+
+    user -> spa "Navega pelos produtos via [HTTPS]"
+    spa -> api "Envia pedido em [JSON/REST]"
+    api -> db "Grava dados via [TCP/SQL]"
+  }
+}`
+    };
+
+    function loadDslTemplate(t) {
+      document.getElementById('c4-dsl-editor').value = dslTemplates[t];
+      renderDslPreview();
+    }
+
+    function renderDslPreview() {
+      const code = document.getElementById('c4-dsl-editor').value;
+      const preview = document.getElementById('dsl-render-preview');
+
+      const elements = [];
+      const lines = code.split('\n');
+
+      lines.forEach(line => {
+        const tr = line.trim();
+        if (tr.includes('= person')) {
+          const m = tr.match(/person\s+"([^"]+)"\s+"([^"]+)"/);
+          if (m) elements.push({ type: 'person', title: m[1], desc: m[2] });
+        } else if (tr.includes('= container')) {
+          const m = tr.match(/container\s+"([^"]+)"\s+"([^"]+)"\s+"([^"]+)"/);
+          if (m) elements.push({ type: 'container', title: m[1], tech: m[2], desc: m[3] });
+        } else if (tr.includes('= softwareSystem') && !tr.includes('{')) {
+          const m = tr.match(/softwareSystem\s+"([^"]+)"\s+"([^"]+)"/);
+          if (m) elements.push({ type: 'system', title: m[1], desc: m[2] });
+        }
+      });
+
+      if (elements.length === 0) {
+        preview.innerHTML = '<span style="color:#ef4444;">Erro de compilação: Nenhum elemento (person, container, softwareSystem) localizado.</span>';
+        return;
+      }
+
+      let html = '<div style="display:flex; flex-direction:column; gap:10px;">';
+      elements.forEach(el => {
+        if (el.type === 'person') {
+          html += `<div class="c4-element c4-el-person" style="max-width:100%;"><div class="c4-el-tag">[Person]</div><div class="c4-el-title">${el.title}</div><div class="c4-el-desc">${el.desc}</div></div>`;
+        } else if (el.type === 'container') {
+          html += `<div class="c4-element c4-el-container" style="max-width:100%;"><div class="c4-el-tag">[Container]</div><div class="c4-el-title">${el.title}</div><div class="c4-el-tech">${el.tech || ''}</div><div class="c4-el-desc">${el.desc}</div></div>`;
+        } else {
+          html += `<div class="c4-element c4-el-system-ext" style="max-width:100%;"><div class="c4-el-tag">[Software System]</div><div class="c4-el-title">${el.title}</div><div class="c4-el-desc">${el.desc}</div></div>`;
+        }
+      });
+      html += '</div>';
+
+      preview.innerHTML = html;
+
+      if (code.toLowerCase().includes('cache') || code.toLowerCase().includes('redis') || elements.length >= 4) {
+        if (!appState.completedMissions.m5) {
+          appState.completedMissions.m5 = true;
+          document.getElementById('challenge5-box').className = 'challenge-status challenge-unlocked';
+          document.getElementById('challenge5-icon').innerText = '🎉';
+          document.getElementById('challenge5-msg').innerText = 'Missão Concluída! Novo contêiner compilado via C4-DSL.';
+          updateProgress();
+        }
+      }
+    }
+
+    function resetDslLab() {
+      document.getElementById('c4-dsl-editor').value = dslTemplates.container;
+      renderDslPreview();
+    }
+
+    // ABA 6: DECISÃO & BUSCA
+    const decisions = {
+      context: {
+        title: "Nível 1 &bull; Contexto",
+        desc: "Ideal para reuniões com gerentes de produto, investidores e novos engenheiros no onboarding. Mostra o ecossistema e não menciona bibliotecas ou portas de rede."
+      },
+      container: {
+        title: "Nível 2 &bull; Contêineres",
+        desc: "O diagrama mais útil para a equipe de engenharia e DevOps no dia a dia. Mostra onde o código roda, onde os dados persistem e quais protocolos ligam os microsserviços."
+      },
+      component: {
+        title: "Nível 3 &bull; Componentes",
+        desc: "Útil ao planejar um refactoring profundo em um microsserviço complexo. Mostra controladores, serviços de aplicação e adaptadores daquela base de código específica."
+      },
+      code: {
+        title: "Nível 4 &bull; Código",
+        desc: "Praticamente sempre dispensável de desenhar à mão. Utilize ferramentas de IDE para gerar diagramas de classes UML sob demanda quando necessário."
+      }
+    };
+
+    function showC4Decision(k) {
+      const b = document.getElementById('decision-info-box');
+      b.style.display = 'block';
+      document.getElementById('decision-title').innerHTML = decisions[k].title;
+      document.getElementById('decision-desc').innerHTML = decisions[k].desc;
+    }
+
+    function filterCheat() {
+      const t = document.getElementById('cheat-search').value.toLowerCase();
+      document.querySelectorAll('#cheat-table tbody tr').forEach(r => {
+        r.style.display = r.innerText.toLowerCase().includes(t) ? '' : 'none';
+      });
+    }
+
+    // QUIZZES FISHER-YATES
+    function initQuizzes() {
+      document.querySelectorAll('.quiz-question').forEach(qBlock => {
+        const qid = qBlock.getAttribute('data-qid');
+        const optContainer = qBlock.querySelector('.quiz-options');
+        const feedbackBox = qBlock.querySelector('.quiz-feedback');
+
+        const options = Array.from(optContainer.children);
+        for (let i = options.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          optContainer.appendChild(options[j]);
+        }
+
+        optContainer.querySelectorAll('.quiz-opt-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const isCorrect = btn.getAttribute('data-correct') === 'true';
+            const feedbackText = btn.getAttribute('data-fb');
+
+            optContainer.querySelectorAll('.quiz-opt-btn').forEach(b => {
+              b.disabled = true;
+              if (b.getAttribute('data-correct') === 'true') b.classList.add('correct');
+            });
+
+            if (!isCorrect) {
+              btn.classList.add('wrong');
+              feedbackBox.style.display = 'block';
+              feedbackBox.style.background = 'var(--danger-bg)';
+              feedbackBox.style.color = 'var(--danger)';
+              feedbackBox.style.border = '1px solid var(--danger)';
+              feedbackBox.innerHTML = `<strong>Resposta Incorreta:</strong> ${feedbackText}`;
+            } else {
+              feedbackBox.style.display = 'block';
+              feedbackBox.style.background = 'var(--success-bg)';
+              feedbackBox.style.color = 'var(--success)';
+              feedbackBox.style.border = '1px solid var(--success)';
+              feedbackBox.innerHTML = `<strong>Correto!</strong> ${feedbackText}`;
+
+              if (!appState.completedQuizzes[qid]) {
+                appState.completedQuizzes[qid] = true;
+                updateProgress();
+              }
+            }
+          });
+        });
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      setZoomLevel(1);
+      loadGalleryCase('uber');
+      renderDslPreview();
+      initQuizzes();
+      updateProgress();
+    });
+  </script>
+</body>
+</html>
