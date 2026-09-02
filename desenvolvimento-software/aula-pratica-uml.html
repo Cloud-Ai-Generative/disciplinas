@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aula Interativa: Diagramas UML - Casos de Uso & Sequência</title>
+  <style>
+    :root {
+      --bg-body: #090d16;
+      --bg-card: #131b2e;
+      --bg-card-hover: #1e293b;
+      --bg-inset: #0a0f1d;
+      --border-color: #24324f;
+      --border-focus: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-hover: #0284c7;
+      --accent: #818cf8;
+      --uml-blue: #0284c7;
+      --uml-purple: #a855f7;
+      --uml-amber: #f59e0b;
+      --terminal-bg: #030712;
+      --success: #22c55e;
+      --success-bg: rgba(34, 197, 94, 0.15);
+      --warning: #f59e0b;
+      --warning-bg: rgba(245, 158, 11, 0.15);
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.15);
+      --badge-bg: #1e1b4b;
+      --badge-text: #a5b4fc;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+      --radius: 12px;
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    [data-theme="light"] {
+      --bg-body: #f1f5f9;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f8fafc;
+      --bg-inset: #f1f5f9;
+      --border-color: #cbd5e1;
+      --border-focus: #0284c7;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --primary: #0284c7;
+      --primary-hover: #0369a1;
+      --accent: #4f46e5;
+      --uml-blue: #0284c7;
+      --uml-purple: #7e22ce;
+      --terminal-bg: #0f172a;
+      --success: #16a34a;
+      --success-bg: rgba(22, 163, 74, 0.12);
+      --warning: #d97706;
+      --warning-bg: rgba(217, 119, 6, 0.12);
+      --danger: #dc2626;
+      --danger-bg: rgba(220, 38, 38, 0.12);
+      --badge-bg: #e0e7ff;
+      --badge-text: #3730a3;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease; }
+    body { font-family: var(--font-sans); background-color: var(--bg-body); color: var(--text-main); line-height: 1.6; padding-bottom: 60px; }
+    .container { max-width: 1180px; margin: 0 auto; padding: 20px; }
+
+    header {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .header-info h1 { font-size: 1.6rem; font-weight: 800; display: flex; align-items: center; gap: 10px; color: var(--primary); }
+    .header-info p { color: var(--text-muted); font-size: 0.95rem; margin-top: 4px; }
+    .header-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .progress-box { background: var(--bg-inset); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 9999px; display: flex; align-items: center; gap: 12px; }
+    .progress-bar-wrap { width: 110px; height: 8px; background: var(--border-color); border-radius: 9999px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--primary), var(--success)); border-radius: 9999px; transition: width 0.4s ease; }
+    .progress-text { font-size: 0.85rem; font-weight: 700; color: var(--primary); min-width: 38px; }
+    .btn-theme { background: var(--bg-inset); border: 1px solid var(--border-color); color: var(--text-main); padding: 8px 14px; border-radius: var(--radius); cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+    .btn-theme:hover { background: var(--bg-card-hover); border-color: var(--border-focus); }
+
+    .tabs-nav { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 24px; border-bottom: 2px solid var(--border-color); scrollbar-width: thin; }
+    .tab-btn { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-muted); padding: 12px 18px; border-radius: var(--radius) var(--radius) 0 0; cursor: pointer; font-weight: 700; font-size: 0.92rem; white-space: nowrap; display: flex; align-items: center; gap: 8px; transition: all 0.2s; }
+    .tab-btn:hover { color: var(--text-main); background: var(--bg-card-hover); }
+    .tab-btn.active { background: var(--primary); color: #ffffff; border-color: var(--primary); box-shadow: 0 4px 12px rgba(56, 189, 248, 0.35); }
+
+    .tab-panel { display: none; animation: fadeIn 0.3s ease; }
+    .tab-panel.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 24px; margin-bottom: 24px; box-shadow: var(--shadow); }
+    .card-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; color: var(--primary); }
+    .concept-box { background: var(--bg-inset); border-left: 4px solid var(--primary); padding: 16px 20px; border-radius: 0 var(--radius) var(--radius) 0; margin-bottom: 16px; }
+    .concept-box p { margin-bottom: 10px; font-size: 1rem; }
+    .concept-box p:last-child { margin-bottom: 0; }
+    .analogy-highlight { background: var(--badge-bg); color: var(--badge-text); padding: 12px 16px; border-radius: 8px; font-weight: 500; margin-top: 12px; display: flex; align-items: flex-start; gap: 10px; border: 1px solid rgba(129, 140, 248, 0.3); }
+
+    .lab-container { background: var(--bg-inset); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 20px; margin-top: 16px; }
+    .lab-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+    .btn-reset { background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+    .btn-reset:hover { color: var(--text-main); border-color: var(--primary); background: var(--bg-card); }
+    .btn-action { background: var(--primary); color: #ffffff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-size: 0.95rem; box-shadow: 0 4px 10px rgba(56, 189, 248, 0.25); }
+    .btn-action:hover { background: var(--primary-hover); transform: translateY(-1px); }
+
+    /* UML Diagram Elements Canvas */
+    .uml-canvas {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 24px;
+      position: relative;
+      min-height: 380px;
+      overflow-x: auto;
+    }
+
+    /* Use Case Elements */
+    .use-case-system {
+      border: 2px solid var(--primary);
+      border-radius: 12px;
+      background: rgba(56, 189, 248, 0.03);
+      padding: 24px 20px;
+      position: relative;
+      margin: 10px auto;
+      max-width: 680px;
+    }
+
+    .system-title {
+      position: absolute;
+      top: -14px;
+      left: 24px;
+      background: var(--bg-card);
+      padding: 2px 12px;
+      border: 1px solid var(--primary);
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .use-case-oval {
+      border: 2px solid var(--primary);
+      background: var(--bg-inset);
+      border-radius: 9999px;
+      padding: 12px 22px;
+      text-align: center;
+      font-size: 0.88rem;
+      font-weight: 700;
+      display: inline-block;
+      margin: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .use-case-oval:hover { transform: scale(1.03); border-color: var(--accent); }
+
+    .actor-stick {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: var(--text-main);
+      padding: 10px;
+    }
+
+    /* Sequence Diagram Timeline */
+    .seq-lifelines {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 20px;
+      border-bottom: 2px dashed var(--border-color);
+      padding-bottom: 12px;
+    }
+
+    .seq-actor-head {
+      background: var(--bg-inset);
+      border: 2px solid var(--primary);
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      text-align: center;
+      color: var(--primary);
+    }
+
+    .seq-step-card {
+      background: var(--bg-inset);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.2s;
+    }
+    .seq-step-card.active-step {
+      border-color: var(--primary);
+      background: rgba(56, 189, 248, 0.08);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+    }
+
+    /* Challenge Box */
+    .challenge-card {
+      background: var(--bg-card);
+      border: 2px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-top: 24px;
+      position: relative;
+    }
+
+    .challenge-badge {
+      position: absolute;
+      top: -12px;
+      left: 20px;
+      background: var(--accent);
+      color: #ffffff;
+      padding: 2px 12px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .challenge-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+      font-weight: 700;
+      padding: 10px 14px;
+      border-radius: 8px;
+    }
+
+    .challenge-unlocked { background: var(--success-bg); color: var(--success); border: 1px solid var(--success); }
+    .challenge-locked { background: var(--bg-inset); color: var(--text-muted); border: 1px dashed var(--border-color); }
+
+    /* Quiz Styling */
+    .quiz-card { margin-top: 24px; }
+    .quiz-question { background: var(--bg-inset); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 18px; margin-bottom: 16px; }
+    .quiz-question h4 { font-size: 1rem; margin-bottom: 14px; color: var(--text-main); }
+    .quiz-options { display: flex; flex-direction: column; gap: 10px; }
+    .quiz-opt-btn { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px 16px; border-radius: 8px; cursor: pointer; text-align: left; font-size: 0.95rem; display: flex; align-items: center; gap: 10px; }
+    .quiz-opt-btn:hover:not(:disabled) { border-color: var(--primary); background: var(--bg-card-hover); }
+    .quiz-opt-btn.correct { background: var(--success-bg) !important; border-color: var(--success) !important; color: var(--success) !important; font-weight: 700; }
+    .quiz-opt-btn.wrong { background: var(--danger-bg) !important; border-color: var(--danger) !important; color: var(--danger) !important; }
+    .quiz-feedback { margin-top: 10px; padding: 12px; border-radius: 8px; font-size: 0.9rem; display: none; line-height: 1.5; }
+
+    .code-editor {
+      width: 100%;
+      height: 250px;
+      background: var(--terminal-bg);
+      color: #38bdf8;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 14px;
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    .badge-code { font-family: var(--font-mono); font-weight: 700; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; }
+    .search-bar { width: 100%; padding: 12px 18px; background: var(--bg-inset); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-main); font-size: 1rem; margin-bottom: 16px; }
+    .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border-color); }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem; }
+    th, td { padding: 12px 16px; border-bottom: 1px solid var(--border-color); }
+    th { background: var(--bg-inset); font-weight: 800; color: var(--primary); }
+    tr:hover td { background: var(--bg-card-hover); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-info">
+        <h1>📊 UML na Prática: Casos de Uso & Sequência</h1>
+        <p>Engenharia de Software &bull; Modelagem de Requisitos e Fluxos Interativos &bull; 100% Offline</p>
+      </div>
+      <div class="header-actions">
+        <div class="progress-box">
+          <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Progresso:</span>
+          <div class="progress-bar-wrap"><div class="progress-bar-fill" id="global-progress-bar"></div></div>
+          <span class="progress-text" id="global-progress-text">0%</span>
+        </div>
+        <button class="btn-theme" id="theme-toggle"><span>🌓</span> Tema</button>
+      </div>
+    </header>
+
+    <nav class="tabs-nav">
+      <button class="tab-btn active" data-tab="tab1"><span>🧩</span> 1. Fundamentos da UML</button>
+      <button class="tab-btn" data-tab="tab2"><span>🎯</span> 2. Diagrama de Casos de Uso</button>
+      <button class="tab-btn" data-tab="tab3"><span>⏱️</span> 3. Diagrama de Sequência</button>
+      <button class="tab-btn" data-tab="tab4"><span>🏢</span> 4. Galeria de Exemplos Reais</button>
+      <button class="tab-btn" data-tab="tab5"><span>💻</span> 5. Live Parser & Validador</button>
+      <button class="tab-btn" data-tab="tab6"><span>🗺️</span> 6. Mapa Mental & Cheat Sheet</button>
+    </nav>
+
+    <!-- ABA 1 -->
+    <section class="tab-panel active" id="tab1">
+      <div class="card">
+        <h2 class="card-title">💡 Conceito em 60 Segundos: Estrutura vs Comportamento</h2>
+        <div class="concept-box">
+          <p>
+            A <strong>UML (Unified Modeling Language)</strong> é a linguagem visual padrão da indústria para especificar, documentar e desenhar artefatos de software. Seus 14 diagramas oficiais são divididos em dois grandes grupos:
+          </p>
+          <ul style="margin-left: 20px; font-size: 0.95rem; line-height: 1.7; margin-top:8px;">
+            <li><strong>Diagramas Estruturais:</strong> Fotografam a arquitetura parada no tempo (ex: Diagrama de Classes, Pacotes, Componentes).</li>
+            <li><strong>Diagramas Comportamentais:</strong> Gravam o filme da execução ao longo do tempo (ex: <strong>Casos de Uso</strong> para <em>o que o sistema faz</em> e <strong>Sequência</strong> para <em>como os componentes trocam mensagens</em>).</li>
+          </ul>
+          <div class="analogy-highlight">
+            <span style="font-size: 1.5rem;">🏗️</span>
+            <div>
+              <strong>Analogia da Construção Civil:</strong> O Diagrama Estrutural (Classes) é a <em>planta baixa da casa</em> (paredes, canos e fiação física estática). Os Diagramas Comportamentais (Casos de Uso e Sequência) são o <em>manual de uso</em> que descreve o que os moradores fazem (ex: abrir o chuveiro) e a ordem milissegundo a milissegundo de como a válvula abre e o aquecedor liga para esquentar a água.
+            </div>
+          </div>
+        </div>
+
+        <div class="lab-container">
+          <div class="lab-header">
+            <h3 style="display:flex; align-items:center; gap:8px;">
+              <span>🧪</span> Laboratório: Classificador Estrutural vs Comportamental
+            </h3>
+            <button class="btn-reset" onclick="resetLab1()">↺ Reiniciar Classificação</button>
+          </div>
+          <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:14px;">
+            Identifique a intenção de cada diagrama UML abaixo clicando na categoria correta:
+          </p>
+
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:12px;">
+            <div style="background:var(--bg-card); padding:14px; border-radius:8px; border:1px solid var(--border-color);">
+              <strong>1. Diagrama de Sequência</strong>
+              <div style="font-size:0.8rem; color:var(--text-muted); margin:4px 0 8px;">Mostra chamadas de métodos ordenadas no tempo entre API, Serviço e Banco.</div>
+              <div style="display:flex; gap:6px;">
+                <button class="btn-reset" onclick="classifyDiagram(1, 'comportamental')">Comportamental ✅</button>
+                <button class="btn-reset" onclick="classifyDiagram(1, 'estrutural')">Estrutural ❌</button>
+              </div>
+              <div id="diag-fb-1" style="margin-top:6px; font-size:0.82rem;"></div>
+            </div>
+
+            <div style="background:var(--bg-card); padding:14px; border-radius:8px; border:1px solid var(--border-color);">
+              <strong>2. Diagrama de Casos de Uso</strong>
+              <div style="font-size:0.8rem; color:var(--text-muted); margin:4px 0 8px;">Descreve os objetivos dos atores externos ao interagir com o sistema.</div>
+              <div style="display:flex; gap:6px;">
+                <button class="btn-reset" onclick="classifyDiagram(2, 'comportamental')">Comportamental ✅</button>
+                <button class="btn-reset" onclick="classifyDiagram(2, 'estrutural')">Estrutural ❌</button>
+              </div>
+              <div id="diag-fb-2" style="margin-top:6px; font-size:0.82rem;"></div>
+            </div>
+
+            <div style="background:var(--bg-card); padding:14px; border-radius:8px; border:1px solid var(--border-color);">
+              <strong>3. Diagrama de Classes</strong>
+              <div style="font-size:0.8rem; color:var(--text-muted); margin:4px 0 8px;">Especifica atributos, tipos de dados e herança estática entre entidades.</div>
+              <div style="display:flex; gap:6px;">
+                <button class="btn-reset" onclick="classifyDiagram(3, 'estrutural')">Estrutural ✅</button>
+                <button class="btn-reset" onclick="classifyDiagram(3, 'comportamental')">Comportamental ❌</button>
+              </div>
+              <div id="diag-fb-3" style="margin-top:6px; font-size:0.82rem;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-badge">Missão 1</div>
+          <h3 style="font-size:1.1rem; margin-top:6px;">🎯 Desafio Prático: Diferenciar a Dinâmica dos Modelos</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">
+            Classifique corretamente os 3 diagramas acima para demonstrar domínio da taxonomia fundamental da UML.
+          </p>
+          <div id="challenge1-box" class="challenge-status challenge-locked">
+            <span id="challenge1-icon">🔒</span>
+            <span id="challenge1-msg">Aguardando você classificar todos os 3 diagramas...</span>
+          </div>
+        </div>
+
+        <div class="quiz-card">
+          <h3 class="card-title">🧠 Mini-Quiz de Fixação</h3>
+          <div class="quiz-question" data-qid="uml_q1_1">
+            <h4>1. Qual é o foco primordial dos diagramas comportamentais da UML?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-fb="Incorreto. Atributos e tipos de dados estáticos são modelados no Diagrama de Classes (Estrutural).">Definir os tipos de variáveis e schemas de tabelas SQL.</button>
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Correto! Diagramas comportamentais capturam a dinâmica da execução, troca de mensagens e interação com atores no decorrer do tempo.">Descrever o comportamento dinâmico do sistema ao longo do tempo e como seus componentes interagem.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. O C4 e outros modelos cuidam disso; diagramas comportamentais focam em tempo e fluxo.">Substituir a necessidade de testes automatizados.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <div class="quiz-question" data-qid="uml_q1_2">
+            <h4>2. Em qual momento do ciclo de desenvolvimento de software o Diagrama de Casos de Uso agrega maior valor?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Perfeito! Ele conecta o levantamento de requisitos de negócio com o escopo técnico do produto.">Na fase inicial de levantamento de requisitos para delimitar o escopo e funcionalidades sob a ótica do usuário.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. Casos de uso não servem para otimizar instruções de CPU ou compilação.">Durante a compilação do código binário pelo compilador.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. Monitoramento de produção é escopo de ferramentas de observabilidade (APM).">Apenas após o sistema ser publicado em produção.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABA 2 -->
+    <section class="tab-panel" id="tab2">
+      <div class="card">
+        <h2 class="card-title">💡 Conceito em 60 Segundos: O que o Sistema Faz?</h2>
+        <div class="concept-box">
+          <p>
+            O <strong>Diagrama de Casos de Uso (Use Case Diagram)</strong> desenha o escopo de funcionalidades de um sistema sob a ótica dos seus usuários externos (<strong>Atores</strong>). Elementos fundamentais:
+          </p>
+          <ul style="margin-left: 20px; font-size: 0.95rem; line-height: 1.7; margin-top:8px;">
+            <li><strong>Ator (Actor):</strong> Entidade externa que interage com o sistema (humano ou outro sistema/serviço).</li>
+            <li><strong>Caso de Uso (Use Case):</strong> Elipse representando uma funcionalidade completa e observável de ponta a ponta (verbo no infinitivo).</li>
+            <li><strong>Limite do Sistema (Boundary):</strong> Retângulo que delimita o que está <em>dentro</em> da nossa aplicação.</li>
+            <li><strong>Relacionamento &lt;&lt;include&gt;&gt;:</strong> Inclusão obrigatória (o caso A <em>sempre</em> executa B).</li>
+            <li><strong>Relacionamento &lt;&lt;extend&gt;&gt;:</strong> Extensão opcional (o caso B é acionado sob condição especial).</li>
+          </ul>
+        </div>
+
+        <div class="lab-container">
+          <div class="lab-header">
+            <h3 style="display:flex; align-items:center; gap:8px;">
+              <span>🧪</span> Laboratório: Construtor de Caso de Uso (Caixa Eletrônico / ATM)
+            </h3>
+            <button class="btn-reset" onclick="resetUseCaseLab()">↺ Resetar Diagrama</button>
+          </div>
+          <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:14px;">
+            Alterne os relacionamentos entre <strong>Sacar Dinheiro</strong>, a autenticação obrigatória (<code>&lt;&lt;include&gt;&gt;</code>) e a emissão opcional de comprovante (<code>&lt;&lt;extend&gt;&gt;</code>):
+          </p>
+
+          <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;">
+            <button class="btn-action" id="tg-uc-include" onclick="toggleUcRelation('include')">🔗 Alternar &lt;&lt;include&gt;&gt; (Autenticar Senha)</button>
+            <button class="btn-reset" id="tg-uc-extend" onclick="toggleUcRelation('extend')">🌿 Alternar &lt;&lt;extend&gt;&gt; (Imprimir Comprovante)</button>
+          </div>
+
+          <div class="uml-canvas" style="display:flex; justify-content:center; align-items:center; gap:30px; flex-wrap:wrap;">
+            <div class="actor-stick">
+              <svg width="48" height="70" viewBox="0 0 50 80" stroke="var(--primary)" stroke-width="3" fill="none">
+                <circle cx="25" cy="15" r="10" />
+                <line x1="25" y1="25" x2="25" y2="55" />
+                <line x1="5" y1="38" x2="45" y2="38" />
+                <line x1="25" y1="55" x2="10" y2="78" />
+                <line x1="25" y1="55" x2="40" y2="78" />
+              </svg>
+              <span>Cliente Banco</span>
+            </div>
+
+            <div class="use-case-system" style="flex:1; min-width:320px;">
+              <div class="system-title">Sistema de Autoatendimento (ATM)</div>
+              
+              <div style="text-align:center;">
+                <div class="use-case-oval" style="background:rgba(56, 189, 248, 0.15); border-color:var(--primary);">
+                  Sacar Dinheiro
+                </div>
+              </div>
+
+              <div id="uc-box-include" style="margin-top:16px; padding:10px; border-radius:8px; background:rgba(34, 197, 94, 0.08); border:1px dashed var(--success); text-align:center;">
+                <span style="font-family:var(--font-mono); font-size:0.8rem; color:var(--success); font-weight:bold;">&lt;&lt;include&gt;&gt; (Sempre Obrigatório)</span>
+                <br>
+                <div class="use-case-oval" style="border-color:var(--success); margin-top:8px;">
+                  Autenticar Biometria / Senha
+                </div>
+              </div>
+
+              <div id="uc-box-extend" style="margin-top:16px; padding:10px; border-radius:8px; background:rgba(245, 158, 11, 0.08); border:1px dashed var(--warning); text-align:center; display:none;">
+                <span style="font-family:var(--font-mono); font-size:0.8rem; color:var(--warning); font-weight:bold;">&lt;&lt;extend&gt;&gt; (Opcional - se solicitado pelo cliente)</span>
+                <br>
+                <div class="use-case-oval" style="border-color:var(--warning); margin-top:8px;">
+                  Imprimir Comprovante em Papel
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-badge">Missão 2</div>
+          <h3 style="font-size:1.1rem; margin-top:6px;">🎯 Desafio Prático: Ativar a Extensão Opcional</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">
+            Clique no botão para ligar o relacionamento <code>&lt;&lt;extend&gt;&gt;</code> e observe a diferença semântica em relação ao <code>&lt;&lt;include&gt;&gt;</code>.
+          </p>
+          <div id="challenge2-box" class="challenge-status challenge-locked">
+            <span id="challenge2-icon">🔒</span>
+            <span id="challenge2-msg">Aguardando você ativar a extensão opcional...</span>
+          </div>
+        </div>
+
+        <div class="quiz-card">
+          <h3 class="card-title">🧠 Mini-Quiz de Fixação</h3>
+          <div class="quiz-question" data-qid="uml_q2_1">
+            <h4>1. Qual é a diferença fundamental entre &lt;&lt;include&gt;&gt; e &lt;&lt;extend&gt;&gt; no Diagrama de Casos de Uso?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Correto! Include é uma chamada incondicional obrigatória; extend acontece apenas sob uma condição específica (opcional).">&lt;&lt;include&gt;&gt; representa execução obrigatória em todas as ocorrências; &lt;&lt;extend&gt;&gt; representa fluxo opcional condicional.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. Ambos relacionam casos de uso dentro do mesmo sistema.">Include é para sistemas web e Extend é apenas para aplicativos móveis.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. A semântica é oposta.">Include é opcional e Extend é obrigatório.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <div class="quiz-question" data-qid="uml_q2_2">
+            <h4>2. No Diagrama de Casos de Uso, um 'Ator' pode representar um sistema externo (ex: Gateway de Pagamento) ou apenas seres humanos?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Exatamente! Qualquer entidade externa (pessoa, hardware, sensor ou API de terceiro) que inicia ou recebe dados do sistema é um Ator.">Pode representar seres humanos ou sistemas externos de terceiros que trocam informações com a aplicação.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. Atores não são restritos a pessoas com CPF.">Apenas seres humanos com cadastro ativo no sistema.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Apenas bancos de dados relacionais.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABA 3 -->
+    <section class="tab-panel" id="tab3">
+      <div class="card">
+        <h2 class="card-title">💡 Conceito em 60 Segundos: Como os Componentes Conversam no Tempo?</h2>
+        <div class="concept-box">
+          <p>
+            O <strong>Diagrama de Sequência (Sequence Diagram)</strong> é o diagrama comportamental mais poderoso e utilizado no dia a dia da engenharia de software. Ele mapeia a troca cronológica de mensagens entre objetos ou componentes:
+          </p>
+          <ul style="margin-left: 20px; font-size: 0.95rem; line-height: 1.7; margin-top:8px;">
+            <li><strong>Linha de Vida (Lifeline):</strong> Linha vertical pontilhada que representa a existência do participante ao longo do tempo (que corre de cima para baixo).</li>
+            <li><strong>Barra de Ativação:</strong> Retângulo vertical sobre a linha de vida que indica quando o componente está executando processamento.</li>
+            <li><strong>Mensagem Síncrona (seta cheia <code>&rarr;</code>):</strong> O chamador pausa e espera a resposta.</li>
+            <li><strong>Mensagem de Retorno (seta pontilhada <code>--&gt;</code>):</strong> Devolve o resultado do processamento.</li>
+            <li><strong>Fragmentos Combinados:</strong> Caixas que delimitam lógicas especiais: <code>alt</code> (if/else), <code>opt</code> (if simples sem else) e <code>loop</code> (repetição while/for).</li>
+          </ul>
+        </div>
+
+        <div class="lab-container">
+          <div class="lab-header">
+            <h3 style="display:flex; align-items:center; gap:8px;">
+              <span>🧪</span> Laboratório: Executador Passo a Passo de Sequência (Checkout de Pedido)
+            </h3>
+            <button class="btn-reset" onclick="resetSeqLab()">↺ Reiniciar Fluxo</button>
+          </div>
+          <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:14px;">
+            Avance passo a passo pelo fluxo temporal de um <strong>Processamento de Pagamento com Gateway Externo</strong>:
+          </p>
+
+          <div style="display:flex; gap:10px; margin-bottom:14px; align-items:center;">
+            <button class="btn-action" onclick="nextSeqStep()">▶ Avançar Passo do Fluxo</button>
+            <span style="font-size:0.85rem; color:var(--text-muted);" id="seq-step-counter">Passo 0 de 4</span>
+          </div>
+
+          <div class="uml-canvas">
+            <div class="seq-lifelines">
+              <div class="seq-actor-head">📱 Cliente (Frontend)</div>
+              <div class="seq-actor-head">⚙️ API Gateway</div>
+              <div class="seq-actor-head">💳 Gateway Pagamento</div>
+              <div class="seq-actor-head">💾 Banco de Dados</div>
+            </div>
+
+            <div id="seq-steps-container">
+              <div class="seq-step-card" id="seq-s1">
+                <span class="badge-code" style="background:var(--primary); color:#fff;">1</span>
+                <div>
+                  <strong>Mensagem Síncrona:</strong> <code>Cliente &rarr; API: checkout(pedidoId, cartaoToken)</code>
+                  <div style="font-size:0.8rem; color:var(--text-muted);">Inicia a transação pelo frontend via requisição HTTPS.</div>
+                </div>
+              </div>
+
+              <div class="seq-step-card" id="seq-s2">
+                <span class="badge-code" style="background:var(--primary); color:#fff;">2</span>
+                <div>
+                  <strong>Mensagem Síncrona Externa:</strong> <code>API &rarr; GatewayPagamento: autorizarCobranca(valor)</code>
+                  <div style="font-size:0.8rem; color:var(--text-muted);">Comunicação síncrona com adquirente financeira.</div>
+                </div>
+              </div>
+
+              <div class="seq-step-card" id="seq-s3">
+                <span class="badge-code" style="background:var(--primary); color:#fff;">3</span>
+                <div>
+                  <strong>Gravação em Banco:</strong> <code>API &rarr; Banco: atualizarStatusPedido("PAGO")</code>
+                  <div style="font-size:0.8rem; color:var(--text-muted);">Persistência de estado da transação no banco relacional.</div>
+                </div>
+              </div>
+
+              <div class="seq-step-card" id="seq-s4">
+                <span class="badge-code" style="background:var(--success); color:#fff;">4</span>
+                <div>
+                  <strong>Mensagem de Retorno:</strong> <code>API --&gt; Cliente: HTTP 201 Created (Comprovante)</code>
+                  <div style="font-size:0.8rem; color:var(--text-muted);">Resposta final retornada ao usuário na tela.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-badge">Missão 3</div>
+          <h3 style="font-size:1.1rem; margin-top:6px;">🎯 Desafio Prático: Completar o Ciclo Temporal</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">
+            Percorra todos os 4 passos do diagrama de sequência até que a mensagem de retorno chegue ao cliente.
+          </p>
+          <div id="challenge3-box" class="challenge-status challenge-locked">
+            <span id="challenge3-icon">🔒</span>
+            <span id="challenge3-msg">Aguardando você avançar todos os passos do fluxo...</span>
+          </div>
+        </div>
+
+        <div class="quiz-card">
+          <h3 class="card-title">🧠 Mini-Quiz de Fixação</h3>
+          <div class="quiz-question" data-qid="uml_q3_1">
+            <h4>1. No Diagrama de Sequência, em qual sentido o tempo cronológico flui por convenção estrita da UML?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Correto! O tempo avança verticalmente de cima para baixo.">De cima para baixo, ao longo das linhas de vida verticais.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. O tempo não corre no sentido inverso.">De baixo para cima.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. A leitura horizontal representa a passagem de mensagem de um objeto para outro.">Em círculos concêntricos.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <div class="quiz-question" data-qid="uml_q3_2">
+            <h4>2. Para que serve o fragmento combinado 'alt' em um Diagrama de Sequência?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Exatamente! O fragmento 'alt' é o equivalente visual ao bloco if/else da programação.">Representar caminhos alternativos mutuamente exclusivos (equivalente ao bloco if/else).</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. Repetição é modelada pelo fragmento 'loop'.">Executar repetições infinitas em um laço while.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Alterar a paleta de cores do diagrama.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABA 4 -->
+    <section class="tab-panel" id="tab4">
+      <div class="card">
+        <h2 class="card-title">💡 Conceito em 60 Segundos: Galeria de Casos Reais</h2>
+        <div class="concept-box">
+          <p>
+            Na prática corporativa, os diagramas de Casos de Uso e Sequência trabalham juntos: o <strong>Caso de Uso</strong> identifica <em>o que o usuário precisa</em> e o <strong>Diagrama de Sequência</strong> detalha <em>a orquestração técnica dos componentes de software</em> para realizar aquele caso.
+          </p>
+        </div>
+
+        <div class="lab-container">
+          <div class="lab-header">
+            <h3 style="display:flex; align-items:center; gap:8px;">
+              <span>🏢</span> Laboratório: Mostruário de Arquiteturas Comerciais
+            </h3>
+            <span style="font-size:0.85rem; color:var(--text-muted);">Selecione o cenário para inspecionar os diagramas:</span>
+          </div>
+
+          <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;">
+            <button class="btn-action" id="gal-btn-auth" onclick="loadUmlCase('auth')">🔐 Autenticação com 2FA (Sequência com `alt`)</button>
+            <button class="btn-reset" id="gal-btn-tele" onclick="loadUmlCase('tele')">🩺 Telemedicina & Consulta (Casos de Uso)</button>
+            <button class="btn-reset" id="gal-btn-pix" onclick="loadUmlCase('pix')">💸 Transferência PIX Instantânea (Sequência)</button>
+          </div>
+
+          <div id="uml-gallery-content"></div>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-badge">Missão 4</div>
+          <h3 style="font-size:1.1rem; margin-top:6px;">🎯 Desafio Prático: Explorar Todos os Padrões da Galeria</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">
+            Alterne entre os 3 cenários práticos (Autenticação 2FA, Telemedicina e PIX) para comparar as notações de fragmentos alternativos.
+          </p>
+          <div id="challenge4-box" class="challenge-status challenge-locked">
+            <span id="challenge4-icon">🔒</span>
+            <span id="challenge4-msg">Aguardando você inspecionar os 3 cenários comerciais...</span>
+          </div>
+        </div>
+
+        <div class="quiz-card">
+          <h3 class="card-title">🧠 Mini-Quiz de Fixação</h3>
+          <div class="quiz-question" data-qid="uml_q4_1">
+            <h4>1. No fluxo de Autenticação com 2FA, qual fragmento combinado é empregado para separar o caso de 'Código Correto' do caso de 'Código Inválido'?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Correto! O fragmento 'alt' divide a sequência em guardas condicionais mutuamente exclusivas ([sucesso] e [falha]).">Fragmento 'alt' com guardas condicionais ([código válido] e [else]).</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. O fragmento loop cria laços de repetição.">Fragmento 'loop'.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Fragmento 'par' para concorrência de threads.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <div class="quiz-question" data-qid="uml_q4_2">
+            <h4>2. Em um sistema de Telemedicina, se o médico pode 'Prescrever Receita' somente quando estiver em uma 'Consulta em Andamento', como isso é modelado?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Perfeito! A prescrição estende a consulta sob a condição de necessidade clínica.">Como um relacionamento &lt;&lt;extend&gt;&gt; sob a condição de consulta ativa.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. O include forçaria toda e qualquer consulta a emitir receitas, mesmo sem necessidade.">Como um relacionamento &lt;&lt;include&gt;&gt; obrigatório em todas as consultas.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Deletando o prontuário do paciente.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABA 5 -->
+    <section class="tab-panel" id="tab5">
+      <div class="card">
+        <h2 class="card-title">💡 Conceito em 60 Segundos: Diagrams as Code (PlantUML / Mermaid)</h2>
+        <div class="concept-box">
+          <p>
+            Desenhar caixas com o mouse em ferramentas gráficas é demorado e não permite versionamento com o código no Git. A prática moderna de engenharia é escrever diagramas como código textual declarativo (<strong>PlantUML</strong> ou <strong>Mermaid.js</strong>).
+          </p>
+        </div>
+
+        <div class="lab-container">
+          <div class="lab-header">
+            <h3 style="display:flex; align-items:center; gap:8px;">
+              <span>💻</span> Laboratório: Live Parser e Validador de Sintaxe de Sequência
+            </h3>
+            <button class="btn-reset" onclick="resetDslLab()">↺ Resetar Código</button>
+          </div>
+          <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:12px;">
+            Digite o fluxo de mensagens abaixo. Se houver erro de sintaxe (como setas inválidas ou participantes sem declaração), o parser avisará <strong>o número exato da linha</strong> com instruções de correção:
+          </p>
+
+          <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center;">
+            <button class="btn-reset" style="border-color:var(--primary); color:var(--primary);" onclick="loadUmlTemplate('login')">📄 Template: Login & JWT</button>
+            <button class="btn-reset" style="border-color:var(--accent); color:var(--accent);" onclick="loadUmlTemplate('cart')">📄 Template: Adicionar ao Carrinho</button>
+            
+            <div style="display:inline-flex; gap:8px; margin-left:auto; flex-wrap:wrap;">
+              <a href="https://www.uml.org/" target="_blank" rel="noopener noreferrer" class="btn-reset" style="border-color:#38bdf8; color:#38bdf8; text-decoration:none;">
+                <span>📖</span> Guia Oficial OMG UML ↗
+              </a>
+              <a href="https://plantuml.com/sequence-diagram" target="_blank" rel="noopener noreferrer" class="btn-reset" style="border-color:#10a37f; color:#10a37f; text-decoration:none;">
+                <span>🛠️</span> PlantUML Sequence Doc ↗
+              </a>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+            <div>
+              <div style="padding:8px 12px; background:var(--bg-inset); border:1px solid var(--border-color); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--font-mono); font-size:0.82rem; font-weight:700; color:var(--text-muted);">
+                sequencia.uml (Código Textual Declarativo)
+              </div>
+              <textarea id="uml-dsl-editor" class="code-editor" style="border-radius:0 0 8px 8px;">actor Usuario
+participant App
+participant ServidorAuth
+database BancoDados
+
+Usuario -> App: Digita credenciais
+App -> ServidorAuth: POST /login {user, pass}
+ServidorAuth -> BancoDados: SELECT * FROM usuarios
+BancoDados --> ServidorAuth: Registro do usuario
+ServidorAuth --> App: Token JWT gerado (200 OK)
+App --> Usuario: Acesso concedido</textarea>
+              <div style="margin-top:10px; text-align:right;">
+                <button class="btn-action" onclick="renderUmlSequenceDsl()"><span>⚡</span> Renderizar Diagrama</button>
+              </div>
+            </div>
+
+            <div>
+              <div style="padding:8px 12px; background:var(--bg-inset); border:1px solid var(--border-color); border-bottom:none; border-radius:8px 8px 0 0; font-family:var(--font-mono); font-size:0.82rem; font-weight:700; color:var(--primary);">
+                Visualização Gráfica Compilada
+              </div>
+              <div id="uml-dsl-preview" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:0 0 8px 8px; padding:16px; min-height:280px; max-height:350px; overflow-y:auto;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-badge">Missão 5</div>
+          <h3 style="font-size:1.1rem; margin-top:6px;">🎯 Desafio Prático: Provocar e Corrigir um Erro de Sintaxe</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">
+            Altere o código para uma sintaxe inválida (ex: digite uma linha sem seta como <code>Usuario App chamada</code>), clique em renderizar para ver o aviso de linha com erro, e em seguida adicione a seta <code>-></code> correta.
+          </p>
+          <div id="challenge5-box" class="challenge-status challenge-locked">
+            <span id="challenge5-icon">🔒</span>
+            <span id="challenge5-msg">Aguardando você testar a validação de sintaxe e renderizar com sucesso...</span>
+          </div>
+        </div>
+
+        <div class="quiz-card">
+          <h3 class="card-title">🧠 Mini-Quiz de Fixação</h3>
+          <div class="quiz-question" data-qid="uml_q5_1">
+            <h4>1. Na sintaxe do PlantUML e Mermaid, qual notação representa uma mensagem de retorno (resposta)?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Correto! A seta pontilhada '-->' representa o retorno de processamento ao componente chamador.">Seta pontilhada: '--&gt;' ou '--&gt;&gt;'.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. A seta cheia '->' representa mensagens de chamada síncrona.">Seta cheia: '-&gt;'.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Dois pontos duplos: '::'.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <div class="quiz-question" data-qid="uml_q5_2">
+            <h4>2. Por que equipes ágeis preferem ferramentas como PlantUML em vez de desenhar diagramas no Photoshop ou Visio?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Exatamente! Os diagramas vivem em arquivos de texto plano ao lado do código no repositório Git, viabilizando revisão em Pull Requests.">Porque texto plano permite versionamento no Git, integração contínua (CI/CD) e fácil refatoração de nomes.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. A documentação textual é muito mais rápida de atualizar do que reposicionar caixas manualmente.">Porque o PlantUML proíbe o uso de cores.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Porque diagramas de texto não podem ser salvos em disco.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABA 6 -->
+    <section class="tab-panel" id="tab6">
+      <div class="card">
+        <h2 class="card-title">🗺️ Mapa Mental Interativo: Quando Usar Cada Diagrama?</h2>
+        <p style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 16px;">
+          Clique nas etapas do fluxo para descobrir qual diagrama UML atende melhor à sua necessidade atual:
+        </p>
+
+        <div class="uml-canvas" style="min-height: auto; padding: 20px;">
+          <div style="display:flex; justify-content:space-around; gap:16px; flex-wrap:wrap;">
+            <button class="btn-action" onclick="showUmlGuide('usecase')">🎯 Requisitos: Casos de Uso</button>
+            <button class="btn-action" style="background:var(--accent);" onclick="showUmlGuide('sequence')">⏱️ Orquestração: Sequência</button>
+            <button class="btn-action" style="background:var(--uml-purple);" onclick="showUmlGuide('classes')">🧱 Estrutura: Classes</button>
+          </div>
+          <div id="uml-guide-box" class="concept-box" style="margin-top:16px; display:none;">
+            <h4 id="uml-guide-title" style="color:var(--primary); margin-bottom:6px;">Guia de Decisão</h4>
+            <p id="uml-guide-desc" style="font-size:0.95rem;"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">📋 Cola Rápida (UML Cheat Sheet)</h2>
+        <input type="text" id="cheat-search" class="search-bar" placeholder="🔍 Filtrar notações (ex: actor, include, extend, lifeline, alt, loop, sincrona, retorno)..." oninput="filterUmlCheat()">
+
+        <div class="table-wrap">
+          <table id="cheat-table">
+            <thead>
+              <tr>
+                <th>Notação / Símbolo</th>
+                <th>Diagrama</th>
+                <th>Significado Técnico</th>
+                <th>Exemplo de Uso</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge-code" style="background:var(--primary); color:#fff;">Actor (Boneco)</span></td>
+                <td>Casos de Uso / Sequência</td>
+                <td>Entidade externa que interage com o sistema (humano ou serviço terceiro).</td>
+                <td>Cliente, Operador, Gateway de Pagamento</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code" style="background:var(--primary); color:#fff;">Use Case (Elipse)</span></td>
+                <td>Casos de Uso</td>
+                <td>Funcionalidade completa observável que entrega valor ao ator.</td>
+                <td>Consultar Extrato, Cadastrar Produto</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code status-2xx">&lt;&lt;include&gt;&gt;</span></td>
+                <td>Casos de Uso</td>
+                <td>Inclusão mandatória e incondicional de outro caso de uso.</td>
+                <td>Sacar Dinheiro &lt;&lt;include&gt;&gt; Validar Senha</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code status-5xx">&lt;&lt;extend&gt;&gt;</span></td>
+                <td>Casos de Uso</td>
+                <td>Extensão condicional/opcional de um caso de uso principal.</td>
+                <td>Comprar Ingresso &lt;&lt;extend&gt;&gt; Selecionar Assento VIP</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code" style="background:var(--accent); color:#fff;">Linha de Vida (Lifeline)</span></td>
+                <td>Sequência</td>
+                <td>Linha vertical que representa o tempo de existência do participante.</td>
+                <td>Linha pontilhada descendo de :ServicoAutenticacao</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code" style="background:var(--accent); color:#fff;">Mensagem Síncrona (-&gt;)</span></td>
+                <td>Sequência</td>
+                <td>Chamada onde o remetente aguarda o processamento ser concluído.</td>
+                <td>PedidoController -&gt; PagamentoService: debitar()</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code status-2xx">Retorno (--&gt;)</span></td>
+                <td>Sequência</td>
+                <td>Mensagem de resposta contendo o resultado da chamada.</td>
+                <td>BancoDeDados --&gt; Repositorio: List&lt;Cliente&gt;</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code" style="background:var(--uml-purple); color:#fff;">Fragmento 'alt'</span></td>
+                <td>Sequência</td>
+                <td>Caminhos alternativos mutuamente exclusivos (if / else).</td>
+                <td>alt [saldo suficiente] debita else [saldo insuficiente] erro</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code" style="background:var(--uml-purple); color:#fff;">Fragmento 'opt'</span></td>
+                <td>Sequência</td>
+                <td>Bloco condicional opcional que executa apenas se for verdadeiro (if sem else).</td>
+                <td>opt [primeira compra] enviarCupom()</td>
+              </tr>
+              <tr>
+                <td><span class="badge-code" style="background:var(--uml-purple); color:#fff;">Fragmento 'loop'</span></td>
+                <td>Sequência</td>
+                <td>Laço de repetição que itera sobre uma coleção ou condição.</td>
+                <td>loop [para cada item do carrinho] calcularPreco()</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const appState = {
+      completedMissions: { m1: false, m2: false, m3: false, m4: false, m5: false },
+      completedQuizzes: {},
+      m1Votes: {},
+      m2Extend: false,
+      seqCurrentStep: 0,
+      m4Visited: { auth: false, tele: false, pix: false },
+      m5TriggeredError: false
+    };
+
+    function updateProgress() {
+      const m = Object.values(appState.completedMissions).filter(Boolean).length;
+      const q = Object.keys(appState.completedQuizzes).length;
+      let score = (m * 10) + (q * 5);
+      const finalScore = Math.min(100, Math.round(score));
+      document.getElementById('global-progress-bar').style.width = finalScore + '%';
+      document.getElementById('global-progress-text').innerText = finalScore + '%';
+    }
+
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      const cur = document.documentElement.getAttribute('data-theme');
+      document.documentElement.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+    });
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.getAttribute('data-tab');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(target).classList.add('active');
+      });
+    });
+
+    // ABA 1
+    function classifyDiagram(id, type) {
+      const fb = document.getElementById('diag-fb-' + id);
+      if (id === 1 && type === 'comportamental') {
+        fb.innerHTML = '<span style="color:var(--success); font-weight:bold;">Correto! O Diagrama de Sequência é comportamental pois expressa chamadas no tempo.</span>';
+        appState.m1Votes[1] = true;
+      } else if (id === 2 && type === 'comportamental') {
+        fb.innerHTML = '<span style="color:var(--success); font-weight:bold;">Correto! Casos de uso mapeiam a dinâmica de interação dos atores com o sistema.</span>';
+        appState.m1Votes[2] = true;
+      } else if (id === 3 && type === 'estrutural') {
+        fb.innerHTML = '<span style="color:var(--success); font-weight:bold;">Correto! O Diagrama de Classes é estrutural estático.</span>';
+        appState.m1Votes[3] = true;
+      } else {
+        fb.innerHTML = '<span style="color:var(--danger); font-weight:bold;">Incorreto. Revise a definição deste diagrama.</span>';
+      }
+
+      if (appState.m1Votes[1] && appState.m1Votes[2] && appState.m1Votes[3] && !appState.completedMissions.m1) {
+        appState.completedMissions.m1 = true;
+        document.getElementById('challenge1-box').className = 'challenge-status challenge-unlocked';
+        document.getElementById('challenge1-icon').innerText = '🎉';
+        document.getElementById('challenge1-msg').innerText = 'Missão Concluída! Você dominou a taxonomia estrutural e comportamental da UML.';
+        updateProgress();
+      }
+    }
+
+    function resetLab1() {
+      appState.m1Votes = {};
+      document.getElementById('diag-fb-1').innerHTML = '';
+      document.getElementById('diag-fb-2').innerHTML = '';
+      document.getElementById('diag-fb-3').innerHTML = '';
+    }
+
+    // ABA 2
+    function toggleUcRelation(type) {
+      if (type === 'extend') {
+        appState.m2Extend = !appState.m2Extend;
+        document.getElementById('uc-box-extend').style.display = appState.m2Extend ? 'block' : 'none';
+        document.getElementById('tg-uc-extend').className = appState.m2Extend ? 'btn-action' : 'btn-reset';
+
+        if (appState.m2Extend && !appState.completedMissions.m2) {
+          appState.completedMissions.m2 = true;
+          document.getElementById('challenge2-box').className = 'challenge-status challenge-unlocked';
+          document.getElementById('challenge2-icon').innerText = '🎉';
+          document.getElementById('challenge2-msg').innerText = 'Missão Concluída! Você compreendeu o relacionamento opcional de extensão (extend).';
+          updateProgress();
+        }
+      }
+    }
+
+    function resetUseCaseLab() {
+      appState.m2Extend = false;
+      document.getElementById('uc-box-extend').style.display = 'none';
+      document.getElementById('tg-uc-extend').className = 'btn-reset';
+    }
+
+    // ABA 3
+    function nextSeqStep() {
+      appState.seqCurrentStep++;
+      if (appState.seqCurrentStep > 4) appState.seqCurrentStep = 1;
+
+      document.getElementById('seq-step-counter').innerText = `Passo ${appState.seqCurrentStep} de 4`;
+
+      for (let i = 1; i <= 4; i++) {
+        const el = document.getElementById(`seq-s${i}`);
+        if (i <= appState.seqCurrentStep) {
+          el.classList.add('active-step');
+        } else {
+          el.classList.remove('active-step');
+        }
+      }
+
+      if (appState.seqCurrentStep === 4 && !appState.completedMissions.m3) {
+        appState.completedMissions.m3 = true;
+        document.getElementById('challenge3-box').className = 'challenge-status challenge-unlocked';
+        document.getElementById('challenge3-icon').innerText = '🎉';
+        document.getElementById('challenge3-msg').innerText = 'Missão Concluída! Você acompanhou o ciclo completo de mensagens no tempo.';
+        updateProgress();
+      }
+    }
+
+    function resetSeqLab() {
+      appState.seqCurrentStep = 0;
+      document.getElementById('seq-step-counter').innerText = 'Passo 0 de 4';
+      for (let i = 1; i <= 4; i++) {
+        document.getElementById(`seq-s${i}`).classList.remove('active-step');
+      }
+    }
+
+    // ABA 4
+    const galleryCases = {
+      auth: {
+        title: "🔐 Autenticação com Dois Fatores (2FA) e Fragmento 'alt'",
+        html: `
+          <div class="uml-canvas">
+            <div class="seq-lifelines">
+              <div class="seq-actor-head">👤 Usuário</div>
+              <div class="seq-actor-head">🖥️ Web Client</div>
+              <div class="seq-actor-head">⚙️ Auth Server</div>
+              <div class="seq-actor-head">📱 SMS Gateway</div>
+            </div>
+            <div style="font-family:var(--font-mono); font-size:0.85rem; line-height:1.7;">
+              <div>1. Usuário -&gt; Web Client: Informa usuário e senha</div>
+              <div>2. Web Client -&gt; Auth Server: validarCredenciais(user, pass)</div>
+              <div>3. Auth Server -&gt; SMS Gateway: enviarCodigo2FA(celular, "849201")</div>
+              <div style="background:rgba(168, 85, 247, 0.12); border-left:3px solid var(--uml-purple); padding:8px; margin:8px 0; border-radius:4px;">
+                <strong>[Fragmento Combinado: alt]</strong><br>
+                <strong>[se código digitado == 849201]:</strong><br>
+                &bull; Auth Server --&gt; Web Client: Token JWT emitido (Login Autorizado)<br>
+                <strong>[else (código inválido)]:</strong><br>
+                &bull; Auth Server --&gt; Web Client: Erro 401 Unauthorized (Código incorreto)
+              </div>
+            </div>
+          </div>
+        `
+      },
+      tele: {
+        title: "🩺 Sistema de Telemedicina & Consultas Online",
+        html: `
+          <div class="uml-canvas">
+            <div class="use-case-system">
+              <div class="system-title">Plataforma de Telemedicina</div>
+              <div style="text-align:center;">
+                <div class="use-case-oval">Realizar Videochamada Médica</div>
+                <div class="use-case-oval">Consultar Prontuário Eletrônico</div>
+                <div class="use-case-oval" style="border-color:var(--success);">&lt;&lt;include&gt;&gt; Validar Certificado Digital CFM</div>
+                <div class="use-case-oval" style="border-color:var(--warning);">&lt;&lt;extend&gt;&gt; Prescrever Medicamento Controlado</div>
+              </div>
+            </div>
+            <div style="font-size:0.85rem; color:var(--text-muted); text-align:center; margin-top:8px;">
+              Atores: <strong>Médico</strong> e <strong>Paciente</strong> interagindo com a plataforma.
+            </div>
+          </div>
+        `
+      },
+      pix: {
+        title: "💸 Orquestração de Transferência PIX Instantânea",
+        html: `
+          <div class="uml-canvas">
+            <div class="seq-lifelines">
+              <div class="seq-actor-head">📱 App Pagador</div>
+              <div class="seq-actor-head">🏦 Banco Origem</div>
+              <div class="seq-actor-head">🏛️ DICT / Bacen</div>
+              <div class="seq-actor-head">🏦 Banco Destino</div>
+            </div>
+            <div style="font-family:var(--font-mono); font-size:0.85rem; line-height:1.7;">
+              <div>1. App Pagador -&gt; Banco Origem: transferirPix(chave="email@pix.com", R$ 250)</div>
+              <div>2. Banco Origem -&gt; DICT / Bacen: consultarChavePix("email@pix.com")</div>
+              <div>3. DICT / Bacen --&gt; Banco Origem: dadosContaDestino(Ag, Conta, CPF)</div>
+              <div>4. Banco Origem -&gt; Banco Destino: liquidarTEDInstantanea(PIX_ID_9901)</div>
+              <div>5. Banco Destino --&gt; Banco Origem: Confirmado com Sucesso</div>
+              <div>6. Banco Origem --&gt; App Pagador: Comprovante de Transferência emitido</div>
+            </div>
+          </div>
+        `
+      }
+    };
+
+    function loadUmlCase(type) {
+      document.getElementById('gal-btn-auth').className = (type === 'auth') ? 'btn-action' : 'btn-reset';
+      document.getElementById('gal-btn-tele').className = (type === 'tele') ? 'btn-action' : 'btn-reset';
+      document.getElementById('gal-btn-pix').className = (type === 'pix') ? 'btn-action' : 'btn-reset';
+
+      const data = galleryCases[type];
+      document.getElementById('uml-gallery-content').innerHTML = `
+        <h4 style="color:var(--primary); font-size:1.05rem; margin-bottom:12px;">${data.title}</h4>
+        ${data.html}
+      `;
+
+      appState.m4Visited[type] = true;
+      if (appState.m4Visited.auth && appState.m4Visited.tele && appState.m4Visited.pix && !appState.completedMissions.m4) {
+        appState.completedMissions.m4 = true;
+        document.getElementById('challenge4-box').className = 'challenge-status challenge-unlocked';
+        document.getElementById('challenge4-icon').innerText = '🎉';
+        document.getElementById('challenge4-msg').innerText = 'Missão Concluída! Todos os cenários da galeria foram analisados.';
+        updateProgress();
+      }
+    }
+
+    // ABA 5: LIVE PARSER & VALIDADOR SINTÁTICO COM LINHA DE ERRO
+    const umlTemplates = {
+      login: `actor Usuario
+participant App
+participant ServidorAuth
+database BancoDados
+
+Usuario -> App: Digita credenciais
+App -> ServidorAuth: POST /login {user, pass}
+ServidorAuth -> BancoDados: SELECT * FROM usuarios
+BancoDados --> ServidorAuth: Registro do usuario
+ServidorAuth --> App: Token JWT gerado (200 OK)
+App --> Usuario: Acesso concedido`,
+      cart: `actor Comprador
+participant CatalogoWeb
+participant CarrinhoAPI
+database RedisCache
+
+Comprador -> CatalogoWeb: Clica em "Adicionar ao Carrinho"
+CatalogoWeb -> CarrinhoAPI: POST /carrinho/item {sku, qtd}
+CarrinhoAPI -> RedisCache: HSET cart:123 item_sku 1
+RedisCache --> CarrinhoAPI: OK
+CarrinhoAPI --> CatalogoWeb: 200 OK (Subtotal atualizado)
+CatalogoWeb --> Comprador: Mostra badge "1 item"`
+    };
+
+    function loadUmlTemplate(t) {
+      document.getElementById('uml-dsl-editor').value = umlTemplates[t];
+      renderUmlSequenceDsl();
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function renderUmlSequenceDsl() {
+      const code = document.getElementById('uml-dsl-editor').value;
+      const preview = document.getElementById('uml-dsl-preview');
+      const lines = code.split('\n');
+
+      const participants = [];
+      const messages = [];
+
+      for (let i = 0; i < lines.length; i++) {
+        const rawLine = lines[i];
+        const lineNum = i + 1;
+        const line = rawLine.trim();
+        if (!line || line.startsWith('#') || line.startsWith('//')) continue;
+
+        // Declaração de participante
+        if (line.startsWith('actor ') || line.startsWith('participant ') || line.startsWith('database ')) {
+          const parts = line.split(/\s+/);
+          if (parts.length < 2) {
+            preview.innerHTML = `
+              <div style="background:rgba(239,68,68,0.15); border:2px solid var(--danger); border-radius:8px; padding:14px; color:#fca5a5;">
+                <strong>❌ Erro de Sintaxe na Linha ${lineNum}:</strong><br>
+                Declaração incompleta: <code>${escapeHtml(line)}</code>.<br>
+                <em>Esperava o nome do participante após o comando. Ex: <code>actor Usuario</code></em>
+              </div>`;
+            appState.m5TriggeredError = true;
+            return;
+          }
+          participants.push({ type: parts[0], name: parts[1] });
+        }
+        // Mensagem entre participantes
+        else if (line.includes('->') || line.includes('-->')) {
+          const isReturn = line.includes('-->');
+          const arrow = isReturn ? '-->' : '->';
+          const splitParts = line.split(arrow);
+
+          const from = splitParts[0].trim();
+          const rest = splitParts[1];
+
+          if (!rest.includes(':')) {
+            preview.innerHTML = `
+              <div style="background:rgba(239,68,68,0.15); border:2px solid var(--danger); border-radius:8px; padding:14px; color:#fca5a5;">
+                <strong>❌ Erro de Sintaxe na Linha ${lineNum}:</strong><br>
+                Falta o caractere <code>:</code> delimitando o texto da mensagem em: <code>${escapeHtml(line)}</code>.<br>
+                <em>Exemplo correto: <code>${from} ${arrow} Destino: NomeDaMensagem()</code></em>
+              </div>`;
+            appState.m5TriggeredError = true;
+            return;
+          }
+
+          const msgParts = rest.split(':');
+          const to = msgParts[0].trim();
+          const label = msgParts.slice(1).join(':').trim();
+
+          messages.push({ from, to, label, isReturn });
+        }
+        else {
+          preview.innerHTML = `
+            <div style="background:rgba(239,68,68,0.15); border:2px solid var(--danger); border-radius:8px; padding:14px; color:#fca5a5;">
+              <strong>❌ Erro de Sintaxe na Linha ${lineNum}:</strong><br>
+              Instrução não reconhecida: <code>${escapeHtml(line)}</code>.<br>
+              <em>Linhas devem declarar participantes (<code>actor</code>, <code>participant</code>, <code>database</code>) ou trocar mensagens com <code>-></code> ou <code>--></code> seguidos de <code>:</code>.</em>
+            </div>`;
+          appState.m5TriggeredError = true;
+          return;
+        }
+      }
+
+      if (messages.length === 0) {
+        preview.innerHTML = '<span style="color:var(--text-muted);">Nenhuma mensagem declarada. Adicione linhas com `A -> B: mensagem`.</span>';
+        return;
+      }
+
+      // Renderização visual da sequência compilada
+      let html = '<div style="display:flex; flex-direction:column; gap:8px;">';
+      html += '<div style="font-size:0.75rem; color:var(--success); font-weight:bold; margin-bottom:6px;">✔ Sintaxe UML Validada com Sucesso</div>';
+
+      messages.forEach((m, idx) => {
+        const isRet = m.isReturn;
+        html += `
+          <div style="background:var(--bg-inset); border:1px solid ${isRet ? 'var(--success)' : 'var(--border-color)'}; border-left:4px solid ${isRet ? 'var(--success)' : 'var(--primary)'}; border-radius:6px; padding:8px 12px; font-family:var(--font-mono); font-size:0.85rem;">
+            <span style="color:var(--text-muted); font-size:0.75rem;">#${idx+1}</span>
+            <strong style="color:var(--primary);">${escapeHtml(m.from)}</strong>
+            <span style="color:${isRet ? 'var(--success)' : 'var(--text-muted)'}; font-weight:bold;">${isRet ? ' --&gt; ' : ' -&gt; '}</span>
+            <strong style="color:var(--accent);">${escapeHtml(m.to)}</strong>
+            <div style="color:var(--text-main); margin-top:2px; font-size:0.88rem;">${escapeHtml(m.label)}</div>
+          </div>
+        `;
+      });
+      html += '</div>';
+
+      preview.innerHTML = html;
+
+      if (appState.m5TriggeredError && !appState.completedMissions.m5) {
+        appState.completedMissions.m5 = true;
+        document.getElementById('challenge5-box').className = 'challenge-status challenge-unlocked';
+        document.getElementById('challenge5-icon').innerText = '🎉';
+        document.getElementById('challenge5-msg').innerText = 'Missão Concluída! Você testou a validação de linha e compilou a sequência com sucesso.';
+        updateProgress();
+      }
+    }
+
+    function resetDslLab() {
+      document.getElementById('uml-dsl-editor').value = umlTemplates.login;
+      renderUmlSequenceDsl();
+    }
+
+    // ABA 6
+    const umlGuides = {
+      usecase: {
+        title: "🎯 Quando usar o Diagrama de Casos de Uso?",
+        desc: "Nas fases de descoberta e refinamento de produto. Responde à pergunta: 'O que o sistema faz para o usuário e quem são os envolvidos?'. Excelente para alinhar expectativas com clientes, POs e partes não técnicas."
+      },
+      sequence: {
+        title: "⏱️ Quando usar o Diagrama de Sequência?",
+        desc: "Quando múltiplos serviços, bancos e gateways precisam conversar para realizar uma operação crítica (ex: autenticação 2FA, pagamento com cartão, checkout). Detalha ordem temporal, payloads e tratamento de erros (alt/opt)."
+      },
+      classes: {
+        title: "🧱 Quando usar o Diagrama de Classes?",
+        desc: "Para detalhar o modelo de domínio estático (entidades, atributos, herança e relacionamentos) dentro de um microsserviço ou monolito. Excelente para orientar a modelagem de banco e de classes de negócio."
+      }
+    };
+
+    function showUmlGuide(k) {
+      const box = document.getElementById('uml-guide-box');
+      const item = umlGuides[k];
+      box.style.display = 'block';
+      document.getElementById('uml-guide-title').innerText = item.title;
+      document.getElementById('uml-guide-desc').innerText = item.desc;
+    }
+
+    function filterUmlCheat() {
+      const term = document.getElementById('cheat-search').value.toLowerCase();
+      document.querySelectorAll('#cheat-table tbody tr').forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+      });
+    }
+
+    // QUIZZES FISHER-YATES
+    function initQuizzes() {
+      document.querySelectorAll('.quiz-question').forEach(qBlock => {
+        const qid = qBlock.getAttribute('data-qid');
+        const optContainer = qBlock.querySelector('.quiz-options');
+        const feedbackBox = qBlock.querySelector('.quiz-feedback');
+
+        const options = Array.from(optContainer.children);
+        for (let i = options.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          optContainer.appendChild(options[j]);
+        }
+
+        optContainer.querySelectorAll('.quiz-opt-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const isCorrect = btn.getAttribute('data-correct') === 'true';
+            const feedbackText = btn.getAttribute('data-fb');
+
+            optContainer.querySelectorAll('.quiz-opt-btn').forEach(b => {
+              b.disabled = true;
+              if (b.getAttribute('data-correct') === 'true') b.classList.add('correct');
+            });
+
+            if (!isCorrect) {
+              btn.classList.add('wrong');
+              feedbackBox.style.display = 'block';
+              feedbackBox.style.background = 'var(--danger-bg)';
+              feedbackBox.style.color = 'var(--danger)';
+              feedbackBox.style.border = '1px solid var(--danger)';
+              feedbackBox.innerHTML = `<strong>Resposta Incorreta:</strong> ${feedbackText}`;
+            } else {
+              feedbackBox.style.display = 'block';
+              feedbackBox.style.background = 'var(--success-bg)';
+              feedbackBox.style.color = 'var(--success)';
+              feedbackBox.style.border = '1px solid var(--success)';
+              feedbackBox.innerHTML = `<strong>Correto!</strong> ${feedbackText}`;
+
+              if (!appState.completedQuizzes[qid]) {
+                appState.completedQuizzes[qid] = true;
+                updateProgress();
+              }
+            }
+          });
+        });
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadUmlCase('auth');
+      renderUmlSequenceDsl();
+      initQuizzes();
+      updateProgress();
+    });
+  </script>
+</body>
+</html>
