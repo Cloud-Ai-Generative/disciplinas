@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aula Interativa: Docker, Compose & MySQL na Prática</title>
+  <style>
+    :root {
+      --bg-body: #090d16;
+      --bg-card: #131b2e;
+      --bg-card-hover: #1e293b;
+      --bg-inset: #0a0f1d;
+      --border-color: #24324f;
+      --border-focus: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #0ea5e9;
+      --primary-hover: #0284c7;
+      --accent: #6366f1;
+      --docker-blue: #2496ed;
+      --terminal-bg: #030712;
+      --terminal-text: #38bdf8;
+      --success: #22c55e;
+      --success-bg: rgba(34, 197, 94, 0.15);
+      --warning: #f59e0b;
+      --warning-bg: rgba(245, 158, 11, 0.15);
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.15);
+      --badge-bg: #1e1b4b;
+      --badge-text: #a5b4fc;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+      --radius: 12px;
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    [data-theme="light"] {
+      --bg-body: #f1f5f9;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f8fafc;
+      --bg-inset: #f1f5f9;
+      --border-color: #cbd5e1;
+      --border-focus: #0284c7;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --primary: #0284c7;
+      --primary-hover: #0369a1;
+      --accent: #4f46e5;
+      --docker-blue: #0073bb;
+      --terminal-bg: #0f172a;
+      --terminal-text: #38bdf8;
+      --success: #16a34a;
+      --success-bg: rgba(22, 163, 74, 0.12);
+      --warning: #d97706;
+      --warning-bg: rgba(217, 119, 6, 0.12);
+      --danger: #dc2626;
+      --danger-bg: rgba(220, 38, 38, 0.12);
+      --badge-bg: #e0e7ff;
+      --badge-text: #3730a3;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease; }
+    body { font-family: var(--font-sans); background-color: var(--bg-body); color: var(--text-main); line-height: 1.6; padding-bottom: 60px; }
+    .container { max-width: 1140px; margin: 0 auto; padding: 20px; }
+
+    header {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .header-info h1 { font-size: 1.6rem; font-weight: 800; display: flex; align-items: center; gap: 10px; color: var(--docker-blue); }
+    .header-info p { color: var(--text-muted); font-size: 0.95rem; margin-top: 4px; }
+    .header-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .progress-box { background: var(--bg-inset); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 9999px; display: flex; align-items: center; gap: 12px; }
+    .progress-bar-wrap { width: 110px; height: 8px; background: var(--border-color); border-radius: 9999px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--primary), var(--success)); border-radius: 9999px; transition: width 0.4s ease; }
+    .progress-text { font-size: 0.85rem; font-weight: 700; color: var(--primary); min-width: 38px; }
+    .btn-theme { background: var(--bg-inset); border: 1px solid var(--border-color); color: var(--text-main); padding: 8px 14px; border-radius: var(--radius); cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+    .btn-theme:hover { background: var(--bg-card-hover); border-color: var(--border-focus); }
+
+    .tabs-nav { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 24px; border-bottom: 2px solid var(--border-color); scrollbar-width: thin; }
+    .tab-btn { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-muted); padding: 12px 18px; border-radius: var(--radius) var(--radius) 0 0; cursor: pointer; font-weight: 700; font-size: 0.92rem; white-space: nowrap; display: flex; align-items: center; gap: 8px; transition: all 0.2s; }
+    .tab-btn:hover { color: var(--text-main); background: var(--bg-card-hover); }
+    .tab-btn.active { background: var(--docker-blue); color: #ffffff; border-color: var(--docker-blue); box-shadow: 0 4px 12px rgba(36, 150, 237, 0.3); }
+
+    .tab-panel { display: none; animation: fadeIn 0.3s ease; }
+    .tab-panel.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 24px; margin-bottom: 24px; box-shadow: var(--shadow); }
+    .card-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; color: var(--primary); }
+    .concept-box { background: var(--bg-inset); border-left: 4px solid var(--docker-blue); padding: 16px 20px; border-radius: 0 var(--radius) var(--radius) 0; margin-bottom: 16px; }
+    .concept-box p { margin-bottom: 10px; font-size: 1rem; }
+    .concept-box p:last-child { margin-bottom: 0; }
+    .analogy-highlight { background: var(--badge-bg); color: var(--badge-text); padding: 12px 16px; border-radius: 8px; font-weight: 500; margin-top: 12px; display: flex; align-items: flex-start; gap: 10px; border: 1px solid rgba(99, 102, 241, 0.3); }
+
+    .lab-container { background: var(--bg-inset); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 20px; margin-top: 16px; }
+    .lab-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+    .btn-reset { background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+    .btn-reset:hover { color: var(--text-main); border-color: var(--primary); background: var(--bg-card); }
+    .btn-action { background: var(--docker-blue); color: #ffffff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-size: 0.95rem; box-shadow: 0 4px 10px rgba(36, 150, 237, 0.25); }
+    .btn-action:hover { background: #0284c7; transform: translateY(-1px); }
+
+    /* Terminal Simulator */
+    .terminal-window { background: var(--terminal-bg); border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.6); margin-top: 14px; }
+    .terminal-bar { background: #0b1120; padding: 8px 14px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #1e293b; }
+    .terminal-dot { width: 11px; height: 11px; border-radius: 50%; }
+    .dot-red { background: #ef4444; }
+    .dot-yellow { background: #f59e0b; }
+    .dot-green { background: #22c55e; }
+    .terminal-title { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); margin-left: 6px; }
+    .terminal-body { padding: 14px 18px; font-family: var(--font-mono); font-size: 0.9rem; min-height: 170px; max-height: 320px; overflow-y: auto; color: #e2e8f0; line-height: 1.5; }
+    .terminal-prompt-line { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #080d1a; border-top: 1px solid #1e293b; }
+    .prompt-label { color: #22c55e; font-weight: bold; font-family: var(--font-mono); font-size: 0.9rem; }
+    .terminal-input { flex: 1; background: transparent; border: none; color: #38bdf8; font-family: var(--font-mono); font-size: 0.95rem; outline: none; }
+
+    .containers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-top: 14px; }
+    .container-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+    .container-status { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 800; padding: 3px 8px; border-radius: 4px; width: fit-content; }
+    .status-running { background: var(--success-bg); color: var(--success); border: 1px solid var(--success); }
+    .status-stopped { background: rgba(148, 163, 184, 0.15); color: var(--text-muted); border: 1px solid var(--border-color); }
+
+    .challenge-card { background: var(--bg-card); border: 2px solid var(--accent); border-radius: var(--radius); padding: 20px; margin-top: 24px; position: relative; }
+    .challenge-badge { position: absolute; top: -12px; left: 20px; background: var(--accent); color: #ffffff; padding: 2px 12px; border-radius: 9999px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+    .challenge-status { display: flex; align-items: center; gap: 10px; margin-top: 14px; font-weight: 700; padding: 10px 14px; border-radius: 8px; }
+    .challenge-unlocked { background: var(--success-bg); color: var(--success); border: 1px solid var(--success); }
+    .challenge-locked { background: var(--bg-inset); color: var(--text-muted); border: 1px dashed var(--border-color); }
+
+    .quiz-card { margin-top: 24px; }
+    .quiz-question { background: var(--bg-inset); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 18px; margin-bottom: 16px; }
+    .quiz-question h4 { font-size: 1rem; margin-bottom: 14px; color: var(--text-main); }
+    .quiz-options { display: flex; flex-direction: column; gap: 10px; }
+    .quiz-opt-btn { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px 16px; border-radius: 8px; cursor: pointer; text-align: left; font-size: 0.95rem; display: flex; align-items: center; gap: 10px; }
+    .quiz-opt-btn:hover:not(:disabled) { border-color: var(--primary); background: var(--bg-card-hover); }
+    .quiz-opt-btn.correct { background: var(--success-bg) !important; border-color: var(--success) !important; color: var(--success) !important; font-weight: 700; }
+    .quiz-opt-btn.wrong { background: var(--danger-bg) !important; border-color: var(--danger) !important; color: var(--danger) !important; }
+    .quiz-feedback { margin-top: 10px; padding: 12px; border-radius: 8px; font-size: 0.9rem; display: none; line-height: 1.5; }
+
+    .badge-code { font-family: var(--font-mono); font-weight: 700; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; }
+    .search-bar { width: 100%; padding: 12px 18px; background: var(--bg-inset); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-main); font-size: 1rem; margin-bottom: 16px; }
+    .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border-color); }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem; }
+    th, td { padding: 12px 16px; border-bottom: 1px solid var(--border-color); }
+    th { background: var(--bg-inset); font-weight: 800; color: var(--primary); }
+    tr:hover td { background: var(--bg-card-hover); }
+    .code-editor { width: 100%; height: 220px; background: var(--terminal-bg); color: #38bdf8; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; font-family: var(--font-mono); font-size: 0.88rem; resize: vertical; line-height: 1.5; }
+
+    .flow-diagram { width: 100%; background: var(--bg-inset); border-radius: var(--radius); border: 1px solid var(--border-color); padding: 20px; text-align: center; }
+    .flow-node { cursor: pointer; transition: transform 0.2s; }
+    .flow-node:hover rect { stroke: var(--primary); stroke-width: 3; filter: drop-shadow(0 0 8px var(--primary)); }
+    .flow-node text { pointer-events: none; }
+
+    .os-switch { display: flex; gap: 12px; margin-bottom: 16px; }
+    .os-btn { flex: 1; padding: 12px; background: var(--bg-inset); border: 2px solid var(--border-color); border-radius: 8px; color: var(--text-main); font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1rem; }
+    .os-btn.active { border-color: var(--docker-blue); background: rgba(36, 150, 237, 0.12); color: var(--docker-blue); }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="header-info">
+        <h1>🐳 Dominando Docker, Compose & MySQL</h1>
+        <p>Infraestrutura Ágil & DevOps &bull; Laboratório Interativo 100% Offline</p>
+      </div>
+      <div class="header-actions">
+        <div class="progress-box">
+          <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Progresso:</span>
+          <div class="progress-bar-wrap"><div class="progress-bar-fill" id="global-progress-bar"></div></div>
+          <span class="progress-text" id="global-progress-text">0%</span>
+        </div>
+        <button class="btn-theme" id="theme-toggle"><span>🌓</span> Tema</button>
+      </div>
+    </header>
+
+    <nav class="tabs-nav">
+      <button class="tab-btn active" data-tab="tab1"><span>📦</span> 1. Containers & Instalação</button>
+      <button class="tab-btn" data-tab="tab2"><span>💻</span> 2. Comandos CLI Essenciais</button>
+      <button class="tab-btn" data-tab="tab3"><span>🔌</span> 3. Portas & Volumes</button>
+      <button class="tab-btn" data-tab="tab4"><span>🐬</span> 4. MySQL na Prática</button>
+      <button class="tab-btn" data-tab="tab5"><span>🐙</span> 5. Docker Compose</button>
+      <button class="tab-btn" data-tab="tab6"><span>🗺️</span> 6. Mapa & Cheat Sheet</button>
+    </nav>
+
+    <!-- TAB 1: O que é Container + Instalação -->
+    <section class="tab-panel active" id="tab1">
+      <div class="card">
+        <h2 class="card-title">💡 Conceito em 60 Segundos: VM vs Container</h2>
+        <div class="concept-box">
+          <p>Uma <strong>Máquina Virtual (VM)</strong> emula um computador inteiro com kernel próprio, gastando gigabytes de RAM e minutos para carregar. Um <strong>Container Docker</strong> é um processo isolado compartilhando o mesmo Kernel do sistema hospedeiro, iniciando em milissegundos.</p>
+          <div class="analogy-highlight">
+            <span style="font-size: 1.5rem;">🏗️</span>
+            <div><strong>Analogia do Prédio:</strong> A VM é uma casa inteira com gerador próprio para cada morador; o Container é um apartamento que compartilha a fundação e o encanamento central do prédio (Kernel).</div>
+          </div>
+        </div>
+
+        <div class="lab-container">
+          <div class="lab-header">
+            <h3 style="display:flex; align-items:center; gap:8px;"><span>🛠️</span> Guia de Instalação Interativo</h3>
+            <span style="font-size:0.85rem; color:var(--text-muted);">Selecione seu Sistema Operacional:</span>
+          </div>
+          <div class="os-switch">
+            <button class="os-btn active" id="btn-os-win" onclick="switchOS('windows')"><span>🪟</span> Windows (com WSL2)</button>
+            <button class="os-btn" id="btn-os-linux" onclick="switchOS('linux')"><span>🐧</span> Linux (Ubuntu / Debian)</button>
+          </div>
+
+          <div id="guide-windows">
+            <div style="background:var(--bg-card); padding:16px; border-radius:8px; border:1px solid var(--border-color);">
+              <h4 style="color:var(--primary); margin-bottom:8px;">Roteiro para Windows 10/11:</h4>
+              <ol style="margin-left: 20px; font-size: 0.92rem; line-height: 1.8;">
+                <li>Ative a <strong>Virtualização (VT-x / AMD-V)</strong> na BIOS da sua placa-mãe.</li>
+                <li>Abra o PowerShell como Administrador e execute: <code>wsl --install</code>.</li>
+                <li>Baixe o <strong>Docker Desktop</strong> e mantenha marcada a opção <em>"Use WSL 2 engine"</em>.</li>
+              </ol>
+            </div>
+          </div>
+
+          <div id="guide-linux" style="display:none;">
+            <div style="background:var(--bg-card); padding:16px; border-radius:8px; border:1px solid var(--border-color);">
+              <h4 style="color:var(--primary); margin-bottom:8px;">Roteiro para Ubuntu / Debian:</h4>
+              <ol style="margin-left: 20px; font-size: 0.92rem; line-height: 1.8;">
+                <li>Instale via script oficial automatizado: <code>curl -fsSL https://get.docker.com | sh</code></li>
+                <li>Execute o Docker sem precisar de `sudo`: <code>sudo usermod -aG docker $USER</code></li>
+              </ol>
+            </div>
+          </div>
+
+          <div style="margin-top:14px; display:flex; justify-content:flex-end;">
+            <button class="btn-action" onclick="checkInstallationStep()"><span>✅</span> Simular Validação (`docker run hello-world`)</button>
+          </div>
+          <div id="install-test-output" class="terminal-window" style="display:none; margin-top:12px;">
+            <div class="terminal-body" id="install-test-text"></div>
+          </div>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-badge">Missão 1</div>
+          <h3 style="font-size:1.1rem; margin-top:6px;">🎯 Desafio Prático: Validar seu Ambiente Docker</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">Clique no botão de validação acima para simular a execução do container de boas-vindas.</p>
+          <div id="challenge1-box" class="challenge-status challenge-locked">
+            <span id="challenge1-icon">🔒</span><span id="challenge1-msg">Aguardando você simular a validação...</span>
+          </div>
+        </div>
+
+        <div class="quiz-card">
+          <h3 class="card-title">🧠 Mini-Quiz de Fixação</h3>
+          <div class="quiz-question" data-qid="dock_q1_1">
+            <h4>1. Por que containers iniciam em milissegundos enquanto VMs levam minutos?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-fb="Incorreto. Containers usam memória real.">Porque não usam memória RAM.</button>
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Exatamente! Reusam o kernel do host sem boot de OS completo.">Porque rodam como processos isolados compartilhando o Kernel do hospedeiro.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Porque rodam dentro da placa de vídeo.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <div class="quiz-question" data-qid="dock_q1_2">
+            <h4>2. Qual componente no Windows permite a execução nativa de containers Linux de alta performance?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Correto! O WSL2 fornece um kernel Linux real integrado.">WSL2 (Windows Subsystem for Linux 2).</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Prompt MS-DOS.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">DirectX 12.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: Comandos CLI Essenciais -->
+    <section class="tab-panel" id="tab2">
+      <div class="card">
+        <h2 class="card-title">💡 Conceito em 60 Segundos: O Ciclo de Vida do Container</h2>
+        <div class="concept-box">
+          <p>A <strong>Imagem</strong> é a receita (somente-leitura); o <strong>Container</strong> é o bolo pronto na memória. Comandos-chave: <code>docker run</code> (cria e executa), <code>docker ps</code> (lista), <code>docker stop</code> (interrompe) e <code>docker rm</code> (deleta).</p>
+        </div>
+
+        <div class="lab-container">
+          <div class="lab-header">
+            <h3 style="display:flex; align-items:center; gap:8px;"><span>🧪</span> Laboratório: Terminal Docker CLI Interativo</h3>
+            <button class="btn-reset" onclick="resetCliLab()">↺ Limpar Terminal</button>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+            <button class="btn-reset" onclick="setCliInput('docker run -d --name web nginx')">💡 Rodar Nginx</button>
+            <button class="btn-reset" onclick="setCliInput('docker ps')">💡 Listar (docker ps)</button>
+            <button class="btn-reset" onclick="setCliInput('docker stop web')">💡 Parar (docker stop web)</button>
+            <button class="btn-reset" onclick="setCliInput('docker rm web')">💡 Remover (docker rm web)</button>
+          </div>
+
+          <div class="terminal-window">
+            <div class="terminal-bar">
+              <span class="terminal-dot dot-red"></span><span class="terminal-dot dot-yellow"></span><span class="terminal-dot dot-green"></span>
+              <span class="terminal-title">aluno@devops-machine: ~ (Docker CLI Simulator)</span>
+            </div>
+            <div class="terminal-body" id="cli-output">
+              <span style="color:#22c55e;">Docker Engine inicializado. Digite comandos reais ou clique nos botões acima.</span><br>
+            </div>
+            <div class="terminal-prompt-line">
+              <span class="prompt-label">$</span>
+              <input type="text" id="cli-input" class="terminal-input" placeholder="docker run ..." autofocus onkeydown="handleCliKeyDown(event)">
+              <button class="btn-action" style="padding:6px 14px; font-size:0.85rem;" onclick="executeCliCommand()">Executar</button>
+            </div>
+          </div>
+
+          <div style="margin-top:16px;">
+            <span style="font-size:0.85rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:6px;">📊 Containers Ativos no Daemon:</span>
+            <div class="containers-grid" id="containers-visual-grid"></div>
+          </div>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-badge">Missão 2</div>
+          <h3 style="font-size:1.1rem; margin-top:6px;">🎯 Desafio Prático: Criar, Parar e Remover um Container</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">Execute a sequência no terminal: (1) <code>docker run -d --name web nginx</code>, (2) <code>docker stop web</code> e (3) <code>docker rm web</code>.</p>
+          <div id="challenge2-box" class="challenge-status challenge-locked">
+            <span id="challenge2-icon">🔒</span><span id="challenge2-msg">Aguardando você iniciar o container 'web'...</span>
+          </div>
+        </div>
+
+        <div class="quiz-card">
+          <h3 class="card-title">🧠 Mini-Quiz de Fixação</h3>
+          <div class="quiz-question" data-qid="dock_q2_1">
+            <h4>1. O que faz o modificador '-d' no comando 'docker run -d nginx'?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Deleta o contêiner ao encerrar.</button>
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Correto! Roda em segundo plano (Detached), liberando o prompt.">Executa o container em background (segundo plano).</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Duplica os núcleos de CPU.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <div class="quiz-question" data-qid="dock_q2_2">
+            <h4>2. Se você tentar 'docker rm' em um contêiner em execução (Up), o que o Docker fará?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Exatamente! É necessário parar o container antes ou usar a flag -f.">Emitirá um erro proibindo a remoção de container ativo.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Desligará o computador.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Apagará todas as imagens.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: Portas & Volumes -->
+    <section class="tab-panel" id="tab3">
+      <div class="card">
+        <h2 class="card-title">💡 Conceito em 60 Segundos: Port Mapping & Persistência de Dados</h2>
+        <div class="concept-box">
+          <p>O isolamento de rede exige mapeamento de portas: <code>-p 8080:80</code> (<strong>Host:Container</strong>). Para não perder dados com a destruição do container, conectamos <strong>Volumes</strong> persistentes (<code>-v volume:/caminho/no/container</code>).</p>
+        </div>
+
+        <div class="lab-container">
+          <div class="lab-header">
+            <h3 style="display:flex; align-items:center; gap:8px;"><span>🧪</span> Laboratório: Construtor Visual de Portas e Volumes</h3>
+            <button class="btn-reset" onclick="resetPortLab()">↺ Resetar Simulador</button>
+          </div>
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:14px; margin-bottom:14px;">
+            <div>
+              <label style="font-size:0.85rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">🚪 Porta no seu PC (Host Port):</label>
+              <input type="number" id="lab3-host-port" class="terminal-input" value="8080" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px;" oninput="updateLab3Command()">
+            </div>
+            <div>
+              <label style="font-size:0.85rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">🚪 Porta interna do Container:</label>
+              <input type="number" id="lab3-container-port" class="terminal-input" value="80" disabled style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px; opacity:0.6;">
+            </div>
+            <div>
+              <label style="font-size:0.85rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">💾 Nome do Volume:</label>
+              <input type="text" id="lab3-volume-name" class="terminal-input" value="site_dados" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px;" oninput="updateLab3Command()">
+            </div>
+          </div>
+
+          <div style="background:var(--terminal-bg); padding:12px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:14px;">
+            <code id="lab3-generated-cmd" style="color:#22c55e; font-family:var(--font-mono); font-weight:bold;">docker run -d -p 8080:80 -v site_dados:/usr/share/nginx/html --name meu-site nginx</code>
+          </div>
+
+          <button class="btn-action" onclick="runLab3PortTest()"><span>🚀</span> Subir e Testar no Navegador</button>
+          <div id="lab3-test-result" class="terminal-window" style="display:none; margin-top:14px;">
+            <div class="terminal-body" id="lab3-result-body"></div>
+          </div>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-badge">Missão 3</div>
+          <h3 style="font-size:1.1rem; margin-top:6px;">🎯 Desafio Prático: Mapear na Porta 3000 com Volume</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">Altere o Host Port para <strong>3000</strong> e teste o container para liberar a missão.</p>
+          <div id="challenge3-box" class="challenge-status challenge-locked">
+            <span id="challenge3-icon">🔒</span><span id="challenge3-msg">Aguardando configurar porta 3000 e disparar o teste...</span>
+          </div>
+        </div>
+
+        <div class="quiz-card">
+          <h3 class="card-title">🧠 Mini-Quiz de Fixação</h3>
+          <div class="quiz-question" data-qid="dock_q3_1">
+            <h4>1. No parâmetro '-p 8080:80', qual porta é acessada no seu navegador?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Correto! A sintaxe é sempre <Host>:<Container>.">A porta 8080 (lado esquerdo), pertencente à sua máquina Host.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto. A porta 80 é a porta interna do container.">A porta 80 (lado direito).</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Ambas funcionam igualmente no navegador.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <div class="quiz-question" data-qid="dock_q3_2">
+            <h4>2. O que acontece com os dados gravados num contêiner se você destruí-lo sem ter usado Volumes (-v)?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Eles vão para a nuvem automaticamente.</button>
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Perfeito! Containers são efêmeros por natureza sem volumes.">Todos os dados novos gravados são permanentemente perdidos.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">O Windows guarda um backup na lixeira.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: MySQL na Prática -->
+    <section class="tab-panel" id="tab4">
+      <div class="card">
+        <h2 class="card-title">💡 Conceito em 60 Segundos: Subindo MySQL no Docker</h2>
+        <div class="concept-box">
+          <p>O MySQL exige a variável de ambiente <code>-e MYSQL_ROOT_PASSWORD=...</code> para ser inicializado com segurança. Sua porta padrão é <strong>3306</strong> e seus dados persistem no caminho <code>/var/lib/mysql</code>.</p>
+        </div>
+
+        <div class="lab-container">
+          <div class="lab-header">
+            <h3 style="display:flex; align-items:center; gap:8px;"><span>🐬</span> Laboratório: Provisionador e Inspetor de MySQL</h3>
+            <button class="btn-reset" onclick="resetMysqlLab()">↺ Resetar Banco</button>
+          </div>
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:14px;">
+            <div>
+              <label style="font-size:0.85rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">🏷️ Nome:</label>
+              <input type="text" id="mysql-name" class="terminal-input" value="banco-producao" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px;" oninput="updateMysqlCmd()">
+            </div>
+            <div>
+              <label style="font-size:0.85rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">🔑 Senha Root (MYSQL_ROOT_PASSWORD):</label>
+              <input type="text" id="mysql-pass" class="terminal-input" value="root123" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px;" oninput="updateMysqlCmd()">
+            </div>
+            <div>
+              <label style="font-size:0.85rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">📁 Volume de Dados:</label>
+              <input type="text" id="mysql-vol" class="terminal-input" value="mysql_dados" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px;" oninput="updateMysqlCmd()">
+            </div>
+            <div>
+              <label style="font-size:0.85rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">🔌 Porta Host:Container:</label>
+              <input type="text" id="mysql-port" class="terminal-input" value="3306:3306" style="width:100%; border:1px solid var(--border-color); padding:8px; border-radius:6px;" oninput="updateMysqlCmd()">
+            </div>
+          </div>
+
+          <div style="background:var(--terminal-bg); padding:12px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:14px;">
+            <code id="mysql-generated-cmd" style="color:#38bdf8; font-family:var(--font-mono); font-weight:bold;">docker run -d --name banco-producao -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root123 -v mysql_dados:/var/lib/mysql mysql:8.0</code>
+          </div>
+
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn-action" onclick="runMysqlContainer()"><span>🚀</span> 1. Subir Container MySQL</button>
+            <button class="btn-action" style="background:#059669;" id="btn-mysql-exec" disabled onclick="testMysqlConnection()"><span>⚡</span> 2. Testar SQL via 'docker exec'</button>
+          </div>
+          <div id="mysql-logs-output" class="terminal-window" style="display:none; margin-top:14px;">
+            <div class="terminal-body" id="mysql-logs-text"></div>
+          </div>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-badge">Missão 4</div>
+          <h3 style="font-size:1.1rem; margin-top:6px;">🎯 Desafio Prático: Conectar no MySQL via 'docker exec'</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">Suba o MySQL e rode a query interativa para testar a comunicação com a porta 3306.</p>
+          <div id="challenge4-box" class="challenge-status challenge-locked">
+            <span id="challenge4-icon">🔒</span><span id="challenge4-msg">Aguardando você iniciar o container e rodar a query SQL...</span>
+          </div>
+        </div>
+
+        <div class="quiz-card">
+          <h3 class="card-title">🧠 Mini-Quiz de Fixação</h3>
+          <div class="quiz-question" data-qid="dock_q4_1">
+            <h4>1. O que ocorre se você iniciar o container oficial do MySQL sem a flag MYSQL_ROOT_PASSWORD?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Exatamente! O container aborta na hora por segurança.">O container falha na inicialização e desliga imediatamente.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Ele cria a senha 'admin' automaticamente.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">A imagem é desinstalada.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <div class="quiz-question" data-qid="dock_q4_2">
+            <h4>2. Qual comando abre um terminal interativo dentro de um contêiner em execução?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Perfeito! O -it conecta a entrada e aloca um pseudo-TTY.">docker exec -it &lt;container&gt; bash</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">docker ps -a</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">docker build .</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: Docker Compose -->
+    <section class="tab-panel" id="tab5">
+      <div class="card">
+        <h2 class="card-title">💡 Conceito em 60 Segundos: Orquestração com docker-compose.yml</h2>
+        <div class="concept-box">
+          <p>O <strong>Docker Compose</strong> permite gerenciar stacks multi-serviços (Frontend + MySQL + Redis) em um único arquivo YAML. Com <code>docker compose up -d</code>, toda a arquitetura sobe conectada em rede privada isolada.</p>
+        </div>
+
+        <div class="lab-container">
+          <div class="lab-header">
+            <h3 style="display:flex; align-items:center; gap:8px;"><span>🐙</span> Laboratório: Compose Studio</h3>
+            <button class="btn-reset" onclick="resetComposeLab()">↺ Resetar Compose</button>
+          </div>
+          <textarea id="compose-editor" class="code-editor">services:
+  web-app:
+    image: nginx:alpine
+    container_name: api-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - banco-mysql
+
+  banco-mysql:
+    image: mysql:8.0
+    container_name: mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: secret_password_2026
+      MYSQL_DATABASE: loja_virtual
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_storage:/var/lib/mysql
+
+volumes:
+  mysql_storage:
+    driver: local</textarea>
+
+          <div style="display:flex; gap:12px; margin-top:12px; flex-wrap:wrap;">
+            <button class="btn-action" onclick="runComposeUp()"><span>🚀</span> docker compose up -d</button>
+            <button class="btn-action" style="background:#dc2626;" onclick="runComposeDown()"><span>🛑</span> docker compose down</button>
+          </div>
+          <div id="compose-terminal" class="terminal-window" style="display:none; margin-top:14px;">
+            <div class="terminal-body" id="compose-terminal-body"></div>
+          </div>
+        </div>
+
+        <div class="challenge-card">
+          <div class="challenge-badge">Missão 5</div>
+          <h3 style="font-size:1.1rem; margin-top:6px;">🎯 Desafio Prático: Orquestrar e Desmontar a Stack</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 4px;">Execute <code>docker compose up -d</code> e em seguida <code>docker compose down</code> para validar a orquestração completa.</p>
+          <div id="challenge5-box" class="challenge-status challenge-locked">
+            <span id="challenge5-icon">🔒</span><span id="challenge5-msg">Aguardando rodar up -d e down...</span>
+          </div>
+        </div>
+
+        <div class="quiz-card">
+          <h3 class="card-title">🧠 Mini-Quiz de Fixação</h3>
+          <div class="quiz-question" data-qid="dock_q5_1">
+            <h4>1. Qual é o papel do comando 'docker compose down'?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Deletar seu código-fonte do computador.</button>
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Exatamente! Para contêineres e limpa redes criadas para a stack.">Interromper os containers e remover a rede bridge compartilhada.</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">Desinstalar o Docker.</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <div class="quiz-question" data-qid="dock_q5_2">
+            <h4>2. Em um docker-compose.yml, qual propriedade garante a ordem de inicialização entre serviços dependentes?</h4>
+            <div class="quiz-options">
+              <button class="quiz-opt-btn" data-correct="true" data-fb="Correto! depends_on expressa dependências entre serviços.">depends_on</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">restart: always</button>
+              <button class="quiz-opt-btn" data-fb="Incorreto.">volumes</button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 6: Mapa Mental & Cheat Sheet -->
+    <section class="tab-panel" id="tab6">
+      <div class="card">
+        <h2 class="card-title">🗺️ Mapa Mental Interativo: A Arquitetura do Docker</h2>
+        <div class="flow-diagram">
+          <svg viewBox="0 0 860 160" style="max-width: 100%; height: auto;">
+            <line x1="80" y1="80" x2="780" y2="80" stroke="#24324f" stroke-width="4" stroke-dasharray="6,6" />
+            <g class="flow-node" onclick="showDockerFlow('cli')">
+              <rect x="20" y="40" width="130" height="80" rx="10" fill="#131b2e" stroke="#0ea5e9" stroke-width="2"/>
+              <text x="85" y="75" fill="#f8fafc" font-size="12" font-weight="bold" text-anchor="middle">1. Docker CLI</text>
+              <text x="85" y="95" fill="#94a3b8" font-size="11" text-anchor="middle">Terminal / Compose</text>
+            </g>
+            <g class="flow-node" onclick="showDockerFlow('daemon')">
+              <rect x="210" y="40" width="140" height="80" rx="10" fill="#131b2e" stroke="#2496ed" stroke-width="2"/>
+              <text x="280" y="75" fill="#f8fafc" font-size="12" font-weight="bold" text-anchor="middle">2. Docker Daemon</text>
+              <text x="280" y="95" fill="#94a3b8" font-size="11" text-anchor="middle">dockerd Engine</text>
+            </g>
+            <g class="flow-node" onclick="showDockerFlow('registry')">
+              <rect x="410" y="40" width="140" height="80" rx="10" fill="#131b2e" stroke="#f59e0b" stroke-width="2"/>
+              <text x="480" y="75" fill="#f8fafc" font-size="12" font-weight="bold" text-anchor="middle">3. Imagens / Hub</text>
+              <text x="480" y="95" fill="#94a3b8" font-size="11" text-anchor="middle">Templates Prontos</text>
+            </g>
+            <g class="flow-node" onclick="showDockerFlow('containers')">
+              <rect x="610" y="40" width="150" height="80" rx="10" fill="#131b2e" stroke="#22c55e" stroke-width="2"/>
+              <text x="685" y="75" fill="#f8fafc" font-size="12" font-weight="bold" text-anchor="middle">4. Containers & Vol</text>
+              <text x="685" y="95" fill="#94a3b8" font-size="11" text-anchor="middle">Processos Vivos</text>
+            </g>
+          </svg>
+        </div>
+        <div id="docker-flow-box" class="concept-box" style="margin-top: 16px; display:none;">
+          <h4 id="docker-flow-title" style="color:var(--primary); margin-bottom:6px;">Componente</h4>
+          <p id="docker-flow-desc" style="font-size:0.95rem;"></p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">📋 Cola Rápida (Docker & Compose Cheat Sheet)</h2>
+        <input type="text" id="cheat-search" class="search-bar" placeholder="🔍 Digite para filtrar (ex: run, ps, exec, volumes, 3306, compose, mysql, -d, -v)..." oninput="filterCheat()">
+        <div class="table-wrap">
+          <table id="cheat-table">
+            <thead>
+              <tr><th>Comando / Flag</th><th>Categoria</th><th>O que faz na prática</th><th>Exemplo de Uso</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><span class="badge-code" style="background:#0ea5e9; color:#fff;">docker run</span></td><td>CLI Essencial</td><td>Baixa a imagem e cria um contêiner ativo.</td><td><code>docker run -d nginx</code></td></tr>
+              <tr><td><span class="badge-code" style="background:#2496ed; color:#fff;">-d (detached)</span></td><td>Flags</td><td>Roda o contêiner em background liberando o prompt.</td><td><code>docker run -d mysql</code></td></tr>
+              <tr><td><span class="badge-code" style="background:#2496ed; color:#fff;">-p (port)</span></td><td>Flags</td><td>Mapeia porta física do Host para porta interna do Container.</td><td><code>-p 8080:80</code> ou <code>-p 3306:3306</code></td></tr>
+              <tr><td><span class="badge-code" style="background:#2496ed; color:#fff;">-v (volume)</span></td><td>Flags</td><td>Persiste arquivos do container em um volume do Host.</td><td><code>-v dados:/var/lib/mysql</code></td></tr>
+              <tr><td><span class="badge-code" style="background:#2496ed; color:#fff;">-e (environment)</span></td><td>Flags</td><td>Injeta variáveis de ambiente no container.</td><td><code>-e MYSQL_ROOT_PASSWORD=123</code></td></tr>
+              <tr><td><span class="badge-code" style="background:#0ea5e9; color:#fff;">docker ps</span></td><td>CLI Essencial</td><td>Lista contêineres que estão rodando no momento.</td><td><code>docker ps</code> (com <code>-a</code> para todos)</td></tr>
+              <tr><td><span class="badge-code status-5xx">docker stop</span></td><td>Ciclo de Vida</td><td>Envia sinal SIGTERM e para suavemente o processo.</td><td><code>docker stop meu-container</code></td></tr>
+              <tr><td><span class="badge-code status-4xx">docker rm</span></td><td>Ciclo de Vida</td><td>Deleta o container parado do disco.</td><td><code>docker rm meu-container</code></td></tr>
+              <tr><td><span class="badge-code" style="background:#6366f1; color:#fff;">docker exec -it</span></td><td>Depuração</td><td>Abre um terminal interativo dentro de um container rodando.</td><td><code>docker exec -it meu-mysql bash</code></td></tr>
+              <tr><td><span class="badge-code" style="background:#22c55e; color:#fff;">docker compose up -d</span></td><td>Compose</td><td>Lê o docker-compose.yml e sobe toda a infraestrutura em rede.</td><td><code>docker compose up -d</code></td></tr>
+              <tr><td><span class="badge-code status-4xx">docker compose down</span></td><td>Compose</td><td>Para os containers e remove a rede virtual da stack com segurança.</td><td><code>docker compose down</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const appState = {
+      completedMissions: { m1: false, m2: false, m3: false, m4: false, m5: false },
+      completedQuizzes: {},
+      cliContainers: [],
+      mission2State: { created: false, stopped: false, deleted: false },
+      mission5State: { up: false, down: false }
+    };
+
+    function updateProgress() {
+      const m = Object.values(appState.completedMissions).filter(Boolean).length;
+      const q = Object.keys(appState.completedQuizzes).length;
+      const score = Math.min(100, Math.round((m * 10) + (q * 5)));
+      document.getElementById('global-progress-bar').style.width = score + '%';
+      document.getElementById('global-progress-text').innerText = score + '%';
+    }
+
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      const cur = document.documentElement.getAttribute('data-theme');
+      document.documentElement.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+    });
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.getAttribute('data-tab');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(target).classList.add('active');
+      });
+    });
+
+    // Tab 1: OS Switch
+    function switchOS(os) {
+      document.getElementById('btn-os-win').classList.toggle('active', os === 'windows');
+      document.getElementById('btn-os-linux').classList.toggle('active', os === 'linux');
+      document.getElementById('guide-windows').style.display = (os === 'windows') ? 'block' : 'none';
+      document.getElementById('guide-linux').style.display = (os === 'linux') ? 'block' : 'none';
+    }
+    function checkInstallationStep() {
+      const out = document.getElementById('install-test-output');
+      const text = document.getElementById('install-test-text');
+      out.style.display = 'block';
+      text.innerHTML = '<span style="color:#38bdf8;">$ docker run hello-world</span><br><span style="color:#94a3b8;">Pulling from library/hello-world...</span><br>';
+      setTimeout(() => {
+        text.innerHTML += '<span style="color:#22c55e;">Hello from Docker!</span><br>Sua instalação do Docker Engine está validada com sucesso.';
+        if (!appState.completedMissions.m1) {
+          appState.completedMissions.m1 = true;
+          document.getElementById('challenge1-box').className = 'challenge-status challenge-unlocked';
+          document.getElementById('challenge1-icon').innerText = '🎉';
+          document.getElementById('challenge1-msg').innerText = 'Missão Concluída! Instalação validada.';
+          updateProgress();
+        }
+      }, 700);
+    }
+
+    // Tab 2: Terminal CLI
+    function renderVisualContainers() {
+      const grid = document.getElementById('containers-visual-grid');
+      grid.innerHTML = '';
+      if (appState.cliContainers.length === 0) {
+        grid.innerHTML = '<span style="font-size:0.85rem; color:var(--text-muted); grid-column:1/-1;">Nenhum container ativo. Use `docker run`.</span>';
+        return;
+      }
+      appState.cliContainers.forEach(c => {
+        const card = document.createElement('div');
+        card.className = 'container-card';
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong style="color:var(--text-main); font-family:var(--font-mono);">${c.name}</strong>
+            <span class="container-status ${c.status === 'running' ? 'status-running' : 'status-stopped'}">${c.status === 'running' ? '🟢 Up' : '⚪ Exited'}</span>
+          </div>
+          <div style="font-size:0.8rem; color:var(--text-muted);">ID: <code>${c.id}</code> &bull; ${c.image}</div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function setCliInput(cmd) {
+      document.getElementById('cli-input').value = cmd;
+      executeCliCommand();
+    }
+    function handleCliKeyDown(e) { if (e.key === 'Enter') executeCliCommand(); }
+
+    function executeCliCommand() {
+      const input = document.getElementById('cli-input');
+      const raw = input.value.trim();
+      if (!raw) return;
+      input.value = '';
+      const output = document.getElementById('cli-output');
+      output.innerHTML += `<div><span style="color:#22c55e;">aluno@devops:~$</span> <span style="color:#ffffff;">${raw}</span></div>`;
+      const parts = raw.split(/\s+/);
+
+      if (raw === 'clear') { output.innerHTML = ''; return; }
+      if (parts[0] !== 'docker') { output.innerHTML += `<div style="color:#ef4444;">Comando inválido. Use 'docker ...'</div>`; return; }
+
+      const sub = parts[1];
+      if (sub === 'ps') {
+        const list = parts.includes('-a') ? appState.cliContainers : appState.cliContainers.filter(c => c.status === 'running');
+        if (list.length === 0) {
+          output.innerHTML += `<div style="color:#94a3b8;">CONTAINER ID   IMAGE   STATUS   NAMES</div>`;
+        } else {
+          let t = `<pre style="color:#94a3b8; margin:4px 0;">CONTAINER ID   IMAGE      STATUS      NAMES\n`;
+          list.forEach(c => { t += `${c.id}   ${c.image.padEnd(10)} ${c.status === 'running' ? 'Up 2 mins' : 'Exited'}    ${c.name}\n`; });
+          output.innerHTML += t + '</pre>';
+        }
+      } else if (sub === 'run') {
+        const nameIdx = parts.indexOf('--name');
+        const name = (nameIdx !== -1 && parts[nameIdx+1]) ? parts[nameIdx+1] : 'app_' + Math.floor(Math.random()*100);
+        const img = parts[parts.length - 1];
+        const hash = Math.random().toString(16).substring(2, 10);
+        appState.cliContainers.push({ id: hash, name: name, image: img, status: 'running' });
+        output.innerHTML += `<div style="color:#38bdf8;">${hash}</div>`;
+        if (name === 'web') appState.mission2State.created = true;
+        renderVisualContainers();
+      } else if (sub === 'stop') {
+        const target = parts[2];
+        const it = appState.cliContainers.find(c => c.name === target || c.id === target);
+        if (it) {
+          it.status = 'stopped';
+          output.innerHTML += `<div style="color:#38bdf8;">${target}</div>`;
+          if (target === 'web') appState.mission2State.stopped = true;
+          renderVisualContainers();
+        } else { output.innerHTML += `<div style="color:#ef4444;">Container não encontrado: ${target}</div>`; }
+      } else if (sub === 'rm') {
+        const target = parts[2];
+        const idx = appState.cliContainers.findIndex(c => c.name === target || c.id === target);
+        if (idx !== -1) {
+          if (appState.cliContainers[idx].status === 'running') {
+            output.innerHTML += `<div style="color:#ef4444;">Pare o container antes de remover.</div>`;
+          } else {
+            appState.cliContainers.splice(idx, 1);
+            output.innerHTML += `<div style="color:#38bdf8;">${target}</div>`;
+            if (target === 'web') appState.mission2State.deleted = true;
+            renderVisualContainers();
+          }
+        } else { output.innerHTML += `<div style="color:#ef4444;">Container não encontrado.</div>`; }
+      }
+
+      if (appState.mission2State.created && appState.mission2State.stopped && appState.mission2State.deleted && !appState.completedMissions.m2) {
+        appState.completedMissions.m2 = true;
+        document.getElementById('challenge2-box').className = 'challenge-status challenge-unlocked';
+        document.getElementById('challenge2-icon').innerText = '🎉';
+        document.getElementById('challenge2-msg').innerText = 'Missão Concluída! Ciclo de vida CLI dominado.';
+        updateProgress();
+      }
+      document.getElementById('cli-output').scrollTop = document.getElementById('cli-output').scrollHeight;
+    }
+    function resetCliLab() {
+      appState.cliContainers = [];
+      document.getElementById('cli-output').innerHTML = '<span style="color:#22c55e;">Ambiente limpo.</span><br>';
+      renderVisualContainers();
+    }
+
+    // Tab 3: Portas & Volumes
+    function updateLab3Command() {
+      const p = document.getElementById('lab3-host-port').value || '8080';
+      const v = document.getElementById('lab3-volume-name').value || 'meu_volume';
+      document.getElementById('lab3-generated-cmd').innerText = `docker run -d -p ${p}:80 -v ${v}:/usr/share/nginx/html --name meu-site nginx`;
+    }
+    function runLab3PortTest() {
+      const p = document.getElementById('lab3-host-port').value;
+      const v = document.getElementById('lab3-volume-name').value;
+      const out = document.getElementById('lab3-test-result');
+      out.style.display = 'block';
+      document.getElementById('lab3-result-body').innerHTML = `
+        <span style="color:#22c55e;">✔ Container Nginx ativo na porta Host ${p}!</span><br>
+        <span style="color:#38bdf8;">✔ Volume montado com sucesso: ${v} &rarr; /usr/share/nginx/html</span><br>
+        <code>&lt;html&gt;&lt;h1&gt;Welcome to Nginx on port ${p}!&lt;/h1&gt;&lt;/html&gt;</code>
+      `;
+      if (p === '3000' && !appState.completedMissions.m3) {
+        appState.completedMissions.m3 = true;
+        document.getElementById('challenge3-box').className = 'challenge-status challenge-unlocked';
+        document.getElementById('challenge3-icon').innerText = '🎉';
+        document.getElementById('challenge3-msg').innerText = 'Missão Concluída! Mapeamento na porta 3000 verificado.';
+        updateProgress();
+      }
+    }
+    function resetPortLab() {
+      document.getElementById('lab3-host-port').value = '8080';
+      updateLab3Command();
+      document.getElementById('lab3-test-result').style.display = 'none';
+    }
+
+    // Tab 4: MySQL
+    function updateMysqlCmd() {
+      const n = document.getElementById('mysql-name').value;
+      const p = document.getElementById('mysql-pass').value;
+      const v = document.getElementById('mysql-vol').value;
+      const pt = document.getElementById('mysql-port').value;
+      document.getElementById('mysql-generated-cmd').innerText = `docker run -d --name ${n} -p ${pt} -e MYSQL_ROOT_PASSWORD=${p} -v ${v}:/var/lib/mysql mysql:8.0`;
+    }
+    function runMysqlContainer() {
+      const p = document.getElementById('mysql-pass').value;
+      const out = document.getElementById('mysql-logs-output');
+      out.style.display = 'block';
+      if (!p) {
+        document.getElementById('mysql-logs-text').innerHTML = `<span style="color:#ef4444;">[ERROR] Sem MYSQL_ROOT_PASSWORD o MySQL aborta a inicialização!</span>`;
+        return;
+      }
+      document.getElementById('mysql-logs-text').innerHTML = `
+        <span style="color:#22c55e;">✔ MySQL iniciado com sucesso na porta 3306!</span><br>
+        <span style="color:#94a3b8;">ready for connections. Version: '8.0.36' socket: '/var/run/mysqld/mysqld.sock' port: 3306</span>
+      `;
+      document.getElementById('btn-mysql-exec').disabled = false;
+    }
+    function testMysqlConnection() {
+      const p = document.getElementById('mysql-pass').value;
+      const n = document.getElementById('mysql-name').value;
+      document.getElementById('mysql-logs-text').innerHTML += `
+        <br><span style="color:#38bdf8;">$ docker exec -it ${n} mysql -u root -p${p} -e "SELECT VERSION();"</span><br>
+        <pre style="color:#22c55e;">+-----------+\n| VERSION() |\n+-----------+\n| 8.0.36    |\n+-----------+</pre>
+      `;
+      if (!appState.completedMissions.m4) {
+        appState.completedMissions.m4 = true;
+        document.getElementById('challenge4-box').className = 'challenge-status challenge-unlocked';
+        document.getElementById('challenge4-icon').innerText = '🎉';
+        document.getElementById('challenge4-msg').innerText = 'Missão Concluída! MySQL em execução e testado via docker exec.';
+        updateProgress();
+      }
+    }
+    function resetMysqlLab() {
+      document.getElementById('mysql-pass').value = 'root123';
+      document.getElementById('btn-mysql-exec').disabled = true;
+      document.getElementById('mysql-logs-output').style.display = 'none';
+      updateMysqlCmd();
+    }
+
+    // Tab 5: Compose
+    function runComposeUp() {
+      const win = document.getElementById('compose-terminal');
+      win.style.display = 'block';
+      document.getElementById('compose-terminal-body').innerHTML = `
+        <span style="color:#38bdf8;">$ docker compose up -d</span><br>
+        <span style="color:#22c55e;">✔ Network default Created</span><br>
+        <span style="color:#22c55e;">✔ Container mysql-db Started (3306)</span><br>
+        <span style="color:#22c55e;">✔ Container api-frontend Started (8080)</span>
+      `;
+      appState.mission5State.up = true;
+      checkMission5();
+    }
+    function runComposeDown() {
+      const win = document.getElementById('compose-terminal');
+      win.style.display = 'block';
+      document.getElementById('compose-terminal-body').innerHTML += `
+        <br><span style="color:#38bdf8;">$ docker compose down</span><br>
+        <span style="color:#f59e0b;">✔ Container api-frontend Removed</span><br>
+        <span style="color:#f59e0b;">✔ Container mysql-db Removed</span><br>
+        <span style="color:#f59e0b;">✔ Network default Removed</span>
+      `;
+      appState.mission5State.down = true;
+      checkMission5();
+    }
+    function checkMission5() {
+      if (appState.mission5State.up && appState.mission5State.down && !appState.completedMissions.m5) {
+        appState.completedMissions.m5 = true;
+        document.getElementById('challenge5-box').className = 'challenge-status challenge-unlocked';
+        document.getElementById('challenge5-icon').innerText = '🎉';
+        document.getElementById('challenge5-msg').innerText = 'Missão Concluída! Orquestração Compose dominada.';
+        updateProgress();
+      }
+    }
+    function resetComposeLab() {
+      document.getElementById('compose-terminal').style.display = 'none';
+      appState.mission5State = { up: false, down: false };
+    }
+
+    // Tab 6: Flow & Search
+    const dockerFlowData = {
+      cli: { title: "Docker CLI", desc: "Formata comandos e envia requisições para o Docker Daemon." },
+      daemon: { title: "Docker Daemon (dockerd)", desc: "Gerencia processos, redes bridge, volumes e containers." },
+      registry: { title: "Docker Hub / Registries", desc: "Armazena e distribui imagens públicas e privadas." },
+      containers: { title: "Containers & Volumes", desc: "Processos isolados gravando dados em volumes protegidos." }
+    };
+    function showDockerFlow(k) {
+      document.getElementById('docker-flow-box').style.display = 'block';
+      document.getElementById('docker-flow-title').innerText = dockerFlowData[k].title;
+      document.getElementById('docker-flow-desc').innerText = dockerFlowData[k].desc;
+    }
+    function filterCheat() {
+      const term = document.getElementById('cheat-search').value.toLowerCase();
+      document.querySelectorAll('#cheat-table tbody tr').forEach(r => {
+        r.style.display = r.innerText.toLowerCase().includes(term) ? '' : 'none';
+      });
+    }
+
+    // Quizzes (Fisher-Yates)
+    function initQuizzes() {
+      document.querySelectorAll('.quiz-question').forEach(qBlock => {
+        const qid = qBlock.getAttribute('data-qid');
+        const opts = qBlock.querySelector('.quiz-options');
+        const fb = qBlock.querySelector('.quiz-feedback');
+        const arr = Array.from(opts.children);
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          opts.appendChild(arr[j]);
+        }
+        opts.querySelectorAll('.quiz-opt-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const ok = btn.getAttribute('data-correct') === 'true';
+            opts.querySelectorAll('.quiz-opt-btn').forEach(b => {
+              b.disabled = true;
+              if (b.getAttribute('data-correct') === 'true') b.classList.add('correct');
+            });
+            if (!ok) btn.classList.add('wrong');
+            fb.style.display = 'block';
+            fb.style.background = ok ? 'var(--success-bg)' : 'var(--danger-bg)';
+            fb.style.color = ok ? 'var(--success)' : 'var(--danger)';
+            fb.innerHTML = btn.getAttribute('data-fb');
+            if (ok && !appState.completedQuizzes[qid]) {
+              appState.completedQuizzes[qid] = true;
+              updateProgress();
+            }
+          });
+        });
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderVisualContainers();
+      initQuizzes();
+      updateProgress();
+    });
+  </script>
+</body>
+</html>
