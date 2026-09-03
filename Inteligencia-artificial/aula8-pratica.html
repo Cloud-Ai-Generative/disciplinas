@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IA Interativo — Aula 8 (Unidade 4)</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:system-ui,sans-serif;background:#f4f7f6;margin:0;padding:18px;color:#1d1d1f}
+h1{font-size:1.25rem} h2{margin-top:0}
+nav{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.tab{border:2px solid #1d1d1f;background:#fff;border-radius:10px;padding:8px 12px;cursor:pointer;box-shadow:3px 3px 0 #d946ef;font-weight:600}
+.tab.active{background:#d946ef;color:#fff}
+.demo{display:none;background:#fff;border:2px solid #1d1d1f;border-radius:14px;padding:16px;box-shadow:5px 5px 0 #d946ef}
+.demo.active{display:block}
+button{border:2px solid #1d1d1f;border-radius:8px;background:#fff;padding:6px 10px;cursor:pointer;font-weight:600}
+button:hover{background:#fdf4ff}
+details{margin:10px 0;border-radius:10px;padding:8px 12px;border:2px solid #1d1d1f}
+summary{cursor:pointer;font-weight:700}
+.info{background:#eaf4ff}.steps{background:#fff8dc}.links{background:#f2f2f2}.real{background:#eaffe8}.tool{background:#f5eaff}.quiz{background:#ffe8f0}
+.links a{color:#0a66c2;display:inline-block;margin:2px 12px 2px 0}
+.q{margin:2px}.q.ok{background:#b9f6ca}.q.bad{background:#ffb3b3}
+.fb{font-size:.85rem;background:#fff;border-radius:6px;padding:4px 8px;margin:4px 0}
+#o1,#o2,#o3,#o4,#o5,#o6,#outT,#outE,#outN,#outL{background:#fff;border:2px dashed #999;border-radius:8px;padding:10px;margin:8px 0;min-height:40px}
+.bar{display:inline-block;border:2px solid #1d1d1f;border-radius:8px;padding:6px 12px;margin:3px;cursor:pointer;background:#fff;font-weight:600}
+.blok{display:inline-block;border:2px solid #1d1d1f;border-radius:8px;padding:8px 14px;margin:4px;cursor:pointer;font-weight:600;background:#fff}
+.blok.on{background:#2dd4a7}
+.rv{display:none;margin-left:6px}
+.instrucao{background:#fff3cd;border:2px solid #ffc107;border-radius:8px;padding:10px;margin:8px 0}
+.instrucao b{color:#856404}
+input[type=text]{width:60%;padding:6px;border:2px solid #1d1d1f;border-radius:8px}
+body.aposta .sig{display:none}
+body.aposta .sig.shown{display:inline}
+body.aposta .rv{display:inline-block}
+body.aposta .rv.off{display:none}
+#apBtn{box-shadow:3px 3px 0 #d4a017}
+</style>
+</head>
+<body>
+<h1>💬 IA — Aula 8 (Unidade 4, págs. 10–19): processamento de linguagem natural</h1>
+<button id="apBtn" onclick="aposta()">🎲 Modo aposta: OFF</button>
+<p>Mesma estrutura das aulas anteriores: 🌍 →  → 🎤 plano de testes → demo → 🧠 quiz (3 alternativas embaralhadas, cada uma com a própria explicação, tudo por extenso) → 🔗 Aprofundar. Com 🎲 ligado, a turma aposta antes de revelar.</p>
+
+<details class="tool"><summary>🧰 Glossário de ferramentas (leia uma vez!)</summary><ul>
+  <li><b>PLN (NLP):</b> Processamento de Linguagem Natural — fazer o computador entender e gerar linguagem humana.</li>
+  <li><b>Ambiguidade:</b> uma frase com mais de uma leitura válida — o grande desafio do PLN.</li>
+  <li><b>Teste de Turing:</b> se um juiz humano não distinguir máquina de humano na conversa, a máquina "passa".</li>
+  <li><b>ELIZA:</b> chatbot de 1966 que "imitava" um psicoterapeuta só com padrões e respostas prontas.</li>
+  <li><b>N-grama:</b> sequência de n palavras; o modelo prevê a próxima palavra pela frequência.</li>
+  <li><b>Assistente virtual:</b> Siri, Alexa, Google Assistant — PLN aplicado em produto real.</li>
+</ul></details>
+
+<nav>
+  <button class="tab active" data-t="d1">01 Ambiguidade e Teste de Turing</button>
+  <button class="tab" data-t="d2">02 As 4 categorias históricas</button>
+  <button class="tab" data-t="d3">03 ELIZA e seus 5 problemas</button>
+  <button class="tab" data-t="d4">04 Lógica de programação × PLN</button>
+  <button class="tab" data-t="d5">05 Modelos N-gramas</button>
+  <button class="tab" data-t="d6">06 Idiomas e assistentes virtuais</button>
+</nav>
+
+<!-- 01 -->
+<section id="d1" class="demo active">
+  <h2>01 — Ambiguidade e o Teste de Turing</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>"Vi o homem com o telescópio":</b> quem tinha o telescópio — você ou o homem? As DUAS leituras são válidas. Humanos resolvem pelo contexto; máquinas penam.</li>
+    <li><b>Teste de Turing na prática:</b> os "captchas" e triagens de chatbot invertem a ideia: provar que você NÃO é máquina.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Ambiguidade:</b> uma palavra/frase com múltiplos sentidos (lexical, sintática, semântica).</li>
+    <li><b>Teste de Turing (1950):</b> o "jogo da imitação" — um juiz conversa com humano e máquina; se não distinguir, a máquina é "inteligente".</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> dois jogos: (a) frases ambíguas — escolha UMA leitura; (b) mini Teste de Turing — descubra qual resposta é da máquina.</li>
+    <li><b>Teste 1 — ambiguidade.</b> <i>Clicar:</i> numa leitura de cada frase. <span class="sig"><i>Vê:</i> que a OUTRA leitura também é válida. <i>Significa:</i> a ambiguidade obriga a máquina a escolher entre leituras igualmente corretas — por isso PLN é difícil.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — Turing.</b> <i>Clicar:</i> em qual resposta veio da máquina. <span class="sig"><i>Vê:</i> acerto/erro com o porquê. <i>Significa:</i> o teste de Turing mede se a máquina conversa como humano — a base histórica do PLN.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Leia a <b>frase ambígua</b> e clique numa das duas leituras.<br>
+    <b>Passo 2:</b> Veja que a outra leitura TAMBÉM é válida — isso é ambiguidade.<br>
+    <b>Passo 3:</b> No <b>Teste de Turing</b>, clique na resposta que veio da máquina.<br>
+    <b>Passo 4:</b> Use os botões de reiniciar para refazer.<br><br>
+    <b>Dica:</b> na ambiguidade não há errado; no Turing, procure a resposta "sem emoção".
+  </div>
+  <div id="o1"></div>
+  <div id="outT"></div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u11"><p>1) Ambiguidade em linguagem natural é quando…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Uma frase com várias leituras válidas — como "Vi o homem com o telescópio".">uma frase tem mais de uma leitura válida</button>
+      <button class="q" data-fb="❌ Ambiguidade não é erro; é ter múltiplas leituras corretas.">a frase está sempre errada</button>
+      <button class="q" data-fb="❌ Ambiguidade existe em todas as línguas.">só existe em inglês</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u12"><p>2) O Teste de Turing avalia se…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Se o juiz não distingue máquina de humano na conversa, a máquina "passa".">uma máquina conversa sem ser distinguida de um humano</button>
+      <button class="q" data-fb="❌ Velocidade de cálculo não é o teste.">a máquina calcula rápido</button>
+      <button class="q" data-fb="❌ Traduzir não é o teste de Turing.">a máquina traduz textos</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u13"><p>3) Turing propôs o teste ao perguntar…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! O artigo de 1950 parte de "As máquinas podem pensar?".">"As máquinas podem pensar?"</button>
+      <button class="q" data-fb="❌ Não era sobre voar.">"As máquinas podem voar?"</button>
+      <button class="q" data-fb="❌ Não era sobre armazenar.">"As máquinas podem guardar dados?"</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Teste_de_Turing">Teste de Turing — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Ambiguidade">Ambiguidade — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 02 -->
+<section id="d2" class="demo">
+  <h2>02 — As 4 categorias históricas do PLN</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Regras → dados → redes → LLMs:</b> como a tradução automática evoluiu de dicionários manuais (simbólico) para o Google Tradutor (estatístico/neural) e o ChatGPT (LLM).</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário — as 4 categorias</summary><ul>
+    <li><b>1. Simbólica:</b> regras e gramáticas escritas à mão (anos 50–70).</li>
+    <li><b>2. Estatística:</b> probabilidades extraídas de grandes textos (anos 90–2000).</li>
+    <li><b>3. Neural:</b> redes neurais profundas aprendem representações (2010+).</li>
+    <li><b>4. Grandes modelos de linguagem (LLM):</b> transformers treinados em escala gigante (2018+).</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> jogo de classificar 6 descrições na categoria histórica certa.</li>
+    <li><b>Teste 1 — classificar.</b> <i>Clicar:</i> na categoria. <span class="sig"><i>Vê:</i> acerto/erro com o porquê e exemplo real. <i>Significa:</i> cada categoria mudou o que o PLN conseguia fazer — de tradutores travados a assistentes fluentes.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Abaixo aparece uma <b>descrição de abordagem</b>.<br>
+    <b>Passo 2:</b> Clique na <b>categoria</b> (Simbólica, Estatística, Neural, LLM).<br>
+    <b>Passo 3:</b> Se acertar, avança. Se errar, tenta de novo.<br>
+    <b>Passo 4:</b> Ao final, clique em "🔄 Jogar de novo".<br><br>
+    <b>Dica:</b> regras à mão = simbólica; probabilidades de textos = estatística; redes profundas = neural; ChatGPT = LLM.
+  </div>
+  <div id="o2"></div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u21"><p>1) As primeiras décadas do PLN usavam…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Regras e gramáticas escritas à mão — a era simbólica.">regras e símbolos escritos à mão</button>
+      <button class="q" data-fb="❌ Redes neurais vieram décadas depois.">redes neurais</button>
+      <button class="q" data-fb="❌ Big data é da era estatística/neural.">big data</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u22"><p>2) A abordagem estatística aprende com…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Probabilidades extraídas de grandes volumes de texto.">probabilidades extraídas de dados</button>
+      <button class="q" data-fb="❌ Regras fixas é a simbólica.">regras fixas</button>
+      <button class="q" data-fb="❌ Só dicionários manuais é a simbólica.">dicionários manuais apenas</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u23"><p>3) A categoria atual é dominada por…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Modelos neurais e grandes modelos de linguagem (transformers).">modelos neurais e grandes modelos de linguagem</button>
+      <button class="q" data-fb="❌ Cartões perfurados são da pré-história.">cartões perfurados</button>
+      <button class="q" data-fb="❌ Só simbólico não domina hoje.">sistemas puramente simbólicos</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Processamento_de_linguagem_natural">Processamento de linguagem natural — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Alan_Turing">Alan Turing — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 03 -->
+<section id="d3" class="demo">
+  <h2>03 — O programa ELIZA e seus 5 problemas técnicos</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>"Efeito ELIZA":</b> pessoas se apegaram ao bot achando que ele "entendia" — ele só reformatava suas frases. Igual atribuir inteligência a um chatbot simples hoje.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>ELIZA (1966, Weizenbaum, MIT):</b> chatbot que imitava um psicoterapeuta rogeriano usando padrões e respostas prontas.</li>
+    <li><b>Os 5 problemas técnicos:</b> (1) sem compreensão real de significado; (2) só casamento de padrões/keywords; (3) respostas prontas (scripts); (4) sem memória/contexto longo; (5) sem conhecimento de mundo (ilusão de entendimento).</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> uma mini-ELIZA de verdade: digite algo e veja a resposta E qual regra disparou.</li>
+    <li><b>Teste 1 — conversar.</b> <i>Clicar:</i> "Enviar" com frases como "estou triste" ou "minha mãe não me entende". <span class="sig"><i>Vê:</i> a resposta pronta e o keyword que disparou. <i>Significa:</i> ELIZA não entende nada — só casa padrões e devolve scripts; por isso parece "inteligente" sem ser.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — os 5 problemas.</b> <i>Clicar:</i> "Ver os 5 problemas técnicos". <span class="sig"><i>Vê:</i> a lista. <i>Significa:</i> cada problema é uma limitação que as gerações seguintes de PLN tentaram superar.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Digite uma frase no campo (ex.: "estou triste" ou "fale sobre minha família").<br>
+    <b>Passo 2:</b> Clique em <b>💬 Enviar</b> e veja a resposta + a regra que disparou.<br>
+    <b>Passo 3:</b> Clique em <b>️ Ver os 5 problemas técnicos</b>.<br>
+    <b>Passo 4:</b> Clique em <b>🔄 Limpar conversa</b> para refazer.<br><br>
+    <b>Dica:</b> repare que a ELIZA só "espelha" — nunca entende.
+  </div>
+  <input type="text" id="elizaIn" placeholder="Digite algo para a ELIZA...">
+  <button onclick="eliza()">💬 Enviar</button>
+  <button onclick="verProb()">⚠️ Ver os 5 problemas técnicos</button>
+  <button onclick="limpE()">🔄 Limpar conversa</button>
+  <div id="outE">Converse com a mini-ELIZA e observe o casamento de padrões.</div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u31"><p>1) ELIZA simulava…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Um psicoterapeuta rogeriano que reformula as falas do paciente.">um psicoterapeuta rogeriano</button>
+      <button class="q" data-fb="❌ Não era tradutor.">um tradutor automático</button>
+      <button class="q" data-fb="❌ Não jogava xadrez.">um jogador de xadrez</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u32"><p>2) ELIZA funcionava por…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Casamento de padrões e respostas prontas — sem entendimento.">casamento de padrões e respostas prontas</button>
+      <button class="q" data-fb="❌ Não havia compreensão real.">compreensão real da linguagem</button>
+      <button class="q" data-fb="❌ Redes neurais não existiam nesse uso em 1966.">redes neurais profundas</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u33"><p>3) Um dos problemas técnicos de ELIZA era…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Sem compreensão real de significado — só espelhava padrões.">não ter compreensão real do significado</button>
+      <button class="q" data-fb="❌ Ela era rápida; o problema era entendimento.">ser lenta demais</button>
+      <button class="q" data-fb="❌ Memória não era o gargalo; entendimento sim.">usar memória demais</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://en.wikipedia.org/wiki/ELIZA">ELIZA (Wikipédia, em inglês)</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Processamento_de_linguagem_natural">Processamento de linguagem natural — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 04 -->
+<section id="d4" class="demo">
+  <h2>04 — Lógica de programação × PLN</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>SE-ENTÃO do código:</b> exato e determinístico. <b>"Tá frio?":</b> depende de quem fala, onde, quando — contexto e probabilidade.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Lógica de programação:</b> comandos exatos, sem ambiguidade; mesma entrada, mesma saída.</li>
+    <li><b>PLN:</b> lida com linguagem ambígua e dependente de contexto; usa estatística para "apostar" no sentido.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> jogo de classificar 6 frases como "lógica de programação" ou "PLN".</li>
+    <li><b>Teste 1 — classificar.</b> <i>Clicar:</i> no lado certo. <span class="sig"><i>Vê:</i> acerto/erro com o porquê. <i>Significa:</i> programação é exata; linguagem humana é probabilística — por isso PLN precisa de outro ferramental.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Abaixo aparece uma <b>frase/situação</b>.<br>
+    <b>Passo 2:</b> Clique em <b>Lógica de programação</b> ou <b>PLN</b>.<br>
+    <b>Passo 3:</b> Se acertar, avança. Se errar, tenta de novo.<br>
+    <b>Passo 4:</b> Ao final, clique em "🔄 Jogar de novo".<br><br>
+    <b>Dica:</b> exato e determinístico = lógica; ambíguo e contextual = PLN.
+  </div>
+  <div id="o4"></div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u41"><p>1) A lógica de programação é…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Exata e determinística — mesma entrada, mesma saída.">exata e determinística</button>
+      <button class="q" data-fb="❌ Ambígua é a linguagem natural.">ambígua</button>
+      <button class="q" data-fb="❌ Probabilística é o PLN.">probabilística</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u42"><p>2) O PLN lida com linguagem…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Ambígua e dependente de contexto — como "tá frio?".">ambígua e dependente de contexto</button>
+      <button class="q" data-fb="❌ Só comandos exatos é programação.">de comandos exatos apenas</button>
+      <button class="q" data-fb="❌ Só números não é linguagem natural.">apenas numérica</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u43"><p>3) Por causa da ambiguidade, o PLN se apoia em…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Probabilidades e estatística para apostar no sentido certo.">probabilidades e estatística</button>
+      <button class="q" data-fb="❌ Só SE-ENTÃO não resolve ambiguidade.">regras SE-ENTÃO apenas</button>
+      <button class="q" data-fb="❌ Hardware não resolve sentido.">apenas hardware mais rápido</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/L%C3%B3gica">Lógica — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Processamento_de_linguagem_natural">Processamento de linguagem natural — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 05 -->
+<section id="d5" class="demo">
+  <h2>05 — Modelos N-gramas</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Teclado do celular:</b> ao digitar "bom", ele sugere "dia" — porque no corpus "bom dia" é o bigrama mais frequente. É um modelo N-grama em ação.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>N-grama:</b> sequência de n palavras (unigrama 1, bigrama 2, trigrama 3).</li>
+    <li><b>Modelo N-grama:</b> prevê a próxima palavra pela frequência com que ela segue as anteriores no corpus.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> um mini-corpus; clique numa palavra e veja as próximas mais prováveis com porcentagens.</li>
+    <li><b>Teste 1 — prever.</b> <i>Clicar:</i> em "bom", "eu", "quero" ou "adoro". <span class="sig"><i>Vê:</i> as próximas palavras e suas probabilidades. <i>Significa:</i> o modelo não "entende" — só conta co-ocorrências; ainda assim sugere bem, como o teclado do celular.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Clique numa <b>palavra</b> do corpus (bom, eu, quero, adoro).<br>
+    <b>Passo 2:</b> Veja as <b>próximas palavras</b> e suas probabilidades.<br>
+    <b>Passo 3:</b> Clique em <b>🔄 Reiniciar</b> para refazer.<br><br>
+    <b>Dica:</b> probabilidade = quantas vezes a palavra seguiu, dividido pelo total de seguidoras.
+  </div>
+  <div style="margin:10px 0">
+    <button class="bar" onclick="ngram('bom')">bom</button>
+    <button class="bar" onclick="ngram('eu')">eu</button>
+    <button class="bar" onclick="ngram('quero')">quero</button>
+    <button class="bar" onclick="ngram('adoro')">adoro</button>
+    <button onclick="resetN()">🔄 Reiniciar</button>
+  </div>
+  <div id="outN">Clique numa palavra para ver as próximas mais prováveis.</div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u51"><p>1) Um modelo bigrama prevê a próxima palavra usando…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Só a palavra anterior — como "bom" sugerindo "dia".">a palavra anterior</button>
+      <button class="q" data-fb="❌ O texto todo seria um modelo maior.">o texto inteiro</button>
+      <button class="q" data-fb="❌ Não é aleatório; é frequência.">uma letra aleatória</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u52"><p>2) No corpus "eu quero café / eu quero chá / eu adoro café", a probabilidade de "quero" depois de "eu" é…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! "quero" aparece 2 de 3 vezes depois de "eu" = 2/3.">2/3 (cerca de 67%)</button>
+      <button class="q" data-fb="❌ 1/3 seria "adoro".">1/3</button>
+      <button class="q" data-fb="❌ Não é sempre; há "adoro" também.">100%</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u53"><p>3) N-gramas são usados em…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Autocompletar e sugestão de texto do teclado.">autocompletar e sugestão de digitação</button>
+      <button class="q" data-fb="❌ Impressão não usa N-gramas.">impressão de documentos</button>
+      <button class="q" data-fb="❌ Formatação não usa N-gramas.">formatação de texto</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://en.wikipedia.org/wiki/N-gram">N-grama (Wikipédia, em inglês)</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Processamento_de_linguagem_natural">Processamento de linguagem natural — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 06 -->
+<section id="d6" class="demo">
+  <h2>06 — Identificação de idiomas e assistentes virtuais</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Google Tradutor "detectar idioma":</b> ele conta palavras características (stopwords) e n-gramas de caracteres para apostar o idioma — exatamente o que a demo faz.</li>
+    <li><b>Siri/Alexa:</b> ouvir (ASR) → entender (NLU) → decidir → falar (TTS).</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Identificação de idioma:</b> classificar o idioma de um texto usando stopwords e padrões característicos.</li>
+    <li><b>Assistente virtual:</b> aplica PLN de ponta a ponta (ASR, NLU, resposta, TTS).</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> (a) detector de idioma por stopwords; (b) ordenar o pipeline do assistente.</li>
+    <li><b>Teste 1 — detectar idioma.</b> <i>Clicar:</i> num texto de exemplo. <span class="sig"><i>Vê:</i> a contagem de stopwords por idioma e o vencedor. <i>Significa:</i> é o mesmo truque do "detectar idioma" do tradutor — simples, rápido e eficaz.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — pipeline.</b> <i>Clicar:</i> nas 4 etapas na ordem certa. <span class="sig"><i>Vê:</i> ouvir → entender → decidir → falar. <i>Significa:</i> o assistente encadeia módulos de PLN; se um falha, a resposta sai errada.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Clique num <b>texto de exemplo</b> (PT, EN ou ES) para detectar o idioma.<br>
+    <b>Passo 2:</b> Depois, ordene o <b>pipeline do assistente</b> clicando nas etapas.<br>
+    <b>Passo 3:</b> Use "🔄 Reiniciar" para refazer.<br><br>
+    <b>Dica:</b> stopwords são as palavras mais comuns de cada língua (de, the, el…).
+  </div>
+  <div style="margin:10px 0">
+    <button class="bar" onclick="detect(0)">Texto A</button>
+    <button class="bar" onclick="detect(1)">Texto B</button>
+    <button class="bar" onclick="detect(2)">Texto C</button>
+  </div>
+  <div id="outL"></div>
+  <div id="o6"></div>
+  <button onclick="reset6()" style="margin-top:8px">🔄 Reiniciar</button>
+
+  <details class="info"><summary>🗺️ Mapa da aula (visão geral)</summary>
+    <p><b>Ambiguidade</b> (o desafio) + <b>Teste de Turing</b> (a meta) → <b>4 categorias</b> (simbólica → estatística → neural → LLM) → <b>ELIZA</b> (o começo ingênuo e seus 5 problemas) → <b>lógica × PLN</b> (exato × probabilístico) → <b>N-gramas</b> (prever a próxima palavra) → <b>idiomas + assistentes</b> (PLN em produto real).</p>
+  </details>
+  <details class="info"><summary>📝 Cola rápida (uma linha por termo)</summary><ul>
+    <li><b>Ambiguidade:</b> várias leituras válidas — o cerne da dificuldade.</li>
+    <li><b>Turing:</b> máquina conversa sem ser distinguida de humano.</li>
+    <li><b>4 categorias:</b> simbólica, estatística, neural, LLM.</li>
+    <li><b>ELIZA:</b> padrões + scripts; 5 problemas (sem compreensão real etc.).</li>
+    <li><b>Lógica:</b> exata. <b>PLN:</b> probabilístico e contextual.</li>
+    <li><b>N-grama:</b> prevê a próxima pela frequência (autocompletar).</li>
+    <li><b>Idioma:</b> stopwords/n-gramas de caracteres. <b>Assistente:</b> ouvir→entender→decidir→falar.</li>
+  </ul></details>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u61"><p>1) A identificação de idioma pode usar…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Stopwords e n-gramas característicos de cada língua.">stopwords e n-gramas característicos</button>
+      <button class="q" data-fb="❌ Cor do texto não existe em texto puro.">a cor do texto</button>
+      <button class="q" data-fb="❌ Tamanho da fonte não indica idioma.">o tamanho da fonte</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u62"><p>2) O pipeline típico de um assistente virtual é…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Ouvir (ASR) → entender (NLU) → decidir → falar (TTS).">ouvir, entender, decidir, falar</button>
+      <button class="q" data-fb="❌ Falar antes de ouvir não faz sentido.">falar, ouvir, imprimir</button>
+      <button class="q" data-fb="❌ Ignorar não é etapa.">ler, ignorar, falar</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u63"><p>3) Siri, Alexa e Google Assistant são exemplos de…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Assistentes virtuais que aplicam PLN de ponta a ponta.">assistentes virtuais que usam PLN</button>
+      <button class="q" data-fb="❌ Não são compiladores.">compiladores</button>
+      <button class="q" data-fb="❌ Não são planilhas.">planilhas eletrônicas</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Processamento_de_linguagem_natural">Processamento de linguagem natural — Wikipédia</a>
+    <a target="_blank" href="https://en.wikipedia.org/wiki/Virtual_assistant">Assistente virtual (Wikipédia, em inglês)</a>
+  </details>
+</section>
+
+<script>
+// Trocar de aba NÃO reseta as demos (progresso mantido)
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.demo').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); document.getElementById(b.dataset.t).classList.add('active');
+});
+function aposta(){ document.body.classList.toggle('aposta');
+  document.getElementById('apBtn').textContent='🎲 Modo aposta: '+(document.body.classList.contains('aposta')?'ON':'OFF'); }
+function rev(b){ b.previousElementSibling.classList.add('shown'); b.classList.add('off'); }
+document.querySelectorAll('.qq').forEach(qq=>{
+ const btns=[...qq.querySelectorAll('button.q')];
+ const fb=qq.querySelector('.fb');
+ for(let i=btns.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [btns[i],btns[j]]=[btns[j],btns[i]]; }
+ btns.forEach(b=>qq.insertBefore(b,fb));
+});
+document.addEventListener('click',e=>{
+  const b=e.target.closest('.q'); if(!b) return;
+  const fb=b.closest('.qq').querySelector('.fb');
+  b.classList.add(b.dataset.ok=='1'?'ok':'bad');
+  fb.textContent=b.dataset.fb||'';
+});
+
+// Fábrica de jogos de classificação
+function makeGame(outId, opts, items, realEx){
+ const g={i:0,s:0};
+ g.draw=function(){
+  const out=document.getElementById(outId);
+  if(g.i>=items.length){
+   out.innerHTML='<b>🏁 Fim!</b> Você acertou '+g.s+' de '+items.length+'. <b>Exemplo real:</b> '+realEx+'<br><button id="rg_'+outId+'" style="margin-top:8px;font-size:1rem">🔄 Jogar de novo</button>';
+   document.getElementById('rg_'+outId).onclick=function(){g.i=0;g.s=0;g.draw();};
+   return;
+  }
+  const it=items[g.i];
+  out.innerHTML='<b>Situação '+(g.i+1)+' de '+items.length+':</b> "'+it.t+'"<br>'+
+   opts.map(o=>'<button class="bar" data-o="'+o+'">'+o+'</button>').join(' ');
+  out.querySelectorAll('button').forEach(btn=>{ btn.onclick=function(){ g.pick(btn.getAttribute('data-o')); }; });
+ };
+ g.pick=function(v){
+  const it=items[g.i];
+  if(v===it.ok){
+   g.s++;
+   document.getElementById(outId).innerHTML=it.fb+'<br><button id="nx_'+outId+'" style="margin-top:6px">próxima ▶</button>';
+   document.getElementById('nx_'+outId).onclick=function(){g.i++;g.draw();};
+  } else {
+   document.getElementById(outId).innerHTML='❌ Tente de novo. <b>Dica:</b> '+it.hint+'<br><b>Situação '+(g.i+1)+' de '+items.length+':</b> "'+it.t+'"<br>'+
+    opts.map(o=>'<button class="bar" data-o="'+o+'">'+o+'</button>').join(' ');
+   document.getElementById(outId).querySelectorAll('button').forEach(btn=>{ btn.onclick=function(){ g.pick(btn.getAttribute('data-o')); }; });
+  }
+ };
+ return g;
+}
+
+// 01 - AMBIGUIDADE (aceita qualquer leitura) + TURING
+const AMB=[
+ {t:'Vi o homem com o telescópio.',a:'Eu usei o telescópio para ver o homem.',b:'O homem que eu vi carregava um telescópio.'},
+ {t:'O frango está pronto para comer.',a:'O frango está pronto para comer a ração.',b:'O frango está pronto para ser comido.'},
+ {t:'Viram a irmã do menino que corria.',a:'O menino corria.',b:'A irmã corria.'}
+];
+let ai=0;
+function drawAmb(){
+ const out=document.getElementById('o1');
+ if(ai>=AMB.length){
+  out.innerHTML='<b>🏁 Ambiguidade explorada!</b> Em todas as frases, as DUAS leituras eram válidas. <b>Exemplo real:</b> é por isso que o corretor do celular às vezes "entende" errado o que você quis dizer.<br><button id="rg_o1" style="margin-top:8px;font-size:1rem">🔄 Jogar de novo</button>';
+  document.getElementById('rg_o1').onclick=function(){ai=0;drawAmb();};
+  return;
+ }
+ const s=AMB[ai];
+ out.innerHTML='<b>Frase ambígua '+(ai+1)+' de '+AMB.length+':</b> "'+s.t+'"<br>Escolha UMA leitura:<br>'+
+  '<button class="bar" data-r="a">'+s.a+'</button><button class="bar" data-r="b">'+s.b+'</button>';
+ out.querySelectorAll('button').forEach(btn=>{
+  btn.onclick=function(){
+   const r=btn.getAttribute('data-r');
+   const outra=(r==='a')?s.b:s.a;
+   out.innerHTML='✅ Essa é uma leitura válida. <b>Mas atenção:</b> a outra também é: "'+outra+'" — exatamente por isso a frase é AMBÍGUA e o computador precisa escolher pelo contexto.<br><button id="nx_o1" style="margin-top:6px">próxima ▶</button>';
+   document.getElementById('nx_o1').onclick=function(){ai++;drawAmb();};
+  };
+ });
+}
+drawAmb();
+
+const TUR=[
+ {q:'Como você está hoje?',h:'Meio cansado, quase não dormi e ainda tenho reunião às 9 😩 e você?',m:'Eu sou um assistente virtual. Não possuo sentimentos, mas estou operacional.'},
+ {q:'O que você acha da chuva?',h:'Adoro! Domingo com chuva pede café e um filme.',m:'A chuva é um fenômeno meteorológico de precipitação atmosférica.'}
+];
+let ti=0;
+function drawTur(){
+ const out=document.getElementById('outT');
+ if(ti>=TUR.length){
+  out.innerHTML='<b>🏁 Teste de Turing concluído!</b> Você identificou a máquina pelas respostas "sem emoção". <b>Exemplo real:</b> é o mesmo jogo que o artigo de Turing (1950) propôs para decidir se máquinas pensam.<br><button id="rg_outT" style="margin-top:8px;font-size:1rem">🔄 Jogar de novo</button>';
+  document.getElementById('rg_outT').onclick=function(){ti=0;drawTur();};
+  return;
+ }
+ const s=TUR[ti];
+ out.innerHTML='<b>Teste de Turing — rodada '+(ti+1)+' de '+TUR.length+':</b> Pergunta: "'+s.q+'"<br>Qual resposta veio da <b>máquina</b>?<br>'+
+  '<button class="bar" data-r="h">Resposta 1: "'+s.h+'"</button><button class="bar" data-r="m">Resposta 2: "'+s.m+'"</button>';
+ out.querySelectorAll('button').forEach(btn=>{
+  btn.onclick=function(){
+   const r=btn.getAttribute('data-r');
+   if(r==='m'){
+    out.innerHTML='✅ Isso! A resposta 2 é da máquina — formal, sem emoção, sem contexto pessoal.<br><button id="nx_outT" style="margin-top:6px">próxima ▶</button>';
+   } else {
+    out.innerHTML='❌ Na verdade a máquina é a outra — repare no tom formal e "sem vida". Tente de novo.<br><button class="bar" data-r="h">Resposta 1</button><button class="bar" data-r="m">Resposta 2</button>';
+    out.querySelectorAll('button').forEach(b2=>{ b2.onclick=function(){ if(b2.getAttribute('data-r')==='m'){ out.innerHTML='✅ Isso! A máquina é a resposta formal e sem emoção.<br><button id="nx_outT" style="margin-top:6px">próxima ▶</button>'; document.getElementById('nx_outT').onclick=function(){ti++;drawTur();}; } }; });
+    return;
+   }
+   document.getElementById('nx_outT').onclick=function(){ti++;drawTur();};
+  };
+ });
+}
+drawTur();
+
+// 02 - CATEGORIAS HISTÓRICAS
+const g2=makeGame('o2',['Simbólica','Estatística','Neural','LLM'],[
+ {t:'Gramáticas e regras de tradução escritas à mão por linguistas',ok:'Simbólica',hint:'regras à mão',fb:'✅ Simbólica: a era das regras e gramáticas manuais (anos 50–70).'},
+ {t:'Tradutor que escolhe a palavra mais provável contando frequências em milhões de textos',ok:'Estatística',hint:'probabilidades de textos',fb:'✅ Estatística: probabilidades extraídas de grandes corpora (anos 90–2000).'},
+ {t:'Rede neural profunda que aprende representações de palavras sozinha',ok:'Neural',hint:'redes profundas',fb:'✅ Neural: redes neurais aprendem representações (2010+).'},
+ {t:'Modelo transformer treinado em escala gigante que escreve textos fluentes',ok:'LLM',hint:'ChatGPT',fb:'✅ LLM: grandes modelos de linguagem (2018+), como o ChatGPT.'},
+ {t:'Sistema especialista que aplica regras SE-ENTÃO de um dicionário manual',ok:'Simbólica',hint:'SE-ENTÃO manual',fb:'✅ Simbólica: regras SE-ENTÃO escritas à mão.'},
+ {t:'Modelo que ajusta milhões de pesos por retropropagação em GPUs',ok:'Neural',hint:'redes e GPUs',fb:'✅ Neural: treinamento por retropropagação em hardware paralelo.'}
+],'a evolução é visível no Google Tradutor: começou simbólico, virou estatístico e hoje é neural/LLM.');
+g2.draw();
+
+// 03 - ELIZA
+const RULES=[
+ {k:['mae','pai','familia','irmao','irma'],r:'Fale mais sobre sua família.'},
+ {k:['triste','infeliz','chorar','mal'],r:'Sinto muito que você esteja assim. Por que você se sente assim?'},
+ {k:['amo','gosto'],r:'Por que você diz isso?'},
+ {k:['sim'],r:'Você parece bem certo disso.'},
+ {k:['nao'],r:'Por que não?'},
+ {k:['?'],r:'Essa é uma boa pergunta. E o que você pensa?'}
+];
+const DEF=['Por favor, continue.','Como isso faz você se sentir?','Pode me dar um exemplo?'];
+let di=0;
+function eliza(){
+ const txt=document.getElementById('elizaIn').value.toLowerCase().trim();
+ if(!txt){ document.getElementById('outE').innerHTML='⚠️ Digite algo primeiro!'; return; }
+ let resp=null, trig=null;
+ for(const ru of RULES){
+  for(const k of ru.k){ if(txt.includes(k)){ resp=ru.r; trig=k; break; } }
+  if(resp) break;
+ }
+ if(!resp){ resp=DEF[di%DEF.length]; di++; trig='(nenhum — resposta padrão)'; }
+ document.getElementById('outE').innerHTML='<b>Você:</b> '+txt+'<br><b>ELIZA:</b> '+resp+'<br><b>Regra disparada (keyword):</b> '+trig+'<br><i>Exemplo real:</i> é exatamente assim que a ELIZA de 1966 "conversava" — casamento de padrões, sem entender nada.';
+}
+function verProb(){
+ document.getElementById('outE').innerHTML='<b>Os 5 problemas técnicos da ELIZA:</b><br>1. Sem compreensão real do significado.<br>2. Só casamento de padrões/keywords.<br>3. Respostas prontas (scripts).<br>4. Sem memória/contexto longo.<br>5. Sem conhecimento de mundo (ilusão de entendimento).<br><i>Exemplo real:</i> o "Efeito ELIZA" — usuários atribuíam inteligência a um programa que só espelhava frases.';
+}
+function limpE(){ document.getElementById('elizaIn').value=''; document.getElementById('outE').textContent='Converse com a mini-ELIZA e observe o casamento de padrões.'; }
+
+// 04 - LÓGICA × PLN
+const g4=makeGame('o4',['Lógica de programação','PLN'],[
+ {t:'SE o saldo for maior que zero ENTÃO aprovar o saque',ok:'Lógica de programação',hint:'exato e determinístico',fb:'✅ Lógica de programação: regra exata, mesma entrada mesma saída.'},
+ {t:'"Tá frio aí?" — depende de quem fala, onde e quando',ok:'PLN',hint:'ambíguo e contextual',fb:'✅ PLN: o sentido depende de contexto e de quem fala.'},
+ {t:'x = x + 1 sempre incrementa exatamente um',ok:'Lógica de programação',hint:'determinístico',fb:'✅ Lógica de programação: operação exata e previsível.'},
+ {t:'"Ele não gostou nada do prato" — ironia ou sinceridade?',ok:'PLN',hint:'ambiguidade/ironia',fb:'✅ PLN: detectar ironia exige probabilidade e contexto.'},
+ {t:'Um loop FOR executa o bloco exatamente n vezes',ok:'Lógica de programação',hint:'exato',fb:'✅ Lógica de programação: comportamento determinístico.'},
+ {t:'"Banana está madura?" — madura para comer, para vender, para quê?',ok:'PLN',hint:'contextual',fb:'✅ PLN: a palavra muda de sentido pelo contexto.'}
+],'é a diferença entre um compilador (lógica) e a Siri (PLN): um exige exatidão, o outro aposta no sentido.');
+g4.draw();
+
+// 05 - N-GRAMAS
+const CORPUS=['bom dia','bom tarde','bom noite','eu quero café','eu quero chá','eu adoro café'];
+function ngram(w){
+ const counts={};
+ CORPUS.forEach(ph=>{
+  const ws=ph.split(' ');
+  for(let i=0;i<ws.length-1;i++){ if(ws[i]===w){ counts[ws[i+1]]=(counts[ws[i+1]]||0)+1; } }
+ });
+ const total=Object.values(counts).reduce((a,b)=>a+b,0);
+ const out=document.getElementById('outN');
+ if(!total){ out.innerHTML='A palavra "'+w+'" não tem seguidoras no corpus.'; return; }
+ let html='Depois de <b>"'+w+'"</b> no corpus:<br>';
+ Object.keys(counts).sort((a,b)=>counts[b]-counts[a]).forEach(k=>{
+  const p=Math.round(counts[k]/total*100);
+  html+='<b>'+k+'</b>: '+p+'% ('+counts[k]+' de '+total+')<br>';
+ });
+ html+='<i>Exemplo real:</i> é assim que o teclado do celular sugere "dia" depois de "bom".';
+ out.innerHTML=html;
+}
+function resetN(){ document.getElementById('outN').textContent='Clique numa palavra para ver as próximas mais prováveis.'; }
+
+// 06 - IDIOMAS + PIPELINE
+const SW={
+ pt:['de','a','o','que','e','do','da','em','um','uma','para','não','os','as','no','está'],
+ en:['the','of','and','to','in','is','it','that','for','on','are','not','a'],
+ es:['el','la','los','las','de','que','y','en','un','una','para','no','es','está','lo']
+};
+const TEXTS=[
+ 'O clima de hoje não está bom para um passeio no parque.',
+ 'The weather today is not good for a walk in the park.',
+ 'El clima de hoy no es bueno para un paseo en el parque.'
+];
+function detect(i){
+ const t=TEXTS[i].toLowerCase().split(/[^a-zà-ú]+/i);
+ const res={pt:0,en:0,es:0};
+ t.forEach(w=>{ ['pt','en','es'].forEach(L=>{ if(SW[L].includes(w)) res[L]++; }); });
+ const win=Object.keys(res).reduce((a,b)=>res[a]>=res[b]?a:b);
+ const nome={pt:'Português',en:'Inglês',es:'Espanhol'}[win];
+ document.getElementById('outL').innerHTML='<b>Contagem de stopwords:</b> PT='+res.pt+' | EN='+res.en+' | ES='+res.es+'<br><b>Idioma detectado:</b> '+nome+'<br><i>Exemplo real:</i> é o mesmo truque do botão "detectar idioma" do Google Tradutor.';
+}
+const PIPE=['Ouvir (ASR)','Entender (NLU)','Decidir a resposta','Falar (TTS)'];
+let curP=[];
+function reset6(){
+ curP=[];
+ const w=document.getElementById('o6'); w.innerHTML='<b>Pipeline do assistente:</b> clique na ordem certa.<br>';
+ [...PIPE].sort(()=>Math.random()-.5).forEach(s=>{
+  const d=document.createElement('span'); d.className='blok'; d.textContent=s;
+  d.onclick=()=>pickP(d,s); w.appendChild(d);
+ });
+}
+function pickP(el,s){
+ if(s!==PIPE[curP.length]){ document.getElementById('o6').innerHTML+='⚠️ Ordem errada! Próxima: "'+PIPE[curP.length]+'".<br>'; return; }
+ el.classList.add('on'); curP.push(s);
+ if(curP.length===PIPE.length){
+  document.getElementById('o6').innerHTML+='<b>✅ Pipeline completo!</b> Ouvir → Entender → Decidir → Falar. <b>Exemplo real:</b> quando a Siri "erra", quase sempre um desses módulos falhou.';
+ }
+}
+
+reset6();
+</script>
+</body>
+</html>
