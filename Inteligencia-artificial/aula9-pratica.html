@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IA Interativo — Aula 9 (Unidade 4)</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:system-ui,sans-serif;background:#f4f7f6;margin:0;padding:18px;color:#1d1d1f}
+h1{font-size:1.25rem} h2{margin-top:0}
+nav{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.tab{border:2px solid #1d1d1f;background:#fff;border-radius:10px;padding:8px 12px;cursor:pointer;box-shadow:3px 3px 0 #3b82f6;font-weight:600}
+.tab.active{background:#3b82f6;color:#fff}
+.demo{display:none;background:#fff;border:2px solid #1d1d1f;border-radius:14px;padding:16px;box-shadow:5px 5px 0 #3b82f6}
+.demo.active{display:block}
+button{border:2px solid #1d1d1f;border-radius:8px;background:#fff;padding:6px 10px;cursor:pointer;font-weight:600}
+button:hover{background:#eff6ff}
+details{margin:10px 0;border-radius:10px;padding:8px 12px;border:2px solid #1d1d1f}
+summary{cursor:pointer;font-weight:700}
+.info{background:#eaf4ff}.steps{background:#fff8dc}.links{background:#f2f2f2}.real{background:#eaffe8}.tool{background:#f5eaff}.quiz{background:#ffe8f0}
+.links a{color:#0a66c2;display:inline-block;margin:2px 12px 2px 0}
+.q{margin:2px}.q.ok{background:#b9f6ca}.q.bad{background:#ffb3b3}
+.fb{font-size:.85rem;background:#fff;border-radius:6px;padding:4px 8px;margin:4px 0}
+#o1,#o2,#o3,#o4,#o5,#o6,#painelP{background:#fff;border:2px dashed #999;border-radius:8px;padding:10px;margin:8px 0;min-height:40px}
+.bar{display:inline-block;border:2px solid #1d1d1f;border-radius:8px;padding:6px 12px;margin:3px;cursor:pointer;background:#fff;font-weight:600}
+.blok{display:inline-block;border:2px solid #1d1d1f;border-radius:8px;padding:8px 14px;margin:4px;cursor:pointer;font-weight:600;background:#fff}
+.blok.on{background:#2dd4a7}
+.rv{display:none;margin-left:6px}
+.instrucao{background:#fff3cd;border:2px solid #ffc107;border-radius:8px;padding:10px;margin:8px 0}
+.instrucao b{color:#856404}
+body.aposta .sig{display:none}
+body.aposta .sig.shown{display:inline}
+body.aposta .rv{display:inline-block}
+body.aposta .rv.off{display:none}
+#apBtn{box-shadow:3px 3px 0 #d4a017}
+</style>
+</head>
+<body>
+<h1>🧠 IA — Aula 9 (Unidade 4, págs. 20–28): extração, recuperação e classificação</h1>
+<button id="apBtn" onclick="aposta()">🎲 Modo aposta: OFF</button>
+<p>Mesma estrutura das aulas anteriores: 🌍 → 🔤 → 🎤 plano de testes → demo → 🧠 quiz (3 alternativas embaralhadas, cada uma com a própria explicação, tudo por extenso) → 🔗 Aprofundar. Com 🎲 ligado, a turma aposta antes de revelar.</p>
+
+<details class="tool"><summary>🧰 Glossário de ferramentas (leia uma vez!)</summary><ul>
+  <li><b>Classificação de dados:</b> atribuir categorias a textos/itens usando regras (ex.: lógica de primeira ordem).</li>
+  <li><b>RNA:</b> Rede Neural Artificial — modelo inspirado no neurônio biológico.</li>
+  <li><b>Peso sináptico:</b> a "importância" que cada entrada tem na decisão do neurônio.</li>
+  <li><b>Busca binária:</b> achar um item num vetor ORDENADO dividindo ao meio a cada passo.</li>
+  <li><b>Recuperação estatística:</b> ranquear documentos pela frequência/relevância dos termos da consulta.</li>
+  <li><b>Extração de informação:</b> transformar texto livre em dados estruturados (quem, o quê, onde, quando).</li>
+</ul></details>
+
+<nav>
+  <button class="tab active" data-t="d1">01 Classificação com lógica</button>
+  <button class="tab" data-t="d2">02 RNA: analogia biológica</button>
+  <button class="tab" data-t="d3">03 Camadas, unidades e pesos</button>
+  <button class="tab" data-t="d4">04 Recuperação da informação</button>
+  <button class="tab" data-t="d5">05 Extração de informação</button>
+  <button class="tab" data-t="d6">06 Juntando as peças</button>
+</nav>
+
+<!-- 01 -->
+<section id="d1" class="demo active">
+  <h2>01 — Classificação dos dados: categorização com lógica de primeira ordem</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Filtro de spam por regras:</b> "SE contém 'promoção' E 'clique' ENTÃO spam" — é lógica de primeira ordem aplicada a texto, como no seu e-mail.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Lógica de primeira ordem:</b> representa fatos e regras com predicados e quantificadores; permite classificar por condições.</li>
+    <li><b>Categorização de textos:</b> atribuir um texto a uma categoria pré-definida (spam, trabalho, pessoal…).</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> três regras lógicas (SPAM, TRABALHO, PESSOAL) e 4 textos para classificar.</li>
+    <li><b>Teste 1 — classificar.</b> <i>Clicar:</i> na categoria de cada texto. <span class="sig"><i>Vê:</i> qual regra "disparou". <i>Significa:</i> classificar com lógica é aplicar regras SE-ENTÃO ao conteúdo — a base dos filtros de e-mail.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Leia as <b>regras</b> no topo e o <b>texto</b> abaixo.<br>
+    <b>Passo 2:</b> Clique em <b>SPAM</b>, <b>TRABALHO</b> ou <b>PESSOAL</b>.<br>
+    <b>Passo 3:</b> Se acertar, avança. Se errar, tenta de novo.<br>
+    <b>Passo 4:</b> Ao final, clique em "🔄 Jogar de novo".<br><br>
+    <b>Dica:</b> procure as palavras-chave de cada regra (promoção/clique; reunião/pauta; amor/saudade).
+  </div>
+  <div id="o1"></div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u11"><p>1) Na categorização com lógica de primeira ordem…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Aplicam-se regras com condições (SE-ENTÃO) para categorizar o texto.">aplicam-se regras com condições para atribuir categorias</button>
+      <button class="q" data-fb="❌ Contar frequência é método estatístico, não lógico.">conta-se a frequência de palavras</button>
+      <button class="q" data-fb="❌ Neurônios são outra abordagem.">desenha-se um neurônio</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u12"><p>2) A regra "SE contém 'promoção' E 'clique' ENTÃO spam" é um exemplo de…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Uma regra lógica de classificação, como no filtro de e-mail.">regra lógica de classificação</button>
+      <button class="q" data-fb="❌ Peso sináptico é de RNA.">peso sináptico</button>
+      <button class="q" data-fb="❌ Busca binária é de recuperação.">busca binária</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u13"><p>3) Categorizar textos serve para…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Organizar documentos em categorias pré-definidas — como separar spam do resto.">organizar documentos em categorias pré-definidas</button>
+      <button class="q" data-fb="❌ Comprimir é outra coisa.">comprimir arquivos</button>
+      <button class="q" data-fb="❌ Ordenar números é ordenação, não categorização.">ordenar números</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/L%C3%B3gica_de_primeira_ordem">Lógica de primeira ordem — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Processamento_de_linguagem_natural">Processamento de linguagem natural — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 02 -->
+<section id="d2" class="demo">
+  <h2>02 — Redes Neurais Artificiais: a analogia biológica</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Neurônio de verdade:</b> dendritos RECEBEM sinais, o corpo/núcleo PROCESSA, o axônio TRANSMITE a outro neurônio. A RNA copia essa divisão de papéis.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Dendritos:</b> recebem sinais de outros neurônios.</li>
+    <li><b>Núcleo/corpo celular:</b> integra (soma) os sinais e decide.</li>
+    <li><b>Axônio:</b> transmite a decisão adiante.</li>
+    <li><b>Correspondência artificial:</b> dendritos = entradas; núcleo = processamento (soma); axônio = saída.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> jogo de casar cada parte biológica com seu equivalente artificial.</li>
+    <li><b>Teste 1 — casar.</b> <i>Clicar:</i> no equivalente correto. <span class="sig"><i>Vê:</i> acerto/erro com o porquê. <i>Significa:</i> a RNA não "copia" o cérebro, mas empresta a divisão de papéis: receber, integrar, transmitir.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Abaixo aparece uma <b>parte do neurônio biológico</b>.<br>
+    <b>Passo 2:</b> Clique no <b>equivalente artificial</b>.<br>
+    <b>Passo 3:</b> Se acertar, avança. Se errar, tenta de novo.<br>
+    <b>Passo 4:</b> Ao final, clique em "🔄 Jogar de novo".<br><br>
+    <b>Dica:</b> dendritos recebem = entradas; núcleo soma = processamento; axônio envia = saída.
+  </div>
+  <div id="o2"></div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u21"><p>1) No neurônio biológico, quem RECEBE os sinais são os…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Dendritos recebem sinais de outros neurônios.">dendritos</button>
+      <button class="q" data-fb="❌ O axônio transmite, não recebe.">axônios</button>
+      <button class="q" data-fb="❌ O núcleo integra, não recebe.">núcleos</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u22"><p>2) Quem TRANSMITE o sinal adiante é o…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! O axônio leva a decisão a outros neurônios.">axônio</button>
+      <button class="q" data-fb="❌ Dendritos recebem.">dendrito</button>
+      <button class="q" data-fb="❌ O núcleo integra/soma.">núcleo</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u23"><p>3) Na RNA, os dendritos correspondem às…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Entradas recebem os sinais, como os dendritos.">entradas</button>
+      <button class="q" data-fb="❌ Pesos são a "força" das conexões.">pesos</button>
+      <button class="q" data-fb="❌ Saída corresponde ao axônio.">saídas</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Neur%C3%B4nio">Neurônio — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Rede_neural_artificial">Rede neural artificial — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 03 -->
+<section id="d3" class="demo">
+  <h2>03 — Camadas, unidades e pesos sinápticos</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Decidir correr:</b> "tempo bom" pesa 0,6 e "tempo livre" pesa 0,6; se a soma passa do seu "limiar de preguiça" (0,8), você vai. É um perceptron decidindo!</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Unidade (neurônio artificial):</b> soma entradas × pesos e compara com um limiar.</li>
+    <li><b>Peso sináptico:</b> importância de cada entrada; é o que a rede APRENDE.</li>
+    <li><b>Camadas:</b> entrada → ocultas → saída.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> um perceptron com 2 entradas (tempo bom / tempo livre), pesos e limiar ajustáveis.</li>
+    <li><b>Teste 1 — ativar.</b> <i>Clicar:</i> nas entradas e mexa nos pesos/limiar. <span class="sig"><i>Vê:</i> o neurônio "dispara" ou não conforme a soma ponderada cruza o limiar. <i>Significa:</i> pesos maiores dão mais importância; o limiar é a "barra" que a soma precisa passar — é assim que a rede decide.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Ligue/desligue as <b>entradas</b> (tempo bom, tempo livre).<br>
+    <b>Passo 2:</b> Ajuste os <b>pesos</b> e o <b>limiar</b> nos controles.<br>
+    <b>Passo 3:</b> Veja no painel se o neurônio <b>dispara</b> (soma ≥ limiar).<br>
+    <b>Passo 4:</b> Clique em "🔄 Reiniciar" para refazer.<br><br>
+    <b>Dica:</b> soma = x1×p1 + x2×p2; dispara se soma ≥ limiar.
+  </div>
+  <div style="margin:10px 0">
+    <button class="bar" id="x1" onclick="tog(1)">☀️ Tempo bom: ON</button>
+    <button class="bar" id="x2" onclick="tog(2)">🕒 Tempo livre: OFF</button><br>
+    Peso 1: <input type="range" id="w1" min="0" max="1" step="0.1" value="0.6" oninput="updP()">
+    Peso 2: <input type="range" id="w2" min="0" max="1" step="0.1" value="0.6" oninput="updP()">
+    Limiar: <input type="range" id="th" min="0" max="1.5" step="0.1" value="0.8" oninput="updP()">
+    <button onclick="resetP()">🔄 Reiniciar</button>
+  </div>
+  <div id="painelP"></div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u31"><p>1) Os pesos sinápticos de uma RNA servem para…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Dar mais ou menos importância a cada entrada — é o que a rede aprende.">dar mais ou menos importância a cada entrada</button>
+      <button class="q" data-fb="❌ Armazenar texto não é função de peso.">armazenar texto</button>
+      <button class="q" data-fb="❌ Contar palavras é estatística.">contar palavras</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u32"><p>2) Um neurônio artificial "dispara" quando…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Quando a soma ponderada das entradas atinge o limiar.">a soma ponderada das entradas atinge o limiar</button>
+      <button class="q" data-fb="❌ Qualquer entrada não garante disparo.">recebe qualquer entrada</button>
+      <button class="q" data-fb="❌ Desligado não dispara.">está desligado</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u33"><p>3) As camadas de uma RNA são…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Entrada, camadas ocultas e saída.">entrada, ocultas e saída</button>
+      <button class="q" data-fb="❌ Há mais de uma camada.">apenas uma</button>
+      <button class="q" data-fb="❌ Núcleo e axônio são do neurônio biológico.">núcleo e axônio</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Rede_neural_artificial">Rede neural artificial — Wikipédia</a>
+    <a target="_blank" href="https://en.wikipedia.org/wiki/Perceptron">Perceptron (Wikipédia, em inglês)</a>
+  </details>
+</section>
+
+<!-- 04 -->
+<section id="d4" class="demo">
+  <h2>04 — Recuperação da informação: busca binária × estatística</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Procurar nome na lista telefônica ordenada:</b> você abre no meio e descarta metade — busca binária. <b>Google:</b> ranqueia páginas pela relevância dos termos — recuperação estatística.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Busca binária:</b> exige vetor ORDENADO; a cada passo descarta metade (log n).</li>
+    <li><b>Busca linear:</b> olha um a um (n).</li>
+    <li><b>Recuperação estatística:</b> ordena documentos pela frequência/relevância dos termos da consulta.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> (a) comparar busca binária × linear num vetor ordenado; (b) ranquear documentos pela consulta "rede neural".</li>
+    <li><b>Teste 1 — buscas.</b> <i>Clicar:</i> nos botões de busca. <span class="sig"><i>Vê:</i> a binária acha em 2 comparações; a linear em 5. <i>Significa:</i> ordenar os dados permite descartar metade a cada passo — ganho enorme em listas grandes.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — ranquear.</b> <i>Clicar:</i> "Ranquear documentos". <span class="sig"><i>Vê:</i> D1 > D3 > D2 pela contagem dos termos. <i>Significa:</i> é a lógica dos motores de busca: quanto mais o documento "casa" com a consulta, mais alto ele sobe.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Clique em <b>🔎 Busca binária</b> e <b>🐢 Busca linear</b> para comparar comparações.<br>
+    <b>Passo 2:</b> Clique em <b>📊 Ranquear documentos</b> para ver a ordenação estatística.<br>
+    <b>Passo 3:</b> Clique em "🔄 Reiniciar" para refazer.<br><br>
+    <b>Dica:</b> binária precisa de ordem; estatística ranqueia por frequência dos termos.
+  </div>
+  <div style="margin:10px 0">
+    <button onclick="binSearch()">🔎 Busca binária por "rede"</button>
+    <button onclick="linSearch()">🐢 Busca linear por "rede"</button>
+    <button onclick="rankDocs()">📊 Ranquear documentos ("rede neural")</button>
+    <button onclick="reset4()">🔄 Reiniciar</button>
+  </div>
+  <div id="o4">Vetor ordenado: [busca, dados, info, neural, rede, texto]. Clique nas buscas.</div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u41"><p>1) A busca binária exige que os dados estejam…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Sem ordem não dá para descartar metades.">ordenados</button>
+      <button class="q" data-fb="❌ Embaralhados impedem a binária.">embaralhados</button>
+      <button class="q" data-fb="❌ Não precisa ser texto.">em texto</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u42"><p>2) A busca binária é mais rápida porque…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! A cada passo descarta metade do espaço de busca.">descarta metade do espaço de busca a cada passo</button>
+      <button class="q" data-fb="❌ Olhar tudo é a linear.">olha todos os itens</button>
+      <button class="q" data-fb="❌ Não é sobre memória.">usa mais memória</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u43"><p>3) A recuperação estatística ordena os documentos por…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Pela frequência/relevância dos termos da consulta.">relevância/frequência dos termos da consulta</button>
+      <button class="q" data-fb="❌ Alfabeto não mede relevância.">ordem alfabética do título</button>
+      <button class="q" data-fb="❌ Tamanho não indica relevância.">tamanho do arquivo</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Busca_bin%C3%A1ria">Busca binária — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Recupera%C3%A7%C3%A3o_de_informa%C3%A7%C3%A3o">Recuperação de informação — Wikipédia</a>
+  </details>
+</section>
+
+<!-- 05 -->
+<section id="d5" class="demo">
+  <h2>05 — Extração de informação</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Cartão de evento do Google:</b> ao ler uma notícia, o sistema extrai QUEM/O QUÊ/ONDE/QUANDO e monta um card estruturado — é extração de informação.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Aquisição de conhecimento:</b> coletar e estruturar conhecimento de fontes (textos, bases).</li>
+    <li><b>Busca por palavras-chave:</b> localizar trechos pelos termos importantes.</li>
+    <li><b>Significado estruturado:</b> transformar texto livre em campos (quem, o quê, onde, quando).</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> uma frase de notícia dividida em 4 trechos; a cada rodada, clique no trecho que responde à pergunta (QUEM?/O QUÊ?/ONDE?/QUANDO?).</li>
+    <li><b>Teste 1 — extrair.</b> <i>Clicar:</i> no trecho certo. <span class="sig"><i>Vê:</i> acerto/erro com o porquê. <i>Significa:</i> extração de informação é "picotar" o texto livre em dados estruturados — o que alimenta buscas e assistentes.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Leia a <b>pergunta</b> (QUEM?/O QUÊ?/ONDE?/QUANDO?).<br>
+    <b>Passo 2:</b> Clique no <b>trecho</b> da frase que a responde.<br>
+    <b>Passo 3:</b> Se acertar, avança. Se errar, tenta de novo.<br>
+    <b>Passo 4:</b> Ao final, clique em "🔄 Jogar de novo".<br><br>
+    <b>Dica:</b> é o mesmo que o Google faz para montar o cartão do evento.
+  </div>
+  <div id="o5"></div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u51"><p>1) Extração de informação transforma texto livre em…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Dados estruturados: quem, o quê, onde, quando.">dados estruturados (quem, o quê, onde, quando)</button>
+      <button class="q" data-fb="❌ Não vira imagem.">imagens</button>
+      <button class="q" data-fb="❌ Não vira áudio.">áudio</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u52"><p>2) A busca por palavras-chave usa…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Os termos importantes da consulta para localizar trechos.">os termos importantes da consulta</button>
+      <button class="q" data-fb="❌ Cor não existe em texto puro.">a cor do texto</button>
+      <button class="q" data-fb="❌ Fonte não é critério de busca.">a fonte tipográfica</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u53"><p>3) Aquisição de conhecimento é…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Coletar e estruturar conhecimento de fontes para a máquina usar.">coletar e estruturar conhecimento de fontes</button>
+      <button class="q" data-fb="❌ Apagar dados é o oposto.">apagar dados</button>
+      <button class="q" data-fb="❌ Imprimir não adquire conhecimento.">imprimir documentos</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Processamento_de_linguagem_natural">Processamento de linguagem natural — Wikipédia</a>
+    <a target="_blank" href="https://en.wikipedia.org/wiki/Information_extraction">Extração de informação (Wikipédia, em inglês)</a>
+  </details>
+</section>
+
+<!-- 06 -->
+<section id="d6" class="demo">
+  <h2>06 — Juntando as peças: revisão</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Motor de busca completo:</b> extrai informação dos sites, classifica o conteúdo, indexa e, na consulta, recupera e ranqueia — as quatro peças juntas.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> jogo de classificar 6 afirmações no tópico da aula.</li>
+    <li><b>Teste 1 — classificar.</b> <i>Clicar:</i> no tópico. <span class="sig"><i>Vê:</i> acerto/erro com o porquê. <i>Significa:</i> revisar conectando os conceitos fixa o mapa mental da aula.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — fechar a aula.</b> <i>Clicar:</i> 🗺️ mapa e 📝 cola rápida. <span class="sig"><i>Vê:</i> o fio condutor. <i>Significa:</i> classificar, representar (RNA), recuperar e extrair são as quatro engrenagens do processamento de informação.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Abaixo aparece uma <b>afirmação</b>.<br>
+    <b>Passo 2:</b> Clique no <b>tópico</b> (Classificação, RNA, Recuperação, Extração).<br>
+    <b>Passo 3:</b> Se acertar, avança. Se errar, tenta de novo.<br>
+    <b>Passo 4:</b> Ao final, clique em "🔄 Jogar de novo".<br><br>
+    <b>Dica:</b> pense em "qual engrenagem faz isso".
+  </div>
+  <div id="o6"></div>
+
+  <details class="info"><summary>🗺️ Mapa da aula (visão geral)</summary>
+    <p><b>Classificação</b> (regras de lógica de 1ª ordem) → <b>RNA</b> (neurônio biológico → artificial; camadas, unidades, pesos) → <b>Recuperação</b> (busca binária × estatística/ranking) → <b>Extração</b> (aquisição, palavras-chave, significado estruturado). Juntas: o pipeline de um motor de busca.</p>
+  </details>
+  <details class="info"><summary>📝 Cola rápida (uma linha por termo)</summary><ul>
+    <li><b>Classificação:</b> regras SE-ENTÃO atribuem categorias (filtro de spam).</li>
+    <li><b>Neurônio:</b> dendritos recebem, núcleo soma, axônio transmite.</li>
+    <li><b>RNA:</b> entradas, pesos, limiar, camadas (entrada/ocultas/saída).</li>
+    <li><b>Peso sináptico:</b> importância da entrada; é o que se aprende.</li>
+    <li><b>Busca binária:</b> ordenado, descarta metade (log n).</li>
+    <li><b>Recuperação estatística:</b> ranqueia por frequência/relevância.</li>
+    <li><b>Extração:</b> texto livre → campos estruturados (quem/o quê/onde/quando).</li>
+  </ul></details>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u61"><p>1) Classificar, recuperar e extrair informação são tarefas…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Complementares — juntas formam um motor de busca.">complementares</button>
+      <button class="q" data-fb="❌ Elas cooperam, não se excluem.">mutuamente exclusivas</button>
+      <button class="q" data-fb="❌ Não são idênticas.">idênticas</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u62"><p>2) O ranqueamento na recuperação serve para…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Ordenar os resultados pela relevância para a consulta.">ordenar os resultados por relevância</button>
+      <button class="q" data-fb="❌ Ordenar por alfabeto não mede relevância.">ordenar por alfabeto</button>
+      <button class="q" data-fb="❌ Apagar não é ranquear.">apagar duplicados</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u63"><p>3) Uma RNA "aprende" ajustando…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Os pesos sinápticos são ajustados durante o treino.">os pesos sinápticos</button>
+      <button class="q" data-fb="❌ Palavras são do texto, não da rede.">as palavras do texto</button>
+      <button class="q" data-fb="❌ Categorias são saída, não o que se ajusta.">as categorias do usuário</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Rede_neural_artificial">Rede neural artificial — Wikipédia</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Recupera%C3%A7%C3%A3o_de_informa%C3%A7%C3%A3o">Recuperação de informação — Wikipédia</a>
+  </details>
+</section>
+
+<script>
+// Trocar de aba NÃO reseta as demos (progresso mantido)
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.demo').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); document.getElementById(b.dataset.t).classList.add('active');
+});
+function aposta(){ document.body.classList.toggle('aposta');
+  document.getElementById('apBtn').textContent='🎲 Modo aposta: '+(document.body.classList.contains('aposta')?'ON':'OFF'); }
+function rev(b){ b.previousElementSibling.classList.add('shown'); b.classList.add('off'); }
+document.querySelectorAll('.qq').forEach(qq=>{
+ const btns=[...qq.querySelectorAll('button.q')];
+ const fb=qq.querySelector('.fb');
+ for(let i=btns.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [btns[i],btns[j]]=[btns[j],btns[i]]; }
+ btns.forEach(b=>qq.insertBefore(b,fb));
+});
+document.addEventListener('click',e=>{
+  const b=e.target.closest('.q'); if(!b) return;
+  const fb=b.closest('.qq').querySelector('.fb');
+  b.classList.add(b.dataset.ok=='1'?'ok':'bad');
+  fb.textContent=b.dataset.fb||'';
+});
+
+// Fábrica de jogos de classificação
+function makeGame(outId, opts, items, realEx){
+ const g={i:0,s:0};
+ g.draw=function(){
+  const out=document.getElementById(outId);
+  if(g.i>=items.length){
+   out.innerHTML='<b>🏁 Fim!</b> Você acertou '+g.s+' de '+items.length+'. <b>Exemplo real:</b> '+realEx+'<br><button id="rg_'+outId+'" style="margin-top:8px;font-size:1rem">🔄 Jogar de novo</button>';
+   document.getElementById('rg_'+outId).onclick=function(){g.i=0;g.s=0;g.draw();};
+   return;
+  }
+  const it=items[g.i];
+  out.innerHTML='<b>Situação '+(g.i+1)+' de '+items.length+':</b> "'+it.t+'"<br>'+
+   opts.map(o=>'<button class="bar" data-o="'+o+'">'+o+'</button>').join(' ');
+  out.querySelectorAll('button').forEach(btn=>{ btn.onclick=function(){ g.pick(btn.getAttribute('data-o')); }; });
+ };
+ g.pick=function(v){
+  const it=items[g.i];
+  if(v===it.ok){
+   g.s++;
+   document.getElementById(outId).innerHTML=it.fb+'<br><button id="nx_'+outId+'" style="margin-top:6px">próxima ▶</button>';
+   document.getElementById('nx_'+outId).onclick=function(){g.i++;g.draw();};
+  } else {
+   document.getElementById(outId).innerHTML='❌ Tente de novo. <b>Dica:</b> '+it.hint+'<br><b>Situação '+(g.i+1)+' de '+items.length+':</b> "'+it.t+'"<br>'+
+    opts.map(o=>'<button class="bar" data-o="'+o+'">'+o+'</button>').join(' ');
+   document.getElementById(outId).querySelectorAll('button').forEach(btn=>{ btn.onclick=function(){ g.pick(btn.getAttribute('data-o')); }; });
+  }
+ };
+ return g;
+}
+
+// 01 - CLASSIFICAÇÃO COM LÓGICA
+const g1=makeGame('o1',['SPAM','TRABALHO','PESSOAL'],[
+ {t:'Promoção imperdível! Clique aqui e ganhe já.',ok:'SPAM',hint:'promoção + clique',fb:'✅ SPAM: disparou a regra "contém promoção E clique" — como no filtro do seu e-mail.'},
+ {t:'Pessoal, a reunião de hoje tem pauta nova.',ok:'TRABALHO',hint:'reunião/pauta',fb:'✅ TRABALHO: disparou a regra "contém reunião OU pauta".'},
+ {t:'Que saudade de você, meu amor.',ok:'PESSOAL',hint:'amor/saudade',fb:'✅ PESSOAL: disparou a regra "contém amor OU saudade".'},
+ {t:'Clique no link da promoção agora mesmo!',ok:'SPAM',hint:'promoção + clique',fb:'✅ SPAM: de novo a regra promoção + clique.'}
+],'é exatamente assim que um filtro de e-mail baseado em regras decide o que é spam.');
+g1.draw();
+
+// 02 - ANALOGIA BIOLÓGICA
+const g2=makeGame('o2',['Entradas (recebem sinais)','Processamento (soma e decide)','Saída (transmite o resultado)'],[
+ {t:'Dendritos',ok:'Entradas (recebem sinais)',hint:'recebem',fb:'✅ Dendritos = entradas: recebem os sinais de outros neurônios.'},
+ {t:'Núcleo / corpo celular',ok:'Processamento (soma e decide)',hint:'integra/soma',fb:'✅ Núcleo = processamento: integra os sinais e decide.'},
+ {t:'Axônio',ok:'Saída (transmite o resultado)',hint:'transmite',fb:'✅ Axônio = saída: transmite a decisão adiante.'}
+],'a RNA empresta essa divisão de papéis do cérebro: receber, integrar, transmitir.');
+g2.draw();
+
+// 03 - PERCEPTRON
+let X1=1, X2=0;
+function tog(i){
+ if(i===1){ X1=X1?0:1; document.getElementById('x1').textContent='☀️ Tempo bom: '+(X1?'ON':'OFF'); }
+ else { X2=X2?0:1; document.getElementById('x2').textContent='🕒 Tempo livre: '+(X2?'ON':'OFF'); }
+ updP();
+}
+function updP(){
+ const w1=+document.getElementById('w1').value, w2=+document.getElementById('w2').value, th=+document.getElementById('th').value;
+ const soma=X1*w1+X2*w2;
+ const fire=soma>=th;
+ document.getElementById('painelP').innerHTML=
+  '<b>Soma ponderada:</b> ('+X1+' × '+w1.toFixed(1)+') + ('+X2+' × '+w2.toFixed(1)+') = '+soma.toFixed(2)+' | <b>Limiar:</b> '+th.toFixed(1)+'<br>'+
+  '<b>Resultado:</b> '+(fire?'🔥 O neurônio DISPARA — você vai correr!':'❄️ Não dispara — fica no sofá.')+'<br>'+
+  '<b>Exemplo real:</b> pesos maiores = mais importância (tempo bom pesa mais); limiar = sua "barra de preguiça".';
+}
+function resetP(){
+ X1=1; X2=0;
+ document.getElementById('x1').textContent='☀️ Tempo bom: ON';
+ document.getElementById('x2').textContent='🕒 Tempo livre: OFF';
+ document.getElementById('w1').value=0.6; document.getElementById('w2').value=0.6; document.getElementById('th').value=0.8;
+ updP();
+}
+updP();
+
+// 04 - RECUPERAÇÃO
+const V=['busca','dados','info','neural','rede','texto'];
+function binSearch(){
+ document.getElementById('o4').innerHTML='<b>Busca binária por "rede":</b><br>1ª comparação: meio = "info" → "rede" vem depois, descarta a 1ª metade.<br>2ª comparação: meio = "rede" → ACHOU!<br><b>Total: 2 comparações.</b> <b>Exemplo real:</b> procurar um nome na lista telefônica abrindo no meio.';
+}
+function linSearch(){
+ document.getElementById('o4').innerHTML='<b>Busca linear por "rede":</b> compara "busca", "dados", "info", "neural" e então "rede" → ACHOU.<br><b>Total: 5 comparações.</b> <b>Exemplo real:</b> procurar página por página, um a um.';
+}
+function rankDocs(){
+ document.getElementById('o4').innerHTML='<b>Consulta: "rede neural"</b><br>D1 "rede neural artificial rede" → rede:2 + neural:1 = 3<br>D3 "modelo neural profundo neural" → neural:2 = 2<br>D2 "rede de computadores" → rede:1 = 1<br><b>Ranking: D1 > D3 > D2.</b> <b>Exemplo real:</b> é a lógica do Google: quanto mais o documento casa com a consulta, mais alto ele sobe.';
+}
+function reset4(){ document.getElementById('o4').textContent='Vetor ordenado: [busca, dados, info, neural, rede, texto]. Clique nas buscas.'; }
+
+// 05 - EXTRAÇÃO
+const SP=['A empresa TechBR','abriu uma loja','em São Paulo','em 2024.'];
+const RD=[{q:'QUEM?',ok:0},{q:'O QUÊ?',ok:1},{q:'ONDE?',ok:2},{q:'QUANDO?',ok:3}];
+let ri=0, rs=0;
+function drawR(){
+ const out=document.getElementById('o5');
+ if(ri>=RD.length){
+  out.innerHTML='<b>🏁 Extração completa!</b> Você montou: QUEM=A empresa TechBR | O QUÊ=abriu uma loja | ONDE=em São Paulo | QUANDO=em 2024. <b>Exemplo real:</b> é o cartão de evento que o Google monta a partir de uma notícia.<br><button id="rg_o5" style="margin-top:8px;font-size:1rem">🔄 Jogar de novo</button>';
+  document.getElementById('rg_o5').onclick=function(){ri=0;rs=0;drawR();};
+  return;
+ }
+ const r=RD[ri];
+ out.innerHTML='<b>Frase:</b> "'+SP.join(' ')+'"<br><b>Pergunta '+(ri+1)+' de '+RD.length+':</b> '+r.q+' Clique no trecho que responde.<br>'+
+  SP.map((s,i)=>'<button class="bar" data-i="'+i+'">'+s+'</button>').join(' ');
+ out.querySelectorAll('button').forEach(btn=>{
+  btn.onclick=function(){
+   const i=+btn.getAttribute('data-i');
+   if(i===r.ok){ rs++; ri++; drawR(); }
+   else { out.innerHTML='❌ Tente de novo. <b>Dica:</b> '+r.q+' pergunta por '+(r.ok===0?'a pessoa/empresa':r.ok===1?'a ação':r.ok===2?'o lugar':'o tempo')+'.<br><b>Frase:</b> "'+SP.join(' ')+'"<br>'+SP.map((s,j)=>'<button class="bar" data-i="'+j+'">'+s+'</button>').join(' ');
+    out.querySelectorAll('button').forEach(b2=>{ b2.onclick=function(){ const j=+b2.getAttribute('data-i'); if(j===r.ok){rs++;ri++;drawR();} }; });
+   }
+  };
+ });
+}
+drawR();
+
+// 06 - REVISÃO
+const g6=makeGame('o6',['Classificação','RNA','Recuperação','Extração'],[
+ {t:'Regra "SE contém promoção E clique ENTÃO spam"',ok:'Classificação',hint:'regra lógica',fb:'✅ Classificação: regra lógica atribuindo categoria.'},
+ {t:'Dendritos recebem, núcleo soma, axônio transmite',ok:'RNA',hint:'neurônio',fb:'✅ RNA: a analogia biológica do neurônio.'},
+ {t:'Descartar metade do vetor ordenado a cada passo',ok:'Recuperação',hint:'busca binária',fb:'✅ Recuperação: busca binária em vetor ordenado.'},
+ {t:'Transformar a notícia em QUEM/O QUÊ/ONDE/QUANDO',ok:'Extração',hint:'campos estruturados',fb:'✅ Extração: texto livre → campos estruturados.'},
+ {t:'Ranquear documentos pela frequência dos termos da consulta',ok:'Recuperação',hint:'ranking estatístico',fb:'✅ Recuperação: ordenação estatística por relevância.'},
+ {t:'Ajustar a importância de cada entrada durante o treino',ok:'RNA',hint:'pesos sinápticos',fb:'✅ RNA: ajustar pesos sinápticos é aprender.'}
+],'um motor de busca faz tudo isso junto: extrai, classifica, indexa e ranqueia.');
+g6.draw();
+</script>
+</body>
+</html>
