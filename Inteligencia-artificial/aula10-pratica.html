@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IA Interativo — Aula 10 (Unidade 4)</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:system-ui,sans-serif;background:#f4f7f6;margin:0;padding:18px;color:#1d1d1f}
+h1{font-size:1.25rem} h2{margin-top:0}
+nav{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.tab{border:2px solid #1d1d1f;background:#fff;border-radius:10px;padding:8px 12px;cursor:pointer;box-shadow:3px 3px 0 #e11d48;font-weight:600}
+.tab.active{background:#e11d48;color:#fff}
+.demo{display:none;background:#fff;border:2px solid #1d1d1f;border-radius:14px;padding:16px;box-shadow:5px 5px 0 #e11d48}
+.demo.active{display:block}
+button{border:2px solid #1d1d1f;border-radius:8px;background:#fff;padding:6px 10px;cursor:pointer;font-weight:600}
+button:hover{background:#fff1f2}
+details{margin:10px 0;border-radius:10px;padding:8px 12px;border:2px solid #1d1d1f}
+summary{cursor:pointer;font-weight:700}
+.info{background:#eaf4ff}.steps{background:#fff8dc}.links{background:#f2f2f2}.real{background:#eaffe8}.tool{background:#f5eaff}.quiz{background:#ffe8f0}
+.links a{color:#0a66c2;display:inline-block;margin:2px 12px 2px 0}
+.q{margin:2px}.q.ok{background:#b9f6ca}.q.bad{background:#ffb3b3}
+.fb{font-size:.85rem;background:#fff;border-radius:6px;padding:4px 8px;margin:4px 0}
+#o1,#o2,#o3,#o4,#o5,#o6,#outNg,#outSen,#outPx{background:#fff;border:2px dashed #999;border-radius:8px;padding:10px;margin:8px 0;min-height:40px}
+.bar{display:inline-block;border:2px solid #1d1d1f;border-radius:8px;padding:6px 12px;margin:3px;cursor:pointer;background:#fff;font-weight:600}
+.bar.on{background:#e11d48;color:#fff}
+.px{display:inline-block;width:44px;height:44px;border:2px solid #1d1d1f;margin:2px;cursor:pointer;vertical-align:top}
+.rv{display:none;margin-left:6px}
+.instrucao{background:#fff3cd;border:2px solid #ffc107;border-radius:8px;padding:10px;margin:8px 0}
+.instrucao b{color:#856404}
+body.aposta .sig{display:none}
+body.aposta .sig.shown{display:inline}
+body.aposta .rv{display:inline-block}
+body.aposta .rv.off{display:none}
+#apBtn{box-shadow:3px 3px 0 #d4a017}
+</style>
+</head>
+<body>
+<h1>📖 IA — Aula 10 (Unidade 4, págs. 29–46): gramáticas, modelos de linguagem e percepção</h1>
+<button id="apBtn" onclick="aposta()">🎲 Modo aposta: OFF</button>
+<p>Mesma estrutura das aulas anteriores: 🌍 →  → 🎤 plano de testes → demo → 🧠 quiz (3 alternativas embaralhadas, cada uma com a própria explicação, tudo por extenso) → 🔗 Aprofundar. Com 🎲 ligado, a turma aposta antes de revelar.</p>
+
+<details class="tool"><summary>🧰 Glossário de ferramentas (leia uma vez!)</summary><ul>
+  <li><b>Cadeia de Markov (ordem 1–N):</b> prevê o próximo elemento usando os N−1 anteriores (unigrama, bigrama, trigrama…).</li>
+  <li><b>Árvore de dependência:</b> grafo que liga cada palavra ao seu "chefe" (palavra que a governa).</li>
+  <li><b>Sintaxe:</b> estrutura/gramática da frase. <b>Semântica:</b> significado.</li>
+  <li><b>Modelo do mundo:</b> como o estado do mundo evolui. <b>Modelo do sensor:</b> como o sensor lê, com ruído.</li>
+  <li><b>Tarefas de percepção:</b> filtragem, previsão, suavização, explicação mais provável, aprendizagem.</li>
+  <li><b>Matriz de pixels:</b> a imagem como grade de números (cores RGB/CMYK).</li>
+</ul></details>
+
+<nav>
+  <button class="tab active" data-t="d1">01 Markov: unigrama, bigrama, trigrama</button>
+  <button class="tab" data-t="d2">02 Árvores de dependência</button>
+  <button class="tab" data-t="d3">03 Semântica × sintaxe</button>
+  <button class="tab" data-t="d4">04 Sensores: mundo × sensor</button>
+  <button class="tab" data-t="d5">05 Tarefas de percepção</button>
+  <button class="tab" data-t="d6">06 Percepção de objetos complexos</button>
+</nav>
+
+<!-- 01 -->
+<section id="d1" class="demo active">
+  <h2>01 — Cadeias de Markov de ordem 1–N: unigrama, bigrama, trigrama</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Teclado do celular:</b> ao digitar "bom", ele sugere "dia" — um bigrama contando que "bom dia" é frequente. Com "boa noi…", o trigrama aposta "te".</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Unigrama (ordem 1):</b> conta palavras isoladas — sem contexto.</li>
+    <li><b>Bigrama (ordem 2):</b> usa 1 palavra anterior para prever a próxima.</li>
+    <li><b>Trigrama (ordem 3):</b> usa 2 palavras anteriores.</li>
+    <li><b>Ordem N:</b> usa N−1 anteriores — mais contexto, mais dados necessários.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> um mini-corpus; escolha a ordem (unigrama/bigrama/trigrama) e um contexto para ver a previsão da próxima palavra.</li>
+    <li><b>Teste 1 — prever.</b> <i>Clicar:</i> na ordem e depois num contexto. <span class="sig"><i>Vê:</i> as próximas palavras mais prováveis para cada ordem. <i>Significa:</i> quanto maior a ordem, mais contexto e melhor a aposta — mas mais dados são necessários para estimar.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Clique numa <b>ordem</b> (Unigrama, Bigrama, Trigrama).<br>
+    <b>Passo 2:</b> Clique num <b>contexto</b> que aparecer.<br>
+    <b>Passo 3:</b> Veja as <b>próximas palavras</b> e contagens no painel.<br>
+    <b>Passo 4:</b> Clique em "🔄 Reiniciar" para refazer.<br><br>
+    <b>Dica:</b> unigrama não usa contexto; bigrama usa 1 palavra; trigrama usa 2.
+  </div>
+  <div style="margin:10px 0">
+    <button class="bar" onclick="setOrd(1)">Unigrama</button>
+    <button class="bar" onclick="setOrd(2)">Bigrama</button>
+    <button class="bar" onclick="setOrd(3)">Trigrama</button>
+    <button onclick="resetNg()">🔄 Reiniciar</button>
+  </div>
+  <div id="outNg">Escolha uma ordem para ver os contextos disponíveis.</div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u11"><p>1) Um bigrama usa, para prever a próxima palavra…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Bigrama = 1 palavra anterior, como "bom" sugerindo "dia".">1 palavra anterior</button>
+      <button class="q" data-fb="❌ 0 anterior é unigrama.">nenhuma palavra anterior</button>
+      <button class="q" data-fb="❌ 2 anteriores é trigrama.">2 palavras anteriores</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u12"><p>2) Um trigrama usa…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Trigrama = 2 palavras anteriores de contexto.">2 palavras anteriores</button>
+      <button class="q" data-fb="❌ 1 anterior é bigrama.">1 palavra anterior</button>
+      <button class="q" data-fb="❌ 3 anteriores seria ordem 4.">3 palavras anteriores</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u13"><p>3) Ao aumentar a ordem N da cadeia…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Mais contexto melhora a previsão, mas exige mais dados para estimar.">aumenta o contexto, mas também a necessidade de dados</button>
+      <button class="q" data-fb="❌ O contexto aumenta, não diminui.">diminui o contexto</button>
+      <button class="q" data-fb="❌ Muda sim: mais contexto.">nada muda na previsão</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://scholar.google.com/scholar?q=cadeias+de+Markov+processamento+de+linguagem+natural">Artigos sobre cadeias de Markov — Google Acadêmico</a>
+    <a target="_blank" href="https://search.scielo.org/?q=modelo+de+linguagem+n-gramas&lang=pt">Artigos sobre modelos de linguagem — Scielo</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Cadeia_de_Markov">Cadeia de Markov — Wikipédia (fonte auxiliar)</a>
+  </details>
+</section>
+
+<!-- 02 -->
+<section id="d2" class="demo">
+  <h2>02 — Árvores de dependência</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Organograma de empresa:</b> cada funcionário reporta a um chefe; a raiz é o diretor. Na frase, cada palavra "reporta" à palavra que a governa — a raiz costuma ser o verbo principal.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Árvore de dependência:</b> grafo das relações de subordinação entre palavras.</li>
+    <li><b>Raiz:</b> o verbo principal, que não depende de ninguém.</li>
+    <li><b>Dependente:</b> palavra ligada ao seu chefe (governador).</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> a frase "o menino comeu a maçã vermelha"; para cada palavra, descubra quem é o chefe.</li>
+    <li><b>Teste 1 — achar o chefe.</b> <i>Clicar:</i> no governador de cada palavra. <span class="sig"><i>Vê:</i> acerto/erro com o porquê. <i>Significa:</i> a árvore de dependência captura "quem manda em quem" na frase — base do parsing sintático usado em PLN.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Leia a <b>pergunta</b> (qual é o chefe de X?).<br>
+    <b>Passo 2:</b> Clique na <b>palavra-chefe</b> correta.<br>
+    <b>Passo 3:</b> Se acertar, avança. Se errar, tenta de novo.<br>
+    <b>Passo 4:</b> Ao final, clique em "🔄 Jogar de novo".<br><br>
+    <b>Dica:</b> o verbo "comeu" é a raiz; adjetivo depende do substantivo; artigo depende do substantivo.
+  </div>
+  <div id="o2"></div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u21"><p>1) Na árvore de dependência, a raiz geralmente é…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! O verbo principal, que não depende de nenhuma outra palavra.">o verbo principal da frase</button>
+      <button class="q" data-fb="❌ O artigo depende do substantivo.">o artigo</button>
+      <button class="q" data-fb="❌ O adjetivo depende do substantivo.">o adjetivo</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u22"><p>2) Em "o menino comeu a maçã vermelha", a palavra "vermelha" depende de…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! O adjetivo "vermelha" qualifica "maçã", então depende dela.">maçã</button>
+      <button class="q" data-fb="❌ "Comeu" governa "maçã", não "vermelha".">comeu</button>
+      <button class="q" data-fb="❌ "Menino" não é qualificado por "vermelha".">menino</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u23"><p>3) A árvore de dependência mostra…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! As relações de subordinação entre as palavras — quem governa quem.">as relações de subordinação entre palavras</button>
+      <button class="q" data-fb="❌ Frequência é estatística, não sintaxe.">a frequência das palavras</button>
+      <button class="q" data-fb="❌ Só a ordem linear não é a árvore.">apenas a ordem linear das palavras</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://scholar.google.com/scholar?q=%C3%A1rvores+de+depend%C3%AAncia+an%C3%A1lise+sint%C3%A1tica">Artigos sobre árvores de dependência — Google Acadêmico</a>
+    <a target="_blank" href="https://search.scielo.org/?q=an%C3%A1lise+sint%C3%A1tica+depend%C3%AAncia&lang=pt">Artigos sobre análise sintática — Scielo</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Sintaxe">Sintaxe — Wikipédia (fonte auxiliar)</a>
+  </details>
+</section>
+
+<!-- 03 -->
+<section id="d3" class="demo">
+  <h2>03 — Semântica × sintaxe em PLN e linguagens de programação</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>"Ideias verdes incolores dormem furiosamente":</b> a frase respeita a gramática (sintaxe OK) mas não faz sentido (semântica falha) — o exemplo clássico de Chomsky.</li>
+    <li><b>Compilador:</b> aceita "int x = 5;" (sintaxe e semântica OK) e rejeita "x = = 5 int;" (sintaxe falha) antes mesmo de pensar em significado.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Sintaxe:</b> estrutura e regras gramaticais (ordem, concordância).</li>
+    <li><b>Semântica:</b> o significado do que foi dito.</li>
+    <li><b>Em programação:</b> sintaxe = gramática da linguagem; semântica = o que o código faz.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> jogo de classificar 5 frases/códigos em 3 categorias.</li>
+    <li><b>Teste 1 — classificar.</b> <i>Clicar:</i> na categoria correta. <span class="sig"><i>Vê:</i> acerto/erro com o porquê e exemplo real. <i>Significa:</i> sintaxe e semântica são camadas independentes: uma frase pode ser gramatical e sem sentido, ou agramatical — e o PLN precisa lidar com as duas.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Abaixo aparece uma <b>frase ou código</b>.<br>
+    <b>Passo 2:</b> Clique na <b>categoria</b> correta.<br>
+    <b>Passo 3:</b> Se acertar, avança. Se errar, tenta de novo.<br>
+    <b>Passo 4:</b> Ao final, clique em "🔄 Jogar de novo".<br><br>
+    <b>Dica:</b> gramatical e com sentido = ambas OK; gramatical sem sentido = semântica falha; agramatical = sintaxe falha.
+  </div>
+  <div id="o3"></div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u31"><p>1) A sintaxe cuida…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Da estrutura e das regras gramaticais da frase.">da estrutura e das regras gramaticais</button>
+      <button class="q" data-fb="❌ Significado é semântica.">do significado</button>
+      <button class="q" data-fb="❌ Contexto de uso é pragmática.">do contexto de uso</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u32"><p>2) A semântica cuida…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Do significado das palavras e frases.">do significado</button>
+      <button class="q" data-fb="❌ Ordem das palavras é sintaxe.">da ordem das palavras</button>
+      <button class="q" data-fb="❌ Pontuação é sintaxe.">da pontuação</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u33"><p>3) "Ideias verdes incolores dormem furiosamente" é…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Gramaticalmente correta, mas semanticamente sem sentido — o exemplo de Chomsky.">sintaticamente correta, mas semanticamente sem sentido</button>
+      <button class="q" data-fb="❌ A estrutura gramatical está correta.">sintaticamente errada</button>
+      <button class="q" data-fb="❌ O significado não se sustenta.">sintática e semanticamente correta</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://scholar.google.com/scholar?q=sem%C3%A2ntica+sintaxe+processamento+de+linguagem+natural">Artigos sobre semântica × sintaxe — Google Acadêmico</a>
+    <a target="_blank" href="https://search.scielo.org/?q=sem%C3%A2ntica+sintaxe+linguagem&lang=pt">Artigos sobre semântica e sintaxe — Scielo</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Sem%C3%A2ntica">Semântica — Wikipédia (fonte auxiliar)</a>
+  </details>
+</section>
+
+<!-- 04 -->
+<section id="d4" class="demo">
+  <h2>04 — Sensores: modelo do mundo × modelo do sensor</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Termômetro barato:</b> a sala está a 25 °C, mas ele marca 24, 26, 25… O <b>modelo do mundo</b> diz como a temperatura evolui; o <b>modelo do sensor</b> diz como ele erra ao medir.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Modelo do mundo:</b> como o estado real evolui ao longo do tempo.</li>
+    <li><b>Modelo do sensor:</b> como o sensor lê dado o estado real (inclui ruído/erro).</li>
+    <li><b>Ruído:</b> a diferença aleatória entre a leitura e o valor verdadeiro.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> (a) classificar 4 descrições como modelo do mundo ou do sensor; (b) simular um sensor ruidoso lendo uma sala a 25 °C.</li>
+    <li><b>Teste 1 — classificar.</b> <i>Clicar:</i> no modelo correto. <span class="sig"><i>Vê:</i> acerto/erro com o porquê. <i>Significa:</i> perceber é combinar os dois modelos: como o mundo anda e como o sensor engana.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — sensor ruidoso.</b> <i>Clicar:</i> "Fazer leitura" várias vezes. <span class="sig"><i>Vê:</i> leituras oscilando em torno de 25 °C e a média convergindo. <i>Significa:</i> o ruído é aleatório, mas o modelo do sensor permite corrigi-lo — várias leituras revelam o valor verdadeiro.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Classifique as 4 descrições como <b>Modelo do mundo</b> ou <b>Modelo do sensor</b>.<br>
+    <b>Passo 2:</b> Clique em <b>🌡️ Fazer leitura</b> algumas vezes e observe o ruído.<br>
+    <b>Passo 3:</b> Use "🔄 Reiniciar" para refazer.<br><br>
+    <b>Dica:</b> evolução do estado = mundo; como mede/erra = sensor.
+  </div>
+  <div id="o4"></div>
+  <div style="margin:10px 0">
+    <button onclick="readSen()">🌡️ Fazer leitura</button>
+    <button onclick="resetSen()">🔄 Reiniciar</button>
+  </div>
+  <div id="outSen">Clique em "Fazer leitura" para simular o sensor ruidoso (sala a 25 °C).</div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u41"><p>1) O modelo do mundo representa…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Como o estado real evolui ao longo do tempo.">como o estado do mundo evolui ao longo do tempo</button>
+      <button class="q" data-fb="❌ Como o sensor lê é o modelo do sensor.">como o sensor faz a leitura</button>
+      <button class="q" data-fb="❌ Cor do sensor não é modelo.">a cor do sensor</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u42"><p>2) O modelo do sensor representa…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Como o sensor lê dado o estado real, incluindo ruído.">como o sensor lê dado o estado real, incluindo ruído</button>
+      <button class="q" data-fb="❌ Evolução do mundo é o modelo do mundo.">a evolução do mundo</button>
+      <button class="q" data-fb="❌ Objetivo da tarefa não é modelo do sensor.">o objetivo da tarefa</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u43"><p>3) Um sensor ruidoso é aquele que…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Produz leituras com erro aleatório em torno do valor verdadeiro.">produz leituras com erro em torno do valor verdadeiro</button>
+      <button class="q" data-fb="❌ Sempre certo não é ruidoso.">sempre acerta exatamente</button>
+      <button class="q" data-fb="❌ Não ler é sensor quebrado.">nunca faz leituras</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://scholar.google.com/scholar?q=modelo+de+mundo+modelo+de+sensor+percep%C3%A7%C3%A3o">Artigos sobre modelos de percepção — Google Acadêmico</a>
+    <a target="_blank" href="https://search.scielo.org/?q=percep%C3%A7%C3%A3o+intelig%C3%AAncia+artificial+sensores&lang=pt">Artigos sobre percepção e sensores — Scielo</a>
+  </details>
+</section>
+
+<!-- 05 -->
+<section id="d5" class="demo">
+  <h2>05 — Tarefas de percepção: filtragem, previsão, suavização, explicação, aprendizagem</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>GPS do carro:</b> onde estou AGORA (filtragem); onde estarei em 5 s (previsão); onde eu estava há 10 s usando tudo (suavização); qual rota fiz (explicação mais provável); calibrar o GPS com novos dados (aprendizagem).</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Filtragem:</b> estimar o estado ATUAL com o histórico até agora.</li>
+    <li><b>Previsão:</b> estimar estado FUTURO.</li>
+    <li><b>Suavização:</b> estimar estado PASSADO usando também dados posteriores.</li>
+    <li><b>Explicação mais provável:</b> a sequência de estados mais plausível.</li>
+    <li><b>Aprendizagem:</b> ajustar os modelos com dados novos.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> jogo de classificar 5 situações na tarefa de percepção correta.</li>
+    <li><b>Teste 1 — classificar.</b> <i>Clicar:</i> na tarefa. <span class="sig"><i>Vê:</i> acerto/erro com o porquê e exemplo real. <i>Significa:</i> as cinco tarefas respondem perguntas diferentes sobre o tempo: agora, depois, antes, a trajetória inteira, e o próprio modelo.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Abaixo aparece uma <b>situação</b>.<br>
+    <b>Passo 2:</b> Clique na <b>tarefa</b> correta.<br>
+    <b>Passo 3:</b> Se acertar, avança. Se errar, tenta de novo.<br>
+    <b>Passo 4:</b> Ao final, clique em "🔄 Jogar de novo".<br><br>
+    <b>Dica:</b> agora = filtragem; futuro = previsão; passado com dados de depois = suavização; trajetória = explicação; ajustar modelo = aprendizagem.
+  </div>
+  <div id="o5"></div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u51"><p>1) Estimar o estado ATUAL com o histórico até agora é…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Filtragem: onde o carro está agora, dado o GPS até agora.">filtragem</button>
+      <button class="q" data-fb="❌ Previsão é futuro.">previsão</button>
+      <button class="q" data-fb="❌ Suavização é passado com dados posteriores.">suavização</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u52"><p>2) Estimar um estado FUTURO é…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Previsão: onde o carro estará em 5 segundos.">previsão</button>
+      <button class="q" data-fb="❌ Filtragem é agora.">filtragem</button>
+      <button class="q" data-fb="❌ Suavização é passado.">suavização</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u53"><p>3) Reconstruir um estado PASSADO usando também dados posteriores é…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Suavização: usa tudo, inclusive o depois, para estimar o antes.">suavização</button>
+      <button class="q" data-fb="❌ Previsão é futuro.">previsão</button>
+      <button class="q" data-fb="❌ Aprendizagem ajusta o modelo.">aprendizagem</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://scholar.google.com/scholar?q=filtragem+previs%C3%A3o+suaviza%C3%A7%C3%A3o+percep%C3%A7%C3%A3o">Artigos sobre tarefas de percepção — Google Acadêmico</a>
+    <a target="_blank" href="https://search.scielo.org/?q=filtragem+estima%C3%A7%C3%A3o+sensores&lang=pt">Artigos sobre filtragem e estimação — Scielo</a>
+  </details>
+</section>
+
+<!-- 06 -->
+<section id="d6" class="demo">
+  <h2>06 — Percepção de objetos complexos: visão computacional</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Foto no computador:</b> não é "uma cena", é uma grade de números (matriz de pixels). Visão computacional é enxergar através desses números.</li>
+    <li><b>Profundidade:</b> seus dois olhos veem ângulos ligeiramente diferentes; o cérebro compara e calcula distância — visão estéreo.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Matriz de pixels:</b> grade onde cada célula guarda valores de cor.</li>
+    <li><b>RGB:</b> cor somada de Vermelho, Verde e Azul (telas).</li>
+    <li><b>CMYK:</b> cor subtrativa de Ciano, Magenta, Amarelo e Preto (impressão).</li>
+    <li><b>2D × 3D:</b> imagem plana × representação com profundidade.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> uma matriz 4×4 de pixels; clique numa célula para ver RGB e CMYK; alterne para o mapa de profundidade.</li>
+    <li><b>Teste 1 — inspecionar pixels.</b> <i>Clicar:</i> nas células. <span class="sig"><i>Vê:</i> os valores RGB e a conversão CMYK. <i>Significa:</i> para a máquina, a imagem É isso: números por pixel — cores são combinações.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — profundidade.</b> <i>Clicar:</i> "Ver mapa de profundidade". <span class="sig"><i>Vê:</i> a mesma matriz em tons de cinza, onde claro = perto. <i>Significa:</i> a terceira dimensão (distância) vira mais um canal de números — é assim que a visão 3D nasce de dados 2D.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Clique num <b>pixel</b> da matriz para ver RGB e CMYK.<br>
+    <b>Passo 2:</b> Clique em <b>🗺️ Ver mapa de profundidade</b> e depois em <b>🎨 Ver cores</b>.<br>
+    <b>Passo 3:</b> Use "🔄 Reiniciar" para refazer.<br><br>
+    <b>Dica:</b> RGB soma luz (telas); CMYK subtrai (impressão); profundidade = claro perto, escuro longe.
+  </div>
+  <div id="pxGrid"></div>
+  <div style="margin:10px 0">
+    <button onclick="showDepth()">🗺️ Ver mapa de profundidade</button>
+    <button onclick="showColors()">🎨 Ver cores</button>
+    <button onclick="resetPx()">🔄 Reiniciar</button>
+  </div>
+  <div id="outPx">Clique num pixel para inspecionar os valores de cor.</div>
+
+  <details class="info"><summary>🗺️ Mapa da aula (visão geral)</summary>
+    <p><b>Markov 1–N</b> (unigrama → bigrama → trigrama: mais contexto, mais dados) → <b>árvores de dependência</b> (quem governa quem) → <b>semântica × sintaxe</b> (significado × estrutura) → <b>sensores</b> (modelo do mundo × modelo do sensor, com ruído) → <b>tarefas</b> (filtragem, previsão, suavização, explicação, aprendizagem) → <b>visão</b> (matriz de pixels, RGB/CMYK, 2D/3D, profundidade).</p>
+  </details>
+  <details class="info"><summary>📝 Cola rápida (uma linha por termo)</summary><ul>
+    <li><b>Unigrama:</b> 0 anteriores. <b>Bigrama:</b> 1. <b>Trigrama:</b> 2. <b>Ordem N:</b> N−1.</li>
+    <li><b>Árvore de dependência:</b> raiz = verbo principal; dependentes ligam ao chefe.</li>
+    <li><b>Sintaxe:</b> estrutura. <b>Semântica:</b> significado.</li>
+    <li><b>Modelo do mundo:</b> evolução do estado. <b>Do sensor:</b> leitura com ruído.</li>
+    <li><b>Filtragem:</b> agora. <b>Previsão:</b> futuro. <b>Suavização:</b> passado c/ depois.</li>
+    <li><b>Explicação:</b> trajetória mais provável. <b>Aprendizagem:</b> ajustar modelos.</li>
+    <li><b>Pixel:</b> número de cor. <b>RGB:</b> telas. <b>CMYK:</b> impressão. <b>Profundidade:</b> 3ª dimensão.</li>
+  </ul></details>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u61"><p>1) Para a visão computacional, uma imagem é…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Uma matriz de pixels com valores de cor — números, não "cena".">uma matriz de pixels com valores de cor</button>
+      <button class="q" data-fb="❌ Não é texto.">um texto descritivo</button>
+      <button class="q" data-fb="❌ Não é áudio.">um sinal de áudio</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u62"><p>2) O modelo RGB forma as cores com…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Vermelho, Verde e Azul somados — o padrão das telas.">vermelho, verde e azul</button>
+      <button class="q" data-fb="❌ CMYK é ciano, magenta, amarelo e preto (impressão).">ciano, magenta, amarelo e preto</button>
+      <button class="q" data-fb="❌ Só cinza é escala de cinza.">apenas tons de cinza</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u63"><p>3) A percepção de profundidade em visão usa…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! A diferença entre dois pontos de vista (estéreo) para calcular distância.">a diferença entre dois pontos de vista (visão estéreo)</button>
+      <button class="q" data-fb="❌ Um pixel só não dá distância.">um único pixel</button>
+      <button class="q" data-fb="❌ Texto não mede profundidade.">texto descritivo</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://scholar.google.com/scholar?q=vis%C3%A3o+computacional+profundidade+RGB">Artigos sobre visão computacional — Google Acadêmico</a>
+    <a target="_blank" href="https://search.scielo.org/?q=vis%C3%A3o+computacional&lang=pt">Artigos sobre visão computacional — Scielo</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Vis%C3%A3o_computacional">Visão computacional — Wikipédia (fonte auxiliar)</a>
+  </details>
+</section>
+
+<script>
+// Trocar de aba NÃO reseta as demos (progresso mantido)
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.demo').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); document.getElementById(b.dataset.t).classList.add('active');
+});
+function aposta(){ document.body.classList.toggle('aposta');
+  document.getElementById('apBtn').textContent='🎲 Modo aposta: '+(document.body.classList.contains('aposta')?'ON':'OFF'); }
+function rev(b){ b.previousElementSibling.classList.add('shown'); b.classList.add('off'); }
+document.querySelectorAll('.qq').forEach(qq=>{
+ const btns=[...qq.querySelectorAll('button.q')];
+ const fb=qq.querySelector('.fb');
+ for(let i=btns.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [btns[i],btns[j]]=[btns[j],btns[i]]; }
+ btns.forEach(b=>qq.insertBefore(b,fb));
+});
+document.addEventListener('click',e=>{
+  const b=e.target.closest('.q'); if(!b) return;
+  const fb=b.closest('.qq').querySelector('.fb');
+  b.classList.add(b.dataset.ok=='1'?'ok':'bad');
+  fb.textContent=b.dataset.fb||'';
+});
+
+// Fábrica de jogos de classificação
+function makeGame(outId, opts, items, realEx){
+ const g={i:0,s:0};
+ g.draw=function(){
+  const out=document.getElementById(outId);
+  if(g.i>=items.length){
+   out.innerHTML='<b>🏁 Fim!</b> Você acertou '+g.s+' de '+items.length+'. <b>Exemplo real:</b> '+realEx+'<br><button id="rg_'+outId+'" style="margin-top:8px;font-size:1rem">🔄 Jogar de novo</button>';
+   document.getElementById('rg_'+outId).onclick=function(){g.i=0;g.s=0;g.draw();};
+   return;
+  }
+  const it=items[g.i];
+  out.innerHTML='<b>Situação '+(g.i+1)+' de '+items.length+':</b> "'+it.t+'"<br>'+
+   opts.map(o=>'<button class="bar" data-o="'+o+'">'+o+'</button>').join(' ');
+  out.querySelectorAll('button').forEach(btn=>{ btn.onclick=function(){ g.pick(btn.getAttribute('data-o')); }; });
+ };
+ g.pick=function(v){
+  const it=items[g.i];
+  if(v===it.ok){
+   g.s++;
+   document.getElementById(outId).innerHTML=it.fb+'<br><button id="nx_'+outId+'" style="margin-top:6px">próxima ▶</button>';
+   document.getElementById('nx_'+outId).onclick=function(){g.i++;g.draw();};
+  } else {
+   document.getElementById(outId).innerHTML='❌ Tente de novo. <b>Dica:</b> '+it.hint+'<br><b>Situação '+(g.i+1)+' de '+items.length+':</b> "'+it.t+'"<br>'+
+    opts.map(o=>'<button class="bar" data-o="'+o+'">'+o+'</button>').join(' ');
+   document.getElementById(outId).querySelectorAll('button').forEach(btn=>{ btn.onclick=function(){ g.pick(btn.getAttribute('data-o')); }; });
+  }
+ };
+ return g;
+}
+
+// 01 - N-GRAMAS POR ORDEM
+const CORP=['bom dia querido','bom dia amor','boa noite querido','eu amo café','eu amo chá','eu quero café'];
+let ord=0;
+function countsAfter(ctx){
+ const m={};
+ CORP.forEach(ph=>{
+  const ws=ph.split(' ');
+  for(let i=0;i<=ws.length-ctx.length-1;i++){
+   let match=true;
+   for(let k=0;k<ctx.length;k++){ if(ws[i+k]!==ctx[k]){match=false;break;} }
+   if(match){ const nx=ws[i+ctx.length]; m[nx]=(m[nx]||0)+1; }
+  }
+ });
+ return m;
+}
+function setOrd(o){
+ ord=o;
+ document.querySelectorAll('#d1 .bar').forEach(b=>b.classList.remove('on'));
+ const out=document.getElementById('outNg');
+ if(o===1){
+  const m=countsAfter([]);
+  out.innerHTML='<b>Unigrama (sem contexto):</b> palavras mais frequentes no corpus:<br>'+
+   Object.keys(m).sort((a,b)=>m[b]-m[a]).slice(0,5).map(w=>w+' ('+m[w]+')').join(', ')+
+   '<br><i>Exemplo real:</i> sem contexto, o modelo só aposta nas palavras mais comuns — por isso o unigrama é fraco.';
+  return;
+ }
+ const ctxs = o===2 ? [['bom'],['eu'],['boa']] : [['bom','dia'],['eu','amo']];
+ out.innerHTML='<b>'+(o===2?'Bigrama (1 palavra de contexto)':'Trigrama (2 palavras de contexto)')+'</b> — clique num contexto:<br>'+
+  ctxs.map(c=>'<button class="bar" data-c="'+c.join(' ')+'">'+c.join(' ')+' …</button>').join(' ');
+ out.querySelectorAll('button').forEach(btn=>{
+  btn.onclick=function(){
+   const ctx=btn.getAttribute('data-c').split(' ');
+   const m=countsAfter(ctx);
+   const tot=Object.values(m).reduce((a,b)=>a+b,0);
+   out.innerHTML='<b>Depois de "'+ctx.join(' ')+'":</b><br>'+
+    Object.keys(m).sort((a,b)=>m[b]-m[a]).map(w=>w+': '+Math.round(m[w]/tot*100)+'% ('+m[w]+' de '+tot+')').join('<br>')+
+    '<br><i>Exemplo real:</i> é assim que o teclado do celular sugere a próxima palavra — contando o que costuma vir depois.';
+  };
+ });
+}
+function resetNg(){ ord=0; document.getElementById('outNg').textContent='Escolha uma ordem para ver os contextos disponíveis.'; }
+
+// 02 - ÁRVORE DE DEPENDÊNCIA
+const g2=makeGame('o2',['comeu','maçã','menino'],[
+ {t:'Qual é o chefe (governador) de "menino"?',ok:'comeu',hint:'o verbo principal governa o sujeito',fb:'✅ "Menino" é sujeito de "comeu" — depende do verbo raiz.'},
+ {t:'Qual é o chefe de "vermelha"?',ok:'maçã',hint:'adjetivo depende do substantivo',fb:'✅ "Vermelha" qualifica "maçã" — depende dela.'},
+ {t:'Qual é o chefe de "maçã"?',ok:'comeu',hint:'objeto depende do verbo',fb:'✅ "Maçã" é objeto de "comeu" — depende do verbo.'},
+ {t:'Qual é o chefe de "o" (antes de menino)?',ok:'menino',hint:'artigo depende do substantivo',fb:'✅ O artigo "o" determina "menino" — depende dele.'}
+],'é o organograma da frase: cada palavra "reporta" ao seu chefe, e a raiz é o verbo.');
+g2.draw();
+
+// 03 - SEMÂNTICA × SINTAXE
+const g3=makeGame('o3',['Sintaxe e semântica OK','Sintaxe OK, semântica falha','Sintaxe falha'],[
+ {t:'O menino comeu a maçã.',ok:'Sintaxe e semântica OK',hint:'gramatical e com sentido',fb:'✅ Ambas OK: estrutura correta e significado coerente.'},
+ {t:'Ideias verdes incolores dormem furiosamente.',ok:'Sintaxe OK, semântica falha',hint:'gramatical sem sentido',fb:'✅ Sintaxe OK, semântica falha: o exemplo clássico de Chomsky.'},
+ {t:'Maçã a comeu menino o.',ok:'Sintaxe falha',hint:'agramatical',fb:'✅ Sintaxe falha: a ordem quebra a gramática.'},
+ {t:'int x = 5;  (em C)',ok:'Sintaxe e semântica OK',hint:'código válido',fb:'✅ Ambas OK: o compilador aceita e o código faz sentido.'},
+ {t:'x = = 5 int;  (em C)',ok:'Sintaxe falha',hint:'código agramatical',fb:'✅ Sintaxe falha: o compilador rejeita antes de pensar em significado.'}
+],'o compilador é o juiz da sintaxe; o programador (e o usuário) são os juízes da semântica.');
+g3.draw();
+
+// 04 - MODELOS + SENSOR RUIDOSO
+const g4=makeGame('o4',['Modelo do mundo','Modelo do sensor'],[
+ {t:'Descreve como a temperatura da sala evolui ao longo do dia',ok:'Modelo do mundo',hint:'evolução do estado',fb:'✅ Modelo do mundo: como o estado real evolui no tempo.'},
+ {t:'Descreve que o termômetro erra até 2 graus para mais ou menos',ok:'Modelo do sensor',hint:'como mede/erra',fb:'✅ Modelo do sensor: como a leitura se relaciona ao estado real, com ruído.'},
+ {t:'Diz que a sala esquenta quando o sol entra pela janela',ok:'Modelo do mundo',hint:'dinâmica do estado',fb:'✅ Modelo do mundo: a dinâmica que muda o estado.'},
+ {t:'Diz que, com a sala a 25 graus, o sensor lê 24, 25 ou 26 com certas chances',ok:'Modelo do sensor',hint:'probabilidade de leitura',fb:'✅ Modelo do sensor: a distribuição das leituras dado o estado.'}
+],'o termômetro barato: o mundo evolui, o sensor engana — perceber é combinar os dois.');
+g4.draw();
+
+let reads=[];
+function readSen(){
+ const v=25+(Math.random()*4-2);
+ reads.push(v);
+ const avg=reads.reduce((a,b)=>a+b,0)/reads.length;
+ document.getElementById('outSen').innerHTML=
+  '<b>Leituras:</b> '+reads.map(r=>r.toFixed(1)).join(', ')+' °C<br>'+
+  '<b>Média atual:</b> '+avg.toFixed(2)+' °C (verdadeiro: 25 °C)<br>'+
+  '<b>Exemplo real:</b> cada leitura tem ruído, mas a média converge para o valor verdadeiro — o modelo do sensor permite corrigir.';
+}
+function resetSen(){ reads=[]; document.getElementById('outSen').textContent='Clique em "Fazer leitura" para simular o sensor ruidoso (sala a 25 °C).'; }
+
+// 05 - TAREFAS DE PERCEPÇÃO
+const g5=makeGame('o5',['Filtragem','Previsão','Suavização','Explicação mais provável','Aprendizagem'],[
+ {t:'Estimar onde o carro está AGORA com o GPS até agora',ok:'Filtragem',hint:'estado atual',fb:'✅ Filtragem: estado atual dado o histórico.'},
+ {t:'Estimar onde o carro estará em 5 segundos',ok:'Previsão',hint:'futuro',fb:'✅ Previsão: estado futuro.'},
+ {t:'Reconstruir onde o carro estava há 10 s usando também dados de depois',ok:'Suavização',hint:'passado com dados posteriores',fb:'✅ Suavização: passado estimado com tudo, inclusive o depois.'},
+ {t:'Descobrir qual trajetória o carro mais provavelmente percorreu',ok:'Explicação mais provável',hint:'sequência de estados',fb:'✅ Explicação mais provável: a sequência de estados mais plausível.'},
+ {t:'Ajustar o modelo do sensor com novas medições calibradas',ok:'Aprendizagem',hint:'ajustar modelos',fb:'✅ Aprendizagem: ajustar os modelos com dados novos.'}
+],'o GPS do carro responde às cinco: onde estou, onde estarei, onde eu estava, que rota fiz, e calibrar o próprio GPS.');
+g5.draw();
+
+// 06 - PIXELS
+const PIX=[
+ [{r:200,g:30,b:40,d:0.9},{r:210,g:40,b:45,d:0.8},{r:30,g:120,b:60,d:0.5},{r:20,g:100,b:50,d:0.6}],
+ [{r:205,g:35,b:42,d:0.85},{r:240,g:240,b:240,d:0.3},{r:35,g:125,b:65,d:0.55},{r:25,g:105,b:55,d:0.65}],
+ [{r:40,g:80,b:200,d:0.4},{r:245,g:245,b:245,d:0.25},{r:250,g:200,b:60,d:0.7},{r:248,g:195,b:55,d:0.75}],
+ [{r:45,g:85,b:205,d:0.45},{r:50,g:90,b:210,d:0.5},{r:250,g:205,b:65,d:0.72},{r:30,g:110,b:58,d:0.6}]
+];
+let depthMode=false;
+function drawPx(){
+ const w=document.getElementById('pxGrid'); w.innerHTML='';
+ PIX.forEach((row,i)=>{
+  row.forEach((p,j)=>{
+   const s=document.createElement('span'); s.className='px';
+   if(depthMode){ const g=Math.round(255*(1-p.d)); s.style.background='rgb('+g+','+g+','+g+')'; }
+   else s.style.background='rgb('+p.r+','+p.g+','+p.b+')';
+   s.onclick=()=>showPx(p,i,j);
+   w.appendChild(s);
+  });
+  w.appendChild(document.createElement('br'));
+ });
+}
+function showPx(p,i,j){
+ const c=1-p.r/255, m=1-p.g/255, y=1-p.b/255;
+ const k=Math.min(c,m,y);
+ const C=k===1?0:(c-k)/(1-k), M=k===1?0:(m-k)/(1-k), Y=k===1?0:(y-k)/(1-k);
+ document.getElementById('outPx').innerHTML=
+  '<b>Pixel ['+i+']['+j+']:</b> RGB('+p.r+', '+p.g+', '+p.b+') → CMYK('+Math.round(C*100)+'%, '+Math.round(M*100)+'%, '+Math.round(Y*100)+'%, '+Math.round(k*100)+'%)<br>'+
+  '<b>Profundidade:</b> '+p.d+' (1 = perto, 0 = longe)<br>'+
+  '<b>Exemplo real:</b> para a máquina a imagem é só isso — números por pixel; RGB soma luz (telas) e CMYK subtrai (impressão).';
+}
+function showDepth(){ depthMode=true; drawPx();
+ document.getElementById('outPx').innerHTML='<b>Mapa de profundidade:</b> claro = perto, escuro = longe. <b>Exemplo real:</b> é assim que a visão 3D nasce de dados 2D — a distância vira mais um canal de números, como no sensor de profundidade de um robô aspirador.'; }
+function showColors(){ depthMode=false; drawPx();
+ document.getElementById('outPx').textContent='Clique num pixel para inspecionar os valores de cor.'; }
+function resetPx(){ depthMode=false; drawPx(); document.getElementById('outPx').textContent='Clique num pixel para inspecionar os valores de cor.'; }
+drawPx();
+</script>
+</body>
+</html>
