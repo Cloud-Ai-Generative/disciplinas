@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SO Interativo — Aula 10 (Unidade 4)</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:system-ui,sans-serif;background:#f4f7f6;margin:0;padding:18px;color:#1d1d1f}
+h1{font-size:1.25rem} h2{margin-top:0}
+nav{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.tab{border:2px solid #1d1d1f;background:#fff;border-radius:10px;padding:8px 12px;cursor:pointer;box-shadow:3px 3px 0 #f97316;font-weight:600}
+.tab.active{background:#f97316;color:#fff}
+.demo{display:none;background:#fff;border:2px solid #1d1d1f;border-radius:14px;padding:16px;box-shadow:5px 5px 0 #f97316}
+.demo.active{display:block}
+button{border:2px solid #1d1d1f;border-radius:8px;background:#fff;padding:6px 10px;cursor:pointer;font-weight:600}
+button:hover{background:#fff7ed}
+details{margin:10px 0;border-radius:10px;padding:8px 12px;border:2px solid #1d1d1f}
+summary{cursor:pointer;font-weight:700}
+.info{background:#eaf4ff}.steps{background:#fff8dc}.links{background:#f2f2f2}.real{background:#eaffe8}.tool{background:#f5eaff}.quiz{background:#ffe8f0}
+.links a{color:#0a66c2;display:inline-block;margin:2px 12px 2px 0}
+.q{margin:2px}.q.ok{background:#b9f6ca}.q.bad{background:#ffb3b3}
+.fb{font-size:.85rem;background:#fff;border-radius:6px;padding:4px 8px;margin:4px 0}
+#o1,#o2,#o3,#o4,#o5,#o6,#painel1,#painel2,#painel3{background:#fff;border:2px dashed #999;border-radius:8px;padding:10px;margin:8px 0;min-height:40px}
+.bar{display:inline-block;border:2px solid #1d1d1f;border-radius:8px;padding:6px 12px;margin:3px;cursor:pointer;background:#fff;font-weight:600}
+.term{background:#111;color:#0f0;font-family:monospace;border-radius:10px;padding:12px;min-height:140px;max-height:220px;overflow:auto;white-space:pre-wrap}
+.rv{display:none;margin-left:6px}
+.instrucao{background:#fff3cd;border:2px solid #ffc107;border-radius:8px;padding:10px;margin:8px 0}
+.instrucao b{color:#856404}
+input[type=text]{width:50%;padding:6px;border:2px solid #1d1d1f;border-radius:8px}
+body.aposta .sig{display:none}
+body.aposta .sig.shown{display:inline}
+body.aposta .rv{display:inline-block}
+body.aposta .rv.off{display:none}
+#apBtn{box-shadow:3px 3px 0 #d4a017}
+</style>
+</head>
+<body>
+<h1>⏱️ SO — Aula 10 (Unidade 4, págs. 25–40): clocks e terminais</h1>
+<button id="apBtn" onclick="aposta()">🎲 Modo aposta: OFF</button>
+<p>Mesma estrutura das aulas anteriores: 🌍 →  → 🎤 plano de testes → demo → 🧠 quiz (3 alternativas embaralhadas, cada uma com a própria explicação, tudo por extenso) → 🔗 Aprofundar. Com 🎲 ligado, a turma aposta antes de revelar.</p>
+
+<details class="tool"><summary>🧰 Glossário de ferramentas (leia uma vez!)</summary><ul>
+  <li><b>Clock:</b> sinal que marca o ritmo do processador em ciclos por segundo (Hertz).</li>
+  <li><b>Clock rate/speed:</b> a frequência de operação (ex.: 3,5 GHz).</li>
+  <li><b>Superescalar:</b> processador que executa mais de uma instrução por ciclo (várias esteiras).</li>
+  <li><b>Overclock:</b> rodar acima da frequência de fábrica (mais desempenho, mais calor).</li>
+  <li><b>Multiplicador:</b> fator que multiplica o clock-base para dar o clock final.</li>
+  <li><b>Barramento:</b> a "avenida" da placa-mãe que liga componentes, com largura e clock próprios.</li>
+  <li><b>Shell:</b> interpretador de comandos entre o usuário e o kernel (e base da automação/IoT).</li>
+</ul></details>
+
+<nav>
+  <button class="tab active" data-t="d1">01 Clock e Hertz</button>
+  <button class="tab" data-t="d2">02 Superescalar, overclock, multiplicador</button>
+  <button class="tab" data-t="d3">03 Barramentos e clock em E/S</button>
+  <button class="tab" data-t="d4">04 Multitarefa × multiusuário</button>
+  <button class="tab" data-t="d5">05 Multiprogramação serial × integral</button>
+  <button class="tab" data-t="d6">06 Shell e automação IoT</button>
+</nav>
+
+<!-- 01 -->
+<section id="d1" class="demo active">
+  <h2>01 — Clock de processamento: Hertz e clock rate</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Metrônomo do pianista:</b> marca o ritmo das notas. O clock é o metrônomo do chip: a cada "tic", um passo de trabalho.</li>
+    <li><b>3 GHz:</b> 3 bilhões de tics por segundo — é o que "clock rate" significa na caixa do processador.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Hertz (Hz):</b> 1 ciclo por segundo. kHz, MHz, GHz = mil, milhão, bilhão.</li>
+    <li><b>Clock rate/speed:</b> frequência de operação do processador.</li>
+    <li><b>Ciclo:</b> o passo básico em que a CPU busca/decodifica/executa.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> um slider de frequência e um painel que converte GHz em ciclos por segundo.</li>
+    <li><b>Teste 1 — mexer na frequência.</b> <i>Clicar:</i> no slider. <span class="sig"><i>Vê:</i> os ciclos por segundo e por minuto mudarem. <i>Significa:</i> Hertz é só "ciclos por segundo" — 3 GHz são 3 bilhões de passos por segundo, o ritmo de todo o processamento.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Mova o slider de <b>frequência</b> (1 a 5 GHz).<br>
+    <b>Passo 2:</b> Veja no painel os ciclos por segundo e por minuto.<br>
+    <b>Passo 3:</b> Clique em "🔄 Reiniciar" para voltar a 3 GHz.<br><br>
+    <b>Dica:</b> 1 GHz = 1 bilhão de ciclos por segundo.
+  </div>
+  Frequência: <input type="range" id="ghz" min="1" max="5" step="0.5" value="3" oninput="upd1()">
+  <button onclick="reset1()">🔄 Reiniciar</button>
+  <div id="painel1"></div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u11"><p>1) O clock de processamento é…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Um sinal que sincroniza as operações em ciclos por segundo — o metrônomo do chip.">um sinal que sincroniza as operações em ciclos por segundo</button>
+      <button class="q" data-fb="❌ Não é memória.">um tipo de memória</button>
+      <button class="q" data-fb="❌ Não é unidade de armazenamento.">uma unidade de armazenamento</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u12"><p>2) Hertz mede…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Ciclos por segundo — 3 GHz = 3 bilhões de ciclos/s.">ciclos por segundo</button>
+      <button class="q" data-fb="❌ Bytes por segundo é taxa de transferência.">bytes por segundo</button>
+      <button class="q" data-fb="❌ Não é bits por minuto.">bits por minuto</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u13"><p>3) Clock rate (ou speed) é…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! A frequência em que o processador executa seus ciclos.">a frequência em que o processador executa ciclos</button>
+      <button class="q" data-fb="❌ Número de núcleos é outra especificação.">o número de núcleos</button>
+      <button class="q" data-fb="❌ Tamanho de cache é outra especificação.">o tamanho da cache</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://scholar.google.com/scholar?q=clock+de+processamento+hertz">Artigos sobre clock — Google Acadêmico</a>
+    <a target="_blank" href="https://search.scielo.org/?q=clock+processador&lang=pt">Artigos sobre clock — Scielo</a>
+  </details>
+</section>
+
+<!-- 02 -->
+<section id="d2" class="demo">
+  <h2>02 — Superescalares, overclock e multiplicadores</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Caixa de supermercado com várias esteiras:</b> superescalar = mais de uma instrução por ciclo, como várias esteiras atendendo ao mesmo tempo.</li>
+    <li><b>Overclock:</b> "turbinar" o motor acima do especificado — anda mais, mas esquenta e gasta mais.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Superescalar:</b> executa várias instruções por ciclo (múltiplos pipelines).</li>
+    <li><b>Multiplicador:</b> clock final = clock-base × multiplicador.</li>
+    <li><b>Overclock:</b> operar acima da especificação de fábrica.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> clock-base e multiplicador ajustáveis; o painel mostra o clock final e avisa se virou overclock.</li>
+    <li><b>Teste 1 — calcular.</b> <i>Clicar:</i> nos sliders. <span class="sig"><i>Vê:</i> base × multiplicador = clock final; acima do multiplicador de fábrica (35), acende o aviso de overclock/calor. <i>Significa:</i> o multiplicador é a "marcha" que leva o clock-base ao clock de operação — e forçá-la tem custo térmico.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Ajuste o <b>clock-base</b> e o <b>multiplicador</b>.<br>
+    <b>Passo 2:</b> Veja o <b>clock final</b> e o status (especificação × overclock).<br>
+    <b>Passo 3:</b> Passe o multiplicador de 35 para ver o aviso de calor.<br>
+    <b>Passo 4:</b> Clique em "🔄 Reiniciar".<br><br>
+    <b>Dica:</b> clock final = base × multiplicador; acima de 35 = overclock.
+  </div>
+  Base: <input type="range" id="base" min="100" max="150" step="5" value="100" oninput="upd2()">
+  Multiplicador: <input type="range" id="mult" min="10" max="45" step="1" value="35" oninput="upd2()">
+  <button onclick="reset2()">🔄 Reiniciar</button>
+  <div id="painel2"></div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u21"><p>1) Um processador superescalar…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Executa várias instruções por ciclo, como várias esteiras de caixa.">executa mais de uma instrução por ciclo</button>
+      <button class="q" data-fb="❌ Uma por ciclo é o escalar simples.">executa uma instrução por ciclo</button>
+      <button class="q" data-fb="❌ Todo processador tem clock.">não possui clock</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u22"><p>2) Overclock é…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Rodar acima do especificado: mais desempenho, mais calor e consumo.">operar o clock acima da especificação de fábrica</button>
+      <button class="q" data-fb="❌ Reduzir é underclock.">reduzir o clock para economizar</button>
+      <button class="q" data-fb="❌ Não mexe na memória.">trocar a memória do computador</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u23"><p>3) O multiplicador de clock…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Multiplica o clock-base para obter a frequência de operação.">multiplica o clock-base para dar o clock final</button>
+      <button class="q" data-fb="❌ Ele multiplica, não divide.">divide a frequência</button>
+      <button class="q" data-fb="❌ Não mede temperatura.">mede a temperatura</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://scholar.google.com/scholar?q=overclock+multiplicador+de+clock">Artigos sobre overclock — Google Acadêmico</a>
+    <a target="_blank" href="https://search.scielo.org/?q=overclock+processador&lang=pt">Artigos sobre overclock — Scielo</a>
+  </details>
+</section>
+
+<!-- 03 -->
+<section id="d3" class="demo">
+  <h2>03 — Barramentos da placa-mãe e clock em E/S</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Avenida:</b> largura (pistas) × velocidade limite (clock) = quantos carros (dados) passam por segundo. O barramento é a avenida da placa-mãe.</li>
+    <li><b>Dispositivos de E/S:</b> teclado, disco e rede também "dançam no ritmo" do clock para trocar dados sem atropelo.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Barramento:</b> via de comunicação entre CPU, memória e periféricos.</li>
+    <li><b>Largura:</b> quantos bits viajam juntos (32, 64, 128).</li>
+    <li><b>Largura de banda:</b> largura × frequência = bytes por segundo.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> escolha a largura (bits) e a frequência (MHz) do barramento e veja a largura de banda.</li>
+    <li><b>Teste 1 — comparar.</b> <i>Clicar:</i> nas larguras e no slider. <span class="sig"><i>Vê:</i> a banda crescer com largura e frequência. <i>Significa:</i> como na avenida, mais pistas e mais ritmo = mais dados por segundo; e cada dispositivo de E/S precisa desse mesmo relógio para se sincronizar.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Clique numa <b>largura</b> (32/64/128 bits).<br>
+    <b>Passo 2:</b> Mova o slider de <b>frequência</b>.<br>
+    <b>Passo 3:</b> Veja a <b>largura de banda</b> no painel.<br>
+    <b>Passo 4:</b> Clique em "🔄 Reiniciar".<br><br>
+    <b>Dica:</b> banda (GB/s) = (bits ÷ 8) × frequência (MHz) ÷ 1000.
+  </div>
+  <span class="bar" id="w32" onclick="setW(32)">32 bits</span>
+  <span class="bar" id="w64" onclick="setW(64)">64 bits</span>
+  <span class="bar" id="w128" onclick="setW(128)">128 bits</span>
+  Frequência: <input type="range" id="bfreq" min="100" max="1600" step="100" value="800" oninput="upd3()">
+  <button onclick="reset3()">🔄 Reiniciar</button>
+  <div id="painel3"></div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u31"><p>1) O barramento da placa-mãe é…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! A via que conecta componentes, com largura e clock próprios — como uma avenida.">a via de comunicação entre componentes, com largura e clock</button>
+      <button class="q" data-fb="❌ Não armazena dados.">um dispositivo de armazenamento</button>
+      <button class="q" data-fb="❌ Não é processador.">um tipo de processador</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u32"><p>2) A largura de banda do barramento cresce com…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Mais bits por vez e mais ciclos por segundo = mais dados/s.">a largura em bits e a frequência</button>
+      <button class="q" data-fb="❌ Comprimento de cabo não aumenta banda.">o comprimento do cabo</button>
+      <button class="q" data-fb="❌ Não tem relação com parafusos.">o número de parafusos</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u33"><p>3) Dispositivos de entrada/saída também usam clock porque…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Precisam de sincronia para trocar dados sem atropelo.">precisam de sincronia para trocar dados</button>
+      <button class="q" data-fb="❌ Clock não armazena arquivos.">guardam arquivos</button>
+      <button class="q" data-fb="❌ Não é sobre exibir imagens.">exibem imagens</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://scholar.google.com/scholar?q=barramento+de+placa-m%C3%A3e+largura+de+banda">Artigos sobre barramentos — Google Acadêmico</a>
+    <a target="_blank" href="https://search.scielo.org/?q=barramento+computador&lang=pt">Artigos sobre barramentos — Scielo</a>
+  </details>
+</section>
+
+<!-- 04 -->
+<section id="d4" class="demo">
+  <h2>04 — Terminais multiusuários: multitarefa × multiusuário</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Multitarefa:</b> você com música, editor e navegador abertos ao mesmo tempo.</li>
+    <li><b>Multiusuário:</b> o mainframe da universidade com 50 alunos logados em terminais ao mesmo tempo.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Multiprogramado:</b> vários programas na memória ao mesmo tempo.</li>
+    <li><b>Multitarefa:</b> várias tarefas concorrendo pela CPU (para um ou mais usuários).</li>
+    <li><b>Multiusuário:</b> vários usuários simultâneos no mesmo sistema.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> jogo de classificar 6 situações como multitarefa, multiusuário ou ambos.</li>
+    <li><b>Teste 1 — classificar.</b> <i>Clicar:</i> na opção correta. <span class="sig"><i>Vê:</i> acerto/erro com o porquê e exemplo real. <i>Significa:</i> multitarefa é sobre PROGRAMAS concorrendo; multiusuário é sobre PESSOAS simultâneas — um servidor típico é os dois.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Abaixo aparece uma <b>situação</b>.<br>
+    <b>Passo 2:</b> Clique em <b>Multitarefa</b>, <b>Multiusuário</b> ou <b>Ambos</b>.<br>
+    <b>Passo 3:</b> Se acertar, avança. Se errar, tenta de novo.<br>
+    <b>Passo 4:</b> Ao final, clique em "🔄 Jogar de novo".<br><br>
+    <b>Dica:</b> vários programas = multitarefa; várias pessoas = multiusuário; os dois = ambos.
+  </div>
+  <div id="o4"></div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u41"><p>1) Multitarefa é…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Várias tarefas/programas concorrendo pela CPU ao mesmo tempo.">várias tarefas concorrendo pela CPU ao mesmo tempo</button>
+      <button class="q" data-fb="❌ Vários usuários é multiusuário.">vários usuários apenas</button>
+      <button class="q" data-fb="❌ Um programa por vez é monotarefa.">um programa por vez</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u42"><p>2) Multiusuário é…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Vários usuários simultâneos no mesmo sistema, como terminais de um mainframe.">vários usuários simultâneos no mesmo sistema</button>
+      <button class="q" data-fb="❌ Vários monitores não define multiusuário.">vários monitores</button>
+      <button class="q" data-fb="❌ Vários discos não define multiusuário.">vários discos</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u43"><p>3) Um servidor com vários usuários logados, cada um com vários apps, é…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Multitarefa (vários apps) e multiusuário (várias pessoas) ao mesmo tempo.">multitarefa e multiusuário</button>
+      <button class="q" data-fb="❌ Também há várias pessoas.">apenas multitarefa</button>
+      <button class="q" data-fb="❌ Também há vários apps.">apenas multiusuário</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://scholar.google.com/scholar?q=sistemas+multiprogramados+multiusu%C3%A1rio">Artigos sobre sistemas multiusuário — Google Acadêmico</a>
+    <a target="_blank" href="https://search.scielo.org/?q=multiprograma%C3%A7%C3%A3o+multitarefa&lang=pt">Artigos sobre multiprogramação — Scielo</a>
+  </details>
+</section>
+
+<!-- 05 -->
+<section id="d5" class="demo">
+  <h2>05 — Multiprogramação serial × integral</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Serial:</b> um cozinheiro que só começa o próximo prato quando o atual está 100% pronto — fica parado esperando o forno.</li>
+    <li><b>Integral:</b> enquanto o bolo assa (E/S), ele adianta a salada (CPU) — sobrepõe espera e trabalho.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Multiprogramação serial:</b> um programa roda até o fim antes do próximo; CPU pode ficar ociosa em E/S.</li>
+    <li><b>Multiprogramação integral:</b> vários programas na memória; a CPU alterna e sobrepõe E/S com processamento.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> jogo de classificar 6 descrições como serial ou integral.</li>
+    <li><b>Teste 1 — classificar.</b> <i>Clicar:</i> na opção correta. <span class="sig"><i>Vê:</i> acerto/erro com o porquê e exemplo real. <i>Significa:</i> a integral nasceu para eliminar o ócio da CPU durante E/S — por isso os SOs modernos são integrais.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Abaixo aparece uma <b>descrição</b>.<br>
+    <b>Passo 2:</b> Clique em <b>Serial</b> ou <b>Integral</b>.<br>
+    <b>Passo 3:</b> Se acertar, avança. Se errar, tenta de novo.<br>
+    <b>Passo 4:</b> Ao final, clique em "🔄 Jogar de novo".<br><br>
+    <b>Dica:</b> um por vez até o fim = serial; alterna e sobrepõe E/S = integral.
+  </div>
+  <div id="o5"></div>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u51"><p>1) Na multiprogramação serial…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Um programa roda até o fim antes do próximo; a CPU pode ociosar em E/S.">um programa roda até o fim antes do próximo</button>
+      <button class="q" data-fb="❌ Vários na memória ao mesmo tempo é integral.">vários programas rodam na memória ao mesmo tempo</button>
+      <button class="q" data-fb="❌ Na serial a CPU ociosa em E/S.">a CPU nunca fica ociosa</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u52"><p>2) Na multiprogramação integral…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Vários programas na memória; a CPU alterna e sobrepõe E/S com processamento.">vários programas na memória, com a CPU alternando e sobrepondo E/S</button>
+      <button class="q" data-fb="❌ Um por vez é serial.">roda um programa por vez até o fim</button>
+      <button class="q" data-fb="❌ Há alternância sim.">não há alternância</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u53"><p>3) A CPU ficar ociosa esperando E/S é típico da multiprogramação…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Na serial, enquanto um programa espera E/S, a CPU para.">serial</button>
+      <button class="q" data-fb="❌ A integral justamente evita esse ócio.">integral</button>
+      <button class="q" data-fb="❌ Superescalar é arquitetura de CPU.">superescalar</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://scholar.google.com/scholar?q=multiprograma%C3%A7%C3%A3o+serial+integral">Artigos sobre multiprogramação — Google Acadêmico</a>
+    <a target="_blank" href="https://search.scielo.org/?q=multiprograma%C3%A7%C3%A3o&lang=pt">Artigos sobre multiprogramação — Scielo</a>
+  </details>
+</section>
+
+<!-- 06 -->
+<section id="d6" class="demo">
+  <h2>06 — Shell e automação IoT</h2>
+  <details class="real"><summary>🌍 No mundo real</summary><ul>
+    <li><b>Garçom (shell) × cozinha (kernel):</b> você pede ao garçom em linguagem humana; ele traduz para a cozinha. O shell traduz seus comandos para o kernel.</li>
+    <li><b>IoT:</b> um script shell que lê o sensor de temperatura e liga o ventilador sozinho — automação de ponta a ponta.</li>
+  </ul></details>
+  <details class="info"><summary>🔤 Mini-dicionário</summary><ul>
+    <li><b>Shell:</b> interpretador de comandos (linha de texto) entre usuário e kernel.</li>
+    <li><b>Script shell:</b> arquivo com sequência de comandos executados em ordem — a base da automação.</li>
+    <li><b>Automação IoT:</b> scripts que leem sensores e acionam atuadores sem intervenção humana.</li>
+  </ul></details>
+
+  <details class="steps"><summary>🎤 Plano de testes</summary><ol>
+    <li><b>Passo 0 — entender a tela:</b> um mini-shell de verdade: digite comandos (help, date, ls, echo, led on/off) e rode um script de automação IoT.</li>
+    <li><b>Teste 1 — comandos.</b> <i>Clicar:</i> "Enviar" com cada comando. <span class="sig"><i>Vê:</i> a resposta do shell. <i>Significa:</i> o shell é a ponte de tradução entre você e o kernel — cada comando vira uma ação do sistema.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+    <li><b>Teste 2 — automação.</b> <i>Clicar:</i> "Rodar automacao.sh". <span class="sig"><i>Vê:</i> o script ler o sensor, decidir e ligar o LED sozinho. <i>Significa:</i> automação IoT é só um script shell encadeando leitura → decisão → ação, sem humano no loop.</span><button class="rv" onclick="rev(this)">🎲 revelar</button></li>
+  </ol></details>
+
+  <div class="instrucao">
+    <b>📋 INSTRUÇÕES PASSO A PASSO:</b><br>
+    <b>Passo 1:</b> Digite <b>help</b> e clique em "Enviar" para ver os comandos.<br>
+    <b>Passo 2:</b> Experimente <b>date</b>, <b>ls</b>, <b>echo ola</b>, <b>led on</b>, <b>led off</b>.<br>
+    <b>Passo 3:</b> Clique em <b>🤖 Rodar automacao.sh</b> para ver a automação IoT.<br>
+    <b>Passo 4:</b> Clique em "🧹 Limpar" para refazer.<br><br>
+    <b>Dica:</b> o script encadeia leitura → decisão → ação sozinho.
+  </div>
+  <div class="term" id="term">$ _</div>
+  <div style="margin:10px 0">
+    <input type="text" id="cmd" placeholder="digite um comando (help)">
+    <button onclick="runCmd()">Enviar</button>
+    <button onclick="runScript()">🤖 Rodar automacao.sh</button>
+    <button onclick="clearTerm()">🧹 Limpar</button>
+  </div>
+  <div id="o6">LED: <span id="led">⚪ desligado</span></div>
+
+  <details class="info"><summary>🗺️ Mapa da aula (visão geral)</summary>
+    <p><b>Clock</b> (Hertz, clock rate) → <b>superescalar/overclock/multiplicador</b> (ritmo e marcha) → <b>barramentos</b> (largura × frequência; clock em E/S) → <b>terminais</b> (multitarefa × multiusuário) → <b>multiprogramação</b> (serial × integral) → <b>Shell</b> (comandos e automação IoT).</p>
+  </details>
+  <details class="info"><summary>📝 Cola rápida (uma linha por termo)</summary><ul>
+    <li><b>Clock:</b> ritmo em ciclos/s (Hertz). <b>Clock rate:</b> frequência de operação.</li>
+    <li><b>Superescalar:</b> &gt;1 instrução por ciclo. <b>Overclock:</b> acima do especificado.</li>
+    <li><b>Multiplicador:</b> base × multiplicador = clock final.</li>
+    <li><b>Barramento:</b> largura (bits) × frequência = banda.</li>
+    <li><b>Multitarefa:</b> vários programas. <b>Multiusuário:</b> várias pessoas.</li>
+    <li><b>Serial:</b> um por vez (CPU ociosa em E/S). <b>Integral:</b> alterna e sobrepõe.</li>
+    <li><b>Shell:</b> interpretador de comandos; scripts automatizam (IoT).</li>
+  </ul></details>
+
+  <details class="quiz"><summary>🧠 Quiz</summary>
+    <div class="qq" id="u61"><p>1) O Shell é…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! O interpretador de comandos entre o usuário e o kernel — como o garçom.">o interpretador de comandos entre usuário e kernel</button>
+      <button class="q" data-fb="❌ Não é editor gráfico.">um editor gráfico</button>
+      <button class="q" data-fb="❌ Não é antivírus.">um antivírus</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u62"><p>2) A automação via shell permite…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Executar sequências de comandos por scripts — como acionar um atuador IoT.">executar sequências de comandos via scripts</button>
+      <button class="q" data-fb="❌ Scripts existem justamente para não digitar tudo.">apenas digitação manual</button>
+      <button class="q" data-fb="❌ Não é só impressão.">apenas imprimir arquivos</button>
+      <p class="fb"></p></div>
+    <div class="qq" id="u63"><p>3) Em IoT, o shell pode ser usado para…</p>
+      <button class="q" data-ok="1" data-fb="✅ Isso! Ler sensores e acionar atuadores por scripts, sem humano no loop.">ler sensores e acionar atuadores automaticamente</button>
+      <button class="q" data-fb="❌ Montar circuito é hardware.">montar o circuito físico</button>
+      <button class="q" data-fb="❌ Pintar telas não é função de shell.">pintar telas coloridas</button>
+      <p class="fb"></p></div>
+  </details>
+  <details class="links"><summary>🔗 Aprofundar</summary>
+    <a target="_blank" href="https://scholar.google.com/scholar?q=shell+script+automa%C3%A7%C3%A3o+IoT">Artigos sobre shell e automação — Google Acadêmico</a>
+    <a target="_blank" href="https://search.scielo.org/?q=shell+script+automa%C3%A7%C3%A3o&lang=pt">Artigos sobre shell script — Scielo</a>
+    <a target="_blank" href="https://pt.wikipedia.org/wiki/Sistema_operacional">Sistema operacional — Wikipédia (fonte auxiliar)</a>
+  </details>
+</section>
+
+<script>
+// Trocar de aba NÃO reseta as demos (progresso mantido)
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.demo').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); document.getElementById(b.dataset.t).classList.add('active');
+});
+function aposta(){ document.body.classList.toggle('aposta');
+  document.getElementById('apBtn').textContent='🎲 Modo aposta: '+(document.body.classList.contains('aposta')?'ON':'OFF'); }
+function rev(b){ b.previousElementSibling.classList.add('shown'); b.classList.add('off'); }
+document.querySelectorAll('.qq').forEach(qq=>{
+ const btns=[...qq.querySelectorAll('button.q')];
+ const fb=qq.querySelector('.fb');
+ for(let i=btns.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [btns[i],btns[j]]=[btns[j],btns[i]]; }
+ btns.forEach(b=>qq.insertBefore(b,fb));
+});
+document.addEventListener('click',e=>{
+  const b=e.target.closest('.q'); if(!b) return;
+  const fb=b.closest('.qq').querySelector('.fb');
+  b.classList.add(b.dataset.ok=='1'?'ok':'bad');
+  fb.textContent=b.dataset.fb||'';
+});
+
+// Fábrica de jogos de classificação
+function makeGame(outId, opts, items, realEx){
+ const g={i:0,s:0};
+ g.draw=function(){
+  const out=document.getElementById(outId);
+  if(g.i>=items.length){
+   out.innerHTML='<b>🏁 Fim!</b> Você acertou '+g.s+' de '+items.length+'. <b>Exemplo real:</b> '+realEx+'<br><button id="rg_'+outId+'" style="margin-top:8px;font-size:1rem">🔄 Jogar de novo</button>';
+   document.getElementById('rg_'+outId).onclick=function(){g.i=0;g.s=0;g.draw();};
+   return;
+  }
+  const it=items[g.i];
+  out.innerHTML='<b>Situação '+(g.i+1)+' de '+items.length+':</b> "'+it.t+'"<br>'+
+   opts.map(o=>'<button class="bar" data-o="'+o+'">'+o+'</button>').join(' ');
+  out.querySelectorAll('button').forEach(btn=>{ btn.onclick=function(){ g.pick(btn.getAttribute('data-o')); }; });
+ };
+ g.pick=function(v){
+  const it=items[g.i];
+  if(v===it.ok){
+   g.s++;
+   document.getElementById(outId).innerHTML=it.fb+'<br><button id="nx_'+outId+'" style="margin-top:6px">próxima ▶</button>';
+   document.getElementById('nx_'+outId).onclick=function(){g.i++;g.draw();};
+  } else {
+   document.getElementById(outId).innerHTML='❌ Tente de novo. <b>Dica:</b> '+it.hint+'<br><b>Situação '+(g.i+1)+' de '+items.length+':</b> "'+it.t+'"<br>'+
+    opts.map(o=>'<button class="bar" data-o="'+o+'">'+o+'</button>').join(' ');
+   document.getElementById(outId).querySelectorAll('button').forEach(btn=>{ btn.onclick=function(){ g.pick(btn.getAttribute('data-o')); }; });
+  }
+ };
+ return g;
+}
+
+// 01 - CLOCK
+function upd1(){
+ const g=+document.getElementById('ghz').value;
+ const cps=g*1e9;
+ document.getElementById('painel1').innerHTML=
+  '<b>Frequência:</b> '+g+' GHz = <b>'+cps.toLocaleString('pt-BR')+' ciclos por segundo</b><br>'+
+  'Em 1 minuto: '+(cps*60).toLocaleString('pt-BR')+' ciclos.<br>'+
+  '<b>Exemplo real:</b> um chip de 3 GHz dá 3 bilhões de "tics" por segundo — o metrônomo de todo o processamento.';
+}
+function reset1(){ document.getElementById('ghz').value=3; upd1(); }
+upd1();
+
+// 02 - OVERCLOCK
+function upd2(){
+ const b=+document.getElementById('base').value, m=+document.getElementById('mult').value;
+ const finalMHz=b*m;
+ const oc=m>35;
+ document.getElementById('painel2').innerHTML=
+  '<b>Clock final:</b> '+b+' MHz × '+m+' = '+finalMHz+' MHz ('+(finalMHz/1000).toFixed(2)+' GHz)<br>'+
+  '<b>Status:</b> '+(oc?'🔥 OVERCLOCK: acima da especificação (multiplicador &gt; 35) — mais desempenho, mais calor e consumo.':'✅ Dentro da especificação de fábrica.')+'<br>'+
+  '<b>Exemplo real:</b> base 100 MHz × multiplicador 35 = 3,5 GHz — o número que aparece na caixa do processador.';
+}
+function reset2(){ document.getElementById('base').value=100; document.getElementById('mult').value=35; upd2(); }
+upd2();
+
+// 03 - BARRAMENTO
+let bw=64;
+function setW(w){
+ bw=w;
+ ['w32','w64','w128'].forEach(id=>document.getElementById(id).classList.remove('on'));
+ document.getElementById('w'+w).classList.add('on');
+ upd3();
+}
+function upd3(){
+ const f=+document.getElementById('bfreq').value;
+ const gbs=(bw*f)/8000;
+ document.getElementById('painel3').innerHTML=
+  '<b>Barramento:</b> '+bw+' bits @ '+f+' MHz → <b>largura de banda: '+gbs.toFixed(1)+' GB/s</b><br>'+
+  '<b>Exemplo real:</b> como uma avenida: 64 pistas (bits) a 1600 MHz levam 12,8 GB/s — o dobro de 32 pistas no mesmo ritmo. E cada dispositivo de E/S dança nesse mesmo relógio.';
+}
+function reset3(){ setW(64); document.getElementById('bfreq').value=800; upd3(); }
+setW(64);
+
+// 04 - MULTITAREFA × MULTIUSUÁRIO
+const g4=makeGame('o4',['Multitarefa','Multiusuário','Ambos'],[
+ {t:'Um usuário com música, editor e navegador abertos ao mesmo tempo',ok:'Multitarefa',hint:'vários programas, uma pessoa',fb:'✅ Multitarefa: vários programas concorrendo pela CPU, um único usuário.'},
+ {t:'Vários alunos logados em terminais do mainframe da universidade',ok:'Multiusuário',hint:'várias pessoas',fb:'✅ Multiusuário: várias pessoas simultâneas no mesmo sistema.'},
+ {t:'Servidor com 10 usuários logados, cada um rodando 3 aplicativos',ok:'Ambos',hint:'pessoas e programas',fb:'✅ Ambos: várias pessoas E vários programas ao mesmo tempo.'},
+ {t:'Smartphone rodando app de música e GPS para um único usuário',ok:'Multitarefa',hint:'vários apps, uma pessoa',fb:'✅ Multitarefa: vários apps para uma pessoa.'},
+ {t:'Mainframe com 50 funcionários usando o sistema de folha ao mesmo tempo',ok:'Multiusuário',hint:'várias pessoas',fb:'✅ Multiusuário: 50 pessoas simultâneas.'},
+ {t:'Linux servindo 8 desenvolvedores, cada um com editor e compilador rodando',ok:'Ambos',hint:'pessoas e programas',fb:'✅ Ambos: multiusuário e multitarefa, o padrão de servidores.'}
+],'é o mainframe da universidade: várias pessoas (multiusuário) com vários programas cada (multitarefa).');
+g4.draw();
+
+// 05 - SERIAL × INTEGRAL
+const g5=makeGame('o5',['Serial','Integral'],[
+ {t:'O programa A roda até o fim antes de o B começar',ok:'Serial',hint:'um por vez',fb:'✅ Serial: um programa por vez, até o fim.'},
+ {t:'Enquanto um programa espera o disco, a CPU executa outro',ok:'Integral',hint:'sobrepõe E/S',fb:'✅ Integral: sobrepõe espera de E/S com processamento.'},
+ {t:'Fila de jobs em lote processada um a um, sem sobreposição',ok:'Serial',hint:'lote um a um',fb:'✅ Serial: lote um a um, CPU ociosa nas esperas.'},
+ {t:'Vários aplicativos na memória com a CPU alternando entre eles',ok:'Integral',hint:'alterna',fb:'✅ Integral: vários na memória, CPU alternando.'},
+ {t:'A CPU fica parada enquanto o programa espera a impressora',ok:'Serial',hint:'CPU ociosa',fb:'✅ Serial: CPU ociosa durante E/S — o desperdício que a integral elimina.'},
+ {t:'Alta utilização da CPU graças à troca durante as esperas de E/S',ok:'Integral',hint:'alta utilização',fb:'✅ Integral: a alternância mantém a CPU ocupada.'}
+],'é o cozinheiro: serial só começa o próximo prato quando o atual acaba; integral adianta a salada enquanto o bolo assa.');
+g5.draw();
+
+// 06 - MINI SHELL
+let ledOn=false;
+function tprint(s){
+ const t=document.getElementById('term');
+ t.textContent=t.textContent.replace(/\n\$ _$/,'')+'\n'+s+'\n$ _';
+ t.scrollTop=t.scrollHeight;
+}
+function setLed(v){
+ ledOn=v;
+ document.getElementById('led').textContent=v?'🟢 ligado':'⚪ desligado';
+}
+function runCmd(){
+ const raw=document.getElementById('cmd').value.trim();
+ document.getElementById('cmd').value='';
+ if(!raw){ return; }
+ tprint('$ '+raw);
+ const p=raw.split(' ');
+ const c=p[0].toLowerCase();
+ if(c==='help'){ tprint('comandos: help, date, ls, echo <texto>, led on|off, clear'); }
+ else if(c==='date'){ tprint(new Date().toString()); }
+ else if(c==='ls'){ tprint('relatorio.txt  sensor.log  automacao.sh'); }
+ else if(c==='echo'){ tprint(p.slice(1).join(' ')||''); }
+ else if(c==='led'){ 
+  if(p[1]==='on'){ setLed(true); tprint('LED ligado.'); }
+  else if(p[1]==='off'){ setLed(false); tprint('LED desligado.'); }
+  else tprint('uso: led on|off');
+ }
+ else if(c==='clear'){ clearTerm(); }
+ else tprint('comando não encontrado: '+c+' (digite help)');
+}
+function runScript(){
+ tprint('$ ./automacao.sh');
+ setTimeout(()=>tprint('lendo sensor de temperatura... 33°C'),400);
+ setTimeout(()=>{ tprint('33°C > 30°C → acionando ventilador/LED'); setLed(true); tprint('LED ligado. registrado em sensor.log'); },900);
+ setTimeout(()=>tprint('script concluído — automação IoT sem intervenção humana.'),1400);
+}
+function clearTerm(){ document.getElementById('term').textContent='$ _'; }
+</script>
+</body>
+</html>
