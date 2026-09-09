@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Atividade #1 · Semana 2 · Sprint 2 (07/09–13/09/2026) — Definição da Users API (API-First): contrato Swagger/OpenAPI, esqueleto Java, Docker com Swagger UI, ADR API-First · quadro reaproveitado · Wiki por semana">
+<title>Semana 2 · Sprint 2 — Definição da Users API (API-First)</title>
+<style>
+:root{--bg:#f2f4f8;--panel:#fff;--panel-2:#f7f8fb;--line:#dde3ec;--text:#16202b;--muted:#5b6b7c;--brand:#e8590c;--brand-2:#fc6d26;--brand-soft:rgba(252,109,38,.12);--blue:#1c7ed6;--green:#2f9e44;--amber:#e8850c;--red:#e03131;--purple:#7048e8;--cyan:#0c8599;--shadow:0 8px 22px rgba(20,30,45,.08);--dot:rgba(22,32,43,.06);--ease:cubic-bezier(.22,.9,.3,1)}
+html[data-theme="dark"]{--bg:#0d1218;--panel:#151c25;--panel-2:#1b2431;--line:#28323f;--text:#e9eef5;--muted:#93a2b4;--brand:#ff7a38;--brand-2:#fc6d26;--brand-soft:rgba(252,109,38,.16);--blue:#53b1fd;--green:#5cd675;--amber:#ffb454;--red:#ff6b6b;--purple:#a08cff;--cyan:#3fd0e0;--shadow:0 10px 26px rgba(0,0,0,.4);--dot:rgba(233,238,245,.05)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:radial-gradient(circle,var(--dot) 1px,transparent 1.6px),radial-gradient(900px 460px at 88% -8%,rgba(252,109,38,.14),transparent 62%),radial-gradient(760px 480px at -6% 106%,rgba(83,177,253,.11),transparent 58%),var(--bg);background-size:26px 26px,auto,auto,auto;background-attachment:fixed;color:var(--text);line-height:1.55;min-height:100vh;transition:background-color .35s var(--ease),color .35s var(--ease);-webkit-tap-highlight-color:transparent}
+.mono{font-family:ui-monospace,"SF Mono","Cascadia Code",Consolas,monospace}
+.wrap{max-width:1180px;margin-inline:auto;padding-inline:22px}
+::selection{background:rgba(252,109,38,.35)}
+button{font-family:inherit}h1,h2,h3,h4{letter-spacing:-.02em}a{color:var(--blue)}
+.topbar{display:flex;align-items:center;gap:14px;padding:14px 0;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.brand svg{width:34px;height:30px;flex:none;filter:drop-shadow(0 3px 8px rgba(252,109,38,.35))}
+.brand-t small{display:block;font:700 10px ui-monospace,monospace;letter-spacing:2.5px;color:var(--brand);text-transform:uppercase}
+.brand-t b{font-size:15.5px;font-weight:800}
+.top-actions{margin-left:auto;display:flex;gap:8px}
+.icon-btn{width:40px;height:40px;border-radius:11px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:17px;cursor:pointer;display:grid;place-items:center;transition:.2s var(--ease);box-shadow:var(--shadow)}
+.icon-btn:hover{transform:translateY(-2px);border-color:var(--brand)}
+.hero{display:grid;grid-template-columns:1.15fr .85fr;gap:20px;align-items:stretch;margin-top:8px}
+.hero-l .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.chip{font:700 11px ui-monospace,monospace;letter-spacing:.6px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--muted);text-transform:uppercase}
+.chip.hot{background:var(--brand-soft);border-color:transparent;color:var(--brand)}
+.hero-l h1{font-size:clamp(29px,4.4vw,44px);font-weight:800;line-height:1.09;margin:2px 0 12px}
+.hero-l h1 em{font-style:normal;color:var(--brand)}
+.hero-l p{color:var(--muted);font-size:15px;max-width:58ch}
+.console{padding:20px 22px;display:flex;flex-direction:column;gap:13px;position:relative;overflow:hidden}
+.console::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent 30%,var(--brand-soft) 130%);pointer-events:none}
+.c-top{display:flex;align-items:center;gap:9px}
+.c-label{font:700 11px ui-monospace,monospace;letter-spacing:2px;color:var(--muted)}
+.pulse-dot{width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(92,214,117,.6);animation:pulse 1.8s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 11px rgba(92,214,117,0)}100%{box-shadow:0 0 0 0 rgba(92,214,117,0)}}
+.c-name{font-size:20px;font-weight:800}
+.c-dates{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.c-dates div{display:flex;flex-direction:column;font-size:11.5px;color:var(--muted)}
+.c-dates b{font-size:17px;color:var(--text);font-family:ui-monospace,monospace}
+.c-dates .arrow{font-size:20px;color:var(--brand)}
+.c-status{font-size:11.5px;letter-spacing:1.1px;font-weight:700;color:var(--brand);background:var(--brand-soft);border:1px dashed var(--brand);padding:8px 12px;border-radius:10px}
+.c-meta{font-size:12px;color:var(--muted);font-family:ui-monospace,monospace}
+.progress-panel{margin-top:20px;padding:20px 24px;display:grid;grid-template-columns:auto 1fr auto;gap:26px;align-items:center}
+.p-left{display:flex;align-items:center;gap:14px}
+.p-num{font-size:46px;font-weight:800;color:var(--brand);line-height:1;font-family:ui-monospace,monospace}
+.p-num small{font-size:20px}
+.p-cap{font-size:11px;text-transform:uppercase;letter-spacing:1.4px;color:var(--muted);font-weight:700}
+.p-cap .mono{display:block;margin-top:4px;font-size:12px;color:var(--text);letter-spacing:0;text-transform:none}
+.pbar{height:14px;border-radius:999px;background:var(--panel-2);border:1px solid var(--line);position:relative;overflow:hidden}
+.pfill{height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,var(--brand-2),#fca326,var(--green));background-size:200% 100%;animation:flow 4s linear infinite;transition:width .7s var(--ease);position:relative}
+.pfill::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);transform:translateX(-100%);animation:shine 2.6s var(--ease) infinite}
+@keyframes flow{to{background-position:200% 0}}
+@keyframes shine{60%,100%{transform:translateX(100%)}}
+.tick{position:absolute;top:0;bottom:0;width:2px;background:var(--line)}
+.t25{left:25%}.t50{left:50%}.t75{left:75%}
+.p-steps{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:7px;letter-spacing:.8px}
+.p-badges{display:flex;flex-direction:column;gap:6px}
+.bdg{font:700 11px ui-monospace,monospace;padding:5px 11px;border-radius:999px;border:1px dashed var(--line);color:var(--muted);opacity:.55;transition:.4s var(--ease)}
+.bdg.on{opacity:1;border-style:solid;border-color:var(--amber);color:var(--amber);background:rgba(255,180,84,.1);transform:translateX(-4px)}
+.tabs{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--line);margin-top:26px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-top:10px}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:none;display:flex;align-items:center;gap:8px;padding:11px 16px;border:none;background:transparent;color:var(--muted);font-size:13.5px;font-weight:700;cursor:pointer;border-radius:12px 12px 0 0;border-bottom:3px solid transparent;transition:.2s var(--ease);white-space:nowrap}
+.tab:hover{color:var(--text);background:var(--panel-2)}
+.tab.on{color:var(--brand);background:var(--panel);border-bottom-color:var(--brand)}
+.tab .ti{font-size:16px}
+.tcount{font:700 10px ui-monospace,monospace;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);padding:2px 7px;border-radius:999px}
+.tab.on .tcount{background:var(--brand-soft);border-color:transparent;color:var(--brand)}
+main{padding-bottom:30px}
+.panel-sec{display:none;padding-top:28px}
+.panel-sec.on{display:block}
+.sec-head{display:flex;gap:16px;align-items:flex-start;margin-bottom:22px}
+.sec-num{flex:none;width:46px;height:46px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,var(--brand-2),#fca326);color:#fff;font-weight:800;font-size:16px;box-shadow:0 6px 16px rgba(252,109,38,.35)}
+.sec-head h2{font-size:clamp(21px,3vw,27px);font-weight:800}
+.sec-head p{color:var(--muted);font-size:13.5px;margin-top:2px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:20px 22px;transition:box-shadow .25s var(--ease)}
+.card:hover{box-shadow:0 12px 30px rgba(20,30,45,.13)}
+.stack{display:grid;gap:18px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+h3.blk{font-size:16.5px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+h4.sub{font-size:13.5px;font-weight:800;margin:16px 0 8px}
+.note{font-size:13px;color:var(--muted);border-left:3px solid var(--brand);background:var(--panel-2);padding:11px 14px;border-radius:0 10px 10px 0;margin:12px 0}
+.why{font-size:13px;color:var(--muted);border-left:3px solid var(--cyan);background:var(--panel-2);padding:12px 15px;border-radius:0 10px 10px 0;margin:10px 0}
+.why b{color:var(--text)}
+.why .q{display:block;font:800 10.5px ui-monospace,monospace;letter-spacing:1px;color:var(--cyan);text-transform:uppercase;margin:8px 0 3px}
+.why .q:first-child{margin-top:0}
+.hint{font:600 11px ui-monospace,monospace;color:var(--muted)}
+.rv{opacity:0;transform:translateY(16px)}
+.rv.vis{opacity:1;transform:none;transition:opacity .55s var(--ease),transform .55s var(--ease)}
+.btn{display:inline-flex;align-items:center;gap:7px;background:var(--brand);color:#fff;border:none;padding:9px 15px;border-radius:10px;font-size:12.5px;font-weight:800;cursor:pointer;transition:.2s var(--ease);box-shadow:0 4px 14px rgba(252,109,38,.35)}
+.btn:hover{transform:translateY(-2px);filter:brightness(1.08)}
+.btn.ghost{background:var(--panel-2);color:var(--text);border:1px solid var(--line);box-shadow:none}
+.btn.ghost:hover{border-color:var(--brand);color:var(--brand)}
+.btn.sm{padding:6px 11px;font-size:11.5px;border-radius:8px}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;width:19px;height:19px;min-width:19px;border:2px solid var(--muted);border-radius:6px;cursor:pointer;position:relative;transition:.18s;background:transparent}
+input[type=checkbox]:checked{background:var(--acc,var(--brand));border-color:var(--acc,var(--brand))}
+input[type=checkbox]:checked::after{content:"";position:absolute;inset:3px;background:#fff;clip-path:polygon(14% 44%,0 65%,40% 100%,100% 16%,80% 0%,43% 62%)}
+.done-chk{display:inline-flex;gap:8px;align-items:center;margin-top:13px;font-size:12.5px;font-weight:800;cursor:pointer;background:var(--panel-2);border:1px dashed var(--line);padding:8px 13px;border-radius:10px;transition:.2s}
+.done-chk:hover{border-color:var(--green);color:var(--green)}
+.path{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font:600 11px ui-monospace,monospace}
+.path span{background:var(--panel-2);border:1px solid var(--line);padding:4px 9px;border-radius:8px;color:var(--text)}
+.path i{color:var(--brand);font-style:normal;font-weight:900}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{font:800 10px ui-monospace,monospace;text-transform:uppercase;letter-spacing:1px;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:2px solid var(--line)}
+.tbl td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tbody tr:hover{background:var(--panel-2)}
+.twrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin:12px 0}
+.twrap .tbl{margin:0}
+.refs{margin-top:16px;padding-top:12px;border-top:1px dashed var(--line);display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12px;color:var(--muted)}
+.refs b{font-size:11px;letter-spacing:1px}
+.refs a{color:var(--blue);text-decoration:none;font-weight:700;font-size:11.5px;border:1px solid var(--line);background:var(--panel-2);padding:5px 11px;border-radius:999px;transition:.2s}
+.refs a:hover{border-color:var(--blue);transform:translateY(-2px)}
+.checks-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+.grp{--acc:var(--amber);border:1px solid var(--line);border-radius:12px;padding:8px 10px 10px;background:var(--panel-2)}
+.grp.blue{--acc:var(--blue)}.grp.green{--acc:var(--green)}
+.grp legend{padding:3px 11px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--acc);background:var(--panel);border:1px solid var(--line);text-transform:uppercase}
+.chk-item{display:flex;gap:9px;align-items:flex-start;padding:7px 8px;border-radius:9px;cursor:pointer;font-size:13px;line-height:1.45}
+.chk-item input{margin-top:1px}
+.chk-item:has(input:checked) span{color:var(--muted)}
+.shotlist{display:grid;gap:8px;margin-top:10px}
+.shotlist label{display:flex;gap:10px;align-items:flex-start;font-size:13px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:10px 13px;cursor:pointer;transition:.2s}
+.shotlist label:hover{border-color:var(--amber);transform:translateX(4px)}
+.shotlist .cam{flex:none}
+.dordod{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:15px;overflow:hidden;box-shadow:var(--shadow)}
+.dordod>div{padding:18px 20px;background:var(--panel)}
+.dordod>div:first-child{border-right:1px solid var(--line)}
+.dordod h4{font-size:14.5px;font-weight:800;margin-bottom:10px}
+.dordod ul{list-style:none;display:grid;gap:7px}
+.dordod li{font-size:12.5px;color:var(--muted);padding-left:20px;position:relative}
+.dordod li::before{content:"▸";position:absolute;left:4px;font-weight:900}
+.dordod .d1 li::before{color:var(--blue)}.dordod .d2 li::before{color:var(--green)}
+.dordod-foot{background:var(--panel-2);padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.epic{border-left:5px solid var(--ep,var(--brand));display:flex;flex-direction:column;gap:14px}
+.epic-head{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+.epic-ico{font-size:30px;width:54px;height:54px;display:grid;place-items:center;background:var(--panel-2);border:1px solid var(--line);border-radius:14px;flex:none}
+.epic-titles{min-width:200px;flex:1}
+.chip-id{font:800 10.5px ui-monospace,monospace;letter-spacing:1.2px;color:var(--brand)}
+.epic-titles h3{font-size:19px;font-weight:800;margin:3px 0 4px}
+.epic-titles p{font-size:13px;color:var(--muted)}
+.features{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.fchip{font:700 11px ui-monospace,monospace;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);padding:4px 10px;border-radius:999px}
+.story{background:var(--panel-2);border:1px solid var(--line);border-radius:13px;overflow:hidden}
+.story summary{list-style:none;display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:13px 16px;cursor:pointer;user-select:none}
+.story summary::-webkit-details-marker{display:none}
+.sum-id{font:800 11px ui-monospace,monospace;background:var(--ep,var(--brand));color:#fff;padding:4px 9px;border-radius:8px}
+.story-title{font-size:14.5px;font-weight:800;flex:1;min-width:170px}
+.pts{font:800 10.5px ui-monospace,monospace;background:var(--panel);border:1px solid var(--line);padding:3px 9px;border-radius:999px;color:var(--amber)}
+.lbl{font:700 10.5px ui-monospace,monospace;color:var(--muted);background:var(--panel);border:1px dashed var(--line);padding:3px 8px;border-radius:999px}
+.daychip{font:800 10px ui-monospace,monospace;color:#fff;background:var(--muted);padding:3px 8px;border-radius:999px}
+.chev{margin-left:auto;color:var(--muted);transition:transform .3s var(--ease);font-size:12px}
+.story[open] .chev{transform:rotate(180deg)}
+.story-body{padding:2px 16px 16px;border-top:1px dashed var(--line);animation:sd .35s var(--ease)}
+@keyframes sd{from{opacity:0;transform:translateY(-8px)}}
+.statement{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:12px 15px;font-size:13.5px;margin-top:13px}
+.statement b{color:var(--ep,var(--brand))}
+.story-foot{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.backlog-tools{display:flex;justify-content:flex-end;margin-bottom:4px}
+.step{display:grid;grid-template-columns:52px 1fr;gap:16px}
+.snum{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;font-weight:800;font-size:17px;background:linear-gradient(135deg,var(--brand-2),#fca326);color:#fff;box-shadow:0 5px 14px rgba(252,109,38,.35)}
+.step h4{font-size:16px;font-weight:800;margin-bottom:6px}
+.step p{font-size:13px;color:var(--muted)}
+.lblrow{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.lblchip{display:inline-flex;align-items:center;gap:7px;font:700 11.5px ui-monospace,monospace;border:1px solid var(--line);background:var(--panel-2);padding:5px 11px;border-radius:999px}
+.lblchip i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.codewrap{border-radius:13px;overflow:hidden;border:1px solid #1b2735;margin:13px 0;box-shadow:var(--shadow)}
+.codehead{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#0d141d;border-bottom:1px solid rgba(255,255,255,.07);padding:8px 13px}
+.codehead b{color:#8fa3b8;font:700 11px ui-monospace,monospace;letter-spacing:.8px;text-transform:uppercase}
+.cpy{background:rgba(255,255,255,.09);color:#dbe7f3;border:1px solid rgba(255,255,255,.16);border-radius:8px;padding:5px 12px;font:700 11px ui-monospace,monospace;cursor:pointer;transition:.18s;flex:none}
+.cpy:hover{background:rgba(255,255,255,.18)}
+pre.code{margin:0;background:#0b1118;color:#dbe7f3;padding:15px 17px;overflow:auto;font:12.5px/1.7 ui-monospace,Consolas,monospace;tab-size:2;max-height:340px}
+.c{color:#7d8ca1}.k{color:#ffb454;font-weight:700}.h{color:#6cc4ff;font-weight:800}.t{color:#9ece8f}.p{color:#c8a6ff}
+.life{display:grid;gap:12px}
+.lstep{border:1px solid var(--line);border-left:4px solid var(--lc,var(--brand));border-radius:12px;padding:13px 15px;background:var(--panel-2)}
+.lstep h5{font-size:13.5px;font-weight:800;display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.lstep .ln{flex:none;width:24px;height:24px;border-radius:8px;background:var(--lc,var(--brand));color:#fff;font:800 11px ui-monospace,monospace;display:grid;place-items:center}
+.lstep .col{font:800 10px ui-monospace,monospace;color:var(--lc,var(--brand));background:var(--panel);border:1px solid var(--line);padding:3px 9px;border-radius:999px}
+.lstep p{font-size:12.5px;color:var(--muted)}
+.lstep .path{margin:8px 0 4px}
+.lstep .ex{font-size:12px;color:var(--muted);background:var(--panel);border:1px dashed var(--line);border-radius:9px;padding:7px 10px;margin-top:8px}
+.lstep .ex b{color:var(--lc,var(--brand))}
+.ceremony{border-top:5px solid var(--ec)}
+.cer-head{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+.cer-emoji{font-size:28px;width:52px;height:52px;display:grid;place-items:center;background:var(--panel-2);border:1px solid var(--line);border-radius:14px;flex:none}
+.cer-titles{flex:1;min-width:220px}
+.cer-titles h3{font-size:19px;font-weight:800}
+.cer-what{font-size:13px;color:var(--muted);margin-top:3px}
+.cer-meta{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.tb{font:800 11px ui-monospace,monospace;color:var(--ec);background:var(--panel-2);border:1px solid var(--line);padding:5px 11px;border-radius:999px}
+.cer-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:6px}
+.roteiro{list-style:none;display:grid;gap:8px}
+.roteiro li{display:flex;gap:10px;font-size:12.5px;color:var(--muted)}
+.roteiro li b{color:var(--text)}
+.roteiro .tm{font:800 10px ui-monospace,monospace;background:var(--panel-2);border:1px solid var(--line);color:var(--ec);padding:3px 8px;border-radius:8px;flex:none;height:fit-content;white-space:nowrap}
+.sim{display:grid;gap:8px}
+.sim-line{background:var(--panel-2);border:1px solid var(--line);border-left:3px solid var(--wc,var(--muted));border-radius:10px;padding:9px 12px;font-size:12.5px;color:var(--muted)}
+.sim-line b{color:var(--wc);font-size:11.5px}
+.clicks{list-style:none;counter-reset:cl;display:grid;gap:10px;margin-top:8px}
+.clicks li{counter-increment:cl;display:flex;gap:10px;font-size:13px;color:var(--muted);align-items:flex-start}
+.clicks li::before{content:counter(cl);flex:none;width:22px;height:22px;border-radius:7px;background:var(--ec);color:#fff;font:800 11px ui-monospace,monospace;display:grid;place-items:center;margin-top:1px}
+.clicks b{color:var(--text)}
+.cer-foot{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:16px}
+.chart svg{width:100%;height:auto;display:block;margin-top:8px}
+.chart-line{stroke-dasharray:700;stroke-dashoffset:700}
+.play .chart-line{animation:draw 1.7s var(--ease) forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.axis{stroke:var(--line);stroke-width:1.5}
+.gline{stroke:var(--line);stroke-width:1;opacity:.5}
+.ideal{stroke:var(--muted);stroke-width:2;stroke-dasharray:5 5;opacity:.85}
+.ax-t{font:10px ui-monospace,monospace;fill:var(--muted)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-top:8px;font-weight:700}
+.legend i{display:inline-block;width:16px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
+.c4wrap{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0}
+.c4wrap svg{width:100%;height:auto;display:block}
+.svg-b{font:700 14px system-ui,sans-serif;fill:var(--text)}
+.svg-s{font:11px system-ui,sans-serif;fill:var(--muted)}
+.svg-s2{font:italic 10px system-ui,sans-serif;fill:var(--muted);opacity:.85}
+.svg-t{font:800 12px ui-monospace,monospace;fill:var(--brand);letter-spacing:1.5px}
+.pagelist{display:grid;gap:8px;margin-top:10px}
+.pagelist label{display:flex;gap:10px;align-items:center;font-size:13px;font-weight:600;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:10px 13px;cursor:pointer;transition:.2s}
+.pagelist label:hover{border-color:var(--cyan);transform:translateX(4px)}
+.pagelist .mono{color:var(--cyan);font-size:11.5px;font-weight:800;min-width:22px}
+.wk{font:800 9.5px ui-monospace,monospace;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-left:auto;flex:none}
+.wk.on{color:var(--green);border-color:var(--green)}
+.wk.res{color:var(--amber);border-color:var(--amber)}
+.wiki-mock{display:grid;grid-template-columns:235px 1fr;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:12px;background:var(--panel)}
+.wiki-side{background:var(--panel-2);border-right:1px solid var(--line);padding:12px;display:flex;flex-direction:column;gap:4px}
+.wiki-logo{font:800 11px ui-monospace,monospace;letter-spacing:1px;color:var(--muted);padding:4px 8px 10px;border-bottom:1px solid var(--line);margin-bottom:8px}
+.wpage{border:none;background:transparent;text-align:left;color:var(--muted);font:600 12.5px system-ui,sans-serif;padding:8px 10px;border-radius:9px;cursor:pointer;transition:.15s}
+.wpage:hover{background:var(--panel);color:var(--text)}
+.wpage.on{background:var(--panel);color:var(--cyan);font-weight:800;box-shadow:inset 3px 0 0 var(--cyan)}
+.wiki-main{padding:16px 20px;min-height:380px}
+.wiki-bar{display:flex;justify-content:space-between;gap:10px;align-items:center;color:var(--muted);font-size:11px;border-bottom:1px solid var(--line);padding-bottom:9px;margin-bottom:14px;flex-wrap:wrap}
+#wikiBody h1{font-size:20px;margin-bottom:10px}
+#wikiBody h2{font-size:14.5px;margin:14px 0 6px}
+#wikiBody p,#wikiBody li{font-size:13px;color:var(--muted)}
+#wikiBody ul{padding-left:18px;display:grid;gap:5px;margin:6px 0}
+#wikiBody a{color:var(--cyan);cursor:pointer;text-decoration:underline dotted}
+.wstatus{display:inline-block;font:800 10px ui-monospace,monospace;color:var(--green);background:rgba(92,214,117,.12);border:1px solid rgba(92,214,117,.4);padding:3px 9px;border-radius:999px;margin-bottom:10px}
+.wstatus.res{color:var(--amber);background:rgba(255,180,84,.1);border-color:rgba(255,180,84,.4)}
+.wtbl{width:100%;border-collapse:collapse;font-size:12px;margin:8px 0}
+.wtbl td,.wtbl th{border:1px solid var(--line);padding:6px 9px;text-align:left}
+.wtbl th{background:var(--panel-2);font:800 10px ui-monospace,monospace;text-transform:uppercase;color:var(--muted)}
+.adr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}
+.adrcard{display:flex;flex-direction:column;gap:9px}
+.adrcard.hot{border-color:var(--purple);box-shadow:0 0 0 1px var(--purple),var(--shadow)}
+.adr-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.stchip{font:800 10px ui-monospace,monospace;letter-spacing:1px;padding:4px 10px;border-radius:999px;background:rgba(92,214,117,.14);color:var(--green);border:1px solid rgba(92,214,117,.4);text-transform:uppercase}
+.stchip.pu{background:rgba(160,140,255,.14);color:var(--purple);border-color:rgba(160,140,255,.45)}
+.adrcard h4{font-size:15px;font-weight:800}
+.adrcard .lblk{font:800 9.5px ui-monospace,monospace;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);margin-top:4px;display:block}
+.adrcard p{font-size:12.5px;color:var(--muted)}
+.conseq{display:flex;flex-wrap:wrap;gap:6px}
+.pro,.con{font-size:11px;font-weight:700;padding:4px 9px;border-radius:8px}
+.pro{background:rgba(92,214,117,.12);color:var(--green);border:1px solid rgba(92,214,117,.35)}
+.con{background:rgba(255,107,107,.1);color:var(--red);border:1px solid rgba(255,107,107,.35)}
+.adr-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:6px}
+.adr-foot label{display:flex;gap:7px;align-items:center;font-size:12px;font-weight:700;cursor:pointer}
+.badge{display:inline-block;font:700 9.5px ui-monospace,monospace;letter-spacing:.8px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);text-transform:uppercase}
+.badge.b-art{color:var(--blue);border-color:var(--blue)}
+#toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,90px);background:var(--panel);color:var(--text);border:1px solid var(--brand);border-radius:13px;padding:12px 20px;font-size:13px;font-weight:700;box-shadow:0 14px 34px rgba(0,0,0,.3);opacity:0;transition:.4s var(--ease);z-index:200;max-width:88vw;text-align:center}
+#toast.show{transform:translate(-50%,0);opacity:1}
+footer{border-top:1px solid var(--line);margin-top:34px;padding:22px 0 30px;color:var(--muted);font-size:12.5px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}
+footer .mono{font-size:11px;letter-spacing:1px}
+@media (max-width:768px){
+ .hero,.grid2,.dordod,.cer-grid{grid-template-columns:1fr}
+ .dordod>div:first-child{border-right:none;border-bottom:1px solid var(--line)}
+ .progress-panel{grid-template-columns:1fr;gap:16px}
+ .p-badges{flex-direction:row;flex-wrap:wrap}
+ .checks-grid{grid-template-columns:1fr}
+ .step{grid-template-columns:1fr}
+ .wiki-mock{grid-template-columns:1fr}
+ .wiki-side{flex-direction:row;overflow-x:auto;border-right:none;border-bottom:1px solid var(--line)}
+ .wpage{white-space:nowrap}
+ .cer-meta{align-items:flex-start}
+}
+@media (max-width:480px){
+ .wrap{padding-inline:14px}
+ .hero-l h1{font-size:27px}
+ .p-num{font-size:38px}
+ .card{padding:16px 15px}
+ .story-title{min-width:100%}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 36 30" aria-hidden="true"><polygon points="18,29 24.5,9.5 11.5,9.5" fill="#E24329"/><polygon points="11.5,9.5 18,29 5,9.5" fill="#FC6D26"/><polygon points="24.5,9.5 18,29 31,9.5" fill="#FC6D26"/><polygon points="5,9.5 18,29 1,9.5" fill="#FCA326"/><polygon points="31,9.5 18,29 35,9.5" fill="#FCA326"/><polygon points="5,9.5 2.4,1.6 0.7,9.5" fill="#E24329"/><polygon points="31,9.5 33.6,1.6 35.3,9.5" fill="#E24329"/></svg>
+      <div class="brand-t"><small>Atividade #1 · EE 19.4 · Semana 2</small><b>Sprint 2 · Definição da Users API (API-First)</b></div>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" id="resetBtn" title="Zerar progresso">↺</button>
+      <button class="icon-btn" id="themeBtn" title="Alternar tema">🌙</button>
+    </div>
+  </div>
+  <section class="hero">
+    <div class="hero-l">
+      <div class="chips"><span class="chip hot">🦊 GitLab 19.4 + Scrum</span><span class="chip">Semana 2 · Sprint 2</span><span class="chip">Quadro da Semana 1 reaproveitado</span></div>
+      <h1>O contrato antes<br>do <em>código</em>.</h1>
+      <p><b>Definição da Users API (API-First):</b> contrato Swagger/OpenAPI, esqueleto do projeto Java (pacotes, camadas, namespaces) com <b>zero lógica de negócio</b>, container Docker com Swagger UI e a ADR API-First — tudo planejado, executado e documentado no GitLab.</p>
+    </div>
+    <aside class="card console">
+      <div class="c-top"><span class="pulse-dot"></span><span class="c-label mono">SPRINT 2 = SEMANA 2</span></div>
+      <div class="c-name">secao-b / grupo-1 / users-api</div>
+      <div class="c-dates"><div>🏁 INÍCIO<b>07/09/2026</b></div><span class="arrow">➜</span><div>🎯 FIM<b>13/09/2026</b></div></div>
+      <div class="c-status mono" id="sprintStatus">⏳ CALCULANDO…</div>
+      <div class="c-meta">21 pts · demo 14/09 · Swagger UI + compilação</div>
+    </aside>
+  </section>
+  <div class="card progress-panel rv">
+    <div class="p-left"><div class="p-num mono"><span id="pct">0</span><small>%</small></div>
+      <div class="p-cap">concluído<span class="mono" id="pfraction">0 de 0 tarefas</span></div></div>
+    <div class="p-mid"><div class="pbar"><div class="pfill" id="pfill"></div><i class="tick t25"></i><i class="tick t50"></i><i class="tick t75"></i></div>
+      <div class="p-steps mono"><span>MARCO+QUADRO</span><span>CONTRATO+ESQUELETO</span><span>DOCKER+CI</span><span>🏁 WIKI S2</span></div></div>
+    <div class="p-badges">
+      <span class="bdg" data-badge="25">🥉 25% · Marco S2 + quadro filtrado</span>
+      <span class="bdg" data-badge="50">🥈 50% · Contrato + esqueleto merged</span>
+      <span class="bdg" data-badge="75">🥇 75% · Docker + CI + ADR</span>
+      <span class="bdg" data-badge="100">🏆 100% · Wiki da Semana 2 entregue</span>
+    </div>
+  </div>
+  <nav class="tabs" id="tabbar" role="tablist" aria-label="Seções">
+    <button class="tab on" id="tab-sprint2" data-tab="sprint2" role="tab" aria-selected="true"><span class="ti">🎯</span>Sprint 2 → Scrum<span class="tcount" id="tc-sprint2">0/0</span></button>
+    <button class="tab" id="tab-guia" data-tab="guia" role="tab" aria-selected="false"><span class="ti">🚀</span>Do Zero ao Pronto<span class="tcount" id="tc-guia">0/0</span></button>
+    <button class="tab" id="tab-cerimonias" data-tab="cerimonias" role="tab" aria-selected="false"><span class="ti">🎭</span>Cerimônias &amp; Métricas<span class="tcount" id="tc-cerimonias">0/0</span></button>
+    <button class="tab" id="tab-artefatos" data-tab="artefatos" role="tab" aria-selected="false"><span class="ti">📐</span>Artefatos da Semana 2<span class="tcount" id="tc-artefatos">0/0</span></button>
+    <button class="tab" id="tab-wiki" data-tab="wiki" role="tab" aria-selected="false"><span class="ti">📖</span>Wiki por semana<span class="tcount" id="tc-wiki">0/0</span></button>
+  </nav>
+</header>
+<main class="wrap">
+
+<!-- ============ 1 · SPRINT 2 → SCRUM ============ -->
+<section class="panel-sec on" id="sec-sprint2" role="tabpanel">
+  <div class="sec-head rv"><span class="sec-num mono">01</span>
+    <div><h2>Sprint 2 → Scrum → GitLab</h2>
+    <p>O plano da disciplina virou backlog: contrato primeiro, esqueleto depois, zero lógica de negócio — e tudo rastreável no GitLab.</p></div></div>
+  <div class="stack">
+    <div class="card rv">
+      <h3 class="blk">🗓️ Plano da Sprint 2 (Semana 2)</h3>
+      <div class="twrap"><table class="tbl"><thead><tr><th>Tema / Objetivo</th><th>Foco Técnico &amp; Incremento</th><th>Entregáveis</th><th>Início</th><th>Fim</th><th>Foco da Demo</th></tr></thead><tbody>
+        <tr><td><b>Definição da Users API (API-First)</b></td><td>Definir o contrato Swagger/OpenAPI. Configurar o esqueleto do projeto Java (pacotes, camadas, namespaces). <b>Zero lógica de negócio.</b></td><td>Container Docker com Swagger UI; esqueleto do projeto Java; ADR para API-First</td><td class="mono">07/09</td><td class="mono">13/09</td><td><b>14/09</b> — Swagger UI exibe todos os endpoints. O projeto compila com sucesso.</td></tr>
+      </tbody></table></div>
+      <div class="note">♻️ <b>Reaproveitamento:</b> o <b>quadro único</b>, as 6 etiquetas, o grupo/projeto e a Wiki por semana vêm da Semana 1 — nesta sprint só criamos o <b>marco Sprint 2</b> e filtramos o quadro nele. Nada de estrutura é recriado.</div>
+    </div>
+    <div class="card rv">
+      <h3 class="blk">🧭 Matriz de rastreabilidade da Sprint 2</h3>
+      <div class="twrap"><table class="tbl"><thead><tr><th>Entregável da sprint</th><th>História</th><th>Onde vive no GitLab</th><th>Dias</th></tr></thead><tbody>
+        <tr><td>Contrato Swagger/OpenAPI da Users API</td><td>US-001</td><td><span class="mono">docs/openapi.yaml</span> via branch + MR</td><td class="mono">07–09/09</td></tr>
+        <tr><td>Esqueleto Java (pacotes, camadas, namespaces)</td><td>US-002</td><td><span class="mono">src/main/java/…</span> via branch + MR (compila!)</td><td class="mono">08–10/09</td></tr>
+        <tr><td>Container Docker com Swagger UI</td><td>US-003</td><td><span class="mono">Dockerfile</span> + <span class="mono">docker-compose.yml</span></td><td class="mono">09–11/09</td></tr>
+        <tr><td>ADR para API-First</td><td>US-004</td><td>página <span class="mono">adr-001-api-first</span> na Wiki</td><td class="mono">08/09</td></tr>
+        <tr><td>Projeto compila em todo MR (CI build)</td><td>US-005</td><td><span class="mono">.gitlab-ci.yml</span> (stage build)</td><td class="mono">10/09</td></tr>
+        <tr><td>Wiki da Semana 2 (entrega avaliada)</td><td>US-006</td><td><span class="mono">laboratorio-semana-2</span> + home atualizada</td><td class="mono">11–13/09</td></tr>
+      </tbody></table></div>
+      <label class="done-chk"><input type="checkbox" data-chk="s2-matriz"> Entendi o que a Sprint 2 entrega e onde cada item vive</label>
+      <div class="refs"><b>🔗 REFERÊNCIAS</b>
+        <a href="https://scrumguides.org/download.html" target="_blank" rel="noopener">Scrum Guide 2020 (PDF PT-BR)</a>
+        <a href="https://docs.gitlab.com/" target="_blank" rel="noopener">GitLab Docs</a>
+        <a href="https://swagger.io/specification/" target="_blank" rel="noopener">OpenAPI Specification</a>
+        <a href="https://swagger.io/blog/understanding-the-api-first-approach-to-building-products/" target="_blank" rel="noopener">Swagger: API-First</a></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2 · DO ZERO AO PRONTO (SEMANA 2) ============ -->
+<section class="panel-sec" id="sec-guia" role="tabpanel">
+  <div class="sec-head rv"><span class="sec-num mono">02</span>
+    <div><h2>Do Zero ao Pronto — guia explicativo (EE 19.4) · Semana 2</h2>
+    <p>A estrutura já existe (Semana 1); agora criamos marco Sprint 2, filtramos o quadro e entregamos contrato + esqueleto + Docker + ADR.</p></div></div>
+  <div class="stack">
+
+    <div class="card step rv"><div class="snum">1</div><div>
+      <h4>Marco “Sprint 2” + quadro REAPROVEITADO (não crie outro!) · <span class="hint">US-006</span></h4>
+      <div class="why">
+        <span class="q">🎓 O que é?</span> O <b>marco</b> dá data e objetivo à sprint e alimenta burndown/burnup. O <b>quadro</b> é o mesmo da Semana 1: colunas são etiquetas (não mudam); o que muda é o <b>filtro por marco</b>.
+        <span class="q">Por que reaproveitar?</span> Quadro por sprint fragmenta o histórico e quebra a visão de fluxo. Um quadro + um filtro = todas as sprints.
+      </div>
+      <ol class="clicks" style="--ec:var(--brand)">
+        <li><div><b>Planejar (Plan)</b> → <b>Milestones (Marcos)</b> → <b>New milestone (Novo marco)</b> → <span class="mono">Sprint 2</span> · <b>Start</b> 07/09/2026 · <b>Due</b> 13/09/2026 → colar descrição (⧉) → <b>Create milestone</b>.</div></li>
+        <li><div><b>Planejar</b> → <b>Issue boards (Quadros de tarefas)</b> → abrir <b>Scrum do Grupo</b> (o quadro da Semana 1).</div></li>
+        <li><div>No topo: ícone de <b>filtro (funil)</b> → <b>Milestone (Marco)</b> = <b>Sprint 2</b> → aplicar. As 4 colunas continuam as mesmas.</div></li>
+      </ol>
+      <div class="codewrap"><div class="codehead"><b>descricao-marco-sprint-2.md</b><button class="cpy" data-act="copy" data-tpl="milestoneSprint2" data-nome="Marco Sprint 2">⧉ Copiar</button></div><pre class="code" data-code="milestoneSprint2" data-lang="md"></pre></div>
+      <label class="done-chk"><input type="checkbox" data-chk="g2-marco"> Marco Sprint 2 criado + quadro filtrado (mesmo quadro!)</label>
+    </div></div>
+
+    <div class="card step rv"><div class="snum">2</div><div>
+      <h4>Criar as 6 histórias da Sprint 2 · sem template, com DoR/DoD próprios</h4>
+      <div class="why">
+        <span class="q">🎓 Regra API-First da sprint:</span> a DoR das histórias de código (US-002, US-003) exige <b>contrato merged</b> (US-001). Nenhuma linha de esqueleto nasce antes do contrato.
+        <span class="q">Como criar</span> <b>Planejar</b> → <b>Tarefas</b> → <b>New issue</b> → colar a descrição (⧉ no backlog) → lateral: Weight · Milestone <b>Sprint 2</b> · Assignee · Reviewers · Labels ~backlog · Epic → <b>Create issue</b>.
+      </div>
+      <label class="done-chk"><input type="checkbox" data-chk="g2-stories"> 6 histórias da Sprint 2 no backlog (~backlog)</label>
+    </div></div>
+
+    <div class="card step rv"><div class="snum">3</div><div>
+      <h4>Ciclo de entrega: branch → MR → Approve → Merge (compila!)</h4>
+      <div class="why">
+        <span class="q">🎓 Por que assim?</span> O incremento só é “pronto” depois de <b>revisado</b> e <b>compilando</b>. O pipeline de build (US-005) é o porteiro: MR que não compila não mergeia. O quadro reflete os estados pelas etiquetas.
+      </div>
+      <div class="life">
+        <div class="lstep" style="--lc:var(--blue)"><h5><span class="ln">1</span> Backlog → Fazendo (quadro reaproveitado)</h5>
+          <div class="path"><span>Quadros</span><i>›</i><span>Scrum do Grupo (filtro Sprint 2)</span><i>›</i><span>arrastar p/ “fazendo”</span></div>
+          <div class="ex"><b>CARLA:</b> arrasta US-001 na Daily de 07/09 e comenta “/assign @carla — contrato primeiro”.</div></div>
+        <div class="lstep" style="--lc:var(--blue)"><h5><span class="ln">2</span> Branch + artefato</h5>
+          <div class="path"><span>Código</span><i>›</i><span>Branches</span><i>›</i><span>New branch</span><i>›</i><span>feature/US-001-openapi</span></div>
+          <p>Commits <span class="mono">docs(US-001): …</span> / <span class="mono">feat(US-002): …</span>; esqueleto precisa passar no <span class="mono">mvn -q compile</span>.</p></div>
+        <div class="lstep" style="--lc:var(--amber)"><h5><span class="ln">3</span> MR + pipeline build + revisão</h5>
+          <div class="path"><span>Create merge request</span><i>›</i><span>Closes #N</span><i>›</i><span>pipeline build</span><i>›</i><span>Approve</span><i>›</i><span>Merge</span></div>
+          <p>Card → 👀 revisao durante a revisão; → ✅ pronto após merge + página na Wiki da semana.</p></div>
+      </div>
+      <label class="done-chk"><input type="checkbox" data-chk="g2-ciclo"> Ciclo executado em 1 issue de teste (compila + merge)</label>
+    </div></div>
+
+    <div class="card step rv"><div class="snum">4</div><div>
+      <h4>Container Docker com Swagger UI · <span class="hint">US-003</span></h4>
+      <div class="why">
+        <span class="q">🎓 O que é?</span> Um <span class="mono">docker-compose.yml</span> com dois serviços: a <b>app Java</b> (que compila) e o <b>Swagger UI</b> servindo o <span class="mono">docs/openapi.yaml</span>. É a demo permanente da sprint.
+        <span class="q">Para que serve?</span> Qualquer pessoa do time (ou o professor) sobe a demo com um comando — transparência e reprodutibilidade.
+      </div>
+      <div class="codewrap"><div class="codehead"><b>Dockerfile + docker-compose.yml</b><button class="cpy" data-act="copy" data-tpl="dockerFiles" data-nome="Docker + Swagger UI">⧉ Copiar</button></div><pre class="code" data-code="dockerFiles" data-lang="sh"></pre></div>
+      <label class="done-chk"><input type="checkbox" data-chk="g2-docker"> compose up exibe Swagger UI com todos os endpoints</label>
+    </div></div>
+
+    <div class="card step rv"><div class="snum">5</div><div>
+      <h4>CI de compilação: “o projeto compila com sucesso” · <span class="hint">US-005</span></h4>
+      <div class="why">
+        <span class="q">🎓 O que é?</span> Um <span class="mono">.gitlab-ci.yml</span> com stage <b>build</b> (<span class="mono">mvn -q compile</span>) executado em todo MR.
+        <span class="q">Para que serve no Scrum?</span> Materializa a DoD “compila com sucesso” sem depender de memória humana: pipeline falho bloqueia o merge.
+      </div>
+      <div class="codewrap"><div class="codehead"><b>.gitlab-ci.yml</b><button class="cpy" data-act="copy" data-tpl="gitlabCi" data-nome=".gitlab-ci.yml">⧉ Copiar</button></div><pre class="code" data-code="gitlabCi" data-lang="sh"></pre></div>
+      <label class="done-chk"><input type="checkbox" data-chk="g2-ci"> Pipeline build ativo e bloqueando MR que não compila</label>
+    </div></div>
+
+    <div class="card step rv"><div class="snum">6</div><div>
+      <h4>ADR API-First + Wiki da Semana 2 · <span class="hint">US-004 / US-006</span></h4>
+      <div class="why">
+        <span class="q">🎓 O que é?</span> A <b>ADR-001</b> registra a decisão API-First (contexto, alternativas, consequências, fontes). A <b>Wiki da Semana 2</b> reúne explicações próprias, diagramas, capturas, tabelas e a ADR — é a entrega avaliada.
+        <span class="q">Por que na Wiki?</span> É a memória do time por semana; a home indexa tudo e as semanas 3–4 já estão reservadas.
+      </div>
+      <ol class="clicks" style="--ec:var(--cyan)">
+        <li><div><b>Wiki</b> → <b>Create page</b> → <span class="mono">adr-001-api-first</span> → colar (⧉ na aba 📐) → <b>Save</b>.</div></li>
+        <li><div><b>Wiki</b> → <span class="mono">laboratorio-semana-2</span> (página reservada) → <b>Edit</b> → colar conteúdo (⧉ no mock da aba 📖) → <b>Save</b>; atualize a <b>home</b> (semana 2 ✅).</div></li>
+      </ol>
+      <label class="done-chk"><input type="checkbox" data-chk="g2-wiki"> ADR-001 + laboratorio-semana-2 publicados e linkados</label>
+      <div class="refs"><b>🔗 REFERÊNCIAS</b>
+        <a href="https://docs.gitlab.com/ci/yaml/" target="_blank" rel="noopener">GitLab: sintaxe do .gitlab-ci.yml</a>
+        <a href="https://docs.gitlab.com/user/project/milestones/" target="_blank" rel="noopener">Milestones</a>
+        <a href="https://docs.gitlab.com/user/project/issue_board/" target="_blank" rel="noopener">Issue boards (filtros)</a>
+        <a href="https://docs.gitlab.com/user/project/wiki/" target="_blank" rel="noopener">Wiki</a>
+        <a href="https://adr.github.io/" target="_blank" rel="noopener">adr.github.io</a></div>
+    </div></div>
+
+    <div class="card rv" style="padding:0;overflow:hidden">
+      <div class="dordod">
+        <div class="d1"><h4>🟦 DoR da Sprint 2 (por história)</h4><ul><li>US-002/003: contrato openapi.yaml merged (US-001)</li><li>Endpoints/esquemas escritos no aceite</li><li>Weight + dono + revisor + ~backlog + marco S2</li></ul></div>
+        <div class="d2"><h4>🟩 DoD da Sprint 2 (por história)</h4><ul><li>MR com pipeline build verde + Approve</li><li>Swagger UI exibindo o endpoint (captura no MR)</li><li>Página correspondente na Wiki da semana</li></ul></div>
+      </div>
+      <div class="dordod-foot"><span class="hint">DoR/DoD específicos vão escritos na descrição de cada história (sem template genérico).</span>
+        <button class="btn sm" data-act="copy" data-tpl="dorDodS2" data-nome="DoR/DoD da Sprint 2">📋 Copiar DoR/DoD da Sprint 2</button></div>
+    </div>
+    <div class="backlog-tools rv"><button class="btn ghost sm" id="toggleAll">⬍ Expandir / recolher todas</button></div>
+    <div id="epics" class="stack"></div>
+  </div>
+</section>
+
+<!-- ============ 3 · CERIMÔNIAS & MÉTRICAS ============ -->
+<section class="panel-sec" id="sec-cerimonias" role="tabpanel">
+  <div class="sec-head rv"><span class="sec-num mono">03</span>
+    <div><h2>Cerimônias &amp; Métricas — quando apresentar o quê (Sprint 2)</h2>
+    <p>Planning 07/09 · Dailies 08–12/09 no quadro reaproveitado · Review/Demo 14/09 · Retro 14/09 · 21 pts em jogo.</p></div></div>
+  <div class="stack">
+    <article class="card ceremony rv" style="--ec:var(--blue)">
+      <div class="cer-head"><span class="cer-emoji">🧭</span>
+        <div class="cer-titles"><h3>1 · Sprint Planning (07/09)</h3><p class="cer-what"><b>O que é:</b> abre a Sprint 2: objetivo “Definição da Users API (API-First)”, histórias US-001…US-006 e quadro filtrado no novo marco.</p></div>
+        <div class="cer-meta"><span class="tb mono">⏱ 2h</span><span class="tb mono">📊 1ª sprint de incremento</span></div></div>
+      <div class="cer-grid">
+        <div><h4 class="sub">🎬 Roteiro</h4><ol class="roteiro">
+          <li><span class="tm">00–10</span><div>SM: quadro da Semana 1 filtrado p/ Sprint 2; marco criado.</div></li>
+          <li><span class="tm">10–25</span><div>PO: objetivo = contrato + esqueleto + Docker + ADR; zero lógica.</div></li>
+          <li><span class="tm">25–70</span><div>Devs: weight das 6 histórias (total 21).</div></li>
+          <li><span class="tm">70–105</span><div>DoR: US-002/003 dependem do contrato merged; donos/revisores.</div></li>
+          <li><span class="tm">105–120</span><div>Ata na Wiki (semana 2); US-001 e US-005 primeiro.</div></li></ol></div>
+        <div><h4 class="sub">🎭 Simulação</h4><div class="sim">
+          <div class="sim-line" style="--wc:var(--blue)"><b>BRUNO</b> — “Quadro é o mesmo da Semana 1; só filtrei no marco Sprint 2.”</div>
+          <div class="sim-line" style="--wc:var(--brand)"><b>ANA</b> — “Objetivo: Swagger UI exibindo todos os endpoints em 14/09.”</div>
+          <div class="sim-line" style="--wc:var(--purple)"><b>CARLA</b> — “US-001 (contrato) pesa 5: schemas + erros 400/404/422.”</div>
+          <div class="sim-line" style="--wc:var(--cyan)"><b>DIEGO</b> — “US-002 (esqueleto) 5: pacotes controller/service/domain/infra.”</div></div></div>
+      </div>
+      <div class="cer-foot"><button class="btn sm" data-act="copy" data-tpl="planningS2" data-nome="Ata da Planning S2">📋 Copiar ata</button><label class="done-chk" style="margin-top:0"><input type="checkbox" data-chk="cer-planning"> Planning S2 no timebox</label></div>
+      <div class="refs"><b>🔗</b><a href="https://scrumguides.org/download.html" target="_blank" rel="noopener">Scrum Guide: Planning</a><a href="https://www.atlassian.com/br/agile/scrum/sprint-planning" target="_blank" rel="noopener">Atlassian: Planning</a></div>
+    </article>
+
+    <article class="card ceremony rv" style="--ec:var(--amber)">
+      <div class="cer-head"><span class="cer-emoji">⏰</span>
+        <div class="cer-titles"><h3>2 · Daily Scrum (08–12/09)</h3><p class="cer-what"><b>O que é:</b> 15 min no <b>mesmo quadro</b> (filtro Sprint 2) + burn down; bloqueios viram ~impedimento.</p></div>
+        <div class="cer-meta"><span class="tb mono">⏱ 15 min</span><span class="tb mono">📊 down ao vivo</span></div></div>
+      <div class="cer-grid">
+        <div><h4 class="sub">🎬 Roteiro</h4><ol class="roteiro">
+          <li><span class="tm">00–02</span><div>SM abre quadro filtrado + burndown do marco Sprint 2.</div></li>
+          <li><span class="tm">02–12</span><div>Devs: ontem/hoje/impedimento apontando o card.</div></li>
+          <li><span class="tm">12–15</span><div>SM registra ~impedimento; encerra.</div></li></ol></div>
+        <div><h4 class="sub">🎭 Simulação — 09/09</h4><div class="sim">
+          <div class="sim-line" style="--wc:var(--blue)"><b>BRUNO</b> — “Restam 16, ideal 14. Contrato merged ontem ✅.”</div>
+          <div class="sim-line" style="--wc:var(--cyan)"><b>DIEGO</b> — “Esqueleto: mvn compile verde local; MR !31 aberto.”</div>
+          <div class="sim-line" style="--wc:var(--purple)"><b>CARLA</b> — “Swagger UI não acha o yaml no compose → ~impedimento #33.”</div>
+          <div class="sim-line" style="--wc:var(--blue)"><b>BRUNO</b> — “Eu pego o #33: volume do docs/ no swagger-ui.”</div></div></div>
+      </div>
+      <div class="cer-foot"><label class="done-chk" style="margin-top:0"><input type="checkbox" data-chk="cer-daily"> Dailies S2 no quadro reaproveitado</label></div>
+      <div class="refs"><b>🔗</b><a href="https://scrumguides.org/download.html" target="_blank" rel="noopener">Scrum Guide: Daily</a><a href="https://docs.gitlab.com/user/project/milestones/burndown_and_burnup_charts/" target="_blank" rel="noopener">GitLab: charts</a></div>
+    </article>
+
+    <article class="card ceremony rv" style="--ec:var(--green)">
+      <div class="cer-head"><span class="cer-emoji">📊</span>
+        <div class="cer-titles"><h3>★ Burn Down &amp; Burn Up da Sprint 2</h3>
+        <p class="cer-what"><b>Down</b> = restante/dia vs ideal (21 pts). <b>Up</b> = concluído × escopo estável. Mesmos gráficos da Semana 1, novo marco.</p></div>
+        <div class="cer-meta"><span class="tb mono">📅 07/09 → 13/09</span></div></div>
+      <div class="grid2">
+        <div class="chart" id="chartDown"><h4 class="sub">🔥 Burn Down S2</h4>
+          <svg viewBox="0 0 340 210" role="img" aria-label="Burn down sprint 2">
+            <line class="gline" x1="34" y1="70" x2="320" y2="70"/><line class="gline" x1="34" y1="120" x2="320" y2="120"/><path class="axis" d="M34 14 V170 H324" fill="none"/>
+            <line class="ideal" x1="34" y1="20" x2="314" y2="170"/>
+            <polyline class="chart-line" points="34,20 81,20 128,56 174,84 221,113 268,149 314,170" fill="none" stroke="var(--brand)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <g fill="var(--brand)"><circle cx="34" cy="20" r="3.4"/><circle cx="81" cy="20" r="3.4"/><circle cx="128" cy="56" r="3.4"/><circle cx="174" cy="84" r="3.4"/><circle cx="221" cy="113" r="3.4"/><circle cx="268" cy="149" r="3.4"/><circle cx="314" cy="170" r="3.4"/></g>
+            <text class="ax-t" x="34" y="186" text-anchor="middle">07/09</text><text class="ax-t" x="128" y="186" text-anchor="middle">09/09</text><text class="ax-t" x="221" y="186" text-anchor="middle">11/09</text><text class="ax-t" x="314" y="186" text-anchor="middle">13/09</text>
+            <text class="ax-t" x="36" y="12">real [21,21,16,12,8,3,0] · tracejada = ideal</text></svg>
+          <div class="legend"><span><i style="background:var(--brand)"></i>Real</span><span><i style="background:var(--muted)"></i>Ideal</span></div></div>
+        <div class="chart" id="chartUp"><h4 class="sub">📈 Burn Up S2</h4>
+          <svg viewBox="0 0 340 210" role="img" aria-label="Burn up sprint 2">
+            <line class="gline" x1="34" y1="70" x2="320" y2="70"/><line class="gline" x1="34" y1="120" x2="320" y2="120"/><path class="axis" d="M34 14 V170 H324" fill="none"/>
+            <line class="ideal" x1="34" y1="20" x2="314" y2="20"/><text class="ax-t" x="246" y="14">escopo 21 (estável ✅)</text>
+            <polyline class="chart-line" points="34,170 81,170 128,134 174,106 221,77 268,41 314,20" fill="none" stroke="var(--green)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <g fill="var(--green)"><circle cx="34" cy="170" r="3.4"/><circle cx="81" cy="170" r="3.4"/><circle cx="128" cy="134" r="3.4"/><circle cx="174" cy="106" r="3.4"/><circle cx="221" cy="77" r="3.4"/><circle cx="268" cy="41" r="3.4"/><circle cx="314" cy="20" r="3.4"/></g>
+            <text class="ax-t" x="34" y="186" text-anchor="middle">07/09</text><text class="ax-t" x="128" y="186" text-anchor="middle">09/09</text><text class="ax-t" x="221" y="186" text-anchor="middle">11/09</text><text class="ax-t" x="314" y="186" text-anchor="middle">13/09</text>
+            <text class="ax-t" x="36" y="12">concluído [0,0,5,9,13,18,21]</text></svg>
+          <div class="legend"><span><i style="background:var(--green)"></i>Concluído</span><span><i style="background:var(--muted)"></i>Escopo</span></div></div>
+      </div>
+      <h4 class="sub">🗓️ Quando apresentar (Sprint 2)</h4>
+      <div class="twrap"><table class="tbl"><thead><tr><th>Cerimônia</th><th>Momento</th><th>Gráfico</th><th>Quem</th><th>Exemplo de fala</th></tr></thead><tbody>
+        <tr><td>Planning 07/09</td><td>10 min iniciais</td><td>— (1ª sprint de incremento)</td><td>SM</td><td>“Sem velocity de produto ainda: capacidade 21 pts”.</td></tr>
+        <tr><td>Daily 08–12/09</td><td>min 0–2</td><td>Down S2</td><td>SM</td><td>“16 vs 14: impedimento #33 no compose”.</td></tr>
+        <tr><td>Review 14/09</td><td>min 0–10</td><td>Up S2</td><td>PO</td><td>“21/21, escopo estável, compila em todo MR”.</td></tr>
+        <tr><td>Retro 14/09</td><td>min 20–35</td><td>Down S2 (formato)</td><td>SM</td><td>“Platô 08/09 = contrato revisado 2× → checklist de contrato”.</td></tr>
+      </tbody></table></div>
+      <div class="cer-foot"><button class="btn sm" data-act="copy" data-tpl="metricasS2" data-nome="metricas-sprint-2">📋 Copiar métricas S2</button><label class="done-chk" style="margin-top:0"><input type="checkbox" data-chk="cer-met"> Gráficos S2 nas 4 cerimônias</label></div>
+      <div class="refs"><b>🔗</b><a href="https://docs.gitlab.com/user/project/milestones/burndown_and_burnup_charts/" target="_blank" rel="noopener">GitLab: charts</a><a href="https://mermaid.js.org/syntax/xyChart.html" target="_blank" rel="noopener">Mermaid xychart</a></div>
+    </article>
+
+    <article class="card ceremony rv" style="--ec:var(--red)">
+      <div class="cer-head"><span class="cer-emoji">🎤</span>
+        <div class="cer-titles"><h3>3 · Sprint Review + Demo (14/09)</h3><p class="cer-what">Up abre; demo = <b>Swagger UI exibe todos os endpoints</b> + <b>projeto compila</b>; feedback vira ~melhoria.</p></div>
+        <div class="cer-meta"><span class="tb mono">⏱ 1h</span></div></div>
+      <div class="cer-grid">
+        <div><h4 class="sub">🎬 Roteiro</h4><ol class="roteiro">
+          <li><span class="tm">00–10</span><div>PO: up 21/21 + escopo estável.</div></li>
+          <li><span class="tm">10–40</span><div>Demo: docker compose up → Swagger UI c/ todos os endpoints; mvn compile verde; Wiki da semana 2.</div></li>
+          <li><span class="tm">40–52</span><div>Feedback → ~melhoria.</div></li>
+          <li><span class="tm">52–60</span><div>Tag v0.1 + Release.</div></li></ol></div>
+        <div><h4 class="sub">🎭 Simulação</h4><div class="sim">
+          <div class="sim-line" style="--wc:var(--brand)"><b>ANA</b> — “21/21. Contrato primeiro: zero lógica de negócio, como pedido.”</div>
+          <div class="sim-line" style="--wc:var(--cyan)"><b>DIEGO</b> — Swagger UI: /users, /users/{id} (GET/POST/PUT/DELETE) visíveis.</div>
+          <div class="sim-line" style="--wc:var(--purple)"><b>CARLA</b> — mvn -q compile verde em todos os MRs (!31…!36).</div>
+          <div class="sim-line" style="--wc:var(--muted)"><b>PROFESSOR</b> — “Na próxima, lógica de negócio + testes” → #40 ~melhoria.</div></div></div>
+      </div>
+      <div class="cer-foot"><button class="btn sm" data-act="copy" data-tpl="releaseS2" data-nome="Release v0.1">📋 Copiar Release v0.1</button><label class="done-chk" style="margin-top:0"><input type="checkbox" data-chk="cer-review"> Review/Demo 14/09 feita</label></div>
+      <div class="refs"><b>🔗</b><a href="https://docs.gitlab.com/user/project/releases/" target="_blank" rel="noopener">GitLab: Releases</a></div>
+    </article>
+
+    <article class="card ceremony rv" style="--ec:var(--purple)">
+      <div class="cer-head"><span class="cer-emoji">🔁</span>
+        <div class="cer-titles"><h3>4 · Sprint Retrospective (14/09)</h3><p class="cer-what">O formato do down vira causa; ações ~melhoria com dono entram na próxima sprint.</p></div>
+        <div class="cer-meta"><span class="tb mono">⏱ 45–60 min</span></div></div>
+      <div class="cer-grid">
+        <div><h4 class="sub">🎬 Roteiro</h4><ol class="roteiro">
+          <li><span class="tm">00–05</span><div>Segurança.</div></li>
+          <li><span class="tm">05–20</span><div>🟢//🔴.</div></li>
+          <li><span class="tm">20–35</span><div>“Platô 08/09 = quê?” → contrato revisado 2×.</div></li>
+          <li><span class="tm">35–45</span><div>Ações → issues; Wiki da semana.</div></li></ol></div>
+        <div><h4 class="sub">🎭 Simulação</h4><div class="sim">
+          <div class="sim-line" style="--wc:var(--purple)"><b>CARLA</b> — “🟢 Contrato primeiro evitou retrabalho de código.”</div>
+          <div class="sim-line" style="--wc:var(--cyan)"><b>DIEGO</b> — “🟡 Volume do docs/ no compose custou 1 dia.”</div>
+          <div class="sim-line" style="--wc:var(--blue)"><b>BRUNO</b> — #41 “checklist de contrato no MR” · #42 “compose testado na CI”.</div></div></div>
+      </div>
+      <div class="cer-foot"><button class="btn sm" data-act="copy" data-tpl="retroS2" data-nome="Retrospectiva S2">📋 Copiar retro S2</button><label class="done-chk" style="margin-top:0"><input type="checkbox" data-chk="cer-retro"> Retro S2 com ações</label></div>
+      <div class="refs"><b>🔗</b><a href="https://scrumguides.org/download.html" target="_blank" rel="noopener">Scrum Guide: Retro</a></div>
+    </article>
+  </div>
+</section>
+
+<!-- ============ 4 · ARTEFATOS DA SEMANA 2 ============ -->
+<section class="panel-sec" id="sec-artefatos" role="tabpanel">
+  <div class="sec-head rv"><span class="sec-num mono">04</span>
+    <div><h2>Artefatos da Semana 2</h2>
+    <p>Contrato OpenAPI, esqueleto Java, Docker + Swagger UI, CI de compilação e a ADR API-First — tudo copiável e publicável na Wiki da semana.</p></div></div>
+  <div class="stack">
+    <div class="grid2">
+      <div class="card rv"><h3 class="blk">📜 Contrato OpenAPI (Users) <span class="badge b-art">US-001</span></h3>
+        <div class="codewrap"><div class="codehead"><b>docs/openapi.yaml (trecho)</b><button class="cpy" data-act="copy" data-tpl="openapiUsers" data-nome="OpenAPI Users">⧉ Copiar</button></div><pre class="code" data-code="openapiUsers" data-lang="sh"></pre></div></div>
+      <div class="card rv"><h3 class="blk"> Esqueleto Java (pacotes/camadas) <span class="badge b-art">US-002</span></h3>
+        <div class="codewrap"><div class="codehead"><b>árvore do projeto</b><button class="cpy" data-act="copy" data-tpl="javaTree" data-nome="Esqueleto Java">⧉ Copiar</button></div><pre class="code" data-code="javaTree" data-lang="sh"></pre></div>
+        <label class="done-chk"><input type="checkbox" data-chk="art-esq"> Esqueleto compilando (mvn -q compile)</label></div>
+    </div>
+    <div class="grid2">
+      <div class="card rv"><h3 class="blk">🐳 Docker + Swagger UI <span class="badge b-art">US-003</span></h3>
+        <div class="codewrap"><div class="codehead"><b>Dockerfile + compose</b><button class="cpy" data-act="copy" data-tpl="dockerFiles" data-nome="Docker + Swagger UI">⧉ Copiar</button></div><pre class="code" data-code="dockerFiles" data-lang="sh"></pre></div></div>
+      <div class="card rv"><h3 class="blk">🧱 CI de compilação <span class="badge b-art">US-005</span></h3>
+        <div class="codewrap"><div class="codehead"><b>.gitlab-ci.yml</b><button class="cpy" data-act="copy" data-tpl="gitlabCi" data-nome=".gitlab-ci.yml">⧉ Copiar</button></div><pre class="code" data-code="gitlabCi" data-lang="sh"></pre></div>
+        <label class="done-chk"><input type="checkbox" data-chk="art-ci"> CI build verde em todo MR</label></div>
+    </div>
+    <div class="adr-grid" id="adrs"></div>
+  </div>
+</section>
+
+<!-- ============ 5 · WIKI POR SEMANA ============ -->
+<section class="panel-sec" id="sec-wiki" role="tabpanel">
+  <div class="sec-head rv"><span class="sec-num mono">05</span>
+    <div><h2>Wiki por semana — entregas da Semana 2</h2>
+    <p>A home indexa as semanas; a <span class="mono">laboratorio-semana-2</span> traz as entregas desta sprint como exemplo; semanas 3–4 seguem reservadas.</p></div></div>
+  <div class="stack">
+    <div class="card rv">
+      <h3 class="blk">📋 O que a página da Semana 2 precisa ter</h3>
+      <div class="twrap"><table class="tbl"><thead><tr><th>Exigência</th><th>Onde na <span class="mono">laboratorio-semana-2</span></th></tr></thead><tbody>
+        <tr><td>Explicações próprias alinhadas ao problema</td><td>Seção 1 — por que contrato antes do código; por que zero lógica agora</td></tr>
+        <tr><td>Diagramas</td><td>Seção 2 — C4 contexto da Users API + árvore de pacotes</td></tr>
+        <tr><td>Capturas de ótima qualidade</td><td>Seção 3 — Swagger UI c/ endpoints, mvn compile, MR aprovado, burndown, home</td></tr>
+        <tr><td>Tabelas</td><td>Seção 4 — rastreabilidade US → MR → entregável</td></tr>
+        <tr><td>Decisões e pesquisas</td><td>Seção 5 — <span class="mono">adr-001-api-first</span></td></tr>
+        <tr><td>Métricas e aprendizados</td><td>Seção 7 — <span class="mono">metricas-sprint-2</span> + velocity p/ próxima sprint</td></tr>
+      </tbody></table></div>
+    </div>
+    <div class="card rv">
+      <h3 class="blk">📸 Capturas de tela — checklist da Semana 2</h3>
+      <div class="shotlist">
+        <label><input type="checkbox" data-chk="shot2-1"><span class="cam">🖥️</span><span>Swagger UI exibindo todos os endpoints (tela cheia, URL visível)</span></label>
+        <label><input type="checkbox" data-chk="shot2-2"><span class="cam">🖥️</span><span>mvn -q compile / pipeline build verde</span></label>
+        <label><input type="checkbox" data-chk="shot2-3"><span class="cam">🖥️</span><span>MR com Approve clicado (ex.: !31)</span></label>
+        <label><input type="checkbox" data-chk="shot2-4"><span class="cam">🖥️</span><span>Burndown do marco Sprint 2</span></label>
+        <label><input type="checkbox" data-chk="shot2-5"><span class="cam">🖥️</span><span>Home da Wiki com semana 2 ✅ e semanas 3–4 🕒</span></label>
+      </div>
+      <label class="done-chk"><input type="checkbox" data-chk="w-shots2"> 5 capturas anexadas à seção 3</label>
+    </div>
+    <div class="card rv">
+      <h3 class="blk">🗂️ Páginas da Wiki para a Semana 2</h3>
+      <div class="pagelist" id="wikiPages"></div>
+    </div>
+    <div class="card rv">
+      <h3 class="blk">📚 Wiki — exemplo navegável (Semana 2 entregue)</h3>
+      <p style="font-size:13px;color:var(--muted)">Clique nas páginas; o botão da barra copia o Markdown real para colar na sua Wiki.</p>
+      <div class="wiki-mock">
+        <aside class="wiki-side"><div class="wiki-logo">📖 secao-b/grupo-1 · WIKI</div><div id="wikiNav"></div></aside>
+        <div class="wiki-main">
+          <div class="wiki-bar mono"><span>pages/<span id="wikiSlug">home</span> · 13/09 18h</span><button class="cpy" id="wikiCopy">⧉ Copiar Markdown da página</button></div>
+          <div id="wikiBody"></div>
+        </div>
+      </div>
+      <label class="done-chk"><input type="checkbox" data-chk="w-ok2"> Minha Wiki segue este modelo por semana</label>
+      <div class="refs"><b>🔗 REFERÊNCIAS</b>
+        <a href="https://docs.gitlab.com/user/project/wiki/" target="_blank" rel="noopener">GitLab: Wiki</a>
+        <a href="https://docs.gitlab.com/user/markdown.html" target="_blank" rel="noopener">GitLab: Markdown</a>
+        <a href="https://mermaid.js.org/" target="_blank" rel="noopener">Mermaid</a></div>
+    </div>
+  </div>
+</section>
+
+<footer><span>🦊 Atividade #1 · <b>Semana 2 · Sprint 2</b> · API-First · quadro reaproveitado · Wiki por semana</span><span class="mono">SPRINT 2 · 07/09 → 13/09/2026 · DEMO 14/09 · 100% OFFLINE</span></footer>
+</main>
+<div id="toast" role="status" aria-live="polite"></div>
+<script>
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+var $=function(s){return document.querySelector(s)},$$=function(s){return Array.prototype.slice.call(document.querySelectorAll(s));};
+var K_CHK='w2f-checks',K_THEME='w2f-theme',K_TAB='w2f-tab';
+function hlSh(c){return escapeHtml(c).split('\n').map(function(l){if(/^\s*#/.test(l)||/^#!\//.test(l))return '<span class="c">'+l+'</span>';return l.replace(/^(\s*)(git|mvn|docker|FROM|COPY|RUN|EXPOSE|ENTRYPOINT|WORKDIR|python3?|pip|source|cd)(\b)/,'$1<span class="k">$2</span>');}).join('\n');}
+function hlMd(c){return escapeHtml(c).split('\n').map(function(l){if(/^#{1,3} /.test(l))return '<span class="h">'+l+'</span>';if(/^\s*-\s\[[ x]\]/.test(l))return '<span class="t">'+l+'</span>';if(/^\|/.test(l))return '<span class="p">'+l+'</span>';return l;}).join('\n');}
+var toastTimer;function toast(m){var t=$('#toast');t.innerHTML=m;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove('show');},2400);}
+function copiar(txt,nome){function ok(){toast('📋 Copiado: <b>'+escapeHtml(nome||'conteúdo')+'</b>');}
+ function fb(){var ta=document.createElement('textarea');ta.value=txt;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.focus();ta.select();try{document.execCommand('copy');ok();}catch(e){toast('⚠️ Copie manualmente.');}ta.remove();}
+ if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(ok).catch(fb);}else fb();}
+var EPICS=[
+{id:"EPIC-01",icone:"📜",cor:"var(--purple)",titulo:"Contrato API-First",desc:"O contrato Swagger/OpenAPI da Users API e a decisão que o justifica (ADR-001).",features:["openapi.yaml","ADR-001"],stories:[
+ {id:"US-001",titulo:"Contrato Swagger/OpenAPI da Users API",pontos:5,dia:"07–09/09",labels:["backlog"],como:"consumidor da API",quero:"um contrato OpenAPI com todos os endpoints de users",para:"construir e testar contra uma fonte única de verdade",aceite:["docs/openapi.yaml com /users e /users/{id} (GET/POST/PUT/DELETE)","Schemas UserInput/User e erros 400/404/422 documentados","info.version 0.1.0 e servers definidos","Válido em editor OpenAPI (sem erros)"],dor:["Lista de endpoints acordada com a PO","Convenções de nome e erros definidas","Editor OpenAPI disponível"],dod:["MR aprovado + merged","Swagger UI (US-003) exibe o contrato","Linkado na laboratorio-semana-2"]},
+ {id:"US-004",titulo:"ADR-001 para API-First",pontos:3,dia:"08/09",labels:["backlog"],como:"time",quero:"a decisão API-First registrada com contexto e alternativas",para:"justificar contrato-antes-do-código para a disciplina",aceite:["Contexto, decisão, alternativas (code-first, GraphQL) e consequências","Fontes consultadas citadas","Página adr-001-api-first na Wiki"],dor:["Pesquisa coletada","Template de ADR disponível"],dod:["Página publicada e linkada","Decisão citada nas US-001/002"]}
+]},
+{id:"EPIC-02",icone:"🌳",cor:"var(--brand)",titulo:"Esqueleto & Infra",desc:"Esqueleto Java em camadas, container Docker com Swagger UI e CI que garante “compila com sucesso”.",features:["Esqueleto Java","Docker+Swagger UI","CI build"],stories:[
+ {id:"US-002",titulo:"Esqueleto Java (pacotes, camadas, namespaces)",pontos:5,dia:"08–10/09",labels:["backlog"],como:"developer",quero:"um esqueleto organizado em camadas",para:"crescer o código sem retrabalho de arquitetura",aceite:["Pacotes controller/service/domain/infra com namespaces br.com.grupo1.users","Interfaces de service e repository definidas","mvn -q compile verde (zero lógica de negócio)","README do módulo explica cada camada"],dor:["Contrato merged (US-001)","Nome dos pacotes acordado"],dod:["MR aprovado + CI verde","Árvore documentada na Wiki da semana"]},
+ {id:"US-003",titulo:"Container Docker com Swagger UI",pontos:3,dia:"09–11/09",labels:["backlog"],como:"professor/stakeholder",quero:"subir a demo com um comando",para:"ver todos os endpoints sem instalar nada",aceite:["docker compose up sobe app + swagger-ui","Swagger UI em localhost:8081 com o openapi.yaml","Dockerfile versionado (build multi-stage)"],dor:["openapi.yaml merged","Docker disponível no time"],dod:["Captura do Swagger UI no MR e na Wiki","Compose documentado na semana 2"]},
+ {id:"US-005",titulo:"CI de compilação em todo MR",pontos:2,dia:"10/09",labels:["backlog"],como:"time",quero:"pipeline build em cada MR",para:"garantir que o projeto sempre compila",aceite:[".gitlab-ci.yml com stage build (mvn -q compile)","Pipeline roda em todo MR","Pipeline falho bloqueia merge","Badge no README"],dor:["Esqueleto compila localmente"],dod:["MR da CI merged","Bloqueio testado com código quebrado"]}
+]},
+{id:"EPIC-03",icone:"📖",cor:"var(--cyan)",titulo:"Memória da Semana 2",desc:"A entrega avaliada: laboratorio-semana-2 com explicações, diagramas, capturas, tabelas, ADR e métricas.",features:["laboratorio-semana-2","metricas-sprint-2"],stories:[
+ {id:"US-006",titulo:"Wiki da Semana 2 (laboratorio-semana-2)",pontos:2,dia:"11–13/09",labels:["backlog"],como:"time",quero:"a página da semana com todas as entregas",para:"memória avaliável e base da próxima sprint",aceite:["7 seções preenchidas (explicações próprias)","5 capturas de ótima qualidade","Tabela US → MR → entregável","adr-001 + metricas-sprint-2 linkadas","Home atualizada (semana 2 ✅)"],dor:["Entregáveis merged","Capturas coletadas"],dod:["Página publicada","Demo de 14/09 usa a página"]}
+]}];
+var STORY_MAP={};EPICS.forEach(function(e){e.stories.forEach(function(s){STORY_MAP[s.id]={st:s,ep:e};});});
+var ADRS=[
+{n:"001",t:"API-First (contrato antes do código)",st:"Aceita · Sprint 2",destaque:true,contexto:"A disciplina exige definir a Users API com Swagger/OpenAPI antes de qualquer lógica de negócio; o time precisa de uma fonte única de verdade para endpoints e schemas.",decisao:"Adotar API-First: o contrato docs/openapi.yaml é escrito, revisado e merged antes do esqueleto; toda história de código exige contrato merged na DoR.",pesquisa:"API-First trata a API como produto: contrato primeiro (OpenAPI), código depois. Benefícios: paralelismo entre consumidores e implementadores, documentação viva, testes de contrato cedo. Ferramentas: OpenAPI 3.x, Swagger UI, Postman mocks. Fontes: swagger.io (Understanding the API-First Approach), openapis.org.",alts:["Code-first (docs geradas depois): risco de doc desatualizada","GraphQL: overkill para CRUD simples"],pros:["Contrato = critério de aceite","Swagger UI como demo permanente","Zero retrabalho de arquitetura"],cons:["Exige disciplina de atualização do contrato"]}
+];
+var ADR_MAP={};ADRS.forEach(function(a){ADR_MAP[a.n]=a;});
+var TEMPLATES={};
+TEMPLATES.milestoneSprint2=["## 🎯 Sprint 2 — Definição da Users API (API-First)","","**07/09 → 13/09/2026** · 21 pts","","### Objetivo","Definir o contrato Swagger/OpenAPI e o esqueleto Java (pacotes, camadas, namespaces) com zero lógica de negócio.","","### Entregáveis","- [ ] docs/openapi.yaml (US-001)","- [ ] Esqueleto Java compilando (US-002)","- [ ] Container Docker com Swagger UI (US-003)","- [ ] ADR-001 API-First (US-004)","- [ ] CI de compilação (US-005)","- [ ] laboratorio-semana-2 (US-006)","","### Demo (14/09)","Swagger UI exibe todos os endpoints · projeto compila com sucesso."].join("\n");
+TEMPLATES.dorDodS2=["# 🟦 DoR Sprint 2 (por história)","- [ ] US-002/003: contrato openapi.yaml merged (US-001)","- [ ] Endpoints/esquemas escritos no aceite","- [ ] Weight + dono + revisor + ~backlog + marco Sprint 2","","# 🟩 DoD Sprint 2 (por história)","- [ ] MR com pipeline build verde + Approve","- [ ] Swagger UI exibindo o endpoint (captura no MR)","- [ ] Página correspondente na Wiki da semana"].join("\n");
+TEMPLATES.openapiUsers=["openapi: 3.0.3","info:","  title: Users API","  version: 0.1.0","  description: Contrato da Users API (API-First) - Sprint 2","paths:","  /users:","    get:","      summary: Lista users (page/size)","      responses:","        '200': {description: OK}","    post:","      summary: Cria user","      requestBody:","        required: true","        content:","          application/json:","            schema: {$ref: '#/components/schemas/UserInput'}","      responses:","        '201': {description: Criado}","        '422': {description: Validacao falhou}","  /users/{id}:","    get:","      summary: Busca por id","      responses:","        '200': {description: OK}","        '404': {description: Nao encontrado}","    put:","      summary: Atualiza","      responses:","        '200': {description: OK}","        '404': {description: Nao encontrado}","    delete:","      summary: Remove","      responses:","        '204': {description: Sem conteudo}","        '404': {description: Nao encontrado}","components:","  schemas:","    UserInput:","      type: object","      required: [name, email, password]","      properties:","        name: {type: string, minLength: 2}","        email: {type: string, format: email}","        password: {type: string, minLength: 8}"].join("\n");
+TEMPLATES.javaTree=["users-api/","├── docs/","│   └── openapi.yaml            # contrato (US-001)","├── src/main/java/br/com/grupo1/users/","│   ├── UsersApiApplication.java","│   ├── controller/             # camada de entrada (stubs)","│   │   └── UserController.java","│   ├── service/                # camada de servico (interfaces)","│   │   └── UserService.java","│   ├── domain/                 # modelo (User, UserInput)","│   │   └── User.java","│   └── infra/                  # adapters (futuro repositorio)","│       └── InMemoryUserRepository.java","├── src/test/java/br/com/grupo1/users/   # testes (proxima sprint)","├── Dockerfile","├── docker-compose.yml","├── .gitlab-ci.yml","└── pom.xml"].join("\n");
+TEMPLATES.dockerFiles=["# Dockerfile (build multi-stage)","FROM maven:3.9-eclipse-temurin-17 AS build","WORKDIR /app","COPY . .","RUN mvn -q -DskipTests package","","FROM eclipse-temurin:17-jre","WORKDIR /app","COPY --from=build /app/target/*.jar app.jar","EXPOSE 8080","ENTRYPOINT [\"java\",\"-jar\",\"app.jar\"]","","# docker-compose.yml","services:","  api:","    build: .","    ports: [\"8080:8080\"]","  swagger-ui:","    image: swaggerapi/swagger-ui","    ports: [\"8081:8080\"]","    environment:","      SWAGGER_JSON: /docs/openapi.yaml","    volumes:","      - ./docs:/docs"].join("\n");
+TEMPLATES.gitlabCi=["stages: [build]","","build:","  stage: build","  image: maven:3.9-eclipse-temurin-17","  script:","    - mvn -q compile"].join("\n");
+TEMPLATES.planningS2=["# 🧭 Ata da Planning — Sprint 2 (07/09)","","- [ ] Quadro da Semana 1 filtrado no marco Sprint 2","- [ ] Objetivo: contrato + esqueleto + Docker + ADR (zero lógica)","- [ ] 6 histórias (21 pts) c/ DoR de contrato p/ US-002/003","- [ ] US-001 e US-005 primeiro (destravam o resto)","- [ ] Ata publicada na laboratorio-semana-2"].join("\n");
+TEMPLATES.metricasS2=["# 📊 metricas-sprint-2","","## Burn Down","```mermaid","xychart-beta","    x-axis [\"07/09\",\"08/09\",\"09/09\",\"10/09\",\"11/09\",\"12/09\",\"13/09\"]","    y-axis \"pts\" 0 --> 21","    line [21, 18, 14, 11, 7, 4, 0]","    line [21, 21, 16, 12, 8, 3, 0]","```","","## Burn Up","```mermaid","xychart-beta","    x-axis [\"07/09\",\"08/09\",\"09/09\",\"10/09\",\"11/09\",\"12/09\",\"13/09\"]","    y-axis \"pts\" 0 --> 21","    line [21, 21, 21, 21, 21, 21, 21]","    line [0, 0, 5, 9, 13, 18, 21]","```","","## Análise","- Platô 08/09: contrato revisado 2x → ação #41 (checklist de contrato no MR)","- Escopo estável em 21 → sem scope creep","- Velocity 21 → base da próxima sprint"].join("\n");
+TEMPLATES.releaseS2=["## 🎉 Release v0.1 — Sprint 2 (contrato)","","✅ docs/openapi.yaml (Users API completa)","✅ Esqueleto Java em camadas (compila)","✅ Container Docker com Swagger UI","✅ ADR-001 API-First","","📊 Up 21/21 · escopo estável · demo 14/09: Swagger UI + compilação"].join("\n");
+TEMPLATES.retroS2=["# 🔁 Retrospectiva — Sprint 2 (14/09)","","## 🟢 Foi bem","- Contrato primeiro: zero retrabalho de código","- Swagger UI como demo permanente","","## 🟡 Melhorar","- Volume do docs/ no compose custou 1 dia","- Contrato revisado 2x (platô 08/09)","","## 🎯 Ações (~melhoria)","| Ação | Dono | Issue |","|---|---|---|","| Checklist de contrato no MR | Ana | #41 |","| Compose testado na CI | Diego | #42 |"].join("\n");
+TEMPLATES.labSemana2=["# 🧪 Laboratório — Semana 2 (07/09–13/09/2026)","","> Status: ✅ entregue · Sprint 2 · 21 pts","","## 1. Problema da semana e explicações (com nossas palavras)","**Problema:** definir a Users API antes de escrever lógica: contrato Swagger/OpenAPI + esqueleto Java (pacotes, camadas, namespaces), com zero lógica de negócio.","**Nossas decisões:** API-First (ADR-001) — contrato merged antes de qualquer código; esqueleto em camadas controller/service/domain/infra; Docker com Swagger UI como demo permanente; CI de compilação como porteiro do merge.","- Por que zero lógica agora? O foco da sprint é o contrato e a estrutura; lógica e testes vêm na próxima sprint.","- Por que Docker? Qualquer pessoa (ou o professor) sobe a demo com um comando.","","## 2. Diagramas","- C4 contexto da Users API (cliente → Users API → Swagger UI)","- Árvore de pacotes (camadas/namespaces)","","## 3. Capturas de tela (alta qualidade)","- [x] Swagger UI com todos os endpoints","- [x] mvn -q compile / pipeline build verde","- [x] MR !31 com Approve clicado","- [x] Burndown do marco Sprint 2","- [x] Home com semana 2 ✅","","## 4. Tabelas","| História | MR | Entregável |","|---|---|---|","| US-001 | !30 | docs/openapi.yaml |","| US-002 | !31 | esqueleto Java |","| US-003 | !33 | Docker + Swagger UI |","| US-004 | — | adr-001-api-first |","| US-005 | !34 | .gitlab-ci.yml |","| US-006 | — | esta página |","","## 5. Decisões e pesquisas","- [[adr-001-api-first]]","","## 6. Ambiente","Java 17 · Maven 3.9 · Docker (swagger-ui) · GitLab CI (build)","","## 7. Métricas e aprendizados","- Velocity 21 (21/21) · escopo estável","- Aprendizado: checklist de contrato no MR → [[metricas-sprint-2]]"].join("\n");
+TEMPLATES.wikiHome=["# 🏠 Home — Wiki do Grupo 1 (Seção B)","","## 📅 Índice por semana","| Semana | Período | Laboratório | Status |","|---|---|---|---|","| Semana 2 | 07/09–13/09 | [[laboratorio-semana-2]] | ✅ entregue |","| Semana 3 | 14/09–20/09 | [[laboratorio-semana-3]] | 🕒 reservada |","| Semana 4 | 21/09–27/09 | [[laboratorio-semana-4]] | 🕒 reservada |","","## 👥 Alunos","- Ana Souza — Product Owner","- Bruno Lima — Scrum Master","- Carla Nunes — Developer","- Diego Rocha — Developer"].join("\n");
+var WIKI=[
+{k:"home",slug:"home",t:"🏠 Home (índice)",tpl:"wikiHome",d:"índice: semana 2 ✅, 3–4 🕒",wk:"on",h:'<span class="wstatus">✅ SEMANA 2 ENTREGUE · 13/09</span><h1>🏠 Home — Wiki do Grupo 1 (Seção B)</h1><table class="wtbl"><tr><th>Semana</th><th>Período</th><th>Laboratório</th><th>Status</th></tr><tr><td>Semana 2</td><td>07/09–13/09</td><td><a data-wp="sem2">laboratorio-semana-2</a></td><td>✅</td></tr><tr><td>Semana 3</td><td>14/09–20/09</td><td>laboratorio-semana-3</td><td>🕒</td></tr><tr><td>Semana 4</td><td>21/09–27/09</td><td>laboratorio-semana-4</td><td>🕒</td></tr></table>'},
+{k:"sem2",slug:"laboratorio-semana-2",t:"🧪 Semana 2 (entrega)",tpl:"labSemana2",d:"explicações, diagramas, capturas, tabelas, ADR-001, métricas",wk:"on",h:'<span class="wstatus">✅ ENTREGUE · Sprint 2 · 21 pts</span><h1>🧪 laboratorio-semana-2</h1><p><b>Problema:</b> definir a Users API antes da lógica: contrato + esqueleto + Docker + ADR. <b>Solução:</b> API-First (contrato merged primeiro), esqueleto em camadas, Swagger UI no compose, CI de compilação.</p><h2>4 · Tabela US → MR → entregável</h2><table class="wtbl"><tr><th>US</th><th>MR</th><th>Entregável</th></tr><tr><td>US-001</td><td>!30</td><td>openapi.yaml</td></tr><tr><td>US-002</td><td>!31</td><td>esqueleto Java</td></tr><tr><td>US-003</td><td>!33</td><td>Docker + Swagger UI</td></tr><tr><td>US-005</td><td>!34</td><td>.gitlab-ci.yml</td></tr></table><h2>5 · Decisões</h2><ul><li><a data-wp="adr001">adr-001-api-first</a></li></ul><h2>7 · Métricas</h2><p><a data-wp="met2">metricas-sprint-2</a>: velocity 21 · escopo estável</p>'},
+{k:"met2",slug:"metricas-sprint-2",t:"📊 Métricas S2",tpl:"metricasS2",d:"burn down/up S2 + análise",wk:"on",h:'<h1>📊 metricas-sprint-2</h1><span class="wstatus">atualizada após cada Daily</span><p>Down real [21,21,16,12,8,3,0] vs ideal · Up [0,0,5,9,13,18,21] × escopo 21.</p><p>Platô 08/09 = contrato revisado 2× → ação #41. Velocity 21.</p>'},
+{k:"adr001",slug:"adr-001-api-first",t:"📜 ADR-001",tpl:"adr001",d:"API-First: contrato antes do código",wk:"on",h:'<h1>📜 adr-001-api-first</h1><span class="wstatus">Aceita · Sprint 2</span><p><b>Decisão:</b> contrato docs/openapi.yaml escrito, revisado e merged antes do esqueleto; DoR de código exige contrato merged.</p><p><b>Consequências:</b> ✅ contrato = aceite · ✅ Swagger UI como demo · ⚠️ exige disciplina de atualização.</p>'},
+{k:"retro2",slug:"retrospectiva-sprint-2",t:"🔁 Retro S2",tpl:"retroS2",d:"foi bem / melhorar / ações",wk:"res",h:'<h1>🔁 retrospectiva-sprint-2</h1><span class="wstatus res">PREENCHER EM 14/09 (após a Review)</span><p>Modelo: 🟢 foi bem · 🟡 melhorar · 🎯 ações com dono → issues #41/#42.</p>'}
+];
+var curWiki="home";
+function wikiText(k){if(k==="adr001")return adrMarkdown(ADR_MAP["001"]);return TEMPLATES[k]||"";}
+function showWiki(k){curWiki=k;var p=WIKI.filter(function(x){return x.k===k;})[0];$$('#wikiNav .wpage').forEach(function(b){b.classList.toggle('on',b.dataset.wp===k);});$('#wikiSlug').textContent=p.slug;$('#wikiBody').innerHTML=p.h;}
+function renderWiki(){$('#wikiNav').innerHTML=WIKI.map(function(p){return '<button class="wpage" data-wp="'+p.k+'">'+p.t+'</button>';}).join('');
+ $('#wikiNav').addEventListener('click',function(e){var b=e.target.closest('.wpage');if(b)showWiki(b.dataset.wp);});
+ $('#wikiBody').addEventListener('click',function(e){var a=e.target.closest('a[data-wp]');if(a){e.preventDefault();showWiki(a.dataset.wp);}});
+ $('#wikiCopy').addEventListener('click',function(){var p=WIKI.filter(function(x){return x.k===curWiki;})[0];copiar(wikiText(p.tpl),'Wiki · '+p.slug);});showWiki('home');}
+function renderWikiPages(){$('#wikiPages').innerHTML=WIKI.map(function(p,i){return '<label><input type="checkbox" data-chk="wp2-'+i+'"><span class="mono">'+String(i+1).padStart(2,'0')+'</span><span style="flex:1"><b>'+escapeHtml(p.slug)+'</b> — '+escapeHtml(p.d)+'</span><span class="wk '+p.wk+'">'+(p.wk==='on'?'SEM 2':'DEPOIS')+'</span></label>';}).join('');}
+function storyMarkdown(s,ep){var b=function(a){return a.map(function(i){return '- [ ] '+i;}).join('\n');};
+ return '## '+s.id+' — '+s.titulo+'\n\n**Épico:** '+ep.id+' — '+ep.titulo+'  \n**Weight:** '+s.pontos+' · **Previsão:** '+s.dia+'\n\n**Como** '+s.como+', **quero** '+s.quero+', **para** '+s.para+'.\n\n### ✅ Critérios de Aceite\n'+b(s.aceite)+'\n\n### 🟦 Definition of Ready — individual\n'+b(s.dor)+'\n\n### 🟩 Definition of Done — individual\n'+b(s.dod)+'\n\n---\n🏷️ _Sprint 2 · 07/09–13/09/2026 · '+ep.id+'_\n\n/milestone %"Sprint 2"\n/label ~"'+s.labels.join('" ~"')+'"';}
+function renderBacklog(){$('#epics').innerHTML=EPICS.map(function(ep){
+ var st=ep.stories.map(function(s){function it(l,px){return l.map(function(t,i){return '<label class="chk-item"><input type="checkbox" data-chk="'+s.id+'-'+px+'-'+i+'"><span>'+escapeHtml(t)+'</span></label>';}).join('');}
+  return '<details class="story"><summary><span class="sum-id">'+escapeHtml(s.id)+'</span><span class="story-title">'+escapeHtml(s.titulo)+'</span><span class="daychip mono">📅 '+escapeHtml(s.dia)+'</span><span class="pts mono">⚖ '+s.pontos+'</span>'+s.labels.map(function(l){return '<span class="lbl">~'+escapeHtml(l)+'</span>';}).join('')+'<span class="chev">▼</span></summary><div class="story-body"><div class="statement">📖 <b>Como</b> '+escapeHtml(s.como)+', <b>quero</b> '+escapeHtml(s.quero)+', <b>para</b> '+escapeHtml(s.para)+'.</div><div class="checks-grid"><fieldset class="grp"><legend>✅ Aceite</legend>'+it(s.aceite,'ac')+'</fieldset><fieldset class="grp blue"><legend>🟦 DoR</legend>'+it(s.dor,'dor')+'</fieldset><fieldset class="grp green"><legend>🟩 DoD</legend>'+it(s.dod,'dod')+'</fieldset></div><div class="story-foot"><button class="btn sm" data-act="copy-story" data-id="'+s.id+'">📋 Copiar Markdown da Issue</button><span class="hint">cola na descrição · ~backlog · marco Sprint 2</span></div></div></details>';}).join('');
+ return '<article class="epic card rv" style="--ep:'+ep.cor+'"><div class="epic-head"><div class="epic-ico">'+ep.icone+'</div><div class="epic-titles"><span class="chip-id mono">'+escapeHtml(ep.id)+'</span><h3>'+escapeHtml(ep.titulo)+'</h3><p>'+escapeHtml(ep.desc)+'</p><div class="features">'+ep.features.map(function(f){return '<span class="fchip">⚡ '+escapeHtml(f)+'</span>';}).join('')+'</div></div></div><div class="stack" style="gap:10px">'+st+'</div></article>';}).join('');}
+function adrMarkdown(a){var s='# ADR-'+a.n+': '+a.t+'\n\n- **Status:** '+a.st+'\n- **Decisores:** Ana, Bruno, Carla, Diego\n\n## Contexto\n'+a.contexto+'\n\n## Decisão\n'+a.decisao+'\n';if(a.pesquisa)s+='\n## Pesquisa\n'+a.pesquisa+'\n';s+='\n## Alternativas\n'+a.alts.map(function(x){return '- '+x;}).join('\n')+'\n\n## Consequências\n'+a.pros.map(function(x){return '- ✅ '+x;}).join('\n')+'\n'+a.cons.map(function(x){return '- ⚠️ '+x;}).join('\n')+'\n';return s;}
+function renderAdrs(){$('#adrs').innerHTML=ADRS.map(function(a){return '<article class="card adrcard rv'+(a.destaque?' hot':'')+'"><div class="adr-top"><span class="chip-id mono">ADR-'+escapeHtml(a.n)+'</span><span class="stchip'+(a.destaque?' pu':'')+'">'+escapeHtml(a.st)+'</span>'+(a.destaque?'<span class="stchip pu">🔍 PESQUISA</span>':'')+'</div><h4>'+escapeHtml(a.t)+'</h4><span class="lblk">Contexto</span><p>'+escapeHtml(a.contexto)+'</p><span class="lblk">Decisão</span><p style="color:var(--text);font-weight:600">'+escapeHtml(a.decisao)+'</p>'+(a.pesquisa?'<span class="lblk">Pesquisa</span><p>'+escapeHtml(a.pesquisa)+'</p>':'')+'<div class="adr-foot"><button class="btn sm ghost" data-act="copy-adr" data-n="'+a.n+'">📋 Copiar</button><label><input type="checkbox" data-chk="adr-s2-'+a.n+'"> na Wiki</label></div></article>';}).join('');}
+function fillCode(){$$('pre[data-code]').forEach(function(p){var r=TEMPLATES[p.dataset.code]||'';p.innerHTML=(p.dataset.lang==='md')?hlMd(r):hlSh(r);});}
+function applyTheme(t){document.documentElement.dataset.theme=t;$('#themeBtn').textContent=(t==='dark')?'☀️':'';try{localStorage.setItem(K_THEME,t);}catch(e){}}
+function initTheme(){var t='dark';try{var s=localStorage.getItem(K_THEME);if(s==='light'||s==='dark')t=s;}catch(e){}applyTheme(t);}
+var TABS=['sprint2','guia','cerimonias','artefatos','wiki'];var done100=false;
+function saveChecks(){var on=$$('input[data-chk]:checked').map(function(i){return i.dataset.chk;});try{localStorage.setItem(K_CHK,JSON.stringify(on));}catch(e){}}
+function restoreChecks(){try{JSON.parse(localStorage.getItem(K_CHK)||'[]').forEach(function(k){var el=document.querySelector('input[data-chk="'+k+'"]');if(el)el.checked=true;});}catch(e){}}
+function updateProgress(){var all=$$('input[data-chk]'),on=all.filter(function(i){return i.checked;});var pct=all.length?Math.round(on.length/all.length*100):0;
+ $('#pfill').style.width=pct+'%';$('#pct').textContent=pct;$('#pfraction').textContent=on.length+' de '+all.length+' tarefas';
+ [25,50,75,100].forEach(function(th){var b=document.querySelector('[data-badge="'+th+'"]');if(b)b.classList.toggle('on',pct>=th);});
+ TABS.forEach(function(t){var s=$('#sec-'+t);if(!s)return;var el=$('#tc-'+t);if(el)el.textContent=s.querySelectorAll('input[data-chk]:checked').length+'/'+s.querySelectorAll('input[data-chk]').length;});
+ if(pct===100&&!done100&&on.length){done100=true;toast('🏆 <b>100%!</b> Sprint 2 entregue: contrato, esqueleto, Docker, ADR e Wiki!');}}
+function playCharts(){$$('.chart').forEach(function(c){c.classList.remove('play');void c.offsetWidth;c.classList.add('play');});}
+function showTab(n,skip){TABS.forEach(function(t){var b=$('#tab-'+t),s=$('#sec-'+t);if(b){b.classList.toggle('on',t===n);b.setAttribute('aria-selected',t===n?'true':'false');}if(s)s.classList.toggle('on',t===n);});
+ if(!skip){try{localStorage.setItem(K_TAB,n);}catch(e){}}
+ if(n==='cerimonias')playCharts();
+ if(window.__io){window.__io.disconnect();initReveal();}}
+function bindEvents(){
+ $('#tabbar').addEventListener('click',function(e){var b=e.target.closest('[data-tab]');if(b)showTab(b.dataset.tab);});
+ $('#themeBtn').addEventListener('click',function(){applyTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');});
+ $('#resetBtn').addEventListener('click',function(){if(!confirm('Zerar progresso?'))return;$$('input[data-chk]').forEach(function(i){i.checked=false;});saveChecks();updateProgress();toast('↺ Zerado.');});
+ $('#toggleAll').addEventListener('click',function(){var d=$$('#epics details');var any=d.some(function(x){return !x.open;});d.forEach(function(x){x.open=any;});});
+ document.addEventListener('change',function(e){if(e.target.matches('input[data-chk]')){saveChecks();updateProgress();}});
+ document.addEventListener('click',function(e){var b=e.target.closest('[data-act]');if(!b)return;var a=b.dataset.act;
+  if(a==='copy')copiar(TEMPLATES[b.dataset.tpl]||'',b.dataset.nome);
+  else if(a==='copy-story'){var o=STORY_MAP[b.dataset.id];if(o)copiar(storyMarkdown(o.st,o.ep),o.st.id);}
+  else if(a==='copy-adr'){var ad=ADR_MAP[b.dataset.n];if(ad)copiar(adrMarkdown(ad),'ADR-'+ad.n);}});}
+function sprintStatus(){var el=$('#sprintStatus'),i=new Date(2026,8,7),f=new Date(2026,8,13,23,59,59),h=new Date();
+ if(h<i)el.textContent='⏳ FALTAM '+Math.ceil((i-h)/864e5)+' DIA(S) P/ SPRINT 2';
+ else if(h<=f)el.textContent='🔥 DIA '+(Math.floor((h-i)/864e5)+1)+' DE 7 (SPRINT 2)';
+ else el.textContent='✅ SPRINT 2 ENCERRADA — DEMO 14/09';}
+function initReveal(){var els=$$('.rv:not(.vis)').filter(function(el){return el.closest('.panel-sec.on');});
+ if(!('IntersectionObserver' in window)){els.forEach(function(el){el.classList.add('vis');});return;}
+ window.__io=new IntersectionObserver(function(en){en.forEach(function(x,i){if(x.isIntersecting){setTimeout(function(){x.target.classList.add('vis');},Math.min(i*60,360));window.__io.unobserve(x.target);}});},{threshold:.06});
+ els.forEach(function(el){window.__io.observe(el);});}
+document.addEventListener('DOMContentLoaded',function(){
+ initTheme();renderBacklog();renderAdrs();renderWikiPages();fillCode();renderWiki();sprintStatus();
+ restoreChecks();updateProgress();bindEvents();
+ var st='sprint2';try{var s=localStorage.getItem(K_TAB);if(s&&TABS.indexOf(s)>-1)st=s;}catch(e){}
+ showTab(st,true);initReveal();});
+</script>
+</body>
+</html>
