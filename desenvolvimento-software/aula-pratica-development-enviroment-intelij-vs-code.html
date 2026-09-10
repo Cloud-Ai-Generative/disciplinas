@@ -89,6 +89,8 @@ tr:hover td{background:var(--bg-card-hover)}
 .select-ctrl{background:var(--bg-card);border:1px solid var(--border-color);color:var(--text-main);padding:10px 14px;border-radius:8px;font-weight:700;font-size:.92rem;width:100%;font-family:inherit}
 .term-help{background:rgba(36,150,237,.12);border:1px solid var(--docker-blue);border-left:4px solid var(--docker-blue);padding:12px 16px;border-radius:6px;margin:10px 0;font-size:.88rem;line-height:1.7}
 .term-help strong{color:var(--docker-blue)}
+.diag-title{color:var(--accent);font-size:.95rem;font-weight:800;margin:14px 0 6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.diag-title .dt-type{background:var(--badge-bg);color:var(--badge-text);padding:2px 8px;border-radius:9999px;font-size:.7rem;font-weight:800}
 .mermaid-box{background:var(--bg-inset);border:1px solid var(--border-color);border-radius:8px;padding:24px;margin:16px 0;position:relative;overflow:auto;min-height:300px}
 .mermaid-toolbar{position:absolute;top:8px;right:8px;display:flex;gap:4px;z-index:10;background:var(--bg-card);padding:4px;border-radius:6px;border:1px solid var(--border-color);box-shadow:var(--shadow);opacity:.8;transition:opacity .2s;flex-wrap:wrap}
 .mermaid-box:hover .mermaid-toolbar{opacity:1}
@@ -800,6 +802,44 @@ git push -u origin main</pre>
     </div>
   </div>
 
+  <h4 class="diag-title">📐 D-01 <span class="dt-type">Fluxo</span> — Ciclo API-First (ideação→contrato→mock→paralelo→validação)</h4>
+  <div class="mermaid-box" data-code='flowchart LR
+    A["👥 1. Ideação"] --> B["📝 2. Swagger Editor"]
+    B --> C["📜 3. openapi.yaml"]
+    C --> D["🐳 4. Prism :4010"]
+    C --> E["☕ 5a. Java"]
+    C --> F["🔷 5b. .NET"]
+    C --> G["🌐 5c. Frontend"]
+    D --> G
+    E --> H["✅ 6. Validação"]
+    F --> H'>
+    <div class="mermaid"></div>
+  </div>
+
+  <h4 class="diag-title">📐 D-02 <span class="dt-type">C4 · Nível 1 (Contexto)</span> — Loja no ecossistema (atores + sistemas)</h4>
+  <div class="mermaid-box" data-code='flowchart LR
+    DEV["👩‍💻 Dev Backend"] --> SW["📝 Swagger Editor"]
+    FE["🧕🏾 Frontend"] --> PR["🐳 Prism :4010"]
+    QA["👨🏿 QA"] --> PR
+    SW --> CT["📜 openapi.yaml"]
+    CT --> PR
+    DEV --> BE["☕/🔷 Backend :8080"]
+    BE --> CT'>
+    <div class="mermaid"></div>
+  </div>
+
+  <h4 class="diag-title">📐 D-03 <span class="dt-type">UML · Sequência</span> — Request autenticada (login→token→GET)</h4>
+  <div class="mermaid-box" data-code='sequenceDiagram
+    participant C as Cliente
+    participant P as Prism/Backend
+    C->>P: POST /api/auth/login (credenciais)
+    P-->>C: 200 { tokenAcesso }
+    C->>C: guarda token
+    C->>P: GET /api/produtos (Bearer token)
+    P-->>C: 200 [produtos]'>
+    <div class="mermaid"></div>
+  </div>
+
   <div class="lab-container">
     <div class="lab-header">
       <h3>🎭 Sala de Contrato — Workshop interativo (time nomeado, 5 atos)</h3>
@@ -873,7 +913,7 @@ git push -u origin main</pre>
             <tr><td><code>parameters:</code></td><td>Parâmetros de <code>query</code> ou <code>path</code> (<code>{id}</code>, <code>page</code>).</td></tr>
             <tr><td><code>requestBody:</code></td><td>Corpo da requisição (JSON) e seu schema.</td></tr>
             <tr><td><code>responses:</code></td><td>Códigos de resposta (200/201/400/401/404) e o schema de cada um.</td></tr>
-            <tr><td><code>application/problem+json</code></td><td>MIME do <strong>RFC 7807 Problem Details</strong> — padrão internacional p/ erros; clientes sabem parsear.</td></tr>
+            <tr><td><code>application/problem+json</code></td><td>MIME do <strong>RFC 7807 Problem Details</strong> — padrão internacional p/ erros.</td></tr>
             <tr><td><code>components:</code></td><td>Peças <strong>reutilizáveis</strong>: schemas e security schemes.</td></tr>
             <tr><td><code>securitySchemes:</code></td><td>Define <code>bearerAuth</code> (http, bearer, JWT).</td></tr>
             <tr><td><code>schemas:</code></td><td>Modelos: <code>LoginRequest</code>, <code>ProdutoRequest</code>, <code>ProdutoResponse</code>, <code>ProblemDetails</code>.</td></tr>
@@ -885,6 +925,23 @@ git push -u origin main</pre>
         </table>
       </div>
     </div>
+    <h4 style="color:var(--accent);margin-top:18px">📑 ADRs desta aba (registro global)</h4>
+    <div class="adr"><h5>ADR-001 · Contrato OpenAPI como fonte única<span class="status">Aceita</span></h5>
+      <p><b>Contexto:</b> frontend/mobile bloqueados aguardando backend.</p>
+      <p><b>Decisão:</b> contrato OpenAPI 3.1 primeiro + mock Prism; negociado na Sala de Contrato.</p>
+      <p><b>Consequências:</b> desenvolvimento paralelo; contrato = fonte da verdade.</p></div>
+    <div class="adr"><h5>ADR-005 · JWT stateless<span class="status">Aceita</span></h5>
+      <p><b>Contexto:</b> autenticação sem sessão servidor.</p>
+      <p><b>Decisão:</b> Bearer JWT HMAC-SHA256.</p>
+      <p><b>Consequências:</b> escalabilidade horizontal; revogação exige blacklist/refresh.</p></div>
+    <div class="adr"><h5>ADR-007 · Mock Prism em validação estrita (<code>-m false</code>)<span class="status">Aceita</span></h5>
+      <p><b>Contexto:</b> mock dinâmico mascarava erros de contrato.</p>
+      <p><b>Decisão:</b> Prism com <code>-m false</code> valida o body contra o schema e retorna 400 quando não bate.</p>
+      <p><b>Consequências:</b> QA pega erros de contrato cedo; mock menos "mágico".</p></div>
+    <div class="adr"><h5>ADR-008 · Erros no padrão RFC 7807 (<code>application/problem+json</code>)<span class="status">Aceita</span></h5>
+      <p><b>Contexto:</b> erros ad-hoc dificultavam tratamento no cliente.</p>
+      <p><b>Decisão:</b> todos os erros usam Problem Details (type/title/status/detail).</p>
+      <p><b>Consequências:</b> clientes parseiam erros de forma uniforme.</p></div>
   </div>
 
   <div class="lab-container">
@@ -900,7 +957,7 @@ services:
     image: stoplight/prism:5            # imagem oficial do Prism
     container_name: dev_prism_mock      # nome fixo p/ logs/exec
     restart: unless-stopped             # reinicia sozinho se cair
-    command: mock -h 0.0.0.0 -m false -d /tmp/openapi.yaml   # -m false = valida estritamente (sem mock dinâmico)
+    command: mock -h 0.0.0.0 -m false -d /tmp/openapi.yaml   # -m false = valida estritamente
     volumes:
       - ./contracts/openapi.yaml:/tmp/openapi.yaml:ro  # monta o contrato (somente leitura)
     ports:
@@ -945,12 +1002,7 @@ curl -i http://localhost:4010/api/produtos
 # Resultado esperado:
 # HTTP/1.1 401 Unauthorized
 # Content-Type: application/problem+json
-# {
-#   "type": "https://example.com/erros/autenticacao",
-#   "title": "Unauthorized",
-#   "status": 401,
-#   "detail": "Missing Authorization header"
-# }</pre>
+# { "type":"...", "title":"Unauthorized", "status":401 }</pre>
       </div>
     </div>
 
@@ -962,46 +1014,30 @@ curl -i http://localhost:4010/api/produtos
         <span class="code-filepath">terminal da IDE - teste autenticado completo</span>
         <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor"># ── PASSO 1: Login (extrai token) ──
-# jq extrai o campo tokenAcesso da resposta JSON
 TOKEN=$(curl -s -X POST http://localhost:4010/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"dev@loja.com.br","senha":"SenhaForte#2026"}' \
   | jq -r '.tokenAcesso')
 echo "Token: $TOKEN"
 
-# ── PASSO 2: GET (listar) ──
-# Esperado: 200 OK + array de produtos
-curl -i http://localhost:4010/api/produtos \
-  -H "Authorization: Bearer $TOKEN"
+# ── PASSO 2: GET (listar) ── esperado 200
+curl -i http://localhost:4010/api/produtos -H "Authorization: Bearer $TOKEN"
 
-# ── PASSO 3: POST (criar) ──
-# Esperado: 201 Created
+# ── PASSO 3: POST (criar) ── esperado 201
 curl -i -X POST http://localhost:4010/api/produtos \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "nome": "Monitor Ultrawide 34",
-    "preco": 2499.90,
-    "estoque": 8
-  }'
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"nome":"Monitor Ultrawide 34","preco":2499.90,"estoque":8}'
 
-# ── PASSO 4: PUT (atualizar) ──
-# Esperado: 200 OK (atualizado)
+# ── PASSO 4: PUT (atualizar) ── esperado 200
 curl -i -X PUT http://localhost:4010/api/produtos/101 \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "nome": "Monitor Ultrawide 34 4K",
-    "preco": 2999.90,
-    "estoque": 12
-  }'
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"nome":"Monitor Ultrawide 34 4K","preco":2999.90,"estoque":12}'
 
-# ── PASSO 5: DELETE (excluir) ──
-# Esperado: 204 No Content
+# ── PASSO 5: DELETE (excluir) ── esperado 204
 curl -i -X DELETE http://localhost:4010/api/produtos/101 \
   -H "Authorization: Bearer $TOKEN"</pre>
       </div>
-      <div class="success-banner"><strong>✅ Resultado esperado:</strong> POST → 201 Created · PUT → 200 OK · DELETE → 204 No Content. Todos com <code>Authorization: Bearer $TOKEN</code>.</div>
+      <div class="success-banner"><strong>✅ Resultado esperado:</strong> POST → 201 · PUT → 200 · DELETE → 204, todos com <code>Authorization: Bearer $TOKEN</code>.</div>
     </div>
   </div>
 
@@ -1021,45 +1057,33 @@ curl -i -X DELETE http://localhost:4010/api/produtos/101 \
 POST {{host}}/api/auth/login
 Content-Type: application/json
 
-{
-  "email": "dev@loja.com.br",
-  "senha": "SenhaForte#2026"
-}
+{ "email": "dev@loja.com.br", "senha": "SenhaForte#2026" }
 
 > {% client.global.set("token", response.body.tokenAcesso); %}
 
 ### 2) Listar produtos (GET com token)
 GET {{host}}/api/produtos
 Authorization: Bearer {{token}}
-Accept: application/json
 
 ### 3) Criar produto (POST com token)
 POST {{host}}/api/produtos
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{
-  "nome": "Cadeira Gamer Pro",
-  "preco": 1299.00,
-  "estoque": 5
-}
+{ "nome": "Cadeira Gamer Pro", "preco": 1299.00, "estoque": 5 }
 
 ### 4) Atualizar produto (PUT com token)
 PUT {{host}}/api/produtos/101
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{
-  "nome": "Cadeira Gamer Pro Max",
-  "preco": 1499.00,
-  "estoque": 10
-}
+{ "nome": "Cadeira Gamer Pro Max", "preco": 1499.00, "estoque": 10 }
 
 ### 5) Excluir produto (DELETE com token)
 DELETE {{host}}/api/produtos/101
 Authorization: Bearer {{token}}</pre>
     </div>
-    <div class="info-banner"><strong>💡 Painel de resposta visual:</strong> ao clicar no ▶ verde, o IntelliJ abre um painel inferior mostrando a resposta HTTP completa (status, headers, body JSON). É assim que você <strong>vê</strong> o resultado de cada request.</div>
+    <div class="info-banner"><strong>💡 Painel de resposta visual:</strong> ao clicar no ▶ verde, o IntelliJ abre um painel inferior mostrando a resposta HTTP completa (status, headers, body JSON).</div>
   </div>
 
   <div class="step-box">
@@ -1067,90 +1091,52 @@ Authorization: Bearer {{token}}</pre>
     <ol class="step-number-list" style="margin-top:12px">
       <li>Barra lateral → <strong>⚡ Thunder Client</strong>.</li>
       <li><strong>New Collection</strong> → <code>Loja API Mock</code>; em <strong>Env/Variables</strong> crie <code>baseUrl</code> = <code>http://localhost:4010</code>.</li>
-      <li><strong>New Request</strong> → método <strong>POST</strong>, URL <code>{{baseUrl}}/api/auth/login</code>; aba <strong>Body → JSON</strong> com as credenciais → <strong>Send</strong>.</li>
-      <li>Copie o <code>tokenAcesso</code> da resposta para a variável <code>token</code> da collection.</li>
-      <li>Nova request <strong>GET</strong> <code>{{baseUrl}}/api/produtos</code>; aba <strong>Auth → Bearer Token</strong> = <code>{{token}}</code> → <strong>Send</strong>.</li>
+      <li><strong>New Request</strong> → <strong>POST</strong> <code>{{baseUrl}}/api/auth/login</code>; aba <strong>Body → JSON</strong> com credenciais → <strong>Send</strong>.</li>
+      <li>Copie o <code>tokenAcesso</code> para a variável <code>token</code> da collection.</li>
+      <li>Nova request <strong>GET</strong> <code>{{baseUrl}}/api/produtos</code>; aba <strong>Auth → Bearer</strong> = <code>{{token}}</code> → <strong>Send</strong>.</li>
     </ol>
   </div>
 
   <div class="step-box">
     <h4 style="color:var(--warning)"><span class="step-num-big">E</span> Postman — collection importável</h4>
     <ol class="step-number-list" style="margin-top:12px">
-      <li><strong>Baixe o Postman:</strong> <a href="https://www.postman.com/downloads/" target="_blank" style="color:var(--primary);text-decoration:underline">postman.com/downloads</a> (gratuito).</li>
-      <li><strong>Importe a collection:</strong> botão <strong>Import</strong> → cole o JSON abaixo → <strong>Import</strong>.</li>
-      <li>A collection já tem <strong>variáveis</strong> <code>baseUrl</code> e <code>token</code> pré-configuradas.</li>
-      <li>Rode a request <strong>Login</strong> primeiro → copia o token da resposta → cole na variável <code>token</code> da collection.</li>
+      <li><strong>Baixe o Postman:</strong> <a href="https://www.postman.com/downloads/" target="_blank" style="color:var(--primary);text-decoration:underline">postman.com/downloads</a>.</li>
+      <li><strong>Import</strong> → cole o JSON abaixo → <strong>Import</strong>.</li>
+      <li>A collection já tem variáveis <code>baseUrl</code> e <code>token</code>.</li>
+      <li>Rode <strong>Login</strong> primeiro → copie o token → cole na variável <code>token</code>.</li>
     </ol>
     <details>
-      <summary>📋 Abrir JSON da collection Postman (clique para copiar)</summary>
+      <summary>📋 Abrir JSON da collection Postman</summary>
       <div class="code-editor-wrap" style="margin-top:10px">
         <span class="code-filepath">loja-api.postman_collection.json</span>
         <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="loja-api.postman_collection.json">{
-  "info": {
-    "name": "Loja API Mock",
-    "description": "Collection p/ testar o mock Prism (API-First)",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-  },
+  "info": { "name": "Loja API Mock", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json" },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:4010", "type": "string" },
-    { "key": "token", "value": "", "type": "string" }
+    { "key": "baseUrl", "value": "http://localhost:4010" },
+    { "key": "token", "value": "" }
   ],
   "item": [
-    {
-      "name": "Login",
-      "request": {
-        "method": "POST",
+    { "name": "Login", "request": { "method": "POST",
         "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": {
-          "mode": "raw",
-          "raw": "{\"email\":\"dev@loja.com.br\",\"senha\":\"SenhaForte#2026\"}"
-        },
-        "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
-      }
-    },
-    {
-      "name": "Listar Produtos",
-      "request": {
+        "body": { "mode": "raw", "raw": "{\"email\":\"dev@loja.com.br\",\"senha\":\"SenhaForte#2026\"}" },
+        "url": { "raw": "{{baseUrl}}/api/auth/login" } } },
+    { "name": "Listar", "request": { "method": "GET",
         "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
-        "method": "GET",
-        "url": { "raw": "{{baseUrl}}/api/produtos", "host": ["{{baseUrl}}"], "path": ["api", "produtos"] }
-      }
-    },
-    {
-      "name": "Criar Produto",
-      "request": {
+        "url": { "raw": "{{baseUrl}}/api/produtos" } } },
+    { "name": "Criar", "request": { "method": "POST",
         "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
-        "method": "POST",
         "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": {
-          "mode": "raw",
-          "raw": "{\"nome\":\"Monitor Ultrawide 34\",\"preco\":2499.90,\"estoque\":8}"
-        },
-        "url": { "raw": "{{baseUrl}}/api/produtos", "host": ["{{baseUrl}}"], "path": ["api", "produtos"] }
-      }
-    },
-    {
-      "name": "Atualizar Produto",
-      "request": {
+        "body": { "mode": "raw", "raw": "{\"nome\":\"Monitor\",\"preco\":2499.90,\"estoque\":8}" },
+        "url": { "raw": "{{baseUrl}}/api/produtos" } } },
+    { "name": "Atualizar", "request": { "method": "PUT",
         "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
-        "method": "PUT",
         "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": {
-          "mode": "raw",
-          "raw": "{\"nome\":\"Monitor Ultrawide 34 4K\",\"preco\":2999.90,\"estoque\":12}"
-        },
-        "url": { "raw": "{{baseUrl}}/api/produtos/101", "host": ["{{baseUrl}}"], "path": ["api", "produtos", "101"] }
-      }
-    },
-    {
-      "name": "Excluir Produto",
-      "request": {
+        "body": { "mode": "raw", "raw": "{\"nome\":\"Monitor 4K\",\"preco\":2999.90,\"estoque\":12}" },
+        "url": { "raw": "{{baseUrl}}/api/produtos/101" } } },
+    { "name": "Excluir", "request": { "method": "DELETE",
         "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
-        "method": "DELETE",
-        "url": { "raw": "{{baseUrl}}/api/produtos/101", "host": ["{{baseUrl}}"], "path": ["api", "produtos", "101"] }
-      }
-    }
+        "url": { "raw": "{{baseUrl}}/api/produtos/101" } } }
   ]
 }</pre>
       </div>
@@ -1162,14 +1148,13 @@ Authorization: Bearer {{token}}</pre>
     <div class="terminal-body" id="prism-sim-text"></div>
   </div>
 </div>
-</div>
 </section>
 
 <!-- ============ TAB 5 ============ -->
 <section class="tab-panel" id="tab5">
 <div class="card">
   <h2 class="card-title">🐬🍃 Orquestração de Bancos: MySQL 8.4 + MongoDB 7.0 + Playground</h2>
-  <p class="section-intro">Sobe os bancos, conecta, e um <strong>playground CRUD completo</strong> (INSERT/SELECT/UPDATE/DELETE + agregações + JOIN) com diagramas de dados.</p>
+  <p class="section-intro">Sobe os bancos, conecta, e um <strong>playground CRUD completo</strong> (INSERT/SELECT/UPDATE/DELETE + agregações + JOIN) com diagramas de dados nomeados.</p>
   <div class="deep-concept-box">
     <h3>🐳 Conceitos</h3>
     <h4>1. Rede Bridge</h4>
@@ -1208,32 +1193,27 @@ Authorization: Bearer {{token}}</pre>
       <span class="code-filepath">docker-compose.yml</span>
       <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="docker-compose.yml"># COMPOSE DE INFRAESTRUTURA - SOMENTE BANCOS
-# (Prism tem compose próprio: docker-compose.prism.yml - Tab 4)
 services:
-
-  # MySQL 8.4 LTS (relacional - uso imediato das APIs)
   mysql-db:
     image: mysql:8.4
     container_name: dev_mysql_server
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root123      # superusuário
-      MYSQL_DATABASE: loja_db           # database criado no boot
-      MYSQL_USER: devuser               # usuário da aplicação
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: loja_db
+      MYSQL_USER: devuser
       MYSQL_PASSWORD: devpass
       TZ: America/Sao_Paulo
     ports: ["3306:3306"]
     volumes:
       - mysql_dev_data:/var/lib/mysql
-      - ./init-sql:/docker-entrypoint-initdb.d    # scripts de carga (Passo 2)
+      - ./init-sql:/docker-entrypoint-initdb.d
     networks: [dev_network]
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot123"]
       interval: 10s
       timeout: 5s
       retries: 5
-
-  # MongoDB 7.0 (destino da migração relacional→NoSQL)
   mongo-db:
     image: mongo:7.0
     container_name: dev_mongo_server
@@ -1253,15 +1233,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
 volumes:
   mysql_dev_data: { driver: local }
   mongo_dev_data: { driver: local }
-
 networks:
-  dev_network:
-    driver: bridge
-    name: loja_dev_network</pre>
+  dev_network: { driver: bridge, name: loja_dev_network }</pre>
     </div>
     <div class="code-editor-wrap">
       <span class="code-filepath">terminal da IDE - subir e verificar</span>
@@ -1283,21 +1259,16 @@ docker compose logs -f mysql-db</pre>
       <span class="code-filepath">terminal da IDE - conexão comentada</span>
       <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor"># ── MySQL: abre o cliente mysql DENTRO do container ──
-# -u root -proot123 = usuário e senha (sem espaço após -p!)
-# loja_db = database inicial conectado
 docker exec -it dev_mysql_server mysql -u root -proot123 loja_db
-
-# Dentro do shell MySQL, explore e saia:
-SHOW TABLES;            # lista tabelas (verá: categorias, produtos)
+# Dentro do shell MySQL:
+SHOW TABLES;            # lista tabelas (categorias, produtos)
 DESCRIBE produtos;      # estrutura: colunas e tipos
 SELECT * FROM produtos; # os dados de seed
 EXIT;                   # volta para o terminal da IDE
 
 # ── MongoDB: abre o mongosh DENTRO do container ──
-# --authenticationDatabase admin = banco onde o usuário root foi criado
 docker exec -it dev_mongo_server mongosh -u root -p root123 --authenticationDatabase admin
-
-# Dentro do mongosh, explore e saia:
+# Dentro do mongosh:
 show dbs                # lista databases
 use loja_nosql          # troca de contexto
 db.produtos.find()      # documentos de seed
@@ -1320,13 +1291,13 @@ exit                    # volta para o terminal da IDE</pre>
           <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="init-sql/01-init.sql">USE loja_db;
 
--- DDL: tabela de categorias (lado "1" do relacionamento)
+-- DDL: tabela de categorias (lado "1")
 CREATE TABLE IF NOT EXISTS categorias (
   id INT AUTO_INCREMENT PRIMARY KEY,
   nome VARCHAR(60) NOT NULL UNIQUE
 );
 
--- DDL: tabela de produtos (lado "N"), com FK para categorias
+-- DDL: tabela de produtos (lado "N"), com FK
 CREATE TABLE IF NOT EXISTS produtos (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   nome VARCHAR(100) NOT NULL,
@@ -1341,7 +1312,7 @@ CREATE TABLE IF NOT EXISTS produtos (
 -- DML: seed de categorias
 INSERT INTO categorias (nome) VALUES ('Perifericos'),('Audio');
 
--- DML: seed de produtos (vinculados às categorias)
+-- DML: seed de produtos
 INSERT INTO produtos (nome,preco,estoque,categoria_id) VALUES
  ('Teclado Mecanico RGB',349.90,15,1),
  ('Mouse Gamer 16000 DPI',189.50,20,1),
@@ -1420,13 +1391,14 @@ db.produtos.countDocuments()</pre>
         </div>
       </div>
     </div>
-    <h4 style="color:var(--primary);margin:14px 0 6px">📐 Diagramas de dados</h4>
+    <h4 class="diag-title">📐 D-04 <span class="dt-type">ER</span> — Modelo relacional MySQL (categorias⟷produtos)</h4>
     <div class="mermaid-box" data-code='erDiagram
     CATEGORIAS ||--o{ PRODUTOS : possui
     CATEGORIAS { int id PK string nome }
     PRODUTOS { int id PK string nome decimal preco int estoque int categoria_id FK }'>
       <div class="mermaid"></div>
     </div>
+    <h4 class="diag-title">📐 D-05 <span class="dt-type">Fluxo</span> — Mapeamento relacional→documento (BSON)</h4>
     <div class="mermaid-box" data-code='flowchart LR
     subgraph REL["Relacional (linhas)"]
       R1["produto: id=1 nome=Teclado preco=349.90 cat=1"]
@@ -1445,11 +1417,11 @@ db.produtos.countDocuments()</pre>
 <section class="tab-panel" id="tab6">
 <div class="card">
   <h2 class="card-title">🏛️ Clean Architecture Poliglota: TDD, Conexões, Documentação, Migração & ADRs</h2>
-  <p class="section-intro">Gera a base Spring Boot aqui mesmo (simulador alvo=Projeto), todos os módulos Java/.NET, TDD, migração e notação arquitetural com ADRs.</p>
+  <p class="section-intro">Gera a base Spring Boot aqui mesmo (simulador alvo=Projeto), todos os módulos Java/.NET, TDD, migração e notação arquitetural com ADRs. Todos os diagramas nomeados.</p>
 
   <div class="split-view">
     <div class="split-col">
-      <strong style="color:var(--java-orange);margin-bottom:8px">☕ Java: Clean Arch + testes</strong>
+      <h4 class="diag-title">📐 D-06 <span class="dt-type">Arquitetura</span> — Clean Arch Java (camadas + testes)</h4>
       <div class="mermaid-box" data-code='flowchart TD
   subgraph P["🎯 Presentation"]
     PC["ProdutoController"]
@@ -1477,7 +1449,7 @@ db.produtos.countDocuments()</pre>
       </div>
     </div>
     <div class="split-col">
-      <strong style="color:var(--dotnet-purple);margin-bottom:8px">🔷 C#: Clean Arch + testes</strong>
+      <h4 class="diag-title">📐 D-07 <span class="dt-type">Arquitetura</span> — Clean Arch C# (camadas + testes)</h4>
       <div class="mermaid-box" data-code='flowchart TD
   subgraph P["🎯 Presentation"]
     PC["ProdutosController"]
@@ -1944,6 +1916,7 @@ public class ProdutoController {
 
     <div class="sub-panel" id="sub-java-tdd">
       <h3 style="color:var(--java-orange);margin-bottom:14px">🧪 TDD Java: JUnit 5 + Mockito</h3>
+      <h4 class="diag-title">📐 D-13 <span class="dt-type">Fluxo</span> — Ciclo TDD Red-Green-Refactor (Java)</h4>
       <div class="mermaid-box" data-code='flowchart LR
     R["🔴 RED"] --> G["🟢 GREEN"] --> RF["🔵 REFACTOR"] --> R
     style R fill:#7f1d1d,color:#fff
@@ -1982,7 +1955,7 @@ class ProdutoServiceTest {
         assertThrows(DomainException.class,()-&gt;service.criarProduto(new Produto(null,"X",BigDecimal.ZERO,1)));
         verify(repoMock,never()).salvar(any());
     }
-    @Test @DisplayName("🔴→🟢 recusa nome vazio")
+    @Test @DisplayName("🔴→ recusa nome vazio")
     void recusaNomeVazio(){
         assertThrows(DomainException.class,()-&gt;service.criarProduto(new Produto(null,"  ",BigDecimal.TEN,1)));
         verify(repoMock,never()).salvar(any());
@@ -2015,28 +1988,22 @@ class ProdutoServiceTest {
         <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor"># Cria a pasta da solução e entra nela
 mkdir LojaApi && cd LojaApi
-# Cria o arquivo de solução (.sln) que agrupa os projetos
 dotnet new sln -n LojaApi
-# Cria os 5 projetos (4 camadas + testes)
 dotnet new classlib -n LojaApi.Domain -f net10.0
 dotnet new classlib -n LojaApi.Application -f net10.0
 dotnet new classlib -n LojaApi.Infrastructure -f net10.0
 dotnet new webapi -n LojaApi.Api -f net10.0
 dotnet new xunit -n LojaApi.Tests -f net10.0
-# Adiciona todos os projetos à solução
 dotnet sln add LojaApi.Domain LojaApi.Application LojaApi.Infrastructure LojaApi.Api LojaApi.Tests
-# Referências (regra Clean Arch: dependências apontam para dentro)
 dotnet add LojaApi.Application reference LojaApi.Domain
 dotnet add LojaApi.Infrastructure reference LojaApi.Domain LojaApi.Application
 dotnet add LojaApi.Api reference LojaApi.Application LojaApi.Infrastructure
 dotnet add LojaApi.Tests reference LojaApi.Application LojaApi.Domain
-# Pacotes NuGet (EF Core, MySQL, Mongo, JWT, Moq)
 dotnet add LojaApi.Infrastructure package Microsoft.EntityFrameworkCore
 dotnet add LojaApi.Infrastructure package Pomelo.EntityFrameworkCore.MySql
 dotnet add LojaApi.Infrastructure package MongoDB.Driver
 dotnet add LojaApi.Api package Microsoft.AspNetCore.Authentication.JwtBearer
 dotnet add LojaApi.Tests package Moq
-# Abre no VS Code
 code .</pre>
       </div>
       <div class="code-editor-wrap">
@@ -2156,6 +2123,7 @@ app.Run();</pre>
 
     <div class="sub-panel" id="sub-dotnet-tdd">
       <h3 style="color:var(--dotnet-purple);margin-bottom:14px">🧪 TDD C#: xUnit + Moq</h3>
+      <h4 class="diag-title">📐 D-14 <span class="dt-type">Fluxo</span> — Ciclo TDD Red-Green-Refactor (C#)</h4>
       <div class="mermaid-box" data-code='flowchart LR
     R["🔴 RED"] --> G["🟢 GREEN"] --> RF["🔵 REFACTOR"] --> R
     style R fill:#7f1d1d,color:#fff
@@ -2163,6 +2131,7 @@ app.Run();</pre>
     style RF fill:#1e3a8a,color:#fff'>
         <div class="mermaid"></div>
       </div>
+      <h4 class="diag-title">📐 D-15 <span class="dt-type">UML · Sequência</span> — Teste xUnit + Moq</h4>
       <div class="mermaid-box" data-code='sequenceDiagram
     participant T as Teste xUnit
     participant M as Moq (IProdutoRepository)
@@ -2212,6 +2181,7 @@ public class ProdutoTests
     </div>
 
     <div class="sub-panel" id="sub-mig">
+      <h4 class="diag-title">📐 D-12 <span class="dt-type">Fluxo</span> — Migração Strangler Fig (4 fases)</h4>
       <div class="mermaid-box" data-code='flowchart LR
     F1["1 Dual Write"] --> F2["2 Backfill"] --> F3["3 Cut-over"] --> F4["4 Só Mongo"]'>
         <div class="mermaid"></div>
@@ -2232,12 +2202,14 @@ public class ProdutoTests
     </div>
 
     <div class="sub-panel" id="sub-diag">
+      <h4 class="diag-title">📐 D-08 <span class="dt-type">C4 · Nível 2 (Container)</span> — Loja API + bancos + mock</h4>
       <div class="mermaid-box" data-code='flowchart LR
     U["👤 Usuário"] -->|HTTPS+JWT| API["🖥️ Loja API"]
     API -->|3306| MY["🐬 MySQL"]
     API -->|27017| MO["🍃 Mongo"]'>
         <div class="mermaid"></div>
       </div>
+      <h4 class="diag-title">📐 D-09 <span class="dt-type">C4 · Nível 3 (Componente)</span> — Dentro da Loja API</h4>
       <div class="mermaid-box" data-code='flowchart TD
     subgraph API["Loja API (Componentes)"]
       C["Controller"] --> S["Service"] --> R["Repository (porta)"]
@@ -2246,6 +2218,7 @@ public class ProdutoTests
     end'>
         <div class="mermaid"></div>
       </div>
+      <h4 class="diag-title">📐 D-10 <span class="dt-type">UML · Sequência</span> — Criação de produto</h4>
       <div class="mermaid-box" data-code='sequenceDiagram
     participant C as Cliente
     participant K as Controller
@@ -2260,6 +2233,7 @@ public class ProdutoTests
     K-->>C: 201 Created'>
         <div class="mermaid"></div>
       </div>
+      <h4 class="diag-title">📐 D-11 <span class="dt-type">UML · Classes</span> — Modelo de domínio + portas</h4>
       <div class="mermaid-box" data-code='classDiagram
     class Produto { +Long id +String nome +BigDecimal preco }
     class ProdutoRepository { <<interface>> +salvar() +buscarPorId() }
@@ -2270,11 +2244,7 @@ public class ProdutoTests
     ProdutoRepository --> Produto'>
         <div class="mermaid"></div>
       </div>
-      <div class="adr"><h5>ADR-001 · API-First com OpenAPI 3.1<span class="status">Aceita</span></h5>
-        <p><b>Contexto:</b> frontend/mobile bloqueados aguardando backend.</p>
-        <p><b>Decisão:</b> contrato primeiro + mock Prism; negociado na Sala de Contrato.</p>
-        <p><b>Alternativas:</b> code-first (rejeitada), GraphQL (fora de escopo).</p>
-        <p><b>Consequências:</b> desenvolvimento paralelo; contrato = fonte da verdade.</p></div>
+      <h4 style="color:var(--accent);margin-top:18px">📑 ADRs desta aba (registro global)</h4>
       <div class="adr"><h5>ADR-002 · Clean Architecture em 4 módulos<span class="status">Aceita</span></h5>
         <p><b>Contexto:</b> acoplamento domínio↔infra dificultava troca de banco.</p>
         <p><b>Decisão:</b> módulos domain/application/infrastructure/presentation com regra de dependência para dentro.</p>
@@ -2287,10 +2257,6 @@ public class ProdutoTests
         <p><b>Contexto:</b> mover relacional→NoSQL sem downtime.</p>
         <p><b>Decisão:</b> dual-write→backfill→cut-over→desligamento, via <code>persistence.provider</code>.</p>
         <p><b>Consequências:</b> rollback trivial; complexidade temporária de dois adapters.</p></div>
-      <div class="adr"><h5>ADR-005 · JWT stateless<span class="status">Aceita</span></h5>
-        <p><b>Contexto:</b> autenticação sem sessão servidor.</p>
-        <p><b>Decisão:</b> Bearer JWT HMAC-SHA256 + RFC 7807 para erros.</p>
-        <p><b>Consequências:</b> escalabilidade horizontal; revogação exige blacklist/refresh.</p></div>
       <div class="adr"><h5>ADR-006 · Persistência poliglota MySQL+Mongo<span class="status">Aceita</span></h5>
         <p><b>Contexto:</b> dados relacionais transacionais + catálogo flexível.</p>
         <p><b>Decisão:</b> MySQL p/ transações, Mongo p/ catálogo, ambos no dev via compose.</p>
@@ -2313,11 +2279,12 @@ dotnet test</pre></div></div>
     <div class="grid-card"><h5>🐳 Docker</h5><div class="code-editor-wrap"><button class="copy-btn" onclick="copyCode(this)">📋</button><pre class="code-editor">docker compose ps</pre></div></div>
   </div>
   <h3 class="mt-4 mb-2" style="color:var(--primary);font-size:1.15rem">❓ FAQ</h3>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">Os diagramas têm nome? Onde vejo qual é qual?</div><div class="faq-a"><p>Sim: todo diagrama tem cabeçalho <code>📐 D-XX · tipo — nome</code> (ex.: D-02 · C4 Nível 1 · Contexto). Assim você sabe o tipo (C4/UML/ER/Fluxo) e onde se encaixa.</p></div></div>
   <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">O que significa cada tag do openapi.yaml?</div><div class="faq-a"><p>Abra o quadro "🔎 o que significa CADA tag" na Tab 4: explica linha a linha.</p></div></div>
   <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">Onde valido o contrato e onde leio a especificação?</div><div class="faq-a"><p><strong>Validar:</strong> editor.swagger.io. <strong>Especificação:</strong> spec.openapis.org/oas/v3.1.0. Ambos linkados na Tab 4.</p></div></div>
-  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">Por que os rostos do elenco agora são diferentes?</div><div class="faq-a"><p>Usamos silhuetas distintas que não dependem de modificador: 👩 Mariana, 🧔 Rafael, 🧕 Juliana, 👨🏿 Diego.</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">Por que os rostos do elenco agora são diferentes?</div><div class="faq-a"><p>Usamos silhuetas distintas que não dependem de modificador: 👩🏻 Mariana,  Rafael, 🏾 Juliana, 👨🏿 Diego.</p></div></div>
   <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">O simulador do Initializr já vem guiado?</div><div class="faq-a"><p>Sim: recomendações pré-marcadas com <span class="rec">✅ rec</code></span> e botão <strong>↺ Voltar ao recomendado</strong>.</p></div></div>
-  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">A Tab 4 tem botão de download?</div><div class="faq-a"><p>Sim: <strong>📦 Baixar ZIP desta aba</strong> no lab "Contrato final", levando <code>openapi.yaml</code>, <code>ata.md</code>, <code>docker-compose.prism.yml</code> e <code>testes-mock.http</code>.</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">A Tab 4 tem botão de download?</div><div class="faq-a"><p>Sim: <strong>📦 Baixar ZIP desta aba</strong> no lab "Contrato final", levando <code>openapi.yaml</code>, <code>ata.md</code>, <code>docker-compose.prism.yml</code>, <code>testes-mock.http</code> e a collection Postman.</p></div></div>
 </div>
 </section>
 
@@ -2426,7 +2393,7 @@ const PERSONAS={
  neg:{p:'👩🏻',n:'Mariana Duarte',r:'Negócio / PO',ri:'💼',c:'var(--warning)'},
  back:{p:'🧔',n:'Rafael Souza',r:'Backend',ri:'☕',c:'var(--java-orange)'},
  front:{p:'🧕🏾',n:'Juliana Lima',r:'Frontend',ri:'🌐',c:'var(--primary)'},
- qa:{p:'👨🏿',n:'Diego Ferreira',r:'QA',ri:'🧪',c:'var(--success)'}
+ qa:{p:'👨',n:'Diego Ferreira',r:'QA',ri:'🧪',c:'var(--success)'}
 };
 const BEATS=[
  {a:1,s:'neg',t:'Precisamos de um catálogo: consultar produtos com nome, preço e estoque, e cadastrar novos.',fx:{op:'req',v:'Catálogo: listar + cadastrar'}},
@@ -2448,14 +2415,14 @@ const BEATS=[
  {a:5,s:'back',t:'Gero o openapi.yaml. Contrato fechado!',fx:{op:'freeze'}}
 ];
 const REACT={
- pag:{offset:'💬 🧔 Rafael: offset é simples.\n💬 👨🏿 Diego: testável, aprovo. ✔',cursor:'💬 🧔 Rafael: cursor é complexo, aceito p/ escala.',none:'💬 👨🏿 Diego: sem paginação limita testes; ressalva.'},
+ pag:{offset:'💬 🧔 Rafael: offset é simples.\n💬 👨 Diego: testável, aprovo. ✔',cursor:'💬 🧔 Rafael: cursor é complexo, aceito p/ escala.',none:'💬 🏿 Diego: sem paginação limita testes; ressalva.'},
  price:{number:'💬 🧕🏾 Juliana: number facilita exibir.\n💬 🧔 Rafael: atenção à precisão de double (cedo c/ ressalva).',string:'💬 🧔 Rafael: string evita erro de float.\n💬 🧕🏾 Juliana: vou parsear (cedo).'},
- err:{rfc7807:'💬 🧔 Rafael + 👨🏿 Diego: RFC 7807, ótimo p/ testes. ✔',custom:'💬 🧔 Rafael: custom não é padrão; prefiro RFC.'}
+ err:{rfc7807:'💬 🧔 Rafael + 🏿 Diego: RFC 7807, ótimo p/ testes. ✔',custom:'💬 🧔 Rafael: custom não é padrão; prefiro RFC.'}
 };
 const DEC_META={
  pag:{offset:{adv:'👨🏿 Diego',con:'—'},cursor:{adv:'🧔 Rafael',con:'👨🏿 Diego'},none:{adv:'—',con:'👨🏿 Diego'}},
  price:{number:{adv:'🧕🏾 Juliana',con:'🧔 Rafael'},string:{adv:'🧔 Rafael',con:'🧕🏾 Juliana'}},
- err:{rfc7807:{adv:'🧔 Rafael + 👨🏿 Diego',con:'—'},custom:{adv:'—',con:'🧔 Rafael'}},
+ err:{rfc7807:{adv:'🧔 Rafael + 🏿 Diego',con:'—'},custom:{adv:'—',con:'🧔 Rafael'}},
 };
 let M={i:0,st:{reqs:[],eps:[],fields:[],dec:{}},auto:null,done:false,filter:null};
 function renderRoster(){document.getElementById('roster').innerHTML=Object.entries(PERSONAS).map(([k,P])=>'<span class="roster-chip'+(M.filter===k?' on':'')+'" style="--rc:'+P.c+'" onclick="setFilter(\''+k+'\')"><span class="pav">'+P.p+'</span>'+P.n+' · '+P.ri+' '+P.r+'</span>').join('');}
@@ -2471,7 +2438,6 @@ function applyFx(b){const f=b.fx;if(!f)return;const s=M.st;if(f.op==='req')s.req
 function renderPoll(f){const room=document.getElementById('meet-room');const d=document.createElement('div');d.className='poll';d.innerHTML='<div class="q">'+f.q+'</div>'+f.opts.map(o=>'<label><input type="radio" name="poll-'+f.id+'" value="'+o.v+'"> '+o.l+'</label>').join('')+'<div class="react" style="display:none"></div>';d.querySelectorAll('input').forEach(inp=>inp.addEventListener('change',()=>{d.classList.add('answered');M.st.dec[f.id]=inp.value;const rec=d.querySelector('.react');rec.style.display='block';rec.textContent=REACT[f.id][inp.value];if(f.id==='price')M.st.fields.forEach(x=>{if(x.n==='preco')x.t=(inp.value==='string'?'string decimal':'number double');});renderCanvas();setTimeout(meetNext,900);}));room.appendChild(d);room.scrollTop=room.scrollHeight;}
 function buildYaml(s){const d=s.dec;
   const priceY=d.price==='string'?"type: string\n          pattern: '^\\\\d+(\\\\.\\\\d{2})?$'\n          example: '249.90'":"type: number\n          format: double\n          example: 249.90";
-  const priceYInline=d.price==='string'?"type: string, pattern: '^\\\\d+(\\\\.\\\\d{2})?$', example: '249.90'":"type: number, format: double, example: 249.90";
   const errY=`    ProblemDetails:
       type: object
       properties:
@@ -2601,7 +2567,7 @@ async function confirmDownload(){closeDlModal();if(!window.JSZip){showToast('❌
 /* MISC */
 function showToast(m,t='success'){const c=document.getElementById('toast-container');const d=document.createElement('div');d.className='toast '+(t==='error'?'error':t==='info'?'info':'');d.textContent=m;c.appendChild(d);setTimeout(()=>{d.classList.add('hiding');setTimeout(()=>d.remove(),300);},3500);}
 function toggleFaq(e){e.classList.toggle('open');}
-function runGlobalSearch(term){const res=document.getElementById('global-search-results');if(!term||term.length<2){res.classList.remove('active');return;}const t=term.toLowerCase();const s=[{tab:'tab1',title:'1. OS & CLI',k:'winget apt wsl docker'},{tab:'tab2',title:'2. Java IntelliJ',k:'java intellij initializr simulador hello sdkman git'},{tab:'tab3',title:'3. C# VS Code',k:'dotnet vscode hello global.json git'},{tab:'tab4',title:'4. Sala de Contrato + API-First',k:'sala contrato mariana rafael juliana diego openapi swagger especificação prism jwt download zip problem+json rfc7807 postman'},{tab:'tab5',title:'5. Docker + Playground',k:'docker mysql mongo crud join'},{tab:'tab6',title:'6. Clean Arch + TDD + ADRs',k:'clean tdd c4 adr migração'},{tab:'tab7',title:'7. Diagnóstico',k:'faq cheat'}];const f=s.filter(x=>x.title.toLowerCase().includes(t)||x.k.includes(t));res.innerHTML=f.length?f.map(x=>'<div class="search-result-item" onclick="switchTab(\''+x.tab+'\');this.parentElement.classList.remove(\'active\');document.getElementById(\'global-search-input\').value=\'\'"><strong>'+x.title+'</strong></div>').join(''):'<div class="search-result-item text-muted">Nada encontrado.</div>';res.classList.add('active');}
+function runGlobalSearch(term){const res=document.getElementById('global-search-results');if(!term||term.length<2){res.classList.remove('active');return;}const t=term.toLowerCase();const s=[{tab:'tab1',title:'1. OS & CLI',k:'winget apt wsl docker'},{tab:'tab2',title:'2. Java IntelliJ',k:'java intellij initializr simulador hello sdkman git'},{tab:'tab3',title:'3. C# VS Code',k:'dotnet vscode hello global.json git'},{tab:'tab4',title:'4. Sala de Contrato + API-First',k:'sala contrato mariana rafael juliana diego openapi swagger especificação prism jwt download zip problem+json rfc7807 postman diagrama c4'},{tab:'tab5',title:'5. Docker + Playground',k:'docker mysql mongo crud join er'},{tab:'tab6',title:'6. Clean Arch + TDD + ADRs',k:'clean tdd c4 adr migração diagrama uml'},{tab:'tab7',title:'7. Diagnóstico',k:'faq cheat'}];const f=s.filter(x=>x.title.toLowerCase().includes(t)||x.k.includes(t));res.innerHTML=f.length?f.map(x=>'<div class="search-result-item" onclick="switchTab(\''+x.tab+'\');this.parentElement.classList.remove(\'active\');document.getElementById(\'global-search-input\').value=\'\'"><strong>'+x.title+'</strong></div>').join(''):'<div class="search-result-item text-muted">Nada encontrado.</div>';res.classList.add('active');}
 document.addEventListener('keydown',e=>{const t=e.target.tagName;if(t==='INPUT'||t==='TEXTAREA'){if(e.key==='Escape')e.target.blur();return;}if(e.key>='1'&&e.key<='7'){switchTab('tab'+e.key);e.preventDefault();}if(e.key==='/'){document.getElementById('global-search-input').focus();e.preventDefault();}if(e.key.toLowerCase()==='d'){const n=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',n);document.querySelectorAll('.mermaid-box').forEach(b=>b.removeAttribute('data-rendered'));initMermaid();renderMermaidIn(document.querySelector('.tab-panel.active'));e.preventDefault();}if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()==='f'){document.body.classList.toggle('focus-mode');e.preventDefault();}if(e.key==='Escape'){closeCodeModal();closeDlModal();document.querySelectorAll('.mermaid-box.fullscreen').forEach(b=>mFS(b,0));document.getElementById('global-search-results').classList.remove('active');}});
 document.addEventListener('click',e=>{if(!e.target.closest('.global-search'))document.getElementById('global-search-results').classList.remove('active');});
 window.addEventListener('DOMContentLoaded',()=>{
@@ -2614,7 +2580,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('theme-toggle').onclick=()=>{const n=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',n);document.querySelectorAll('.mermaid-box').forEach(b=>b.removeAttribute('data-rendered'));initMermaid();renderMermaidIn(document.querySelector('.tab-panel.active'));};
   document.getElementById('focus-toggle').onclick=()=>document.body.classList.toggle('focus-mode');
   document.getElementById('print-btn').onclick=()=>window.print();
-  showToast('👋 B.15: testes negativo/autenticado separados, POST/PUT/DELETE, Postman collection importável!');
+  showToast('👋 B.16: todos os diagramas nomeados (D-01…D-15) + D-02/D-03 + ADR-007/008 na Tab 4!');
 });
 </script>
 </body>
