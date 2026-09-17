@@ -1404,51 +1404,132 @@ Authorization: Bearer {{token}}</pre>
 <span class="code-filepath">docker-compose.yml</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="docker-compose.yml"># COMPOSE DE INFRAESTRUTURA - SOMENTE BANCOS
+# =====================================================================
+# COMPOSE DE INFRAESTRUTURA - SOMENTE BANCOS
+# ---------------------------------------------------------------------
+# Este arquivo sobe APENAS os serviços de banco de dados (MySQL e MongoDB)
+# para desenvolvimento local. Aplicações (APIs, workers, etc.) devem
+# rodar em outro compose ou diretamente na máquina host.
+#
+# Uso:
+#   docker compose up -d          -> sobe os bancos em background
+#   docker compose ps             -> verifica status
+#   docker compose logs -f mysql-db
+#   docker compose down           -> derruba (mantém volumes)
+#   docker compose down -v        -> derruba e APAGA os volumes (perde dados)
+# =====================================================================
+
 services:
+
+  # -------------------------------------------------------------------
+  # MYSQL 8.4 - Banco relacional principal
+  # -------------------------------------------------------------------
   mysql-db:
+    # Imagem oficial do MySQL. 8.4 = LTS (Long Term Support).
     image: mysql:8.4
+
+    # Nome fixo do container (facilita 'docker exec -it dev_mysql_server ...').
+    # Útil em dev, mas evita usar em produção (nome global conflita).
     container_name: dev_mysql_server
+
+    # Reinicia automaticamente o container se cair, exceto se for parado manualmente.
     restart: unless-stopped
+
+    # Variáveis lidas pela imagem na PRIMEIRA inicialização do volume.
+    # Atenção: se o volume já existir, alterar aqui NÃO muda senhas/DB.
     environment:
-      MYSQL_ROOT_PASSWORD: root123
-      MYSQL_DATABASE: loja_db
-      MYSQL_USER: devuser
-      MYSQL_PASSWORD: devpass
-      TZ: America/Sao_Paulo
-    ports: ["3306:3306"]
+      MYSQL_ROOT_PASSWORD: root123          # senha do usuário root
+      MYSQL_DATABASE: loja_db               # DB criado automaticamente
+      MYSQL_USER: devuser                   # usuário comum criado
+      MYSQL_PASSWORD: devpass               # senha do usuário comum
+      TZ: America/Sao_Paulo                 # fuso horário do container
+
+    # Mapeia porta do host -> container. Formato "host:container".
+    # Exposto no host para permitir conexão via DBeaver/Workbench/etc.
+    ports:
+      - "3306:3306"
+
+    # Volumes: persistência de dados + scripts de inicialização.
     volumes:
+      # Volume nomeado: dados do MySQL persistem entre 'down/up'.
       - mysql_dev_data:/var/lib/mysql
+      # Pasta local com .sql/.sh executados UMA vez na criação do DB.
+      # Coloque aqui seus scripts em ./init-sql/*.sql
       - ./init-sql:/docker-entrypoint-initdb.d
-    networks: [dev_network]
+
+    # Anexa o container à rede customizada (permite DNS interno 'mysql-db').
+    networks:
+      - dev_network
+
+    # Healthcheck: permite que outras stacks esperem o MySQL estar pronto.
+    # 'mysqladmin ping' retorna OK quando o servidor aceita conexões.
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot123"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 10s      # intervalo entre checagens
+      timeout: 5s        # tempo máximo de cada checagem
+      retries: 5         # tentativas antes de marcar como unhealthy
+      start_period: 30s  # (extra) carência inicial p/ o MySQL subir
+
+  # -------------------------------------------------------------------
+  # MONGODB 7.0 - Banco NoSQL (documentos)
+  # -------------------------------------------------------------------
   mongo-db:
     image: mongo:7.0
     container_name: dev_mongo_server
     restart: unless-stopped
+
+    # Credenciais do usuário root do Mongo (admin).
+    # MONGO_INITDB_DATABASE cria o DB na primeira inicialização.
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: root123
       MONGO_INITDB_DATABASE: loja_nosql
       TZ: America/Sao_Paulo
-    ports: ["27017:27017"]
+
+    ports:
+      - "27017:27017"    # exposto p/ Mongo Compass / mongosh no host
+
     volumes:
+      # Persistência dos dados do Mongo.
       - mongo_dev_data:/data/db
+      # Scripts .js/.sh rodados na criação inicial do DB.
       - ./init-mongo:/docker-entrypoint-initdb.d
-    networks: [dev_network]
+
+    networks:
+      - dev_network
+
+    # 'mongosh' é o shell oficial moderno (substitui 'mongo' legado).
+    # db.adminCommand('ping') retorna { ok: 1 } se o servidor responde.
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 20s
+
+# =====================================================================
+# VOLUMES NOMEADOS
+# ---------------------------------------------------------------------
+# Gerenciados pelo Docker. Persistem mesmo após 'docker compose down'.
+# Só são removidos com 'docker compose down -v' ou 'docker volume rm'.
+# =====================================================================
 volumes:
-  mysql_dev_data: { driver: local }
-  mongo_dev_data: { driver: local }
+  mysql_dev_data:
+    driver: local
+  mongo_dev_data:
+    driver: local
+
+# =====================================================================
+# REDE
+# ---------------------------------------------------------------------
+# Rede bridge isolada. Containers nela se enxergam pelo nome do serviço
+# (ex: 'mysql-db:3306' e 'mongo-db:27017' funcionam como hostname).
+# O 'name' fixa o nome real da rede (default seria algo como 'pasta_dev_network').
+# =====================================================================
 networks:
-  dev_network: { driver: bridge, name: loja_dev_network }</pre>
+  dev_network:
+    driver: bridge
+    name: loja_dev_network</pre>
 </div>
 <div class="code-editor-wrap">
 <span class="code-filepath">terminal da IDE - subir e verificar</span>
