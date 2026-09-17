@@ -1,0 +1,1803 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CIS - Crowdsourced Ideation Solution</title>
+    <style>
+        /* ============================================
+           RESET E VARIÁVEIS CSS
+           ============================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #a5b4fc;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --radius: 12px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ============================================
+           TELA DE LOGIN
+           ============================================ */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 420px;
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-card h1 {
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 8px;
+            font-size: 28px;
+        }
+
+        .login-card .subtitle {
+            text-align: center;
+            color: var(--text-light);
+            margin-bottom: 32px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text);
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.3s;
+            outline: none;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            border-color: var(--primary);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+
+        .login-hint {
+            margin-top: 20px;
+            padding: 12px;
+            background: #f0f9ff;
+            border-radius: 8px;
+            font-size: 13px;
+            color: var(--text-light);
+            text-align: center;
+            border: 1px solid #bae6fd;
+        }
+
+        .login-hint strong {
+            color: var(--primary);
+        }
+
+        /* ============================================
+           LAYOUT PRINCIPAL (APÓS LOGIN)
+           ============================================ */
+        .app-container {
+            display: none;
+            min-height: 100vh;
+        }
+
+        .app-container.active {
+            display: block;
+        }
+
+        .header {
+            background: white;
+            padding: 16px 32px;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .logo span {
+            color: var(--text);
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-tab {
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            color: var(--text-light);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .nav-tab:hover {
+            background: var(--bg);
+            color: var(--primary);
+        }
+
+        .nav-tab.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .btn-logout {
+            padding: 8px 16px;
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-logout:hover {
+            background: #dc2626;
+        }
+
+        /* ============================================
+           CONTEÚDO PRINCIPAL
+           ============================================ */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .page-subtitle {
+            color: var(--text-light);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        /* ============================================
+           CARDS DE TÓPICOS
+           ============================================ */
+        .topics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .topic-card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .topic-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary-light);
+        }
+
+        .topic-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary);
+        }
+
+        .topic-card:nth-child(2)::before { background: var(--success); }
+        .topic-card:nth-child(3)::before { background: var(--warning); }
+        .topic-card:nth-child(4)::before { background: var(--danger); }
+        .topic-card:nth-child(5)::before { background: #8b5cf6; }
+        .topic-card:nth-child(6)::before { background: #ec4899; }
+
+        .topic-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .topic-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        .topic-description {
+            color: var(--text-light);
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+
+        .topic-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .topic-ideas-count {
+            font-size: 13px;
+            color: var(--text-light);
+            font-weight: 600;
+        }
+
+        .topic-ideas-count span {
+            color: var(--primary);
+        }
+
+        .topic-author {
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        /* ============================================
+           PÁGINA DE TÓPICO (IDEIAS)
+           ============================================ */
+        .topic-detail {
+            display: none;
+        }
+
+        .topic-detail.active {
+            display: block;
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary);
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 24px;
+            font-size: 14px;
+            background: none;
+            border: none;
+            transition: all 0.3s;
+        }
+
+        .back-button:hover {
+            color: var(--primary-dark);
+            transform: translateX(-4px);
+        }
+
+        .topic-header-card {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 32px;
+            border-radius: var(--radius);
+            margin-bottom: 32px;
+        }
+
+        .topic-header-card h2 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .topic-header-card p {
+            opacity: 0.9;
+            font-size: 15px;
+        }
+
+        .ideas-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .idea-card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .idea-card:hover {
+            border-color: var(--primary-light);
+        }
+
+        .idea-vote-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            min-width: 60px;
+        }
+
+        .vote-btn {
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+
+        .vote-btn:hover {
+            border-color: var(--primary);
+            background: var(--bg);
+        }
+
+        .vote-btn.upvoted {
+            border-color: var(--success);
+            background: #d1fae5;
+            color: var(--success);
+        }
+
+        .vote-btn.downvoted {
+            border-color: var(--danger);
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        .vote-count {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .vote-count.positive { color: var(--success); }
+        .vote-count.negative { color: var(--danger); }
+
+        .idea-content {
+            flex: 1;
+        }
+
+        .idea-title {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--text);
+        }
+
+        .idea-description {
+            color: var(--text-light);
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .idea-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .idea-author {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-light);
+        }
+
+        .idea-author-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .idea-date {
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        /* ============================================
+           MODAL
+           ============================================ */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal {
+            background: white;
+            border-radius: var(--radius);
+            padding: 32px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: var(--bg);
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .modal-close:hover {
+            background: var(--border);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .modal-actions .btn {
+            flex: 1;
+        }
+
+        /* ============================================
+           TOAST NOTIFICATIONS
+           ============================================ */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background: white;
+            padding: 16px 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 300px;
+            animation: slideIn 0.3s ease;
+            border-left: 4px solid var(--primary);
+        }
+
+        .toast.success { border-left-color: var(--success); }
+        .toast.error { border-left-color: var(--danger); }
+        .toast.warning { border-left-color: var(--warning); }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .toast-icon {
+            font-size: 20px;
+        }
+
+        .toast-message {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* ============================================
+           EMPTY STATE
+           ============================================ */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-light);
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state h3 {
+            font-size: 20px;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        /* ============================================
+           FILTERS BAR
+           ============================================ */
+        .filters-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px 16px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+        }
+
+        .filter-select {
+            padding: 10px 16px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            background: white;
+            cursor: pointer;
+        }
+
+        /* ============================================
+           STATS BAR
+           ============================================ */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-light);
+            margin-top: 4px;
+        }
+
+        /* ============================================
+           RESPONSIVO
+           ============================================ */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 12px;
+                padding: 16px;
+            }
+
+            .nav-tabs {
+                flex-wrap: wrap;
+            }
+
+            .main-content {
+                padding: 16px;
+            }
+
+            .topics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .idea-card {
+                flex-direction: column;
+            }
+
+            .idea-vote-section {
+                flex-direction: row;
+                width: 100%;
+                justify-content: center;
+            }
+
+            .page-header {
+                flex-direction: column;
+                gap: 16px;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================
+         TELA DE LOGIN
+         ============================================ -->
+    <div class="login-container" id="loginScreen">
+        <div class="login-card">
+            <h1>🚀 CIS Platform</h1>
+            <p class="subtitle">Crowdsourced Ideation Solution</p>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginUsername">Usuário</label>
+                    <input type="text" id="loginUsername" placeholder="Digite seu usuário" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Senha</label>
+                    <input type="password" id="loginPassword" placeholder="Digite sua senha" required>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    🔐 Entrar no Sistema
+                </button>
+            </form>
+
+            <div class="login-hint">
+                💡 <strong>Dica para teste:</strong><br>
+                Use qualquer usuário/senha para entrar<br>
+                <small>(ex: admin / 123456)</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         APLICAÇÃO PRINCIPAL
+         ============================================ -->
+    <div class="app-container" id="appContainer">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <div class="logo">CIS <span>Platform</span></div>
+                <nav class="nav-tabs">
+                    <button class="nav-tab active" data-page="dashboard">📋 Tópicos</button>
+                    <button class="nav-tab" data-page="myideas">💡 Minhas Ideias</button>
+                    <button class="nav-tab" data-page="stats">📊 Estatísticas</button>
+                </nav>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">U</div>
+                    <span class="user-name" id="userName">Usuário</span>
+                </div>
+                <button class="btn-logout" id="btnLogout">Sair</button>
+            </div>
+        </header>
+
+        <!-- Conteúdo Principal -->
+        <main class="main-content">
+            <!-- Dashboard de Tópicos -->
+            <div id="pageDashboard" class="page-content">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-title">Tópicos de Ideação</h1>
+                        <p class="page-subtitle">Explore e contribua com ideias inovadoras</p>
+                    </div>
+                    <button class="btn btn-success" id="btnNewTopic">
+                        ➕ Novo Tópico
+                    </button>
+                </div>
+
+                <!-- Stats -->
+                <div class="stats-bar">
+                    <div class="stat-card">
+                        <div class="stat-value" id="statTopics">0</div>
+                        <div class="stat-label">Tópicos Criados</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statIdeas">0</div>
+                        <div class="stat-label">Ideias Propostas</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statVotes">0</div>
+                        <div class="stat-label">Votos Realizados</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statUsers">0</div>
+                        <div class="stat-label">Usuários Ativos</div>
+                    </div>
+                </div>
+
+                <!-- Filtros -->
+                <div class="filters-bar">
+                    <input type="text" class="search-input" id="searchTopics" placeholder="🔍 Buscar tópicos...">
+                    <select class="filter-select" id="filterSort">
+                        <option value="recent">Mais Recentes</option>
+                        <option value="popular">Mais Populares</option>
+                        <option value="ideas">Mais Ideias</option>
+                    </select>
+                </div>
+
+                <!-- Grid de Tópicos -->
+                <div class="topics-grid" id="topicsGrid">
+                    <!-- Tópicos serão renderizados aqui -->
+                </div>
+            </div>
+
+            <!-- Página de Detalhe do Tópico -->
+            <div id="pageTopicDetail" class="topic-detail">
+                <button class="back-button" id="btnBackToTopics">
+                    ← Voltar para Tópicos
+                </button>
+
+                <div class="topic-header-card" id="topicHeaderCard">
+                    <h2 id="detailTopicTitle">Título do Tópico</h2>
+                    <p id="detailTopicDescription">Descrição do tópico</p>
+                </div>
+
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-title">Ideias</h1>
+                        <p class="page-subtitle">Vote nas melhores ideias deste tópico</p>
+                    </div>
+                    <button class="btn btn-success" id="btnNewIdea">
+                        💡 Nova Ideia
+                    </button>
+                </div>
+
+                <div class="filters-bar">
+                    <select class="filter-select" id="filterIdeas">
+                        <option value="votes">Mais Votadas</option>
+                        <option value="recent">Mais Recentes</option>
+                        <option value="controversial">Mais Controversas</option>
+                    </select>
+                </div>
+
+                <div class="ideas-list" id="ideasList">
+                    <!-- Ideias serão renderizadas aqui -->
+                </div>
+            </div>
+
+            <!-- Página Minhas Ideias -->
+            <div id="pageMyIdeas" class="page-content" style="display:none;">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-title">Minhas Ideias</h1>
+                        <p class="page-subtitle">Todas as ideias que você propôs</p>
+                    </div>
+                </div>
+                <div class="ideas-list" id="myIdeasList">
+                    <!-- Minhas ideias -->
+                </div>
+            </div>
+
+            <!-- Página Estatísticas -->
+            <div id="pageStats" class="page-content" style="display:none;">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-title">Estatísticas do Sistema</h1>
+                        <p class="page-subtitle">Visão geral da plataforma CIS</p>
+                    </div>
+                </div>
+                <div class="stats-bar" id="statsDetail">
+                    <!-- Stats detalhadas -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ============================================
+         MODAL: NOVO TÓPICO
+         ============================================ -->
+    <div class="modal-overlay" id="modalNewTopic">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title"> Criar Novo Tópico</h2>
+                <button class="modal-close" id="closeModalTopic">✕</button>
+            </div>
+            <form id="formNewTopic">
+                <div class="form-group">
+                    <label for="topicTitle">Título do Tópico *</label>
+                    <input type="text" id="topicTitle" placeholder="Ex: Hábitos de estudo recomendados" required>
+                </div>
+                <div class="form-group">
+                    <label for="topicDescription">Descrição *</label>
+                    <textarea id="topicDescription" rows="4" placeholder="Descreva o objetivo deste tópico..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="topicIcon">Ícone</label>
+                    <select id="topicIcon">
+                        <option value="">📚 Educação</option>
+                        <option value="🌱">🌱 Sustentabilidade</option>
+                        <option value="">💻 Tecnologia</option>
+                        <option value="🏥">🏥 Saúde</option>
+                        <option value="">🎨 Cultura</option>
+                        <option value="🚀"> Inovação</option>
+                        <option value="🌍">🌍 Meio Ambiente</option>
+                        <option value="💼">💼 Negócios</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" id="cancelNewTopic">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Criar Tópico</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============================================
+         MODAL: NOVA IDEIA
+         ============================================ -->
+    <div class="modal-overlay" id="modalNewIdea">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">💡 Propor Nova Ideia</h2>
+                <button class="modal-close" id="closeModalIdea">✕</button>
+            </div>
+            <form id="formNewIdea">
+                <div class="form-group">
+                    <label for="ideaTitle">Título da Ideia *</label>
+                    <input type="text" id="ideaTitle" placeholder="Ex: Plataforma de reciclagem escolar" required>
+                </div>
+                <div class="form-group">
+                    <label for="ideaDescription">Descrição detalhada *</label>
+                    <textarea id="ideaDescription" rows="5" placeholder="Descreva sua ideia inovadora..." required></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" id="cancelNewIdea">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Publicar Ideia</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============================================
+         TOAST CONTAINER
+         ============================================ -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- ============================================
+         JAVASCRIPT
+         ============================================ -->
+    <script>
+        // ============================================
+        // ESTADO DA APLICAÇÃO
+        // ============================================
+        const AppState = {
+            currentUser: null,
+            currentTopic: null,
+            currentPage: 'dashboard',
+            users: [],
+            topics: [],
+            ideas: [],
+            votes: []
+        };
+
+        // ============================================
+        // DADOS INICIAIS (SEED)
+        // ============================================
+        function initializeSeedData() {
+            // Só inicializa se não houver dados no localStorage
+            if (localStorage.getItem('cis_topics')) return;
+
+            const seedUsers = [
+                { id: 1, username: 'admin', password: '123456', name: 'Administrador' },
+                { id: 2, username: 'maria', password: '123456', name: 'Maria Silva' },
+                { id: 3, username: 'joao', password: '123456', name: 'João Santos' },
+                { id: 4, username: 'ana', password: '123456', name: 'Ana Costa' }
+            ];
+
+            const seedTopics = [
+                {
+                    id: 1,
+                    title: 'Hábitos de Estudo Recomendados',
+                    description: 'Compartilhe técnicas e métodos de estudo que funcionam para você. Vamos construir juntos um guia de melhores práticas acadêmicas.',
+                    icon: '📚',
+                    author: 'admin',
+                    authorName: 'Administrador',
+                    createdAt: '2024-01-15T10:00:00'
+                },
+                {
+                    id: 2,
+                    title: 'Reduzir o Aquecimento Global',
+                    description: 'Ideias inovadoras para combater as mudanças climáticas no nosso dia a dia. Cada pequena ação conta!',
+                    icon: '🌍',
+                    author: 'maria',
+                    authorName: 'Maria Silva',
+                    createdAt: '2024-01-16T14:30:00'
+                },
+                {
+                    id: 3,
+                    title: 'Tecnologia na Educação',
+                    description: 'Como podemos usar a tecnologia para melhorar o aprendizado? Compartilhe suas ideias sobre ferramentas e métodos digitais.',
+                    icon: '💻',
+                    author: 'joao',
+                    authorName: 'João Santos',
+                    createdAt: '2024-01-17T09:15:00'
+                },
+                {
+                    id: 4,
+                    title: 'Sustentabilidade Urbana',
+                    description: 'Ideias para tornar nossas cidades mais verdes, limpas e sustentáveis. Do transporte à gestão de resíduos.',
+                    icon: '🌱',
+                    author: 'ana',
+                    authorName: 'Ana Costa',
+                    createdAt: '2024-01-18T16:45:00'
+                },
+                {
+                    id: 5,
+                    title: 'Saúde Mental no Trabalho',
+                    description: 'Estratégias e ideias para promover o bem-estar psicológico no ambiente corporativo.',
+                    icon: '🏥',
+                    author: 'admin',
+                    authorName: 'Administrador',
+                    createdAt: '2024-01-19T11:20:00'
+                },
+                {
+                    id: 6,
+                    title: 'Inovação em Startups',
+                    description: 'Compartilhe ideias disruptivas para o ecossistema de startups e empreendedorismo.',
+                    icon: '🚀',
+                    author: 'maria',
+                    authorName: 'Maria Silva',
+                    createdAt: '2024-01-20T08:00:00'
+                }
+            ];
+
+            const seedIdeas = [
+                {
+                    id: 1,
+                    topicId: 1,
+                    title: 'Técnica Pomodoro Adaptativa',
+                    description: 'Uma versão da técnica Pomodoro que se adapta ao ritmo de cada estudante, aumentando ou diminuindo os intervalos conforme o nível de concentração medido por questionários rápidos.',
+                    author: 'maria',
+                    authorName: 'Maria Silva',
+                    createdAt: '2024-01-15T11:00:00',
+                    upvotes: 12,
+                    downvotes: 2
+                },
+                {
+                    id: 2,
+                    topicId: 1,
+                    title: 'Grupos de Estudo Gamificados',
+                    description: 'Criar grupos de estudo com sistema de pontos, conquistas e rankings para motivar os participantes a manter a consistência nos estudos.',
+                    author: 'joao',
+                    authorName: 'João Santos',
+                    createdAt: '2024-01-15T14:30:00',
+                    upvotes: 8,
+                    downvotes: 1
+                },
+                {
+                    id: 3,
+                    topicId: 2,
+                    title: 'App de Pegada de Carbono Pessoal',
+                    description: 'Aplicativo que calcula automaticamente a pegada de carbono do usuário baseado em compras com cartão de crédito e sugere compensações.',
+                    author: 'ana',
+                    authorName: 'Ana Costa',
+                    createdAt: '2024-01-16T15:00:00',
+                    upvotes: 15,
+                    downvotes: 3
+                },
+                {
+                    id: 4,
+                    topicId: 2,
+                    title: 'Hortas Comunitárias em Telhados',
+                    description: 'Transformar telhados de prédios residenciais em hortas comunitárias, reduzindo ilhas de calor e produzindo alimentos locais.',
+                    author: 'admin',
+                    authorName: 'Administrador',
+                    createdAt: '2024-01-17T10:00:00',
+                    upvotes: 20,
+                    downvotes: 1
+                },
+                {
+                    id: 5,
+                    topicId: 3,
+                    title: 'Realidade Virtual para Aulas de História',
+                    description: 'Usar VR para transportar alunos para eventos históricos, tornando o aprendizado imersivo e memorável.',
+                    author: 'joao',
+                    authorName: 'João Santos',
+                    createdAt: '2024-01-17T11:30:00',
+                    upvotes: 18,
+                    downvotes: 2
+                },
+                {
+                    id: 6,
+                    topicId: 4,
+                    title: 'Bicicletas Compartilhadas Elétricas',
+                    description: 'Sistema de bicicletas elétricas compartilhadas com estações de recarga solar em pontos estratégicos da cidade.',
+                    author: 'maria',
+                    authorName: 'Maria Silva',
+                    createdAt: '2024-01-18T17:00:00',
+                    upvotes: 25,
+                    downvotes: 4
+                },
+                {
+                    id: 7,
+                    topicId: 5,
+                    title: 'Sala de Descompressão no Escritório',
+                    description: 'Espaço dedicado com iluminação suave, sons da natureza e atividades de mindfulness para pausas durante o dia de trabalho.',
+                    author: 'ana',
+                    authorName: 'Ana Costa',
+                    createdAt: '2024-01-19T12:00:00',
+                    upvotes: 14,
+                    downvotes: 1
+                },
+                {
+                    id: 8,
+                    topicId: 6,
+                    title: 'Marketplace de Mentoria entre Startups',
+                    description: 'Plataforma onde startups em estágios diferentes podem trocar mentoria: startups maduras mentoram as novas em troca de equity simbólico.',
+                    author: 'admin',
+                    authorName: 'Administrador',
+                    createdAt: '2024-01-20T09:30:00',
+                    upvotes: 11,
+                    downvotes: 2
+                }
+            ];
+
+            localStorage.setItem('cis_users', JSON.stringify(seedUsers));
+            localStorage.setItem('cis_topics', JSON.stringify(seedTopics));
+            localStorage.setItem('cis_ideas', JSON.stringify(seedIdeas));
+            localStorage.setItem('cis_votes', JSON.stringify([]));
+        }
+
+        // ============================================
+        // FUNÇÕES DE PERSISTÊNCIA
+        // ============================================
+        function loadData() {
+            AppState.users = JSON.parse(localStorage.getItem('cis_users') || '[]');
+            AppState.topics = JSON.parse(localStorage.getItem('cis_topics') || '[]');
+            AppState.ideas = JSON.parse(localStorage.getItem('cis_ideas') || '[]');
+            AppState.votes = JSON.parse(localStorage.getItem('cis_votes') || '[]');
+        }
+
+        function saveData() {
+            localStorage.setItem('cis_users', JSON.stringify(AppState.users));
+            localStorage.setItem('cis_topics', JSON.stringify(AppState.topics));
+            localStorage.setItem('cis_ideas', JSON.stringify(AppState.ideas));
+            localStorage.setItem('cis_votes', JSON.stringify(AppState.votes));
+        }
+
+        // ============================================
+        // FUNÇÕES DE UTILIDADE
+        // ============================================
+        function generateId() {
+            return Date.now() + Math.random().toString(36).substr(2, 9);
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = now - date;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            
+            if (days === 0) return 'Hoje';
+            if (days === 1) return 'Ontem';
+            if (days < 7) return `${days} dias atrás`;
+            if (days < 30) return `${Math.floor(days / 7)} semanas atrás`;
+            return date.toLocaleDateString('pt-BR');
+        }
+
+        function getInitials(name) {
+            return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+        }
+
+        // ============================================
+        // SISTEMA DE TOAST (NOTIFICAÇÕES)
+        // ============================================
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icons = { success: '✅', error: '', warning: '⚠️', info: 'ℹ️' };
+            toast.innerHTML = `
+                <span class="toast-icon">${icons[type]}</span>
+                <span class="toast-message">${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // ============================================
+        // AUTENTICAÇÃO
+        // ============================================
+        function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            if (!username || !password) {
+                showToast('Preencha todos os campos!', 'error');
+                return;
+            }
+
+            // Simulação de autenticação (aceita qualquer usuário/senha)
+            // Na Fase 1 real, isso chamaria a User API Java
+            let user = AppState.users.find(u => u.username === username);
+            
+            if (!user) {
+                // Cria usuário automaticamente se não existir (simulação)
+                user = {
+                    id: generateId(),
+                    username: username,
+                    password: password,
+                    name: username.charAt(0).toUpperCase() + username.slice(1)
+                };
+                AppState.users.push(user);
+                saveData();
+                showToast(`Bem-vindo, ${user.name}! (usuário criado)`, 'success');
+            } else {
+                showToast(`Bem-vindo de volta, ${user.name}!`, 'success');
+            }
+
+            AppState.currentUser = user;
+            showApp();
+        }
+
+        function handleLogout() {
+            AppState.currentUser = null;
+            AppState.currentTopic = null;
+            document.getElementById('appContainer').classList.remove('active');
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('loginForm').reset();
+            showToast('Você saiu do sistema', 'info');
+        }
+
+        function showApp() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('appContainer').classList.add('active');
+            
+            // Atualiza header com info do usuário
+            document.getElementById('userName').textContent = AppState.currentUser.name;
+            document.getElementById('userAvatar').textContent = getInitials(AppState.currentUser.name);
+            
+            // Renderiza dashboard
+            renderDashboard();
+        }
+
+        // ============================================
+        // RENDERIZAÇÃO: DASHBOARD
+        // ============================================
+        function renderDashboard() {
+            const grid = document.getElementById('topicsGrid');
+            const searchTerm = document.getElementById('searchTopics').value.toLowerCase();
+            const sortBy = document.getElementById('filterSort').value;
+
+            let filteredTopics = AppState.topics.filter(t => 
+                t.title.toLowerCase().includes(searchTerm) || 
+                t.description.toLowerCase().includes(searchTerm)
+            );
+
+            // Ordenação
+            if (sortBy === 'recent') {
+                filteredTopics.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            } else if (sortBy === 'popular') {
+                filteredTopics.sort((a, b) => {
+                    const ideasA = AppState.ideas.filter(i => i.topicId === a.id);
+                    const ideasB = AppState.ideas.filter(i => i.topicId === b.id);
+                    const votesA = ideasA.reduce((sum, i) => sum + i.upvotes - i.downvotes, 0);
+                    const votesB = ideasB.reduce((sum, i) => sum + i.upvotes - i.downvotes, 0);
+                    return votesB - votesA;
+                });
+            } else if (sortBy === 'ideas') {
+                filteredTopics.sort((a, b) => {
+                    const countA = AppState.ideas.filter(i => i.topicId === a.id).length;
+                    const countB = AppState.ideas.filter(i => i.topicId === b.id).length;
+                    return countB - countA;
+                });
+            }
+
+            if (filteredTopics.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <div class="empty-state-icon">📭</div>
+                        <h3>Nenhum tópico encontrado</h3>
+                        <p>Crie o primeiro tópico para começar!</p>
+                        <button class="btn btn-success" onclick="openModal('modalNewTopic')">➕ Criar Tópico</button>
+                    </div>
+                `;
+            } else {
+                grid.innerHTML = filteredTopics.map(topic => {
+                    const ideasCount = AppState.ideas.filter(i => i.topicId === topic.id).length;
+                    const totalVotes = AppState.ideas
+                        .filter(i => i.topicId === topic.id)
+                        .reduce((sum, i) => sum + i.upvotes + i.downvotes, 0);
+                    
+                    return `
+                        <div class="topic-card" onclick="openTopic(${topic.id})">
+                            <div class="topic-icon">${topic.icon}</div>
+                            <div class="topic-title">${topic.title}</div>
+                            <div class="topic-description">${topic.description.substring(0, 100)}${topic.description.length > 100 ? '...' : ''}</div>
+                            <div class="topic-meta">
+                                <div class="topic-ideas-count">
+                                    <span>${ideasCount}</span> ideias · <span>${totalVotes}</span> votos
+                                </div>
+                                <div class="topic-author">por ${topic.authorName}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // Atualiza estatísticas
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById('statTopics').textContent = AppState.topics.length;
+            document.getElementById('statIdeas').textContent = AppState.ideas.length;
+            
+            const totalVotes = AppState.ideas.reduce((sum, i) => sum + i.upvotes + i.downvotes, 0);
+            document.getElementById('statVotes').textContent = totalVotes;
+            
+            document.getElementById('statUsers').textContent = AppState.users.length;
+        }
+
+        // ============================================
+        // RENDERIZAÇÃO: DETALHE DO TÓPICO
+        // ============================================
+        function openTopic(topicId) {
+            const topic = AppState.topics.find(t => t.id === topicId);
+            if (!topic) return;
+
+            AppState.currentTopic = topic;
+            AppState.currentPage = 'topicDetail';
+
+            document.getElementById('pageDashboard').style.display = 'none';
+            document.getElementById('pageMyIdeas').style.display = 'none';
+            document.getElementById('pageStats').style.display = 'none';
+            document.getElementById('pageTopicDetail').classList.add('active');
+
+            document.getElementById('detailTopicTitle').textContent = `${topic.icon} ${topic.title}`;
+            document.getElementById('detailTopicDescription').textContent = topic.description;
+
+            renderIdeas();
+        }
+
+        function closeTopic() {
+            AppState.currentTopic = null;
+            AppState.currentPage = 'dashboard';
+
+            document.getElementById('pageTopicDetail').classList.remove('active');
+            document.getElementById('pageDashboard').style.display = 'block';
+            document.getElementById('pageMyIdeas').style.display = 'none';
+            document.getElementById('pageStats').style.display = 'none';
+
+            renderDashboard();
+        }
+
+        function renderIdeas() {
+            const list = document.getElementById('ideasList');
+            const sortBy = document.getElementById('filterIdeas').value;
+            const topicId = AppState.currentTopic.id;
+
+            let ideas = AppState.ideas.filter(i => i.topicId === topicId);
+
+            // Ordenação
+            if (sortBy === 'votes') {
+                ideas.sort((a, b) => (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes));
+            } else if (sortBy === 'recent') {
+                ideas.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            } else if (sortBy === 'controversial') {
+                ideas.sort((a, b) => {
+                    const diffA = Math.abs(a.upvotes - a.downvotes);
+                    const diffB = Math.abs(b.upvotes - b.downvotes);
+                    return diffA - diffB; // Menor diferença = mais controversa
+                });
+            }
+
+            if (ideas.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">💡</div>
+                        <h3>Nenhuma ideia ainda</h3>
+                        <p>Seja o primeiro a propor uma ideia para este tópico!</p>
+                        <button class="btn btn-success" onclick="openModal('modalNewIdea')">💡 Propor Ideia</button>
+                    </div>
+                `;
+            } else {
+                list.innerHTML = ideas.map(idea => {
+                    const netVotes = idea.upvotes - idea.downvotes;
+                    const voteClass = netVotes > 0 ? 'positive' : netVotes < 0 ? 'negative' : '';
+                    
+                    return `
+                        <div class="idea-card">
+                            <div class="idea-vote-section">
+                                <button class="vote-btn ${isUserVoted(idea.id, 'up') ? 'upvoted' : ''}" 
+                                        onclick="voteIdea(${idea.id}, 'up')">
+                                    ▲
+                                </button>
+                                <span class="vote-count ${voteClass}">${netVotes}</span>
+                                <button class="vote-btn ${isUserVoted(idea.id, 'down') ? 'downvoted' : ''}" 
+                                        onclick="voteIdea(${idea.id}, 'down')">
+                                    ▼
+                                </button>
+                            </div>
+                            <div class="idea-content">
+                                <div class="idea-title">${idea.title}</div>
+                                <div class="idea-description">${idea.description}</div>
+                                <div class="idea-footer">
+                                    <div class="idea-author">
+                                        <div class="idea-author-avatar">${getInitials(idea.authorName)}</div>
+                                        <span>${idea.authorName}</span>
+                                    </div>
+                                    <div class="idea-date">${formatDate(idea.createdAt)}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function isUserVoted(ideaId, type) {
+            // Simulação: verifica se o usuário atual já votou
+            // Em produção, isso viria da API
+            return false;
+        }
+
+        // ============================================
+        // SISTEMA DE VOTAÇÃO
+        // ============================================
+        function voteIdea(ideaId, type) {
+            const idea = AppState.ideas.find(i => i.id === ideaId);
+            if (!idea) return;
+
+            if (type === 'up') {
+                idea.upvotes++;
+                showToast('Voto positivo registrado! 👍', 'success');
+            } else {
+                idea.downvotes++;
+                showToast('Voto negativo registrado! 👎', 'warning');
+            }
+
+            saveData();
+            renderIdeas();
+        }
+
+        // ============================================
+        // MODAIS
+        // ============================================
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function handleNewTopic(e) {
+            e.preventDefault();
+            const title = document.getElementById('topicTitle').value.trim();
+            const description = document.getElementById('topicDescription').value.trim();
+            const icon = document.getElementById('topicIcon').value;
+
+            if (!title || !description) {
+                showToast('Preencha todos os campos obrigatórios!', 'error');
+                return;
+            }
+
+            const newTopic = {
+                id: generateId(),
+                title,
+                description,
+                icon,
+                author: AppState.currentUser.username,
+                authorName: AppState.currentUser.name,
+                createdAt: new Date().toISOString()
+            };
+
+            AppState.topics.push(newTopic);
+            saveData();
+            closeModal('modalNewTopic');
+            document.getElementById('formNewTopic').reset();
+            renderDashboard();
+            showToast('Tópico criado com sucesso! 🎉', 'success');
+        }
+
+        function handleNewIdea(e) {
+            e.preventDefault();
+            const title = document.getElementById('ideaTitle').value.trim();
+            const description = document.getElementById('ideaDescription').value.trim();
+
+            if (!title || !description) {
+                showToast('Preencha todos os campos obrigatórios!', 'error');
+                return;
+            }
+
+            const newIdea = {
+                id: generateId(),
+                topicId: AppState.currentTopic.id,
+                title,
+                description,
+                author: AppState.currentUser.username,
+                authorName: AppState.currentUser.name,
+                createdAt: new Date().toISOString(),
+                upvotes: 0,
+                downvotes: 0
+            };
+
+            AppState.ideas.push(newIdea);
+            saveData();
+            closeModal('modalNewIdea');
+            document.getElementById('formNewIdea').reset();
+            renderIdeas();
+            showToast('Ideia publicada com sucesso! 💡', 'success');
+        }
+
+        // ============================================
+        // NAVEGAÇÃO ENTRE PÁGINAS
+        // ============================================
+        function navigateTo(page) {
+            AppState.currentPage = page;
+            
+            // Esconde todas as páginas
+            document.getElementById('pageDashboard').style.display = 'none';
+            document.getElementById('pageTopicDetail').classList.remove('active');
+            document.getElementById('pageMyIdeas').style.display = 'none';
+            document.getElementById('pageStats').style.display = 'none';
+
+            // Remove active de todas as tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+
+            if (page === 'dashboard') {
+                document.getElementById('pageDashboard').style.display = 'block';
+                document.querySelector('[data-page="dashboard"]').classList.add('active');
+                renderDashboard();
+            } else if (page === 'myideas') {
+                document.getElementById('pageMyIdeas').style.display = 'block';
+                document.querySelector('[data-page="myideas"]').classList.add('active');
+                renderMyIdeas();
+            } else if (page === 'stats') {
+                document.getElementById('pageStats').style.display = 'block';
+                document.querySelector('[data-page="stats"]').classList.add('active');
+                renderStatsDetail();
+            }
+        }
+
+        function renderMyIdeas() {
+            const list = document.getElementById('myIdeasList');
+            const myIdeas = AppState.ideas.filter(i => i.author === AppState.currentUser.username);
+
+            if (myIdeas.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon"></div>
+                        <h3>Você ainda não propôs ideias</h3>
+                        <p>Explore os tópicos e compartilhe suas ideias inovadoras!</p>
+                        <button class="btn btn-primary" onclick="navigateTo('dashboard')">Explorar Tópicos</button>
+                    </div>
+                `;
+            } else {
+                list.innerHTML = myIdeas.map(idea => {
+                    const topic = AppState.topics.find(t => t.id === idea.topicId);
+                    const netVotes = idea.upvotes - idea.downvotes;
+                    
+                    return `
+                        <div class="idea-card">
+                            <div class="idea-vote-section">
+                                <span class="vote-count ${netVotes > 0 ? 'positive' : netVotes < 0 ? 'negative' : ''}">${netVotes}</span>
+                                <small style="color: var(--text-light);">votos</small>
+                            </div>
+                            <div class="idea-content">
+                                <div class="idea-title">${idea.title}</div>
+                                <div class="idea-description">${idea.description}</div>
+                                <div class="idea-footer">
+                                    <div class="idea-author">
+                                        <span>📁 ${topic ? topic.title : 'Tópico removido'}</span>
+                                    </div>
+                                    <div class="idea-date">${formatDate(idea.createdAt)}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function renderStatsDetail() {
+            const container = document.getElementById('statsDetail');
+            const totalUpvotes = AppState.ideas.reduce((sum, i) => sum + i.upvotes, 0);
+            const totalDownvotes = AppState.ideas.reduce((sum, i) => sum + i.downvotes, 0);
+            const avgVotesPerIdea = AppState.ideas.length > 0 
+                ? ((totalUpvotes + totalDownvotes) / AppState.ideas.length).toFixed(1) 
+                : 0;
+
+            container.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${AppState.topics.length}</div>
+                    <div class="stat-label">Tópicos Ativos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${AppState.ideas.length}</div>
+                    <div class="stat-label">Ideias Publicadas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${totalUpvotes}</div>
+                    <div class="stat-label">Votos Positivos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${totalDownvotes}</div>
+                    <div class="stat-label">Votos Negativos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${avgVotesPerIdea}</div>
+                    <div class="stat-label">Média de Votos/Ideia</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${AppState.users.length}</div>
+                    <div class="stat-label">Usuários Cadastrados</div>
+                </div>
+            `;
+        }
+
+        // ============================================
+        // EVENT LISTENERS
+        // ============================================
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicializa dados seed
+            initializeSeedData();
+            loadData();
+
+            // Login
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            document.getElementById('btnLogout').addEventListener('click', handleLogout);
+
+            // Navegação
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.addEventListener('click', () => navigateTo(tab.dataset.page));
+            });
+
+            // Voltar do tópico
+            document.getElementById('btnBackToTopics').addEventListener('click', closeTopic);
+
+            // Modais de criação
+            document.getElementById('btnNewTopic').addEventListener('click', () => openModal('modalNewTopic'));
+            document.getElementById('btnNewIdea').addEventListener('click', () => openModal('modalNewIdea'));
+            
+            document.getElementById('closeModalTopic').addEventListener('click', () => closeModal('modalNewTopic'));
+            document.getElementById('closeModalIdea').addEventListener('click', () => closeModal('modalNewIdea'));
+            document.getElementById('cancelNewTopic').addEventListener('click', () => closeModal('modalNewTopic'));
+            document.getElementById('cancelNewIdea').addEventListener('click', () => closeModal('modalNewIdea'));
+
+            // Forms
+            document.getElementById('formNewTopic').addEventListener('submit', handleNewTopic);
+            document.getElementById('formNewIdea').addEventListener('submit', handleNewIdea);
+
+            // Filtros
+            document.getElementById('searchTopics').addEventListener('input', renderDashboard);
+            document.getElementById('filterSort').addEventListener('change', renderDashboard);
+            document.getElementById('filterIdeas').addEventListener('change', renderIdeas);
+
+            // Fechar modal ao clicar fora
+            document.querySelectorAll('.modal-overlay').forEach(overlay => {
+                overlay.addEventListener('click', (e) => {
+                    if (e.target === overlay) {
+                        overlay.classList.remove('active');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
