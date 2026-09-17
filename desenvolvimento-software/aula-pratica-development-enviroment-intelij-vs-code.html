@@ -1553,19 +1553,103 @@ docker compose logs -f mysql-db</pre>
 <span class="code-filepath">terminal da IDE - conexão comentada</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor"># ── MySQL: abre o cliente mysql DENTRO do container ──
-docker exec -it dev_mysql_server mysql -u root -proot123 loja_db
-# Dentro do shell MySQL:
-SHOW TABLES;            -- lista tabelas (categorias, produtos)
-DESCRIBE produtos;      -- estrutura: colunas e tipos
-SELECT * FROM produtos; -- os dados de seed
-EXIT;                   -- volta para o terminal da IDE
-# ── MongoDB: abre o mongosh DENTRO do container ──
-docker exec -it dev_mongo_server mongosh -u root -p root123 --authenticationDatabase admin
-# Dentro do mongosh:
-show dbs                // lista databases
-use loja_nosql          // troca de contexto
-db.produtos.find()      // documentos de seed
-exit                    // volta para o terminal da IDE</pre>
+-- ==========================================
+-- 0) PREPARAÇÃO: ver o que já existe
+-- ==========================================
+SHOW TABLES;                    -- deve listar: categorias, produtos
+DESCRIBE produtos;              -- confere colunas/tipos (bate com o schema)
+SELECT * FROM categorias;       -- ⚠️ PRECISA saber quais IDs existem!
+SELECT * FROM produtos;         -- estado atual dos dados (seed)
+
+-- ==========================================
+-- 1) READ (Ler)
+-- ==========================================
+-- Todos os produtos:
+SELECT * FROM produtos;
+
+-- Só alguns campos (mais enxuto):
+SELECT id, nome, preco, estoque, categoria_id FROM produtos;
+
+-- Filtrando por faixa de preço:
+SELECT nome, preco FROM produtos WHERE preco BETWEEN 50 AND 500;
+
+-- JOIN com categorias (mostra o nome da categoria em vez do ID):
+SELECT p.id, p.nome, p.preco, p.estoque, c.nome AS categoria
+  FROM produtos p
+  LEFT JOIN categorias c ON c.id = p.categoria_id
+ ORDER BY p.id;
+
+-- ==========================================
+-- 2) CREATE (Inserir) — +2 itens novos
+-- ==========================================
+-- 🔎 Passo 1: descobrir um categoria_id VÁLIDO (a FK exige isso)
+SELECT id, nome FROM categorias;
+
+-- 🔎 Passo 2: assumindo que existe categoria_id = 1 (ex.: "Periféricos")
+--            e categoria_id = 2 (ex.: "Áudio"), insira 2 produtos:
+
+INSERT INTO produtos (nome, preco, estoque, categoria_id)
+VALUES ('Teclado Mecânico', 349.90, 15, 1);
+
+INSERT INTO produtos (nome, preco, estoque, categoria_id)
+VALUES ('Mouse Gamer', 199.50, 30, 1);
+
+-- Alternativa: inserir os 2 de uma vez (mais eficiente):
+-- INSERT INTO produtos (nome, preco, estoque, categoria_id) VALUES
+--   ('Teclado Mecânico', 349.90, 15, 1),
+--   ('Mouse Gamer',      199.50, 30, 1);
+
+-- Conferir:
+SELECT id, nome, preco, estoque, categoria_id
+  FROM produtos
+ WHERE nome IN ('Teclado Mecânico', 'Mouse Gamer');
+
+-- 🧪 Teste de erro proposital (comentado) — descomente para ver as constraints agindo:
+-- INSERT INTO produtos (nome, preco) VALUES ('Inválido', -10);       -- ❌ CHECK preco > 0
+-- INSERT INTO produtos (nome, preco, categoria_id) VALUES ('X', 10, 999); -- ❌ FK inexistente
+
+-- ==========================================
+-- 3) UPDATE (Atualizar)
+-- ==========================================
+-- Aumenta 10% o preço do Teclado Mecânico:
+UPDATE produtos
+   SET preco = preco * 1.10
+ WHERE nome = 'Teclado Mecânico';
+
+-- Repõe estoque do Mouse Gamer em +20 unidades:
+UPDATE produtos
+   SET estoque = estoque + 20
+ WHERE nome = 'Mouse Gamer';
+
+-- Atualização múltipla (preço E estoque no mesmo comando):
+UPDATE produtos
+   SET preco = 219.90,
+       estoque = 50
+ WHERE nome = 'Mouse Gamer';
+
+-- Confere:
+SELECT id, nome, preco, estoque FROM produtos
+ WHERE nome IN ('Teclado Mecânico', 'Mouse Gamer');
+
+-- ==========================================
+-- 4) DELETE (Remover) — apaga 1 item
+-- ==========================================
+DELETE FROM produtos WHERE nome = 'Mouse Gamer';
+
+-- Conferir que sumiu (deve retornar 0 linhas):
+SELECT * FROM produtos WHERE nome = 'Mouse Gamer';
+
+-- ⚠️ CUIDADOS:
+-- DELETE FROM produtos;                    -- apaga TODOS os registros
+-- DELETE FROM produtos WHERE categoria_id = 1;  -- apaga por categoria
+-- (O AUTO_INCREMENT NÃO reinicia sozinho; use TRUNCATE se quiser resetar.)
+
+-- ==========================================
+-- 5) SAIR DO SHELL
+-- ==========================================
+EXIT;
+-- ou: \q
+-- ou: Ctrl + D</pre>
 </div>
 </div>
 
