@@ -2069,7 +2069,8 @@ import java.util.List;
 public interface ProdutoService {
     Produto criarProduto(Produto produto);
     List&lt;Produto&gt; listarProdutos();
-    List&lt;Produto&gt; listarProdutos(int page, int size);   
+    List&lt;Produto&gt; listarProdutos(int page, int size);
+    Produto atualizarProduto(Long id, Produto produto);
     Produto obterPorId(Long id);
     void excluirProduto(Long id);
 }</pre></div>
@@ -2120,7 +2121,21 @@ public class ProdutoServiceImpl implements ProdutoService {
         int from = Math.min(page * size, todos.size());
         int to = Math.min(from + size, todos.size());
         return todos.subList(from, to);
-
+    @Override
+    public Produto atualizarProduto(Long id, Produto p) {
+    Produto existente = repository.buscarPorId(id)
+    .orElseThrow(() -> new DomainException("Produto não encontrado: " + id));
+    if (p.getNome() == null || p.getNome().trim().length() < 2)
+    throw new DomainException("O nome deve ter pelo menos 2 caracteres");
+    if (p.getPreco() == null || p.getPreco().compareTo(BigDecimal.ZERO) <= 0)
+    throw new DomainException("O preço deve ser maior que zero");
+    if (p.getEstoque() == null || p.getEstoque() < 0)
+    throw new DomainException("O estoque não pode ser negativo");
+    existente.setNome(p.getNome());
+    existente.setPreco(p.getPreco());
+    existente.setEstoque(p.getEstoque());
+    return repository.salvar(existente);
+    }
     @Override
     public Produto obterPorId(Long id) {
         return repository.buscarPorId(id)
@@ -2425,7 +2440,11 @@ public class ProdutoController {
         var p = service.criarProduto(ProdutoMapper.toDomain(req));
         return ResponseEntity.status(HttpStatus.CREATED).body(ProdutoMapper.toResponse(p));
     }
-
+    @PutMapping("/{id}")
+    public ResponseEntity&lt;ProdutoResponse&gt; atualizar(@PathVariable Long id, @Valid @RequestBody CriarProdutoRequest req) {
+    var p = service.atualizarProduto(id, ProdutoMapper.toDomain(req));
+    return ResponseEntity.ok(ProdutoMapper.toResponse(p));
+    }
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void excluir(@PathVariable Long id) {
@@ -2731,8 +2750,23 @@ class ProdutoServiceTest {
         when(repoMock.existePorId(2L)).thenReturn(false);
         assertThrows(DomainException.class, () -> service.excluirProduto(2L));
         verify(repoMock, never()).deletarPorId(anyLong());
+        }
+        @Test @DisplayName("🟢 atualiza existente e delega persistência")
+        void atualizarExistente() {
+        when(repoMock.buscarPorId(1L)).thenReturn(Optional.of(new Produto(1L, "Teclado", BigDecimal.TEN, 1)));
+        when(repoMock.salvar(any())).thenAnswer(i -> i.getArgument(0));
+        Produto p = service.atualizarProduto(1L, new Produto(1L, "Teclado V2", BigDecimal.TEN, 2));
+        assertEquals("Teclado V2", p.getNome());
+        verify(repoMock).salvar(any());
+        }
+        @Test @DisplayName("🔴 atualizar inexistente lança DomainException")
+        void atualizarInexistenteLanca() {
+        when(repoMock.buscarPorId(999L)).thenReturn(Optional.empty());
+        assertThrows(DomainException.class, () -> service.atualizarProduto(999L, new Produto(999L, "X", BigDecimal.TEN, 1)));
+        verify(repoMock, never()).salvar(any());
+        }
     }
-}</pre></div>
+</pre></div>
 <div class="term-help"><strong>🖥️ Rodar testes:</strong> <span class="ide-tag java">IntelliJ</span> <kbd>Alt+F12</kbd> → <code>./mvnw -pl produtos-core-application test</code>. Ou clique no ▶ verde ao lado da classe de teste.</div>
 <div class="success-banner"><strong>✅ Checklist:</strong> 7 testes (6 de service + 1 extra nome curto) → todos verdes.</div>
 </div>
@@ -3266,6 +3300,15 @@ public class Produto
 
     /// &lt;summary&gt;Eventes são limpos após dispatch.&lt;/summary&gt;
     public void ClearEvents() =&gt; _events.Clear();
+    /// <summary>Aplica atualização validando invariantes (usado pelo PUT).</summary>
+    public void AplicarAtualizacao(string nome, Dinheiro preco, int estoque)
+    {
+        if (string.IsNullOrWhiteSpace(nome)) throw new DomainException("Nome é obrigatório");
+        if (nome.Trim().Length &lt; 2) throw new DomainException("Nome deve ter &gt;= 2 caracteres");
+        if (preco is null || preco.Valor &lt;= 0) throw new DomainException("Preço deve ser &gt; 0");
+        if (estoque &lt; 0) throw new DomainException("Estoque não pode ser negativo");
+        Nome = nome.Trim(); Preco = preco; Estoque = estoque;
+    }    
 
     private void Aplicar(string nome, Dinheiro preco, int estoque)
     {
@@ -3340,7 +3383,14 @@ public class ProdutoService : IProdutoService
         var todos = await _repo.ListarAsync();
         return todos.Skip(page * size).Take(size).Select(ProdutoMapper.ToResponse).ToList();
     }
-
+    public async Task<ProdutoResponse> AtualizarAsync(int id, CriarProdutoRequest req)
+    {
+        var p = await _repo.BuscarPorIdAsync(id)
+            ?? throw new DomainException($"Produto não encontrado: {id}");
+        p.AplicarAtualizacao(req.Nome, new Domain.ValueObjects.Dinheiro(req.Preco), req.Estoque);
+        var salvo = await _repo.SalvarAsync(p);
+        return ProdutoMapper.ToResponse(salvo);
+    }
     public async Task&lt;ProdutoResponse&gt; ObterPorIdAsync(int id)
     {
         var p = await _repo.BuscarPorIdAsync(id)
@@ -3552,7 +3602,10 @@ public class ProdutosController : ControllerBase
         var criado = await _service.CriarAsync(req);
         return CreatedAtAction(nameof(Obter), new { id = criado.Id }, criado);
     }
-
+    [HttpPut("{id:int}")]
+    [Authorize(Roles = "ADMIN")]    // escrita autenticada
+    public async Task<ActionResult<ProdutoResponse>> Atualizar(int id, [FromBody] CriarProdutoRequest req)
+        => Ok(await _service.AtualizarAsync(id, req));
     [HttpDelete("{id:int}")]
     [Authorize(Roles = "ADMIN")]
     public async Task&lt;IActionResult&gt; Excluir(int id)
@@ -3833,9 +3886,25 @@ public class ProdutoServiceTests
     {
         _repo.Setup(r =&gt; r.ExistePorIdAsync(2)).ReturnsAsync(false);
         await Assert.ThrowsAsync&lt;DomainException&gt;(() =&gt; _svc.ExcluirAsync(2));
-        _repo.Verify(r =&gt; r.DeletarAsync(It.IsAny&lt;int&gt;()), Times.Never);
+        _repo.Verify(r => r.DeletarAsync(It.IsAny<int>()), Times.Never);
+        }
+        [Fact]
+        public async Task AtualizarExistente_Delega()
+        {
+            _repo.Setup(r => r.BuscarPorIdAsync(1)).ReturnsAsync(Produto.Criar("Teclado", new Dinheiro(10m), 1));
+            _repo.Setup(r => r.SalvarAsync(It.IsAny<Produto>())).ReturnsAsync((Produto p) => p);
+            var resp = await _svc.AtualizarAsync(1, new CriarProdutoRequest("Teclado V2", 12m, 2));
+            Assert.Equal("Teclado V2", resp.Nome);
+            _repo.Verify(r => r.SalvarAsync(It.IsAny<Produto>()), Times.Once);
+        }
+        [Fact]
+        public async Task AtualizarInexistente_Lanca()
+        {
+            _repo.Setup(r => r.BuscarPorIdAsync(999)).ReturnsAsync((Produto?)null);
+            await Assert.ThrowsAsync<DomainException>(() => _svc.AtualizarAsync(999, new CriarProdutoRequest("X", 10m, 1)));
+        }
     }
-}</pre></div>
+</pre></div>
 <div class="term-help"><strong>🖥️ Rodar:</strong> <span class="ide-tag cs">VS Code</span> <kbd>Ctrl+`</kbd> → <code>dotnet test</code>. Ou Test Explorer (C# Dev Kit).</div>
 <div class="success-banner"><strong>✅ Paridade de testes:</strong> 4 de domínio + 6 de serviço = 10 testes C#, equivalente aos do Java.</div>
 </div>
@@ -4305,40 +4374,64 @@ paths:
           content:
             application/problem+json:
               schema: { $ref: '#/components/schemas/ProblemDetails' }
-  /api/catalogo/produtos:
+  /api/catalogo/produtos/{id}:
     get:
       tags: [Catalogo]
-      summary: Lista produtos (leitura pública, paginada)
+      summary: Busca produto por id (leitura pública)
       security: []
       parameters:
-        - { name: page, in: query, schema: { type: integer, default: 0 } }
-        - { name: size, in: query, schema: { type: integer, default: 20 } }
+        - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
         '200':
           description: OK
           content:
             application/json:
-              schema:
-                type: array
-                items: { $ref: '#/components/schemas/ProdutoResponse' }
-    post:
+              schema: { $ref: '#/components/schemas/ProdutoResponse' }
+        '404':
+          description: Inexistente
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+    put:
       tags: [Catalogo]
-      summary: Cria produto
+      summary: Atualiza produto (nome/preço/estoque)
       security:
         - bearerAuth: [CATALOGO_ADMIN, ADMIN]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
       requestBody:
         required: true
         content:
           application/json:
             schema: { $ref: '#/components/schemas/ProdutoRequest' }
       responses:
-        '201':
-          description: Criado
+        '200':
+          description: Atualizado
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ProdutoResponse' }
         '400':
           description: Validação
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+        '404':
+          description: Inexistente
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+    delete:
+      tags: [Catalogo]
+      summary: Descontinua produto (exclusão)
+      security:
+        - bearerAuth: [CATALOGO_ADMIN, ADMIN]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '204':
+          description: Excluído
+        '404':
+          description: Inexistente
           content:
             application/problem+json:
               schema: { $ref: '#/components/schemas/ProblemDetails' }
@@ -4435,25 +4528,74 @@ paths:
           content:
             application/problem+json:
               schema: { $ref: '#/components/schemas/ProblemDetails' }
-  /api/clientes:
-    post:
+  /api/clientes/{id}:
+    get:
       tags: [Clientes]
-      summary: Cria cliente com endereços
+      summary: Busca cliente por id
       security:
         - bearerAuth: [CLIENTES_ADMIN, ADMIN]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ClienteResponse' }
+        '404':
+          description: Inexistente
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+    put:
+      tags: [Clientes]
+      summary: Atualiza cadastro do cliente
+      security:
+        - bearerAuth: [CLIENTES_ADMIN, ADMIN]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
       requestBody:
         required: true
         content:
           application/json:
             schema: { $ref: '#/components/schemas/ClienteRequest' }
       responses:
-        '201':
-          description: Criado
+        '200':
+          description: Atualizado
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ClienteResponse' }
         '400':
           description: Validação (email/CEP)
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+        '404':
+          description: Inexistente
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+  /api/clientes/{id}/desativar:
+    post:
+      tags: [Clientes]
+      summary: Desativa cliente (LGPD: anonimiza em vez de DELETE físico)
+      security:
+        - bearerAuth: [CLIENTES_ADMIN, ADMIN]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: Cliente desativado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ClienteResponse' }
+        '404':
+          description: Inexistente
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+        '409':
+          description: Já desativado
           content:
             application/problem+json:
               schema: { $ref: '#/components/schemas/ProblemDetails' }
@@ -4605,6 +4747,7 @@ components:
 <tr><td>Paths</td><td><code>/api/produtos</code></td><td>prefixos <code>/api/catalogo|pedidos|clientes</code></td></tr>
 <tr><td>Security</td><td>global + <code>security: []</code> no login/GETs</td><td><strong>por operação com roles</strong> (<code>bearerAuth: [ROLE]</code>)</td></tr>
 <tr><td>Endpoints internos</td><td>—</td><td><code>…/reservar</code>, <code>…/enderecos</code> (PEDIDOS_SERVICE)</td></tr>
+<tr><td>CRUD por id</td><td>GET/PUT/DELETE em <code>/api/produtos/{id}</code></td><td>GET/PUT/DELETE em <code>/api/catalogo/produtos/{id}</code> + <code>PUT/POST desativar</code> em <code>/api/clientes/{id}</code> (LGPD)</td></tr>
 <tr><td>Erros</td><td>400/401/404</td><td>+ <strong>409</strong> (estoque/status) com <code>type</code> específico</td></tr>
 </tbody>
 </table>
@@ -4701,8 +4844,13 @@ curl -i -X POST http://localhost:4011/api/catalogo/produtos/101/reservar \
 <p><b>Contexto:</b> checkout precisa de reserva de estoque e endereço válidos no momento da criação.</p>
 <p><b>Decisão:</b> chamadas HTTP síncronas com token PEDIDOS_SERVICE, timeout 2s, erros 409/503 tipificados em RFC 7807; sem eventos assíncronos nesta fase.</p>
 <p><b>Alternativas consideradas:</b> eventos + eventual consistency (adiada: complexidade de reconciliação); banco compartilhado (rejeitada: quebra fronteiras).</p>
-<p><b>Consequências:</b> (+) consistência imediata e teste simples; (−) acoplamento temporal mitigado por timeout/erros tipizados.</p>
-<p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend, QA, SRE.</p></div>
+
+<div class="adr"><h5>ADR-013 · Pedidos: comandos em vez de CRUD (sem PUT/DELETE)<span class="status">Aceita</span></h5>
+<p><b>Contexto:</b> Pedido é agregado com máquina de estados (CRIADO→RESERVADO→CONFIRMADO→ENVIADO/CANCELADO); PUT/DELETE deixariam mudar status "por fora" e apagar registro de auditoria. Catálogo e Clientes, sem máquina de estados, mantêm CRUD completo (PUT/DELETE/desativar).</p>
+<p><b>Decisão:</b> mudanças de estado de Pedido via comandos POST (<code>/cancelar</code>, futuramente <code>/confirmar</code>); sem PUT/DELETE em <code>/api/pedidos</code>; "remoção" = cancelamento (soft), preservando auditoria/legal.</p>
+<p><b>Alternativas consideradas:</b> PUT com status editável (rejeitada: quebra invariantes); DELETE físico (rejeitada: perda de auditoria); PATCH parcial (adiado).</p>
+<p><b>Consequências:</b> (+) invariantes e trilha de auditoria garantidas; (−) clientes aprendem endpoints de comando.</p>
+<p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend, QA, Jurídico/Compliance.</p></div>
 
 <h4 style="color:var(--accent);margin:16px 0 8px">🗺️ Legenda de diagramas desta aba</h4>
 <div class="table-wrap">
@@ -4715,7 +4863,7 @@ curl -i -X POST http://localhost:4011/api/catalogo/produtos/101/reservar \
 </tbody>
 </table>
 </div>
-<div class="success-banner"><strong>✅ Checklist:</strong> 3 contextos com prefixos/tags ✓ · roles por operação ✓ · endpoints internos PEDIDOS_SERVICE ✓ · 409 tipificado ✓ · Prism :4011 sobe ✓ · roteiro curl 200/401-403/201/409 ✓ · ADRs 009–012 ✓ · D-23…D-25 nomeados ✓.</div>
+<div class="success-banner"><strong>✅ Checklist:</strong> 3 contextos com prefixos/tags ✓ · roles por operação ✓ · endpoints internos PEDIDOS_SERVICE ✓ · 409 tipificado ✓ · Prism :4011 sobe ✓ · roteiro curl 200/401-403/201/409 ✓ · ADRs 009–013 ✓ · CRUD completo por contexto ✓ · D-23…D-25 nomeados ✓.</div>
 </div>
 </section>
 <!-- ===== FIM DA PARTE 2/3 — cole a Parte 3 (Tab 9: C# Multi-Contextos) antes de <section … id="tab10"> ===== -->
@@ -4934,6 +5082,15 @@ public class Produto
     }
     public void Liberar(int qtd) => Reservado = Math.Max(0, Reservado - qtd);
     public void ConfirmarReserva(int qtd) { Estoque -= qtd; Liberar(qtd); }
+    /// <summary>Atualização validada (PUT do contrato): invariantes de nome/preço/estoque.</summary>
+    public void Atualizar(string nome, decimal preco, int estoque)
+    {
+        if (string.IsNullOrWhiteSpace(nome) || nome.Trim().Length < 2)
+            throw new DomainException("Nome deve ter >= 2 caracteres");
+        if (preco <= 0) throw new DomainException("Preço deve ser > 0");
+        if (estoque < 0) throw new DomainException("Estoque não pode ser negativo");
+        Nome = nome.Trim(); Preco = preco; Estoque = estoque;
+    }    
 }</pre></div>
 <div class="code-editor-wrap"><span class="code-filepath">LojaApi.Modules.Catalogo/CatalogoController.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="LojaApi.Modules.Catalogo/CatalogoController.cs">using LojaApi.Modules.Catalogo.Domain;
@@ -4944,6 +5101,7 @@ using Microsoft.EntityFrameworkCore;
 namespace LojaApi.Modules.Catalogo;
 public record ReservarRequest(int Quantidade, string PedidoOrigem);
 public record ReservaResponse(string ReservaId, string Status, decimal PrecoUnitario);
+public record AtualizarProdutoRequest(string Nome, decimal Preco, int Estoque);    
 [ApiController]
 [Route("api/catalogo")]
 public class CatalogoController : ControllerBase
@@ -4976,6 +5134,33 @@ public class CatalogoController : ControllerBase
         await _db.SaveChangesAsync();
         return NoContent();
     }
+    [HttpGet("produtos/{id:int}")]                     // leitura pública
+    public async Task<ActionResult> Obter(int id)
+    {
+        var p = await _db.Produtos.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+        return p is null ? NotFound(new ProblemDetails { Type = "https://example.com/erros/nao-encontrado", Title = "Produto inexistente", Status = 404 }) : Ok(p);
+    }
+    [HttpPut("produtos/{id:int}")]
+    [Authorize(Roles = "CATALOGO_ADMIN,ADMIN")]
+    public async Task<ActionResult> Atualizar(int id, [FromBody] AtualizarProdutoRequest req)
+    {
+        var p = await _db.Produtos.FindAsync(id);
+        if (p is null) return NotFound(new ProblemDetails { Type = "https://example.com/erros/nao-encontrado", Title = "Produto inexistente", Status = 404 });
+        p.Atualizar(req.Nome, req.Preco, req.Estoque);   // DomainException → 400 via middleware
+        await _db.SaveChangesAsync();
+        return Ok(p);
+    }
+    [HttpDelete("produtos/{id:int}")]
+    [Authorize(Roles = "CATALOGO_ADMIN,ADMIN")]
+    public async Task<ActionResult> Excluir(int id)
+    {
+        var p = await _db.Produtos.FindAsync(id);
+        if (p is null) return NotFound(new ProblemDetails { Type = "https://example.com/erros/nao-encontrado", Title = "Produto inexistente", Status = 404 });
+        _db.Produtos.Remove(p); await _db.SaveChangesAsync();
+        return NoContent();
+    }
+    }
+}
 }</pre></div>
 <div class="code-editor-wrap"><span class="code-filepath">LojaApi.Modules.Catalogo/Data/CatalogoDbContext.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="LojaApi.Modules.Catalogo/Data/CatalogoDbContext.cs">using LojaApi.Modules.Catalogo.Domain;
@@ -5028,6 +5213,22 @@ public class Cliente
     public List&lt;Endereco&gt; Enderecos { get; private set; } = new();
     protected Cliente() { }
     public Cliente(int id, string nome, string email) { Id = id; Nome = nome; Email = email; }
+
+    public bool Ativo { get; private set; } = true;
+    /// <summary>Atualização validada (PUT do contrato).</summary>
+    public void Atualizar(string nome, string email)
+    {
+        if (string.IsNullOrWhiteSpace(nome)) throw new DomainException("Nome é obrigatório");
+        if (string.IsNullOrWhiteSpace(email) || !email.Contains('@')) throw new DomainException("E-mail inválido");
+        Nome = nome.Trim(); Email = email.Trim();
+    }
+    /// <summary>LGPD: desativação lógica (soft) em vez de DELETE físico.</summary>
+    public void Desativar()
+    {
+        if (!Ativo) throw new DomainException("Cliente já desativado", ProblemTypes.StatusInvalido);
+        Ativo = false;
+    }
+    
 }</pre></div>
 <div class="code-editor-wrap"><span class="code-filepath">LojaApi.Modules.Clientes/ClientesController.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="LojaApi.Modules.Clientes/ClientesController.cs">using LojaApi.Modules.Clientes.Domain;
@@ -5035,6 +5236,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 namespace LojaApi.Modules.Clientes;
+public record AtualizarClienteRequest(string Nome, string Email);    
 [ApiController]
 [Route("api/clientes")]
 public class ClientesController : ControllerBase
@@ -5048,7 +5250,35 @@ public class ClientesController : ControllerBase
     [HttpGet("{id:int}/enderecos")]            // interno p/ Pedidos + admin
     [Authorize(Roles = "PEDIDOS_SERVICE,CLIENTES_ADMIN,ADMIN")]
     public async Task&lt;ActionResult&gt; Enderecos(int id)
-        =&gt; Ok(await _db.Enderecos.AsNoTracking().Where(e =&gt; e.ClienteId == id).ToListAsync());
+        => Ok(await _db.Enderecos.AsNoTracking().Where(e => e.ClienteId == id).ToListAsync());
+}
+[HttpGet("{id:int}")]
+[Authorize(Roles = "CLIENTES_ADMIN,ADMIN")]
+public async Task<ActionResult> Obter(int id)
+{
+    var c = await _db.Clientes.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+    return c is null ? NotFound(new ProblemDetails { Type = "https://example.com/erros/nao-encontrado", Title = "Cliente inexistente", Status = 404 }) : Ok(c);
+}
+[HttpPut("{id:int}")]
+[Authorize(Roles = "CLIENTES_ADMIN,ADMIN")]
+public async Task<ActionResult> Atualizar(int id, [FromBody] AtualizarClienteRequest req)
+{
+    var c = await _db.Clientes.FindAsync(id);
+    if (c is null) return NotFound(new ProblemDetails { Type = "https://example.com/erros/nao-encontrado", Title = "Cliente inexistente", Status = 404 });
+    c.Atualizar(req.Nome, req.Email);
+    await _db.SaveChangesAsync();
+    return Ok(c);
+}
+[HttpPost("{id:int}/desativar")]
+[Authorize(Roles = "CLIENTES_ADMIN,ADMIN")]
+public async Task<ActionResult> Desativar(int id)
+{
+    var c = await _db.Clientes.FindAsync(id);
+    if (c is null) return NotFound(new ProblemDetails { Type = "https://example.com/erros/nao-encontrado", Title = "Cliente inexistente", Status = 404 });
+    c.Desativar();   // já desativado → DomainException 409
+    await _db.SaveChangesAsync();
+    return Ok(c);
+}
 }</pre></div>
 
 <h4 style="color:var(--accent);margin:16px 0 8px">🛒 Módulo Pedidos (orquestração + clients HTTP)</h4>
@@ -5483,6 +5713,21 @@ public class CatalogoProdutoTests
         Assert.Equal(3, p.Estoque);
         Assert.Equal(3, p.Disponivel);
     }
+    [Fact]
+    public void Atualizar_Valido_AlteraCampos()
+    {
+        var p = new Produto(101, "Teclado", 349.9m, 5);
+        p.Atualizar("Teclado V2", 399.9m, 7);
+        Assert.Equal("Teclado V2", p.Nome);
+        Assert.Equal(399.9m, p.Preco);
+        Assert.Equal(7, p.Estoque);
+    }
+    [Fact]
+    public void Atualizar_PrecoInvalido_Lanca()
+    {
+        var p = new Produto(101, "Teclado", 349.9m, 5);
+        Assert.Throws<DomainException>(() => p.Atualizar("Teclado V2", 0m, 7));
+    }
 }
 public class ClienteEnderecoTests
 {
@@ -5500,8 +5745,24 @@ public class ClienteEnderecoTests
     {
         var e = new Endereco(4, "Rua B", "São Paulo", "sp", "02002-000");
         Assert.Equal("SP", e.Uf);
-    }
-}</pre>
+}
+[Fact]
+public void Cliente_Desativar_MarcaInativo()
+{
+    var c = new Cliente(7, "Ana Souza", "ana@example.com");
+    c.Desativar();
+    Assert.False(c.Ativo);
+}
+[Fact]
+public void Cliente_Desativar_DuasVezes_Lanca409()
+{
+    var c = new Cliente(7, "Ana Souza", "ana@example.com");
+    c.Desativar();
+    var ex = Assert.Throws<DomainException>(() => c.Desativar());
+    Assert.Equal(ProblemTypes.StatusInvalido, ex.Type);
+}
+}
+</pre>
 </div>
 <div class="term-help"><strong>🖥️ Rodar:</strong> <span class="ide-tag cs">VS Code</span> <kbd>Ctrl+`</kbd> → <code>dotnet test</code> (roda os 3 contextos de uma vez).</div>
 <div class="success-banner"><strong>✅ Paridade:</strong> 12 testes multi-contexto (5 pedidos c/ compensação + 4 catálogo + 3 clientes), no mesmo padrão AAA das Tabs 6/7.</div>
@@ -5860,7 +6121,7 @@ const BEATS2=[
 {a:2,s:'back',t:'…via role ADMIN, sem endpoint novo. ⚖️ Poll: contrato único ou 1 YAML por contexto?',fx:{op:'poll',id:'yaml',q:'⚖️ Decisão: formato do contrato? (ADR-009)',opts:[{v:'single',l:'1 YAML único c/ tags por contexto'},{v:'multi',l:'1 YAML por contexto + N Prisms'}]}},
 {a:3,s:'qa',t:'Pedidos: user cria/lista/cancela os próprios; 409 quando estoque insuficiente.',fx:{op:'eps',v:[['POST','/api/pedidos','PEDIDOS_USER'],['GET','/api/pedidos','PEDIDOS_USER'],['POST','/api/pedidos/{id}/cancelar','PEDIDOS_USER']]}},
 {a:3,s:'front',t:'O card do pedido mostra status e total com snapshot de preço por item.',fx:{op:'req',v:'ItemPedido guarda precoUnitario (snapshot)'}},
-{a:4,s:'back',t:'Clientes: CRUD CLIENTES_ADMIN; endereços expostos p/ PEDIDOS_SERVICE validar o checkout.',fx:{op:'eps',v:[['POST','/api/clientes','CLIENTES_ADMIN'],['GET','/api/clientes/{id}/enderecos','PEDIDOS_SERVICE']]}},
+{a:4,s:'back',t:'Clientes: CRUD CLIENTES_ADMIN; endereços expostos p/ PEDIDOS_SERVICE validar o checkout.',fx:{op:'eps',v:[['POST','/api/clientes','CLIENTES_ADMIN'],['GET','/api/clientes/{id}','CLIENTES_ADMIN'],['PUT','/api/clientes/{id}','CLIENTES_ADMIN'],['POST','/api/clientes/{id}/desativar','CLIENTES_ADMIN'],['GET','/api/clientes/{id}/enderecos','PEDIDOS_SERVICE']]}},
 {a:4,s:'qa',t:'⚖️ Poll: JWT com roles por contexto ou scopes finos por operação?',fx:{op:'poll',id:'roles',q:'⚖️ Decisão: autorização por contexto? (ADR-010)',opts:[{v:'roles',l:'roles por contexto (+ token de serviço)'},{v:'scopes',l:'scopes finos por operação'}]}},
 {a:5,s:'back',t:'Checkout: Pedidos chama Catálogo (reservar) e Clientes (endereços). ⚖️ Poll: HTTP síncrono ou eventos?',fx:{op:'poll',id:'sync',q:'⚖️ Decisão: integração entre contextos? (ADR-012)',opts:[{v:'sync',l:'HTTP síncrono + compensação (saga-lite)'},{v:'events',l:'Eventos assíncronos (eventual consistency)'}]}},
 {a:5,s:'qa',t:'Se síncrono: timeout 2s, retry só em GET idempotente e 409/503 tipificados em RFC 7807.',fx:{op:'req',v:'Timeout 2s + erros 409/503 tipificados'}},
@@ -5898,8 +6159,11 @@ function renderPoll2(f){const room=document.getElementById('meet-room2');const d
 function buildYaml2(s){const d=s.dec;const pre=(d.ver==='now'?'/v1':'');const sec=r=>(d.roles==='scopes'?"bearerAuth: ['"+r.toLowerCase()+":write']":'bearerAuth: ['+r+', ADMIN]');
 let paths='';
 paths+='  '+pre+'/api/catalogo/produtos:\n    get:\n      summary: Lista produtos (público)\n      tags: [Catalogo]\n      security: []\n    post:\n      summary: Cria produto\n      tags: [Catalogo]\n      security:\n        - '+sec('CATALOGO_ADMIN')+'\n';
+paths+='  '+pre+'/api/catalogo/produtos/{id}:\n    get:\n      summary: Busca por id (público)\n      tags: [Catalogo]\n      security: []\n    put:\n      summary: Atualiza produto\n      tags: [Catalogo]\n      security:\n        - '+sec('CATALOGO_ADMIN')+'\n    delete:\n      summary: Descontinua produto\n      tags: [Catalogo]\n      security:\n        - '+sec('CATALOGO_ADMIN')+'\n';
 paths+='  '+pre+'/api/catalogo/produtos/{id}/reservar:\n    post:\n      summary: Reserva estoque (interno)\n      tags: [Interno]\n      security:\n        - bearerAuth: [PEDIDOS_SERVICE]\n';
 paths+='  '+pre+'/api/pedidos:\n    post:\n      summary: Cria pedido (orquestra reserva+endereço)\n      tags: [Pedidos]\n      security:\n        - '+sec('PEDIDOS_USER')+'\n';
+paths+='  '+pre+'/api/clientes/{id}:\n    get:\n      summary: Busca cliente\n      tags: [Clientes]\n      security:\n        - '+sec('CLIENTES_ADMIN')+'\n    put:\n      summary: Atualiza cliente\n      tags: [Clientes]\n      security:\n        - '+sec('CLIENTES_ADMIN')+'\n';
+paths+='  '+pre+'/api/clientes/{id}/desativar:\n    post:\n      summary: Desativa cliente (LGPD)\n      tags: [Clientes]\n      security:\n        - '+sec('CLIENTES_ADMIN')+'\n';
 paths+='  '+pre+'/api/clientes/{id}/enderecos:\n    get:\n      summary: Endereços (interno)\n      tags: [Interno]\n      security:\n        - bearerAuth: [PEDIDOS_SERVICE, CLIENTES_ADMIN, ADMIN]\n';
 return 'openapi: 3.1.0\ninfo:\n  title: Loja REST API — Multi-Contextos\n  version: 2.0.0-draft\ntags:\n  - { name: Catalogo }\n  - { name: Pedidos }\n  - { name: Clientes }\n  - { name: Interno }\n# decisões: contrato='+(d.yaml||'single')+' · auth='+(d.roles||'roles')+' · integração='+(d.sync||'sync')+' · versão='+(d.ver||'additive')+'\npaths:\n'+paths;}
 function renderCanvas2(){const s=M2.st;document.getElementById('cv2-ctx').innerHTML=s.ctx.length?s.ctx.map(c=>'<div>• <strong>'+c+'</strong></div>').join(''):'—';document.getElementById('cv2-eps').innerHTML=s.eps.length?'<table><tr><th>Método</th><th>Rota</th><th>Auth</th></tr>'+s.eps.map(e=>'<tr><td>'+e.m+'</td><td>'+e.p+'</td><td>'+e.a+'</td></tr>').join('')+'</table>':'—';const decs=Object.entries(s.dec);document.getElementById('cv2-dec').innerHTML=decs.length?decs.map(([k,v])=>{const m=DEC_META2[k][v];return '<div>⚖️ '+LBL2[k]+' = '+v+' · defendeu: '+m.adv+(m.con!=='—'?' · cedeu: '+m.con:'')+' · → ADR-'+({yaml:'009',roles:'010',sync:'012',ver:'011'})[k]+'</div>';}).join(''):'—';document.getElementById('cv2-yaml').textContent=buildYaml2(s);}
