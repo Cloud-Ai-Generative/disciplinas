@@ -259,7 +259,9 @@ body{background:#fff;color:#000}
 <button class="tab-btn" data-tab="tab5" onclick="switchTab('tab5')"><span class="tab-num">5</span>🐬 Docker + Playground SQL</button>
 <button class="tab-btn" data-tab="tab6" onclick="switchTab('tab6')"><span class="tab-num">6</span>☕ API Java (IntelliJ)</button>
 <button class="tab-btn" data-tab="tab7" onclick="switchTab('tab7')"><span class="tab-num">7</span>🔷 API C# (VS Code)</button>
-<button class="tab-btn" data-tab="tab8" onclick="switchTab('tab8')"><span class="tab-num">8</span>🗺️ Diagnóstico & Glossário</button>
+<button class="tab-btn" data-tab="tab8" onclick="switchTab('tab8')"><span class="tab-num">8</span>📜 Contrato Multi-Contextos</button>
+<button class="tab-btn" data-tab="tab9" onclick="switchTab('tab9')"><span class="tab-num">9</span>🔷 C# Multi-Contextos</button>
+<button class="tab-btn" data-tab="tab10" onclick="switchTab('tab10')"><span class="tab-num">10</span>🗺️ Diagnóstico & Glossário</button>
 </nav>
 
 <!-- ============ TAB 1 ============ -->
@@ -4090,8 +4092,1273 @@ test:dotnet:                            # job "test:dotnet"
 </div>
 </section>
 <!-- ===== FIM DA PARTE 4/5 — cole a Parte 5 (Tab 8 Diagnóstico + modais + JS) logo após este comentário ===== -->
-<!-- ============ TAB 8 ============ -->
+<!-- ============ TAB 8 (NOVA): CONTRATO MULTI-CONTEXTOS ============ -->
 <section class="tab-panel" id="tab8">
+<div class="card">
+<h2 class="card-title">📜 Engenharia de Contratos API-First — Multi-Contextos: OpenAPI + Prism + JWT + Bounded Contexts</h2>
+<p class="section-intro">Evolui o contrato da Tab 4 (um só contexto: Produtos) para <strong>3 bounded contexts</strong> — Catálogo, Pedidos e Clientes — num <strong>único openapi.yaml</strong> com tags e prefixos por contexto, <strong>roles JWT por contexto</strong> e integração <strong>HTTP síncrona</strong> entre contextos. <span class="ide-tag java">Contrato</span> <span class="ide-tag cs">Implementação: Tab 9</span></p>
+<div class="doc-banner"><strong>🧔 Rafael Souza · 📜 Backend (Contratos):</strong> esta aba é a <strong>evolução multi-contextos do contrato</strong> negociado na Sala (Tab 4). Mini-fluxo: <em>Sala v2 (por contexto) → <code>openapi-multicontexto.yaml</code> → Prism :4011 → implementação (Tab 9) → validação</em>. <a href="javascript:switchTab('tab4')" style="color:var(--primary);text-decoration:underline">Contrato original (Tab 4) →</a> · <a href="javascript:switchTab('tab9')" style="color:var(--primary);text-decoration:underline">Implementação C# (Tab 9) →</a></div>
+
+<div class="deep-concept-box">
+<h3>🗺️ Bounded Contexts aplicados ao contrato</h3>
+<p><strong>Bounded Context (DDD):</strong> fronteira onde um modelo de domínio vale. Fora dela, o mesmo nome pode significar outra coisa. No contrato, cada contexto vira um <strong>grupo de tags + prefixo de path</strong>, com schemas próprios — nada de "Produto" do Catálogo vazando como "Item" do Pedido sem conversão.</p>
+<div class="table-wrap" style="margin:12px 0">
+<table>
+<thead><tr><th>Contexto</th><th>Responsabilidade</th><th>Prefixo</th><th>Tags</th><th>Roles principais</th></tr></thead>
+<tbody>
+<tr><td><strong>📦 Catálogo</strong></td><td>Produtos, categorias, preço vigente, reserva de estoque</td><td><code>/api/catalogo/…</code></td><td>Catalogo</td><td><code>CATALOGO_ADMIN</code> (escrita) · leitura pública</td></tr>
+<tr><td><strong>🛒 Pedidos</strong></td><td>Carrinho→checkout, status do pedido, orquestra reservas</td><td><code>/api/pedidos/…</code></td><td>Pedidos</td><td><code>PEDIDOS_USER</code> (criar/cancelar o próprio pedido)</td></tr>
+<tr><td><strong>🧾 Clientes</strong></td><td>Cadastro, endereços de entrega</td><td><code>/api/clientes/…</code></td><td>Clientes</td><td><code>CLIENTES_ADMIN</code> (escrita/leitura)</td></tr>
+<tr><td><strong>🔌 Interno (service-to-service)</strong></td><td>Reserva de estoque · validação de endereço</td><td>dentro dos prefixos acima</td><td>Interno</td><td><code>PEDIDOS_SERVICE</code> (token de serviço)</td></tr>
+</tbody>
+</table>
+</div>
+<div class="analogy-highlight"><span class="icon">🏬</span><div><strong>Analogia do shopping:</strong> cada loja (contexto) tem seu balcão, seu catálogo e suas regras. O Pedido é o "cliente que circula": consulta o Catálogo, confirma o Endereço com Clientes — mas <strong>não mexe no caixa das lojas</strong>: chama os balcões certos, na ordem certa.</div></div>
+</div>
+
+<div class="deep-concept-box">
+<h3>📜 Um YAML ou vários? (decisão de contrato)</h3>
+<ul>
+<li><strong>Adotado: um único <code>openapi-multicontexto.yaml</code></strong> com <code>tags</code> por contexto e prefixos de path. Vantagens: 1 fonte única, 1 Prism, 1 Swagger UI organizado por tags, refs compartilhadas (<code>ProblemDetails</code>, <code>Endereco</code>).</li>
+<li><strong>Alternativa rejeitada:</strong> 1 YAML por contexto + N Prisms. Mais isolamento, mas duplica infra e dificulta refs cruzadas (ver ADR-009).</li>
+<li><strong>Regra de ouro:</strong> schema de um contexto <strong>não referencia entidade interna</strong> de outro — só DTOs de fronteira (ex.: <code>ItemPedido</code> guarda <code>produtoId</code> + snapshot de <code>precoUnitario</code>, não o Produto inteiro).</li>
+</ul>
+</div>
+
+<div class="deep-concept-box">
+<h3>🔑 JWT com roles por contexto</h3>
+<p>O claim <code>role</code> vira <code>roles</code> (lista). Cada operação declara no contrato qual role exige (<code>security</code> por operação). Tokens de <strong>serviço</strong> (<code>PEDIDOS_SERVICE</code>) são emitidos por login machine-to-machine (didático: mesmo endpoint, credencial de serviço).</p>
+<div class="table-wrap" style="margin:12px 0">
+<table>
+<thead><tr><th>Role</th><th>Quem recebe</th><th>Libera</th></tr></thead>
+<tbody>
+<tr><td><code>ADMIN</code></td><td>dev/admin global</td><td>tudo (fallback de gestão)</td></tr>
+<tr><td><code>CATALOGO_ADMIN</code></td><td>time de catálogo</td><td>POST/PUT/DELETE em <code>/api/catalogo/**</code></td></tr>
+<tr><td><code>PEDIDOS_USER</code></td><td>cliente logado</td><td>criar/listar/cancelar <strong>os próprios</strong> pedidos</td></tr>
+<tr><td><code>CLIENTES_ADMIN</code></td><td>time de cadastro</td><td>CRUD em <code>/api/clientes/**</code></td></tr>
+<tr><td><code>PEDIDOS_SERVICE</code></td><td>API de Pedidos (token de serviço)</td><td>endpoints internos: reservar estoque, ler endereços</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Exemplo de payload:</strong> <code>{ "sub": "api-pedidos", "roles": ["PEDIDOS_SERVICE"], "exp": … }</code>. No Swagger UI, cada operação mostra o cadeado com a role exigida.</p>
+</div>
+
+<div class="deep-concept-box">
+<h3>🔌 Integração entre contextos: HTTP síncrono (e seus riscos)</h3>
+<ul>
+<li><strong>Como:</strong> Pedidos chama Catálogo (<code>POST …/reservar</code>) e Clientes (<code>GET …/enderecos</code>) via HTTP com token <code>PEDIDOS_SERVICE</code>, <strong>dentro da mesma transação de negócio</strong> (saga-lite: se a reserva falhar, o pedido nem é criado).</li>
+<li><strong>Por que síncrono aqui:</strong> didático e simples de testar (curl/Prism); consistência imediata na criação do pedido.</li>
+<li><strong>Riscos:</strong> acoplamento temporal (Catálogo fora → Pedido falha), latência somada, falha em cascata.</li>
+<li><strong>Mitigações mínimas:</strong> timeout curto (2s), retry só p/ GET idempotente, e mensagem de erro RFC 7807 com <code>type</code> específico (<code>…/erros/dependencia-indisponivel</code>). Evolução futura: eventos assíncronos (fora de escopo agora).</li>
+</ul>
+</div>
+
+<div class="deep-concept-box">
+<h3>🔢 Versionamento aditivo vs breaking (ADR-011)</h3>
+<ul>
+<li><strong>Aditivo (não quebra):</strong> novo path, novo campo opcional, nova tag → publica sem mudar versão.</li>
+<li><strong>Breaking (quebra):</strong> remover campo, mudar tipo, endurecer validação → sobe prefixo <code>/v2/…</code> e mantém <code>/v1/…</code> vivo até o fim do sunset.</li>
+<li><strong>No contrato:</strong> hoje sem prefixo (v1 implícito); o ADR registra gatilhos e procedimento.</li>
+</ul>
+</div>
+
+<h4 class="diag-title">📐 D-23 <span class="dt-type">C4 · Nível 1 (Contexto)</span> — Mapa de contextos da Loja</h4>
+<div class="mermaid-box" data-code='flowchart LR
+U["👤 Cliente"] --> PED
+ADM["👩💼 Admin"] --> CAT
+subgraph PED["🛒 Contexto Pedidos"]
+PS["API Pedidos"]
+end
+subgraph CAT["📦 Contexto Catálogo"]
+CS["API Catálogo"]
+end
+subgraph CLI["🧾 Contexto Clientes"]
+CLS["API Clientes"]
+end
+PS -->|"HTTP sínc: reservar estoque (PEDIDOS_SERVICE)"| CS
+PS -->|"HTTP sínc: validar endereço (PEDIDOS_SERVICE)"| CLS
+CS --> MY1["🐬 MySQL catalogo_db"]
+CLS --> MY2["🐬 MySQL clientes_db"]
+PS --> MO["🍃 Mongo pedidos_read"]'>
+<div class="mermaid"></div>
+</div>
+<h4 class="diag-title">📐 D-24 <span class="dt-type">UML · Sequência</span> — Checkout com reserva síncrona</h4>
+<div class="mermaid-box" data-code='sequenceDiagram
+participant C as Cliente
+participant P as API Pedidos
+participant K as API Catálogo
+participant L as API Clientes
+C->>P: POST /api/pedidos (Bearer PEDIDOS_USER)
+P->>P: valida itens (quantidade > 0)
+P->>K: POST /api/catalogo/produtos/{id}/reservar (PEDIDOS_SERVICE)
+alt estoque suficiente
+K-->>P: 200 { reservaId, status: RESERVADO }
+else estoque insuficiente
+K-->>P: 409 ProblemDetails (type …/erros/estoque-insuficiente)
+P-->>C: 409 ProblemDetails
+end
+P->>L: GET /api/clientes/{id}/enderecos (PEDIDOS_SERVICE)
+L-->>P: 200 [ enderecos ]
+P->>P: cria pedido (status RESERVADO, total c/ snapshot de preço)
+P-->>C: 201 { pedido }'>
+<div class="mermaid"></div>
+</div>
+<h4 class="diag-title">📐 D-25 <span class="dt-type">Fluxo (state)</span> — Ciclo de vida do Pedido</h4>
+<div class="mermaid-box er-small" data-code='stateDiagram-v2
+[*] --> Criado
+Criado --> Reservado: reserva de estoque ok
+Criado --> Cancelado: reserva falhou (409)
+Reservado --> Confirmado: pagamento aprovado
+Reservado --> Cancelado: timeout da reserva
+Confirmado --> Enviado: expedição
+Enviado --> [*]
+Cancelado --> [*]'>
+<div class="mermaid"></div>
+</div>
+
+<div class="lab-container">
+<div class="lab-header">
+<h3>📜 Contrato multi-contextos: <code>contracts/openapi-multicontexto.yaml</code></h3>
+<div class="lab-actions">
+<button class="btn btn-zip" onclick="openDlModal('tab8')">📦 Baixar ZIP desta aba</button>
+<a href="https://editor.swagger.io/" target="_blank" class="btn" style="border-color:#10a37f;color:#10a37f">🛠️ Validar no Swagger Editor ↗</a>
+</div>
+</div>
+<p class="text-sm text-muted mb-2">Um YAML, três contextos: <code>tags</code> agrupam no Swagger UI; <code>security</code> por operação declara a role; endpoints internos usam <code>PEDIDOS_SERVICE</code>.</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">contracts/openapi-multicontexto.yaml</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="contracts/openapi-multicontexto.yaml">openapi: 3.1.0
+info:
+  title: Loja REST API — Multi-Contextos (Catálogo · Pedidos · Clientes)
+  version: 1.0.0
+  description: >
+    Contrato único com bounded contexts separados por tags e prefixos.
+    Roles JWT por contexto; endpoints internos exigem PEDIDOS_SERVICE.
+servers:
+  - { url: http://localhost:4011, description: Prism (mock multi-contexto) }
+  - { url: http://localhost:8081, description: API real (.NET, Tab 9) }
+security:
+  - bearerAuth: []
+tags:
+  - { name: Auth, description: Login e emissão de tokens }
+  - { name: Catalogo, description: Produtos, categorias e reserva de estoque }
+  - { name: Pedidos, description: Checkout e ciclo de vida do pedido }
+  - { name: Clientes, description: Cadastro e endereços }
+  - { name: Interno, description: Service-to-service (token PEDIDOS_SERVICE) }
+paths:
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login (emite JWT com roles)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: Token emitido
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LoginResponse' }
+        '401':
+          description: Credenciais inválidas
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+  /api/catalogo/produtos:
+    get:
+      tags: [Catalogo]
+      summary: Lista produtos (leitura pública, paginada)
+      security: []
+      parameters:
+        - { name: page, in: query, schema: { type: integer, default: 0 } }
+        - { name: size, in: query, schema: { type: integer, default: 20 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ProdutoResponse' }
+    post:
+      tags: [Catalogo]
+      summary: Cria produto
+      security:
+        - bearerAuth: [CATALOGO_ADMIN, ADMIN]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProdutoRequest' }
+      responses:
+        '201':
+          description: Criado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProdutoResponse' }
+        '400':
+          description: Validação
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+  /api/catalogo/produtos/{id}/reservar:
+    post:
+      tags: [Interno]
+      summary: Reserva estoque (chamado pela API de Pedidos)
+      security:
+        - bearerAuth: [PEDIDOS_SERVICE]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReservaRequest' }
+      responses:
+        '200':
+          description: Estoque reservado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReservaResponse' }
+        '404':
+          description: Produto inexistente
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+        '409':
+          description: Estoque insuficiente
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+  /api/pedidos:
+    post:
+      tags: [Pedidos]
+      summary: Cria pedido (orquestra reserva + endereço)
+      security:
+        - bearerAuth: [PEDIDOS_USER, ADMIN]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PedidoRequest' }
+      responses:
+        '201':
+          description: Pedido criado (status RESERVADO)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PedidoResponse' }
+        '400':
+          description: Itens inválidos
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+        '409':
+          description: Estoque insuficiente em algum item
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+    get:
+      tags: [Pedidos]
+      summary: Lista os pedidos do próprio usuário
+      security:
+        - bearerAuth: [PEDIDOS_USER, ADMIN]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/PedidoResponse' }
+  /api/pedidos/{id}/cancelar:
+    post:
+      tags: [Pedidos]
+      summary: Cancela pedido (libera reservas)
+      security:
+        - bearerAuth: [PEDIDOS_USER, ADMIN]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: Cancelado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PedidoResponse' }
+        '404':
+          description: Pedido inexistente
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+        '409':
+          description: Status não permite cancelamento
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+  /api/clientes:
+    post:
+      tags: [Clientes]
+      summary: Cria cliente com endereços
+      security:
+        - bearerAuth: [CLIENTES_ADMIN, ADMIN]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ClienteRequest' }
+      responses:
+        '201':
+          description: Criado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ClienteResponse' }
+        '400':
+          description: Validação (email/CEP)
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+  /api/clientes/{id}/enderecos:
+    get:
+      tags: [Interno]
+      summary: Endereços do cliente (chamado pela API de Pedidos)
+      security:
+        - bearerAuth: [PEDIDOS_SERVICE, CLIENTES_ADMIN, ADMIN]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Endereco' }
+        '404':
+          description: Cliente inexistente
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    LoginRequest:
+      type: object
+      required: [email, senha]
+      properties:
+        email: { type: string, format: email, example: dev@loja.com.br }
+        senha: { type: string, format: password, example: "SenhaForte#2026" }
+    LoginResponse:
+      type: object
+      required: [tokenAcesso, roles]
+      properties:
+        tokenAcesso: { type: string, example: "eyJhbGciOi…" }
+        tipo: { type: string, example: Bearer }
+        expiraEm: { type: integer, example: 3600 }
+        roles:
+          type: array
+          items: { type: string }
+          example: [PEDIDOS_USER]
+    ProdutoRequest:
+      type: object
+      required: [nome, preco, estoque]
+      properties:
+        nome: { type: string, minLength: 2, example: "Teclado Mecânico RGB" }
+        preco: { type: number, format: double, minimum: 0.01, example: 349.9 }
+        estoque: { type: integer, minimum: 0, example: 15 }
+        categoriaId: { type: integer, example: 1 }
+    ProdutoResponse:
+      type: object
+      required: [id, nome, preco, estoque]
+      properties:
+        id: { type: integer, format: int64, example: 101 }
+        nome: { type: string, example: "Teclado Mecânico RGB" }
+        preco: { type: number, format: double, example: 349.9 }
+        estoque: { type: integer, example: 15 }
+    ReservaRequest:
+      type: object
+      required: [quantidade, pedidoOrigem]
+      properties:
+        quantidade: { type: integer, minimum: 1, example: 2 }
+        pedidoOrigem: { type: string, example: "PED-2026-0001" }
+    ReservaResponse:
+      type: object
+      required: [reservaId, status]
+      properties:
+        reservaId: { type: string, example: "RES-8f3a" }
+        status: { type: string, enum: [RESERVADO, LIBERADO], example: RESERVADO }
+        expiraEm: { type: string, format: date-time, example: "2026-09-12T12:00:00Z" }
+    PedidoRequest:
+      type: object
+      required: [clienteId, enderecoId, itens]
+      properties:
+        clienteId: { type: integer, example: 7 }
+        enderecoId: { type: integer, example: 3 }
+        itens:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [produtoId, quantidade]
+            properties:
+              produtoId: { type: integer, example: 101 }
+              quantidade: { type: integer, minimum: 1, example: 2 }
+    PedidoResponse:
+      type: object
+      required: [id, status, total, itens]
+      properties:
+        id: { type: integer, format: int64, example: 1 }
+        status: { type: string, enum: [CRIADO, RESERVADO, CONFIRMADO, ENVIADO, CANCELADO], example: RESERVADO }
+        total: { type: number, format: double, example: 699.8 }
+        clienteId: { type: integer, example: 7 }
+        itens:
+          type: array
+          items:
+            type: object
+            properties:
+              produtoId: { type: integer, example: 101 }
+              quantidade: { type: integer, example: 2 }
+              precoUnitario: { type: number, format: double, example: 349.9 }
+        criadoEm: { type: string, format: date-time, example: "2026-09-12T10:00:00Z" }
+    ClienteRequest:
+      type: object
+      required: [nome, email]
+      properties:
+        nome: { type: string, example: "Ana Souza" }
+        email: { type: string, format: email, example: ana@example.com }
+        enderecos:
+          type: array
+          items: { $ref: '#/components/schemas/Endereco' }
+    ClienteResponse:
+      type: object
+      required: [id, nome, email]
+      properties:
+        id: { type: integer, format: int64, example: 7 }
+        nome: { type: string, example: "Ana Souza" }
+        email: { type: string, example: ana@example.com }
+    Endereco:
+      type: object
+      required: [logradouro, cidade, uf, cep]
+      properties:
+        id: { type: integer, example: 3 }
+        logradouro: { type: string, example: "Rua A, 123" }
+        cidade: { type: string, example: "São Paulo" }
+        uf: { type: string, minLength: 2, maxLength: 2, example: SP }
+        cep: { type: string, pattern: '^[0-9]{5}-?[0-9]{3}$', example: "01001-000" }
+    ProblemDetails:
+      type: object
+      properties:
+        type: { type: string, example: "https://example.com/erros/estoque-insuficiente" }
+        title: { type: string, example: "Conflito" }
+        status: { type: integer, example: 409 }
+        detail: { type: string, example: "Estoque insuficiente p/ produto 101 (disp: 1, ped: 2)." }</pre>
+</div>
+<h4 style="color:var(--accent);margin-top:14px">🔎 O que muda em relação ao contrato da Tab 4</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Aspecto</th><th>Tab 4 (1 contexto)</th><th>Tab 8 (multi-contexto)</th></tr></thead>
+<tbody>
+<tr><td>Organização</td><td>tags Auth/Produtos</td><td>tags por contexto + <code>Interno</code></td></tr>
+<tr><td>Paths</td><td><code>/api/produtos</code></td><td>prefixos <code>/api/catalogo|pedidos|clientes</code></td></tr>
+<tr><td>Security</td><td>global + <code>security: []</code> no login/GETs</td><td><strong>por operação com roles</strong> (<code>bearerAuth: [ROLE]</code>)</td></tr>
+<tr><td>Endpoints internos</td><td>—</td><td><code>…/reservar</code>, <code>…/enderecos</code> (PEDIDOS_SERVICE)</td></tr>
+<tr><td>Erros</td><td>400/401/404</td><td>+ <strong>409</strong> (estoque/status) com <code>type</code> específico</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div class="lab-container">
+<div class="lab-header"><h3>🐳 Prism do contrato multi-contexto (:4011)</h3></div>
+<div class="info-banner"><strong>✅ Mesmo motor, porta nova:</strong> como é <strong>um YAML só</strong>, basta um compose extra montando o arquivo novo. O Prism valida roles? <strong>Não</strong> — Prism valida schema/status; a checagem de role é da implementação (Tab 9). Prism responde os <code>example</code> de cada schema.</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">docker-compose.prism-contextos.yml</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="docker-compose.prism-contextos.yml"># Compose dedicado ao mock do contrato MULTI-CONTEXTOS
+services:
+  prism-contextos:
+    image: stoplight/prism:5
+    container_name: dev_prism_contextos
+    restart: unless-stopped
+    command: mock -h 0.0.0.0 -m false -d /tmp/openapi-multicontexto.yaml
+    volumes:
+      - ./contracts/openapi-multicontexto.yaml:/tmp/openapi-multicontexto.yaml:ro
+    ports:
+      - "4011:4011"   # porta distinta do Prism da Tab 4 (4010)</pre>
+</div>
+<div class="term-help"><strong>🖥️ Terminal:</strong> <span class="ide-tag java">IntelliJ</span> <kbd>Alt+F12</kbd> · <span class="ide-tag cs">VS Code</span> <kbd>Ctrl+`</kbd> → <code>docker compose -f docker-compose.prism-contextos.yml up -d</code> · logs: <code>… logs -f prism-contextos</code>.</div>
+</div>
+
+<div class="lab-container">
+<div class="lab-header"><h3>🧪 Testes por contexto e por role (curl)</h3></div>
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal da IDE - roteiro multi-contexto</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor"># ── 1) Tokens com roles diferentes (mesmo login, credenciais distintas p/ role) ──
+TOKEN_USER=$(curl -s -X POST http://localhost:4011/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"ana@example.com","senha":"SenhaForte#2026"}' | jq -r '.tokenAcesso')
+TOKEN_SVC=$(curl -s -X POST http://localhost:4011/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"svc-pedidos@loja.internal","senha":"SenhaForte#2026"}' | jq -r '.tokenAcesso')
+# ── 2) Catálogo: leitura pública (200 sem token) ──
+curl -i http://localhost:4011/api/catalogo/produtos?page=0&size=10
+# ── 3) Interno: reservar estoque COM token de serviço (200) ──
+curl -i -X POST http://localhost:4011/api/catalogo/produtos/101/reservar \
+  -H "Authorization: Bearer $TOKEN_SVC" -H "Content-Type: application/json" \
+  -d '{"quantidade":2,"pedidoOrigem":"PED-2026-0001"}'
+# ── 4) Interno: reservar SEM token de serviço (401) e com token de user (403) ──
+curl -i -X POST http://localhost:4011/api/catalogo/produtos/101/reservar \
+  -H "Authorization: Bearer $TOKEN_USER" -H "Content-Type: application/json" \
+  -d '{"quantidade":2,"pedidoOrigem":"PED-2026-0001"}'
+# ── 5) Pedidos: criar pedido com token de user (201 no mock; na API real orquestra) ──
+curl -i -X POST http://localhost:4011/api/pedidos \
+  -H "Authorization: Bearer $TOKEN_USER" -H "Content-Type: application/json" \
+  -d '{"clienteId":7,"enderecoId":3,"itens":[{"produtoId":101,"quantidade":2}]}'
+# ── 6) Estoque insuficiente → 409 ProblemDetails (type …/erros/estoque-insuficiente) ──
+curl -i -X POST http://localhost:4011/api/catalogo/produtos/101/reservar \
+  -H "Authorization: Bearer $TOKEN_SVC" -H "Content-Type: application/json" \
+  -d '{"quantidade":999,"pedidoOrigem":"PED-2026-0002"}'</pre>
+</div>
+<div class="table-wrap" style="margin-top:12px">
+<table>
+<thead><tr><th>#</th><th>Chamada</th><th>Esperado</th><th>Prova que…</th></tr></thead>
+<tbody>
+<tr><td>2</td><td>GET catálogo sem token</td><td>200</td><td>leitura pública mantida</td></tr>
+<tr><td>3</td><td>POST reservar c/ PEDIDOS_SERVICE</td><td>200</td><td>endpoint interno aceita só token de serviço</td></tr>
+<tr><td>4</td><td>POST reservar c/ PEDIDOS_USER</td><td>401/403</td><td>role errada é barrada</td></tr>
+<tr><td>5</td><td>POST pedidos c/ PEDIDOS_USER</td><td>201</td><td>checkout funciona p/ o dono do carrinho</td></tr>
+<tr><td>6</td><td>reservar 999 un.</td><td>409</td><td>conflito de estoque vira ProblemDetails</td></tr>
+</tbody>
+</table>
+</div>
+<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> esquecer <code>-m false</code> e achar que o Prism valida role (não valida); usar a porta 4010 (é o Prism da Tab 4); token de user em endpoint interno (deve ser 401/403); enviar <code>quantidade: 0</code> (400 de schema).</div>
+</div>
+
+<div class="lab-container">
+<div class="lab-header"><h3>🎭 Sala de Contrato v2 — ata por contexto (resumo negociado)</h3></div>
+<div class="info-banner"><strong>💡 Formato:</strong> mesma dinâmica da Sala (Tab 4), agora com um "ato" por contexto. Abaixo, a <strong>ata consolidada</strong> (decisões que viraram contrato).</div>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Contexto</th><th>Decisão</th><th>Defendeu</th><th>Cedeu/ressalva</th></tr></thead>
+<tbody>
+<tr><td>Catálogo</td><td>Leitura pública; escrita só CATALOGO_ADMIN; reserva é endpoint interno</td><td>🧔 Rafael</td><td>👩🏻 Mariana queria escrita "do marketing" → ficou via role ADMIN</td></tr>
+<tr><td>Pedidos</td><td>User só vê os próprios pedidos; cancelamento libera reservas; 409 em estoque</td><td>👨🏿 Diego</td><td>🧕🏾 Juliana queria ver "todos" → negado por privacidade</td></tr>
+<tr><td>Clientes</td><td>CRUD restrito a CLIENTES_ADMIN; endereços expostos p/ PEDIDOS_SERVICE</td><td>👩🏻 Mariana</td><td>🧔 Rafael queria cache de endereço no pedido → ficou snapshot só do preço</td></tr>
+<tr><td>JWT</td><td>Claim <code>roles</code> (lista); token de serviço p/ machine-to-machine</td><td>🧔 Rafael</td><td>👨🏿 Diego pediu scopes finos → adiado (roles bastam agora)</td></tr>
+<tr><td>Integração</td><td>HTTP síncrono c/ timeout 2s; eventos assíncronos adiados</td><td>🧔 Rafael</td><td>👨🏿 Diego alertou p/ cascata de falha → mitigado c/ 409/503 tipificados</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<h4 style="color:var(--accent);margin-top:18px">📑 ADRs desta aba (padrão AWS)</h4>
+<div class="adr"><h5>ADR-009 · Contrato único com tags por contexto<span class="status">Aceita</span></h5>
+<p><b>Contexto:</b> 3 bounded contexts precisam de contrato claro sem duplicar infra de mock/docs.</p>
+<p><b>Decisão:</b> um <code>openapi-multicontexto.yaml</code> com tags por contexto e prefixos de path; schemas de fronteira sem vazamento de entidades internas.</p>
+<p><b>Alternativas consideradas:</b> 1 YAML por contexto + N Prisms (rejeitada: duplicação e refs cruzadas difíceis); monolito de schemas sem tags (rejeitada: ilegível).</p>
+<p><b>Consequências:</b> (+) 1 fonte única, Swagger UI organizado; (−) exige disciplina de prefixos/tags.</p>
+<p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend, Frontend, QA.</p></div>
+<div class="adr"><h5>ADR-010 · Roles JWT por contexto (+ token de serviço)<span class="status">Aceita</span></h5>
+<p><b>Contexto:</b> autorização precisa refletir fronteiras de contexto e chamadas machine-to-machine.</p>
+<p><b>Decisão:</b> claim <code>roles</code> (lista); roles CATALOGO_ADMIN, PEDIDOS_USER, CLIENTES_ADMIN, PEDIDOS_SERVICE, ADMIN; <code>security</code> por operação no contrato.</p>
+<p><b>Alternativas consideradas:</b> scopes finos por operação (adiada: complexidade); role única ADMIN (rejeitada: tudo-ou-nada).</p>
+<p><b>Consequências:</b> (+) autorização declarativa e testável; (−) gestão de roles exige procedimento de onboarding.</p>
+<p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend, Segurança, SRE.</p></div>
+<div class="adr"><h5>ADR-011 · Versionamento aditivo com gatilhos de breaking change<span class="status">Aceita</span></h5>
+<p><b>Contexto:</b> contrato multi-contexto evolui com vários times consumindo.</p>
+<p><b>Decisão:</b> mudanças aditivas sem versão; breaking changes sobem prefixo <code>/v2</code> com sunset mínimo de 90 dias; matriz de compatibilidade revisada em PR.</p>
+<p><b>Alternativas consideradas:</b> versionar desde já (<code>/v1</code>) (rejeitada: cerimônia sem consumo externo ainda); sem política (rejeitada).</p>
+<p><b>Consequências:</b> (+) evolução sem fricção; (−) exige checagem disciplinada de breaking changes.</p>
+<p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend, Frontend, Arquitetura.</p></div>
+<div class="adr"><h5>ADR-012 · Integração síncrona HTTP entre contextos (saga-lite)<span class="status">Aceita</span></h5>
+<p><b>Contexto:</b> checkout precisa de reserva de estoque e endereço válidos no momento da criação.</p>
+<p><b>Decisão:</b> chamadas HTTP síncronas com token PEDIDOS_SERVICE, timeout 2s, erros 409/503 tipificados em RFC 7807; sem eventos assíncronos nesta fase.</p>
+<p><b>Alternativas consideradas:</b> eventos + eventual consistency (adiada: complexidade de reconciliação); banco compartilhado (rejeitada: quebra fronteiras).</p>
+<p><b>Consequências:</b> (+) consistência imediata e teste simples; (−) acoplamento temporal mitigado por timeout/erros tipizados.</p>
+<p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend, QA, SRE.</p></div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🗺️ Legenda de diagramas desta aba</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>ID</th><th>Tipo</th><th>Quando aplicar</th></tr></thead>
+<tbody>
+<tr><td>D-23</td><td>C4 Nível 1 (Contexto)</td><td>Mostrar fronteiras entre contextos e dependências externas</td></tr>
+<tr><td>D-24</td><td>UML Sequência</td><td>Fluxo request/response entre APIs (checkout c/ reserva)</td></tr>
+<tr><td>D-25</td><td>Fluxo (state diagram)</td><td>Ciclo de vida de entidade com status (Pedido)</td></tr>
+</tbody>
+</table>
+</div>
+<div class="success-banner"><strong>✅ Checklist:</strong> 3 contextos com prefixos/tags ✓ · roles por operação ✓ · endpoints internos PEDIDOS_SERVICE ✓ · 409 tipificado ✓ · Prism :4011 sobe ✓ · roteiro curl 200/401-403/201/409 ✓ · ADRs 009–012 ✓ · D-23…D-25 nomeados ✓.</div>
+</div>
+</section>
+<!-- ===== FIM DA PARTE 2/3 — cole a Parte 3 (Tab 9: C# Multi-Contextos) antes de <section … id="tab10"> ===== -->
+    <!-- ============ TAB 9 (NOVA): C# MULTI-CONTEXTOS ============ -->
+<section class="tab-panel" id="tab9">
+<div class="card">
+<h2 class="card-title">🔷 API C# Completa — Multi-Contextos: Clean Arch + SOLID + DDD + HTTP Síncrono + Roles por Contexto</h2>
+<p class="section-intro">Implementa o <strong>contrato multi-contextos da Tab 8</strong> (Catálogo · Pedidos · Clientes) como um <strong>monolito modular</strong>: um projeto-módulo por contexto + <code>Shared.Kernel</code>, integração <strong>HTTP síncrona</strong> com timeout e compensação, e <strong>roles JWT por contexto</strong>. <span class="ide-tag cs">IDE: VS Code</span></p>
+<div class="doc-banner"><strong>🧔 Rafael Souza · 🔷 Backend (C# Multi-Contextos):</strong> esta solução é a <strong>implementação do contrato multi-contextos</strong> (Tab 8). Mini-fluxo: <em>Sala v2 → <code>openapi-multicontexto.yaml</code> → módulos (esta aba) → validação (testes + Prism :4011)</em>. <a href="javascript:switchTab('tab8')" style="color:var(--primary);text-decoration:underline">Contrato multi-contextos (Tab 8) →</a></div>
+
+<div class="deep-concept-box">
+<h3>🧱 Monolito modular: o que é e por que (antes de microsserviços)</h3>
+<p><strong>Monolito modular</strong> = um único deploy (um host ASP.NET) contendo <strong>módulos com fronteiras explícitas</strong> (projetos .csproj separados). Cada módulo dono do seu modelo e do seu schema; comunicação entre módulos por <strong>contratos públicos</strong> (HTTP interno ou interfaces), nunca por tabela/alheia.</p>
+<div class="table-wrap" style="margin:12px 0">
+<table>
+<thead><tr><th>Aspecto</th><th>Monolito modular (adotado)</th><th>Microsserviços</th></tr></thead>
+<tbody>
+<tr><td>Deploy</td><td>1 artefato (LojaApi.Api)</td><td>N artefatos independentes</td></tr>
+<tr><td>Fronteira</td><td>Projetos/.csproj + regras de referência</td><td>Repos/serviços separados</td></tr>
+<tr><td>Comunicação</td><td>HTTP interno (loopback/rede) tipado</td><td>HTTP/mensageria entre redes</td></tr>
+<tr><td>Banco</td><td>1 servidor, <strong>1 schema por contexto</strong></td><td>1 banco por serviço</td></tr>
+<tr><td>Quando migrar</td><td>Se um contexto exigir escala/deploy independente</td><td>—</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Regra de ouro:</strong> módulo <strong>não referencia</strong> projeto de outro módulo. Pedidos fala com Catálogo <strong>somente</strong> via <code>ICatalogoClient</code> (HTTP) — assim a extração futura p/ microsserviço é cortar e colar.</p>
+<p><strong>Aprofundar:</strong> <a class="ext" href="https://martinfowler.com/bliki/MonolithFirst.html" target="_blank">MonolithFirst (Fowler)</a> · <a class="ext" href="https://learn.microsoft.com/dotnet/architecture/modern-web-apps-azure/" target="_blank">MS: arquitetura modular</a>.</p>
+</div>
+
+<div class="deep-concept-box">
+<h3>🗺️ Mapa de contextos → módulos → bancos → roles</h3>
+<div class="table-wrap" style="margin:12px 0">
+<table>
+<thead><tr><th>Contexto</th><th>Projeto-módulo</th><th>Prefixo / tags</th><th>DbContext (schema)</th><th>Roles de escrita</th></tr></thead>
+<tbody>
+<tr><td>📦 Catálogo</td><td><code>LojaApi.Modules.Catalogo</code></td><td><code>/api/catalogo/**</code> · Catalogo/Interno</td><td><code>CatalogoDbContext</code> (catalogo_db)</td><td><code>CATALOGO_ADMIN</code>; reserva: <code>PEDIDOS_SERVICE</code></td></tr>
+<tr><td>🛒 Pedidos</td><td><code>LojaApi.Modules.Pedidos</code></td><td><code>/api/pedidos/**</code> · Pedidos</td><td><code>PedidosDbContext</code> (pedidos_db)</td><td><code>PEDIDOS_USER</code> (próprio pedido)</td></tr>
+<tr><td>🧾 Clientes</td><td><code>LojaApi.Modules.Clientes</code></td><td><code>/api/clientes/**</code> · Clientes/Interno</td><td><code>ClientesDbContext</code> (clientes_db)</td><td><code>CLIENTES_ADMIN</code>; leitura interna: <code>PEDIDOS_SERVICE</code></td></tr>
+<tr><td>🔑 Shared</td><td><code>LojaApi.Shared.Kernel</code></td><td>—</td><td>—</td><td>—</td></tr>
+</tbody>
+</table>
+</div>
+<h4>🔑 Roles no JWT (claim <code>roles</code> em lista)</h4>
+<ul>
+<li><code>ADMIN</code> — gestão global (fallback).</li>
+<li><code>CATALOGO_ADMIN</code> / <code>CLIENTES_ADMIN</code> — escrita nos seus contextos.</li>
+<li><code>PEDIDOS_USER</code> — cria/lista/cancela <strong>os próprios</strong> pedidos.</li>
+<li><code>PEDIDOS_SERVICE</code> — token machine-to-machine p/ endpoints internos (reservar, endereços).</li>
+</ul>
+<p>No ASP.NET, <code>"roles": ["PEDIDOS_USER"]</code> vira múltiplos claims de role automaticamente; <code>[Authorize(Roles="…")]</code> valida por operação — espelhando o <code>security</code> do YAML da Tab 8.</p>
+</div>
+
+<div class="deep-concept-box">
+<h3>🔌 HTTP síncrono entre contextos (decisão Q5=B) — com disciplina</h3>
+<ol>
+<li><strong>Cliente tipado:</strong> <code>ICatalogoClient</code>/<code>IClientesClient</code> registrados via <code>AddHttpClient</code> com <strong>BaseAddress</strong> config e <strong>timeout 2s</strong>.</li>
+<li><strong>Token de serviço:</strong> chamadas internas usam credencial <code>svc-pedidos@loja.internal</code> (role <code>PEDIDOS_SERVICE</code>) — em dev, o host anexa o header; em prod, client-credentials.</li>
+<li><strong>Erros tipados:</strong> 409 do Catálogo vira <code>DomainException</code> com o mesmo <code>type</code> RFC 7807 (<code>…/erros/estoque-insuficiente</code>); 503/timeout vira <code>…/erros/dependencia-indisponivel</code>.</li>
+<li><strong>Compensação (saga-lite):</strong> se qualquer reserva falhar, o <code>PedidoService</code> <strong>libera</strong> as reservas já feitas antes de propagar o erro.</li>
+</ol>
+<div class="warning-banner"><strong>⚠️ Risco assumido (ADR-C5):</strong> acoplamento temporal — Catálogo fora derruba o checkout. Mitigado por timeout curto, erros tipados e healthcheck; evolução p/ eventos fica registrada como futura.</div>
+</div>
+
+<h4 class="diag-title">📐 D-26 <span class="dt-type">C4 · Nível 2 (Container)</span> — Monolito modular + 3 schemas + HTTP interno</h4>
+<div class="mermaid-box" data-code='flowchart LR
+U["👤 Cliente"] -->|HTTPS+JWT roles| HOST["🖥️ LojaApi.Api (host único)"]
+subgraph HOST
+MC["📦 Módulo Catalogo"]
+MP["🛒 Módulo Pedidos"]
+ML["🧾 Módulo Clientes"]
+end
+MP -->|"HTTP sínc 2s (PEDIDOS_SERVICE)"| MC
+MP -->|"HTTP sínc 2s (PEDIDOS_SERVICE)"| ML
+MC --> DB1["🐬 catalogo_db"]
+MP --> DB2["🐬 pedidos_db"]
+ML --> DB3["🐬 clientes_db"]
+MP --> MO["🍃 pedidos_read (futuro)"]'>
+<div class="mermaid"></div>
+</div>
+<h4 class="diag-title">📐 D-27 <span class="dt-type">UML · Sequência</span> — Checkout com reserva + compensação</h4>
+<div class="mermaid-box" data-code='sequenceDiagram
+participant C as Cliente
+participant P as PedidosService
+participant K as CatalogoClient(HTTP)
+participant L as ClientesClient(HTTP)
+C->>P: POST /api/pedidos (PEDIDOS_USER)
+loop cada item
+P->>K: POST /api/catalogo/produtos/{id}/reservar
+alt ok
+K-->>P: 200 {reservaId, precoUnitario}
+else insuficiente
+K-->>P: 409 ProblemDetails
+P->>K: (compensação) POST .../liberar p/ itens já reservados
+P-->>C: 409 ProblemDetails
+end
+end
+P->>L: GET /api/clientes/{id}/enderecos
+L-->>P: 200 [enderecos]
+P->>P: Pedido.Criar + MarcarReservado
+P-->>C: 201 {pedido RESERVADO}'>
+<div class="mermaid"></div>
+</div>
+<h4 class="diag-title">📐 D-28 <span class="dt-type">UML · Classes</span> — Portas de integração e agregados</h4>
+<div class="mermaid-box er-small" data-code='classDiagram
+class Pedido { +int Id +string Usuario +PedidoStatus Status +decimal Total +MarcarReservado() +Cancelar() }
+class ItemPedido { +int ProdutoId +int Quantidade +decimal PrecoUnitario }
+class Produto { +int Id +int Estoque +int Reservado +int Disponivel +Reservar() +Liberar() +ConfirmarReserva() }
+class Cliente { +int Id +string Email +Endereco[] Enderecos }
+class ICatalogoClient { <<interface>> +ReservarAsync() +LiberarAsync() }
+class IClientesClient { <<interface>> +ObterEnderecosAsync() }
+class CatalogoClient
+class ClientesClient
+class PedidoService
+ICatalogoClient <|.. CatalogoClient
+IClientesClient <|.. ClientesClient
+PedidoService --> ICatalogoClient
+PedidoService --> IClientesClient
+PedidoService --> Pedido
+Pedido --> ItemPedido
+Produto ..> Pedido : snapshot de preco no item'>
+<div class="mermaid"></div>
+</div>
+
+<div class="lab-container">
+<div class="lab-header">
+<h3>🔷 Setup — solução modular (VS Code)</h3>
+<div class="lab-actions"><button class="btn btn-zip" onclick="openDlModal('tab9')">📦 Baixar ZIP desta aba</button></div>
+</div>
+<div class="term-help"><strong>🖥️ Terminal:</strong> <span class="ide-tag cs">VS Code</span> <kbd>Ctrl+`</kbd>. Rode na pasta onde quer criar a solução.</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal do VS Code - solução multi-contextos</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor"># Solução + projetos (1 host, 3 módulos, 1 kernel, 1 teste)
+mkdir LojaMulti && cd LojaMulti
+dotnet new sln -n LojaMulti
+dotnet new classlib -n LojaApi.Shared.Kernel -f net10.0
+dotnet new classlib -n LojaApi.Modules.Catalogo -f net10.0
+dotnet new classlib -n LojaApi.Modules.Pedidos -f net10.0
+dotnet new classlib -n LojaApi.Modules.Clientes -f net10.0
+dotnet new webapi -n LojaApi.Api -f net10.0
+dotnet new xunit -n LojaApi.Tests -f net10.0
+dotnet sln add LojaApi.Shared.Kernel LojaApi.Modules.Catalogo LojaApi.Modules.Pedidos LojaApi.Modules.Clientes LojaApi.Api LojaApi.Tests
+# Regras de referência (fronteiras!): módulos -> kernel; host -> módulos; testes -> módulos
+dotnet add LojaApi.Modules.Catalogo reference LojaApi.Shared.Kernel
+dotnet add LojaApi.Modules.Pedidos reference LojaApi.Shared.Kernel
+dotnet add LojaApi.Modules.Clientes reference LojaApi.Shared.Kernel
+dotnet add LojaApi.Api reference LojaApi.Modules.Catalogo LojaApi.Modules.Pedidos LojaApi.Modules.Clientes
+dotnet add LojaApi.Tests reference LojaApi.Modules.Catalogo LojaApi.Modules.Pedidos LojaApi.Modules.Clientes
+# Pacotes
+dotnet add LojaApi.Modules.Catalogo package Microsoft.EntityFrameworkCore
+dotnet add LojaApi.Modules.Pedidos package Microsoft.EntityFrameworkCore
+dotnet add LojaApi.Modules.Clientes package Microsoft.EntityFrameworkCore
+dotnet add LojaApi.Api package Pomelo.EntityFrameworkCore.MySql
+dotnet add LojaApi.Api package Microsoft.AspNetCore.Authentication.JwtBearer
+dotnet add LojaApi.Tests package Moq
+code .</pre>
+</div>
+<div class="tree-view"><span class="folder">📁 LojaMulti/</span>
+├── <span class="file">📄 LojaMulti.sln</span>
+├── <span class="folder">📁 LojaApi.Shared.Kernel/</span>          <span class="comment"># 🔑 exceções, eventos, contratos de erro</span>
+│   └── DomainException.cs · IDomainEvent.cs · ProblemTypes.cs
+├── <span class="folder">📁 LojaApi.Modules.Catalogo/</span>         <span class="comment"># 📦 domínio+repo+controller do catálogo</span>
+│   └── Domain/Produto.cs · Data/CatalogoDbContext.cs · CatalogoController.cs · ModuleExtensions.cs
+├── <span class="folder">📁 LojaApi.Modules.Pedidos/</span>          <span class="comment"># 🛒 pedido + clients HTTP + orquestração</span>
+│   └── Domain/Pedido.cs · Integration/ICatalogoClient.cs · Integration/CatalogoClient.cs · Integration/IClientesClient.cs · Integration/ClientesClient.cs · PedidoService.cs · PedidosController.cs · Data/PedidosDbContext.cs · ModuleExtensions.cs
+├── <span class="folder">📁 LojaApi.Modules.Clientes/</span>         <span class="comment"># 🧾 cliente + endereços</span>
+│   └── Domain/Cliente.cs · Domain/Endereco.cs · Data/ClientesDbContext.cs · ClientesController.cs · ModuleExtensions.cs
+├── <span class="folder">📁 LojaApi.Api/</span>                      <span class="comment"># 🎯 host: Program.cs + appsettings + JWT roles</span>
+│   └── Program.cs · appsettings.json · Middleware/ExceptionMiddleware.cs
+└── <span class="folder">📁 LojaApi.Tests/</span>                    <span class="comment"># 🧪 TDD por contexto</span>
+    └── PedidoServiceTests.cs · CatalogoProdutoTests.cs · ClienteEnderecoTests.cs</div>
+</div>
+
+<div class="lab-container">
+<div class="lab-header"><h3>🔷 Código completo — kernel, módulos e host</h3></div>
+<h4 style="color:var(--accent);margin:16px 0 8px">🔑 Shared.Kernel</h4>
+<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Shared.Kernel/DomainException.cs + ProblemTypes.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Shared.Kernel/DomainException.cs">namespace LojaApi.Shared.Kernel;
+/// &lt;summary&gt;Exceção de domínio compartilhada (regra violada / conflito de integração).</summary>
+public class DomainException : Exception
+{
+    public string Type { get; }
+    public DomainException(string message, string type = "https://example.com/erros/dominio")
+        : base(message) { Type = type; }
+}
+/// &lt;summary&gt;Types RFC 7807 padronizados entre contextos (espelham a Tab 8).</summary>
+public static class ProblemTypes
+{
+    public const string EstoqueInsuficiente = "https://example.com/erros/estoque-insuficiente";
+    public const string DependenciaIndisponivel = "https://example.com/erros/dependencia-indisponivel";
+    public const string StatusInvalido = "https://example.com/erros/status-invalido";
+}</pre></div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">📦 Módulo Catálogo</h4>
+<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Modules.Catalogo/Domain/Produto.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Catalogo/Domain/Produto.cs">using LojaApi.Shared.Kernel;
+namespace LojaApi.Modules.Catalogo.Domain;
+/// &lt;summary&gt;Aggregate Root do Catálogo: estoque com reserva em duas fases.</summary>
+public class Produto
+{
+    public int Id { get; private set; }
+    public string Nome { get; private set; } = string.Empty;
+    public decimal Preco { get; private set; }
+    public int Estoque { get; private set; }
+    public int Reservado { get; private set; }
+    public int Disponivel => Estoque - Reservado;
+    protected Produto() { }
+    public Produto(int id, string nome, decimal preco, int estoque)
+    { Id = id; Nome = nome; Preco = preco; Estoque = estoque; }
+    public void Reservar(int qtd)
+    {
+        if (qtd &lt;= 0) throw new DomainException("Quantidade deve ser &gt; 0");
+        if (Disponivel &lt; qtd)
+            throw new DomainException($"Estoque insuficiente p/ produto {Id} (disp: {Disponivel}, ped: {qtd})", ProblemTypes.EstoqueInsuficiente);
+        Reservado += qtd;
+    }
+    public void Liberar(int qtd) => Reservado = Math.Max(0, Reservado - qtd);
+    public void ConfirmarReserva(int qtd) { Estoque -= qtd; Liberar(qtd); }
+}</pre></div>
+<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Modules.Catalogo/CatalogoController.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Catalogo/CatalogoController.cs">using LojaApi.Modules.Catalogo.Domain;
+using LojaApi.Shared.Kernel;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+namespace LojaApi.Modules.Catalogo;
+public record ReservarRequest(int Quantidade, string PedidoOrigem);
+public record ReservaResponse(string ReservaId, string Status, decimal PrecoUnitario);
+[ApiController]
+[Route("api/catalogo")]
+public class CatalogoController : ControllerBase
+{
+    private readonly CatalogoDbContext _db;
+    public CatalogoController(CatalogoDbContext db) { _db = db; }
+    [HttpGet("produtos")]                     // leitura pública (security: [] no YAML)
+    public async Task&lt;ActionResult&gt; Listar([FromQuery] int page = 0, [FromQuery] int size = 20)
+        =&gt; Ok(await _db.Produtos.AsNoTracking().Skip(page * size).Take(size).ToListAsync());
+    [HttpPost("produtos")]
+    [Authorize(Roles = "CATALOGO_ADMIN,ADMIN")]
+    public async Task&lt;ActionResult&gt; Criar([FromBody] Produto p)
+    { _db.Produtos.Add(p); await _db.SaveChangesAsync(); return Created($"/api/catalogo/produtos/{p.Id}", p); }
+    [HttpPost("produtos/{id:int}/reservar")]   // interno: token de serviço
+    [Authorize(Roles = "PEDIDOS_SERVICE")]
+    public async Task&lt;ActionResult&lt;ReservaResponse&gt;&gt; Reservar(int id, [FromBody] ReservarRequest req)
+    {
+        var p = await _db.Produtos.FindAsync(id);
+        if (p is null) return NotFound(new ProblemDetails { Type = "https://example.com/erros/nao-encontrado", Title = "Produto inexistente", Status = 404 });
+        p.Reservar(req.Quantidade);            // lança DomainException → 409 via middleware
+        await _db.SaveChangesAsync();
+        return Ok(new ReservaResponse(Guid.NewGuid().ToString("N")[..8], "RESERVADO", p.Preco));
+    }
+    [HttpPost("produtos/{id:int}/liberar")]    // compensação da saga-lite
+    [Authorize(Roles = "PEDIDOS_SERVICE")]
+    public async Task&lt;ActionResult&gt; Liberar(int id, [FromBody] ReservarRequest req)
+    {
+        var p = await _db.Produtos.FindAsync(id);
+        p?.Liberar(req.Quantidade);
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+}</pre></div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🧾 Módulo Clientes</h4>
+<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Modules.Clientes/Domain/Endereco.cs + Cliente.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Clientes/Domain/Endereco.cs">using LojaApi.Shared.Kernel;
+using System.Text.RegularExpressions;
+namespace LojaApi.Modules.Clientes.Domain;
+/// &lt;summary&gt;Value Object de endereço (CEP validado no construtor).</summary>
+public class Endereco
+{
+    public int Id { get; private set; }
+    public string Logradouro { get; private set; }
+    public string Cidade { get; private set; }
+    public string Uf { get; private set; }
+    public string Cep { get; private set; }
+    protected Endereco() { }
+    public Endereco(int id, string logradouro, string cidade, string uf, string cep)
+    {
+        if (!Regex.IsMatch(cep ?? "", @"^[0-9]{5}-?[0-9]{3}$"))
+            throw new DomainException($"CEP inválido: {cep}");
+        Id = id; Logradouro = logradouro; Cidade = cidade; Uf = uf.ToUpper(); Cep = cep;
+    }
+}
+/// &lt;summary&gt;Aggregate Root de Cliente.</summary>
+public class Cliente
+{
+    public int Id { get; private set; }
+    public string Nome { get; private set; } = string.Empty;
+    public string Email { get; private set; } = string.Empty;
+    public List&lt;Endereco&gt; Enderecos { get; private set; } = new();
+    protected Cliente() { }
+    public Cliente(int id, string nome, string email) { Id = id; Nome = nome; Email = email; }
+}</pre></div>
+<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Modules.Clientes/ClientesController.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Clientes/ClientesController.cs">using LojaApi.Modules.Clientes.Domain;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+namespace LojaApi.Modules.Clientes;
+[ApiController]
+[Route("api/clientes")]
+public class ClientesController : ControllerBase
+{
+    private readonly ClientesDbContext _db;
+    public ClientesController(ClientesDbContext db) { _db = db; }
+    [HttpPost]
+    [Authorize(Roles = "CLIENTES_ADMIN,ADMIN")]
+    public async Task&lt;ActionResult&gt; Criar([FromBody] Cliente c)
+    { _db.Clientes.Add(c); await _db.SaveChangesAsync(); return Created($"/api/clientes/{c.Id}", c); }
+    [HttpGet("{id:int}/enderecos")]            // interno p/ Pedidos + admin
+    [Authorize(Roles = "PEDIDOS_SERVICE,CLIENTES_ADMIN,ADMIN")]
+    public async Task&lt;ActionResult&gt; Enderecos(int id)
+        =&gt; Ok(await _db.Enderecos.AsNoTracking().Where(e =&gt; e.ClienteId == id).ToListAsync());
+}</pre></div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🛒 Módulo Pedidos (orquestração + clients HTTP)</h4>
+<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Modules.Pedidos/Domain/Pedido.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Pedidos/Domain/Pedido.cs">using LojaApi.Shared.Kernel;
+namespace LojaApi.Modules.Pedidos.Domain;
+public enum PedidoStatus { CRIADO, RESERVADO, CONFIRMADO, ENVIADO, CANCELADO }
+public class ItemPedido
+{
+    public int ProdutoId { get; private set; }
+    public int Quantidade { get; private set; }
+    public decimal PrecoUnitario { get; private set; }   // snapshot do Catálogo no checkout
+    protected ItemPedido() { }
+    public ItemPedido(int produtoId, int quantidade, decimal precoUnitario)
+    { ProdutoId = produtoId; Quantidade = quantidade; PrecoUnitario = precoUnitario; }
+}
+/// &lt;summary&gt;Aggregate Root de Pedido com máquina de estados guardada.</summary>
+public class Pedido
+{
+    public int Id { get; private set; }
+    public string Usuario { get; private set; } = string.Empty;
+    public int ClienteId { get; private set; }
+    public int EnderecoId { get; private set; }
+    public PedidoStatus Status { get; private set; } = PedidoStatus.CRIADO;
+    public List&lt;ItemPedido&gt; Itens { get; private set; } = new();
+    public List&lt;string&gt; ReservaIds { get; private set; } = new();
+    public decimal Total =&gt; Itens.Sum(i =&gt; i.PrecoUnitario * i.Quantidade);
+    protected Pedido() { }
+    public static Pedido Criar(string usuario, int clienteId, int enderecoId, IEnumerable&lt;ItemPedido&gt; itens)
+    {
+        var p = new Pedido { Usuario = usuario, ClienteId = clienteId, EnderecoId = enderecoId };
+        p.Itens.AddRange(itens);
+        if (p.Itens.Count == 0) throw new DomainException("Pedido sem itens");
+        return p;
+    }
+    public void MarcarReservado(IEnumerable&lt;string&gt; reservaIds)
+    {
+        if (Status != PedidoStatus.CRIADO) throw new DomainException("Transição inválida p/ RESERVADO", ProblemTypes.StatusInvalido);
+        ReservaIds.AddRange(reservaIds); Status = PedidoStatus.RESERVADO;
+    }
+    public void Cancelar()
+    {
+        if (Status is PedidoStatus.CONFIRMADO or PedidoStatus.ENVIADO)
+            throw new DomainException("Pedido não pode ser cancelado neste status", ProblemTypes.StatusInvalido);
+        Status = PedidoStatus.CANCELADO;
+    }
+}</pre></div>
+<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Modules.Pedidos/Integration/ICatalogoClient.cs + CatalogoClient.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Pedidos/Integration/ICatalogoClient.cs">using LojaApi.Modules.Pedidos.Domain;
+namespace LojaApi.Modules.Pedidos.Integration;
+public record ReservarDto(int Quantidade, string PedidoOrigem);
+public record ReservaDto(string ReservaId, string Status, decimal PrecoUnitario);
+/// &lt;summary&gt;Porta de saída p/ o contexto Catálogo (HTTP síncrono).</summary>
+public interface ICatalogoClient
+{
+    Task&lt;ReservaDto&gt; ReservarAsync(int produtoId, ReservarDto dto, CancellationToken ct = default);
+    Task LiberarAsync(int produtoId, ReservarDto dto, CancellationToken ct = default);
+}
+/// &lt;summary&gt;Adapter HTTP: timeout 2s, erros 409/503 mapeados p/ DomainException tipada.</summary>
+public class CatalogoClient : ICatalogoClient
+{
+    private readonly HttpClient _http;
+    public CatalogoClient(HttpClient http) { _http = http; _http.Timeout = TimeSpan.FromSeconds(2); }
+    public async Task&lt;ReservaDto&gt; ReservarAsync(int produtoId, ReservarDto dto, CancellationToken ct = default)
+    {
+        var resp = await _http.PostAsJsonAsync($"/api/catalogo/produtos/{produtoId}/reservar", dto, ct);
+        if (resp.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var body = await resp.Content.ReadAsStringAsync(ct);
+            throw new DomainException($"Estoque insuficiente p/ produto {produtoId}", ProblemTypes.EstoqueInsuficiente) { };
+        }
+        if (!resp.IsSuccessStatusCode)
+            throw new DomainException($"Catálogo indisponível ({(int)resp.StatusCode})", ProblemTypes.DependenciaIndisponivel);
+        return (await resp.Content.ReadFromJsonAsync&lt;ReservaDto&gt;(ct))!;
+    }
+    public async Task LiberarAsync(int produtoId, ReservarDto dto, CancellationToken ct = default)
+    {
+        try { await _http.PostAsJsonAsync($"/api/catalogo/produtos/{produtoId}/liberar", dto, ct); }
+        catch { /* compensação best-effort: log + fila de reconciliação em prod */ }
+    }
+}</pre></div>
+<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Modules.Pedidos/PedidoService.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Pedidos/PedidoService.cs">using LojaApi.Modules.Pedidos.Domain;
+using LojaApi.Modules.Pedidos.Integration;
+using LojaApi.Shared.Kernel;
+namespace LojaApi.Modules.Pedidos;
+public record PedidoRequest(int ClienteId, int EnderecoId, List&lt;ItemRequest&gt; Itens);
+public record ItemRequest(int ProdutoId, int Quantidade);
+/// &lt;summary&gt;Caso de uso de checkout: reserva síncrona + validação de endereço + compensação.</summary>
+public class PedidoService
+{
+    private readonly ICatalogoClient _catalogo;
+    private readonly IClientesClient _clientes;
+    private readonly PedidosDbContext _db;
+    public PedidoService(ICatalogoClient catalogo, IClientesClient clientes, PedidosDbContext db)
+    { _catalogo = catalogo; _clientes = clientes; _db = db; }
+    public async Task&lt;Pedido&gt; CriarAsync(PedidoRequest req, string usuario, CancellationToken ct = default)
+    {
+        var reservas = new List&lt;(int ProdutoId, ReservarDto Dto)&gt;();
+        try
+        {
+            var itens = new List&lt;ItemPedido&gt;();
+            foreach (var item in req.Itens)
+            {
+                var dto = new ReservarDto(item.Quantidade, $"PED-{usuario}");
+                var r = await _catalogo.ReservarAsync(item.ProdutoId, dto, ct);
+                reservas.Add((item.ProdutoId, dto));
+                itens.Add(new ItemPedido(item.ProdutoId, item.Quantidade, r.PrecoUnitario));
+            }
+            var enderecos = await _clientes.ObterEnderecosAsync(req.ClienteId, ct);
+            if (!enderecos.Any(e =&gt; e.Id == req.EnderecoId))
+                throw new DomainException("Endereço não pertence ao cliente");
+            var pedido = Pedido.Criar(usuario, req.ClienteId, req.EnderecoId, itens);
+            pedido.MarcarReservado(reservas.Select((_, i) =&gt; $"RES-{i:D4}"));
+            _db.Pedidos.Add(pedido); await _db.SaveChangesAsync(ct);
+            return pedido;
+        }
+        catch
+        {   // compensação da saga-lite: libera tudo que foi reservado
+            foreach (var (produtoId, dto) in reservas) await _catalogo.LiberarAsync(produtoId, dto, ct);
+            throw;
+        }
+    }
+    public async Task CancelarAsync(int pedidoId, string usuario, CancellationToken ct = default)
+    {
+        var p = await _db.Pedidos.FindAsync(new object[] { pedidoId }, ct)
+            ?? throw new DomainException("Pedido inexistente");
+        if (p.Usuario != usuario) throw new DomainException("Pedido de outro usuário");
+        p.Cancelar();
+        foreach (var i in p.Itens)
+            await _catalogo.LiberarAsync(i.ProdutoId, new ReservarDto(i.Quantidade, $"PED-{pedidoId}"), ct);
+        await _db.SaveChangesAsync(ct);
+    }
+}</pre></div>
+<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Modules.Pedidos/PedidosController.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Pedidos/PedidosController.cs">using LojaApi.Modules.Pedidos.Domain;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+namespace LojaApi.Modules.Pedidos;
+[ApiController]
+[Route("api/pedidos")]
+[Authorize(Roles = "PEDIDOS_USER,ADMIN")]
+public class PedidosController : ControllerBase
+{
+    private readonly PedidoService _svc;
+    private readonly PedidosDbContext _db;
+    public PedidosController(PedidoService svc, PedidosDbContext db) { _svc = svc; _db = db; }
+    private string Usuario =&gt; User.Identity!.Name!;
+    [HttpPost]
+    public async Task&lt;ActionResult&lt;Pedido&gt;&gt; Criar([FromBody] PedidoRequest req)
+        =&gt; Created($"/api/pedidos", await _svc.CriarAsync(req, Usuario));
+    [HttpGet]
+    public async Task&lt;ActionResult&gt; Meus()
+        =&gt; Ok(await _db.Pedidos.AsNoTracking().Include(p =&gt; p.Itens).Where(p =&gt; p.Usuario == Usuario).ToListAsync());
+    [HttpPost("{id:int}/cancelar")]
+    public async Task&lt;ActionResult&gt; Cancelar(int id)
+    { await _svc.CancelarAsync(id, Usuario); return NoContent(); }
+}</pre></div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🎯 Host (LojaApi.Api): DI por módulo + JWT com roles</h4>
+<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Api/Program.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Api/Program.cs">using LojaApi.Modules.Catalogo;
+using LojaApi.Modules.Pedidos;
+using LojaApi.Modules.Pedidos.Integration;
+using LojaApi.Modules.Clientes;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer(); builder.Services.AddSwaggerGen();
+// ── DbContext por contexto (1 schema/db cada — fronteira de dados) ──
+builder.Services.AddDbContext&lt;CatalogoDbContext&gt;(o =&gt; o.UseMySql(builder.Configuration.GetConnectionString("Catalogo"), ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("Catalogo"))));
+builder.Services.AddDbContext&lt;PedidosDbContext&gt;(o =&gt; o.UseMySql(builder.Configuration.GetConnectionString("Pedidos"), ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("Pedidos"))));
+builder.Services.AddDbContext&lt;ClientesDbContext&gt;(o =&gt; o.UseMySql(builder.Configuration.GetConnectionString("Clientes"), ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("Clientes"))));
+// ── Clients HTTP síncronos entre contextos (timeout 2s no adapter) ──
+builder.Services.AddHttpClient&lt;ICatalogoClient, CatalogoClient&gt;(o =&gt; o.BaseAddress = new Uri(builder.Configuration["Services:Catalogo"]!));
+builder.Services.AddHttpClient&lt;IClientesClient, ClientesClient&gt;(o =&gt; o.BaseAddress = new Uri(builder.Configuration["Services:Clientes"]!));
+// ── Serviços dos módulos ──
+builder.Services.AddScoped&lt;PedidoService&gt;();
+// ── JWT com claim "roles" (lista) → [Authorize(Roles=…)] por contexto ──
+var secret = builder.Configuration["Jwt:Secret"]!;
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(o =&gt; o.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = false, ValidateAudience = false,
+        ValidateLifetime = true, ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)),
+        ClockSkew = TimeSpan.FromMinutes(1),
+        RoleClaimType = System.Security.Claims.ClaimTypes.Role   // "roles": ["A","B"] → 2 claims
+    });
+builder.Services.AddAuthorization();
+var app = builder.Build();
+app.UseMiddleware&lt;ExceptionMiddleware&gt;();   // DomainException → 409/400 RFC 7807 (Tab 7)
+app.UseSwagger(); app.UseSwaggerUI();
+app.UseAuthentication(); app.UseAuthorization();
+app.MapControllers();
+app.Run();</pre></div>
+<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Api/appsettings.json</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Api/appsettings.json">{
+  "ConnectionStrings": {
+    "Catalogo": "Server=localhost;Port=3306;Database=catalogo_db;User=devuser;Password=devpass;",
+    "Pedidos":  "Server=localhost;Port=3306;Database=pedidos_db;User=devuser;Password=devpass;",
+    "Clientes": "Server=localhost;Port=3306;Database=clientes_db;User=devuser;Password=devpass;"
+  },
+  "Services": {
+    "Catalogo": "http://localhost:8081",
+    "Clientes": "http://localhost:8081"
+  },
+  "Jwt": { "Secret": "MinhaChaveSecretaSuperSeguraLojaAPI2026DeveTerMin32Caracteres" }
+}</pre></div>
+<div class="code-editor-wrap"><span class="code-filepath">init-sql-contextos/01-init.sql (cria os 3 databases)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="init-sql-contextos/01-init.sql">-- Fronteira de dados: 1 database por bounded context
+CREATE DATABASE IF NOT EXISTS catalogo_db CHARACTER SET utf8mb4;
+CREATE DATABASE IF NOT EXISTS pedidos_db  CHARACTER SET utf8mb4;
+CREATE DATABASE IF NOT EXISTS clientes_db CHARACTER SET utf8mb4;
+-- Tabelas são criadas pelo EF (EnsureCreated/migrations) de cada módulo.</pre></div>
+</div>
+
+<div class="lab-container">
+<div class="lab-header"><h3>🧪 TDD por contexto (xUnit + Moq)</h3></div>
+<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Tests/PedidoServiceTests.cs (orquestração + compensação)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Tests/PedidoServiceTests.cs">using LojaApi.Modules.Pedidos;
+using LojaApi.Modules.Pedidos.Domain;
+using LojaApi.Modules.Pedidos.Integration;
+using LojaApi.Shared.Kernel;
+using Moq; using Xunit;
+public class PedidoServiceTests
+{
+    private readonly Mock&lt;ICatalogoClient&gt; _cat = new();
+    private readonly Mock&lt;IClientesClient&gt; _cli = new();
+    private readonly Mock&lt;PedidosDbContext&gt; _db = new();
+    private readonly PedidoService _svc;
+    public PedidoServiceTests() { _svc = new PedidoService(_cat.Object, _cli.Object, _db.Object); }
+    [Fact]
+    public async Task Criar_ReservaTodosItens_EMarcaReservado()
+    {
+        _cat.Setup(c =&gt; c.ReservarAsync(It.IsAny&lt;int&gt;(), It.IsAny&lt;ReservarDto&gt;(), default))
+            .ReturnsAsync(new ReservaDto("R1", "RESERVADO", 10m));
+        _cli.Setup(c =&gt; c.ObterEnderecosAsync(7, default))
+            .ReturnsAsync(new List&lt;EnderecoDto&gt; { new(3, "Rua A", "SP", "SP", "01001-000") });
+        var pedido = await _svc.CriarAsync(new PedidoRequest(7, 3, new() { new ItemRequest(101, 2) }), "ana");
+        Assert.Equal(PedidoStatus.RESERVADO, pedido.Status);
+        Assert.Equal(20m, pedido.Total);
+        _cat.Verify(c =&gt; c.ReservarAsync(101, It.IsAny&lt;ReservarDto&gt;(), default), Times.Once);
+    }
+    [Fact]
+    public async Task Criar_EstoqueInsuficiente_Lanca409_ECompensaLibera()
+    {
+        _cat.SetupSequence(c =&gt; c.ReservarAsync(It.IsAny&lt;int&gt;(), It.IsAny&lt;ReservarDto&gt;(), default))
+            .ReturnsAsync(new ReservaDto("R1", "RESERVADO", 10m))
+            .ThrowsAsync(new DomainException("Estoque insuficiente", ProblemTypes.EstoqueInsuficiente));
+        await Assert.ThrowsAsync&lt;DomainException&gt;(() =&gt;
+            _svc.CriarAsync(new PedidoRequest(7, 3, new() { new ItemRequest(101, 1), new ItemRequest(102, 5) }), "ana"));
+        _cat.Verify(c =&gt; c.LiberarAsync(101, It.IsAny&lt;ReservarDto&gt;(), default), Times.Once); // compensação
+    }
+    [Fact]
+    public async Task Cancelar_PedidoDeOutroUsuario_Lanca()
+    {
+        await Assert.ThrowsAsync&lt;DomainException&gt;(() =&gt; _svc.CancelarAsync(999, "intruso"));
+    }
+}</pre></div>
+<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Tests/CatalogoProdutoTests.cs + ClienteEnderecoTests.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Tests/CatalogoProdutoTests.cs">using LojaApi.Modules.Catalogo.Domain;
+using LojaApi.Modules.Clientes.Domain;
+using LojaApi.Shared.Kernel;
+using Xunit;
+public class CatalogoProdutoTests
+{
+    [Fact]
+    public void Reservar_AcimaDoDisponivel_Lanca409()
+    {
+        var p = new Produto(101, "Teclado", 349.9m, 5);
+        var ex = Assert.Throws&lt;DomainException&gt;(() =&gt; p.Reservar(6));
+        Assert.Equal(ProblemTypes.EstoqueInsuficiente, ex.Type);
+    }
+    [Fact]
+    public void Liberar_RestauraDisponivel()
+    {
+        var p = new Produto(101, "Teclado", 349.9m, 5);
+        p.Reservar(3); p.Liberar(3);
+        Assert.Equal(5, p.Disponivel);
+    }
+}
+public class ClienteEnderecoTests
+{
+    [Fact]
+    public void Endereco_CepInvalido_Lanca()
+        =&gt; Assert.Throws&lt;DomainException&gt;(() =&gt; new Endereco(1, "Rua A", "SP", "SP", "123"));
+}</pre></div>
+<div class="term-help"><strong>🖥️ Rodar:</strong> <span class="ide-tag cs">VS Code</span> <kbd>Ctrl+`</kbd> → <code>dotnet test</code> (roda os 3 contextos de uma vez).</div>
+<div class="success-banner"><strong>✅ Paridade:</strong> 6 testes multi-contexto (3 orquestração/compensação + 2 catálogo + 1 clientes), no mesmo padrão AAA das Tabs 6/7.</div>
+</div>
+
+<div class="lab-container">
+<div class="lab-header"><h3>🐳🔁 Docker + CI/CD (herda os padrões das Tabs 5/7)</h3></div>
+<ul style="margin-left:22px;font-size:.93rem;line-height:1.8;color:var(--text-muted)">
+<li><strong>Dockerfile:</strong> idêntico ao da Tab 7, trocando o publish p/ o host <code>LojaApi.Api</code> desta solução.</li>
+<li><strong>Bancos:</strong> mesmo compose da Tab 5 + o <code>init-sql-contextos/01-init.sql</code> (3 databases).</li>
+<li><strong>CI:</strong> mesmos workflows da Tab 7 — <code>dotnet build</code> + <code>dotnet test</code> cobrem todos os módulos (fronteiras compilam juntas).</li>
+<li><strong>Prism:</strong> o compose <code>docker-compose.prism-contextos.yml</code> da Tab 8 (:4011) valida o contrato antes desta implementação.</li>
+</ul>
+</div>
+
+<h4 style="color:var(--accent);margin-top:18px">📑 ADRs desta aba (padrão AWS)</h4>
+<div class="adr"><h5>ADR-C3 · Monolito modular com projeto por contexto<span class="stack-tag">🔷 C#</span><span class="status">Aceita</span></h5>
+<p><b>Contexto:</b> 3 bounded contexts precisam evoluir sem virar 3 repos prematurely.</p>
+<p><b>Decisão:</b> solução única com <code>Shared.Kernel</code> + <code>Modules.{Catalogo,Pedidos,Clientes}</code> + host <code>LojaApi.Api</code>; módulos não se referenciam.</p>
+<p><b>Alternativas consideradas:</b> microsserviços separados (rejeitada: ops prematura); camadas únicas sem módulos (rejeitada: fronteira invisível).</p>
+<p><b>Consequências:</b> (+) deploy simples, fronteiras compiladas; (−) exige disciplina de referências.</p>
+<p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend C#, Arquitetura.</p></div>
+<div class="adr"><h5>ADR-C4 · Um DbContext/schema por contexto<span class="stack-tag">🔷 C#</span><span class="status">Aceita</span></h5>
+<p><b>Contexto:</b> compartilhamento de tabelas entre contextos cria acoplamento oculto.</p>
+<p><b>Decisão:</b> <code>CatalogoDbContext</code>/<code>PedidosDbContext</code>/<code>ClientesDbContext</code> em databases MySQL separados (mesmo servidor em dev).</p>
+<p><b>Alternativas consideradas:</b> DB único compartilhado (rejeitada); servidor separado por contexto (adiado p/ prod).</p>
+<p><b>Consequências:</b> (+) fronteira de dados real; (−) joins cross-context viram chamadas HTTP (intencional).</p>
+<p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend C#, DBA.</p></div>
+<div class="adr"><h5>ADR-C5 · Integração síncrona HTTP com timeout e compensação<span class="stack-tag">🔷 C#</span><span class="status">Aceita</span></h5>
+<p><b>Contexto:</b> checkout precisa de reserva de estoque e endereço válidos no ato (decisão Q5=B, espelhando ADR-012 da Tab 8).</p>
+<p><b>Decisão:</b> clients tipados (<code>AddHttpClient</code>) com timeout 2s; 409/503 mapeados p/ <code>DomainException</code> tipada; compensação libera reservas em falha.</p>
+<p><b>Alternativas consideradas:</b> eventos assíncronos (adiada); banco compartilhado (rejeitada).</p>
+<p><b>Consequências:</b> (+) consistência imediata e teste simples; (−) acoplamento temporal mitigado por timeout/erros tipados.</p>
+<p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend C#, QA, SRE.</p></div>
+<div class="adr"><h5>ADR-C6 · Roles JWT por contexto (claim roles em lista)<span class="stack-tag">🔷 C#</span><span class="status">Aceita</span></h5>
+<p><b>Contexto:</b> autorização precisa refletir as fronteiras negociadas no contrato (Q6=A).</p>
+<p><b>Decisão:</b> claim <code>roles</code> (lista); <code>[Authorize(Roles=…)]</code> por operação; token de serviço <code>PEDIDOS_SERVICE</code> p/ chamadas internas.</p>
+<p><b>Alternativas consideradas:</b> scopes OAuth2 (adiado); role única ADMIN (rejeitada).</p>
+<p><b>Consequências:</b> (+) autorização declarativa alinhada ao YAML; (−) gestão de roles exige procedimento.</p>
+<p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend C#, Segurança.</p></div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🗺️ Legenda de diagramas desta aba</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>ID</th><th>Tipo</th><th>Quando aplicar</th></tr></thead>
+<tbody>
+<tr><td>D-26</td><td>C4 Nível 2 (Container)</td><td>Mostrar módulos, bancos por contexto e HTTP interno</td></tr>
+<tr><td>D-27</td><td>UML Sequência</td><td>Checkout com reserva + compensação (saga-lite)</td></tr>
+<tr><td>D-28</td><td>UML Classes</td><td>Portas de integração (clients) e agregados</td></tr>
+</tbody>
+</table>
+</div>
+<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> módulo referenciando outro módulo (quebra a fronteira — use o client HTTP); esquecer <code>RoleClaimType</code> e roles em lista não funcionarem; timeout &gt; 2s mascarando indisponibilidade; compensação sem log (em prod, fila de reconciliação).</div>
+<div class="success-banner"><strong>✅ Checklist multi-contextos C#:</strong> 3 módulos + kernel ✓ · fronteiras sem referência cruzada ✓ · DbContext por contexto ✓ · HTTP síncrono c/ timeout + compensação ✓ · roles por contexto ✓ · TDD 6 testes ✓ · Docker/CI herdados ✓ · ADRs C3–C6 ✓ · D-26…D-28 nomeados ✓.</div>
+</div>
+</section>
+<!-- ===== FIM DA PARTE 3/3 — B.25 completa: 10 abas ===== -->
+<section class="tab-panel" id="tab10">
 <div class="card">
 <h2 class="card-title">🗺️ Diagnóstico, Glossário & FAQ</h2>
 <p class="section-intro">Feche o ciclo: valide seu ambiente com os sanity checks, consulte o cheat-sheet e o glossário A–Z, e tire dúvidas no FAQ. Tudo filtrável.</p>
@@ -4184,7 +5451,7 @@ docker compose -f docker-compose.prism.yml ps</pre></div></div>
 </div>
 
 <h3 class="mt-4 mb-2" style="color:var(--primary);font-size:1.15rem">❓ FAQ</h3>
-<div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">Por que 8 abas com Java e C# separados?</div><div class="faq-a"><p>Para <strong>não misturar stacks</strong>: a Tab 6 é 100% Java/IntelliJ e a Tab 7 é 100% C#/VS Code, cada uma auto-contida (conceitos, código, TDD, migração, Docker, CI/CD, diagramas, ADRs). As IDEs não compartilham nada.</p></div></div>
+<div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">Por que 10 abas com Java e C# separados?</div><div class="faq-a"><p>Para <strong>não misturar stacks</strong>: Tab 6 = Java/IntelliJ, Tab 7 = C#/VS Code (auto-contidas). As Tabs 8–9 evoluem o contrato e o C# para <strong>múltiplos bounded contexts</strong> (Catálogo·Pedidos·Clientes). Tab 10 = Diagnóstico.</p></div>
 <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">Os diagramas têm nome? Onde vejo qual é qual?</div><div class="faq-a"><p>Sim: todo diagrama tem cabeçalho <code>📐 D-XX · tipo — nome</code> (ex.: D-02 · C4 Nível 1 · Contexto). Detalhados separados por stack: D-06…D-13 (Java) e D-07, D-14…D-19 (C#).</p></div></div>
 <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">Estamos usando SOLID? Onde?</div><div class="faq-a"><p>Sim. Cada aba de stack tem a tabela <strong>SOLID aplicado</strong> mapeando cada princípio (S/O/L/I/D) ao arquivo/concretização no projeto, com links.</p></div></div>
 <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">SDKMAN só funciona no Linux?</div><div class="faq-a"><p>Não só Linux: roda em <strong>Linux, macOS e Windows via WSL/Cygwin/MSYS</strong> (shell POSIX). Em <strong>CMD/PowerShell nativo do Windows NÃO funciona</strong>; use WSL ou instale o JDK manualmente/<code>winget</code>.</p></div></div>
@@ -4387,7 +5654,7 @@ function simulateMultiDbDockerUp(){const w=document.getElementById('docker-multi
 function simulatePrismMockRequest(type){const w=document.getElementById('prism-sim-result'),t=document.getElementById('prism-sim-text');w.style.display='block';t.innerHTML=type==='valid'?'<span style="color:#38bdf8">→ GET /api/produtos (Bearer JWT)</span>\n<span style="color:#22c55e">← 200 OK | X-Prism-Mock: true | -m false (validação estrita)</span>\n<span style="color:#22c55e">[ { "id": 101, "nome": "Teclado Mecânico RGB", "preco": 249.90, "estoque": 50 } ]</span>\n<span style="color:#94a3b8"># exemplo vem do "example:" do schema</span>':'<span style="color:#ef4444">→ GET /api/produtos (sem token)</span>\n<span style="color:#ef4444">← 401 Unauthorized | Content-Type: application/problem+json</span>\n<span style="color:#ef4444">{ "type":"...", "title":"Unauthorized", "status":401 }</span>';}
 /* ═══════════ ZIP ═══════════ */
 let DLK=null;
-const DLI={tab2:{f:'lab-hello-spring.zip',t:'📦 Lab Hello Spring',s:['Descompacte em <strong>hello-spring/</strong>.','Abra no IntelliJ: File → Open → Trust.','Terminal (<kbd>Alt+F12</kbd>): <code>./mvnw spring-boot:run</code>.','Segundo terminal: <code>curl -i :8080/hello</code>.']},tab3:{f:'lab-hello-dotnet.zip',t:'📦 Lab Hello .NET',s:['Descompacte em <strong>HelloDotnetApi/</strong>.','<code>code .</code>; Terminal (<kbd>Ctrl+`</kbd>): <code>dotnet run</code>.','Segundo terminal: <code>curl -i :porta/hello</code>.']},tab4:{f:'loja-tab4-api-first.zip',t:'📦 Tab 4 — API-First',s:['<code>contracts/openapi.yaml</code> = resultado da Sala (validado com <code>-m false</code>).','<code>ata.md</code>, <code>docker-compose.prism.yml</code>, <code>testes-mock.http</code>, <code>loja-api.postman_collection.json</code>.','Terminal: <code>docker compose -f docker-compose.prism.yml up -d</code>.']},tab5:{f:'loja-tab5-bancos.zip',t:'📦 Tab 5 — Bancos',s:['Descompacte em <strong>loja-infra/</strong>.','Terminal: <code>docker compose up -d</code>.','Conecte com <code>docker exec -it</code> e use o Playground CRUD.']},tab6:{f:'loja-tab6-java.zip',t:'📦 Tab 6 — API Java (IntelliJ)',s:['Java completo: 4 módulos, TDD, migração, Docker, CI.']},tab7:{f:'loja-tab7-csharp.zip',t:'📦 Tab 7 — API C# (VS Code)',s:['C# completo: solução, DDD, TDD, migração, Docker, CI.']},complete:{f:'loja-projeto-completo.zip',t:'📦 Projeto Completo',s:['Descompacte em <strong>loja-projeto/</strong> e abra o <code>COMO_RODAR.md</code>.','Ordem: Sala → labs → bancos → mock → backend → testes → migração.']}};
+const DLI={tab2:{f:'lab-hello-spring.zip',t:'📦 Lab Hello Spring',s:['Descompacte em <strong>hello-spring/</strong>.','Abra no IntelliJ: File → Open → Trust.','Terminal (<kbd>Alt+F12</kbd>): <code>./mvnw spring-boot:run</code>.','Segundo terminal: <code>curl -i :8080/hello</code>.']},tab3:{f:'lab-hello-dotnet.zip',t:'📦 Lab Hello .NET',s:['Descompacte em <strong>HelloDotnetApi/</strong>.','<code>code .</code>; Terminal (<kbd>Ctrl+`</kbd>): <code>dotnet run</code>.','Segundo terminal: <code>curl -i :porta/hello</code>.']},tab4:{f:'loja-tab4-api-first.zip',t:'📦 Tab 4 — API-First',s:['<code>contracts/openapi.yaml</code> = resultado da Sala (validado com <code>-m false</code>).','<code>ata.md</code>, <code>docker-compose.prism.yml</code>, <code>testes-mock.http</code>, <code>loja-api.postman_collection.json</code>.','Terminal: <code>docker compose -f docker-compose.prism.yml up -d</code>.']},tab5:{f:'loja-tab5-bancos.zip',t:'📦 Tab 5 — Bancos',s:['Descompacte em <strong>loja-infra/</strong>.','Terminal: <code>docker compose up -d</code>.','Conecte com <code>docker exec -it</code> e use o Playground CRUD.']},tab6:{f:'loja-tab6-java.zip',t:'📦 Tab 6 — API Java (IntelliJ)',s:['Java completo: 4 módulos, TDD, migração, Docker, CI.']},tab7:{f:'loja-tab7-csharp.zip',t:'📦 Tab 7 — API C# (VS Code)',s:['C# completo: solução, DDD, TDD, migração, Docker, CI.']}, tab8:{f:'loja-tab8-contrato-contextos.zip',t:'📦 Tab 8 — Contrato Multi-Contextos',s:['<code>openapi-multicontexto.yaml</code> (tags por contexto), ADRs 009–012, testes curl por role.']}, tab9:{f:'loja-tab9-csharp-contextos.zip',t:'📦 Tab 9 — C# Multi-Contextos',s:['Solução modular: Shared.Kernel + módulos Catálogo/Pedidos/Clientes, HTTP síncrono, roles por contexto.']},complete:{f:'loja-projeto-completo.zip',t:'📦 Projeto Completo',s:['Descompacte em <strong>loja-projeto/</strong> e abra o <code>COMO_RODAR.md</code>.','Ordem: Sala → labs → bancos → mock → backend → testes → migração.']}};
 function openDlModal(k){DLK=k;const i=DLI[k];document.getElementById('dl-modal-title').textContent=i.t;document.getElementById('dl-modal-body').innerHTML='<p class="text-sm text-muted mb-2"><strong>Como fazer funcionar após baixar:</strong></p><ol>'+i.s.map(x=>'<li>'+x+'</li>').join('')+'</ol>';document.getElementById('dl-modal').classList.add('active');}
 function closeDlModal(){document.getElementById('dl-modal').classList.remove('active');}
 function pageFiles(sc){const o={};document.querySelectorAll(sc+' [data-zip-path]').forEach(e=>o[e.dataset.zipPath]=e.textContent);return o;}
@@ -4398,6 +5665,8 @@ async function confirmDownload(){closeDlModal();if(!window.JSZip){showToast('❌
  else if(DLK==='tab5'){add(pageFiles('#tab5'));}
  else if(DLK==='tab6'){add(pageFiles('#tab6'));}
  else if(DLK==='tab7'){add(pageFiles('#tab7'));}
+ else if(DLK==='tab8'){add(pageFiles('#tab8'));}
+ else if(DLK==='tab9'){add(pageFiles('#tab9'));}
  else if(DLK==='complete'){add(pageFiles('#tab2'));add(pageFiles('#tab3'));add(pageFiles('#tab4'));z.file('contracts/openapi.yaml',currentContract());z.file('ata.md',ataContent());add(pageFiles('#tab5'),'infra');add(pageFiles('#tab6'),'java');add(pageFiles('#tab7'),'csharp');z.file('COMO_RODAR.md','# 🚀 COMO RODAR — Projeto Completo\n\nOrdem: Sala de Contrato → labs hello → bancos → mock → backend → testes → migração.\nTerminais: IntelliJ Alt+F12 · VS Code Ctrl+`.\n');}
  const b=await z.generateAsync({type:'blob'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=DLI[DLK].f;a.click();URL.revokeObjectURL(a.href);showToast('✅ ZIP gerado: '+DLI[DLK].f);}
 /* ═══════════ MISC ═══════════ */
@@ -4405,8 +5674,8 @@ function showToast(m,t='success'){const c=document.getElementById('toast-contain
 function toggleFaq(e){e.classList.toggle('open');}
 function filterCheat(){const t=document.getElementById('cheat-search').value.toLowerCase();document.querySelectorAll('#cheat-table tbody tr').forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(t)?'':'none';});}
 function filterGloss(){const t=document.getElementById('gloss-search').value.toLowerCase();document.querySelectorAll('#gloss-table tbody tr').forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(t)?'':'none';});}
-function runGlobalSearch(term){const res=document.getElementById('global-search-results');if(!term||term.length<2){res.classList.remove('active');return;}const t=term.toLowerCase();const s=[{tab:'tab1',title:'1. OS & CLI',k:'winget apt wsl docker terminal cli shell'},{tab:'tab2',title:'2. Java IntelliJ',k:'java intellij initializr simulador hello sdkman git maven tomcat rest json'},{tab:'tab3',title:'3. C# VS Code',k:'dotnet vscode hello global.json git csproj nuget'},{tab:'tab4',title:'4. Sala de Contrato + API-First',k:'sala contrato mariana rafael juliana diego openapi swagger especificação prism jwt curl mock postman thunder yaml json rfc7807'},{tab:'tab5',title:'5. Docker + Playground',k:'docker mysql mongo crud join er volume container imagem porta sql ddl dml'},{tab:'tab6',title:'6. API Java (IntelliJ)',k:'clean solid tdd c4 adr migração diagrama uml conceitos padrões repository adapter ddd dockerfile ci cd java'},{tab:'tab7',title:'7. API C# (VS Code)',k:'clean solid ddd tdd c4 adr migração diagrama uml value object domain event dockerfile ci cd csharp'},{tab:'tab8',title:'8. Diagnóstico + Glossário',k:'faq cheat glossário sanity'}];const f=s.filter(x=>x.title.toLowerCase().includes(t)||x.k.includes(t));res.innerHTML=f.length?f.map(x=>'<div class="search-result-item" onclick="switchTab(\''+x.tab+'\');this.parentElement.classList.remove(\'active\');document.getElementById(\'global-search-input\').value=\'\'"><strong>'+x.title+'</strong></div>').join(''):'<div class="search-result-item text-muted">Nada encontrado.</div>';res.classList.add('active');}
-document.addEventListener('keydown',e=>{const t=e.target.tagName;if(t==='INPUT'||t==='TEXTAREA'){if(e.key==='Escape')e.target.blur();return;}if(e.key>='1'&&e.key<='8'){switchTab('tab'+e.key);e.preventDefault();}if(e.key==='/'){document.getElementById('global-search-input').focus();e.preventDefault();}if(e.key.toLowerCase()==='d'){const n=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',n);document.querySelectorAll('.mermaid-box').forEach(b=>b.removeAttribute('data-rendered'));initMermaid();renderMermaidIn(document.querySelector('.tab-panel.active'));e.preventDefault();}if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()==='f'){document.body.classList.toggle('focus-mode');e.preventDefault();}if(e.key==='Escape'){closeCodeModal();closeDlModal();document.querySelectorAll('.mermaid-box.fullscreen').forEach(b=>mFS(b,0));document.getElementById('global-search-results').classList.remove('active');}});
+function runGlobalSearch(term){const res=document.getElementById('global-search-results');if(!term||term.length<2){res.classList.remove('active');return;}const t=term.toLowerCase();const s=[{tab:'tab1',title:'1. OS & CLI',k:'winget apt wsl docker terminal cli shell'},{tab:'tab2',title:'2. Java IntelliJ',k:'java intellij initializr simulador hello sdkman git maven tomcat rest json'},{tab:'tab3',title:'3. C# VS Code',k:'dotnet vscode hello global.json git csproj nuget'},{tab:'tab4',title:'4. Sala de Contrato + API-First',k:'sala contrato mariana rafael juliana diego openapi swagger especificação prism jwt curl mock postman thunder yaml json rfc7807'},{tab:'tab5',title:'5. Docker + Playground',k:'docker mysql mongo crud join er volume container imagem porta sql ddl dml'},{tab:'tab6',title:'6. API Java (IntelliJ)',k:'clean solid tdd c4 adr migração diagrama uml conceitos padrões repository adapter ddd dockerfile ci cd java'},{tab:'tab7',title:'7. API C# (VS Code)',k:'clean solid ddd tdd c4 adr migração diagrama uml value object domain event dockerfile ci cd csharp'},{tab:'tab8',title:'8. Contrato Multi-Contextos',k:'bounded context contextos catálogo pedidos clientes openapi tags roles versão mapa de contextos'}, {tab:'tab9',title:'9. C# Multi-Contextos',k:'monolito modular shared kernel módulos http síncrono roles pedidos catálogo clientes ddd'}, {tab:'tab10',title:'10. Diagnóstico + Glossário',k:'faq cheat glossário sanity'}];;const f=s.filter(x=>x.title.toLowerCase().includes(t)||x.k.includes(t));res.innerHTML=f.length?f.map(x=>'<div class="search-result-item" onclick="switchTab(\''+x.tab+'\');this.parentElement.classList.remove(\'active\');document.getElementById(\'global-search-input\').value=\'\'"><strong>'+x.title+'</strong></div>').join(''):'<div class="search-result-item text-muted">Nada encontrado.</div>';res.classList.add('active');}
+document.addEventListener('keydown',e=>{const t=e.target.tagName;if(t==='INPUT'||t==='TEXTAREA'){if(e.key==='Escape')e.target.blur();return;}if(e.key>='1'&&e.key<='9'){switchTab('tab'+e.key);e.preventDefault();} if(e.key==='0'){switchTab('tab10');e.preventDefault();}if(e.key==='/'){document.getElementById('global-search-input').focus();e.preventDefault();}if(e.key.toLowerCase()==='d'){const n=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',n);document.querySelectorAll('.mermaid-box').forEach(b=>b.removeAttribute('data-rendered'));initMermaid();renderMermaidIn(document.querySelector('.tab-panel.active'));e.preventDefault();}if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()==='f'){document.body.classList.toggle('focus-mode');e.preventDefault();}if(e.key==='Escape'){closeCodeModal();closeDlModal();document.querySelectorAll('.mermaid-box.fullscreen').forEach(b=>mFS(b,0));document.getElementById('global-search-results').classList.remove('active');}});
 document.addEventListener('click',e=>{if(!e.target.closest('.global-search'))document.getElementById('global-search-results').classList.remove('active');});
 window.addEventListener('DOMContentLoaded',()=>{
 const st=localStorage.getItem('devTheme');if(st)document.documentElement.setAttribute('data-theme',st);
@@ -4418,7 +5687,7 @@ setTimeout(()=>renderMermaidIn(document.querySelector('.tab-panel.active')),150)
 document.getElementById('theme-toggle').onclick=()=>{const n=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',n);document.querySelectorAll('.mermaid-box').forEach(b=>b.removeAttribute('data-rendered'));initMermaid();renderMermaidIn(document.querySelector('.tab-panel.active'));};
 document.getElementById('focus-toggle').onclick=()=>document.body.classList.toggle('focus-mode');
 document.getElementById('print-btn').onclick=()=>window.print();
-showToast('👋 B.23 completa: 8 abas, Java/C# isolados, Sala de Contrato, SOLID, Docker, CI/CD, glossário!');
+showToast('👋 B.25: 10 abas — agora com Contrato e API C# Multi-Contextos (Catálogo·Pedidos·Clientes)!');
 });
 </script>
 </body>
