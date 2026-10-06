@@ -1,728 +1,1179 @@
 <!DOCTYPE html>
+<!--
+  Disciplina: Sistemas Operacionais — Aula 01, Unidade 1, págs. 12 a 25
+  Título: Definição e Tipos de Sistemas Operacionais
+  Abas: 6 de conteúdo (5 em sala + 1 estudo próprio) + 1 Revisão
+  Cor destaque: #5e35b1 (índigo/roxo kernel)
+  Assunções: páginas 12 a 25 confirmadas; 8 tópicos condensados em 6 abas respeitando o limite 5–7.
+-->
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="color-scheme" content="light dark">
-<title>🖥️ Sistemas Operacionais — Aula 01: Definição e Tipos</title>
+<title>Aula 01 — Definição e Tipos de Sistemas Operacionais</title>
 <style>
-  :root{
-    --bg:#fdf2f8; --card:#ffffff; --fg:#500724; --muted:#57534e; --line:#cbd5e1;
-    --primary:#be185d; --primary-dark:#9d174d; --primary-soft:#fce7f3;
-    --teal:#0d9488; --teal-soft:#ccfbf1; --teal-ink:#115e59;
-    --purple:#8b5cf6; --purple-soft:#ede9fe; --purple-ink:#6d28d9;
-    --warn:#eab308; --warn-soft:#fef9c3; --warn-ink:#854d0e;
-    --orange:#ea580c; --orange-soft:#ffedd5; --orange-ink:#9a3412;
-    --pink:#ec4899; --pink-soft:#fdf2f8;
-    --ok:#16a34a; --ok-soft:#dcfce7;
-    --erro:#dc2626; --erro-soft:#fee2e2;
-    --neutral-soft:#f8fafc; --tab-idle:#e2e8f0;
-    --shadow:0 10px 30px rgba(190,24,93,.15),0 4px 10px rgba(0,0,0,.05);
-    --radius:14px; --font-base:18px;
-  }
-  body.dark{
-    --bg:#170a12; --card:#1e293b; --fg:#e2e8f0; --muted:#94a3b8; --line:#475569;
-    --primary:#f472b6; --primary-dark:#fbcfe8; --primary-soft:#831843;
-    --teal-soft:#0f3d38; --teal-ink:#5eead4;
-    --purple-soft:#2e1065; --purple-ink:#c4b5fd;
-    --warn-soft:#3f3a0d; --warn-ink:#fde047;
-    --orange-soft:#431407; --orange-ink:#fdba74;
-    --pink-soft:#500724;
-    --ok-soft:#052e16; --erro-soft:#450a0a;
-    --neutral-soft:#243244; --tab-idle:#243244;
-    --shadow:0 10px 30px rgba(0,0,0,.5);
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-    font-size:var(--font-base);line-height:1.6;}
-  body.apresentacao{font-size:22px;}
-  header.topo{background:linear-gradient(135deg,#be185d,#c026d3);color:#fff;
-    padding:32px 24px;border-radius:0 0 24px 24px;box-shadow:var(--shadow);}
-  header.topo h1{margin:0 0 8px 0;font-size:2em;line-height:1.2;}
-  header.topo .meta{opacity:.95;}
-  .container{max-width:1100px;margin:24px auto;padding:0 16px;}
-  .card{background:var(--card);border:3px solid var(--primary);border-radius:var(--radius);
-    box-shadow:var(--shadow);padding:20px 24px;margin:18px 0;}
-  .card h2{margin:0 0 12px 0;color:var(--primary-dark);font-size:1.3em;}
-  .card h3{color:var(--primary-dark);margin-top:20px;}
-  details{border-radius:var(--radius);margin:12px 0;border:2px solid transparent;}
-  details[open]{border-color:var(--primary);}
-  summary{cursor:pointer;font-weight:700;padding:12px 16px;border-radius:var(--radius);
-    list-style:none;user-select:none;color:var(--fg);}
-  summary::-webkit-details-marker{display:none}
-  summary::before{content:"▸ ";display:inline-block;}
-  details[open]>summary::before{content:"▾ ";}
-  .sum-mundo{background:var(--primary-soft);}
-  .sum-ferramentas{background:var(--teal-soft);}
-  .sum-dicionario{background:var(--purple-soft);}
-  .sum-conceitos{background:var(--warn-soft);}
-  .sum-roteiro{background:var(--orange-soft);}
-  .sum-quiz{background:#fce7f3;}
-  .sum-aprofundar{background:var(--neutral-soft);}
-  details .conteudo{padding:12px 20px 20px 20px;}
-
-  .tabs{position:sticky;top:0;z-index:300;display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;
-    padding:12px 10px 0 10px;background:var(--bg);border-bottom:3px solid var(--primary);
-    -webkit-overflow-scrolling:touch;scrollbar-width:thin;}
-  .tab-btn{flex:0 0 auto;white-space:nowrap;border:3px solid var(--primary);border-bottom:none;
-    border-radius:12px 12px 0 0;background:var(--tab-idle);color:var(--muted);
-    padding:10px 16px;margin-bottom:-3px;font-weight:600;font-size:1em;cursor:pointer;font-family:inherit;}
-  .tab-btn:hover{color:var(--primary-dark);}
-  .tab-btn[aria-selected="true"]{background:var(--card);color:var(--primary-dark);
-    border-bottom:3px solid var(--card);position:relative;z-index:2;font-weight:700;}
-  .tab-btn.done::after{content:" ✓";color:var(--ok);}
-  .panel-shell{border:3px solid var(--primary);border-top:none;background:var(--card);
-    border-radius:0 0 16px 16px;padding:8px 18px 22px 18px;box-shadow:var(--shadow);}
-  .tab-panel{display:none;}
-  .tab-panel.active{display:block;animation:fade .3s;}
-  @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
-
-  .progresso-wrap{background:var(--line);border-radius:999px;height:14px;overflow:hidden;margin:8px 0 16px 0;}
-  .progresso-bar{height:100%;background:linear-gradient(90deg,var(--primary),#f472b6);width:0%;transition:width .4s;}
-  .progresso-info{display:flex;justify-content:space-between;font-size:.9em;}
-
-  .termo{font-weight:600;color:var(--primary-dark);text-decoration:underline dotted;cursor:help;}
-  .popover{position:fixed;z-index:1000;background:var(--card);border:2px solid var(--primary);
-    border-radius:10px;padding:12px 14px;max-width:320px;box-shadow:0 10px 30px rgba(0,0,0,.35);
-    font-size:.9em;display:none;color:var(--fg);}
-  .popover.show{display:block;}
-  .popover .tipo{display:inline-block;background:var(--primary-soft);color:var(--primary-dark);
-    padding:2px 8px;border-radius:6px;font-size:.75em;margin-bottom:6px;}
-
-  .demo-instrucoes{background:var(--warn-soft);border-left:6px solid var(--warn);padding:12px 16px;border-radius:8px;margin-bottom:12px;color:var(--fg);}
-  .demo-instrucoes strong{color:var(--warn-ink);}
-  .demo-feedback{padding:12px 16px;border-radius:8px;margin-top:10px;font-weight:500;min-height:20px;}
-  .demo-feedback.neutro{background:var(--neutral-soft);color:var(--fg);}
-  button.demo-btn{background:var(--primary);color:#fff;border:none;padding:10px 18px;border-radius:8px;
-    cursor:pointer;font-weight:600;font-size:1em;margin:4px;font-family:inherit;}
-  button.demo-btn.secondary{background:var(--card);color:var(--primary-dark);border:2px solid var(--primary);}
-  button.demo-btn.reset{background:var(--muted);}
-  button.demo-btn.disabled{opacity:.5;cursor:not-allowed;pointer-events:none;}
-
-  .fb-box{margin-top:10px;padding:10px 14px;border-radius:8px;border-left:6px solid;font-size:.95em;color:var(--fg);}
-  .fb-box.erro{background:var(--erro-soft);border-left-color:var(--erro);}
-  .fb-box.ok{background:var(--ok-soft);border-left-color:var(--ok);}
-  .fb-box.warn{background:var(--warn-soft);border-left-color:var(--warn);}
-  .observar{background:var(--primary-soft);border-left:6px solid var(--primary);padding:10px 14px;border-radius:8px;margin-top:10px;font-size:.95em;}
-
-  .quiz-pergunta{font-weight:700;margin-bottom:12px;font-size:1.05em;}
-  .quiz-alt{background:var(--card);border:2px solid var(--line);padding:12px 16px;border-radius:10px;
-    margin:6px 0;cursor:pointer;color:var(--fg);}
-  .quiz-alt:hover:not(.disabled){border-color:var(--primary);}
-  .quiz-alt.correct{background:var(--ok-soft);border-color:var(--ok);font-weight:600;}
-  .quiz-alt.correct::before{content:"✓ ";color:var(--ok);font-weight:900;}
-  .quiz-alt.wrong{background:var(--erro-soft);border-color:var(--erro);}
-  .quiz-alt.wrong::before{content:"✗ ";color:var(--erro);font-weight:900;}
-  .quiz-alt.disabled{cursor:not-allowed;opacity:.6;}
-  .quiz-alt .fb{display:none;margin-top:10px;padding:10px 12px;border-radius:8px;font-weight:500;
-    font-size:.95em;border-left:5px solid var(--line);background:var(--neutral-soft);}
-  .quiz-alt.correct .fb{display:block;background:var(--ok-soft);border-left-color:var(--ok);}
-  .quiz-alt.wrong .fb{display:block;background:var(--erro-soft);border-left-color:var(--erro);}
-  .so-apresentacao{display:none !important;}
-  body.apresentacao .so-apresentacao{display:block !important;}
-
-  .toggles{position:fixed;top:12px;right:12px;z-index:500;display:flex;gap:8px;}
-  .toggles button{background:var(--card);border:2px solid var(--primary);color:var(--primary-dark);
-    padding:8px 14px;border-radius:999px;cursor:pointer;font-weight:700;box-shadow:var(--shadow);font-family:inherit;}
-  body.apresentacao #darkToggle{display:none;}
-
-  .mapa{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;padding:16px;background:var(--primary-soft);border-radius:var(--radius);}
-  .mapa-node{background:var(--card);padding:10px 14px;border-radius:10px;border:2px solid var(--primary);
-    font-weight:600;flex:1 1 140px;text-align:center;color:var(--fg);}
-  .mapa-node::after{content:"→";color:var(--primary-dark);font-weight:900;font-size:1.5em;margin-left:6px;}
-  .mapa-node:last-child::after{content:"🏁";}
-
-  .aprofundar-lista{list-style:none;padding:0;}
-  .aprofundar-lista li{padding:8px 12px;margin:4px 0;background:var(--neutral-soft);border-radius:8px;border-left:4px solid var(--primary);}
-  .aprofundar-lista a{color:var(--primary-dark);text-decoration:none;font-weight:600;}
-  .aprofundar-lista a:hover{text-decoration:underline;}
-  .idioma-tag{background:var(--warn-soft);color:var(--warn-ink);padding:1px 8px;border-radius:6px;font-size:.75em;font-weight:700;margin-left:6px;}
-
-  table.cola{width:100%;border-collapse:collapse;font-size:.95em;}
-  table.cola th,table.cola td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;color:var(--fg);}
-  table.cola th{background:var(--primary-soft);color:var(--primary-dark);}
-
-  .cenario-card{background:var(--card);border:2px solid var(--line);border-radius:12px;padding:14px;margin:8px 0;color:var(--fg);}
-  .cenario-card .titulo{font-weight:700;color:var(--primary-dark);}
-  .fila-visual{display:flex;gap:4px;padding:12px;background:var(--neutral-soft);border-radius:8px;min-height:60px;align-items:center;flex-wrap:wrap;}
-  .pacote{background:var(--primary);color:#fff;padding:6px 10px;border-radius:6px;font-size:.85em;font-weight:700;}
-  .atendente{background:var(--teal);color:#fff;padding:6px 10px;border-radius:6px;font-size:.85em;font-weight:700;}
-  .chefao-box{background:var(--purple-soft);border:3px solid var(--purple);padding:24px;border-radius:var(--radius);color:var(--fg);}
-
-  .gantt{display:flex;gap:2px;padding:12px;background:var(--neutral-soft);border-radius:8px;min-height:64px;align-items:center;flex-wrap:wrap;margin:10px 0;}
-  .gblk{height:40px;border-radius:6px;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:.85em;}
-  .nuc-row{display:flex;gap:2px;align-items:center;margin:4px 0;flex-wrap:wrap;}
-  .nuc-label{width:110px;font-weight:700;font-size:.85em;color:var(--muted);}
-  .nblk{height:34px;width:34px;border-radius:6px;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:.75em;}
-
-  @media (max-width:600px){
-    :root{--font-base:16px;}
-    body.apresentacao{font-size:19px;}
-    header.topo{padding:20px 16px;}
-    header.topo h1{font-size:1.5em;}
-    .tab-btn{padding:8px 12px;font-size:.9em;}
-  }
+:root{
+  --cor:#5e35b1;
+  --cor-forte:#311b92;
+  --cor-suave:#ede7f6;
+  --fundo:#fdfdfd;
+  --texto:#1a1a1a;
+  --painel:#ffffff;
+  --borda:#d9d9d9;
+  --muted:#555;
+  --ok:#2e7d32;
+  --erro:#c62828;
+  --fonte:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --tam:18px;
+}
+*{box-sizing:border-box}
+body.dark{
+  --fundo:#121212;--texto:#e8e8e8;--painel:#1e1e1e;--borda:#333;
+  --muted:#b0b0b0;--cor-suave:#2a1d3a;--suave2:#232323;
+}
+html,body{margin:0;padding:0;background:var(--fundo);color:var(--texto);font-family:var(--fonte);font-size:var(--tam);line-height:1.55}
+header.topo{
+  position:sticky;top:0;z-index:100;background:var(--cor);color:#fff;
+  padding:10px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;
+  box-shadow:0 2px 6px rgba(0,0,0,.15)
+}
+header.topo h1{font-size:1.1rem;margin:0;font-weight:700}
+header.topo .meta{font-size:.85rem;opacity:.95}
+.acoes{display:flex;gap:6px;flex-wrap:wrap}
+.acoes button{
+  background:#fff;color:var(--cor);border:none;padding:6px 10px;border-radius:6px;
+  cursor:pointer;font-weight:600;font-size:.85rem
+}
+.acoes button:hover{background:var(--cor-suave)}
+nav.tabs{
+  position:sticky;top:56px;z-index:90;background:var(--painel);
+  border-bottom:2px solid var(--borda);overflow-x:auto;white-space:nowrap;
+  scrollbar-width:thin
+}
+nav.tabs button{
+  font-family:var(--fonte);font-size:var(--tam);background:transparent;color:var(--texto);
+  border:none;padding:12px 16px;cursor:pointer;border-bottom:4px solid transparent;
+  margin:0;font-weight:600;position:relative;opacity:.75
+}
+nav.tabs button:hover{opacity:1}
+nav.tabs button[aria-selected="true"]{
+  color:var(--cor);border-bottom-color:var(--cor);opacity:1;
+  background:var(--painel);
+}
+nav.tabs button .selo{font-size:.7rem;background:var(--cor);color:#fff;padding:1px 5px;border-radius:8px;margin-left:4px;vertical-align:middle}
+main{max-width:980px;margin:0 auto;padding:20px}
+section.aba{display:none;animation:fade .3s ease}
+section.aba.ativa{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.card{background:var(--painel);border:2px solid var(--borda);border-radius:12px;padding:18px 20px;margin-bottom:18px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.card h2{margin-top:0;color:var(--cor);font-size:1.3rem;border-bottom:2px dashed var(--borda);padding-bottom:6px}
+.card h3{color:var(--cor);font-size:1.1rem;margin-top:18px}
+.missao{
+  background:linear-gradient(135deg,var(--cor),var(--cor-forte));color:#fff;
+  padding:16px 18px;border-radius:10px;margin-bottom:18px;font-weight:500
+}
+.missao strong{display:block;font-size:1.1rem;margin-bottom:4px}
+.demo{
+  background:var(--suave2, #f5f0ff);border:2px solid var(--cor);border-radius:10px;
+  padding:16px;margin:18px 0
+}
+body.dark .demo{background:#2a1d3a}
+.demo h3{color:var(--cor);margin-top:0}
+.instru{
+  background:#fff8e1;border-left:5px solid #ffa000;padding:10px 14px;border-radius:6px;margin:10px 0;font-size:.95rem
+}
+body.dark .instru{background:#3a2d10}
+.preveja{
+  background:#e8f5e9;border-left:5px solid var(--ok);padding:10px 14px;border-radius:6px;
+  margin:10px 0;font-style:italic
+}
+body.dark .preveja{background:#1e3a1e}
+.obs{
+  background:#e3f2fd;border-left:5px solid #1976d2;padding:10px 14px;border-radius:6px;margin:10px 0;font-size:.95rem
+}
+body.dark .obs{background:#153047}
+button.btn{
+  background:var(--cor);color:#fff;border:none;padding:9px 16px;border-radius:8px;
+  cursor:pointer;font-weight:600;font-family:var(--fonte);font-size:.95rem;margin:4px 4px 4px 0
+}
+button.btn:hover{filter:brightness(1.08)}
+button.btn.sec{background:#6c757d}
+button.btn:disabled{opacity:.5;cursor:not-allowed}
+.quiz-perg{border:2px solid var(--borda);border-radius:10px;padding:14px;margin:12px 0;background:var(--painel)}
+.quiz-perg h4{margin:0 0 10px;color:var(--texto)}
+.quiz-perg .alts{display:flex;flex-direction:column;gap:8px}
+.alt{
+  text-align:left;background:var(--fundo);border:2px solid var(--borda);border-radius:8px;
+  padding:10px 14px;cursor:pointer;font-family:var(--fonte);font-size:1rem;
+  transition:all .2s
+}
+.alt:hover:not(:disabled){border-color:var(--cor);background:var(--cor-suave)}
+.alt:disabled{cursor:not-allowed;opacity:.85}
+.alt.certa{background:#d4edda;border-color:var(--ok);color:#155724}
+.alt.errada{background:#f8d7da;border-color:var(--erro);color:#721c24}
+body.dark .alt.certa{background:#1e3a1e;color:#a8e6a8}
+body.dark .alt.errada{background:#3a1e1e;color:#ffb3b3}
+.fb{
+  margin-top:10px;padding:10px 14px;border-radius:8px;font-size:.95rem;
+  display:none
+}
+.fb.ok{background:#d4edda;border-left:5px solid var(--ok);color:#155724;display:block}
+.fb.bad{background:#f8d7da;border-left:5px solid var(--erro);color:#721c24;display:block}
+body.dark .fb.ok{background:#1e3a1e;color:#a8e6a8}
+body.dark .fb.bad{background:#3a1e1e;color:#ffb3b3}
+details{background:var(--suave2,#fafafa);border:1px solid var(--borda);border-radius:8px;padding:8px 12px;margin:10px 0}
+body.dark details{background:#222}
+details summary{cursor:pointer;font-weight:600;color:var(--cor)}
+details[open] summary{margin-bottom:8px}
+details.lex{background:#fff3e0;border-color:#ffb74d}
+details.links{background:#e8f5e9;border-color:#81c784}
+details.links a{color:var(--cor);font-weight:600}
+.progresso{
+  background:var(--painel);border:2px solid var(--borda);border-radius:10px;
+  padding:10px 14px;margin-bottom:14px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:.95rem
+}
+.xp{background:var(--cor);color:#fff;padding:3px 10px;border-radius:20px;font-weight:700}
+.selos{display:flex;gap:6px;flex-wrap:wrap}
+.selo{background:var(--cor-suave);color:var(--cor);padding:3px 8px;border-radius:20px;font-size:.8rem;font-weight:600}
+.rota{
+  background:#e0f7fa;border-left:5px solid #0097a7;padding:10px 14px;border-radius:6px;
+  margin:10px 0;font-size:.9rem
+}
+body.dark .rota{background:#0c2d33;color:#b3e5fc}
+body.apresentacao{font-size:22px}
+body.apresentacao nav.tabs button{font-size:22px}
+body.apresentacao .rota-apres{
+  position:fixed;bottom:0;left:0;right:0;background:#263238;color:#fff;
+  padding:14px 20px;font-size:1.05rem;box-shadow:0 -2px 8px rgba(0,0,0,.25);z-index:50
+}
+.revisao-mapa{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.revisao-mapa .no{
+  border:2px solid var(--cor);border-radius:8px;padding:10px;background:var(--cor-suave)
+}
+.revisao-mapa .no strong{color:var(--cor)}
+.cola{background:#fff3cd;border-left:5px solid #ffc107;padding:12px 16px;border-radius:8px;font-family:"Courier New",monospace;font-size:.95rem;white-space:pre-wrap}
+body.dark .cola{background:#3a2d10;color:#ffd980}
+.chefao{
+  background:linear-gradient(135deg,#263238,#37474f);color:#fff;padding:18px;border-radius:12px;margin-top:18px
+}
+.chefao h3{color:#ffd54f;margin-top:0}
+.chefao button{background:#ffd54f;color:#263238}
+footer{max-width:980px;margin:30px auto;padding:20px;text-align:center;color:var(--muted);font-size:.85rem}
+@media(max-width:600px){
+  main{padding:12px}
+  .card{padding:14px}
+  header.topo h1{font-size:.95rem}
+}
 </style>
 </head>
 <body>
 
-<div class="toggles">
-  <button id="darkToggle" aria-label="Alternar modo escuro">🌙 Escuro</button>
-  <button id="modoToggle" aria-label="Alternar modo de apresentação">🎤 Modo Apresentação</button>
-</div>
-
 <header class="topo">
-  <div class="container" style="margin:0;">
-    <h1>🖥️ Sistemas Operacionais — Aula 01: Definição e Tipos</h1>
-    <div class="meta">Unidade 1 · Páginas 12 a 25 · <span id="xpInfo">0 XP · 0 selos</span></div>
-    <div class="progresso-wrap"><div class="progresso-bar" id="progressoBar"></div></div>
-    <div class="progresso-info"><span>Progresso da aula</span><span id="progressoTxt">0 / 5 abas concluídas</span></div>
+  <div>
+    <h1>🧠 Aula 01 — Definição e Tipos de Sistemas Operacionais</h1>
+    <div class="meta">Unidade 1 • págs. 12 a 25 • ~30 min em sala</div>
+  </div>
+  <div class="acoes">
+    <button id="btnApres" title="Modo Apresentação">🎤</button>
+    <button id="btnDark" title="Modo Escuro">🌙</button>
   </div>
 </header>
 
-<div class="container">
-  <div class="card" style="border-color:var(--purple);">
-    <h2 style="color:var(--purple-ink);">🚀 Sua missão</h2>
-    <p><strong>Ano de 1955.</strong> Você acaba de ser contratado como gerente de um centro de computação. A máquina custa uma fortuna e passa metade do dia parada enquanto operadores trocam cartões e fitas. Ao longo desta aula, você vai evoluir esse centro por <strong>70 anos de história</strong> — do processamento em lotes até os sistemas fracamente acoplados que rodam na nuvem. Cada aba é uma era que você precisa dominar. Ao final, enfrenta o <strong>Chefão</strong>.</p>
-    <p>💡 <em>Regras:</em> ganhe XP acertando o quiz (+10 de primeira, +5 após errar), colete selos completando as demos e use o <strong>Modo Apresentação</strong> (canto superior direito) ao projetar em sala.</p>
-  </div>
+<nav class="tabs" role="tablist" id="tablist"></nav>
 
-  <div class="card" style="border-color:var(--orange);">
-    <h2 style="color:var(--orange-ink);">🧰 Glossário de ferramentas (leia uma vez!)</h2>
-    <p>Clique em qualquer palavra azul sublinhada nos textos para relembrar a definição.</p>
-    <div id="glossarioLista"></div>
-  </div>
+<main id="main"></main>
 
-  <div class="tabs" id="tabsBar" role="tablist" aria-label="Abas da aula"></div>
-  <div class="panel-shell" id="panelShell"></div>
-</div>
-
-<div class="popover" id="popover"></div>
+<footer>
+  Aula gerada offline • XP ganho ao completar Missões, Demos e Quizzes • Botão <strong>FIM</strong> encerra sessão.
+</footer>
 
 <script>
-const AULA_DADOS={
- glossario:[
-  {termo:"Sistema Operacional",tipo:"conceito",explicacao:"Software que gerencia o hardware e oferece serviços aos programas. É o 'gerente' do computador: decide quem usa CPU, memória e dispositivos.",exemploReal:"Windows, Linux, macOS, Android e iOS são sistemas operacionais."},
-  {termo:"Kernel",tipo:"componente",explicacao:"O coração do SO: fica na memória o tempo todo e toma as decisões de baixo nível (escalar processos, alocar memória, falar com discos).",exemploReal:"O kernel Linux roda dentro do Android e em servidores do mundo inteiro."},
-  {termo:"Processamento Batch",tipo:"modo",explicacao:"Executar jobs agrupados, em sequência, sem interação do usuário durante a execução.",exemploReal:"A folha de pagamento do banco processada de madrugada, sem nenhum operador clicando."},
-  {termo:"Multitarefa",tipo:"conceito",explicacao:"O SO conduz vários programas 'ao mesmo tempo', dividindo o tempo da CPU entre eles em fatias rápidas.",exemploReal:"Música no Spotify, navegador e Word abertos simultaneamente no seu computador."},
-  {termo:"Multiprocessador",tipo:"arquitetura",explicacao:"Computador com duas ou mais CPUs trabalhando juntas; o SO distribui as tarefas entre elas.",exemploReal:"Qualquer celular atual tem de 4 a 8 núcleos de processamento."},
-  {termo:"Fortemente acoplado",tipo:"arquitetura",explicacao:"Processadores compartilham a mesma memória e o mesmo clock; comunicação rapidíssima, mas falha e disputa se concentram no todo.",exemploReal:"Os múltiplos núcleos dentro do chip do seu notebook."},
-  {termo:"Fracamente acoplado",tipo:"arquitetura",explicacao:"Cada máquina tem memória e SO próprios; conversam por rede trocando mensagens; mais resiliente e escalável.",exemploReal:"Clusters de data centers, caixas eletrônicos de agências diferentes."},
-  {termo:"Processo",tipo:"conceito",explicacao:"Um programa em execução: o código mais seu estado atual (memória, arquivos abertos, ponto da CPU).",exemploReal:"Cada aba do Chrome aparece como um processo no Gerenciador de Tarefas."},
-  {termo:"Driver",tipo:"componente",explicacao:"Peça de software que ensina o SO a conversar com um hardware específico.",exemploReal:"O driver da impressora que você instala para o Windows conseguir imprimir."}
- ],
- abas:[
-  {titulo:"1️⃣ O que é um SO?",narrativa:"Anos 1950. Seu centro de computação tem uma máquina caríssima e nenhum software que a gerencie: cada programa precisa trazer o próprio código para controlar disco, tela e memória. Alguém propõe criar uma camada única que administre tudo. Nasce o Sistema Operacional.",
-   mundoReal:["🏨 Pense num hotel: os hóspedes (aplicativos) não entram na cozinha nem mexem na fiação elétrica. Eles pedem ao concierge (o SO), que organiza quem usa o quê, quando e como.","🚦 O CPU é um cruzamento de uma pista só. Sem semáforo, seria o caos. O Sistema Operacional é o semáforo (e o guarda): decide quem passa, por quanto tempo e em que ordem."],
-   ferramentas:[{nome:"Kernel",tipo:"componente",explicacao:"Parte do SO que nunca sai da memória; escala processos, aloca memória e atende aos pedidos de hardware."},{nome:"Driver",tipo:"componente",explicacao:"Tradutor entre o SO e uma peça de hardware específica (impressora, placa de vídeo, Wi-Fi)."},{nome:"Shell / Interface",tipo:"componente",explicacao:"A camada do SO que conversa com você: terminal de comandos ou área de trabalho com janelas."}],
-   dicionario:[{termo:"Hardware",definicao:"Parte física: CPU, memória, discos, telas, teclados."},{termo:"Software",definicao:"Conjunto de instruções que dizem ao hardware o que fazer."},{termo:"Recurso",definicao:"Tudo que é disputado: CPU, memória, disco, rede, impressora."},{termo:"Abstração",definicao:"Esconder a complexidade e oferecer um botão simples no lugar."}],
-   conceitos:[{titulo:"O SO como gerente e mágico",texto:"Como gerente, o SO distribui recursos disputados (CPU, memória, dispositivos) entre processos. Como mágico, cria a ilusão de que cada programa tem a máquina inteira só para si — a chamada máquina virtual por processo.",analogia:"💡 O gerente de uma empresa decide qual departamento usa a sala de reunião, por quanto tempo, e ainda faz cada equipe sentir que a sala é 'sua'.",exemploReal:"Abra o Gerenciador de Tarefas do Windows: você vê o kernel dividindo CPU e memória entre dezenas de processos ao mesmo tempo."},
-    {titulo:"Sem SO, o 'metal nu'",texto:"Antes dos SOs, cada programa precisava embutir o próprio código para controlar disco, tela e impressora. Qualquer mudança de hardware exigia reescrever os programas.",analogia:"💡 Era como cada hóspede do hotel ter que cozinhar a própria comida, consertar o próprio chuveiro e gerar a própria energia.",exemploReal:"O IBM 701 (1952) era operado por painéis e cartões perfurados, sem sistema operacional: o operador era o 'SO humano'."}],
-   roteiroDemo:{passo0:"Três situações do dia a dia. Em cada uma, escolha quem faz o trabalho: SO, aplicativo ou usuário.",passos:[
-     {acao:"Leia a situação 1 e clique em uma das três opções",ve:"Quadro explicando por que sua escolha acertou ou falhou",significa:"Gerenciar memória e CPU é papel do kernel, não do app."},
-     {acao:"Resolva as 3 situações",ve:"Sua pontuação no cenário",significa:"Separar papéis (SO × app × usuário) é a essência da abstração."}]},
-   demo:{tipo:"cenario",config:{pergunta:"Em cada situação, QUEM faz o trabalho?",cenarios:[
-     {empresa:"🧠 Memória no limite",descricao:"O Chrome abre 50 abas e a memória enche. Quem decide qual página fica na memória e qual vai para o disco?",correta:"Sistema Operacional",opcoes:["Sistema Operacional","Aplicativo","Usuário"],
-      porques:{"Sistema Operacional":"gerenciar memória física é tarefa do kernel; o Chrome apenas solicita páginas, quem aloca e despeja no disco é o SO.","Aplicativo":"o Chrome pede memória, mas não decide onde ela fica fisicamente nem o que sai dela: isso é abaixo da camada dele.","Usuário":"o usuário pode fechar abas, mas não gerencia páginas de memória nem swap."}},
-     {empresa:"✍️ Texto na tela",descricao:"Você digita uma carta e ela aparece formatada na tela. Quem desenha as letras e o layout?",correta:"Aplicativo",opcoes:["Sistema Operacional","Aplicativo","Usuário"],
-      porques:{"Sistema Operacional":"o SO entrega a tela e as janelas, mas não sabe nada sobre o conteúdo do seu documento.","Aplicativo":"o editor de texto renderiza fontes, cores e layout: é trabalho da aplicação.","Usuário":"o usuário digita, mas a renderização é feita pelo software, não pela pessoa."}},
-     {empresa:"🖨️ Impressão preto e branco",descricao:"Na hora de imprimir, alguém escolhe entre colorido ou preto e branco. Quem toma essa decisão?",correta:"Usuário",opcoes:["Sistema Operacional","Aplicativo","Usuário"],
-      porques:{"Sistema Operacional":"o SO só enfileira e envia o job à impressora; preferências de conteúdo não são decisão dele.","Aplicativo":"o editor oferece o menu de opções, mas a escolha em si é humana.","Usuário":"preferência estética é decisão da pessoa: nem SO nem app escolhem sozinhos."}}],
-     exemploReal:"No Android, o aplicativo 'Configurar' mostra o kernel dividindo memória entre apps — e nenhum app consegue invadir a memória do outro."}},
-   quiz:[{pergunta:"Qual é a função principal de um Sistema Operacional?",alternativas:[
-     {texto:"Gerenciar o hardware e oferecer serviços aos programas, atuando como intermediário entre eles e a máquina",correta:true,fb:"exatamente: o SO abstrai o hardware e administra recursos disputados (CPU, memória, dispositivos) para os aplicativos."},
-     {texto:"Substituir o processador nos cálculos matemáticos do computador",correta:false,fb:"o SO não faz o trabalho do CPU: ele apenas decide QUEM usa o CPU, quando e por quanto tempo."},
-     {texto:"Servir apenas para deixar o computador com aparência bonita e organizada",correta:false,fb:"a interface é só uma camada visível; a essência do SO é gerenciamento de recursos, que funciona mesmo sem tela."}]},
-    {pergunta:"O que é o kernel de um Sistema Operacional?",alternativas:[
-     {texto:"A parte do SO que permanece na memória o tempo todo e gerencia CPU, memória e dispositivos",correta:true,fb:"correto: o kernel é o núcleo permanente; todo o resto do sistema pede serviços a ele."},
-     {texto:"A primeira tela que aparece quando o computador é ligado",correta:false,fb:"essa tela é a de boot/login; o kernel roda 'por trás', sem aparência visual."},
-     {texto:"Um antivírus que já vem instalado no sistema",correta:false,fb:"antivírus é um aplicativo; o kernel é parte estrutural do próprio SO."}]},
-    {pergunta:"Por que se diz que o SO cria uma 'máquina virtual' para cada programa?",alternativas:[
-     {texto:"Porque dá a cada programa a ilusão de ter CPU e memória só para si, enquanto divide os recursos reais entre todos",correta:true,fb:"perfeito: é a abstração central dos SOs — cada processo se comporta como se fosse dono da máquina."},
-     {texto:"Porque clona fisicamente o computador para cada aplicativo aberto",correta:false,fb:"não há clonagem física: é uma ilusão criada pelo escalonamento e pela memória virtual."},
-     {texto:"Porque só funciona dentro de máquinas virtuais como o VirtualBox",correta:false,fb:"é o contrário: máquinas virtuais é que simulam um computador para o SO rodar dentro."}]}],
-   aprofundar:[{rotulo:"Sistema operacional — Wikipédia em português",url:"https://pt.wikipedia.org/wiki/Sistema_operacional",idioma:"pt"},{rotulo:"🎓 Pesquisa científica (Google Scholar): sistemas operacionais",url:"https://scholar.google.com/scholar?q=sistemas+operacionais+defini%C3%A7%C3%A3o",idioma:"pt"},{rotulo:"Operating Systems: Crash Course Computer Science #18 (YouTube)",url:"https://www.youtube.com/watch?v=26QPDBe-NB8",idioma:"en"}],
-   mitoOuVerdade:{afirmacao:"Windows e Linux são o mesmo sistema operacional com interfaces diferentes.",verdade:false,explicacao:"Mito: são kernels distintos (NT e Linux), com arquiteturas, licenças e ecossistemas diferentes. A semelhança é só no papel de 'gerente do hardware'."}},
-
-  {titulo:"2️⃣ Batch: a era das filas",narrativa:"Anos 1950-60. Sua máquina custa milhões e ficar parada é queimar dinheiro. A solução da época: agrupar jobs em cartões perfurados e executá-los em sequência, sem operador interferindo entre um e outro. Nasce o processamento batch.",
-   mundoReal:["🧾 A folha de pagamento do banco: milhares de registros processados de madrugada, em lote, sem nenhum bancário clicando durante a execução.","🍞 A padaria não aquece o forno para cada pão: junta uma tanda inteira e assa em lote. Batch é exatamente isso, com jobs no lugar de pães."],
-   ferramentas:[{nome:"Cartão perfurado",tipo:"meio físico",explicacao:"Cartão rígido com furos que codificavam dados e programas; era o 'pendrive' da época."},{nome:"Monitor residente",tipo:"software",explicacao:"O SO primitivo: ficava na memória e passava o controle de um job para o seguinte, sem intervenção humana."},{nome:"JCL (Job Control Language)",tipo:"linguagem",explicacao:"Instruções escritas nos cartões dizendo ao sistema qual programa rodar e quais dispositivos usar."}],
-   dicionario:[{termo:"Job",definicao:"Unidade de trabalho submetida ao sistema (programa + dados + instruções)."},{termo:"Fila de jobs",definicao:"Linha ordenada de jobs aguardando execução."},{termo:"Tempo de setup",definicao:"Tempo perdido preparando a máquina entre jobs (trocar fitas, carregar compilador)."},{termo:"Throughput",definicao:"Quantidade de jobs concluídos por unidade de tempo."}],
-   conceitos:[{titulo:"Como o batch funcionava",texto:"Operários agrupavam cartões de jobs parecidos em lotes; o monitor residente executava um job após o outro, carregando o próximo automaticamente. O objetivo era um só: reduzir o tempo ocioso da máquina caríssima.",analogia:"💡 Lavanderia: você lava todas as roupas brancas juntas, depois as coloridas — não liga a máquina para cada meia.",exemploReal:"O IBM OS/360 (1964) processava lotes de bancos e seguradoras; um job de folha de pagamento podia levar horas, rodando sozinho."},
-    {titulo:"O preço da ausência de interação",texto:"No batch, o usuário não conversa com o programa: submete o job e recebe o resultado horas (ou um dia) depois. Um erro de digitação só era descoberto no fim.",analogia:"💡 É a diferença entre trocar cartas e conversar ao telefone: na carta, cada dúvida custa dias.",exemploReal:"Estudantes dos anos 1960 entregavam seu programa em cartões de manhã e buscavam o resultado (com a lista de erros) no dia seguinte."}],
-   roteiroDemo:{passo0:"Você é o operador do centro em 1962. Jobs chegam em cartões; escolha como processá-los.",passos:[
-     {acao:"Adicione 10 jobs à fila",ve:"A fila de cartões cresce",significa:"Em centros reais, centenas de jobs aguardavam ao mesmo tempo."},
-     {acao:"Escolha 'Manual: operador para a máquina entre jobs'",ve:"Quase nada anda e sobra fila",significa:"Era o problema original: setup manual consumia mais tempo que o próprio cálculo."},
-     {acao:"Escolha 'Batch agrupado por tipo'",ve:"A fila esvazia rápido",significa:"Agrupar jobs parecidos minimiza troca de fitas e compiladores: throughput máximo."}]},
-   demo:{tipo:"fila",config:{pergunta:"Sua fila tem jobs em cartões. Qual estratégia processa mais rápido?",
-     opcoes:[{texto:"Manual: operador para a máquina entre jobs",velocidade:1,porque:"cada job exige parar tudo para carregar cartões e fitas: a máquina fica ociosa na maior parte do tempo."},
-             {texto:"Batch simples: monitor residente passa de job em job",velocidade:3,porque:"o monitor carrega o próximo job sozinho: o tempo ocioso cai drasticamente."},
-             {texto:"Batch agrupado por tipo (jobs parecidos juntos)",velocidade:5,porque:"jobs parecidos usam o mesmo compilador e as mesmas fitas: quase nenhum setup entre eles, throughput máximo."}],
-     exemploReal:"No IBM OS/360, agrupar jobs que usavam o mesmo compilador (COBOL com COBOL, FORTRAN com FORTRAN) era prática padrão dos operadores."}},
-   quiz:[{pergunta:"O que caracteriza o processamento batch?",alternativas:[
-     {texto:"Jobs executados em sequência, sem interação do usuário durante a execução",correta:true,fb:"exato: o job roda do início ao fim sozinho; o resultado sai depois, como um relatório."},
-     {texto:"O usuário responde perguntas do programa enquanto ele executa",correta:false,fb:"isso é processamento interativo (tempo compartilhado), o oposto do batch."},
-     {texto:"Os programas só rodam quando o usuário clica em um ícone",correta:false,fb:"no batch não há ícones nem clique: os jobs são submetidos em fila e executados pelo monitor."}]},
-    {pergunta:"Qual era o papel do monitor residente nos primeiros sistemas batch?",alternativas:[
-     {texto:"Permanecer na memória e passar o controle automaticamente de um job para o seguinte, reduzindo o tempo ocioso",correta:true,fb:"correto: foi o 'avô' dos SOs — eliminou o operador entre jobs."},
-     {texto:"Desenhar janelas e menus para o usuário interagir",correta:false,fb:"não havia interação: interfaces gráficas só chegaram décadas depois."},
-     {texto:"Calcular a folha de pagamento dos funcionários do centro",correta:false,fb:"o monitor não fazia cálculos de negócio; ele apenas orquestrava a sequência de jobs."}]},
-    {pergunta:"Por que agrupar jobs parecidos no mesmo lote aumentava o throughput?",alternativas:[
-     {texto:"Porque evitava o setup entre jobs: mesma fita, mesmo compilador, menos troca de material",correta:true,fb:"perfeito: o ganho vinha de eliminar o tempo morto de preparação entre jobs diferentes."},
-     {texto:"Porque os cartões perfurados ficavam fisicamente mais leves",correta:false,fb:"o peso dos cartões não influenciava a velocidade de processamento."},
-     {texto:"Porque a máquina passava a rodar com clock mais alto",correta:false,fb:"o clock não mudava; o ganho era de organização, não de hardware."}]}],
-   aprofundar:[{rotulo:"Processamento em lote — Wikipédia",url:"https://pt.wikipedia.org/wiki/Processamento_em_lote",idioma:"pt"},{rotulo:"Cartão perfurado — Wikipédia",url:"https://pt.wikipedia.org/wiki/Cart%C3%A3o_perfurado",idioma:"pt"},{rotulo:"🎓 Pesquisa científica (Google Scholar): processamento em lote",url:"https://scholar.google.com/scholar?q=processamento+em+lote+batch+processing",idioma:"pt"}],
-   mitoOuVerdade:{afirmacao:"O processamento batch deixou de existir nos computadores modernos.",verdade:false,explicacao:"Mito: batch vive em todo lugar — folha de pagamento, extratos bancários, backups noturnos e jobs de cron/Linux são batch puro, só que sem cartões."}},
-
-  {titulo:"3️⃣ Multitarefa e o PC",narrativa:"Anos 1980-90. O computador entra na sua mesa e vira produto de prateleira. O usuário agora quer ouvir música ENQUANTO escreve — e o SO precisa dividir a atenção do CPU sem deixar um programa travado congelar os demais.",
-   mundoReal:["🍳 Um chef com várias panelas no fogo: ele alterna a atenção entre elas. Na multitarefa preemptiva, o chef (SO) decide quando trocar; na cooperativa, as panelas é que 'avisam' quando podem esperar.","📱 Seu celular agora: música, WhatsApp e GPS funcionando ao mesmo tempo — três processos dividindo um punhado de núcleos."],
-   ferramentas:[{nome:"MS-DOS",tipo:"sistema operacional",explicacao:"SO dos primeiros IBM PC (1981): monotarefa — um programa por vez, sem proteção entre eles."},{nome:"Windows 3.1 / Windows 95",tipo:"sistema operacional",explicacao:"3.1 (1992) trouxe multitarefa cooperativa; 95 (1995) popularizou a preemptiva com proteção entre aplicativos."},{nome:"Escalonador",tipo:"componente",explicacao:"Peça do kernel que fatia o tempo do CPU entre os processos e decide quem roda a cada instante."}],
-   dicionario:[{termo:"Fatia de tempo",definicao:"Pequeno intervalo de CPU concedido a cada processo antes da troca."},{termo:"Troca de contexto",definicao:"Salvar o estado de um processo e carregar o do próximo."},{termo:"Cooperativa",definicao:"Multitarefa em que os programas cedem o CPU voluntariamente."},{termo:"Preemptiva",definicao:"Multitarefa em que o SO toma o CPU de volta via interrupção de timer."}],
-   conceitos:[{titulo:"A ilusão do 'ao mesmo tempo'",texto:"Com um CPU só, nada roda simultaneamente: o escalonador alterna processos em fatias de milissegundos, e a velocidade cria a sensação de paralelismo.",analogia:"💡 Um garçom único servindo dez mesas: cada mesa sente atendimento contínuo, mas ele está em uma mesa por vez.",exemploReal:"No Windows 95, dava para deixar Winamp tocando enquanto se digitava no Word com a internet discada conectada — três processos revezando no mesmo Pentium."},
-    {titulo:"Cooperativa x Preemptiva: a guerra do CPU",texto:"Na cooperativa, um programa mal-educado que não cede o CPU congela o sistema inteiro. Na preemptiva, o timer do kernel interrompe quem estourou a fatia — e um crash fica isolado.",analogia:"💡 Reunião sem moderador (cooperativa): quem pega a palavra não solta mais. Com moderador e cronômetro (preemptiva): todos falam em rodízio.",exemploReal:"No Windows 3.x, um aplicativo travado congelava tudo; no Windows NT/95, o Ctrl+Alt+Del matava só o processo travado."},
-    {titulo:"O computador pessoal muda o jogo",texto:"O SO vira produto de massa, com interface para uma pessoa só. O MS-DOS era simples e monotarefa; a pressão do usuário doméstico por 'fazer duas coisas ao mesmo tempo' empurrou a indústria para a multitarefa.",analogia:"💡 O carro popular: antes dirigido só por especialistas, agora precisa ser simples, seguro e fazer várias coisas ao mesmo tempo (ar, som, GPS).",exemploReal:"O IBM PC 5150 (1981) vinha com MS-DOS; em 1995, o Windows 95 vendia a multitarefa como argumento de venda principal."}],
-   roteiroDemo:{passo0:"Uma linha do tempo (Gantt) animada com 3 processos em round-robin. Antes de dar play, PREVEJA: com quantum 1, quantas trocas de contexto acontecerão?",passos:[
-     {acao:"Escolha quantum 1 e clique em ▶ Play",ve:"Os blocos alternam quase a cada tick; muitas trocas de contexto",significa:"Quantum pequeno = mais justiça entre processos, porém mais overhead de troca."},
-     {acao:"Clique em Reiniciar, escolha quantum 4 e dê play",ve:"Cada processo roda longos trechos; a ordem vira quase 'quem chegou primeiro'",significa:"Quantum grande degenera o round-robin para FCFS (first-come, first-served)."},
-     {acao:"Use ⏭ Passo algumas vezes",ve:"O tempo avança 1 tick por clique, com o status do CPU atualizado",significa:"Ideal para explicar cada troca de contexto devagar, em sala."}]},
-   demo:{tipo:"gantt",config:{pergunta:"Três processos (P1=5 ticks, P2=3, P3=2) disputam UM cpu em round-robin. Escolha o quantum e observe a linha do tempo."}},
-   quiz:[{pergunta:"Como a multitarefa funciona em um computador com UM único núcleo de CPU?",alternativas:[
-     {texto:"O CPU alterna entre processos em fatias de tempo tão rápidas que cria a ilusão de paralelismo",correta:true,fb:"exato: é concorrência por revezamento — o paralelismo real exige múltiplos núcleos."},
-     {texto:"O CPU se divide fisicamente em pedaços, um para cada programa",correta:false,fb:"o hardware não se parte: quem se divide é o TEMPO de uso, não o silício."},
-     {texto:"Os programas rodam verdadeiramente no mesmo instante, dentro do mesmo núcleo",correta:false,fb:"em um núcleo, só uma instrução por vez: simultaneidade real só com mais núcleos."}]},
-    {pergunta:"Qual é o grande risco da multitarefa cooperativa?",alternativas:[
-     {texto:"Um programa que não cede o CPU voluntariamente congela todos os demais",correta:true,fb:"correto: a cooperação depende da boa vontade do código; um loop infinito trava o sistema."},
-     {texto:"Gasta muito mais energia que a preemptiva",correta:false,fb:"o consumo não é o problema central; o problema é a falta de proteção entre processos."},
-     {texto:"Exige dois monitores para funcionar",correta:false,fb:"nada a ver: cooperativa rodava em máquinas com um monitor só, como o Windows 3.x."}]},
-    {pergunta:"O que mudou, para o usuário, do MS-DOS para o Windows 95?",alternativas:[
-     {texto:"Passou de um programa por vez para multitarefa preemptiva com crashes isolados",correta:true,fb:"perfeito: foi o salto que permitiu 'várias janelas vivas' sem o sistema inteiro depender da educação de cada app."},
-     {texto:"Nada mudou, apenas as cores da tela",correta:false,fb:"mudou a arquitetura inteira de escalonamento e proteção de processos."},
-     {texto:"O MS-DOS já era preemptivo desde 1981",correta:false,fb:"o MS-DOS era monotarefa e sem proteção: preemptiva só chegou depois, com Windows 95/NT."}]}],
-   aprofundar:[{rotulo:"Multitarefa — Wikipédia",url:"https://pt.wikipedia.org/wiki/Multitarefa",idioma:"pt"},{rotulo:"MS-DOS — Wikipédia",url:"https://pt.wikipedia.org/wiki/MS-DOS",idioma:"pt"},{rotulo:"🎓 Pesquisa científica (Google Scholar): multitarefa preemptiva",url:"https://scholar.google.com/scholar?q=multitarefa+preemptiva+escalонamento",idioma:"pt"}],
-   mitoOuVerdade:{afirmacao:"Com quatro núcleos, tudo roda verdadeiramente ao mesmo tempo.",verdade:false,explicacao:"Mito: no máximo quatro threads executam no mesmo instante; as demais continuam revezando em fatias. Paralelismo total exigiria um núcleo por processo."}},
-
-  {titulo:"4️⃣ Multiprocessadores",narrativa:"Anos 2000. O clock dos processadores estaciona: aumentar a frequência vira sinônimo de calor e consumo. A saída da indústria: colocar vários CPUs na mesma placa. Seu servidor agora tem oito cérebros — e o SO precisa distribuir o trabalho entre eles.",
-   mundoReal:["🛒 Supermercado com um caixa só: fila gigante. Com oito caixas abertos, o fluxo anda. Multiprocessador é abrir caixas, não fazer o caixa correr mais rápido.","🎧 Seu celular hoje: um núcleo cuida da música, outro da câmera, outro da rede — e o SO equilibra tudo sem você perceber."],
-   ferramentas:[{nome:"SMP (Multiprocessamento Simétrico)",tipo:"arquitetura",explicacao:"Todos os processadores compartilham a mesma memória e o mesmo barramento; o SO trata todos como iguais."},{nome:"Multi-core",tipo:"tecnologia",explicacao:"Vários CPUs dentro de um único chip físico; é o SMP em miniatura dentro do seu notebook."},{nome:"Thread",tipo:"conceito",explicacao:"Linha de execução dentro de um processo; é a thread que o escalonador coloca em cada núcleo."}],
-   dicionario:[{termo:"Paralelismo",definicao:"Várias coisas executando no mesmo instante físico, em núcleos diferentes."},{termo:"Memória compartilhada",definicao:"Memória única acessada por todos os CPUs do sistema."},{termo:"Gargalo",definicao:"Recurso compartilhado que limita o crescimento (ex.: barramento de memória)."},{termo:"Socket",definicao:"Encaixe físico da placa-mãe onde cada CPU é instalado."}],
-   conceitos:[{titulo:"Por que vários CPUs?",texto:"Por volta de 2005, subir o clock esbarrou no muro do calor. A Lei de Amdahl e a física empurraram a indústria para o multi-core: mais cérebros lentos entregam mais trabalho com menos energia.",analogia:"💡 Um carregador muito rápido cansa e esquenta; oito carregadores em ritmo confortável movem mais caixas no total.",exemploReal:"Chips Apple M e Intel Core combinam núcleos de desempenho e de eficiência: o SO manda o pesado para uns e o leve para outros."},
-    {titulo:"SMP: todos iguais, memória de todos",texto:"No SMP, qualquer processador pode executar qualquer tarefa, inclusive código do kernel, e todos enxergam a mesma memória. Programar fica mais simples, mas a disputa pelo barramento vira o novo gargalo.",analogia:"💡 Uma cozinha com despensa única: qualquer cozinheiro pega qualquer ingrediente — até o dia em que todos vão à despensa ao mesmo tempo.",exemploReal:"Servidores corporativos com 2 ou 4 sockets rodam bancos de dados gigantes usando SMP há décadas."}],
-   roteiroDemo:{passo0:"Um job com 2 tarefas sequenciais + 8 tarefas paralelizáveis. Antes de clicar, PREVEJA o tempo total com 4 núcleos.",passos:[
-     {acao:"Clique em '1 núcleo'",ve:"Uma única linha com 10 blocos: tempo total 10 ticks",significa:"Sem núcleos extras, tudo vira fila única."},
-     {acao:"Clique em '4 núcleos'",ve:"Parte paralela termina em 2 ticks; total 4 ticks",significa:"Speedup de 2,5x — não 4x: a parte sequencial limita o ganho."},
-     {acao:"Clique em '8 núcleos'",ve:"Total cai para 3 ticks; o ganho sobre 4 núcleos é pequeno",significa:"Lei de Amdahl na prática: os 2 ticks sequenciais viram o piso."}]},
-   demo:{tipo:"nucleos",config:{pergunta:"Distribua um job (2 tarefas sequenciais + 8 paralelizáveis) entre 1, 2, 4 ou 8 núcleos e compare o tempo total."}},
-   quiz:[{pergunta:"O que caracteriza o multiprocessamento simétrico (SMP)?",alternativas:[
-     {texto:"Todos os processadores compartilham a mesma memória e são tratados como iguais pelo SO",correta:true,fb:"exato: simetria significa que qualquer CPU pode rodar qualquer tarefa, inclusive o kernel."},
-     {texto:"Cada processador tem memória privada e exclusiva para si",correta:false,fb:"isso descreve sistemas fracamente acoplados; no SMP a memória é compartilhada."},
-     {texto:"Apenas um processador pode executar código do sistema operacional",correta:false,fb:"isso é multiprocessamento ASSIMÉTRICO (mestre-escravo), não o simétrico."}]},
-    {pergunta:"Por que a indústria adotou multi-core a partir dos anos 2000?",alternativas:[
-     {texto:"Porque aumentar a frequência gerava calor e consumo excessivos; vários núcleos mais lentos entregam mais com menos energia",correta:true,fb:"correto: foi o fim da 'corrida dos GHz' e o começo da 'corrida dos núcleos'."},
-     {texto:"Porque os transistores estavam acabando no planeta",correta:false,fb:"transistores continuam encolhendo; o limite era térmico e energético, não de matéria-prima."},
-     {texto:"Porque os usuários queriam computadores coloridos",correta:false,fb:"estética não teve papel nessa decisão de arquitetura."}]},
-    {pergunta:"Qual é a diferença entre paralelismo e multitarefa (concorrência)?",alternativas:[
-     {texto:"Paralelismo é executar várias coisas no mesmo instante físico (vários núcleos); multitarefa é alternar no tempo criando ilusão de simultaneidade",correta:true,fb:"perfeito: paralelismo é hardware a mais; concorrência é escalonamento esperto."},
-     {texto:"São sinônimos exatos, sem diferença prática",correta:false,fb:"há diferença real: um núcleo só faz concorrência, nunca paralelismo verdadeiro."},
-     {texto:"Paralelismo só existe em software, nunca em hardware",correta:false,fb:"é o contrário: paralelismo verdadeiro depende de hardware com múltiplas unidades de execução."}]}],
-   aprofundar:[{rotulo:"Multiprocessamento — Wikipédia",url:"https://pt.wikipedia.org/wiki/Multiprocessamento",idioma:"pt"},{rotulo:"Thread (computação) — Wikipédia",url:"https://pt.wikipedia.org/wiki/Thread_(computa%C3%A7%C3%A3o)",idioma:"pt"},{rotulo:"🎓 Pesquisa científica (Google Scholar): multiprocessamento simétrico",url:"https://scholar.google.com/scholar?q=multiprocessamento+sim%C3%A9trico+SMP",idioma:"pt"}],
-   mitoOuVerdade:{afirmacao:"Dobrar o número de núcleos dobra a velocidade de qualquer programa.",verdade:false,explicacao:"Mito: pela Lei de Amdahl, a parte sequencial do programa limita o ganho. Um código 50% sequencial nunca acelera mais que 2x, mesmo com infinitos núcleos."}},
-
-  {titulo:"5️⃣ Acoplamento: perto ou longe?",narrativa:"Hoje. Sua empresa opera em várias cidades e você precisa decidir: colocar os processadores no mesmo gabinete, compartilhando memória (fortemente acoplado), ou espalhar máquinas independentes conversando por rede (fracamente acoplado)? A resposta define custo, resiliência e velocidade.",
-   mundoReal:["🧠 Fortemente acoplado é um único cérebro com várias áreas compartilhando o mesmo sangue (a memória): comunicação instantânea, mas um problema vascular afeta tudo.","🏢 Fracamente acoplado é matriz e filiais: cada uma com prédio, estoque e gerente próprios, conversando por e-mail e telefone (a rede). Uma filial pode cair sem derrubar as outras."],
-   ferramentas:[{nome:"Cluster",tipo:"arquitetura",explicacao:"Conjunto de máquinas fracamente acopladas trabalhando como se fossem um sistema só."},{nome:"Rede (LAN/WAN)",tipo:"meio",explicacao:"O canal por onde sistemas fracamente acoplados trocam mensagens; define a latência da conversa."},{nome:"SO distribuído",tipo:"software",explicacao:"Sistema que gerencia máquinas independentes dando a impressão de um computador único."}],
-   dicionario:[{termo:"Memória compartilhada",definicao:"Memória única vista por todos os CPUs (típico de fortemente acoplados)."},{termo:"Memória privada",definicao:"Cada máquina tem a sua; a troca é por mensagens (típico de fracamente acoplados)."},{termo:"Passagem de mensagens",definicao:"Comunicação via pacotes de rede, em vez de ler/escrever memória comum."},{termo:"Latência",definicao:"Atraso entre enviar uma mensagem e receber a resposta."}],
-   conceitos:[{titulo:"Fortemente acoplado: velocidade com risco concentrado",texto:"Compartilhar memória e clock torna a comunicação entre CPUs quase instantânea. Em compensação, o barramento de memória vira gargalo e uma falha de placa pode parar o sistema inteiro.",analogia:"💡 Gêmeos que dividem a mesma mochila: pegar a caneta é instantâneo — mas se a mochila rasga, os dois ficam sem material.",exemploReal:"Todo multi-core (seu notebook, seu celular) é fortemente acoplado: núcleos lendo e escrevendo na mesma memória RAM."},
-    {titulo:"Fracamente acoplado: resiliência que escala",texto:"Cada nó tem SO, memória e relógio próprios; a conversa é por mensagens. Escalar significa acrescentar máquinas comuns — e a falha de uma não derruba o conjunto. O preço é a latência da rede.",analogia:"💡 Rede de franquias: abrir mais lojas é fácil e uma loja falida não fecha as outras; mas alinhar decisões entre lojas demora.",exemploReal:"Data centers do Google e da AWS, caixas eletrônicos espalhados pelo país e o supercomputador Santos Dumont (LNCC) são fracamente acoplados."}],
-   roteiroDemo:{passo0:"Três projetos reais. Escolha o acoplamento certo para cada um.",passos:[
-     {acao:"Leia o cenário do smartphone e escolha",ve:"Quadro explicando por que sua escolha acertou ou falhou",significa:"Dentro de um chip, rede seria absurdo: memória compartilhada é o caminho."},
-     {acao:"Resolva os 3 cenários",ve:"Sua pontuação final",significa:"Acoplamento é decisão de arquitetura: latência × resiliência × custo."}]},
-   demo:{tipo:"cenario",config:{pergunta:"Qual acoplamento é o adequado para cada projeto?",cenarios:[
-     {empresa:"📱 Smartphone multi-core",descricao:"Câmera, música e GPS rodando juntos, acessando os mesmos dados na mesma placa.",correta:"Fortemente acoplado",opcoes:["Fortemente acoplado","Fracamente acoplado"],
-      porques:{"Fortemente acoplado":"os núcleos compartilham memória e clock dentro do chip: comunicação em nanossegundos, essencial para apps que dividem dados.","Fracamente acoplado":"exigiria rede e memória privada entre núcleos do mesmo chip: latência e consumo absurdos para milímetros de distância."}},
-     {empresa:"🏧 Rede de caixas eletrônicos",descricao:"ATMs em cinco estados; cada um precisa continuar operando mesmo se o link de outro cair.",correta:"Fracamente acoplado",opcoes:["Fortemente acoplado","Fracamente acoplado"],
-      porques:{"Fortemente acoplado":"memória única entre estados seria um ponto único de falha e latência impossível por essa distância.","Fracamente acoplado":"cada nó tem autonomia e conversa por mensagens: resiliência geográfica, exatamente o que um banco precisa."}},
-     {empresa:"🌦️ Previsão do tempo nacional",descricao:"Dividir o mapa em regiões e calcular em centenas de máquinas de um data center.",correta:"Fracamente acoplado",opcoes:["Fortemente acoplado","Fracamente acoplado"],
-      porques:{"Fortemente acoplado":"centenas de CPUs disputando uma única memória não escala: o barramento vira gargalo imediato.","Fracamente acoplado":"um cluster divide regiões por nó e troca só as bordas do mapa pela rede: escala a milhares de máquinas."}}],
-     exemploReal:"O supercomputador Santos Dumont, do LNCC, é um cluster: milhares de nós fracamente acoplados usados em previsão do tempo e genômica."}},
-   quiz:[{pergunta:"Qual é a diferença central entre sistemas fortemente e fracamente acoplados?",alternativas:[
-     {texto:"Fortemente acoplados compartilham memória e clock; fracamente acoplados têm memória privada por máquina e se comunicam por rede",correta:true,fb:"exato: essa é a linha que separa um multi-core/SMP de um cluster ou sistema distribuído."},
-     {texto:"Fortemente acoplados são sempre mais lentos que os fracamente",correta:false,fb:"é o contrário na comunicação local: memória compartilhada é muito mais rápida que rede."},
-     {texto:"Fracamente acoplados usam uma única memória compartilhada",correta:false,fb:"isso definiria fortemente acoplado; no fracamente, cada nó tem a sua memória."}]},
-    {pergunta:"Qual é uma grande vantagem dos sistemas fracamente acoplados?",alternativas:[
-     {texto:"Resiliência e escalabilidade: a falha de uma máquina não derruba o todo e é possível acrescentar nós comuns",correta:true,fb:"correto: por isso a nuvem inteira é construída com máquinas fracamente acopladas."},
-     {texto:"Latência de comunicação menor que a memória compartilhada",correta:false,fb:"rede é ordens de grandeza mais lenta que acesso à memória compartilhada."},
-     {texto:"Programação mais simples, graças à memória única",correta:false,fb:"memória única é característica dos fortemente acoplados; no fracamente, programar troca de mensagens é mais complexo."}]},
-    {pergunta:"Qual destes é um exemplo típico de sistema fracamente acoplado?",alternativas:[
-     {texto:"Um cluster de servidores que atua como uma máquina só",correta:true,fb:"perfeito: nós independentes, memória privada, comunicação por rede — a definição de cluster."},
-     {texto:"Um processador dual-core dentro de um notebook",correta:false,fb:"dois núcleos compartilhando a mesma RAM são fortemente acoplados (SMP)."},
-     {texto:"Uma placa-mãe com quatro sockets e memória única",correta:false,fb:"quatro CPUs com memória compartilhada continuam sendo fortemente acoplados."}]}],
-   aprofundar:[{rotulo:"Sistema distribuído — Wikipédia",url:"https://pt.wikipedia.org/wiki/Sistema_distribu%C3%ADdo",idioma:"pt"},{rotulo:"Supercomputador — Wikipédia",url:"https://pt.wikipedia.org/wiki/Supercomputador",idioma:"pt"},{rotulo:"🎓 Pesquisa científica (Google Scholar): sistemas fracamente acoplados",url:"https://scholar.google.com/scholar?q=loosely+coupled+distributed+systems",idioma:"en"}],
-   mitoOuVerdade:{afirmacao:"Sistemas fracamente acoplados são sempre superiores aos fortemente acoplados.",verdade:false,explicacao:"Mito: tarefas que exigem comunicação intensiva e latência mínima (ex.: núcleos de um chip, SMP) se dão melhor com acoplamento forte. Cada arquitetura serve a um problema."}}
- ],
- revisao:{
-  mapa:["Definição e papel do SO (kernel)","Batch (1950-60)","Multitarefa e PC (1980-90)","Multiprocessadores / SMP (2000+)","Fortemente × fracamente acoplado (hoje)"],
-  cola:[{termo:"Sistema Operacional",linha:"Gerente do hardware; intermediário entre apps e máquina."},{termo:"Kernel",linha:"Núcleo permanente do SO na memória; escala e aloca tudo."},{termo:"Batch",linha:"Jobs em fila, sem interação; executados em sequência."},{termo:"Monitor residente",linha:"SO primitivo que passava o controle de job em job."},{termo:"Multitarefa",linha:"Vários processos revezando o CPU em fatias de tempo."},{termo:"Preemptiva",linha:"SO toma o CPU via timer; crash fica isolado."},{termo:"Cooperativa",linha:"Programas cedem o CPU por boa vontade; um travado congela tudo."},{termo:"SMP / multi-core",linha:"Vários CPUs compartilhando a mesma memória, tratados como iguais."},{termo:"Fortemente acoplado",linha:"Memória e clock compartilhados; rápido, mas risco concentrado."},{termo:"Fracamente acoplado",linha:"Memória privada + rede; resiliente e escalável, com latência."},{termo:"Cluster",linha:"Máquinas fracamente acopladas agindo como um sistema só."}],
-  desafio:"Para ser expert em SO, domine a TRAJETÓRIA: por que o SO existe (gerenciar), como começou (batch), como dividiu a atenção (multitarefa), como ganhou músculos (multiprocessadores) e como se espalhou (acoplamento). Enfrente o Chefão!"
- }
+/* =========================================================
+   DADOS DA AULA
+   ========================================================= */
+const AULA_DADOS = {
+  disciplina:"Sistemas Operacionais",
+  aula:"01",
+  unidade:"Unidade 1",
+  paginas:"12 a 25",
+  titulo:"Definição e Tipos de Sistemas Operacionais",
+  cor:"#5e35b1",
+  abas:[
+    {
+      id:"aba-1",
+      titulo:"O que é um SO?",
+      missao:"Entender que o sistema operacional é o 'maestro' invisível que faz hardware e software conversarem sem que você precise falar a língua dos transistores.",
+      teoria:[
+        "Um <strong>sistema operacional (SO)</strong> é um conjunto de programas que gerencia os recursos do hardware (CPU, memória, discos, dispositivos) e oferece uma interface amigável para usuários e aplicativos.",
+        "Sem o SO, cada programa teria que conversar diretamente com o hardware — seria como pedir para um cliente do iFood falar diretamente com o agricultor.",
+        "Os dois papéis clássicos do SO são: <strong>máquina estendida</strong> (esconde a complexidade do hardware) e <strong>gerente de recursos</strong> (decide quem usa o quê, quando e por quanto tempo).",
+        "Exemplos do cotidiano: <strong>Windows</strong> (PCs), <strong>macOS</strong> (Macs), <strong>Linux</strong> (servidores e Android), <strong>iOS</strong> (iPhones). Todos são SOs diferentes resolvendo o mesmo problema: fazer hardware + apps funcionarem juntos."
+      ],
+      demo:{
+        tipo:"livre",
+        titulo:"🎼 Anatomia do SO: clique nas camadas",
+        preveja:"Antes de clicar, preveja: se o Word travar e fechar sozinho, em qual camada o problema MAIS provavelmente está?",
+        instru:"A tela mostra 4 camadas empilhadas. Clique em cada uma para ver o papel do SO naquele nível.",
+        camadas:[
+          {nome:"🖥️ Hardware (CPU, RAM, disco)",texto:"Componentes físicos. Sozinhos, só entendem binário (0 e 1) e sinais elétricos. Sem SO, são inúteis para o usuário.",exemplo:"Ex: um SSD NVMe tem bilhões de transistores, mas você nunca fala diretamente com eles."},
+          {nome:"⚙️ Kernel (núcleo do SO)",texto:"Programa central que nunca 'dorme'. Gerencia CPU, memória e dispositivos. Roda em modo privilegiado.",exemplo:"No Linux, o kernel decide qual app recebe mais tempo de CPU agora — como um maestro."},
+          {nome:"🖱️ Shell / Interface",texto:"Camada que o usuário vê: terminal (bash, PowerShell) ou GUI (janelas, ícones). Traduz cliques em chamadas ao kernel.",exemplo:"Quando você clica duas vezes em 'Word.exe', o Explorer do Windows traduz isso em uma chamada ao kernel."},
+          {nome:"📄 Aplicativos",texto:"Programas do usuário (Word, Chrome, WhatsApp). Não podem acessar hardware diretamente — pedem ao SO via chamadas de sistema (syscalls).",exemplo:"O Chrome não abre um arquivo sozinho: ele chama 'open()' do SO, que faz o trabalho sujo."}
+        ],
+        guia:"Observe que o SO vive ENTRE o hardware e os apps. Quando um app trava, 99% das vezes é problema no app, não no SO — o SO continua gerenciando os outros apps normalmente."
+      },
+      aprofundar:{
+        lexico:[
+          {termo:"Kernel",def:"Núcleo do SO que gerencia recursos de baixo nível (CPU, memória, I/O). Fica sempre na RAM."},
+          {termo:"Syscall (chamada de sistema)",def:"Interface padronizada que os apps usam para pedir serviços ao kernel. Ex: ler arquivo, criar processo."}
+        ],
+        links:[
+          {rotulo:"Sistema operacional (Wikipédia)",url:"https://pt.wikipedia.org/wiki/Sistema_operacional",lang:"pt"},
+          {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=sistema+operacional+defini%C3%A7%C3%A3o+fun%C3%A7%C3%B5es"}
+        ]
+      },
+      quiz:[
+        {p:"Qual é a definição mais precisa de sistema operacional?",
+          alts:[
+            {t:"Programa que gerencia hardware e oferece interface para usuários e apps",c:1,fb:"Correto! Essa é a definição clássica de Tanenbaum: máquina estendida + gerente de recursos."},
+            {t:"Hardware físico que executa os programas do usuário",c:0,fb:"Hardware é o computador em si. O SO é SOFTWARE que roda sobre o hardware, não o contrário."},
+            {t:"Conjunto de cabos e chips que transmitem dados",c:0,fb:"Isso descreveria a rede ou o barramento, não o SO. SO é programa, não componente físico."}
+          ]},
+        {p:"O que são syscalls (chamadas de sistema)?",
+          alts:[
+            {t:"Interface padronizada que apps usam para pedir serviços ao kernel do SO",c:1,fb:"Exato! Ex: open(), read(), write() no Linux. Sem syscalls, apps não poderiam ler arquivos nem abrir janelas."},
+            {t:"Chamadas telefônicas para o suporte técnico do Windows",c:0,fb:"Piada literal! Syscalls são funções de programação, não telefonemas humanos."},
+            {t:"Comandos de voz que o usuário fala para o PC executar",c:0,fb:"Isso seria assistente de voz (Cortana, Siri), não syscalls. Syscalls são entre apps e kernel, sem voz."}
+          ]},
+        {p:"Qual papel do SO é descrito como 'esconder a complexidade do hardware'?",
+          alts:[
+            {t:"Máquina estendida (ou máquina virtual)",c:1,fb:"Correto! O SO apresenta ao app uma 'máquina virtual' mais simples que a real — você abre um arquivo sem saber se é SSD, HD ou NVMe."},
+            {t:"Gerente de recursos",c:0,fb:"Gerente de recursos é o OUTRO papel: decidir quem usa CPU, memória e disco. Esconder complexidade é máquina estendida."},
+            {t:"Compilador de programas",c:0,fb:"Compilador é outra ferramenta (como GCC). O SO não compila código, ele executa e gerencia."}
+          ]}
+      ]
+    },
+    {
+      id:"aba-2",
+      titulo:"Sistema Batch (lote)",
+      missao:"Viajar no tempo até os anos 1950/60, quando computadores valiam milhões e jobs eram entregues em pilhas de cartões perfurados.",
+      teoria:[
+        "Em sistemas <strong>batch (em lote)</strong>, os programas eram agrupados em 'lotes' e executados <strong>sequencialmente, sem interação com o usuário</strong> durante a execução.",
+        "Contexto histórico: nos anos 1950, um mainframe IBM 704 custava US$ 2 milhões. Não dava para deixar o computador parado esperando alguém digitar — era preciso aproveitar cada segundo de CPU.",
+        "O operador coletava os jobs (em cartões perfurados), montava o lote, e o computador rodava um atrás do outro. Resultados saíam em impressoras horas depois.",
+        "Exemplo atualizado: processamento de folha de pagamento de grandes empresas ainda usa lógica batch — roda de madrugada, quando ninguém usa o sistema.",
+        "Problema clássico: se um job travava, todos os seguintes esperavam. E o usuário só descobria o erro horas depois, quando pegava a saída impressa."
+      ],
+      demo:{
+        tipo:"livre",
+        titulo:"📋 Fila Batch: empilhe jobs de 1960",
+        preveja:"Antes de empilhar, preveja: se o 2º job da fila travar, o que acontece com o 3º, 4º e 5º?",
+        instru:"Adicione jobs à fila (clique nos tipos) e rode. Observe como o processamento é sequencial e sem interação.",
+        tipos:[
+          {nome:"📊 Relatório mensal (3s)",tempo:3},
+          {nome:"💰 Folha de pagamento (5s)",tempo:5},
+          {nome:"🔬 Cálculo científico (8s)",tempo:8},
+          {nome:"⚠️ Job defeituoso (trava)",tempo:-1}
+        ],
+        guia:"Note que o batch é EFICIENTE em uso de CPU (não há tempo ocioso), mas PÉSSIMO para o usuário (espera horas pelo resultado). É o oposto dos SOs modernos."
+      },
+      aprofundar:{
+        lexico:[
+          {termo:"Batch (lote)",def:"Processamento onde jobs são agrupados e executados sequencialmente, sem interação do usuário durante a execução."},
+          {termo:"Cartão perfurado",def:"Mídia de entrada de dados dos anos 1950-70. Furos representavam bits. Cada cartão = uma instrução ou dado."}
+        ],
+        links:[
+          {rotulo:"Processamento em lote (Wikipédia)",url:"https://pt.wikipedia.org/wiki/Processamento_em_lote",lang:"pt"},
+          {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=sistema+operacional+batch+processamento+em+lote"}
+        ]
+      },
+      quiz:[
+        {p:"Qual é a característica principal de um sistema batch?",
+          alts:[
+            {t:"Jobs executados sequencialmente, sem interação do usuário durante a execução",c:1,fb:"Correto! No batch, você entrega o job e só vê o resultado horas depois. Era o modelo dos mainframes dos anos 1950-60."},
+            {t:"Múltiplos usuários digitando ao mesmo tempo em terminais",c:0,fb:"Isso é time-sharing (multitarefa), não batch. Batch é sequencial e sem interação em tempo real."},
+            {t:"Execução paralela em vários processadores",c:0,fb:"Isso é multiprocessamento. Batch é sobre ausência de interação, não sobre paralelismo."}
+          ]},
+        {p:"Por que os mainframes dos anos 1950 usavam batch?",
+          alts:[
+            {t:"Custo altíssimo do hardware exigia aproveitar cada segundo de CPU sem tempo ocioso",c:1,fb:"Exato! Um IBM 704 custava US$ 2 milhões. Parar para esperar digitação humana seria desperdício inaceitável."},
+            {t:"Não existiam teclados na época, só impressoras",c:0,fb:"Teclados existiam! A escolha era econômica (custo da máquina), não técnica (ausência de hardware)."},
+            {t:"Os programadores preferiam esperar horas para ver o resultado",c:0,fb:"Ninguém preferia! Era a única opção economicamente viável. Com o tempo, os programadores pressionaram por sistemas interativos."}
+          ]},
+        {p:"Qual exemplo MODERNO ainda usa lógica batch?",
+          alts:[
+            {t:"Processamento noturno da folha de pagamento de um grande banco",c:1,fb:"Correto! Bancos como Itaú e Bradesco rodam batch de madrugada para calcular salários, juros e extratos de milhões de clientes."},
+            {t:"Navegar no Instagram em tempo real",c:0,fb:"Instagram é interativo em tempo real — você clica e vê a resposta em milissegundos. É o oposto de batch."},
+            {t:"Jogar Fortnite online com outros jogadores",c:0,fb:"Jogos online exigem interação em tempo real (latência < 100ms). Batch é inviável para esse caso."}
+          ]}
+      ]
+    },
+    {
+      id:"aba-3",
+      titulo:"Sistema Multitarefa",
+      missao:"Descobrir como o SO faz você usar Spotify, Word e Chrome 'ao mesmo tempo' — spoiler: ele não faz, ele alterna rápido.",
+      teoria:[
+        "<strong>Multitarefa (multiprogramação)</strong>: vários programas residem na memória ao mesmo tempo, e o SO <strong>alterna a CPU entre eles</strong> em frações de segundo.",
+        "A mágica se chama <strong>preempção</strong>: o SO 'tira' a CPU de um processo quando seu tempo (time-slice) acaba e entrega a outro. A troca é tão rápida (~10ms) que parece simultâneo.",
+        "Dois tipos: <strong>cooperativa</strong> (processo devolve a CPU voluntariamente — Windows 3.1, Mac clássico) e <strong>preemptiva</strong> (SO tira à força — Windows 95+, Linux, macOS moderno).",
+        "Exemplo real: quando você está no Word, o Chrome está 'congelado'? Não — ele só não está com a CPU. Assim que o Word cede seu time-slice, o Chrome continua a baixar aquele vídeo.",
+        "Troca de contexto: quando o SO troca de processo, salva registradores e estado do atual e carrega os do próximo. Cada troca custa ~1μs — por isso SOs modernos evitam trocar demais."
+      ],
+      demo:{
+        tipo:"livre",
+        titulo:"⏱️ Simulador de time-slice (CPU alternando)",
+        preveja:"Antes de rodar, preveja: se o time-slice for de 10ms e há 3 apps, quantos ms cada um 'acha' que está rodando a cada segundo?",
+        instru:"Veja os 3 processos disputando a CPU em tempo real. Cada cor = 1 processo. Observe o 'troca de contexto' (piscada cinza).",
+        processos:[
+          {nome:"📝 Word",cor:"#5e35b1"},
+          {nome:"🌐 Chrome",cor:"#1976d2"},
+          {nome:"🎵 Spotify",cor:"#2e7d32"}
+        ],
+        guia:"Observe que a CPU NUNCA fica ociosa quando há processos prontos. O SO é o maestro que mantém todos 'andando', um pouco por vez."
+      },
+      aprofundar:{
+        lexico:[
+          {termo:"Preempção",def:"Capacidade do SO de 'tirar' a CPU de um processo à força, quando seu time-slice acaba."},
+          {termo:"Time-slice (quantum)",def:"Fração de tempo que cada processo tem direito à CPU antes de ser preemptado. Típico: 10-100ms."},
+          {termo:"Troca de contexto",def:"Ação de salvar o estado de um processo e carregar o de outro. Custa ~1μs em hardware moderno."}
+        ],
+        links:[
+          {rotulo:"Multitarefa (Wikipédia)",url:"https://pt.wikipedia.org/wiki/Multitarefa",lang:"pt"},
+          {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=multiprograma%C3%A7%C3%A3o+preemp%C3%A7%C3%A3o+troca+de+contexto"}
+        ]
+      },
+      quiz:[
+        {p:"O que é preempção em sistemas multitarefa?",
+          alts:[
+            {t:"Capacidade do SO de tirar a CPU de um processo à força quando seu tempo acaba",c:1,fb:"Correto! Sem preempção, um processo bugado poderia monopolizar a CPU para sempre. Windows 95 e Linux modernos são preemptivos."},
+            {t:"O usuário precisa clicar em 'OK' para o SO trocar de programa",c:0,fb:"Isso seria multitarefa manual, não existe. A troca é automática, em milissegundos, sem intervenção humana."},
+            {t:"Dois processos rodando exatamente ao mesmo tempo em CPUs diferentes",c:0,fb:"Isso é paralelismo (multiprocessador), não preempção. Preempção é alternância rápida em UMA CPU."}
+          ]},
+        {p:"Qual é o problema da multitarefa COOPERATIVA (Windows 3.1, Mac clássico)?",
+          alts:[
+            {t:"Se um processo travar, ele não devolve a CPU e o sistema todo congela",c:1,fb:"Exato! O Word 6.0 travando paralisava o Windows 3.1 inteiro. Multitarefa preemptiva (Windows 95+) resolveu isso."},
+            {t:"Não permitia mais de 2 apps abertos ao mesmo tempo",c:0,fb:"Permitia vários! O problema não era quantidade, mas a dependência de cada app cooperar devolvendo a CPU."},
+            {t:"Só funcionava em mainframes IBM, não em PCs",c:0,fb:"Funcionava em PCs — Windows 3.1 e Mac clássico eram sistemas de mesa. Mainframes já usavam multiprogramação há décadas."}
+          ]},
+        {p:"O que é 'troca de contexto'?",
+          alts:[
+            {t:"Ação de salvar o estado de um processo e carregar o de outro durante a troca de CPU",c:1,fb:"Correto! O SO salva registradores, ponteiros e estado do atual; carrega os do próximo. Custa ~1μs por troca em hardware moderno."},
+            {t:"Trocar de usuário no Windows (ex: da conta 'João' para 'Maria')",c:0,fb:"Isso é troca de usuário, não de contexto. Troca de contexto acontece MILHÕES de vezes por segundo, entre processos."},
+            {t:"Reiniciar o computador para limpar a memória",c:0,fb:"Reiniciar é reboot, não troca de contexto. Troca de contexto é operação rotineira do kernel, invisível ao usuário."}
+          ]}
+      ]
+    },
+    {
+      id:"aba-4",
+      titulo:"SO de Computador Pessoal",
+      missao:"Ver como os SOs de mesa (Windows, macOS, Linux de desktop) abriram mão de maximizar uso de CPU para priorizar tempo de resposta ao usuário.",
+      teoria:[
+        "SOs de <strong>computador pessoal</strong> priorizam <strong>tempo de resposta</strong> sobre utilização máxima da CPU. O usuário não pode esperar — se o Chrome demorar 500ms para abrir uma aba, já parece lento.",
+        "Características marcantes: <strong>interface gráfica rica</strong> (janelas, ícones, menus), <strong>monousuário típico</strong> (uma pessoa por máquina), <strong>foco em interatividade</strong>.",
+        "Exemplos reais: <strong>Microsoft Windows</strong> (95% do mercado desktop), <strong>macOS</strong> (~9%), <strong>Linux de desktop</strong> (~4% — Ubuntu, Fedora, Mint).",
+        "Curiosidade: quando o Windows abre o menu Iniciar, ele 'rouba' ciclos da CPU de outros programas para garantir que a animação rode a 60 FPS — é prioridade explícita à UI.",
+        "Mobile é extensão disso: <strong>Android</strong> (Linux modificado) e <strong>iOS</strong> (macOS simplificado) aplicam os mesmos princípios em telas menores."
+      ],
+      demo:{
+        tipo:"exploratorio",
+        titulo:"🖥️ Galeria: SOs pessoais que você usa todo dia",
+        preveja:"Antes de explorar, preveja: qual família de SO pessoal tem MAIS市场份额 (market share) global em desktops hoje?",
+        instru:"Clique em cada SO para ver fatos reais, ano de lançamento e onde ele domina.",
+        sos:[
+          {nome:"🪟 Windows",fato:"Dominou o mercado desde 1995. Hoje: ~72% dos desktops mundiais. Usado em 1,4 bilhão de PCs. Windows 11 é a versão atual (2021).",dominio:"PCs corporativos, gamers (DirectX), escolas"},
+          {nome:"🍎 macOS",fato:"Sistema da Apple desde 2001 (base Unix/BSD). ~15% dos desktops. Só roda em hardware Apple. Muito popular entre designers e devs.",dominio:"Criativos, programadores, universidades dos EUA"},
+          {nome:"🐧 Linux Desktop",fato:"Ubuntu, Fedora, Mint. ~4% dos desktops, mas domina servidores (90%+). 100% gratuito e de código aberto.",dominio:"Devs, cientistas, servidores, supercomputadores"},
+          {nome:"🤖 Android (mobile)",fato:"Base Linux modificado. 71% dos smartphones mundiais (2024). Desenvolvido pelo Google desde 2008.",dominio:"Smartphones, tablets, TVs, carros"},
+          {nome:"📱 iOS (mobile)",fato:"Sistema da Apple para iPhones/iPads. ~28% dos smartphones. Fechado e muito seguro.",dominio:"iPhones, iPads — usuários Apple"}
+        ],
+        guia:"Observe a dominância do Windows em PCs vs. Android em celulares. macOS e iOS dominam nichos de alto valor (criativos, devs), mesmo com market share menor."
+      },
+      aprofundar:{
+        lexico:[
+          {termo:"Tempo de resposta",def:"Intervalo entre uma ação do usuário e a resposta visível do sistema. Crítico em SOs pessoais."},
+          {termo:"Interface gráfica (GUI)",def:"Interface baseada em janelas, ícones e menus. Popularizada pelo Macintosh em 1984."}
+        ],
+        links:[
+          {rotulo:"Comparativo de sistemas operacionais (Wikipédia)",url:"https://pt.wikipedia.org/wiki/Lista_de_sistemas_operacionais",lang:"pt"},
+          {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=mercado+sistemas+operacionais+desktop"}
+        ]
+      },
+      quiz:[
+        {p:"Qual é a prioridade NÚMERO 1 de um SO de computador pessoal?",
+          alts:[
+            {t:"Tempo de resposta rápido ao usuário, mesmo sacrificando uso máximo da CPU",c:1,fb:"Correto! Um usuário percebe atrasos de 200ms. Por isso, Windows prioriza animações da UI mesmo com outros apps rodando."},
+            {t:"Utilização máxima da CPU a 100% em todos os momentos",c:0,fb:"Isso é prioridade de SO de servidor/mainframe. Desktop prefere CPU 60% com resposta rápida a 100% com travamento."},
+            {t:"Suporte a milhares de usuários simultâneos",c:0,fb:"Desktop é tipicamente monousuário. Suporte a milhares de usuários é de SO de servidor (Windows Server, Linux corporativo)."}
+          ]},
+        {p:"Qual SO domina o mercado global de DESKTOPS em 2024?",
+          alts:[
+            {t:"Microsoft Windows (~72%)",c:1,fb:"Correto! Windows domina desktops desde 1995. Linux domina servidores, mas em PCs o Windows ainda reina absoluto."},
+            {t:"Linux (~60%)",c:0,fb:"Linux domina servidores (90%+), mas em desktops tem apenas ~4%. No servidor é rei, no desktop é nicho."},
+            {t:"macOS (~50%)",c:0,fb:"macOS tem ~15% do mercado desktop. É forte em nichos (criativos, devs), mas longe de dominar o mercado geral."}
+          ]},
+        {p:"O que é o Android em relação ao Linux?",
+          alts:[
+            {t:"Uma versão modificada do kernel Linux otimizada para dispositivos móveis",c:1,fb:"Correto! Android usa o kernel Linux, mas substitui as bibliotecas GNU por outras próprias e adiciona camadas gráficas específicas para touch."},
+            {t:"Um SO completamente independente, sem relação com Linux",c:0,fb:"Falso! Android é baseado no kernel Linux. Google o escolheu por ser aberto, maduro e gratuito."},
+            {t:"Uma marca de hardware que roda Windows Mobile",c:0,fb:"Android é SO, não hardware. E Windows Mobile foi descontinuado em 2019 — fracasso da Microsoft em celulares."}
+          ]}
+      ]
+    },
+    {
+      id:"aba-5",
+      titulo:"Múltiplos Processadores",
+      missao:"Entender a diferença crítica entre sistemas fortemente acoplados (memória compartilhada) e fracamente acoplados (troca de mensagens).",
+      teoria:[
+        "Em <strong>sistemas com múltiplos processadores</strong>, mais de uma CPU trabalha em conjunto. Dois grandes modelos existem: <strong>fortemente acoplados</strong> e <strong>fracamente acoplados</strong>.",
+        "<strong>Fortemente acoplados (SMP — Symmetric Multiprocessing)</strong>: várias CPUs compartilham a MESMA memória RAM e o mesmo barramento. Ex: servidor Dell com 2 CPUs Xeon, cada uma com 16 cores.",
+        "<strong> fracamente acoplados (clusters, distribuídos)</strong>: cada máquina tem sua própria memória e SO. Elas se comunicam por REDE (Ethernet, InfiniBand). Ex: clusters de data centers da AWS.",
+        "Por que importa? Num fortemente acoplado, processos compartilham dados diretamente (ponteiro de memória). Num fracamente acoplado, precisam enviar MENSAGENS pela rede — mais lento, mas escala a milhares de máquinas.",
+        "Exemplo real: a Netflix usa os dois. O app em si roda em um servidor (fortemente acoplado), mas o catálogo global está distribuído em milhares de máquinas (fracamente acoplado)."
+      ],
+      demo:{
+        tipo:"livre",
+        titulo:"🔗 Forte vs Fraco: onde está o dado?",
+        preveja:"Antes de testar, preveja: em qual modelo dois processos podem ler o MESMO dado ao mesmo tempo sem copiar?",
+        instru:"Clique em 'Processo A escreve' e depois em 'Processo B lê'. Compare os dois modelos.",
+        guia:"Observe: no fortemente acoplado, o dado é UM (todos veem o mesmo valor). No fracamente acoplado, cada um tem sua CÓPIA — sincronizar exige rede."
+      },
+      aprofundar:{
+        lexico:[
+          {termo:"SMP (Symmetric Multiprocessing)",def:"Modelo fortemente acoplado onde múltiplas CPUs compartilham memória. Qualquer CPU pode rodar qualquer tarefa."},
+          {termo:"Cluster",def:"Conjunto de computadores independentes (fracamente acoplados) que trabalham juntos como um só. Ex: clusters Hadoop, Kubernetes."},
+          {termo:"Memória compartilhada",def:"Modelo onde múltiplos processos acessam a mesma RAM física. Rápido, mas exige sincronização (locks)."}
+        ],
+        links:[
+          {rotulo:"Multiprocessamento (Wikipédia)",url:"https://pt.wikipedia.org/wiki/Multiprocessamento",lang:"pt"},
+          {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=sistemas+fortemente+acoplados+fracamente+acoplados"}
+        ]
+      },
+      quiz:[
+        {p:"Qual é a característica central de um sistema FORTEMENTE acoplado?",
+          alts:[
+            {t:"Múltiplas CPUs compartilham a mesma memória RAM física",c:1,fb:"Correto! No SMP (Symmetric Multiprocessing), todas as CPUs veem a mesma memória. É o modelo do seu notebook com CPU dual-core."},
+            {t:"Cada CPU tem sua própria RAM e SO independente",c:0,fb:"Isso descreve sistemas FRACAMENTE acoplados (clusters). Fortemente acoplado = memória única compartilhada."},
+            {t:"Processadores conectados pela internet (WAN)",c:0,fb:"Isso é computação em nuvem distribuída. Fortemente acoplado usa barramento interno, não internet."}
+          ]},
+        {p:"Qual é o modelo usado pelos data centers da AWS (Amazon)?",
+          alts:[
+            {t:"Fracamente acoplado — milhares de servidores independentes se comunicando por rede",c:1,fb:"Exato! AWS tem milhões de servidores, cada um com RAM própria. Eles trocam mensagens via rede de alta velocidade (InfiniBand)."},
+            {t:"Fortemente acoplado — um único computador gigante com milhões de CPUs",c:0,fb:"Isso é fisicamente impossível — barramentos não escalam a milhões. AWS é um cluster massivo fracamente acoplado."},
+            {t:"Sistema batch clássico com cartões perfurados",c:0,fb:"Batch é dos anos 1950. AWS é computação em nuvem moderna, totalmente oposta em conceito e escala."}
+          ]},
+        {p:"Qual é a principal DESVANTAGEM dos sistemas fracamente acoplados?",
+          alts:[
+            {t:"Comunicação por rede é mais lenta que acesso direto à memória compartilhada",c:1,fb:"Correto! Ler RAM local leva ~100ns. Enviar uma mensagem por rede leva ~1μs a 1ms — 10 a 10.000 vezes mais lento."},
+            {t:"Não é possível conectar mais de 10 máquinas",c:0,fb:"Absurdo! Clusters fracamente acoplados escalam a MILHÕES de máquinas (ex: Google, AWS, Meta)."},
+            {t:"Exigem obrigatoriamente mainframes IBM",c:0,fb:"Clusters usam hardware commodity (PCs servidores baratos). Mainframes IBM são caros e centralizados — o oposto."}
+          ]}
+      ]
+    },
+    {
+      id:"aba-6",
+      titulo:"Comparativo & Estado da Arte 📖 Estudo próprio",
+      estudoProprio:true,
+      missao:"Consolidar todos os tipos vistos e entender quando cada um é usado — de mainframes dos anos 50 a data centers de IA em 2026.",
+      teoria:[
+        "Cada tipo de SO nasceu de uma <strong>necessidade econômica</strong>: batch (hardware caro → maximizar uso), multitarefa (tempo humano caro → responder rápido), pessoal (UX importa), multiprocessador (escala exige).",
+        "<strong>Estado da arte em 2026</strong>: <strong>Kubernetes</strong> orquestra containers em clusters fracamente acoplados globalmente. É o 'SO da nuvem'.",
+        "<strong>Real-time OS (RTOS)</strong>: sistemas com garantias de tempo rígidas. Usados em aviões (Airbus A350), carros autônomos (Tesla), marcapassos. Se o cálculo atrasar 1ms, desastre.",
+        "<strong>SOs embarcados</strong>: seu roteador, smart TV, geladeira smart e smartwatch têm SOs próprios (FreeRTOS, Zephyr, WatchOS). Bilhões de dispositivos, invisíveis.",
+        "<strong>Tendência 2026</strong>: SOs específicos para IA (Groq, Cerebras) que substituem CPUs tradicionais por chips dedicados a modelos de linguagem."
+      ],
+      demo:{
+        tipo:"exploratorio",
+        titulo:"🌐 Mapa: qual SO usar em qual cenário?",
+        preveja:"Antes de explorar, preveja: qual tipo de SO está rodando no seu smartwatch agora?",
+        instru:"Clique em cada cenário real para ver qual SO roda lá e por quê.",
+        cenarios:[
+          {nome:"💳 Caixa de banco (ATM)",so:"RTOS (ex: VxWorks)",porque:"Exige resposta em milissegundos garantidos. Se demorar, o cliente desiste."},
+          {nome:"🛫 Airbus A350",so:"RTOS (ARINC 653)",porque:"Aviônica crítica. Um atraso de 10ms pode derrubar o avião. SO deve ser deterministicamente rápido."},
+          {nome:"🚗 Tesla Model Y",so:"Linux modificado + RTOS para controle",porque:"Sistema de entretenimento roda Linux; controle de motor/freio roda RTOS por segurança."},
+          {nome:"🏢 Data center Google",so:"Borg / Kubernetes (fracamente acoplado)",porque:"Milhões de containers em milhares de servidores. Escala impossível com fortemente acoplado."},
+          {nome:"⌚ Apple Watch",so:"watchOS (baseado em iOS)",porque:"Derivado do iOS para caber em 32GB e bateria de 18h. Economia de energia é prioridade."}
+        ],
+        guia:"Observe que NÃO existe 'melhor SO universal'. Cada tipo resolve um problema específico: tempo, escala, custo ou segurança."
+      },
+      aprofundar:{
+        lexico:[
+          {termo:"RTOS (Real-Time OS)",def:"SO com garantias rígidas de tempo de resposta. Usado em sistemas críticos (aviões, médicos, industriais)."},
+          {termo:"Container",def:"Unidade de software empacotada com suas dependências. Roda isolada em qualquer SO compatível. Docker é o mais famoso."},
+          {termo:"Kubernetes",def:"Orquestrador de containers criado pelo Google. Considerado o 'SO da nuvem' moderna."}
+        ],
+        links:[
+          {rotulo:"Sistemas de tempo real (Wikipédia)",url:"https://pt.wikipedia.org/wiki/Sistema_embarcado",lang:"pt"},
+          {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=sistemas+operacionais+de+tempo+real"}
+        ]
+      },
+      quiz:[
+        {p:"Qual tipo de SO é usado em aviões (Airbus) e marcapassos?",
+          alts:[
+            {t:"RTOS (Real-Time Operating System)",c:1,fb:"Correto! RTOS tem garantias rígidas de tempo. Em sistemas críticos, 'atrasar' pode ser fatal."},
+            {t:"Windows 11 padrão",c:0,fb:"Windows 11 é SO de desktop, sem garantias de tempo. Nunca seria certificado para aviônica (DO-178C) ou dispositivos médicos."},
+            {t:"Batch dos anos 1960",c:0,fb:"Batch é sem interação. Aviões precisam de resposta em tempo real a cada comando do piloto — exatamente o oposto."}
+          ]},
+        {p:"O que é o Kubernetes no ecossistema de SOs modernos?",
+          alts:[
+            {t:"Orquestrador de containers que funciona como 'SO da nuvem', gerenciando milhares de máquinas",c:1,fb:"Exato! Kubernetes (do Google) coordena containers em clusters globalmente. É o padrão da indústria em 2026."},
+            {t:"Uma nova versão do Windows para servidores",c:0,fb:"Kubernetes é open-source, multiplataforma, não é da Microsoft. Windows Server é outro produto."},
+            {t:"Um tipo de vírus que ataca Linux",c:0,fb:"Falso! Kubernetes é ferramenta legítima, amplamente usada por empresas sérias (AWS, Google, Nubank)."}
+          ]},
+        {p:"Por que SOs embarcados (roteador, smart TV) não usam Windows?",
+          alts:[
+            {t:"Hardware limitado (pouca RAM/CPU) exige SOs leves e específicos para a tarefa",c:1,fb:"Correto! Seu roteador tem 256MB de RAM e CPU de 1GHz. Windows exigiria 4GB+ e seria desperdício absurdo."},
+            {t:"Windows não funciona em dispositivos sem tela",c:0,fb:"Windows Server existe sem tela (headless). O problema é tamanho/peso, não ausência de display."},
+            {t:"Microsoft proíbe instalação em roteadores",c:0,fb:"Não há proibição legal. É uma questão técnica: Windows é pesado demais para hardware limitado."}
+          ]}
+      ]
+    }
+  ],
+  revisao:{
+    titulo:"Revisão — Mapa completo e Chefão",
+    cola:[
+      "• SO = maestro entre hardware e apps (máquina estendida + gerente de recursos)",
+      "• Batch (1950s): jobs sequenciais, sem interação, máximo aproveitamento de CPU cara",
+      "• Multitarefa: vários apps na RAM, CPU alterna em time-slices (preempção = SO tira à força)",
+      "• Pessoal: prioriza tempo de resposta > uso máximo de CPU (Windows, macOS, Linux desktop)",
+      "• Fortemente acoplado: CPUs compartilham RAM (notebooks, servidores pequenos)",
+      "• Fracamente acoplado: CPUs com RAM própria, comunicam por rede (AWS, Google, clusters)",
+      "• RTOS: tempo garantido (aviões, médicos); Embarcados: hardware limitado (roteadores)"
+    ],
+    chefao:{
+      pergunta:"Você é arquiteto de sistemas em 2026. A Nubank pede para projetar a infraestrutura do novo produto. Eles têm: (a) app móvel com 90 milhões de clientes; (b) processamento de transações em tempo real (frações de segundo); (c) análise de IA em petabytes de dados históricos. Que TIPOS de SO você usaria em cada camada?",
+      criterios:[
+        "App móvel dos clientes: SO pessoal (Android/iOS) com UX responsiva",
+        "Processamento de transações: RTOS ou Linux otimizado com baixa latência (fracamente acoplado)",
+        "Análise IA em petabytes: cluster fracamente acoplado (Kubernetes) com milhares de máquinas",
+        "Justificar economicamente cada escolha (custo, escala, tempo de resposta)"
+      ]
+    }
+  }
 };
 
-const estado={abaAtiva:0,xp:0,selos:[],abasConcluidas:new Set(),quizRespondidos:{},apresentacao:false};
-let filas={},GS={},timers={};
+/* =========================================================
+   MOTOR
+   ========================================================= */
+const estado = {
+  xp:0,
+  selos:new Set(),
+  quizOk:new Set(),
+  demoOk:new Set(),
+  dark:false,
+  apres:false,
+  abaAtiva:null,
+  demos:{}
+};
 
-function fbBox(tipo,titulo,texto){return `<div class="fb-box ${tipo}"><strong>${titulo}</strong> ${texto}</div>`;}
+function carregarEstado(){
+  try{
+    const s = JSON.parse(localStorage.getItem('so_aula01')||'{}');
+    estado.xp = s.xp||0;
+    estado.selos = new Set(s.selos||[]);
+    estado.quizOk = new Set(s.quizOk||[]);
+    estado.demoOk = new Set(s.demoOk||[]);
+  }catch(e){}
+}
+function salvarEstado(){
+  localStorage.setItem('so_aula01',JSON.stringify({
+    xp:estado.xp,
+    selos:Array.from(estado.selos),
+    quizOk:Array.from(estado.quizOk),
+    demoOk:Array.from(estado.demoOk)
+  }));
+}
+function ganhaXP(n,motivo){
+  estado.xp += n;
+  showToast(`+${n} XP — ${motivo}`);
+  atualizaProgresso();
+  salvarEstado();
+}
+function adicionaSelo(s){
+  if(!estado.selos.has(s)){
+    estado.selos.add(s);
+    showToast(`🏅 Selo: ${s}`);
+    atualizaProgresso();
+    salvarEstado();
+  }
+}
 
-function init(){
-  renderGlossario();renderAbas();setupTabs();setupModos();setupTermos();atualizarProgresso();
-  ativarAba(hashParaAba(),false);
+function shuffle(a){
+  const b = a.slice();
+  for(let i=b.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [b[i],b[j]] = [b[j],b[i]];
+  }
+  return b;
 }
-function renderGlossario(){
-  document.getElementById('glossarioLista').innerHTML=AULA_DADOS.glossario.map(g=>`
-   <div style="margin:8px 0;padding:10px 12px;background:var(--neutral-soft);border-left:4px solid var(--orange);border-radius:6px;">
-     <strong style="color:var(--primary-dark);">${g.termo}</strong>
-     <span style="background:var(--orange-soft);color:var(--orange-ink);padding:2px 8px;border-radius:6px;font-size:.75em;font-weight:700;margin-left:6px;">${g.tipo}</span>
-     <div style="margin-top:6px;">${g.explicacao}</div>
-     <div style="margin-top:6px;color:var(--muted);font-size:.9em;"><strong>🌍 Exemplo real:</strong> ${g.exemploReal}</div>
-   </div>`).join('');
-}
-function renderAbas(){
-  const bar=document.getElementById('tabsBar'),shell=document.getElementById('panelShell');
-  let tabs='',panels='';
-  AULA_DADOS.abas.forEach((aba,i)=>{
-    tabs+=`<button class="tab-btn" id="tab-${i}" role="tab" data-aba="${i}" aria-controls="panel-${i}" aria-selected="false" tabindex="-1">${aba.titulo}</button>`;
-    panels+=painelAba(i,aba);
-  });
-  tabs+=`<button class="tab-btn" id="tab-revisao" role="tab" data-aba="revisao" aria-controls="panel-revisao" aria-selected="false" tabindex="-1">🏁 Revisão</button>`;
-  panels+=painelRevisao();
-  bar.innerHTML=tabs;shell.innerHTML=panels;
-  AULA_DADOS.abas.forEach((aba,i)=>renderDemo(i,aba.demo));
-}
-function painelAba(i,aba){
-  return `<div class="tab-panel" id="panel-${i}" data-aba="${i}" role="tabpanel" aria-labelledby="tab-${i}" tabindex="0">
-    <div class="card" style="border-color:var(--purple);"><h2 style="color:var(--purple-ink);">🎭 Missão desta era</h2><p><em>${aba.narrativa}</em></p></div>
-    <details open class="sum-mundo"><summary>🌍 No mundo real</summary><div class="conteudo">${aba.mundoReal.map(x=>`<p>${x}</p>`).join('')}</div></details>
-    <details class="sum-ferramentas"><summary>🛠️ Nas ferramentas</summary><div class="conteudo">${aba.ferramentas.map(f=>`
-      <div style="margin:8px 0;padding:10px;background:var(--neutral-soft);border-radius:8px;">
-        <strong style="color:var(--teal-ink);">${f.nome}</strong>
-        <span style="background:var(--teal-soft);color:var(--teal-ink);padding:2px 8px;border-radius:6px;font-size:.75em;font-weight:700;margin-left:6px;">${f.tipo}</span>
-        <div style="margin-top:4px;">${f.explicacao}</div></div>`).join('')}</div></details>
-    <details class="sum-dicionario"><summary>🔤 Mini-dicionário</summary><div class="conteudo"><table class="cola"><thead><tr><th>Termo</th><th>Definição rápida</th></tr></thead><tbody>${aba.dicionario.map(d=>`<tr><td><strong>${d.termo}</strong></td><td>${d.definicao}</td></tr>`).join('')}</tbody></table></div></details>
-    <details class="sum-conceitos"><summary>📖 Conceitos + analogias</summary><div class="conteudo">${aba.conceitos.map(c=>`
-      <div style="margin:16px 0;"><h3>${c.titulo}</h3><p>${c.texto}</p>
-      <p style="background:var(--warn-soft);padding:10px;border-radius:8px;color:var(--fg);">${c.analogia}</p>
-      <p style="color:var(--muted);"><strong>🌍 Exemplo real:</strong> ${c.exemploReal}</p></div>`).join('')}</div></details>
-    <details class="sum-roteiro so-apresentacao"><summary>🎤 Roteiro do apresentador</summary><div class="conteudo">
-      <p><strong>Passo 0 — entender a tela:</strong> ${aba.roteiroDemo.passo0}</p>
-      <ol>${aba.roteiroDemo.passos.map((p,n)=>`<li style="margin:12px 0;"><strong>Passo ${n+1}:</strong><br><i>O que clicar:</i> ${p.acao}<br><i>O que você vê:</i> ${p.ve}<br><i>O que isso significa:</i> ${p.significa}</li>`).join('')}</ol></div></details>
-    <div class="card"><h2>🎮 Demo interativa</h2>
-      <div class="demo-instrucoes"><strong>📋 INSTRUÇÕES PASSO A PASSO</strong><p>${aba.roteiroDemo.passo0}</p></div>
-      <div id="demo-${i}"></div>
-      <div style="margin-top:12px;"><button class="demo-btn reset" onclick="resetDemo(${i})">🔄 Reiniciar demo</button></div></div>
-    <details open class="sum-quiz"><summary>🧠 Quiz — 3 perguntas</summary><div class="conteudo">${aba.quiz.map((q,qi)=>renderQuiz(i,qi,q)).join('')}</div></details>
-    <details class="sum-aprofundar"><summary>🔗 Aprofundar</summary><div class="conteudo"><ul class="aprofundar-lista">${aba.aprofundar.map(a=>`<li><a href="${a.url}" target="_blank" rel="noopener">${a.rotulo}</a>${a.idioma!=='pt'?`<span class="idioma-tag">${a.idioma.toUpperCase()}</span>`:''}</li>`).join('')}</ul></div></details>
-    <div class="card" style="border-color:var(--warn);background:var(--warn-soft);"><h2 style="color:var(--warn-ink);">🔍 Mito ou verdade?</h2>
-      <p><strong>"${aba.mitoOuVerdade.afirmacao}"</strong></p>
-      <p>${aba.mitoOuVerdade.verdade?'✅ VERDADE':'❌ MITO'} — ${aba.mitoOuVerdade.explicacao}</p></div>
-  </div>`;
-}
-function painelRevisao(){
-  const r=AULA_DADOS.revisao;
-  return `<div class="tab-panel" id="panel-revisao" data-aba="revisao" role="tabpanel" aria-labelledby="tab-revisao" tabindex="0">
-    <div class="card" style="border-color:var(--purple);"><h2 style="color:var(--purple-ink);">🗺️ Mapa da aula</h2>
-      <div class="mapa">${r.mapa.map(m=>`<div class="mapa-node">${m}</div>`).join('')}</div></div>
-    <div class="card"><h2>📝 Cola rápida</h2><table class="cola"><thead><tr><th>Termo</th><th>Em uma linha</th></tr></thead><tbody>${r.cola.map(c=>`<tr><td><strong>${c.termo}</strong></td><td>${c.linha}</td></tr>`).join('')}</tbody></table></div>
-    <div class="card chefao-box"><h2 style="color:var(--purple-ink);">👑 Desafio final do Chefão</h2><p>${r.desafio}</p>
-      <button class="demo-btn" onclick="iniciarChefao()" id="btnChefao">🎲 Sortear pergunta do Chefão</button>
-      <div id="chefaoArea" style="margin-top:16px;"></div></div>
-  </div>`;
-}
-function renderQuiz(ai,qi,q){
-  const id=`${ai}-${qi}`,alts=[...q.alternativas];
-  for(let i=alts.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[alts[i],alts[j]]=[alts[j],alts[i]];}
-  return `<div class="quiz-bloco" data-id="${id}" style="margin:20px 0;padding:16px;background:var(--neutral-soft);border-radius:12px;border:2px solid var(--line);">
-    <div class="quiz-pergunta">${qi+1}. ${q.pergunta}</div>
-    ${alts.map(a=>`<div class="quiz-alt" data-correta="${a.correta}" data-id="${id}" data-fb="${a.fb.replace(/"/g,'&quot;')}" onclick="responderQuiz('${id}',this)">${a.texto}<span class="fb"></span></div>`).join('')}
-  </div>`;
-}
-function responderQuiz(id,el){
-  const st=estado.quizRespondidos[id]||(estado.quizRespondidos[id]={erros:0,resolvida:false});
-  if(st.resolvida||el.classList.contains('disabled'))return;
-  const bloco=document.querySelector(`.quiz-bloco[data-id="${id}"]`);
-  const correta=el.dataset.correta==='true';
-  el.querySelector('.fb').innerHTML=`<strong>${correta?'✅ Por que esta está certa:':'❌ Por que esta está errada:'}</strong> ${el.dataset.fb}`;
-  if(correta){
-    el.classList.add('correct');
-    bloco.querySelectorAll('.quiz-alt').forEach(alt=>alt.classList.add('disabled'));
-    st.resolvida=true;
-    const xp=st.erros===0?10:5;
-    estado.xp+=xp;
-    mostrarNotificacao(`+${xp} XP! ${st.erros===0?'🎉 Primeira tentativa!':'🔄 Acertou após errar!'}`);
-    const ai=parseInt(id.split('-')[0]);
-    if(!isNaN(ai)){
-      const tot=AULA_DADOS.abas[ai].quiz.length;
-      let feitas=0;
-      for(let q=0;q<tot;q++){const s=estado.quizRespondidos[ai+'-'+q];if(s&&s.resolvida)feitas++;}
-      if(feitas===tot&&!estado.abasConcluidas.has(ai)){
-        estado.abasConcluidas.add(ai);estado.selos.push(ai);mostrarNotificacao('🏆 Selo conquistado!');
+
+function renderTabs(){
+  const nav = document.getElementById('tablist');
+  nav.innerHTML = '';
+  const todas = [...AULA_DADOS.abas,{id:'revisao',titulo:'Revisão'}];
+  todas.forEach((a,i)=>{
+    const btn = document.createElement('button');
+    btn.role = 'tab';
+    btn.setAttribute('aria-selected','false');
+    btn.setAttribute('aria-controls',a.id);
+    btn.dataset.id = a.id;
+    btn.innerHTML = `${i+1}. ${a.titulo}${a.estudoProprio?'<span class="selo">📖 Estudo próprio</span>':''}`;
+    btn.onclick = ()=>irPara(a.id);
+    btn.onkeydown = (e)=>{
+      if(e.key==='ArrowRight'){
+        const next = btn.nextElementSibling||nav.firstElementChild;
+        next.focus();
+      } else if(e.key==='ArrowLeft'){
+        const prev = btn.previousElementSibling||nav.lastElementChild;
+        prev.focus();
+      } else if(e.key==='Enter'||e.key===' '){
+        e.preventDefault();irPara(a.id);
       }
+    };
+    nav.appendChild(btn);
+  });
+}
+
+function renderMain(){
+  const m = document.getElementById('main');
+  m.innerHTML = '';
+  const pr = document.createElement('div');
+  pr.className='progresso';
+  pr.id='progresso';
+  m.appendChild(pr);
+  AULA_DADOS.abas.forEach(a=>{
+    const sec = document.createElement('section');
+    sec.className='aba';
+    sec.id=a.id;
+    sec.setAttribute('role','tabpanel');
+    sec.innerHTML = renderAba(a);
+    m.appendChild(sec);
+  });
+  const rev = document.createElement('section');
+  rev.className='aba';rev.id='revisao';
+  rev.setAttribute('role','tabpanel');
+  rev.innerHTML = renderRevisao();
+  m.appendChild(rev);
+  atualizaProgresso();
+}
+
+function renderAba(a){
+  let html = `
+    <div class="missao"><strong>🎯 Missão</strong>${a.missao}</div>
+    <div class="card">
+      <h2>${a.titulo}</h2>
+      ${a.teoria.map(p=>`<p>${p}</p>`).join('')}
+    </div>
+    <div class="demo" id="demo-${a.id}">
+      <h3>🧪 Demo: ${a.demo.titulo}</h3>
+      <div class="preveja">💭 ${a.demo.preveja}</div>
+      <div class="instru">📋 <strong>Instruções passo a passo:</strong> ${a.demo.instru}</div>
+      <div id="demo-area-${a.id}"></div>
+      ${a.demo.guia?`<div class="obs">👀 <strong>O que observar:</strong> ${a.demo.guia}</div>`:''}
+      <button class="btn sec" onclick="reiniciarDemo('${a.id}')">🔄 Reiniciar demo</button>
+      ${!estado.demoOk.has(a.id)?`<button class="btn" onclick="marcarDemoOk('${a.id}')">✓ Concluí a demo</button>`:'<span class="selo">✓ Demo concluída</span>'}
+    </div>
+    <details class="lex">
+      <summary>📘 Mini-dicionário</summary>
+      <ul>${a.aprofundar.lexico.map(l=>`<li><strong>${l.termo}:</strong> ${l.def}</li>`).join('')}</ul>
+    </details>
+    <details class="links">
+      <summary>🔗 Links para aprofundar</summary>
+      <ul>${a.aprofundar.links.map(l=>`<li><a href="${l.url}" target="_blank" rel="noopener">${l.rotulo}${l.lang&&l.lang!=='pt'?` <em>(${l.lang})</em>`:''}</a></li>`).join('')}</ul>
+    </details>
+    <div class="card">
+      <h2>📝 Quiz — 3 perguntas</h2>
+      ${a.quiz.map((q,i)=>renderQuiz(a.id,i,q)).join('')}
+    </div>
+    ${a.estudoProprio?`<div class="rota"><strong>🏠 Rota em casa:</strong> esta aba é estudo próprio. Em sala, o professor percorre as abas 1–5. Aqui, aprofunde no seu ritmo.</div>`:`<div class="rota"><strong>🎤 Roteiro do apresentador:</strong> 6 min nesta aba. Comece pela Missão, peça previsão da demo, deixe alunos explorarem 2 min, feche com o Quiz.</div>`}
+  `;
+  return html;
+}
+
+function renderQuiz(abaId,idx,q){
+  const key = `${abaId}-${idx}`;
+  const misturadas = shuffle(q.alts);
+  return `
+    <div class="quiz-perg" data-key="${key}" data-aba="${abaId}">
+      <h4>Pergunta ${idx+1}. ${q.p}</h4>
+      <div class="alts">
+        ${misturadas.map((alt,i)=>`<button class="alt" data-c="${alt.c?1:0}" data-fb='${alt.fb.replace(/'/g,'&#39;')}' onclick="respQuiz(this)">${alt.t}</button>`).join('')}
+      </div>
+      <div class="fb" id="fb-${key}"></div>
+    </div>
+  `;
+}
+
+function respQuiz(btn){
+  const p = btn.closest('.quiz-perg');
+  const key = p.dataset.key;
+  const abaId = p.dataset.aba;
+  const fb = btn.dataset.fb;
+  const c = btn.dataset.c === '1';
+  const fbd = p.querySelector('.fb');
+  if(c){
+    btn.classList.add('certa');
+    btn.innerHTML = '✓ '+btn.innerHTML;
+    p.querySelectorAll('.alt').forEach(b=>b.disabled=true);
+    fbd.className='fb ok';
+    fbd.innerHTML='✅ <strong>Por que esta está certa:</strong> '+fb;
+    if(!estado.quizOk.has(key)){
+      const retryKey = key+'-retry';
+      const wasRetry = sessionStorage.getItem(retryKey);
+      estado.quizOk.add(key);
+      ganhaXP(wasRetry?5:10, wasRetry?'Acerto no retry!':'Acerto de primeira!');
+      sessionStorage.removeItem(retryKey);
+      verificarAbaCompleta(abaId);
+      salvarEstado();
     }
-    atualizarProgresso();
   } else {
-    el.classList.add('wrong','disabled');
-    st.erros++;
+    btn.classList.add('errada');
+    btn.innerHTML = '✗ '+btn.innerHTML;
+    btn.disabled = true;
+    fbd.className='fb bad';
+    fbd.innerHTML='❌ <strong>Por que esta está errada:</strong> '+fb+'<br><em>🔁 Tente outra alternativa.</em>';
+    if(!estado.quizOk.has(key)){
+      sessionStorage.setItem(key+'-retry','1');
+    }
   }
 }
-function renderDemo(i,demo){
-  const c=document.getElementById('demo-'+i);if(!c)return;
-  if(timers[i]){clearInterval(timers[i]);timers[i]=null;}
-  if(demo.tipo==='fila')c.innerHTML=`<p><strong>Cenário:</strong> ${demo.config.pergunta}</p>
-    <button class="demo-btn" onclick="filaAdd(${i})">➕ Adicionar job à fila</button>
-    <span id="fila-cont-${i}" style="margin-left:12px;font-weight:600;">Jobs: 0</span>
-    <div class="fila-visual" id="fila-vis-${i}"></div>
-    <p>Escolha como processar:</p>
-    ${demo.config.opcoes.map((o,k)=>`<button class="demo-btn secondary" onclick="filaProc(${i},${k})">${o.texto}</button>`).join('')}
-    <div class="demo-feedback neutro" id="feedback-${i}">Adicione jobs e escolha uma estratégia!</div>`;
-  if(demo.tipo==='cenario')c.innerHTML=`<p><strong>${demo.config.pergunta}</strong></p>
-    ${demo.config.cenarios.map((s,k)=>`<div class="cenario-card"><div class="titulo">${s.empresa}</div><div style="margin:8px 0;">${s.descricao}</div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;">${(s.opcoes||['SaaS','PaaS','IaaS']).map(o=>`<button class="demo-btn secondary" onclick="cenEscolher(${i},${k},'${o}')">${o}</button>`).join('')}</div>
-      <div class="demo-feedback neutro" id="cen-fb-${i}-${k}" style="display:none;"></div></div>`).join('')}
-    <div class="demo-feedback neutro" id="feedback-${i}">Escolha uma opção em cada cenário!</div>`;
-  if(demo.tipo==='gantt'){
-    GS[i]={q:2,t:0,rem:[5,3,2],fila:[0,1,2],cur:null,used:0,blocks:[],done:false,playing:false};
-    c.innerHTML=`<p><strong>${demo.config.pergunta}</strong></p>
-    <p>Quantum (fatia de tempo):
-      <button class="demo-btn secondary" onclick="ganttSetQ(${i},1)">1</button>
-      <button class="demo-btn secondary" onclick="ganttSetQ(${i},2)">2</button>
-      <button class="demo-btn secondary" onclick="ganttSetQ(${i},4)">4</button>
-    </p>
-    <button class="demo-btn" id="gantt-play-${i}" onclick="ganttPlay(${i})">▶ Play</button>
-    <button class="demo-btn secondary" onclick="ganttStep(${i})">⏭ Passo</button>
-    <div class="gantt" id="gantt-${i}"></div>
-    <div id="gantt-status-${i}" style="font-weight:600;">t=0 · CPU ocioso · restantes P1:5 P2:3 P3:2</div>
-    <div class="observar">👀 <strong>O que observar:</strong> com quantum 1 os blocos alternam quase a cada tick (muitas trocas de contexto); com quantum 4 cada processo "segura" o CPU e a ordem vira quase fila única (FCFS).</div>
-    <div class="demo-feedback neutro" id="feedback-${i}">Escolha um quantum e dê play (ou avance passo a passo)!</div>`;
-    ganttRender(i);
+
+function verificarAbaCompleta(abaId){
+  const aba = AULA_DADOS.abas.find(a=>a.id===abaId);
+  if(!aba) return;
+  const todas = aba.quiz.every((_,i)=>estado.quizOk.has(`${abaId}-${i}`));
+  const demo = estado.demoOk.has(abaId);
+  if(todas && demo){
+    const nomeSelo = aba.titulo.split('📖')[0].replace(/[^\w\s]/g,'').trim().substring(0,25);
+    adicionaSelo(nomeSelo||aba.titulo.substring(0,25));
   }
-  if(demo.tipo==='nucleos')c.innerHTML=`<p><strong>${demo.config.pergunta}</strong></p>
-    <p>Núcleos disponíveis:
-      <button class="demo-btn secondary" onclick="nucEscolher(${i},1)">1 núcleo</button>
-      <button class="demo-btn secondary" onclick="nucEscolher(${i},2)">2 núcleos</button>
-      <button class="demo-btn secondary" onclick="nucEscolher(${i},4)">4 núcleos</button>
-      <button class="demo-btn secondary" onclick="nucEscolher(${i},8)">8 núcleos</button>
-    </p>
-    <div id="nuc-grid-${i}" style="margin:10px 0;"></div>
-    <div class="observar">👀 <strong>O que observar:</strong> dobre os núcleos e compare o tempo total. A partir de certo ponto o tempo quase não cai — os 2 ticks da parte sequencial viram o piso. Isso é a Lei de Amdahl.</div>
-    <div class="demo-feedback neutro" id="feedback-${i}">Escolha uma quantidade de núcleos para ver a distribuição!</div>`;
 }
-function ganttSetQ(i,q){
-  if(timers[i]){clearInterval(timers[i]);timers[i]=null;}
-  GS[i]={q:q,t:0,rem:[5,3,2],fila:[0,1,2],cur:null,used:0,blocks:[],done:false,playing:false};
-  document.getElementById('gantt-play-'+i).textContent='▶ Play';
-  ganttRender(i);
-  const fb=document.getElementById('feedback-'+i);
-  fb.className='demo-feedback neutro';
-  fb.innerHTML=fbBox('warn','⚠️ Quantum alterado para '+q+':','a linha do tempo foi reiniciada (reinício manual, pedido por você).');
-}
-function ganttTick(i){
-  const s=GS[i];
-  if(s.done)return;
-  if(s.cur===null||s.used===s.q||s.rem[s.cur]===0){
-    if(s.cur!==null&&s.rem[s.cur]>0)s.fila.push(s.cur);
-    s.cur=s.fila.length?s.fila.shift():null;
-    s.used=0;
+
+function marcarDemoOk(abaId){
+  if(!estado.demoOk.has(abaId)){
+    estado.demoOk.add(abaId);
+    ganhaXP(5,'Demo concluída');
+    verificarAbaCompleta(abaId);
+    salvarEstado();
+    const area = document.querySelector(`#demo-${abaId}`);
+    if(area){
+      const btns = area.querySelectorAll('button.btn');
+      btns.forEach(b=>{
+        if(b.textContent.includes('Concluí')){
+          const span = document.createElement('span');
+          span.className='selo';
+          span.textContent='✓ Demo concluída';
+          b.replaceWith(span);
+        }
+      });
+    }
   }
-  if(s.cur===null){s.done=true;ganttRender(i);ganttFinish(i);return;}
-  const last=s.blocks[s.blocks.length-1];
-  if(last&&last.p===s.cur)last.len++;else s.blocks.push({p:s.cur,len:1});
-  s.rem[s.cur]--;s.used++;s.t++;
-  if(s.rem.every(r=>r===0))s.done=true;
-  ganttRender(i);
-  if(s.done)ganttFinish(i);
 }
-function ganttRender(i){
-  const s=GS[i],g=document.getElementById('gantt-'+i);
-  const cores=['#be185d','#0d9488','#ea580c'];
-  g.innerHTML=s.blocks.length?s.blocks.map(b=>`<div class="gblk" style="width:${b.len*34}px;background:${cores[b.p]}">P${b.p+1}</div>`).join(''):'<span style="color:var(--muted)">Linha do tempo vazia — dê play.</span>';
-  const st=document.getElementById('gantt-status-'+i);
-  if(s.done){st.textContent=`Concluído em t=${s.t}.`;}
-  else if(s.cur===null){st.textContent=`t=${s.t} · CPU ocioso · restantes P1:${s.rem[0]} P2:${s.rem[1]} P3:${s.rem[2]}`;}
-  else{st.textContent=`t=${s.t} · CPU: P${s.cur+1} (fatia ${s.used}/${s.q}) · restantes P1:${s.rem[0]} P2:${s.rem[1]} P3:${s.rem[2]}`;}
+
+function renderRevisao(){
+  return `
+    <div class="missao"><strong>🎯 Revisão final</strong>Recapitule: SO como maestro → Batch (anos 50) → Multitarefa → Pessoal → Multiprocessador → Estado da arte.</div>
+    <div class="card">
+      <h2>🗺️ Mapa da aula</h2>
+      <div class="revisao-mapa">
+        ${AULA_DADOS.abas.map((a,i)=>`<div class="no"><strong>${i+1}.</strong> ${a.titulo.split('📖')[0].trim()}${a.estudoProprio?' <em>(estudo)</em>':''}<br><small>${estado.selos.size>0?'🏅':'○'} ${a.estudoProprio?'estudo próprio':'em sala'}</small></div>`).join('')}
+      </div>
+    </div>
+    <div class="card">
+      <h2>🧾 Cola rápida</h2>
+      <div class="cola">${AULA_DADOS.revisao.cola.join('\n')}</div>
+    </div>
+    <div class="chefao" id="chefao">
+      <h3>👹 Chefão — o desafio final</h3>
+      <p><strong>${AULA_DADOS.revisao.chefao.pergunta}</strong></p>
+      <p>Seu argumentário deve cobrir:</p>
+      <ul>${AULA_DADOS.revisao.chefao.criterios.map(c=>`<li>${c}</li>`).join('')}</ul>
+      <textarea id="chefaoResp" rows="6" style="width:100%;padding:10px;border-radius:8px;border:2px solid #ffd54f;font-family:inherit;font-size:1rem" placeholder="Escreva sua resposta aqui. Use todos os critérios acima."></textarea><br>
+      <button class="btn" onclick="entregarChefao()">🏆 Entregar resposta</button>
+      <div id="chefaoFb" style="margin-top:10px"></div>
+    </div>
+  `;
 }
-function ganttPlay(i){
-  const s=GS[i];
-  if(s.done)return;
-  if(s.playing){clearInterval(timers[i]);timers[i]=null;s.playing=false;document.getElementById('gantt-play-'+i).textContent='▶ Play';return;}
-  s.playing=true;document.getElementById('gantt-play-'+i).textContent='⏸ Pausar';
-  timers[i]=setInterval(()=>ganttTick(i),600);
-}
-function ganttStep(i){const s=GS[i];if(s.playing){clearInterval(timers[i]);timers[i]=null;s.playing=false;document.getElementById('gantt-play-'+i).textContent='▶ Play';}ganttTick(i);}
-function ganttFinish(i){
-  const s=GS[i];
-  if(timers[i]){clearInterval(timers[i]);timers[i]=null;}
-  s.playing=false;document.getElementById('gantt-play-'+i).textContent='▶ Play';
-  const trocas=s.blocks.length-1;
-  const fb=document.getElementById('feedback-'+i);
-  fb.className='demo-feedback neutro';
-  fb.innerHTML=fbBox('ok','✅ Round-robin concluído:',`em ${s.t} ticks com ${trocas} trocas de contexto (quantum ${s.q}). Quantum pequeno distribui melhor o CPU, mas paga mais overhead de troca; quantum grande vira quase FCFS.`)+
-   `<div style="margin-top:8px;color:var(--muted);font-size:.9em;">🌍 Exemplo real: Linux e Windows trocam o processo em execução a cada poucos milissegundos; aqui, 1 tick = 1 segundo, só para dar tempo de ver.</div>`;
-}
-function nucEscolher(i,c){
-  const seq=2,par=8;
-  const pt=Math.ceil(par/c),total=seq+pt,sp=(10/total).toFixed(1).replace('.',',');
-  const base=Math.floor(par/c),rest=par%c;
-  let html=`<div class="nuc-row"><div class="nuc-label">Sequencial</div>${'<div class="nblk" style="background:#64748b">S</div>'.repeat(seq)}</div>`;
-  let t=0;
-  for(let r=0;r<c;r++){
-    const n=base+(r<rest?1:0);
-    let blks='';
-    for(let k=0;k<n;k++){t++;blks+=`<div class="nblk" style="background:#be185d">T${t}</div>`;}
-    html+=`<div class="nuc-row"><div class="nuc-label">Núcleo ${r+1}</div>${blks}</div>`;
+
+function entregarChefao(){
+  const t = document.getElementById('chefaoResp').value.trim();
+  const fb = document.getElementById('chefaoFb');
+  if(t.length<100){
+    fb.className='fb bad';
+    fb.style.display='block';
+    fb.innerHTML='❌ Resposta muito curta. Desenvolva os 4 critérios (app móvel, transações, IA, justificativa econômica).';
+    return;
   }
-  document.getElementById('nuc-grid-'+i).innerHTML=html;
-  const fb=document.getElementById('feedback-'+i);
-  fb.className='demo-feedback neutro';
-  let nota='';
-  if(c===1)nota='Sem núcleos extras, tudo vira fila única: nenhum ganho de paralelismo.';
-  else if(c>=4)nota='Repare: de 4 para 8 núcleos o ganho encolheu — os 2 ticks sequenciais viraram o piso (Lei de Amdahl).';
-  else nota='O ganho já aparece, mas ainda está longe do número de núcleos: a parte sequencial não paraleliza.';
-  fb.innerHTML=fbBox('ok',`✅ Com ${c} núcleo(s):`,`parte sequencial 2 ticks + parte paralela ${pt} ticks = ${total} ticks no total. Speedup em relação a 1 núcleo (10 ticks): ${sp}×. ${nota}`)+
-   `<div style="margin-top:8px;color:var(--muted);font-size:.9em;">🌍 Exemplo real: é por isso que um chip de 16 núcleos não abre o Excel 16 vezes mais rápido — parte do trabalho é inerentemente sequencial.</div>`;
-}
-function filaAdd(i){filas[i]=filas[i]||[];filas[i].push('J'+(filas[i].length+1));filaDraw(i);}
-function filaDraw(i){document.getElementById('fila-vis-'+i).innerHTML=filas[i].map(p=>`<span class="pacote">${p}</span>`).join('');document.getElementById('fila-cont-'+i).textContent='Jobs: '+filas[i].length;}
-function filaProc(i,k){
-  const cfg=AULA_DADOS.abas[i].demo.config,o=cfg.opcoes[k];
-  const fb=document.getElementById('feedback-'+i);
-  if(!filas[i]||!filas[i].length){fb.innerHTML=fbBox('warn','⚠️','Adicione jobs primeiro!');return;}
-  const cl=[...filas[i]];
-  document.getElementById('fila-vis-'+i).innerHTML=cl.slice(0,o.velocidade).map(c=>`<span class="atendente">⚙️ ${c}</span>`).join('')+cl.slice(o.velocidade).map(c=>`<span class="pacote">${c}</span>`).join('');
-  const vazio=cl.length<=o.velocidade;
-  let html='';
-  if(vazio){html+=fbBox('ok','✅ Por que esvaziou com "'+o.texto+'":',o.porque);}
-  else{html+=fbBox('warn','⚠️ Por que sobrou fila com "'+o.texto+'":',o.porque);}
-  html+=`<div style="margin-top:8px;color:var(--muted);font-size:.9em;">🌍 Exemplo real: ${cfg.exemploReal}</div>`;
-  fb.className='demo-feedback neutro';fb.innerHTML=html;
-}
-function cenEscolher(i,k,esc){
-  const cfg=AULA_DADOS.abas[i].demo.config,s=cfg.cenarios[k],ok=esc===s.correta;
-  const fb=document.getElementById(`cen-fb-${i}-${k}`);fb.style.display='block';
-  const btns=fb.closest('.cenario-card').querySelectorAll('.demo-btn.secondary');
-  let html='';
-  if(ok){
-    html+=fbBox('ok','✅ Por que "'+esc+'" está certo:',s.porques[esc]);
-    btns.forEach(b=>b.classList.add('disabled'));
+  const lower = t.toLowerCase();
+  let pontos = 0;
+  if(/android|ios|móvel|mobile|app|celular/.test(lower)) pontos++;
+  if(/rtos|tempo real|lat[êe]ncia|transaç/.test(lower)) pontos++;
+  if(/cluster|kubernetes|fracamente|petabyte|nuvem|distribu/.test(lower)) pontos++;
+  if(/custo|escala|econ[ôo]mic|invest|opex|capex|justific/.test(lower)) pontos++;
+  fb.style.display='block';
+  if(pontos>=3){
+    fb.className='fb ok';
+    fb.innerHTML=`✅ <strong>Excelente!</strong> Você cobriu ${pontos}/4 critérios. Ganhou 50 XP e o selo "Arquiteto de Sistemas".`;
+    ganhaXP(50,'Chefão concluído');
+    adicionaSelo('Arquiteto de Sistemas');
   } else {
-    html+=fbBox('erro','❌ Por que "'+esc+'" não serve aqui:',s.porques[esc]);
-    btns.forEach(b=>{if(b.textContent===esc)b.classList.add('disabled');});
+    fb.className='fb bad';
+    fb.innerHTML=`❌ Você cobriu apenas ${pontos}/4 critérios. Reveja: app móvel (Android/iOS), transações (RTOS/Linux rápido), IA (cluster Kubernetes), justificativa econômica.`;
   }
-  fb.className='demo-feedback neutro';fb.innerHTML=html;
-  const g=document.getElementById('feedback-'+i);g.className='demo-feedback neutro';g.innerHTML=`<em>🌍 Exemplo real: ${cfg.exemploReal}</em>`;
 }
-function resetDemo(i){
-  if(timers[i]){clearInterval(timers[i]);timers[i]=null;}
-  filas[i]=[];GS[i]=null;
-  renderDemo(i,AULA_DADOS.abas[i].demo);
-}
-function iniciarChefao(){
-  const banco=[];AULA_DADOS.abas.forEach(a=>a.quiz.forEach(q=>banco.push(q)));
-  const s=banco[Math.floor(Math.random()*banco.length)];
-  document.getElementById('chefaoArea').innerHTML=`<div class="card" style="border-color:var(--purple);">${renderQuiz(99,0,s)}</div>`;
-  document.getElementById('btnChefao').textContent='🎲 Sortear outra';
-}
-function hashParaAba(){
-  const h=location.hash.replace('#','');
-  if(h==='revisao')return 'revisao';
-  const m=h.match(/^aba-(\d+)$/);
-  if(m&&+m[1]<AULA_DADOS.abas.length)return String(+m[1]);
-  return '0';
-}
-function ativarAba(dest,rolar){
-  estado.abaAtiva=dest;
-  document.querySelectorAll('.tab-btn').forEach(b=>{
-    const sel=b.dataset.aba===String(dest);
-    b.setAttribute('aria-selected',sel);b.tabIndex=sel?0:-1;
-  });
-  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.dataset.aba===String(dest)));
-  if(rolar)rolarParaAbas();
-}
-function rolarParaAbas(){
-  const bar=document.getElementById('tabsBar');
-  window.scrollTo({top:bar.getBoundingClientRect().top+window.scrollY-2,behavior:'smooth'});
-}
-function setupTabs(){
-  const bar=document.getElementById('tabsBar');
-  bar.addEventListener('click',e=>{
-    const b=e.target.closest('.tab-btn');if(!b)return;
-    const dest=b.dataset.aba;
-    location.hash=(dest==='revisao')?'revisao':'aba-'+dest;
-  });
-  window.addEventListener('hashchange',()=>ativarAba(hashParaAba(),true));
-  bar.addEventListener('keydown',e=>{
-    const tabs=[...bar.querySelectorAll('.tab-btn')];
-    const i=tabs.indexOf(document.activeElement);if(i<0)return;
-    let j=null;
-    if(e.key==='ArrowRight')j=(i+1)%tabs.length;
-    if(e.key==='ArrowLeft')j=(i-1+tabs.length)%tabs.length;
-    if(e.key==='Home')j=0;
-    if(e.key==='End')j=tabs.length-1;
-    if(j!==null){e.preventDefault();tabs[j].focus();tabs[j].click();}
-  });
-  document.addEventListener('keydown',e=>{
-    if(!estado.apresentacao)return;
-    if(e.target.closest('.tabs')||e.target.closest('input,textarea,select'))return;
-    const ordem=[...AULA_DADOS.abas.keys()].map(String).concat(['revisao']);
-    const pos=ordem.indexOf(String(estado.abaAtiva));
-    if(e.key==='ArrowRight'&&pos<ordem.length-1){location.hash=(ordem[pos+1]==='revisao')?'revisao':'aba-'+ordem[pos+1];}
-    if(e.key==='ArrowLeft'&&pos>0){location.hash=(ordem[pos-1]==='revisao')?'revisao':'aba-'+ordem[pos-1];}
+
+/* =========================================================
+   DEMOS
+   ========================================================= */
+function renderDemos(){
+  AULA_DADOS.abas.forEach(a=>{
+    const area = document.getElementById(`demo-area-${a.id}`);
+    if(!area) return;
+    if(a.id==='aba-1') renderDemoAba1(area,a);
+    else if(a.id==='aba-2') renderDemoAba2(area,a);
+    else if(a.id==='aba-3') renderDemoAba3(area,a);
+    else if(a.id==='aba-4') renderDemoAba4(area,a);
+    else if(a.id==='aba-5') renderDemoAba5(area,a);
+    else if(a.id==='aba-6') renderDemoAba6(area,a);
   });
 }
-function setupModos(){
-  const mt=document.getElementById('modoToggle'),dt=document.getElementById('darkToggle');
-  mt.addEventListener('click',()=>{
-    estado.apresentacao=!estado.apresentacao;
-    document.body.classList.toggle('apresentacao',estado.apresentacao);
-    mt.textContent=estado.apresentacao?'📖 Modo Leitura':'🎤 Modo Apresentação';
-    if(estado.apresentacao&&document.body.classList.contains('dark'))dt.click();
-  });
-  dt.addEventListener('click',()=>{
-    const d=document.body.classList.toggle('dark');
-    dt.textContent=d?'☀️ Claro':'🌙 Escuro';
+
+/* ABA 1 — Anatomia em camadas */
+function renderDemoAba1(area,a){
+  const wrap = document.createElement('div');
+  const cores = ['#5e35b1','#7e57c2','#9575cd','#b39ddb'];
+  wrap.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:6px;max-width:500px;margin:0 auto">
+      ${a.demo.camadas.map((c,i)=>`
+        <button class="btn" data-i="${i}" style="background:${cores[i]};padding:14px;text-align:left;font-size:1rem;border-radius:8px">
+          <strong>${c.nome}</strong>
+        </button>`).join('')}
+    </div>
+    <div id="ab1-reveal" style="margin-top:14px;padding:14px;border-radius:8px;background:#fff3e0;min-height:80px;border-left:5px solid #ffa000">
+      <em>👆 Clique em uma camada acima para ver seu papel no SO.</em>
+    </div>
+  `;
+  area.appendChild(wrap);
+  wrap.querySelectorAll('button').forEach(b=>{
+    b.onclick = ()=>{
+      const c = a.demo.camadas[+b.dataset.i];
+      document.getElementById('ab1-reveal').innerHTML = `<strong>${c.nome}</strong><br>${c.texto}<br><br>💡 <em>Exemplo real: ${c.exemplo}</em>`;
+    };
   });
 }
-function setupTermos(){
-  const pop=document.getElementById('popover');
-  AULA_DADOS.glossario.forEach(g=>{
-    const rx=new RegExp('\\b'+g.termo.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','gi');
-    document.querySelectorAll('#panelShell p, #panelShell li').forEach(el=>{
-      if(el.querySelector('.termo')||el.closest('.quiz-alt')||el.closest('a')||el.querySelector('a'))return;
-      if(rx.test(el.textContent)){
-        el.innerHTML=el.innerHTML.replace(rx,`<span class="termo" data-termo="${g.termo}">${g.termo}</span>`);
-      }
+
+/* ABA 2 — Fila Batch */
+function renderDemoAba2(area,a){
+  const wrap = document.createElement('div');
+  let fila = [];
+  function desenha(){
+    wrap.innerHTML = `
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+        ${a.demo.tipos.map((t,i)=>`<button class="btn" data-i="${i}" style="background:#6c757d">+ ${t.nome}</button>`).join('')}
+      </div>
+      <div style="padding:12px;background:#fff;border-radius:8px;border:2px solid #5e35b1">
+        <strong>📋 Fila atual (${fila.length} jobs):</strong>
+        <div id="ab2-fila" style="margin-top:8px;min-height:40px">${fila.map((j,i)=>`<span style="display:inline-block;background:#ede7f6;padding:4px 8px;border-radius:4px;margin:2px;font-size:.9rem">#${i+1} ${j.nome}</span>`).join('')||'<em>Vazia</em>'}</div>
+      </div>
+      <div style="margin-top:10px">
+        <button class="btn" id="ab2-rodar" ${fila.length===0?'disabled':''}>▶️ Processar lote</button>
+        <button class="btn sec" id="ab2-limpar">🗑️ Limpar fila</button>
+      </div>
+      <div id="ab2-log" style="margin-top:12px;padding:10px;background:#f5f0ff;border-radius:6px;font-family:monospace;min-height:40px;font-size:.9rem"></div>
+    `;
+    wrap.querySelectorAll('button[data-i]').forEach(b=>{
+      b.onclick = ()=>{ fila.push(a.demo.tipos[+b.dataset.i]); desenha(); };
     });
+    wrap.querySelector('#ab2-limpar').onclick = ()=>{ fila=[]; desenha(); };
+    wrap.querySelector('#ab2-rodar').onclick = ()=>rodarBatch();
+  }
+  function rodarBatch(){
+    const log = wrap.querySelector('#ab2-log');
+    log.innerHTML='🚀 Iniciando processamento batch...\n';
+    let i = 0;
+    let acumulado = 0;
+    const timer = setInterval(()=>{
+      if(i>=fila.length){
+        clearInterval(timer);
+        log.innerHTML += `\n✅ Lote concluído em ${acumulado}s\n⏱️  Sem interação humana durante execução — você só veria o resultado horas depois (em 1960, impresso).`;
+        estado.demos.aba2 = {parar:()=>clearInterval(timer)};
+        return;
+      }
+      const j = fila[i];
+      if(j.tempo===-1){
+        log.innerHTML += `\n❌ #${i+1} ${j.nome} — TRAVOU! Todos os jobs seguintes esperam indefinidamente.`;
+        clearInterval(timer);
+        log.innerHTML += `\n\n⚠️  Esse era o problema clássico do batch: um job ruim paralisava o lote inteiro.`;
+        return;
+      }
+      acumulado += j.tempo;
+      log.innerHTML += `\n⏳ #${i+1} ${j.nome} — rodando... (${j.tempo}s) — total: ${acumulado}s`;
+      i++;
+    },700);
+    estado.demos.aba2 = {parar:()=>clearInterval(timer)};
+  }
+  area.appendChild(wrap);
+  desenha();
+}
+
+/* ABA 3 — Multitarefa time-slice */
+function renderDemoAba3(area,a){
+  const wrap = document.createElement('div');
+  const canvas = document.createElement('canvas');
+  canvas.width = 580; canvas.height = 120;
+  canvas.style.cssText='width:100%;max-width:580px;background:#fff;border-radius:8px;border:1px solid #ccc';
+  wrap.appendChild(canvas);
+  const info = document.createElement('div');
+  info.style.cssText='margin-top:8px;font-family:monospace;font-size:.9rem';
+  wrap.appendChild(info);
+  const controles = document.createElement('div');
+  controles.innerHTML = `
+    <button class="btn" id="ab3-play">▶️ Rodar simulação</button>
+    <button class="btn sec" id="ab3-stop">⏸️ Parar</button>
+    <span style="margin-left:10px">Legenda: ${a.demo.processos.map(p=>`<span style="display:inline-block;width:12px;height:12px;background:${p.cor};vertical-align:middle;margin-left:6px"></span>${p.nome}`).join(' · ')}</span>
+  `;
+  wrap.appendChild(controles);
+  area.appendChild(wrap);
+  
+  const ctx = canvas.getContext('2d');
+  let timer = null;
+  let x = 0;
+  let currentProc = 0;
+  let ticks = 0;
+  
+  function parar(){ if(timer){clearInterval(timer);timer=null;} }
+  
+  function rodar(){
+    parar();
+    ctx.fillStyle='#fff';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    x=0; ticks=0;
+    timer = setInterval(()=>{
+      if(x>=canvas.width){ x=0; ctx.fillStyle='#fff'; ctx.fillRect(0,0,canvas.width,canvas.height); }
+      const p = a.demo.processos[currentProc];
+      ctx.fillStyle = p.cor;
+      ctx.fillRect(x,10,4,100);
+      x+=4;
+      ticks++;
+      if(ticks%3===0){ // troca de contexto a cada 3 ticks
+        currentProc = (currentProc+1) % a.demo.processos.length;
+        ctx.fillStyle='#888';
+        ctx.fillRect(x,10,2,100); // cinza = troca de contexto
+        x+=2;
+      }
+      info.innerHTML = `CPU rodando: <strong style="color:${p.cor}">${p.nome}</strong> | Trocas de contexto: ${Math.floor(ticks/3)} | Cada processo ganha ~33% da CPU ao longo do tempo`;
+    },60);
+  }
+  estado.demos.aba3 = {parar};
+  controles.querySelector('#ab3-play').onclick = rodar;
+  controles.querySelector('#ab3-stop').onclick = parar;
+  rodar();
+}
+
+/* ABA 4 — Galeria SOs pessoais */
+function renderDemoAba4(area,a){
+  const wrap = document.createElement('div');
+  wrap.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px">
+      ${a.demo.sos.map((s,i)=>`<button class="btn" data-i="${i}" style="background:#00796b">${s.nome}</button>`).join('')}
+    </div>
+    <div id="ab4-det" style="margin-top:14px;padding:14px;background:#e0f2f1;border-radius:8px;min-height:80px;border-left:5px solid #0097a7">
+      <em>👆 Clique em um SO para ver fatos reais e onde ele domina.</em>
+    </div>
+  `;
+  area.appendChild(wrap);
+  wrap.querySelectorAll('button').forEach(b=>{
+    b.onclick=()=>{
+      const s = a.demo.sos[+b.dataset.i];
+      document.getElementById('ab4-det').innerHTML = `<strong>${s.nome}</strong><br>${s.fato}<br><br>🏆 <strong>Dominância:</strong> ${s.dominio}`;
+    };
   });
-  document.addEventListener('click',e=>{
-    if(!e.target.classList.contains('termo')){pop.classList.remove('show');return;}
-    const g=AULA_DADOS.glossario.find(x=>x.termo===e.target.dataset.termo);if(!g)return;
-    const r=e.target.getBoundingClientRect();
-    pop.innerHTML=`<div class="tipo">${g.tipo}</div><strong>${g.termo}</strong><div style="margin-top:6px;">${g.explicacao}</div><div style="margin-top:6px;color:var(--muted);font-size:.9em;">🌍 ${g.exemploReal}</div>`;
-    pop.style.top=(r.bottom+8)+'px';pop.style.left=Math.max(8,Math.min(r.left,window.innerWidth-340))+'px';
-    pop.classList.add('show');
+}
+
+/* ABA 5 — Forte vs Fraco */
+function renderDemoAba5(area,a){
+  const wrap = document.createElement('div');
+  let modo = 'forte';
+  let dados = {forte:'(vazio)', fracoA:'(vazio)', fracoB:'(vazio)'};
+  function desenha(){
+    if(modo==='forte'){
+      wrap.innerHTML = `
+        <div style="padding:14px;background:#fff;border-radius:8px;border:2px solid #5e35b1">
+          <strong>🔗 Fortemente acoplado — Memória COMPARTILHADA</strong>
+          <div style="display:flex;gap:10px;margin-top:10px;align-items:center;flex-wrap:wrap">
+            <div style="flex:1;min-width:120px;padding:10px;background:#ede7f6;border-radius:6px;text-align:center">
+              <strong>Processo A</strong>
+            </div>
+            <div style="padding:10px;background:#5e35b1;color:#fff;border-radius:6px;min-width:120px;text-align:center">
+              💾 RAM ÚNICA<br><strong style="font-size:1.1rem">${dados.forte}</strong>
+            </div>
+            <div style="flex:1;min-width:120px;padding:10px;background:#ede7f6;border-radius:6px;text-align:center">
+              <strong>Processo B</strong>
+            </div>
+          </div>
+          <div style="margin-top:12px">
+            <button class="btn" id="ab5-a">Processo A escreve "Olá!"</button>
+            <button class="btn" id="ab5-b">Processo B lê a RAM</button>
+          </div>
+        </div>
+        <div id="ab5-resp" style="margin-top:10px;padding:10px;background:#f5f0ff;border-radius:6px;font-size:.95rem"></div>
+      `;
+      wrap.querySelector('#ab5-a').onclick=()=>{ dados.forte='"Olá!"'; desenha(); };
+      wrap.querySelector('#ab5-b').onclick=()=>{
+        document.getElementById('ab5-resp').innerHTML = `✅ Processo B leu: <strong>${dados.forte}</strong><br><em>Ambos enxergam a MESMA RAM — sem cópia, instantâneo.</em>`;
+      };
+    } else {
+      wrap.innerHTML = `
+        <div style="padding:14px;background:#fff;border-radius:8px;border:2px solid #00796b">
+          <strong>🔌 Fracamente acoplado — cada um com sua RAM</strong>
+          <div style="display:flex;gap:20px;margin-top:10px;flex-wrap:wrap">
+            <div style="flex:1;min-width:140px;padding:10px;background:#e0f2f1;border-radius:6px">
+              <strong>Máquina A</strong><br>RAM local: <strong>${dados.fracoA}</strong>
+            </div>
+            <div style="padding:10px;background:#ff9800;color:#fff;border-radius:6px;align-self:center">
+              🌐 REDE<br><small>lenta (~1ms)</small>
+            </div>
+            <div style="flex:1;min-width:140px;padding:10px;background:#e0f2f1;border-radius:6px">
+              <strong>Máquina B</strong><br>RAM local: <strong>${dados.fracoB}</strong>
+            </div>
+          </div>
+          <div style="margin-top:12px">
+            <button class="btn" id="ab5-fa">A escreve "Olá!"</button>
+            <button class="btn" id="ab5-send">📤 A envia msg para B</button>
+            <button class="btn" id="ab5-fb">B lê sua RAM</button>
+          </div>
+        </div>
+        <div id="ab5-resp" style="margin-top:10px;padding:10px;background:#e0f2f1;border-radius:6px;font-size:.95rem"></div>
+      `;
+      wrap.querySelector('#ab5-fa').onclick=()=>{ dados.fracoA='"Olá!"'; desenha(); };
+      wrap.querySelector('#ab5-send').onclick=()=>{
+        setTimeout(()=>{ dados.fracoB = dados.fracoA; desenha(); document.getElementById('ab5-resp').innerHTML='📬 Mensagem chegou a B via rede (~1ms de atraso).'; },300);
+      };
+      wrap.querySelector('#ab5-fb').onclick=()=>{
+        document.getElementById('ab5-resp').innerHTML = `✅ B leu: <strong>${dados.fracoB}</strong><br><em>Só recebeu o dado se A ENVIOU pela rede. Não compartilha RAM.</em>`;
+      };
+    }
+    const toggle = document.createElement('div');
+    toggle.style.cssText='margin-top:12px;text-align:center';
+    toggle.innerHTML = `<button class="btn sec" id="ab5-toggle">🔄 Alternar para ${modo==='forte'?'FRACAMENTE':'FORTEMENTE'} acoplado</button>`;
+    wrap.appendChild(toggle);
+    toggle.querySelector('#ab5-toggle').onclick=()=>{
+      modo = modo==='forte'?'fraco':'forte';
+      dados = {forte:'(vazio)', fracoA:'(vazio)', fracoB:'(vazio)'};
+      desenha();
+    };
+  }
+  area.appendChild(wrap);
+  desenha();
+}
+
+/* ABA 6 — Mapa de cenários */
+function renderDemoAba6(area,a){
+  const wrap = document.createElement('div');
+  wrap.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px">
+      ${a.demo.cenarios.map((s,i)=>`<button class="btn" data-i="${i}" style="background:#c62828">${s.nome}</button>`).join('')}
+    </div>
+    <div id="ab6-det" style="margin-top:14px;padding:14px;background:#ffebee;border-radius:8px;min-height:80px;border-left:5px solid #c62828">
+      <em>👆 Clique em um cenário para ver qual SO roda lá e por quê.</em>
+    </div>
+  `;
+  area.appendChild(wrap);
+  wrap.querySelectorAll('button').forEach(b=>{
+    b.onclick=()=>{
+      const s = a.demo.cenarios[+b.dataset.i];
+      document.getElementById('ab6-det').innerHTML = `<strong>${s.nome}</strong><br>🖥️ <strong>SO:</strong> ${s.so}<br>💡 <strong>Por quê:</strong> ${s.porque}`;
+    };
   });
 }
-function atualizarProgresso(){
-  const tot=AULA_DADOS.abas.length,con=estado.abasConcluidas.size;
-  document.getElementById('progressoBar').style.width=(con/tot*100)+'%';
-  document.getElementById('progressoTxt').textContent=`${con} / ${tot} abas concluídas`;
-  document.querySelectorAll('.tab-btn').forEach(b=>{if(b.dataset.aba!=='revisao')b.classList.toggle('done',estado.abasConcluidas.has(parseInt(b.dataset.aba)));});
-  document.getElementById('xpInfo').textContent=`${estado.xp} XP · ${estado.selos.length} selos`;
+
+function reiniciarDemo(abaId){
+  const area = document.getElementById(`demo-area-${abaId}`);
+  if(!area) return;
+  if(estado.demos[abaId] && estado.demos[abaId].parar) estado.demos[abaId].parar();
+  area.innerHTML = '';
+  const aba = AULA_DADOS.abas.find(a=>a.id===abaId);
+  if(abaId==='aba-1') renderDemoAba1(area,aba);
+  else if(abaId==='aba-2') renderDemoAba2(area,aba);
+  else if(abaId==='aba-3') renderDemoAba3(area,aba);
+  else if(abaId==='aba-4') renderDemoAba4(area,aba);
+  else if(abaId==='aba-5') renderDemoAba5(area,aba);
+  else if(abaId==='aba-6') renderDemoAba6(area,aba);
+  showToast('🔄 Demo reiniciada');
 }
-function mostrarNotificacao(t){
-  const d=document.createElement('div');d.textContent=t;
-  d.style.cssText='position:fixed;top:64px;right:16px;z-index:1000;background:var(--ok);color:#fff;padding:12px 20px;border-radius:10px;font-weight:700;box-shadow:0 10px 30px rgba(0,0,0,.3);';
-  document.body.appendChild(d);setTimeout(()=>d.remove(),2000);
+
+function irPara(id){ location.hash = id; }
+function aplicarHash(){
+  let id = location.hash.replace('#','') || AULA_DADOS.abas[0].id;
+  if(!document.getElementById(id)) id = AULA_DADOS.abas[0].id;
+  document.querySelectorAll('section.aba').forEach(s=>s.classList.toggle('ativa',s.id===id));
+  document.querySelectorAll('nav.tabs button').forEach(b=>{
+    const sel = b.dataset.id===id;
+    b.setAttribute('aria-selected',sel?'true':'false');
+  });
+  estado.abaAtiva = id;
+  window.scrollTo({top:0,behavior:'smooth'});
 }
-init();
+function atualizaProgresso(){
+  const pr = document.getElementById('progresso');
+  if(!pr) return;
+  pr.innerHTML = `
+    <span>⭐ XP: <span class="xp">${estado.xp}</span></span>
+    <span>🏅 Selos:</span>
+    <span class="selos">${estado.selos.size?Array.from(estado.selos).map(s=>`<span class="selo">${s}</span>`).join(''):'<em style="color:var(--muted)">conquiste ao completar demos e quizzes</em>'}</span>
+  `;
+}
+
+function showToast(msg){
+  let t = document.getElementById('toast');
+  if(!t){
+    t = document.createElement('div');
+    t.id='toast';
+    t.style.cssText='position:fixed;bottom:20px;right:20px;background:#263238;color:#fff;padding:12px 18px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.3);z-index:200;font-weight:600;opacity:0;transition:opacity .3s';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity='1';
+  clearTimeout(t._tm);
+  t._tm = setTimeout(()=>t.style.opacity='0',2200);
+}
+
+document.getElementById('btnDark').onclick = ()=>{
+  estado.dark = !estado.dark;
+  document.body.classList.toggle('dark',estado.dark);
+  document.getElementById('btnDark').textContent = estado.dark?'☀️':'🌙';
+};
+document.getElementById('btnApres').onclick = ()=>{
+  estado.apres = !estado.apres;
+  document.body.classList.toggle('apresentacao',estado.apres);
+  document.getElementById('btnApres').textContent = estado.apres?'📖':'🎤';
+  if(estado.apres){
+    document.body.classList.remove('dark');
+    estado.dark=false;
+    document.getElementById('btnDark').textContent='🌙';
+    const r = document.createElement('div');
+    r.className='rota-apres';
+    r.id='rotaApres';
+    r.innerHTML = '🎤 <strong>Modo Apresentação:</strong> use ← → para navegar. Roteiro: 6 min por aba (1–5). Aba 6 é estudo próprio. Aba "Revisão" fecha os 30 min.';
+    document.body.appendChild(r);
+  } else {
+    const r = document.getElementById('rotaApres');
+    if(r) r.remove();
+  }
+};
+document.addEventListener('keydown',(e)=>{
+  if(!estado.apres) return;
+  const abas = AULA_DADOS.abas.map(a=>a.id).concat(['revisao']);
+  const idx = abas.indexOf(estado.abaAtiva);
+  if(e.key==='ArrowRight' && idx<abas.length-1){irPara(abas[idx+1]);e.preventDefault();}
+  else if(e.key==='ArrowLeft' && idx>0){irPara(abas[idx-1]);e.preventDefault();}
+});
+
+carregarEstado();
+renderTabs();
+renderMain();
+renderDemos();
+window.addEventListener('hashchange',aplicarHash);
+aplicarHash();
 </script>
 </body>
 </html>
