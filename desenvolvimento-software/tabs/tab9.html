@@ -1,0 +1,3797 @@
+<!-- ============ TAB 9 (NOVA): C# MULTI-CONTEXTOS + AUTH JWT ============ -->
+<section class="tab-panel" id="tab9">
+<div class="card">
+<h2 class="card-title">🔷 API C# Completa — Multi-Contextos + Auth JWT: Clean Arch + SOLID + DDD + HTTP Síncrono + JWT Real</h2>
+<p class="section-intro">Evolui a Tab 9 anterior adicionando o <strong>4º módulo: Auth (Usuários)</strong> com <strong>JWT real</strong> (tabela <code>usuarios</code> no MySQL, senha em texto puro — didático). Os contextos Catálogo, Pedidos e Clientes agora exigem <code>[Authorize]</code> (sem roles). Preparado para migração futura MySQL → MongoDB via interface <code>IUsuarioRepository</code>. <span class="ide-tag cs">IDE: VS Code</span></p>
+<div class="doc-banner"><strong>🧔 Rafael Souza · 🔷 Backend (C# Multi-Contextos + Auth):</strong> esta solução é a <strong>implementação do contrato multi-contextos</strong> (Tab 8) com autenticação JWT real. Mini-fluxo: <em>Tab 8 → openapi-multicontexto.yaml → módulos + Auth (esta aba) → validação (testes + Prism :4011)</em>. <a href="javascript:switchTab('tab8')" style="color:var(--primary);text-decoration:underline">Contrato multi-contextos (Tab 8) →</a></div>
+
+<!-- ══════════ SEÇÃO 1: CONCEITOS AUTH + JWT ══════════ -->
+<div class="deep-concept-box">
+<h3>🔑 Auth JWT sem roles: o que muda em relação à Tab 9 anterior</h3>
+<p>Na Tab 9 anterior, usávamos <strong>roles JWT</strong> (<code>CATALOGO_ADMIN</code>, <code>PEDIDOS_USER</code>, etc.). Nesta versão, simplificamos: <strong>qualquer usuário autenticado acessa todos os endpoints</strong>. O JWT carrega apenas <code>sub</code> (userId), <code>name</code> e <code>exp</code> — sem claims de role.</p>
+<div class="table-wrap" style="margin:12px 0">
+<table>
+<thead><tr><th>Aspecto</th><th>Tab 9 anterior (roles)</th><th>Tab 9 nova (sem roles)</th></tr></thead>
+<tbody>
+<tr><td><strong>Autorização</strong></td><td><code>[Authorize(Roles="CATALOGO_ADMIN")]</code></td><td><code>[Authorize]</code> (qualquer autenticado)</td></tr>
+<tr><td><strong>Claims no JWT</strong></td><td><code>sub</code>, <code>role</code>, <code>exp</code></td><td><code>sub</code> (userId), <code>name</code>, <code>exp</code></td></tr>
+<tr><td><strong>Login</strong></td><td>Credenciais fixas no código</td><td><strong>Tabela <code>usuarios</code> no MySQL</strong></td></tr>
+<tr><td><strong>Módulo Auth</strong></td><td>Inexistente (mock no AuthController)</td><td><strong>4º módulo: <code>LojaApi.Modules.Auth</code></strong></td></tr>
+<tr><td><strong>Endpoints internos</strong></td><td>Token <code>PEDIDOS_SERVICE</code> (role)</td><td>Mesmo token de qualquer usuário autenticado</td></tr>
+</tbody>
+</table>
+</div>
+<div class="analogy-highlight"><span class="icon">🚪</span><div><strong>Analogia da portaria:</strong> antes, cada condômino tinha um cartão com permissões específicas (academia, garagem, piscina). Agora, <strong>basta ter o cartão de morador</strong> (estar autenticado) para acessar todas as áreas — a segurança é "está dentro ou fora", sem granularidade por área.</div></div>
+</div>
+
+<div class="deep-concept-box">
+<h3>🗄️ MySQL agora, MongoDB depois: a interface IUsuarioRepository</h3>
+<p>O módulo Auth usa <strong>MySQL</strong> agora (tabela <code>usuarios</code>), mas toda a persistência passa pela interface <code>IUsuarioRepository</code>. Quando chegar a hora de migrar para MongoDB, basta criar um <code>MongoUsuarioRepository</code> que implementa a mesma interface — <strong>sem alterar nenhuma linha do <code>AuthService</code></strong>.</p>
+<ul>
+<li><strong>Agora:</strong> <code>UsuarioRepository</code> (MySQL via EF Core) implementa <code>IUsuarioRepository</code></li>
+<li><strong>Futuro:</strong> <code>MongoUsuarioRepository</code> (MongoDB.Driver) implementa <code>IUsuarioRepository</code></li>
+<li><strong>O AuthService nunca muda</strong> — depende da interface, não da implementação (DIP)</li>
+</ul>
+</div>
+
+<div class="deep-concept-box">
+<h3>🧱 Monolito modular: agora com 4 módulos + kernel</h3>
+<p>A Tab 9 anterior tinha 3 módulos (Catálogo, Pedidos, Clientes) + <code>Shared.Kernel</code>. Agora adicionamos o <strong>4º módulo: Auth</strong>. A regra de ouro permanece: <strong>módulo não referencia projeto de outro módulo</strong>.</p>
+<div class="table-wrap" style="margin:12px 0">
+<table>
+<thead><tr><th>Contexto</th><th>Projeto-módulo</th><th>Prefixo / tags</th><th>DbContext (schema)</th><th>Auth</th></tr></thead>
+<tbody>
+<tr><td>🔑 Auth (NOVO)</td><td><code>LojaApi.Modules.Auth</code></td><td><code>/api/auth/**</code> · Auth</td><td><code>AuthDbContext</code> (auth_db)</td><td><strong>Público</strong> (é o login!)</td></tr>
+<tr><td>📦 Catálogo</td><td><code>LojaApi.Modules.Catalogo</code></td><td><code>/api/catalogo/**</code> · Catalogo</td><td><code>CatalogoDbContext</code> (catalogo_db)</td><td><code>[Authorize]</code></td></tr>
+<tr><td>🛒 Pedidos</td><td><code>LojaApi.Modules.Pedidos</code></td><td><code>/api/pedidos/**</code> · Pedidos</td><td><code>PedidosDbContext</code> (pedidos_db)</td><td><code>[Authorize]</code></td></tr>
+<tr><td>🧾 Clientes</td><td><code>LojaApi.Modules.Clientes</code></td><td><code>/api/clientes/**</code> · Clientes</td><td><code>ClientesDbContext</code> (clientes_db)</td><td><code>[Authorize]</code></td></tr>
+<tr><td>🔌 Shared</td><td><code>LojaApi.Shared.Kernel</code></td><td>—</td><td>—</td><td>—</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<h4 class="diag-title">📐 D-29 <span class="dt-type">C4 · Nível 2 (Container)</span> — Monolito modular + Auth + 4 databases</h4>
+<div class="mermaid-box" data-code='flowchart LR
+U["👤 Usuário"] -->|"POST /api/auth/login (público)"| HOST
+U -->|"Bearer JWT"| HOST
+subgraph HOST["🖥️ LojaApi.Api (host único)"]
+MA["🔑 Módulo Auth"]
+MC["📦 Módulo Catalogo"]
+MP["🛒 Módulo Pedidos"]
+ML["🧾 Módulo Clientes"]
+end
+MA -->|"emite JWT"| U
+MP -->|"HTTP sínc 2s"| MC
+MP -->|"HTTP sínc 2s"| ML
+MA --> DB0["🐬 auth_db (usuarios)"]
+MC --> DB1["🐬 catalogo_db"]
+MP --> DB2["🐬 pedidos_db"]
+ML --> DB3["🐬 clientes_db"]'>
+<div class="mermaid"></div>
+</div>
+
+<h4 class="diag-title">📐 D-30 <span class="dt-type">UML · Sequência</span> — Login → JWT → Request autenticada</h4>
+<div class="mermaid-box" data-code='sequenceDiagram
+participant C as Cliente
+participant A as AuthController
+participant S as AuthService
+participant R as IUsuarioRepository
+participant J as JwtService
+C->>A: POST /api/auth/login {login, password}
+A->>S: Autenticar(login, password)
+S->>R: BuscarPorLogin(login)
+R-->S: Usuario (ou null)
+S->>S: compara senha (texto puro)
+S->>J: GerarToken(usuario)
+J-->S: JWT (sub + name + exp)
+S-->A: (token, usuario)
+A-->C: 200 {token, user}
+C->>C: guarda token
+C->>A: GET /api/catalogo/produtos (Bearer JWT)
+Note over C,A: Qualquer módulo aceita o mesmo token'>
+<div class="mermaid"></div>
+</div>
+
+<!-- ══════════ SEÇÃO 2: SETUP ══════════ -->
+<div class="lab-container">
+<div class="lab-header">
+<h3>🔷 Setup — solução modular + Auth (VS Code)</h3>
+<div class="lab-actions"><button class="btn btn-zip" onclick="openDlModal('tab9')">📦 Baixar ZIP desta aba</button></div>
+</div>
+<div class="term-help"><strong>🖥️ Terminal:</strong> <span class="ide-tag cs">VS Code</span> <kbd>Ctrl+`</kbd>. Rode na pasta onde quer criar a solução.</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal do VS Code - solução multi-contextos + Auth</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor"># ──────────────────────────────────────────────────────────────
+# PASSO 1: Criar a pasta da solução e entrar nela
+# ──────────────────────────────────────────────────────────────
+# Cria a pasta raiz e navega para dentro dela
+mkdir LojaMulti && cd LojaMulti
+
+# ──────────────────────────────────────────────────────────────
+# PASSO 2: Criar a solução (.sln) que agrupa todos os projetos
+# ──────────────────────────────────────────────────────────────
+# Gera o arquivo LojaMulti.sln na pasta atual
+dotnet new sln -n LojaMulti
+
+# ──────────────────────────────────────────────────────────────
+# PASSO 3: Criar os 6 projetos (4 módulos + kernel + host + testes)
+# ──────────────────────────────────────────────────────────────
+# Shared.Kernel: exceções, eventos, contratos compartilhados
+dotnet new classlib -n LojaApi.Shared.Kernel -f net10.0
+
+# 🔑 NOVO: Módulo Auth (login, JWT, usuarios)
+dotnet new classlib -n LojaApi.Modules.Auth -f net10.0
+
+# 📦 Módulo Catálogo (produtos, reserva de estoque)
+dotnet new classlib -n LojaApi.Modules.Catalogo -f net10.0
+
+# 🛒 Módulo Pedidos (checkout, orquestração, compensação)
+dotnet new classlib -n LojaApi.Modules.Pedidos -f net10.0
+
+# 🧾 Módulo Clientes (cadastro, endereços)
+dotnet new classlib -n LojaApi.Modules.Clientes -f net10.0
+
+# 🎯 Host: projeto web que hospeda todos os módulos
+dotnet new webapi -n LojaApi.Api -f net10.0
+
+# 🧪 Testes: xUnit + Moq para todos os contextos
+dotnet new xunit -n LojaApi.Tests -f net10.0
+
+# ──────────────────────────────────────────────────────────────
+# PASSO 4: Adicionar todos os projetos à solução
+# ──────────────────────────────────────────────────────────────
+# Um único comando adiciona os 7 projetos ao .sln
+dotnet sln add LojaApi.Shared.Kernel LojaApi.Modules.Auth LojaApi.Modules.Catalogo LojaApi.Modules.Pedidos LojaApi.Modules.Clientes LojaApi.Api LojaApi.Tests
+
+# ──────────────────────────────────────────────────────────────
+# PASSO 5: Adicionar referências entre projetos (regra Clean Arch)
+# ──────────────────────────────────────────────────────────────
+# Cada módulo referencia apenas o Shared.Kernel (nunca outro módulo)
+dotnet add LojaApi.Modules.Auth reference LojaApi.Shared.Kernel
+dotnet add LojaApi.Modules.Catalogo reference LojaApi.Shared.Kernel
+dotnet add LojaApi.Modules.Pedidos reference LojaApi.Shared.Kernel
+dotnet add LojaApi.Modules.Clientes reference LojaApi.Shared.Kernel
+
+# O host (Api) referencia todos os módulos
+dotnet add LojaApi.Api reference LojaApi.Modules.Auth LojaApi.Modules.Catalogo LojaApi.Modules.Pedidos LojaApi.Modules.Clientes
+
+# Os testes referenciam todos os módulos (para testar tudo)
+dotnet add LojaApi.Tests reference LojaApi.Modules.Auth LojaApi.Modules.Catalogo LojaApi.Modules.Pedidos LojaApi.Modules.Clientes
+
+# ──────────────────────────────────────────────────────────────
+# PASSO 6: Instalar pacotes NuGet necessários
+# ──────────────────────────────────────────────────────────────
+# EF Core + MySQL para cada módulo com banco
+dotnet add LojaApi.Modules.Auth package Microsoft.EntityFrameworkCore
+dotnet add LojaApi.Modules.Catalogo package Microsoft.EntityFrameworkCore
+dotnet add LojaApi.Modules.Pedidos package Microsoft.EntityFrameworkCore
+dotnet add LojaApi.Modules.Clientes package Microsoft.EntityFrameworkCore
+
+# Driver MySQL (Pomelo) no host (injetado nos DbContexts dos módulos)
+dotnet add LojaApi.Api package Pomelo.EntityFrameworkCore.MySql
+
+# Autenticação JWT Bearer no host
+dotnet add LojaApi.Api package Microsoft.AspNetCore.Authentication.JwtBearer
+
+# System.IdentityModel.Tokens.Jwt (geração de tokens no módulo Auth)
+dotnet add LojaApi.Modules.Auth package System.IdentityModel.Tokens.Jwt
+
+# Moq para mocks nos testes
+dotnet add LojaApi.Tests package Moq
+
+# ──────────────────────────────────────────────────────────────
+# PASSO 7: Abrir a pasta no VS Code
+# ──────────────────────────────────────────────────────────────
+code .</pre>
+</div>
+
+<!-- ══════════ ESTRUTURA DE PASTAS ══════════ -->
+<div class="tree-view"><span class="folder">📁 LojaMulti/</span>
+├── <span class="file">📄 LojaMulti.sln</span>
+├── <span class="folder">📁 LojaApi.Shared.Kernel/</span>           <span class="comment"># 🔑 exceções, eventos, contratos de erro</span>
+│   └── DomainException.cs · IDomainEvent.cs · ProblemTypes.cs
+├── <span class="folder">📁 LojaApi.Modules.Auth/</span>             <span class="comment"># 🔑 NOVO: login, JWT, usuarios</span>
+│   ├── Domain/Usuario.cs
+│   ├── Interfaces/IUsuarioRepository.cs
+│   ├── Services/IAuthService.cs · AuthService.cs
+│   ├── Services/IJwtService.cs · JwtService.cs
+│   ├── Data/AuthDbContext.cs
+│   ├── Repositories/UsuarioRepository.cs
+│   ├── Controllers/AuthController.cs
+│   └── ModuleExtensions.cs
+├── <span class="folder">📁 LojaApi.Modules.Catalogo/</span>          <span class="comment"># 📦 domínio+repo+controller do catálogo</span>
+│   └── Domain/Produto.cs · Data/CatalogoDbContext.cs · CatalogoController.cs · ModuleExtensions.cs
+├── <span class="folder">📁 LojaApi.Modules.Pedidos/</span>           <span class="comment"># 🛒 pedido + clients HTTP + orquestração</span>
+│   └── Domain/Pedido.cs · Integration/ICatalogoClient.cs · Integration/CatalogoClient.cs · Integration/IClientesClient.cs · Integration/ClientesClient.cs · PedidoService.cs · PedidosController.cs · Data/PedidosDbContext.cs · ModuleExtensions.cs
+├── <span class="folder">📁 LojaApi.Modules.Clientes/</span>          <span class="comment"># 🧾 cliente + endereços</span>
+│   └── Domain/Cliente.cs · Domain/Endereco.cs · Data/ClientesDbContext.cs · ClientesController.cs · ModuleExtensions.cs
+├── <span class="folder">📁 LojaApi.Api/</span>                       <span class="comment"># 🎯 host: Program.cs + appsettings + JWT</span>
+│   └── Program.cs · appsettings.json · Middleware/ExceptionMiddleware.cs
+└── <span class="folder">📁 LojaApi.Tests/</span>                     <span class="comment"># 🧪 TDD por contexto (21 testes)</span>
+    └── AuthServiceTests.cs · PedidoServiceTests.cs · CatalogoProdutoTests.cs · ClienteEnderecoTests.cs</div>
+</div>
+
+<!-- ══════════ RODAR E VALIDAR ══════════ -->
+<div class="lab-container">
+<div class="lab-header"><h3>🖥️ Rodar: compilar e testar tudo</h3></div>
+<div class="term-help"><strong>🖥️ Terminal:</strong> <span class="ide-tag cs">VS Code</span> <kbd>Ctrl+`</kbd>. Rode na pasta da solução (onde está o <code>.sln</code>).</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal do VS Code - compilar e testar</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="editor code-editor"># ──────────────────────────────────────────────────────────────
+# COMPILAR: verifica se todos os módulos compilam sem erro
+# ──────────────────────────────────────────────────────────────
+# Compila a solução inteira (todos os 7 projetos)
+dotnet build
+
+# ──────────────────────────────────────────────────────────────
+# TESTAR: roda os 21 testes de todos os contextos de uma vez
+# ──────────────────────────────────────────────────────────────
+# O dotnet test na raiz da solução roda TODOS os projetos de teste
+dotnet test
+
+# ──────────────────────────────────────────────────────────────
+# RODAR A API: sobe o host com todos os módulos
+# ──────────────────────────────────────────────────────────────
+# Rode na pasta LojaApi.Api (onde está o Program.cs)
+cd LojaApi.Api
+dotnet run
+
+# ──────────────────────────────────────────────────────────────
+# TESTAR COM CURL (em outro terminal)
+# ──────────────────────────────────────────────────────────────
+# 1) Login (público) — obtém o token JWT
+TOKEN=$(curl -s -X POST http://localhost:5000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"login":"admin","password":"admin123"}' \
+  | jq -r '.token')
+echo "Token: $TOKEN"
+
+# 2) GET catálogo COM token — esperado: 200
+curl -i http://localhost:5000/api/catalogo/produtos \
+  -H "Authorization: Bearer $TOKEN"
+
+# 3) GET catálogo SEM token — esperado: 401 (prova que auth funciona)
+curl -i http://localhost:5000/api/catalogo/produtos
+
+# 4) POST pedido COM token — esperado: 201
+curl -i -X POST http://localhost:5000/api/pedidos \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"clienteId":1,"enderecoId":1,"itens":[{"produtoId":1,"quantidade":2}]}'</pre>
+</div>
+<div class="success-banner"><strong>✅ Sucesso esperado:</strong> Login retorna <code>200</code> com <code>token</code> + <code>user</code> · GET com token retorna <code>200</code> · GET sem token retorna <code>401</code> · POST pedido retorna <code>201</code>.</div>
+<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> porta diferente da impressa no console (anote a porta do <code>dotnet run</code>); banco <code>auth_db</code> não criado (rode o <code>init-sql</code> antes); esqueceu <code>Bearer</code> antes do token; token expirado (faça login novamente).</div>
+</div>
+
+<!-- ===== FIM DA PARTE 1/6 — cole a Parte 2 (Código Auth) logo após este comentário ===== -->
+<!-- ===== PARTE 2/6: CÓDIGO DO MÓDULO AUTH ===== -->
+<div class="lab-container">
+<div class="lab-header">
+<h3>🔑 Código completo — Módulo Auth (4º módulo)</h3>
+<div class="lab-actions"><span class="ide-tag cs">VS Code</span></div>
+</div>
+
+<div class="warning-banner">
+<strong>⚠️ Didático:</strong> a senha está em <strong>texto puro</strong>. Isso foi validado para fins exclusivamente educacionais. Em produção real, use hash forte (BCrypt/Argon2/Identity).
+</div>
+
+<div class="info-banner">
+<strong>💡 Fronteira Auth:</strong> o módulo Auth é responsável apenas por login e emissão do JWT. Ele não conhece Catálogo, Pedidos ou Clientes. Os outros contextos apenas validam o token no host.
+</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🧠 Domain — Usuario</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Auth/Domain/Usuario.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Auth/Domain/Usuario.cs">using System;
+
+namespace LojaApi.Modules.Auth.Domain;
+
+/// &lt;summary&gt;
+/// Entidade Usuario do contexto Auth.
+/// Didático: senha em texto puro. Não usar em produção real.
+/// &lt;/summary&gt;
+public class Usuario
+{
+    /// &lt;summary&gt;Identificador do usuário. Vira o claim "sub" do JWT.&lt;/summary&gt;
+    public Guid Id { get; private set; }
+
+    /// &lt;summary&gt;Login usado na autenticação. Deve ser único.&lt;/summary&gt;
+    public string Login { get; private set; } = string.Empty;
+
+    /// &lt;summary&gt;Nome exibido no token e nas respostas.&lt;/summary&gt;
+    public string Nome { get; private set; } = string.Empty;
+
+    /// &lt;summary&gt;
+    /// Senha em texto puro (didático).
+    /// Em produção real: hash forte, nunca texto puro.
+    /// &lt;/summary&gt;
+    public string Senha { get; private set; } = string.Empty;
+
+    /// &lt;summary&gt;Data de criação do usuário.&lt;/summary&gt;
+    public DateTime CriadoEm { get; private set; }
+
+    /// &lt;summary&gt;
+    /// Construtor protegido para o EF Core materializar a entidade.
+    /// &lt;/summary&gt;
+    protected Usuario() { }
+
+    /// &lt;summary&gt;
+    /// Construtor principal com validações mínimas de domínio.
+    /// &lt;/summary&gt;
+    public Usuario(Guid id, string login, string nome, string senha)
+    {
+        // Valida login: não pode ser vazio
+        if (string.IsNullOrWhiteSpace(login))
+            throw new ArgumentException("O login é obrigatório.");
+
+        // Valida nome: não pode ser vazio
+        if (string.IsNullOrWhiteSpace(nome))
+            throw new ArgumentException("O nome é obrigatório.");
+
+        // Valida senha: não pode ser vazia
+        if (string.IsNullOrWhiteSpace(senha))
+            throw new ArgumentException("A senha é obrigatória.");
+
+        // Atribui os valores normalizando o login para minúsculas
+        Id = id;
+        Login = login.Trim().ToLower();
+        Nome = nome.Trim();
+        Senha = senha;
+        CriadoEm = DateTime.UtcNow;
+    }
+
+    /// &lt;summary&gt;
+    /// Compara a senha recebida com a senha armazenada.
+    /// Didático: comparação direta em texto puro.
+    /// &lt;/summary&gt;
+    public bool SenhaConfere(string senha)
+    {
+        // Se a senha enviada for nula/vazia, falha imediatamente
+        if (string.IsNullOrWhiteSpace(senha))
+            return false;
+
+        // Comparação direta (texto puro)
+        return Senha == senha;
+    }
+}</pre>
+</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🚪 Porta de saída — IUsuarioRepository</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Auth/Interfaces/IUsuarioRepository.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Auth/Interfaces/IUsuarioRepository.cs">using LojaApi.Modules.Auth.Domain;
+using System.Threading.Tasks;
+
+namespace LojaApi.Modules.Auth.Interfaces;
+
+/// &lt;summary&gt;
+/// Porta de saída do módulo Auth.
+/// Hoje implementada com MySQL/EF Core.
+/// No futuro pode ser trocada por MongoDB sem alterar o AuthService.
+/// &lt;/summary&gt;
+public interface IUsuarioRepository
+{
+    /// &lt;summary&gt;
+    /// Busca um usuário pelo login.
+    /// Retorna null quando o usuário não existe.
+    /// &lt;/summary&gt;
+    Task&lt;Usuario?&gt; BuscarPorLoginAsync(string login);
+
+    /// &lt;summary&gt;
+    /// Salva um usuário.
+    /// Usado principalmente em seed, testes ou futuro cadastro.
+    /// &lt;/summary&gt;
+    Task&lt;Usuario&gt; SalvarAsync(Usuario usuario);
+}</pre>
+</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🗄️ Data — AuthDbContext</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Auth/Data/AuthDbContext.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Auth/Data/AuthDbContext.cs">using LojaApi.Modules.Auth.Domain;
+using Microsoft.EntityFrameworkCore;
+
+namespace LojaApi.Modules.Auth.Data;
+
+/// &lt;summary&gt;
+/// DbContext do contexto Auth.
+/// Usa o database auth_db, criado pelo init-sql.
+/// &lt;/summary&gt;
+public class AuthDbContext : DbContext
+{
+    /// &lt;summary&gt;
+    /// Construtor padrão EF Core recebendo opções de conexão.
+    /// &lt;/summary&gt;
+    public AuthDbContext(DbContextOptions&lt;AuthDbContext&gt; options)
+        : base(options)
+    {
+    }
+
+    /// &lt;summary&gt;
+    /// Tabela de usuários.
+    /// &lt;/summary&gt;
+    public DbSet&lt;Usuario&gt; Usuarios =&gt; Set&lt;Usuario&gt;();
+
+    /// &lt;summary&gt;
+    /// Mapeamento da entidade Usuario para a tabela usuarios.
+    /// &lt;/summary&gt;
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        // Configura a entidade Usuario
+        modelBuilder.Entity&lt;Usuario&gt;(entity =&gt;
+        {
+            // Nome da tabela no MySQL
+            entity.ToTable("usuarios");
+
+            // Chave primária
+            entity.HasKey(u =&gt; u.Id);
+
+            // Login obrigatório e com tamanho máximo
+            entity.Property(u =&gt; u.Login)
+                .HasMaxLength(100)
+                .IsRequired();
+
+            // Nome obrigatório
+            entity.Property(u =&gt; u.Nome)
+                .HasMaxLength(200)
+                .IsRequired();
+
+            // Senha obrigatória (texto puro, didático)
+            entity.Property(u =&gt; u.Senha)
+                .HasMaxLength(255)
+                .IsRequired();
+
+            // Data de criação obrigatória
+            entity.Property(u =&gt; u.CriadoEm)
+                .IsRequired();
+
+            // Índice único para evitar login duplicado
+            entity.HasIndex(u =&gt; u.Login)
+                .IsUnique();
+        });
+    }
+}</pre>
+</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🏭 Infrastructure — UsuarioRepository</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Auth/Repositories/UsuarioRepository.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Auth/Repositories/UsuarioRepository.cs">using LojaApi.Modules.Auth.Data;
+using LojaApi.Modules.Auth.Domain;
+using LojaApi.Modules.Auth.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Threading.Tasks;
+
+namespace LojaApi.Modules.Auth.Repositories;
+
+/// &lt;summary&gt;
+/// Implementação MySQL/EF Core da porta IUsuarioRepository.
+/// Para migrar para MongoDB no futuro, basta criar MongoUsuarioRepository
+/// implementando a mesma interface e trocar o registro no DI.
+/// &lt;/summary&gt;
+public class UsuarioRepository : IUsuarioRepository
+{
+    // DbContext do contexto Auth
+    private readonly AuthDbContext _db;
+
+    /// &lt;summary&gt;
+    /// Injeção de dependência via construtor.
+    /// &lt;/summary&gt;
+    public UsuarioRepository(AuthDbContext db)
+    {
+        _db = db;
+    }
+
+    /// &lt;summary&gt;
+    /// Busca usuário pelo login.
+    /// &lt;/summary&gt;
+    public async Task&lt;Usuario?&gt; BuscarPorLoginAsync(string login)
+    {
+        // Normaliza o login para minúsculas, igual ao construtor da entidade
+        var loginNormalizado = login.Trim().ToLower();
+
+        // Busca no banco usando AsNoTracking porque é somente leitura
+        return await _db.Usuarios
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u =&gt; u.Login == loginNormalizado);
+    }
+
+    /// &lt;summary&gt;
+    /// Salva usuário no banco.
+    /// &lt;/summary&gt;
+    public async Task&lt;Usuario&gt; SalvarAsync(Usuario usuario)
+    {
+        // Se o Id estiver vazio, trata como novo registro
+        if (usuario.Id == Guid.Empty)
+        {
+            await _db.Usuarios.AddAsync(usuario);
+        }
+        else
+        {
+            // Caso contrário, atualiza o registro existente
+            _db.Usuarios.Update(usuario);
+        }
+
+        // Persiste no banco
+        await _db.SaveChangesAsync();
+
+        // Retorna a entidade salva
+        return usuario;
+    }
+}</pre>
+</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🔐 Serviços JWT — IJwtService e JwtService</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Auth/Services/IJwtService.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Auth/Services/IJwtService.cs">using LojaApi.Modules.Auth.Domain;
+
+namespace LojaApi.Modules.Auth.Services;
+
+/// &lt;summary&gt;
+/// Contrato para geração de token JWT.
+/// &lt;/summary&gt;
+public interface IJwtService
+{
+    /// &lt;summary&gt;
+    /// Gera um JWT para o usuário autenticado.
+    /// Claims usadas: sub, name e exp.
+    /// Sem roles, conforme decisão desta Tab 9.
+    /// &lt;/summary&gt;
+    string GerarToken(Usuario usuario);
+}</pre>
+</div>
+
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Auth/Services/JwtService.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Auth/Services/JwtService.cs">using LojaApi.Modules.Auth.Domain;
+using Microsoft.IdentityModel.Tokens;
+using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+
+namespace LojaApi.Modules.Auth.Services;
+
+/// &lt;summary&gt;
+/// Gera JWT real usando HMAC-SHA256.
+/// O token contém apenas:
+/// - sub: id do usuário
+/// - name: nome do usuário
+/// - exp: expiração
+/// &lt;/summary&gt;
+public class JwtService : IJwtService
+{
+    // Segredo usado para assinar o token
+    private readonly string _secret;
+
+    // Tempo de vida do token em minutos
+    private readonly int _expirationMinutes;
+
+    /// &lt;summary&gt;
+    /// Construtor recebe secret e expiração.
+    /// &lt;/summary&gt;
+    public JwtService(string secret, int expirationMinutes)
+    {
+        // Valida se o secret foi informado
+        if (string.IsNullOrWhiteSpace(secret))
+            throw new ArgumentException("O JWT Secret não pode ser vazio.");
+
+        // HMAC-SHA256 exige chave com pelo menos 32 caracteres
+        if (secret.Length &lt; 32)
+            throw new ArgumentException("O JWT Secret deve ter pelo menos 32 caracteres.");
+
+        // Valida expiração positiva
+        if (expirationMinutes &lt;= 0)
+            throw new ArgumentException("A expiração do JWT deve ser maior que zero.");
+
+        _secret = secret;
+        _expirationMinutes = expirationMinutes;
+    }
+
+    /// &lt;summary&gt;
+    /// Gera o token JWT para o usuário.
+    /// &lt;/summary&gt;
+    public string GerarToken(Usuario usuario)
+    {
+        // Converte o secret em chave simétrica
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secret));
+
+        // Cria as credenciais de assinatura
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        // Define as claims do token
+        var claims = new[]
+        {
+            // sub: identificador do usuário
+            new Claim(JwtRegisteredClaimNames.Sub, usuario.Id.ToString()),
+
+            // name: nome do usuário
+            new Claim("name", usuario.Nome),
+
+            // login: útil para diagnóstico e testes
+            new Claim("login", usuario.Login)
+        };
+
+        // Define a expiração do token
+        var expiration = DateTime.UtcNow.AddMinutes(_expirationMinutes);
+
+        // Monta o token JWT
+        var token = new JwtSecurityToken(
+            claims: claims,
+            expires: expiration,
+            signingCredentials: credentials
+        );
+
+        // Serializa o token para o formato string
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+}</pre>
+</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🧩 Serviço de autenticação — IAuthService e AuthService</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Auth/Services/IAuthService.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Auth/Services/IAuthService.cs">using System;
+using System.Threading.Tasks;
+
+namespace LojaApi.Modules.Auth.Services;
+
+/// &lt;summary&gt;
+/// Representa o usuário autenticado retornado pelo login.
+/// &lt;/summary&gt;
+public record UsuarioAutenticado(Guid Id, string Nome, string Login);
+
+/// &lt;summary&gt;
+/// Resultado do login com token e dados do usuário.
+/// &lt;/summary&gt;
+public record LoginResult(string Token, UsuarioAutenticado Usuario);
+
+/// &lt;summary&gt;
+/// Contrato do caso de uso de autenticação.
+/// &lt;/summary&gt;
+public interface IAuthService
+{
+    /// &lt;summary&gt;
+    /// Autentica login e senha.
+    /// Retorna null quando as credenciais são inválidas.
+    /// &lt;/summary&gt;
+    Task&lt;LoginResult?&gt; AutenticarAsync(string login, string senha);
+}</pre>
+</div>
+
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Auth/Services/AuthService.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Auth/Services/AuthService.cs">using LojaApi.Modules.Auth.Interfaces;
+using System.Threading.Tasks;
+
+namespace LojaApi.Modules.Auth.Services;
+
+/// &lt;summary&gt;
+/// Caso de uso de login.
+/// Depende da interface IUsuarioRepository, não da implementação MySQL.
+/// Isso deixa o módulo pronto para futura troca por MongoDB.
+/// &lt;/summary&gt;
+public class AuthService : IAuthService
+{
+    // Porta de acesso aos usuários
+    private readonly IUsuarioRepository _usuarioRepository;
+
+    // Serviço gerador de JWT
+    private readonly IJwtService _jwtService;
+
+    /// &lt;summary&gt;
+    /// Injeção de dependência via construtor.
+    /// &lt;/summary&gt;
+    public AuthService(IUsuarioRepository usuarioRepository, IJwtService jwtService)
+    {
+        _usuarioRepository = usuarioRepository;
+        _jwtService = jwtService;
+    }
+
+    /// &lt;summary&gt;
+    /// Valida credenciais e emite JWT.
+    /// &lt;/summary&gt;
+    public async Task&lt;LoginResult?&gt; AutenticarAsync(string login, string senha)
+    {
+        // Se login ou senha estiverem vazios, falha imediatamente
+        if (string.IsNullOrWhiteSpace(login) || string.IsNullOrWhiteSpace(senha))
+            return null;
+
+        // Busca o usuário pelo login
+        var usuario = await _usuarioRepository.BuscarPorLoginAsync(login);
+
+        // Se não encontrou o usuário, credenciais inválidas
+        if (usuario is null)
+            return null;
+
+        // Compara senha em texto puro (didático)
+        if (!usuario.SenhaConfere(senha))
+            return null;
+
+        // Gera o token JWT
+        var token = _jwtService.GerarToken(usuario);
+
+        // Retorna token + usuário autenticado
+        return new LoginResult(
+            token,
+            new UsuarioAutenticado(usuario.Id, usuario.Nome, usuario.Login)
+        );
+    }
+}</pre>
+</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🎯 Controller — AuthController</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Auth/Controllers/AuthController.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Auth/Controllers/AuthController.cs">using LojaApi.Modules.Auth.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
+
+namespace LojaApi.Modules.Auth.Controllers;
+
+/// &lt;summary&gt;
+/// Request de login.
+/// Formato compatível com o exemplo validado:
+/// { "login": "alice", "password": "senha_secreta" }
+/// &lt;/summary&gt;
+public record LoginRequest(string Login, string Password);
+
+/// &lt;summary&gt;
+/// Controller público de autenticação.
+/// É o único endpoint que não exige token, pois é ele que emite o token.
+/// &lt;/summary&gt;
+[ApiController]
+[Route("api/auth")]
+public class AuthController : ControllerBase
+{
+    // Caso de uso de autenticação
+    private readonly IAuthService _authService;
+
+    /// &lt;summary&gt;
+    /// Injeção de dependência via construtor.
+    /// &lt;/summary&gt;
+    public AuthController(IAuthService authService)
+    {
+        _authService = authService;
+    }
+
+    /// &lt;summary&gt;
+    /// POST /api/auth/login
+    /// Público: emite JWT para usuários válidos.
+    /// &lt;/summary&gt;
+    [HttpPost("login")]
+    [AllowAnonymous]
+    public async Task&lt;ActionResult&gt; Login([FromBody] LoginRequest request)
+    {
+        // Validação de campos obrigatórios
+        if (string.IsNullOrWhiteSpace(request.Login) || string.IsNullOrWhiteSpace(request.Password))
+        {
+            // 400: campos não enviados ou vazios
+            return BadRequest(new ProblemDetails
+            {
+                Type = "https://example.com/erros/validacao",
+                Title = "Campos obrigatórios",
+                Status = 400,
+                Detail = "Os campos login e password são obrigatórios."
+            });
+        }
+
+        // Executa o caso de uso de autenticação
+        var result = await _authService.AutenticarAsync(request.Login, request.Password);
+
+        // Se retornou null, credenciais inválidas
+        if (result is null)
+        {
+            // 401: login ou senha incorretos
+            return Unauthorized(new ProblemDetails
+            {
+                Type = "https://example.com/erros/auth",
+                Title = "Unauthorized",
+                Status = 401,
+                Detail = "Credenciais inválidas."
+            });
+        }
+
+        // 200: login realizado com sucesso
+        // Formato de resposta compatível com o exemplo validado
+        return Ok(new
+        {
+            token = result.Token,
+            user = new
+            {
+                id = result.Usuario.Id,
+                name = result.Usuario.Nome,
+                login = result.Usuario.Login
+            }
+        });
+    }
+}</pre>
+</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🧩 ModuleExtensions — registro do módulo Auth</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Auth/ModuleExtensions.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Auth/ModuleExtensions.cs">using LojaApi.Modules.Auth.Data;
+using LojaApi.Modules.Auth.Interfaces;
+using LojaApi.Modules.Auth.Repositories;
+using LojaApi.Modules.Auth.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace LojaApi.Modules.Auth;
+
+/// &lt;summary&gt;
+/// Extensão para registrar o módulo Auth no host.
+/// Mantém o padrão dos módulos: cada contexto registra suas próprias dependências.
+/// &lt;/summary&gt;
+public static class ModuleExtensions
+{
+    /// &lt;summary&gt;
+    /// Registra AuthDbContext, repositório, serviço de login e JWT.
+    /// &lt;/summary&gt;
+    public static IServiceCollection AddAuthModule(
+        this IServiceCollection services,
+        string connectionString,
+        string jwtSecret,
+        int jwtExpirationMinutes)
+    {
+        // Registra o DbContext do Auth usando MySQL
+        services.AddDbContext&lt;AuthDbContext&gt;(options =&gt;
+            options.UseMySql(
+                connectionString,
+                ServerVersion.AutoDetect(connectionString)
+            )
+        );
+
+        // Registra a porta de usuários com implementação MySQL/EF Core
+        // Futuramente pode ser trocado por MongoUsuarioRepository
+        services.AddScoped&lt;IUsuarioRepository, UsuarioRepository&gt;();
+
+        // Registra o serviço de JWT como singleton
+        services.AddSingleton&lt;IJwtService&gt;(
+            new JwtService(jwtSecret, jwtExpirationMinutes)
+        );
+
+        // Registra o caso de uso de autenticação
+        services.AddScoped&lt;IAuthService, AuthService&gt;();
+
+        // Retorna services para permitir encadeamento
+        return services;
+    }
+}</pre>
+</div>
+
+<div class="success-banner">
+<strong>✅ Resultado desta parte:</strong> módulo Auth completo com <code>Usuario</code>, <code>IUsuarioRepository</code>, repositório MySQL, <code>AuthService</code>, <code>JwtService</code> e endpoint <code>POST /api/auth/login</code>.
+</div>
+
+<div class="warning-banner">
+<strong>⚠️ Próximo passo obrigatório:</strong> na Parte 3/6 vamos ajustar os módulos Catálogo, Pedidos e Clientes para usar <code>[Authorize]</code> sem roles e aceitar qualquer usuário autenticado.
+</div>
+</div>
+<!-- ===== FIM DA PARTE 2/6 — cole a Parte 3 (Catálogo/Pedidos/Clientes sem roles) logo após este comentário ===== -->  
+<!-- ===== PARTE 3/6: CATÁLOGO + PEDIDOS + CLIENTES SEM ROLES ===== -->
+<div class="lab-container">
+<div class="lab-header">
+<h3>📦🛒🧾 Módulos Catálogo, Pedidos e Clientes — sem roles</h3>
+<div class="lab-actions"><span class="ide-tag cs">VS Code</span></div>
+</div>
+
+<div class="info-banner">
+<strong>💡 O que mudou em relação à Tab 9 anterior:</strong> todos os <code>[Authorize(Roles = "...")]</code> viraram <code>[Authorize]</code>. Qualquer usuário autenticado acessa todos os endpoints. Os endpoints internos (reservar, endereços) também usam o mesmo token de qualquer usuário logado — sem token de serviço separado.
+</div>
+
+<div class="table-wrap" style="margin:12px 0">
+<table>
+<thead><tr><th>Endpoint</th><th>Tab 9 anterior (roles)</th><th>Tab 9 nova (sem roles)</th></tr></thead>
+<tbody>
+<tr><td><code>POST /api/catalogo/produtos</code></td><td><code>[Authorize(Roles="CATALOGO_ADMIN,ADMIN")]</code></td><td><code>[Authorize]</code></td></tr>
+<tr><td><code>POST .../reservar</code> (interno)</td><td><code>[Authorize(Roles="PEDIDOS_SERVICE")]</code></td><td><code>[Authorize]</code></td></tr>
+<tr><td><code>POST /api/pedidos</code></td><td><code>[Authorize(Roles="PEDIDOS_USER,ADMIN")]</code></td><td><code>[Authorize]</code></td></tr>
+<tr><td><code>POST /api/clientes</code></td><td><code>[Authorize(Roles="CLIENTES_ADMIN,ADMIN")]</code></td><td><code>[Authorize]</code></td></tr>
+<tr><td><code>GET .../enderecos</code> (interno)</td><td><code>[Authorize(Roles="PEDIDOS_SERVICE,CLIENTES_ADMIN,ADMIN")]</code></td><td><code>[Authorize]</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ══════════ MÓDULO CATÁLOGO ══════════ -->
+<h4 style="color:var(--accent);margin:16px 0 8px">📦 Módulo Catálogo</h4>
+
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Catalogo/Domain/Produto.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Catalogo/Domain/Produto.cs">using LojaApi.Shared.Kernel;
+
+namespace LojaApi.Modules.Catalogo.Domain;
+
+/// &lt;summary&gt;
+/// Aggregate Root do Catálogo: estoque com reserva em duas fases.
+/// Sem alterações em relação à Tab 9 anterior — o domínio não muda.
+/// &lt;/summary&gt;
+public class Produto
+{
+    public int Id { get; private set; }
+    public string Nome { get; private set; } = string.Empty;
+    public decimal Preco { get; private set; }
+    public int Estoque { get; private set; }
+    public int Reservado { get; private set; }
+
+    /// &lt;summary&gt;Estoque disponível = estoque total - reservado.&lt;/summary&gt;
+    public int Disponivel =&gt; Estoque - Reservado;
+
+    /// &lt;summary&gt;Construtor protegido para o EF Core.&lt;/summary&gt;
+    protected Produto() { }
+
+    /// &lt;summary&gt;Construtor principal.&lt;/summary&gt;
+    public Produto(int id, string nome, decimal preco, int estoque)
+    {
+        Id = id;
+        Nome = nome;
+        Preco = preco;
+        Estoque = estoque;
+    }
+
+    /// &lt;summary&gt;
+    /// Reserva quantidade do estoque.
+    /// Lança DomainException 409 se estoque insuficiente.
+    /// &lt;/summary&gt;
+    public void Reservar(int qtd)
+    {
+        // Valida quantidade positiva
+        if (qtd &lt;= 0)
+            throw new DomainException("Quantidade deve ser &gt; 0");
+
+        // Valida estoque disponível
+        if (Disponivel &lt; qtd)
+            throw new DomainException(
+                $"Estoque insuficiente p/ produto {Id} (disp: {Disponivel}, ped: {qtd})",
+                ProblemTypes.EstoqueInsuficiente);
+
+        // Incrementa reservado
+        Reservado += qtd;
+    }
+
+    /// &lt;summary&gt;Libera quantidade reservada (compensação).&lt;/summary&gt;
+    public void Liberar(int qtd)
+    {
+        Reservado = Math.Max(0, Reservado - qtd);
+    }
+
+    /// &lt;summary&gt;Confirma reserva: reduz estoque e libera reservado.&lt;/summary&gt;
+    public void ConfirmarReserva(int qtd)
+    {
+        Estoque -= qtd;
+        Liberar(qtd);
+    }
+
+    /// &lt;summary&gt;
+    /// Atualização validada (PUT do contrato).
+    /// Invariantes de nome/preço/estoque.
+    /// &lt;/summary&gt;
+    public void Atualizar(string nome, decimal preco, int estoque)
+    {
+        // Valida nome
+        if (string.IsNullOrWhiteSpace(nome) || nome.Trim().Length &lt; 2)
+            throw new DomainException("Nome deve ter &gt;= 2 caracteres");
+
+        // Valida preço positivo
+        if (preco &lt;= 0)
+            throw new DomainException("Preço deve ser &gt; 0");
+
+        // Valida estoque não-negativo
+        if (estoque &lt; 0)
+            throw new DomainException("Estoque não pode ser negativo");
+
+        // Aplica atualização
+        Nome = nome.Trim();
+        Preco = preco;
+        Estoque = estoque;
+    }
+}</pre>
+</div>
+
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Catalogo/Data/CatalogoDbContext.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Catalogo/Data/CatalogoDbContext.cs">using LojaApi.Modules.Catalogo.Domain;
+using Microsoft.EntityFrameworkCore;
+
+namespace LojaApi.Modules.Catalogo.Data;
+
+/// &lt;summary&gt;
+/// DbContext do contexto Catálogo.
+/// Usa o database catalogo_db, criado pelo init-sql.
+/// &lt;/summary&gt;
+public class CatalogoDbContext : DbContext
+{
+    /// &lt;summary&gt;Construtor padrão EF Core.&lt;/summary&gt;
+    public CatalogoDbContext(DbContextOptions&lt;CatalogoDbContext&gt; options)
+        : base(options) { }
+
+    /// &lt;summary&gt;Tabela de produtos.&lt;/summary&gt;
+    public DbSet&lt;Produto&gt; Produtos =&gt; Set&lt;Produto&gt;();
+
+    /// &lt;summary&gt;Mapeamento da entidade Produto.&lt;/summary&gt;
+    protected override void OnModelCreating(ModelBuilder mb)
+    {
+        mb.Entity&lt;Produto&gt;(e =&gt;
+        {
+            // Nome da tabela
+            e.ToTable("produtos");
+
+            // Chave primária
+            e.HasKey(p =&gt; p.Id);
+
+            // Nome obrigatório com tamanho máximo
+            e.Property(p =&gt; p.Nome)
+                .HasMaxLength(100)
+                .IsRequired();
+
+            // Preço com precisão decimal
+            e.Property(p =&gt; p.Preco)
+                .HasColumnType("decimal(10,2)");
+        });
+    }
+}</pre>
+</div>
+
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Catalogo/CatalogoController.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Catalogo/CatalogoController.cs">using LojaApi.Modules.Catalogo.Data;
+using LojaApi.Modules.Catalogo.Domain;
+using LojaApi.Shared.Kernel;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace LojaApi.Modules.Catalogo;
+
+/// &lt;summary&gt;Request de reserva de estoque.&lt;/summary&gt;
+public record ReservarRequest(int Quantidade, string PedidoOrigem);
+
+/// &lt;summary&gt;Response de reserva com preço para snapshot.&lt;/summary&gt;
+public record ReservaResponse(string ReservaId, string Status, decimal PrecoUnitario);
+
+/// &lt;summary&gt;Request de atualização de produto.&lt;/summary&gt;
+public record AtualizarProdutoRequest(string Nome, decimal Preco, int Estoque);
+
+/// &lt;summary&gt;
+/// Controller do contexto Catálogo.
+/// SEM ROLES: qualquer usuário autenticado acessa todos os endpoints.
+/// &lt;/summary&gt;
+[ApiController]
+[Route("api/catalogo")]
+public class CatalogoController : ControllerBase
+{
+    // DbContext do contexto Catálogo
+    private readonly CatalogoDbContext _db;
+
+    /// &lt;summary&gt;Injeção de dependência via construtor.&lt;/summary&gt;
+    public CatalogoController(CatalogoDbContext db)
+    {
+        _db = db;
+    }
+
+    // ══════════ LEITURA PÚBLICA ══════════
+
+    /// &lt;summary&gt;
+    /// GET /api/catalogo/produtos
+    /// Leitura pública (sem autenticação).
+    /// &lt;/summary&gt;
+    [HttpGet("produtos")]
+    [AllowAnonymous]
+    public async Task&lt;ActionResult&gt; Listar(
+        [FromQuery] int page = 0,
+        [FromQuery] int size = 20)
+    {
+        // Retorna lista paginada de produtos
+        return Ok(await _db.Produtos
+            .AsNoTracking()
+            .Skip(page * size)
+            .Take(size)
+            .ToListAsync());
+    }
+
+    /// &lt;summary&gt;
+    /// GET /api/catalogo/produtos/{id}
+    /// Busca produto por id (leitura pública).
+    /// &lt;/summary&gt;
+    [HttpGet("produtos/{id:int}")]
+    [AllowAnonymous]
+    public async Task&lt;ActionResult&gt; Obter(int id)
+    {
+        // Busca produto sem rastreamento
+        var p = await _db.Produtos
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x =&gt; x.Id == id);
+
+        // Se não encontrou, retorna 404
+        if (p is null)
+            return NotFound(new ProblemDetails
+            {
+                Type = "https://example.com/erros/nao-encontrado",
+                Title = "Produto inexistente",
+                Status = 404
+            });
+
+        // Retorna produto
+        return Ok(p);
+    }
+
+    // ══════════ ESCRITA AUTENTICADA (SEM ROLES) ══════════
+
+    /// &lt;summary&gt;
+    /// POST /api/catalogo/produtos
+    /// Cria produto. Qualquer usuário autenticado pode criar.
+    /// &lt;/summary&gt;
+    [HttpPost("produtos")]
+    [Authorize]  // SEM ROLES — qualquer autenticado
+    public async Task&lt;ActionResult&gt; Criar([FromBody] Produto p)
+    {
+        // Adiciona produto ao contexto
+        _db.Produtos.Add(p);
+
+        // Persiste no banco
+        await _db.SaveChangesAsync();
+
+        // Retorna 201 com localização do recurso criado
+        return Created($"/api/catalogo/produtos/{p.Id}", p);
+    }
+
+    /// &lt;summary&gt;
+    /// PUT /api/catalogo/produtos/{id}
+    /// Atualiza produto. Qualquer usuário autenticado pode atualizar.
+    /// &lt;/summary&gt;
+    [HttpPut("produtos/{id:int}")]
+    [Authorize]  // SEM ROLES — qualquer autenticado
+    public async Task&lt;ActionResult&gt; Atualizar(
+        int id,
+        [FromBody] AtualizarProdutoRequest req)
+    {
+        // Busca produto
+        var p = await _db.Produtos.FindAsync(id);
+
+        // Se não encontrou, retorna 404
+        if (p is null)
+            return NotFound(new ProblemDetails
+            {
+                Type = "https://example.com/erros/nao-encontrado",
+                Title = "Produto inexistente",
+                Status = 404
+            });
+
+        // Aplica atualização com validação de invariantes
+        // DomainException → 400 via ExceptionMiddleware
+        p.Atualizar(req.Nome, req.Preco, req.Estoque);
+
+        // Persiste no banco
+        await _db.SaveChangesAsync();
+
+        // Retorna produto atualizado
+        return Ok(p);
+    }
+
+    /// &lt;summary&gt;
+    /// DELETE /api/catalogo/produtos/{id}
+    /// Exclui produto. Qualquer usuário autenticado pode excluir.
+    /// &lt;/summary&gt;
+    [HttpDelete("produtos/{id:int}")]
+    [Authorize]  // SEM ROLES — qualquer autenticado
+    public async Task&lt;ActionResult&gt; Excluir(int id)
+    {
+        // Busca produto
+        var p = await _db.Produtos.FindAsync(id);
+
+        // Se não encontrou, retorna 404
+        if (p is null)
+            return NotFound(new ProblemDetails
+            {
+                Type = "https://example.com/erros/nao-encontrado",
+                Title = "Produto inexistente",
+                Status = 404
+            });
+
+        // Remove produto
+        _db.Produtos.Remove(p);
+
+        // Persiste no banco
+        await _db.SaveChangesAsync();
+
+        // Retorna 204 No Content
+        return NoContent();
+    }
+
+    // ══════════ ENDPOINT INTERNO (SEM ROLE DE SERVIÇO) ══════════
+
+    /// &lt;summary&gt;
+    /// POST /api/catalogo/produtos/{id}/reservar
+    /// Reserva estoque. Qualquer usuário autenticado pode reservar.
+    /// Na Tab 9 anterior, exigia role PEDIDOS_SERVICE.
+    /// &lt;/summary&gt;
+    [HttpPost("produtos/{id:int}/reservar")]
+    [Authorize]  // SEM ROLES — qualquer autenticado
+    public async Task&lt;ActionResult&lt;ReservaResponse&gt;&gt; Reservar(
+        int id,
+        [FromBody] ReservarRequest req)
+    {
+        // Busca produto
+        var p = await _db.Produtos.FindAsync(id);
+
+        // Se não encontrou, retorna 404
+        if (p is null)
+            return NotFound(new ProblemDetails
+            {
+                Type = "https://example.com/erros/nao-encontrado",
+                Title = "Produto inexistente",
+                Status = 404
+            });
+
+        // Reserva estoque
+        // Lança DomainException 409 se estoque insuficiente
+        p.Reservar(req.Quantidade);
+
+        // Persiste no banco
+        await _db.SaveChangesAsync();
+
+        // Retorna reserva com preço para snapshot no pedido
+        return Ok(new ReservaResponse(
+            Guid.NewGuid().ToString("N")[..8],
+            "RESERVADO",
+            p.Preco));
+    }
+
+    /// &lt;summary&gt;
+    /// POST /api/catalogo/produtos/{id}/liberar
+    /// Libera estoque reservado (compensação da saga-lite).
+    /// Qualquer usuário autenticado pode liberar.
+    /// &lt;/summary&gt;
+    [HttpPost("produtos/{id:int}/liberar")]
+    [Authorize]  // SEM ROLES — qualquer autenticado
+    public async Task&lt;ActionResult&gt; Liberar(
+        int id,
+        [FromBody] ReservarRequest req)
+    {
+        // Busca produto
+        var p = await _db.Produtos.FindAsync(id);
+
+        // Libera estoque reservado (se produto existir)
+        p?.Liberar(req.Quantidade);
+
+        // Persiste no banco
+        await _db.SaveChangesAsync();
+
+        // Retorna 204 No Content
+        return NoContent();
+    }
+}</pre>
+</div>
+
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Catalogo/ModuleExtensions.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Catalogo/ModuleExtensions.cs">using LojaApi.Modules.Catalogo.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace LojaApi.Modules.Catalogo;
+
+/// &lt;summary&gt;
+/// Extensão para registrar o módulo Catálogo no host.
+/// Sem alterações em relação à Tab 9 anterior.
+/// &lt;/summary&gt;
+public static class ModuleExtensions
+{
+    /// &lt;summary&gt;
+    /// Registra o CatalogoDbContext com a connection string fornecida.
+    /// &lt;/summary&gt;
+    public static IServiceCollection AddCatalogoModule(
+        this IServiceCollection services,
+        string connectionString)
+    {
+        // Registra o DbContext do Catálogo usando MySQL
+        services.AddDbContext&lt;CatalogoDbContext&gt;(options =&gt;
+            options.UseMySql(
+                connectionString,
+                ServerVersion.AutoDetect(connectionString)));
+
+        // Retorna services para permitir encadeamento
+        return services;
+    }
+}</pre>
+</div>
+
+<!-- ══════════ MÓDULO PEDIDOS ══════════ -->
+<h4 style="color:var(--accent);margin:16px 0 8px">🛒 Módulo Pedidos</h4>
+
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Pedidos/Domain/Pedido.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Pedidos/Domain/Pedido.cs">using LojaApi.Shared.Kernel;
+
+namespace LojaApi.Modules.Pedidos.Domain;
+
+/// &lt;summary&gt;Status do pedido (máquina de estados).&lt;/summary&gt;
+public enum PedidoStatus
+{
+    CRIADO,
+    RESERVADO,
+    CONFIRMADO,
+    ENVIADO,
+    CANCELADO
+}
+
+/// &lt;summary&gt;Item do pedido com snapshot de preço.&lt;/summary&gt;
+public class ItemPedido
+{
+    public int ProdutoId { get; private set; }
+    public int Quantidade { get; private set; }
+
+    /// &lt;summary&gt;
+    /// Snapshot do preço do Catálogo no momento do checkout.
+    /// &lt;/summary&gt;
+    public decimal PrecoUnitario { get; private set; }
+
+    /// &lt;summary&gt;Construtor protegido para o EF Core.&lt;/summary&gt;
+    protected ItemPedido() { }
+
+    /// &lt;summary&gt;Construtor principal.&lt;/summary&gt;
+    public ItemPedido(int produtoId, int quantidade, decimal precoUnitario)
+    {
+        ProdutoId = produtoId;
+        Quantidade = quantidade;
+        PrecoUnitario = precoUnitario;
+    }
+}
+
+/// &lt;summary&gt;
+/// Aggregate Root de Pedido com máquina de estados guardada.
+/// Sem alterações em relação à Tab 9 anterior.
+/// &lt;/summary&gt;
+public class Pedido
+{
+    public int Id { get; private set; }
+
+    /// &lt;summary&gt;Id do usuário que criou o pedido (vem do JWT sub).&lt;/summary&gt;
+    public string Usuario { get; private set; } = string.Empty;
+
+    public int ClienteId { get; private set; }
+    public int EnderecoId { get; private set; }
+    public PedidoStatus Status { get; private set; } = PedidoStatus.CRIADO;
+
+    /// &lt;summary&gt;Itens do pedido.&lt;/summary&gt;
+    public List&lt;ItemPedido&gt; Itens { get; private set; } = new();
+
+    /// &lt;summary&gt;Ids das reservas de estoque.&lt;/summary&gt;
+    public List&lt;string&gt; ReservaIds { get; private set; } = new();
+
+    /// &lt;summary&gt;Total calculado a partir dos itens.&lt;/summary&gt;
+    public decimal Total =&gt; Itens.Sum(i =&gt; i.PrecoUnitario * i.Quantidade);
+
+    /// &lt;summary&gt;Construtor protegido para o EF Core.&lt;/summary&gt;
+    protected Pedido() { }
+
+    /// &lt;summary&gt;
+    /// Factory Method: criação controlada com validação.
+    /// &lt;/summary&gt;
+    public static Pedido Criar(
+        string usuario,
+        int clienteId,
+        int enderecoId,
+        IEnumerable&lt;ItemPedido&gt; itens)
+    {
+        // Cria o pedido
+        var p = new Pedido
+        {
+            Usuario = usuario,
+            ClienteId = clienteId,
+            EnderecoId = enderecoId
+        };
+
+        // Adiciona itens
+        p.Itens.AddRange(itens);
+
+        // Valida que o pedido tem itens
+        if (p.Itens.Count == 0)
+            throw new DomainException("Pedido sem itens");
+
+        // Retorna pedido criado
+        return p;
+    }
+
+    /// &lt;summary&gt;
+    /// Marca pedido como reservado após reserva de estoque.
+    /// &lt;/summary&gt;
+    public void MarcarReservado(IEnumerable&lt;string&gt; reservaIds)
+    {
+        // Valida transição de estado
+        if (Status != PedidoStatus.CRIADO)
+            throw new DomainException(
+                "Transição inválida p/ RESERVADO",
+                ProblemTypes.StatusInvalido);
+
+        // Adiciona ids das reservas
+        ReservaIds.AddRange(reservaIds);
+
+        // Atualiza status
+        Status = PedidoStatus.RESERVADO;
+    }
+
+    /// &lt;summary&gt;
+    /// Cancela pedido e libera reservas.
+    /// &lt;/summary&gt;
+    public void Cancelar()
+    {
+        // Valida transição de estado
+        if (Status is PedidoStatus.CONFIRMADO or PedidoStatus.ENVIADO)
+            throw new DomainException(
+                "Pedido não pode ser cancelado neste status",
+                ProblemTypes.StatusInvalido);
+
+        // Atualiza status
+        Status = PedidoStatus.CANCELADO;
+    }
+}</pre>
+</div>
+
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Pedidos/Data/PedidosDbContext.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Pedidos/Data/PedidosDbContext.cs">using LojaApi.Modules.Pedidos.Domain;
+using Microsoft.EntityFrameworkCore;
+
+namespace LojaApi.Modules.Pedidos.Data;
+
+/// &lt;summary&gt;
+/// DbContext do contexto Pedidos.
+/// Usa o database pedidos_db, criado pelo init-sql.
+/// &lt;/summary&gt;
+public class PedidosDbContext : DbContext
+{
+    /// &lt;summary&gt;Construtor padrão EF Core.&lt;/summary&gt;
+    public PedidosDbContext(DbContextOptions&lt;PedidosDbContext&gt; options)
+        : base(options) { }
+
+    /// &lt;summary&gt;Tabela de pedidos.&lt;/summary&gt;
+    public DbSet&lt;Pedido&gt; Pedidos =&gt; Set&lt;Pedido&gt;();
+
+    /// &lt;summary&gt;Mapeamento das entidades.&lt;/summary&gt;
+    protected override void OnModelCreating(ModelBuilder mb)
+    {
+        mb.Entity&lt;Pedido&gt;(e =&gt;
+        {
+            // Nome da tabela
+            e.ToTable("pedidos");
+
+            // Chave primária
+            e.HasKey(p =&gt; p.Id);
+
+            // Status armazenado como string
+            e.Property(p =&gt; p.Status)
+                .HasConversion&lt;string&gt;();
+
+            // Itens como coleção própria (owned)
+            e.OwnsMany(p =&gt; p.Itens, i =&gt;
+            {
+                i.ToTable("pedido_itens");
+                i.Property(x =&gt; x.PrecoUnitario)
+                    .HasColumnType("decimal(10,2)");
+            });
+
+            // ReservaIds não persiste (em prod: coluna JSON)
+            e.Ignore(p =&gt; p.ReservaIds);
+        });
+    }
+}</pre>
+</div>
+
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Pedidos/Integration/ICatalogoClient.cs + CatalogoClient.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Pedidos/Integration/ICatalogoClient.cs">using LojaApi.Modules.Pedidos.Domain;
+using LojaApi.Shared.Kernel;
+
+namespace LojaApi.Modules.Pedidos.Integration;
+
+/// &lt;summary&gt;DTO de reserva de estoque.&lt;/summary&gt;
+public record ReservarDto(int Quantidade, string PedidoOrigem);
+
+/// &lt;summary&gt;DTO de resposta de reserva com preço.&lt;/summary&gt;
+public record ReservaDto(string ReservaId, string Status, decimal PrecoUnitario);
+
+/// &lt;summary&gt;
+/// Porta de saída para o contexto Catálogo (HTTP síncrono).
+/// &lt;/summary&gt;
+public interface ICatalogoClient
+{
+    /// &lt;summary&gt;Reserva estoque no Catálogo.&lt;/summary&gt;
+    Task&lt;ReservaDto&gt; ReservarAsync(
+        int produtoId,
+        ReservarDto dto,
+        CancellationToken ct = default);
+
+    /// &lt;summary&gt;Libera estoque reservado (compensação).&lt;/summary&gt;
+    Task LiberarAsync(
+        int produtoId,
+        ReservarDto dto,
+        CancellationToken ct = default);
+}
+
+/// &lt;summary&gt;
+/// Adapter HTTP: timeout 2s, erros 409/503 mapeados
+/// para DomainException tipada.
+/// &lt;/summary&gt;
+public class CatalogoClient : ICatalogoClient
+{
+    // HttpClient injetado via AddHttpClient
+    private readonly HttpClient _http;
+
+    /// &lt;summary&gt;Construtor com configuração de timeout.&lt;/summary&gt;
+    public CatalogoClient(HttpClient http)
+    {
+        _http = http;
+
+        // Timeout curto: 2 segundos
+        _http.Timeout = TimeSpan.FromSeconds(2);
+    }
+
+    /// &lt;summary&gt;Reserva estoque no Catálogo.&lt;/summary&gt;
+    public async Task&lt;ReservaDto&gt; ReservarAsync(
+        int produtoId,
+        ReservarDto dto,
+        CancellationToken ct = default)
+    {
+        // Faz POST para o endpoint de reserva
+        var resp = await _http.PostAsJsonAsync(
+            $"/api/catalogo/produtos/{produtoId}/reservar",
+            dto,
+            ct);
+
+        // Se 409, estoque insuficiente
+        if (resp.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            throw new DomainException(
+                $"Estoque insuficiente p/ produto {produtoId}",
+                ProblemTypes.EstoqueInsuficiente);
+        }
+
+        // Se outro erro, dependência indisponível
+        if (!resp.IsSuccessStatusCode)
+        {
+            throw new DomainException(
+                $"Catálogo indisponível ({(int)resp.StatusCode})",
+                ProblemTypes.DependenciaIndisponivel);
+        }
+
+        // Desserializa resposta
+        return (await resp.Content.ReadFromJsonAsync&lt;ReservaDto&gt;(ct))!;
+    }
+
+    /// &lt;summary&gt;Libera estoque reservado (compensação best-effort).&lt;/summary&gt;
+    public async Task LiberarAsync(
+        int produtoId,
+        ReservarDto dto,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            // Faz POST para o endpoint de liberação
+            await _http.PostAsJsonAsync(
+                $"/api/catalogo/produtos/{produtoId}/liberar",
+                dto,
+                ct);
+        }
+        catch
+        {
+            // Compensação best-effort:
+            // em prod, log + fila de reconciliação
+        }
+    }
+}</pre>
+</div>
+
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Pedidos/Integration/IClientesClient.cs + ClientesClient.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Pedidos/Integration/IClientesClient.cs">using LojaApi.Shared.Kernel;
+
+namespace LojaApi.Modules.Pedidos.Integration;
+
+/// &lt;summary&gt;DTO de fronteira: endereço vindo do contexto Clientes.&lt;/summary&gt;
+public record EnderecoDto(
+    int Id,
+    string Logradouro,
+    string Cidade,
+    string Uf,
+    string Cep);
+
+/// &lt;summary&gt;Porta de saída para o contexto Clientes (HTTP síncrono).&lt;/summary&gt;
+public interface IClientesClient
+{
+    /// &lt;summary&gt;Obtém endereços do cliente.&lt;/summary&gt;
+    Task&lt;List&lt;EnderecoDto&gt;&gt; ObterEnderecosAsync(
+        int clienteId,
+        CancellationToken ct = default);
+}
+
+/// &lt;summary&gt;
+/// Adapter HTTP: timeout 2s; 404/503 mapeados
+/// para DomainException tipada.
+/// &lt;/summary&gt;
+public class ClientesClient : IClientesClient
+{
+    // HttpClient injetado via AddHttpClient
+    private readonly HttpClient _http;
+
+    /// &lt;summary&gt;Construtor com configuração de timeout.&lt;/summary&gt;
+    public ClientesClient(HttpClient http)
+    {
+        _http = http;
+
+        // Timeout curto: 2 segundos
+        _http.Timeout = TimeSpan.FromSeconds(2);
+    }
+
+    /// &lt;summary&gt;Obtém endereços do cliente.&lt;/summary&gt;
+    public async Task&lt;List&lt;EnderecoDto&gt;&gt; ObterEnderecosAsync(
+        int clienteId,
+        CancellationToken ct = default)
+    {
+        // Faz GET para o endpoint de endereços
+        var resp = await _http.GetAsync(
+            $"/api/clientes/{clienteId}/enderecos",
+            ct);
+
+        // Se 404, cliente inexistente
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            throw new DomainException(
+                $"Cliente {clienteId} inexistente",
+                ProblemTypes.DependenciaIndisponivel);
+        }
+
+        // Se outro erro, dependência indisponível
+        if (!resp.IsSuccessStatusCode)
+        {
+            throw new DomainException(
+                $"Clientes indisponível ({(int)resp.StatusCode})",
+                ProblemTypes.DependenciaIndisponivel);
+        }
+
+        // Desserializa resposta
+        return (await resp.Content.ReadFromJsonAsync&lt;List&lt;EnderecoDto&gt;&gt;(ct))!;
+    }
+}</pre>
+</div>
+
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Pedidos/PedidoService.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Pedidos/PedidoService.cs">using LojaApi.Modules.Pedidos.Data;
+using LojaApi.Modules.Pedidos.Domain;
+using LojaApi.Modules.Pedidos.Integration;
+using LojaApi.Shared.Kernel;
+
+namespace LojaApi.Modules.Pedidos;
+
+/// &lt;summary&gt;Request de criação de pedido.&lt;/summary&gt;
+public record PedidoRequest(
+    int ClienteId,
+    int EnderecoId,
+    List&lt;ItemRequest&gt; Itens);
+
+/// &lt;summary&gt;Item do request de pedido.&lt;/summary&gt;
+public record ItemRequest(int ProdutoId, int Quantidade);
+
+/// &lt;summary&gt;
+/// Caso de uso de checkout: reserva síncrona + validação
+/// de endereço + compensação.
+/// Sem alterações em relação à Tab 9 anterior.
+/// &lt;/summary&gt;
+public class PedidoService
+{
+    // Porta de saída para o Catálogo
+    private readonly ICatalogoClient _catalogo;
+
+    // Porta de saída para os Clientes
+    private readonly IClientesClient _clientes;
+
+    // DbContext do contexto Pedidos
+    private readonly PedidosDbContext _db;
+
+    /// &lt;summary&gt;Injeção de dependência via construtor.&lt;/summary&gt;
+    public PedidoService(
+        ICatalogoClient catalogo,
+        IClientesClient clientes,
+        PedidosDbContext db)
+    {
+        _catalogo = catalogo;
+        _clientes = clientes;
+        _db = db;
+    }
+
+    /// &lt;summary&gt;
+    /// Cria pedido: reserva estoque, valida endereço,
+    /// persiste pedido. Compensa em caso de falha.
+    /// &lt;/summary&gt;
+    public async Task&lt;Pedido&gt; CriarAsync(
+        PedidoRequest req,
+        string usuario,
+        CancellationToken ct = default)
+    {
+        // Lista de reservas feitas (para compensação)
+        var reservas = new List&lt;(int ProdutoId, ReservarDto Dto)&gt;();
+
+        try
+        {
+            // Lista de itens do pedido
+            var itens = new List&lt;ItemPedido&gt;();
+
+            // Para cada item, reserva estoque no Catálogo
+            foreach (var item in req.Itens)
+            {
+                // Cria DTO de reserva
+                var dto = new ReservarDto(
+                    item.Quantidade,
+                    $"PED-{usuario}");
+
+                // Reserva estoque
+                var r = await _catalogo.ReservarAsync(
+                    item.ProdutoId,
+                    dto,
+                    ct);
+
+                // Registra reserva para compensação futura
+                reservas.Add((item.ProdutoId, dto));
+
+                // Cria item com snapshot de preço
+                itens.Add(new ItemPedido(
+                    item.ProdutoId,
+                    item.Quantidade,
+                    r.PrecoUnitario));
+            }
+
+            // Valida endereço do cliente
+            var enderecos = await _clientes.ObterEnderecosAsync(
+                req.ClienteId,
+                ct);
+
+            // Verifica se o endereço pertence ao cliente
+            if (!enderecos.Any(e =&gt; e.Id == req.EnderecoId))
+                throw new DomainException(
+                    "Endereço não pertence ao cliente");
+
+            // Cria pedido com factory method
+            var pedido = Pedido.Criar(
+                usuario,
+                req.ClienteId,
+                req.EnderecoId,
+                itens);
+
+            // Marca como reservado
+            pedido.MarcarReservado(
+                reservas.Select((_, i) =&gt; $"RES-{i:D4}"));
+
+            // Persiste pedido
+            _db.Pedidos.Add(pedido);
+            await _db.SaveChangesAsync(ct);
+
+            // Retorna pedido criado
+            return pedido;
+        }
+        catch
+        {
+            // Compensação da saga-lite:
+            // libera tudo que foi reservado
+            foreach (var (produtoId, dto) in reservas)
+                await _catalogo.LiberarAsync(produtoId, dto, ct);
+
+            // Propaga o erro
+            throw;
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Cancela pedido e libera reservas.
+    /// &lt;/summary&gt;
+    public async Task CancelarAsync(
+        int pedidoId,
+        string usuario,
+        CancellationToken ct = default)
+    {
+        // Busca pedido
+        var p = await _db.Pedidos.FindAsync(
+            new object[] { pedidoId },
+            ct)
+            ?? throw new DomainException("Pedido inexistente");
+
+        // Valida que o pedido pertence ao usuário
+        if (p.Usuario != usuario)
+            throw new DomainException("Pedido de outro usuário");
+
+        // Cancela pedido (valida transição de estado)
+        p.Cancelar();
+
+        // Libera reservas de estoque
+        foreach (var i in p.Itens)
+            await _catalogo.LiberarAsync(
+                i.ProdutoId,
+                new ReservarDto(i.Quantidade, $"PED-{pedidoId}"),
+                ct);
+
+        // Persiste no banco
+        await _db.SaveChangesAsync(ct);
+    }
+}</pre>
+</div>
+
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Pedidos/PedidosController.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Pedidos/PedidosController.cs">using LojaApi.Modules.Pedidos.Data;
+using LojaApi.Modules.Pedidos.Domain;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace LojaApi.Modules.Pedidos;
+
+/// &lt;summary&gt;
+/// Controller do contexto Pedidos.
+/// SEM ROLES: qualquer usuário autenticado acessa todos os endpoints.
+/// &lt;/summary&gt;
+[ApiController]
+[Route("api/pedidos")]
+[Authorize]  // SEM ROLES — qualquer autenticado
+public class PedidosController : ControllerBase
+{
+    // Caso de uso de checkout
+    private readonly PedidoService _svc;
+
+    // DbContext do contexto Pedidos
+    private readonly PedidosDbContext _db;
+
+    /// &lt;summary&gt;Injeção de dependência via construtor.&lt;/summary&gt;
+    public PedidosController(PedidoService svc, PedidosDbContext db)
+    {
+        _svc = svc;
+        _db = db;
+    }
+
+    /// &lt;summary&gt;
+    /// Extrai o id do usuário do JWT (claim sub).
+    /// &lt;/summary&gt;
+    private string Usuario =&gt; User.Identity!.Name!;
+
+    /// &lt;summary&gt;
+    /// POST /api/pedidos
+    /// Cria pedido. Qualquer usuário autenticado pode criar.
+    /// &lt;/summary&gt;
+    [HttpPost]
+    public async Task&lt;ActionResult&lt;Pedido&gt;&gt; Criar(
+        [FromBody] PedidoRequest req)
+    {
+        // Cria pedido via caso de uso
+        var pedido = await _svc.CriarAsync(req, Usuario);
+
+        // Retorna 201 com o pedido criado
+        return Created("/api/pedidos", pedido);
+    }
+
+    /// &lt;summary&gt;
+    /// GET /api/pedidos
+    /// Lista os pedidos do próprio usuário.
+    /// &lt;/summary&gt;
+    [HttpGet]
+    public async Task&lt;ActionResult&gt; Meus()
+    {
+        // Busca pedidos do usuário autenticado
+        return Ok(await _db.Pedidos
+            .AsNoTracking()
+            .Include(p =&gt; p.Itens)
+            .Where(p =&gt; p.Usuario == Usuario)
+            .ToListAsync());
+    }
+
+    /// &lt;summary&gt;
+    /// POST /api/pedidos/{id}/cancelar
+    /// Cancela pedido. Qualquer usuário autenticado pode cancelar
+    /// (mas só se o pedido for dele — validado no service).
+    /// &lt;/summary&gt;
+    [HttpPost("{id:int}/cancelar")]
+    public async Task&lt;ActionResult&gt; Cancelar(int id)
+    {
+        // Cancela pedido via caso de uso
+        await _svc.CancelarAsync(id, Usuario);
+
+        // Retorna 204 No Content
+        return NoContent();
+    }
+}</pre>
+</div>
+
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Pedidos/ModuleExtensions.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Pedidos/ModuleExtensions.cs">using LojaApi.Modules.Pedidos.Data;
+using LojaApi.Modules.Pedidos.Integration;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace LojaApi.Modules.Pedidos;
+
+/// &lt;summary&gt;
+/// Extensão para registrar o módulo Pedidos no host.
+/// Sem alterações em relação à Tab 9 anterior.
+/// &lt;/summary&gt;
+public static class ModuleExtensions
+{
+    /// &lt;summary&gt;
+    /// Registra PedidosDbContext, clients HTTP e PedidoService.
+    /// &lt;/summary&gt;
+    public static IServiceCollection AddPedidosModule(
+        this IServiceCollection services,
+        string connectionString,
+        Uri catalogoBaseAddress,
+        Uri clientesBaseAddress)
+    {
+        // Registra o DbContext dos Pedidos usando MySQL
+        services.AddDbContext&lt;PedidosDbContext&gt;(options =&gt;
+            options.UseMySql(
+                connectionString,
+                ServerVersion.AutoDetect(connectionString)));
+
+        // Registra client HTTP para o Catálogo
+        services.AddHttpClient&lt;ICatalogoClient, CatalogoClient&gt;(
+            options =&gt; options.BaseAddress = catalogoBaseAddress);
+
+        // Registra client HTTP para os Clientes
+        services.AddHttpClient&lt;IClientesClient, ClientesClient&gt;(
+            options =&gt; options.BaseAddress = clientesBaseAddress);
+
+        // Registra o caso de uso de checkout
+        services.AddScoped&lt;PedidoService&gt;();
+
+        // Retorna services para permitir encadeamento
+        return services;
+    }
+}</pre>
+</div>
+
+<!-- ══════════ MÓDULO CLIENTES ══════════ -->
+<h4 style="color:var(--accent);margin:16px 0 8px">🧾 Módulo Clientes</h4>
+
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Clientes/Domain/Endereco.cs + Cliente.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Clientes/Domain/Endereco.cs">using LojaApi.Shared.Kernel;
+using System.Text.RegularExpressions;
+
+namespace LojaApi.Modules.Clientes.Domain;
+
+/// &lt;summary&gt;
+/// Value Object de endereço (CEP validado no construtor).
+/// Sem alterações em relação à Tab 9 anterior.
+/// &lt;/summary&gt;
+public class Endereco
+{
+    public int Id { get; private set; }
+    public string Logradouro { get; private set; } = string.Empty;
+    public string Cidade { get; private set; } = string.Empty;
+    public string Uf { get; private set; } = string.Empty;
+    public string Cep { get; private set; } = string.Empty;
+
+    /// &lt;summary&gt;Construtor protegido para o EF Core.&lt;/summary&gt;
+    protected Endereco() { }
+
+    /// &lt;summary&gt;Construtor com validação de CEP.&lt;/summary&gt;
+    public Endereco(
+        int id,
+        string logradouro,
+        string cidade,
+        string uf,
+        string cep)
+    {
+        // Valida formato do CEP
+        if (!Regex.IsMatch(cep ?? "", @"^[0-9]{5}-?[0-9]{3}$"))
+            throw new DomainException($"CEP inválido: {cep}");
+
+        // Atribui valores normalizando UF para maiúsculas
+        Id = id;
+        Logradouro = logradouro;
+        Cidade = cidade;
+        Uf = uf.ToUpper();
+        Cep = cep;
+    }
+}
+
+/// &lt;summary&gt;
+/// Aggregate Root de Cliente.
+/// Sem alterações em relação à Tab 9 anterior.
+/// &lt;/summary&gt;
+public class Cliente
+{
+    public int Id { get; private set; }
+    public string Nome { get; private set; } = string.Empty;
+    public string Email { get; private set; } = string.Empty;
+
+    /// &lt;summary&gt;Endereços do cliente.&lt;/summary&gt;
+    public List&lt;Endereco&gt; Enderecos { get; private set; } = new();
+
+    /// &lt;summary&gt;Flag de ativação (LGPD: desativação lógica).&lt;/summary&gt;
+    public bool Ativo { get; private set; } = true;
+
+    /// &lt;summary&gt;Construtor protegido para o EF Core.&lt;/summary&gt;
+    protected Cliente() { }
+
+    /// &lt;summary&gt;Construtor principal.&lt;/summary&gt;
+    public Cliente(int id, string nome, string email)
+    {
+        Id = id;
+        Nome = nome;
+        Email = email;
+    }
+
+    /// &lt;summary&gt;Atualização validada (PUT do contrato).&lt;/summary&gt;
+    public void Atualizar(string nome, string email)
+    {
+        // Valida nome
+        if (string.IsNullOrWhiteSpace(nome))
+            throw new DomainException("Nome é obrigatório");
+
+        // Valida email
+        if (string.IsNullOrWhiteSpace(email) || !email.Contains('@'))
+            throw new DomainException("E-mail inválido");
+
+        // Aplica atualização
+        Nome = nome.Trim();
+        Email = email.Trim();
+    }
+
+    /// &lt;summary&gt;
+    /// LGPD: desativação lógica (soft) em vez de DELETE físico.
+    /// &lt;/summary&gt;
+    public void Desativar()
+    {
+        // Valida que o cliente ainda está ativo
+        if (!Ativo)
+            throw new DomainException(
+                "Cliente já desativado",
+                ProblemTypes.StatusInvalido);
+
+        // Marca como inativo
+        Ativo = false;
+    }
+}</pre>
+</div>
+
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Clientes/Data/ClientesDbContext.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Clientes/Data/ClientesDbContext.cs">using LojaApi.Modules.Clientes.Domain;
+using Microsoft.EntityFrameworkCore;
+
+namespace LojaApi.Modules.Clientes.Data;
+
+/// &lt;summary&gt;
+/// DbContext do contexto Clientes.
+/// Usa o database clientes_db, criado pelo init-sql.
+/// &lt;/summary&gt;
+public class ClientesDbContext : DbContext
+{
+    /// &lt;summary&gt;Construtor padrão EF Core.&lt;/summary&gt;
+    public ClientesDbContext(DbContextOptions&lt;ClientesDbContext&gt; options)
+        : base(options) { }
+
+    /// &lt;summary&gt;Tabela de clientes.&lt;/summary&gt;
+    public DbSet&lt;Cliente&gt; Clientes =&gt; Set&lt;Cliente&gt;();
+
+    /// &lt;summary&gt;Tabela de endereços.&lt;/summary&gt;
+    public DbSet&lt;Endereco&gt; Enderecos =&gt; Set&lt;Endereco&gt;();
+
+    /// &lt;summary&gt;Mapeamento das entidades.&lt;/summary&gt;
+    protected override void OnModelCreating(ModelBuilder mb)
+    {
+        // Configura Cliente
+        mb.Entity&lt;Cliente&gt;(e =&gt;
+        {
+            e.ToTable("clientes");
+            e.HasKey(c =&gt; c.Id);
+            e.HasMany(c =&gt; c.Enderecos).WithOne();
+        });
+
+        // Configura Endereco
+        mb.Entity&lt;Endereco&gt;(e =&gt;
+        {
+            e.ToTable("enderecos");
+            e.HasKey(x =&gt; x.Id);
+            e.Property(x =&gt; x.Cep)
+                .HasMaxLength(9)
+                .IsRequired();
+        });
+    }
+}</pre>
+</div>
+
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Clientes/ClientesController.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Clientes/ClientesController.cs">using LojaApi.Modules.Clientes.Data;
+using LojaApi.Modules.Clientes.Domain;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace LojaApi.Modules.Clientes;
+
+/// &lt;summary&gt;Request de atualização de cliente.&lt;/summary&gt;
+public record AtualizarClienteRequest(string Nome, string Email);
+
+/// &lt;summary&gt;
+/// Controller do contexto Clientes.
+/// SEM ROLES: qualquer usuário autenticado acessa todos os endpoints.
+/// &lt;/summary&gt;
+[ApiController]
+[Route("api/clientes")]
+public class ClientesController : ControllerBase
+{
+    // DbContext do contexto Clientes
+    private readonly ClientesDbContext _db;
+
+    /// &lt;summary&gt;Injeção de dependência via construtor.&lt;/summary&gt;
+    public ClientesController(ClientesDbContext db)
+    {
+        _db = db;
+    }
+
+    // ══════════ ESCRITA AUTENTICADA (SEM ROLES) ══════════
+
+    /// &lt;summary&gt;
+    /// POST /api/clientes
+    /// Cria cliente. Qualquer usuário autenticado pode criar.
+    /// &lt;/summary&gt;
+    [HttpPost]
+    [Authorize]  // SEM ROLES — qualquer autenticado
+    public async Task&lt;ActionResult&gt; Criar([FromBody] Cliente c)
+    {
+        // Adiciona cliente ao contexto
+        _db.Clientes.Add(c);
+
+        // Persiste no banco
+        await _db.SaveChangesAsync();
+
+        // Retorna 201 com localização do recurso criado
+        return Created($"/api/clientes/{c.Id}", c);
+    }
+
+    /// &lt;summary&gt;
+    /// GET /api/clientes/{id}
+    /// Busca cliente por id. Qualquer usuário autenticado pode buscar.
+    /// &lt;/summary&gt;
+    [HttpGet("{id:int}")]
+    [Authorize]  // SEM ROLES — qualquer autenticado
+    public async Task&lt;ActionResult&gt; Obter(int id)
+    {
+        // Busca cliente sem rastreamento
+        var c = await _db.Clientes
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x =&gt; x.Id == id);
+
+        // Se não encontrou, retorna 404
+        if (c is null)
+            return NotFound(new ProblemDetails
+            {
+                Type = "https://example.com/erros/nao-encontrado",
+                Title = "Cliente inexistente",
+                Status = 404
+            });
+
+        // Retorna cliente
+        return Ok(c);
+    }
+
+    /// &lt;summary&gt;
+    /// PUT /api/clientes/{id}
+    /// Atualiza cliente. Qualquer usuário autenticado pode atualizar.
+    /// &lt;/summary&gt;
+    [HttpPut("{id:int}")]
+    [Authorize]  // SEM ROLES — qualquer autenticado
+    public async Task&lt;ActionResult&gt; Atualizar(
+        int id,
+        [FromBody] AtualizarClienteRequest req)
+    {
+        // Busca cliente
+        var c = await _db.Clientes.FindAsync(id);
+
+        // Se não encontrou, retorna 404
+        if (c is null)
+            return NotFound(new ProblemDetails
+            {
+                Type = "https://example.com/erros/nao-encontrado",
+                Title = "Cliente inexistente",
+                Status = 404
+            });
+
+        // Aplica atualização com validação
+        c.Atualizar(req.Nome, req.Email);
+
+        // Persiste no banco
+        await _db.SaveChangesAsync();
+
+        // Retorna cliente atualizado
+        return Ok(c);
+    }
+
+    /// &lt;summary&gt;
+    /// POST /api/clientes/{id}/desativar
+    /// Desativa cliente (LGPD). Qualquer usuário autenticado pode desativar.
+    /// &lt;/summary&gt;
+    [HttpPost("{id:int}/desativar")]
+    [Authorize]  // SEM ROLES — qualquer autenticado
+    public async Task&lt;ActionResult&gt; Desativar(int id)
+    {
+        // Busca cliente
+        var c = await _db.Clientes.FindAsync(id);
+
+        // Se não encontrou, retorna 404
+        if (c is null)
+            return NotFound(new ProblemDetails
+            {
+                Type = "https://example.com/erros/nao-encontrado",
+                Title = "Cliente inexistente",
+                Status = 404
+            });
+
+        // Desativa cliente
+        // Se já desativado, DomainException 409
+        c.Desativar();
+
+        // Persiste no banco
+        await _db.SaveChangesAsync();
+
+        // Retorna cliente desativado
+        return Ok(c);
+    }
+
+    // ══════════ ENDPOINT INTERNO (SEM ROLE DE SERVIÇO) ══════════
+
+    /// &lt;summary&gt;
+    /// GET /api/clientes/{id}/enderecos
+    /// Endereços do cliente. Qualquer usuário autenticado pode acessar.
+    /// Na Tab 9 anterior, exigia roles PEDIDOS_SERVICE/CLIENTES_ADMIN/ADMIN.
+    /// &lt;/summary&gt;
+    [HttpGet("{id:int}/enderecos")]
+    [Authorize]  // SEM ROLES — qualquer autenticado
+    public async Task&lt;ActionResult&gt; Enderecos(int id)
+    {
+        // Retorna endereços do cliente
+        return Ok(await _db.Enderecos
+            .AsNoTracking()
+            .Where(e =&gt; e.ClienteId == id)
+            .ToListAsync());
+    }
+}</pre>
+</div>
+
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Clientes/ModuleExtensions.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Clientes/ModuleExtensions.cs">using LojaApi.Modules.Clientes.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace LojaApi.Modules.Clientes;
+
+/// &lt;summary&gt;
+/// Extensão para registrar o módulo Clientes no host.
+/// Sem alterações em relação à Tab 9 anterior.
+/// &lt;/summary&gt;
+public static class ModuleExtensions
+{
+    /// &lt;summary&gt;
+    /// Registra o ClientesDbContext com a connection string fornecida.
+    /// &lt;/summary&gt;
+    public static IServiceCollection AddClientesModule(
+        this IServiceCollection services,
+        string connectionString)
+    {
+        // Registra o DbContext dos Clientes usando MySQL
+        services.AddDbContext&lt;ClientesDbContext&gt;(options =&gt;
+            options.UseMySql(
+                connectionString,
+                ServerVersion.AutoDetect(connectionString)));
+
+        // Retorna services para permitir encadeamento
+        return services;
+    }
+}</pre>
+</div>
+
+<div class="success-banner">
+<strong>✅ Resultado desta parte:</strong> módulos Catálogo, Pedidos e Clientes completos com <code>[Authorize]</code> sem roles. Qualquer usuário autenticado acessa todos os endpoints.
+</div>
+
+<div class="warning-banner">
+<strong>⚠️ Próximo passo obrigatório:</strong> na Parte 4/6 vamos montar o <code>Program.cs</code> do host com JWT Bearer, DI dos 4 módulos, e o <code>init-sql</code> com 4 databases + tabela <code>usuarios</code> + seed admin.
+</div>
+</div>
+<!-- ===== FIM DA PARTE 3/6 — cole a Parte 4 (Program.cs + appsettings + init-sql) logo após este comentário ===== -->  
+<!-- ===== PARTE 4/6: HOST + CONFIG + BANCO ===== -->
+<div class="lab-container">
+<div class="lab-header">
+<h3>🎯 Host (LojaApi.Api) — Program.cs + JWT Bearer sem roles</h3>
+<div class="lab-actions"><span class="ide-tag cs">VS Code</span></div>
+</div>
+
+<div class="info-banner">
+<strong>💡 O que o Program.cs faz:</strong> registra os 4 módulos via <code>ModuleExtensions</code>, configura JWT Bearer <strong>sem roles</strong> (apenas autenticação), adiciona o <code>ExceptionMiddleware</code> (RFC 7807) e mapeia os controllers.
+</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🎯 Program.cs — composição raiz</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Api/Program.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Api/Program.cs">using LojaApi.Api.Middleware;
+using LojaApi.Modules.Auth;
+using LojaApi.Modules.Catalogo;
+using LojaApi.Modules.Clientes;
+using LojaApi.Modules.Pedidos;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+
+// ──────────────────────────────────────────────────────────────
+// PASSO 1: Criar o builder da aplicação web
+// ──────────────────────────────────────────────────────────────
+var builder = WebApplication.CreateBuilder(args);
+
+// ──────────────────────────────────────────────────────────────
+// PASSO 2: Registrar serviços básicos
+// ──────────────────────────────────────────────────────────────
+// Controllers dos 4 módulos
+builder.Services.AddControllers();
+
+// Swagger para documentação
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// ──────────────────────────────────────────────────────────────
+// PASSO 3: Ler configurações do appsettings.json
+// ──────────────────────────────────────────────────────────────
+// Connection strings (1 por contexto)
+var authCs = builder.Configuration.GetConnectionString("Auth");
+var catalogoCs = builder.Configuration.GetConnectionString("Catalogo");
+var pedidosCs = builder.Configuration.GetConnectionString("Pedidos");
+var clientesCs = builder.Configuration.GetConnectionString("Clientes");
+
+// JWT
+var jwtSecret = builder.Configuration["Jwt:Secret"];
+var jwtExpiration = int.Parse(builder.Configuration["Jwt:ExpirationMinutes"] ?? "60");
+
+// Endereços base para chamadas internas (Pedidos → Catálogo/Clientes)
+var catalogoBase = new Uri(builder.Configuration["Services:Catalogo"] ?? "http://localhost:5000");
+var clientesBase = new Uri(builder.Configuration["Services:Clientes"] ?? "http://localhost:5000");
+
+// ──────────────────────────────────────────────────────────────
+// PASSO 4: Registrar os 4 módulos (cada um registra suas deps)
+// ──────────────────────────────────────────────────────────────
+// 🔑 Auth: login, JWT, usuarios
+builder.Services.AddAuthModule(authCs, jwtSecret, jwtExpiration);
+
+// 📦 Catálogo: produtos, reserva de estoque
+builder.Services.AddCatalogoModule(catalogoCs);
+
+// 🛒 Pedidos: checkout, orquestração, clients HTTP
+builder.Services.AddPedidosModule(pedidosCs, catalogoBase, clientesBase);
+
+// 🧾 Clientes: cadastro, endereços
+builder.Services.AddClientesModule(clientesCs);
+
+// ──────────────────────────────────────────────────────────────
+// PASSO 5: Configurar JWT Bearer SEM ROLES
+// ──────────────────────────────────────────────────────────────
+// Qualquer token válido é aceito. Sem verificação de roles.
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =&gt;
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            // Não valida issuer nem audience (didático)
+            ValidateIssuer = false,
+            ValidateAudience = false,
+
+            // Valida expiração e assinatura
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+
+            // Chave simétrica (mesma usada para gerar o token)
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwtSecret)),
+
+            // Tolerância de 1 minuto para expiração
+            ClockSkew = TimeSpan.FromMinutes(1),
+
+            // Mapeia o claim "name" para User.Identity.Name
+            // Assim, User.Identity.Name retorna o nome do usuário
+            NameClaimType = "name"
+        };
+    });
+
+// Habilita autorização (mas sem policies de role)
+builder.Services.AddAuthorization();
+
+// ──────────────────────────────────────────────────────────────
+// PASSO 6: Construir o pipeline de middleware
+// ──────────────────────────────────────────────────────────────
+var app = builder.Build();
+
+// ExceptionMiddleware: DomainException → RFC 7807 (problem+json)
+app.UseMiddleware&lt;ExceptionMiddleware&gt;();
+
+// Swagger (documentação)
+app.UseSwagger();
+app.UseSwaggerUI();
+
+// Autenticação ANTES de autorização (ordem importa!)
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Mapeia os controllers dos 4 módulos
+app.MapControllers();
+
+// ──────────────────────────────────────────────────────────────
+// PASSO 7: Iniciar a aplicação
+// ──────────────────────────────────────────────────────────────
+app.Run();</pre>
+</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">⚙️ appsettings.json — connection strings + JWT</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Api/appsettings.json</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Api/appsettings.json">{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+
+  "ConnectionStrings": {
+    "Auth": "Server=localhost;Port=3306;Database=auth_db;User=devuser;Password=devpass;",
+    "Catalogo": "Server=localhost;Port=3306;Database=catalogo_db;User=devuser;Password=devpass;",
+    "Pedidos": "Server=localhost;Port=3306;Database=pedidos_db;User=devuser;Password=devpass;",
+    "Clientes": "Server=localhost;Port=3306;Database=clientes_db;User=devuser;Password=devpass;"
+  },
+
+  "Services": {
+    "Catalogo": "http://localhost:5000",
+    "Clientes": "http://localhost:5000"
+  },
+
+  "Jwt": {
+    "Secret": "MinhaChaveSecretaSuperSeguraLojaAPI2026DeveTerMin32Caracteres",
+    "ExpirationMinutes": 60
+  }
+}</pre>
+</div>
+
+<div class="warning-banner">
+<strong>⚠️ Atenção:</strong> O <code>Services:Catalogo</code> e <code>Services:Clientes</code> apontam para o próprio host (monolito modular). O módulo Pedidos chama Catálogo e Clientes via HTTP "loopback". Ajuste a porta conforme o <code>dotnet run</code> imprimir (ex.: 5000, 5078, etc.).
+</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🚨 ExceptionMiddleware — RFC 7807</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Api/Middleware/ExceptionMiddleware.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Api/Middleware/ExceptionMiddleware.cs">using LojaApi.Shared.Kernel;
+using System.Text.Json;
+
+namespace LojaApi.Api.Middleware;
+
+/// &lt;summary&gt;
+/// Middleware centralizado de tratamento de exceções.
+/// Converte DomainException em RFC 7807 (application/problem+json).
+/// Sem roles: qualquer erro de domínio vira 400 ou 409.
+/// &lt;/summary&gt;
+public class ExceptionMiddleware
+{
+    // Próximo middleware no pipeline
+    private readonly RequestDelegate _next;
+
+    /// &lt;summary&gt;Construtor padrão do middleware.&lt;/summary&gt;
+    public ExceptionMiddleware(RequestDelegate next)
+    {
+        _next = next;
+    }
+
+    /// &lt;summary&gt;
+    /// Intercepta toda request. Se DomainException for lançada,
+    /// converte para RFC 7807.
+    /// &lt;/summary&gt;
+    public async Task Invoke(HttpContext ctx)
+    {
+        try
+        {
+            // Passa para o próximo middleware
+            await _next(ctx);
+        }
+        catch (DomainException ex)
+        {
+            // Determina o status code baseado no type da exceção
+            var statusCode = GetStatusCode(ex.Type);
+
+            // Configura resposta como RFC 7807
+            ctx.Response.StatusCode = statusCode;
+            ctx.Response.ContentType = "application/problem+json";
+
+            // Serializa o ProblemDetails
+            var problem = new
+            {
+                type = ex.Type,
+                title = "Regra de negócio violada",
+                status = statusCode,
+                detail = ex.Message
+            };
+
+            // Escreve a resposta
+            await ctx.Response.WriteAsync(
+                JsonSerializer.Serialize(problem));
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// Determina o status code baseado no type da exceção.
+    /// &lt;/summary&gt;
+    private static int GetStatusCode(string type)
+    {
+        // Estoque insuficiente ou status inválido → 409 Conflict
+        if (type.Contains("estoque-insuficiente") ||
+            type.Contains("status-invalido"))
+            return 409;
+
+        // Dependência indisponível → 503 Service Unavailable
+        if (type.Contains("dependencia-indisponivel"))
+            return 503;
+
+        // Qualquer outro erro de domínio → 400 Bad Request
+        return 400;
+    }
+}</pre>
+</div>
+</div>
+
+<div class="lab-container">
+<div class="lab-header">
+<h3>🐬 init-sql-contextos/01-init.sql — 4 databases + tabelas + seed admin</h3>
+<div class="lab-actions"><span class="ide-tag cs">VS Code</span></div>
+</div>
+
+<div class="info-banner">
+<strong>💡 Estratégia:</strong> o init-sql cria os 4 databases e todas as tabelas (incluindo <code>usuarios</code> com seed admin). O EF Core NÃO usa <code>EnsureCreated</code> — as tabelas já existem. Isso dá controle total sobre o schema e permite seed via SQL.
+</div>
+
+<div class="code-editor-wrap">
+<span class="code-filepath">init-sql-contextos/01-init.sql</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="init-sql-contextos/01-init.sql">-- ══════════════════════════════════════════════════════════════
+-- INIT SQL: 4 databases + tabelas + seed admin
+-- ══════════════════════════════════════════════════════════════
+-- Este script roda UMA vez no primeiro boot do MySQL (volume vazio).
+-- Para re-executar: docker compose down -v &amp;&amp; docker compose up -d
+-- ══════════════════════════════════════════════════════════════
+
+-- ──────────────────────────────────────────────────────────────
+-- 1) CRIAR OS 4 DATABASES (fronteira de dados por contexto)
+-- ──────────────────────────────────────────────────────────────
+CREATE DATABASE IF NOT EXISTS auth_db CHARACTER SET utf8mb4;
+CREATE DATABASE IF NOT EXISTS catalogo_db CHARACTER SET utf8mb4;
+CREATE DATABASE IF NOT EXISTS pedidos_db CHARACTER SET utf8mb4;
+CREATE DATABASE IF NOT EXISTS clientes_db CHARACTER SET utf8mb4;
+
+-- ──────────────────────────────────────────────────────────────
+-- 2) AUTH: tabela usuarios + seed admin
+-- ──────────────────────────────────────────────────────────────
+USE auth_db;
+
+-- Tabela de usuários (senha em texto puro — didático)
+CREATE TABLE IF NOT EXISTS usuarios (
+  -- GUID como chave primária (CHAR(36) no MySQL)
+  id CHAR(36) NOT NULL PRIMARY KEY,
+
+  -- Login único (usado na autenticação)
+  login VARCHAR(100) NOT NULL,
+
+  -- Nome exibido no token e nas respostas
+  nome VARCHAR(200) NOT NULL,
+
+  -- Senha em texto puro (DIDÁTICO — nunca em produção!)
+  senha VARCHAR(255) NOT NULL,
+
+  -- Data de criação do usuário
+  criado_em DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+
+  -- Índice único no login para evitar duplicados
+  UNIQUE INDEX ix_usuarios_login (login)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Seed: usuário admin inicial
+-- Login: admin / Senha: admin123
+INSERT INTO usuarios (id, login, nome, senha, criado_em)
+VALUES (UUID(), 'admin', 'Administrador', 'admin123', UTC_TIMESTAMP());
+
+-- ──────────────────────────────────────────────────────────────
+-- 3) CATÁLOGO: tabela produtos
+-- ──────────────────────────────────────────────────────────────
+USE catalogo_db;
+
+CREATE TABLE IF NOT EXISTS produtos (
+  -- Id auto-incremento
+  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+
+  -- Nome do produto (obrigatório)
+  nome VARCHAR(100) NOT NULL,
+
+  -- Preço com precisão decimal
+  preco DECIMAL(10,2) NOT NULL,
+
+  -- Estoque total
+  estoque INT NOT NULL DEFAULT 0,
+
+  -- Quantidade reservada (reserva em duas fases)
+  reservado INT NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Seed: produtos iniciais para teste
+INSERT INTO produtos (nome, preco, estoque, reservado) VALUES
+('Teclado Mecânico RGB', 349.90, 15, 0),
+('Mouse Gamer 16000 DPI', 189.50, 20, 0),
+('Headset 7.1 Surround', 420.00, 10, 0);
+
+-- ──────────────────────────────────────────────────────────────
+-- 4) PEDIDOS: tabelas pedidos + pedido_itens
+-- ──────────────────────────────────────────────────────────────
+USE pedidos_db;
+
+-- Tabela principal de pedidos
+CREATE TABLE IF NOT EXISTS pedidos (
+  -- Id auto-incremento
+  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+
+  -- Usuário que criou o pedido (vem do JWT name claim)
+  usuario VARCHAR(200) NOT NULL,
+
+  -- Id do cliente (contexto Clientes)
+  cliente_id INT NOT NULL,
+
+  -- Id do endereço de entrega (contexto Clientes)
+  endereco_id INT NOT NULL,
+
+  -- Status do pedido (CRIADO, RESERVADO, CONFIRMADO, ENVIADO, CANCELADO)
+  status VARCHAR(20) NOT NULL DEFAULT 'CRIADO'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Tabela de itens do pedido (owned entity do EF Core)
+CREATE TABLE IF NOT EXISTS pedido_itens (
+  -- FK para o pedido
+  pedido_id INT NOT NULL,
+
+  -- Id do item dentro do pedido (auto-incremento por pedido)
+  id INT NOT NULL AUTO_INCREMENT,
+
+  -- Id do produto (contexto Catálogo)
+  produto_id INT NOT NULL,
+
+  -- Quantidade
+  quantidade INT NOT NULL,
+
+  -- Snapshot do preço no momento do checkout
+  preco_unitario DECIMAL(10,2) NOT NULL,
+
+  -- Chave primária composta
+  PRIMARY KEY (pedido_id, id),
+
+  -- FK para pedidos
+  CONSTRAINT fk_pedido_itens_pedido
+    FOREIGN KEY (pedido_id) REFERENCES pedidos(id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ──────────────────────────────────────────────────────────────
+-- 5) CLIENTES: tabelas clientes + enderecos
+-- ──────────────────────────────────────────────────────────────
+USE clientes_db;
+
+-- Tabela de clientes
+CREATE TABLE IF NOT EXISTS clientes (
+  -- Id auto-incremento
+  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+
+  -- Nome do cliente
+  nome VARCHAR(200) NOT NULL,
+
+  -- E-mail do cliente
+  email VARCHAR(200) NOT NULL,
+
+  -- Flag de ativação (LGPD: desativação lógica)
+  ativo TINYINT(1) NOT NULL DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Tabela de endereços
+CREATE TABLE IF NOT EXISTS enderecos (
+  -- Id auto-incremento
+  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+
+  -- Logradouro
+  logradouro VARCHAR(200) NOT NULL,
+
+  -- Cidade
+  cidade VARCHAR(100) NOT NULL,
+
+  -- UF (2 caracteres)
+  uf VARCHAR(2) NOT NULL,
+
+  -- CEP (formato 00000-000)
+  cep VARCHAR(9) NOT NULL,
+
+  -- FK para o cliente
+  cliente_id INT NOT NULL,
+
+  -- FK para clientes
+  CONSTRAINT fk_enderecos_cliente
+    FOREIGN KEY (cliente_id) REFERENCES clientes(id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Seed: cliente inicial com endereço
+INSERT INTO clientes (nome, email, ativo) VALUES
+('Ana Souza', 'ana@example.com', 1);
+
+INSERT INTO enderecos (logradouro, cidade, uf, cep, cliente_id) VALUES
+('Rua A, 123', 'São Paulo', 'SP', '01001-000', 1);</pre>
+</div>
+
+<div class="warning-banner">
+<strong>⚠️ Para re-executar o init-sql:</strong> <code>docker compose down -v &amp;&amp; docker compose up -d</code> — o <code>-v</code> apaga os volumes, simulando primeiro boot.
+</div>
+
+<div class="success-banner">
+<strong>✅ Resultado desta parte:</strong> host completo com JWT Bearer sem roles, 4 connection strings, ExceptionMiddleware RFC 7807, e init-sql com 4 databases + todas as tabelas + seed admin.
+</div>
+</div>
+<!-- ===== FIM DA PARTE 4/6 — cole a Parte 5 (Testes) logo após este comentário ===== -->  
+<!-- ===== PARTE 5/6: TESTES (21 TESTES AAA) ===== -->
+<div class="lab-container">
+<div class="lab-header">
+<h3>🧪 TDD: 21 testes multi-contexto + Auth (xUnit + Moq)</h3>
+<div class="lab-actions"><span class="ide-tag cs">VS Code</span></div>
+</div>
+
+<div class="info-banner">
+<strong>💡 Paridade:</strong> 5 Auth + 5 Pedidos (compensação) + 6 Catálogo + 5 Clientes = <strong>21 testes</strong> no padrão AAA (Arrange → Act → Assert). Nomes com emojis via <code>[Fact(DisplayName = "emoji nome")]</code>.
+</div>
+
+<div class="table-wrap" style="margin:12px 0">
+<table>
+<thead><tr><th>Contexto</th><th>Qtd</th><th>Arquivo</th><th>O que testa</th></tr></thead>
+<tbody>
+<tr><td>🔐 Auth</td><td>5</td><td><code>AuthServiceTests.cs</code></td><td>Login válido/inválido, token, expiração</td></tr>
+<tr><td>🛒 Pedidos</td><td>5</td><td><code>PedidoServiceTests.cs</code></td><td>Reserva, compensação, cancelamento</td></tr>
+<tr><td>📦 Catálogo</td><td>6</td><td><code>CatalogoProdutoTests.cs</code></td><td>Reserva, liberação, atualização</td></tr>
+<tr><td>🧾 Clientes</td><td>5</td><td><code>ClienteEnderecoTests.cs</code></td><td>CEP, UF, desativação</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4 class="diag-title">📐 D-31 <span class="dt-type">Fluxo</span> — Ciclo TDD Red-Green-Refactor (C# Multi-Contextos)</h4>
+<div class="mermaid-box er-small" data-code='flowchart LR
+    R["🔴 RED: escreve teste que falha"] --> G["🟢 GREEN: código mínimo p/ passar"]
+    G --> RF["🔵 REFACTOR: melhora sem mudar comportamento"]
+    RF --> R'>
+<div class="mermaid"></div>
+</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🔐 Auth — 5 testes</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Tests/AuthServiceTests.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Tests/AuthServiceTests.cs">using LojaApi.Modules.Auth.Domain;
+using LojaApi.Modules.Auth.Interfaces;
+using LojaApi.Modules.Auth.Services;
+using Moq;
+using Xunit;
+
+namespace LojaApi.Tests;
+
+/// &lt;summary&gt;
+/// Testes do caso de uso de autenticação.
+/// Mock de IUsuarioRepository e IJwtService.
+/// &lt;/summary&gt;
+public class AuthServiceTests
+{
+    // ══════════ ARRANGE (compartilhado) ══════════
+    private readonly Mock&lt;IUsuarioRepository&gt; _repoMock = new();
+    private readonly Mock&lt;IJwtService&gt; _jwtMock = new();
+    private readonly AuthService _service;
+
+    public AuthServiceTests()
+    {
+        // Injeta os mocks no serviço
+        _service = new AuthService(_repoMock.Object, _jwtMock.Object);
+    }
+
+    /// &lt;summary&gt;Cria um usuário válido para os testes.&lt;/summary&gt;
+    private Usuario UsuarioValido() =&gt; new(
+        Guid.NewGuid(),
+        "admin",
+        "Administrador",
+        "admin123"  // texto puro (didático)
+    );
+
+    // ══════════ TESTE 1: Login válido retorna token ══════════
+    [Fact(DisplayName = "🔐 Login com credenciais válidas retorna token JWT")]
+    public async Task Login_CredenciaisValidas_RetornaTokenJwt()
+    {
+        // ── ARRANGE ──
+        var usuario = UsuarioValido();
+        _repoMock
+            .Setup(r =&gt; r.BuscarPorLoginAsync("admin"))
+            .ReturnsAsync(usuario);
+        _jwtMock
+            .Setup(j =&gt; j.GerarToken(usuario))
+            .Returns("token-jwt-falso");
+
+        // ── ACT ──
+        var result = await _service.AutenticarAsync("admin", "admin123");
+
+        // ── ASSERT ──
+        Assert.NotNull(result);
+        Assert.Equal("token-jwt-falso", result.Token);
+        Assert.Equal("admin", result.Usuario.Login);
+        _repoMock.Verify(r =&gt; r.BuscarPorLoginAsync("admin"), Times.Once);
+        _jwtMock.Verify(j =&gt; j.GerarToken(usuario), Times.Once);
+    }
+
+    // ══════════ TESTE 2: Senha incorreta retorna null (401) ══════════
+    [Fact(DisplayName = "🔐 Login com senha incorreta retorna null (controller dá 401)")]
+    public async Task Login_SenhaIncorreta_RetornaNull()
+    {
+        // ── ARRANGE ──
+        var usuario = UsuarioValido();
+        _repoMock
+            .Setup(r =&gt; r.BuscarPorLoginAsync("admin"))
+            .ReturnsAsync(usuario);
+
+        // ── ACT ──
+        var result = await _service.AutenticarAsync("admin", "senha_errada");
+
+        // ── ASSERT ──
+        Assert.Null(result);
+        // JWT nunca deve ser chamado se a senha está errada
+        _jwtMock.Verify(j =&gt; j.GerarToken(It.IsAny&lt;Usuario&gt;()), Times.Never);
+    }
+
+    // ══════════ TESTE 3: Usuário inexistente retorna null (401) ══════════
+    [Fact(DisplayName = "🔐 Login com usuário inexistente retorna null (controller dá 401)")]
+    public async Task Login_UsuarioInexistente_RetornaNull()
+    {
+        // ── ARRANGE ──
+        _repoMock
+            .Setup(r =&gt; r.BuscarPorLoginAsync("nao_existe"))
+            .ReturnsAsync((Usuario?)null);
+
+        // ── ACT ──
+        var result = await _service.AutenticarAsync("nao_existe", "qualquer");
+
+        // ── ASSERT ──
+        Assert.Null(result);
+        _jwtMock.Verify(j =&gt; j.GerarToken(It.IsAny&lt;Usuario&gt;()), Times.Never);
+    }
+
+    // ══════════ TESTE 4: Token gerado contém sub + name + exp ══════════
+    [Fact(DisplayName = "🔐 Token gerado pelo JwtService contém sub, name e exp")]
+    public void Token_Gerado_ContemSubNomeExp()
+    {
+        // ── ARRANGE ──
+        // Usa o JwtService REAL (não mock) para validar o formato do token
+        var secret = "MinhaChaveSecretaSuperSeguraLojaAPI2026DeveTerMin32Caracteres";
+        var jwtService = new JwtService(secret, 60);
+        var usuario = UsuarioValido();
+
+        // ── ACT ──
+        var token = jwtService.GerarToken(usuario);
+
+        // ── ASSERT ──
+        Assert.NotNull(token);
+        Assert.NotEmpty(token);
+        // JWT tem 3 partes separadas por ponto: header.payload.signature
+        Assert.Equal(3, token.Split('.').Length);
+    }
+
+    // ══════════ TESTE 5: Login com campos vazios retorna null ══════════
+    [Fact(DisplayName = "🔐 Login com campos vazios retorna null (controller dá 400)")]
+    public async Task Login_CamposVazios_RetornaNull()
+    {
+        // ── ARRANGE ── (nenhum setup necessário)
+
+        // ── ACT ──
+        var result = await _service.AutenticarAsync("", "");
+
+        // ── ASSERT ──
+        Assert.Null(result);
+        // Repositório nunca deve ser chamado com campos vazios
+        _repoMock.Verify(
+            r =&gt; r.BuscarPorLoginAsync(It.IsAny&lt;string&gt;()),
+            Times.Never);
+    }
+}</pre>
+</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🛒 Pedidos — 5 testes (orquestração + compensação)</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Tests/PedidoServiceTests.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Tests/PedidoServiceTests.cs">using LojaApi.Modules.Pedidos;
+using LojaApi.Modules.Pedidos.Data;
+using LojaApi.Modules.Pedidos.Domain;
+using LojaApi.Modules.Pedidos.Integration;
+using LojaApi.Shared.Kernel;
+using Microsoft.EntityFrameworkCore;
+using Moq;
+using Xunit;
+
+namespace LojaApi.Tests;
+
+/// &lt;summary&gt;
+/// Testes do caso de uso de checkout.
+/// Mock de ICatalogoClient e IClientesClient.
+/// DbContext InMemory para persistência sem MySQL real.
+/// &lt;/summary&gt;
+public class PedidoServiceTests
+{
+    // ══════════ ARRANGE (compartilhado) ══════════
+    private readonly Mock&lt;ICatalogoClient&gt; _catMock = new();
+    private readonly Mock&lt;IClientesClient&gt; _cliMock = new();
+    private readonly PedidosDbContext _db;
+    private readonly PedidoService _svc;
+
+    public PedidoServiceTests()
+    {
+        // DbContext InMemory: simula MySQL sem precisar de container
+        var options = new DbContextOptionsBuilder&lt;PedidosDbContext&gt;()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        _db = new PedidosDbContext(options);
+
+        // Injeta mocks + DbContext real (InMemory)
+        _svc = new PedidoService(_catMock.Object, _cliMock.Object, _db);
+    }
+
+    /// &lt;summary&gt;Request de pedido válido para os testes.&lt;/summary&gt;
+    private PedidoRequest PedidoValido() =&gt; new(
+        ClienteId: 7,
+        EnderecoId: 3,
+        Itens: new List&lt;ItemRequest&gt; { new(101, 2) }
+    );
+
+    // ══════════ TESTE 1: Reserva todos os itens e marca RESERVADO ══════════
+    [Fact(DisplayName = "🛒 Criar pedido reserva todos os itens e marca RESERVADO")]
+    public async Task Criar_ReservaTodosItens_MarcaReservado()
+    {
+        // ── ARRANGE ──
+        _catMock
+            .Setup(c =&gt; c.ReservarAsync(101, It.IsAny&lt;ReservarDto&gt;(), default))
+            .ReturnsAsync(new ReservaDto("RES-001", "RESERVADO", 349.90m));
+        _cliMock
+            .Setup(c =&gt; c.ObterEnderecosAsync(7, default))
+            .ReturnsAsync(new List&lt;EnderecoDto&gt;
+            {
+                new(3, "Rua A, 123", "São Paulo", "SP", "01001-000")
+            });
+
+        // ── ACT ──
+        var pedido = await _svc.CriarAsync(PedidoValido(), "admin");
+
+        // ── ASSERT ──
+        Assert.Equal(PedidoStatus.RESERVADO, pedido.Status);
+        Assert.Equal(699.80m, pedido.Total);  // 2 × 349.90
+        Assert.Single(pedido.Itens);
+        _catMock.Verify(
+            c =&gt; c.ReservarAsync(101, It.IsAny&lt;ReservarDto&gt;(), default),
+            Times.Once);
+    }
+
+    // ══════════ TESTE 2: Estoque insuficiente compensa reservas ══════════
+    [Fact(DisplayName = "🛒 Criar com estoque insuficiente compensa reservas já feitas")]
+    public async Task Criar_EstoqueInsuficiente_Compensa()
+    {
+        // ── ARRANGE ──
+        // Primeiro item: reserva OK
+        _catMock
+            .SetupSequence(c =&gt; c.ReservarAsync(
+                It.IsAny&lt;int&gt;(), It.IsAny&lt;ReservarDto&gt;(), default))
+            .ReturnsAsync(new ReservaDto("RES-001", "RESERVADO", 10m))
+            // Segundo item: falha com estoque insuficiente
+            .ThrowsAsync(new DomainException(
+                "Estoque insuficiente",
+                ProblemTypes.EstoqueInsuficiente));
+
+        var req = new PedidoRequest(7, 3, new List&lt;ItemRequest&gt;
+        {
+            new(101, 1),  // OK
+            new(102, 999) // Falha
+        });
+
+        // ── ACT + ASSERT ──
+        var ex = await Assert.ThrowsAsync&lt;DomainException&gt;(
+            () =&gt; _svc.CriarAsync(req, "admin"));
+        Assert.Equal(ProblemTypes.EstoqueInsuficiente, ex.Type);
+
+        // Compensação: o primeiro item deve ser liberado
+        _catMock.Verify(
+            c =&gt; c.LiberarAsync(101, It.IsAny&lt;ReservarDto&gt;(), default),
+            Times.Once);
+    }
+
+    // ══════════ TESTE 3: Endereço inválido compensa reservas ══════════
+    [Fact(DisplayName = "🛒 Criar com endereço inválido compensa reservas")]
+    public async Task Criar_EnderecoInvalido_Compensa()
+    {
+        // ── ARRANGE ──
+        _catMock
+            .Setup(c =&gt; c.ReservarAsync(
+                It.IsAny&lt;int&gt;(), It.IsAny&lt;ReservarDto&gt;(), default))
+            .ReturnsAsync(new ReservaDto("RES-001", "RESERVADO", 10m));
+        // Retorna endereços que NÃO incluem o enderecoId=3
+        _cliMock
+            .Setup(c =&gt; c.ObterEnderecosAsync(7, default))
+            .ReturnsAsync(new List&lt;EnderecoDto&gt;
+            {
+                new(99, "Rua B", "São Paulo", "SP", "02002-000")
+            });
+
+        // ── ACT + ASSERT ──
+        await Assert.ThrowsAsync&lt;DomainException&gt;(
+            () =&gt; _svc.CriarAsync(PedidoValido(), "admin"));
+
+        // Compensação: reserva deve ser liberada
+        _catMock.Verify(
+            c =&gt; c.LiberarAsync(101, It.IsAny&lt;ReservarDto&gt;(), default),
+            Times.Once);
+    }
+
+    // ══════════ TESTE 4: Cancelar pedido próprio libera reservas ══════════
+    [Fact(DisplayName = "🛒 Cancelar pedido próprio libera reservas e marca CANCELADO")]
+    public async Task Cancelar_PedidoProprio_LiberaReservas()
+    {
+        // ── ARRANGE ──
+        var pedido = Pedido.Criar("admin", 7, 3,
+            new List&lt;ItemPedido&gt; { new(101, 2, 349.90m) });
+        pedido.MarcarReservado(new[] { "RES-001" });
+        _db.Pedidos.Add(pedido);
+        await _db.SaveChangesAsync();
+
+        // ── ACT ──
+        await _svc.CancelarAsync(pedido.Id, "admin");
+
+        // ── ASSERT ──
+        Assert.Equal(PedidoStatus.CANCELADO, pedido.Status);
+        _catMock.Verify(
+            c =&gt; c.LiberarAsync(101, It.IsAny&lt;ReservarDto&gt;(), default),
+            Times.Once);
+    }
+
+    // ══════════ TESTE 5: Cancelar pedido de outro usuário lança erro ══════════
+    [Fact(DisplayName = "🛒 Cancelar pedido de outro usuário lança DomainException")]
+    public async Task Cancelar_OutroUsuario_LancaErro()
+    {
+        // ── ARRANGE ──
+        var pedido = Pedido.Criar("admin", 7, 3,
+            new List&lt;ItemPedido&gt; { new(101, 2, 349.90m) });
+        pedido.MarcarReservado(new[] { "RES-001" });
+        _db.Pedidos.Add(pedido);
+        await _db.SaveChangesAsync();
+
+        // ── ACT + ASSERT ──
+        var ex = await Assert.ThrowsAsync&lt;DomainException&gt;(
+            () =&gt; _svc.CancelarAsync(pedido.Id, "intruso"));
+        Assert.Contains("outro usuário", ex.Message);
+    }
+}</pre>
+</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">📦 Catálogo — 6 testes (domínio direto)</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Tests/CatalogoProdutoTests.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Tests/CatalogoProdutoTests.cs">using LojaApi.Modules.Catalogo.Domain;
+using LojaApi.Shared.Kernel;
+using Xunit;
+
+namespace LojaApi.Tests;
+
+/// &lt;summary&gt;
+/// Testes de domínio do Produto (Catálogo).
+/// Sem mocks — testa a entidade diretamente.
+/// &lt;/summary&gt;
+public class CatalogoProdutoTests
+{
+    // ══════════ TESTE 1: Reservar acima do disponível lança 409 ══════════
+    [Fact(DisplayName = "📦 Reservar acima do disponível lança DomainException 409")]
+    public void Reservar_AcimaDoDisponivel_Lanca409()
+    {
+        // ── ARRANGE ──
+        var produto = new Produto(101, "Teclado", 349.90m, estoque: 5);
+
+        // ── ACT + ASSERT ──
+        var ex = Assert.Throws&lt;DomainException&gt;(
+            () =&gt; produto.Reservar(6));  // 6 &gt; 5 disponível
+        Assert.Equal(ProblemTypes.EstoqueInsuficiente, ex.Type);
+    }
+
+    // ══════════ TESTE 2: Reservar OK reduz disponível ══════════
+    [Fact(DisplayName = "📦 Reservar quantidade válida reduz o disponível")]
+    public void Reservar_Ok_ReduzDisponivel()
+    {
+        // ── ARRANGE ──
+        var produto = new Produto(101, "Teclado", 349.90m, estoque: 5);
+
+        // ── ACT ──
+        produto.Reservar(3);
+
+        // ── ASSERT ──
+        Assert.Equal(2, produto.Disponivel);  // 5 - 3
+        Assert.Equal(3, produto.Reservado);
+        Assert.Equal(5, produto.Estoque);     // estoque total não muda
+    }
+
+    // ══════════ TESTE 3: Liberar restaura disponível ══════════
+    [Fact(DisplayName = "📦 Liberar reserva restaura o disponível")]
+    public void Liberar_RestauraDisponivel()
+    {
+        // ── ARRANGE ──
+        var produto = new Produto(101, "Teclado", 349.90m, estoque: 5);
+        produto.Reservar(3);
+
+        // ── ACT ──
+        produto.Liberar(3);
+
+        // ── ASSERT ──
+        Assert.Equal(5, produto.Disponivel);  // voltou ao original
+        Assert.Equal(0, produto.Reservado);
+    }
+
+    // ══════════ TESTE 4: Confirmar reserva reduz estoque ══════════
+    [Fact(DisplayName = "📦 Confirmar reserva reduz estoque e libera reservado")]
+    public void ConfirmarReserva_ReduzEstoque()
+    {
+        // ── ARRANGE ──
+        var produto = new Produto(101, "Teclado", 349.90m, estoque: 5);
+        produto.Reservar(2);
+
+        // ── ACT ──
+        produto.ConfirmarReserva(2);
+
+        // ── ASSERT ──
+        Assert.Equal(3, produto.Estoque);     // 5 - 2
+        Assert.Equal(0, produto.Reservado);   // liberado
+        Assert.Equal(3, produto.Disponivel);  // 3 - 0
+    }
+
+    // ══════════ TESTE 5: Atualizar válido altera campos ══════════
+    [Fact(DisplayName = "📦 Atualizar com dados válidos altera nome, preço e estoque")]
+    public void Atualizar_Valido_AlteraCampos()
+    {
+        // ── ARRANGE ──
+        var produto = new Produto(101, "Teclado", 349.90m, estoque: 5);
+
+        // ── ACT ──
+        produto.Atualizar("Teclado V2", 399.90m, 10);
+
+        // ── ASSERT ──
+        Assert.Equal("Teclado V2", produto.Nome);
+        Assert.Equal(399.90m, produto.Preco);
+        Assert.Equal(10, produto.Estoque);
+    }
+
+    // ══════════ TESTE 6: Atualizar com preço zero lança erro ══════════
+    [Fact(DisplayName = "📦 Atualizar com preço zero lança DomainException")]
+    public void Atualizar_PrecoZero_LancaErro()
+    {
+        // ── ARRANGE ──
+        var produto = new Produto(101, "Teclado", 349.90m, estoque: 5);
+
+        // ── ACT + ASSERT ──
+        var ex = Assert.Throws&lt;DomainException&gt;(
+            () =&gt; produto.Atualizar("Teclado V2", 0m, 10));
+        Assert.Contains("Preço", ex.Message);
+    }
+}</pre>
+</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🧾 Clientes — 5 testes (domínio direto)</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Tests/ClienteEnderecoTests.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Tests/ClienteEnderecoTests.cs">using LojaApi.Modules.Clientes.Domain;
+using LojaApi.Shared.Kernel;
+using Xunit;
+
+namespace LojaApi.Tests;
+
+/// &lt;summary&gt;
+/// Testes de domínio de Cliente e Endereco.
+/// Sem mocks — testa as entidades diretamente.
+/// &lt;/summary&gt;
+public class ClienteEnderecoTests
+{
+    // ══════════ TESTE 1: CEP inválido lança erro ══════════
+    [Fact(DisplayName = "🧾 Endereço com CEP inválido lança DomainException")]
+    public void Endereco_CepInvalido_LancaErro()
+    {
+        // ── ARRANGE ── (CEP "123" não bate com ^[0-9]{5}-?[0-9]{3}$)
+
+        // ── ACT + ASSERT ──
+        var ex = Assert.Throws&lt;DomainException&gt;(
+            () =&gt; new Endereco(1, "Rua A", "São Paulo", "SP", "123"));
+        Assert.Contains("CEP inválido", ex.Message);
+    }
+
+    // ══════════ TESTE 2: CEP válido cria endereço ══════════
+    [Fact(DisplayName = "🧾 Endereço com CEP válido é criado com sucesso")]
+    public void Endereco_CepValido_Cria()
+    {
+        // ── ARRANGE ── (CEP "01001-000" é válido)
+
+        // ── ACT ──
+        var endereco = new Endereco(3, "Rua A, 123", "São Paulo", "SP", "01001-000");
+
+        // ── ASSERT ──
+        Assert.Equal("01001-000", endereco.Cep);
+        Assert.Equal("Rua A, 123", endereco.Logradouro);
+        Assert.Equal(3, endereco.Id);
+    }
+
+    // ══════════ TESTE 3: UF é normalizada para maiúsculas ══════════
+    [Fact(DisplayName = "🧾 Endereço normaliza UF para maiúsculas")]
+    public void Endereco_Uf_NormalizaMaiusculas()
+    {
+        // ── ARRANGE ── (UF "sp" em minúsculas)
+
+        // ── ACT ──
+        var endereco = new Endereco(4, "Rua B", "São Paulo", "sp", "02002-000");
+
+        // ── ASSERT ──
+        Assert.Equal("SP", endereco.Uf);  // normalizado para maiúsculas
+    }
+
+    // ══════════ TESTE 4: Desativar marca cliente como inativo ══════════
+    [Fact(DisplayName = "🧾 Desativar cliente marca Ativo = false")]
+    public void Desativar_MarcaInativo()
+    {
+        // ── ARRANGE ──
+        var cliente = new Cliente(7, "Ana Souza", "ana@example.com");
+        Assert.True(cliente.Ativo);  // começa ativo
+
+        // ── ACT ──
+        cliente.Desativar();
+
+        // ── ASSERT ──
+        Assert.False(cliente.Ativo);
+    }
+
+    // ══════════ TESTE 5: Desativar duas vezes lança 409 ══════════
+    [Fact(DisplayName = "🧾 Desativar cliente já desativado lança DomainException 409")]
+    public void Desativar_DuasVezes_Lanca409()
+    {
+        // ── ARRANGE ──
+        var cliente = new Cliente(7, "Ana Souza", "ana@example.com");
+        cliente.Desativar();  // primeira vez OK
+
+        // ── ACT + ASSERT ──
+        var ex = Assert.Throws&lt;DomainException&gt;(
+            () =&gt; cliente.Desativar());  // segunda vez falha
+        Assert.Equal(ProblemTypes.StatusInvalido, ex.Type);
+        Assert.Contains("já desativado", ex.Message);
+    }
+}</pre>
+</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🖥️ Rodar os 21 testes</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal do VS Code - rodar testes</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor"># ──────────────────────────────────────────────────────────────
+# RODAR TODOS OS 21 TESTES DE UMA VEZ
+# ──────────────────────────────────────────────────────────────
+# Na raiz da solução (onde está o .sln):
+dotnet test
+
+# ──────────────────────────────────────────────────────────────
+# RODAR COM DETALHES (mostra cada teste individualmente)
+# ──────────────────────────────────────────────────────────────
+dotnet test --verbosity normal
+
+# ──────────────────────────────────────────────────────────────
+# RODAR SÓ OS TESTES DE AUTH
+# ──────────────────────────────────────────────────────────────
+dotnet test --filter "FullyQualifiedName~AuthServiceTests"
+
+# ──────────────────────────────────────────────────────────────
+# RODAR SÓ OS TESTES DE PEDIDOS
+# ──────────────────────────────────────────────────────────────
+dotnet test --filter "FullyQualifiedName~PedidoServiceTests"
+
+# ──────────────────────────────────────────────────────────────
+# RODAR SÓ OS TESTES DE CATÁLOGO
+# ──────────────────────────────────────────────────────────────
+dotnet test --filter "FullyQualifiedName~CatalogoProdutoTests"
+
+# ──────────────────────────────────────────────────────────────
+# RODAR SÓ OS TESTES DE CLIENTES
+# ──────────────────────────────────────────────────────────────
+dotnet test --filter "FullyQualifiedName~ClienteEnderecoTests"</pre>
+</div>
+
+<div class="success-banner">
+<strong>✅ Sucesso esperado:</strong> <code>Passed!  - Failed: 0, Passed: 21, Skipped: 0, Total: 21</code>
+</div>
+
+<div class="warning-banner">
+<strong>⚠️ Erros comuns:</strong> esquecer o pacote <code>Microsoft.EntityFrameworkCore.InMemory</code>; método de teste com emoji no nome (use <code>[Fact(DisplayName = "...")]</code>); mock de <code>PedidosDbContext</code> sem opções (use InMemory); esquecer <code>default</code> no CancellationToken dos mocks.
+</div>
+
+<div class="table-wrap" style="margin:12px 0">
+<table>
+<thead><tr><th>#</th><th>Teste</th><th>Contexto</th><th>O que prova</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>🔐 Login_CredenciaisValidas_RetornaTokenJwt</td><td>Auth</td><td>Fluxo feliz: login → token</td></tr>
+<tr><td>2</td><td>🔐 Login_SenhaIncorreta_RetornaNull</td><td>Auth</td><td>Senha errada não emite token</td></tr>
+<tr><td>3</td><td>🔐 Login_UsuarioInexistente_RetornaNull</td><td>Auth</td><td>Usuário inexistente não emite token</td></tr>
+<tr><td>4</td><td>🔐 Token_Gerado_ContemSubNomeExp</td><td>Auth</td><td>JWT tem 3 partes (header.payload.signature)</td></tr>
+<tr><td>5</td><td>🔐 Login_CamposVazios_RetornaNull</td><td>Auth</td><td>Validação de campos obrigatórios</td></tr>
+<tr><td>6</td><td>🛒 Criar_ReservaTodosItens_MarcaReservado</td><td>Pedidos</td><td>Checkout reserva estoque e calcula total</td></tr>
+<tr><td>7</td><td>🛒 Criar_EstoqueInsuficiente_Compensa</td><td>Pedidos</td><td>Saga-lite: falha → compensação</td></tr>
+<tr><td>8</td><td>🛒 Criar_EnderecoInvalido_Compensa</td><td>Pedidos</td><td>Endereço inválido → compensação</td></tr>
+<tr><td>9</td><td>🛒 Cancelar_PedidoProprio_LiberaReservas</td><td>Pedidos</td><td>Cancelamento libera estoque</td></tr>
+<tr><td>10</td><td>🛒 Cancelar_OutroUsuario_LancaErro</td><td>Pedidos</td><td>Segurança: só o dono cancela</td></tr>
+<tr><td>11</td><td>📦 Reservar_AcimaDoDisponivel_Lanca409</td><td>Catálogo</td><td>Invariante: estoque insuficiente</td></tr>
+<tr><td>12</td><td>📦 Reservar_Ok_ReduzDisponivel</td><td>Catálogo</td><td>Reserva reduz disponível</td></tr>
+<tr><td>13</td><td>📦 Liberar_RestauraDisponivel</td><td>Catálogo</td><td>Compensação restaura estoque</td></tr>
+<tr><td>14</td><td>📦 ConfirmarReserva_ReduzEstoque</td><td>Catálogo</td><td>Confirmação reduz estoque real</td></tr>
+<tr><td>15</td><td>📦 Atualizar_Valido_AlteraCampos</td><td>Catálogo</td><td>PUT atualiza produto</td></tr>
+<tr><td>16</td><td>📦 Atualizar_PrecoZero_LancaErro</td><td>Catálogo</td><td>Invariante: preço &gt; 0</td></tr>
+<tr><td>17</td><td>🧾 Endereco_CepInvalido_LancaErro</td><td>Clientes</td><td>Validação de CEP</td></tr>
+<tr><td>18</td><td>🧾 Endereco_CepValido_Cria</td><td>Clientes</td><td>CEP válido cria endereço</td></tr>
+<tr><td>19</td><td>🧾 Endereco_Uf_NormalizaMaiusculas</td><td>Clientes</td><td>UF normalizada</td></tr>
+<tr><td>20</td><td>🧾 Desativar_MarcaInativo</td><td>Clientes</td><td>LGPD: desativação lógica</td></tr>
+<tr><td>21</td><td>🧾 Desativar_DuasVezes_Lanca409</td><td>Clientes</td><td>Invariante: idempotência</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- ===== FIM DA PARTE 5/6 — cole a Parte 6 (Docker + CI/CD + Prism + Checklist) logo após este comentário ===== -->  
+<!-- ===== PARTE 6/6: DOCKER + CI/CD + PRISM + CHECKLIST ===== -->
+<div class="lab-container">
+<div class="lab-header">
+<h3>🐳 Docker — build da imagem + compose dos 4 bancos</h3>
+<div class="lab-actions"><span class="ide-tag cs">VS Code</span></div>
+</div>
+
+<div class="info-banner">
+<strong>💡 Herda os padrões das Tabs 5/7:</strong> Dockerfile multi-stage idêntico ao da Tab 7 (build com SDK → runtime com aspnet), trocando o publish para o host <code>LojaApi.Api</code> desta solução. Bancos: mesmo padrão do compose da Tab 5 + o <code>init-sql-contextos/01-init.sql</code> (agora com 4 databases).
+</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🐳 Dockerfile — multi-stage (idêntico Tab 7)</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">Dockerfile</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="Dockerfile"># ══════════════════════════════════════════════════════════
+# ESTÁGIO 1: BUILD — usa SDK completo (compila + publica)
+# ══════════════════════════════════════════════════════════
+# Imagem com .NET SDK 10.0 (inclui Roslyn, CLI, NuGet)
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+
+# Define o diretório de trabalho dentro do container
+WORKDIR /src
+
+# Copia TODOS os arquivos da solução para o container
+COPY . .
+
+# Publica o HOST (LojaApi.Api) em modo Release
+# O publish gera o dll executável + todas as dependências
+RUN dotnet publish LojaApi.Api -c Release -o /out
+
+# ══════════════════════════════════════════════════════════
+# ESTÁGIO 2: RUNTIME — imagem mínima (só o necessário p/ rodar)
+# ══════════════════════════════════════════════════════════
+# Imagem com ASP.NET Core Runtime (sem SDK — muito menor)
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
+
+# Define o diretório de trabalho do runtime
+WORKDIR /app
+
+# Copia APENAS o resultado do publish do estágio anterior
+COPY --from=build /out .
+
+# Documenta a porta que a API escuta (informativo)
+EXPOSE 8080
+
+# Comando de entrada: executa o host publicado
+ENTRYPOINT ["dotnet","LojaApi.Api.dll"]</pre>
+</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🗄️ docker-compose.yml — 4 databases + init-sql</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">docker-compose.yml</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="docker-compose.yml"># ══════════════════════════════════════════════════════════
+# COMPOSE DE INFRAESTRUTURA — MySQL com 4 databases (fronteira por contexto)
+# ══════════════════════════════════════════════════════════
+# Uso:
+#   docker compose up -d          → sobe o banco em background
+#   docker compose ps             → verifica status
+#   docker compose down           → derruba (mantém volumes)
+#   docker compose down -v        → derruba e APAGA volumes (re-run init)
+# ══════════════════════════════════════════════════════════
+
+services:
+  mysql-db:
+    # MySQL 8.4 LTS
+    image: mysql:8.4
+
+    # Nome fixo do container (facilita docker exec)
+    container_name: dev_mysql_multicontextos
+
+    # Reinicia sozinho se cair
+    restart: unless-stopped
+
+    # Variáveis de primeiro boot (só valem com volume vazio)
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_USER: devuser
+      MYSQL_PASSWORD: devpass
+      TZ: America/Sao_Paulo
+
+    # Expõe a porta no host
+    ports:
+      - "3306:3306"
+
+    volumes:
+      # Volume nomeado: dados persistem entre down/up
+      - mysql_multi_data:/var/lib/mysql
+      # Scripts de inicialização: cria 4 databases + tabelas + seed admin
+      - ./init-sql-contextos:/docker-entrypoint-initdb.d
+
+    # Rede customizada (DNS interno)
+    networks:
+      - loja_multi_network
+
+    # Healthcheck: espera o MySQL aceitar conexões
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot123"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+# ══════════════════════════════════════════════════════════
+# VOLUMES NOMEADOS
+# ══════════════════════════════════════════════════════════
+volumes:
+  mysql_multi_data:
+    driver: local
+
+# ══════════════════════════════════════════════════════════
+# REDE
+# ══════════════════════════════════════════════════════════
+networks:
+  loja_multi_network:
+    driver: bridge
+    name: loja_multi_network</pre>
+</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🖥️ Terminal — build, run e teste (comentado linha a linha)</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal do VS Code - docker build/run/test</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor"># ──────────────────────────────────────────────────────────────
+# PASSO 1: Subir os bancos (MySQL com 4 databases)
+# ──────────────────────────────────────────────────────────────
+# Sobe o MySQL em background (-d = detached)
+docker compose up -d
+
+# Verifica se está "Up" e healthy
+docker compose ps
+
+# Acompanha os logs (útil para ver o 01-init.sql rodando)
+docker compose logs -f mysql-db
+
+# ──────────────────────────────────────────────────────────────
+# PASSO 2: Verificar se os 4 databases foram criados
+# ──────────────────────────────────────────────────────────────
+# Conecta no MySQL e lista os databases
+docker exec -it dev_mysql_multicontextos mysql -uroot -proot123 -e "SHOW DATABASES;"
+
+# Verifica a tabela usuarios + seed admin
+docker exec -it dev_mysql_multicontextos mysql -uroot -proot123 auth_db -e "SELECT login, nome FROM usuarios;"
+
+# ──────────────────────────────────────────────────────────────
+# PASSO 3: Build da imagem Docker (multi-stage)
+# ──────────────────────────────────────────────────────────────
+# Na raiz da solução (onde está o Dockerfile)
+docker build -t loja-api-multicontextos:latest .
+
+# ──────────────────────────────────────────────────────────────
+# PASSO 4: Rodar a API na rede dos bancos
+# ──────────────────────────────────────────────────────────────
+# O host chama os bancos via DNS interno (mysql-db:3306)
+docker run -d --name loja-multi-api -p 8080:8080 \
+  --network loja_multi_network \
+  -e ConnectionStrings__Auth="Server=mysql-db;Port=3306;Database=auth_db;User=root;Password=root123;" \
+  -e ConnectionStrings__Catalogo="Server=mysql-db;Port=3306;Database=catalogo_db;User=root;Password=root123;" \
+  -e ConnectionStrings__Pedidos="Server=mysql-db;Port=3306;Database=pedidos_db;User=root;Password=root123;" \
+  -e ConnectionStrings__Clientes="Server=mysql-db;Port=3306;Database=clientes_db;User=root;Password=root123;" \
+  loja-api-multicontextos:latest
+
+# ──────────────────────────────────────────────────────────────
+# PASSO 5: Testar a API em Docker
+# ──────────────────────────────────────────────────────────────
+# Login (obtem token)
+TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"login":"admin","password":"admin123"}' \
+  | jq -r '.token')
+echo "Token: $TOKEN"
+
+# GET catálogo COM token — esperado: 200
+curl -i http://localhost:8080/api/catalogo/produtos \
+  -H "Authorization: Bearer $TOKEN"
+
+# GET catálogo SEM token — esperado: 401
+curl -i http://localhost:8080/api/catalogo/produtos
+
+# ──────────────────────────────────────────────────────────────
+# PASSO 6: Logs e cleanup
+# ──────────────────────────────────────────────────────────────
+# Logs em tempo real
+docker logs -f loja-multi-api
+
+# Parar a API
+docker stop loja-multi-api &amp;&amp; docker rm loja-multi-api
+
+# Parar bancos mantendo volumes
+docker compose down
+
+# Parar bancos APAGANDO volumes (re-run do init-sql)
+docker compose down -v</pre>
+</div>
+
+<div class="warning-banner">
+<strong>⚠️ Erros comuns:</strong> porta 3306/8080 já em uso; esquecer Docker Desktop aberto; editar init-sql sem <code>down -v</code> (o init só roda com volume vazio); API não acha o banco (use <code>--network loja_multi_network</code> e <code>Server=mysql-db</code>).
+</div>
+
+<div class="success-banner">
+<strong>✅ Sucesso esperado:</strong> <code>docker compose ps</code> mostra healthy · <code>SHOW DATABASES</code> lista auth_db, catalogo_db, pedidos_db, clientes_db · login retorna token · GET com token 200 · GET sem token 401.
+</div>
+</div>
+
+<div class="lab-container">
+<div class="lab-header">
+<h3>🔁 CI/CD — GitHub Actions + GitLab CI (herda Tab 7)</h3>
+<div class="lab-actions"><span class="ide-tag cs">VS Code</span></div>
+</div>
+
+<div class="info-banner">
+<strong>💡 Herda os padrões da Tab 7:</strong> mesmos workflows — <code>dotnet build</code> + <code>dotnet test</code> cobrem todos os módulos (as fronteiras compilam juntas porque a solução referencia todos os projetos). Se qualquer módulo quebrar, o pipeline falha.
+</div>
+
+<div class="split-view">
+<div class="split-col">
+<h4 style="color:var(--primary);margin-bottom:8px">🐙 GitHub Actions</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">.github/workflows/ci-multicontextos.yml</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path=".github/workflows/ci-multicontextos.yml"># Nome do workflow (aparece na aba Actions)
+name: ci-multicontextos
+
+# Gatilhos: roda em PR para main e ao mergear na main
+on:
+  pull_request: { branches: [main] }
+  push: { branches: [main] }
+
+# Conjunto de jobs
+jobs:
+  build-test:
+    # Runner: máquina Ubuntu
+    runs-on: ubuntu-latest
+
+    # Passos sequenciais
+    steps:
+      # 1. Baixa o código do repositório
+      - uses: actions/checkout@v4
+
+      # 2. Instala o SDK .NET 10
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '10.0.x' }
+
+      # 3. Compila TODOS os módulos (fronteiras compilam juntas)
+      - run: dotnet build
+
+      # 4. Roda os 21 testes (falha o pipeline se algum falhar)
+      - run: dotnet test</pre>
+</div>
+</div>
+
+<div class="split-col">
+<h4 style="color:var(--primary);margin-bottom:8px">🦊 GitLab CI</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">.gitlab-ci.yml</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path=".gitlab-ci.yml"># Fases do pipeline, em ordem
+stages: [build, test]
+
+# Job "build": compila todos os módulos
+build:multicontextos:
+  stage: build                          # pertence à fase build
+  image: mcr.microsoft.com/dotnet/sdk:10.0   # imagem do runner
+  script: [ dotnet build ]              # compila a solução inteira
+
+# Job "test": roda os 21 testes
+test:multicontextos:
+  stage: test                           # fase test (roda depois de build)
+  image: mcr.microsoft.com/dotnet/sdk:10.0
+  script: [ dotnet test ]               # roda todos os testes</pre>
+</div>
+</div>
+</div>
+
+<div class="term-help">
+<strong>🖥️ Onde configurar:</strong> GitHub → repo → aba <em>Actions</em> → criar workflow · GitLab → repo → <em>Settings → CI/CD</em> → habilitar Runners. Proteger a main: GitHub → <em>Settings → Branches</em> → exigir checks; GitLab → <em>Settings → Repository → Protected branches</em>.
+</div>
+
+<div class="success-banner">
+<strong>✅ Sucesso esperado:</strong> pipeline verde em PR e merge. Os 21 testes rodam em todos os módulos. Se qualquer fronteira quebrar (ex.: referência cruzada entre módulos), o build falha.
+</div>
+</div>
+
+<div class="lab-container">
+<div class="lab-header">
+<h3>🔌 Prism — validar o contrato ANTES da implementação (:4011)</h3>
+<div class="lab-actions"><span class="ide-tag cs">VS Code</span></div>
+</div>
+
+<div class="info-banner">
+<strong>💡 Fluxo API-First:</strong> o compose <code>docker-compose.prism-contextos.yml</code> da Tab 8 (:4011) valida o contrato <code>openapi-multicontexto.yaml</code> <strong>antes</strong> desta implementação existir. Isso garante que o contrato está correto antes de escrever código.
+</div>
+
+<div class="term-help">
+<strong>📜 Contrato:</strong> use o <code>openapi-multicontexto.yaml</code> da Tab 8. O Prism valida o schema dos bodies contra o contrato (com <code>-m false</code>, validação estrita).
+</div>
+
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal do VS Code - Prism (Tab 8)</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor"># ──────────────────────────────────────────────────────────────
+# PASSO 1: Subir o Prism com o contrato multi-contextos
+# ──────────────────────────────────────────────────────────────
+# Usa o compose da Tab 8 (porta 4011)
+docker compose -f docker-compose.prism-contextos.yml up -d
+
+# Verifica se está rodando
+docker compose -f docker-compose.prism-contextos.yml ps
+
+# ──────────────────────────────────────────────────────────────
+# PASSO 2: Testar o contrato no Prism (sem implementação)
+# ──────────────────────────────────────────────────────────────
+# GET catálogo (leitura pública) — esperado: 200 com example
+curl -i http://localhost:4011/api/catalogo/produtos?page=0&amp;size=10
+
+# POST produtos (exige CATALOGO_ADMIN no contrato)
+# O Prism NÃO valida roles — só schema. Retorna example do schema.
+curl -i -X POST http://localhost:4011/api/catalogo/produtos \
+  -H "Content-Type: application/json" \
+  -d '{"nome":"Monitor 27 144Hz","preco":1899.00,"estoque":5}'
+
+# POST pedido (exige PEDIDOS_USER no contrato)
+curl -i -X POST http://localhost:4011/api/pedidos \
+  -H "Content-Type: application/json" \
+  -d '{"clienteId":7,"enderecoId":3,"itens":[{"produtoId":101,"quantidade":2}]}'
+
+# ──────────────────────────────────────────────────────────────
+# PASSO 3: Derrubar o Prism
+# ──────────────────────────────────────────────────────────────
+docker compose -f docker-compose.prism-contextos.yml down</pre>
+</div>
+
+<div class="warning-banner">
+<strong>⚠️ Atenção:</strong> o Prism <strong>NÃO valida roles JWT</strong> — ele valida apenas o schema dos bodies contra o contrato. A checagem de roles é da implementação (esta Tab 9). Use o Prism para validar o contrato <strong>antes</strong> de implementar.
+</div>
+</div>
+
+<div class="lab-container">
+<div class="lab-header">
+<h3>✅ Checklist Final — Tab 9 Nova Completa</h3>
+</div>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>#</th><th>Parte</th><th>Item</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td colspan="4"><strong>📋 Parte 1/6 — Conceitos + Setup + Estrutura</strong></td></tr>
+<tr><td>1</td><td>1/6</td><td>Conceitos Auth JWT sem roles incluídos</td><td>⬜</td></tr>
+<tr><td>2</td><td>1/6</td><td>Diagramas D-29 e D-30 incluídos</td><td>⬜</td></tr>
+<tr><td>3</td><td>1/6</td><td>Setup terminal comentado linha a linha</td><td>⬜</td></tr>
+<tr><td>4</td><td>1/6</td><td>Estrutura de pastas (tree-view)</td><td>⬜</td></tr>
+<tr><td>5</td><td>1/6</td><td>Seção "Rodar e validar" com curl</td><td>⬜</td></tr>
+<tr><td colspan="4"><strong>📋 Parte 2/6 — Módulo Auth</strong></td></tr>
+<tr><td>6</td><td>2/6</td><td>Pomelo + FrameworkReference no Auth</td><td>⬜</td></tr>
+<tr><td>7</td><td>2/6</td><td><code>Usuario.cs</code> + <code>IUsuarioRepository.cs</code></td><td>⬜</td></tr>
+<tr><td>8</td><td>2/6</td><td><code>AuthDbContext.cs</code> + <code>UsuarioRepository.cs</code></td><td>⬜</td></tr>
+<tr><td>9</td><td>2/6</td><td><code>JwtService.cs</code> (sub + name + exp, sem roles)</td><td>⬜</td></tr>
+<tr><td>10</td><td>2/6</td><td><code>AuthService.cs</code> + <code>AuthController.cs</code></td><td>⬜</td></tr>
+<tr><td>11</td><td>2/6</td><td><code>ModuleExtensions.cs</code> do Auth</td><td>⬜</td></tr>
+<tr><td colspan="4"><strong>📋 Parte 3/6 — Catálogo + Pedidos + Clientes (sem roles)</strong></td></tr>
+<tr><td>12</td><td>3/6</td><td>Pomelo + FrameworkReference nos 3 módulos</td><td>⬜</td></tr>
+<tr><td>13</td><td>3/6</td><td>Catálogo completo com <code>[Authorize]</code></td><td>⬜</td></tr>
+<tr><td>14</td><td>3/6</td><td>Pedidos completo com compensação</td><td>⬜</td></tr>
+<tr><td>15</td><td>3/6</td><td>Clientes completo com LGPD</td><td>⬜</td></tr>
+<tr><td colspan="4"><strong>📋 Parte 4/6 — Host + Config + Banco</strong></td></tr>
+<tr><td>16</td><td>4/6</td><td><code>Program.cs</code> com JWT Bearer sem roles</td><td>⬜</td></tr>
+<tr><td>17</td><td>4/6</td><td><code>appsettings.json</code> com 4 connection strings + JWT</td><td>⬜</td></tr>
+<tr><td>18</td><td>4/6</td><td><code>ExceptionMiddleware.cs</code> (RFC 7807)</td><td>⬜</td></tr>
+<tr><td>19</td><td>4/6</td><td><code>init-sql-contextos/01-init.sql</code> com 4 databases + seed admin</td><td>⬜</td></tr>
+<tr><td colspan="4"><strong>📋 Parte 5/6 — Testes (21 AAA)</strong></td></tr>
+<tr><td>20</td><td>5/6</td><td>Pacote InMemory adicionado</td><td>⬜</td></tr>
+<tr><td>21</td><td>5/6</td><td><code>AuthServiceTests.cs</code> (5 testes)</td><td>⬜</td></tr>
+<tr><td>22</td><td>5/6</td><td><code>PedidoServiceTests.cs</code> (5 testes)</td><td>⬜</td></tr>
+<tr><td>23</td><td>5/6</td><td><code>CatalogoProdutoTests.cs</code> (6 testes)</td><td>⬜</td></tr>
+<tr><td>24</td><td>5/6</td><td><code>ClienteEnderecoTests.cs</code> (5 testes)</td><td>⬜</td></tr>
+<tr><td>25</td><td>5/6</td><td><code>dotnet test</code> roda 21 testes verdes</td><td>⬜</td></tr>
+<tr><td colspan="4"><strong>📋 Parte 6/6 — Docker + CI/CD + Prism</strong></td></tr>
+<tr><td>26</td><td>6/6</td><td><code>Dockerfile</code> multi-stage</td><td>⬜</td></tr>
+<tr><td>27</td><td>6/6</td><td><code>docker-compose.yml</code> com 4 databases</td><td>⬜</td></tr>
+<tr><td>28</td><td>6/6</td><td>GitHub Actions + GitLab CI</td><td>⬜</td></tr>
+<tr><td>29</td><td>6/6</td><td>Prism :4011 validado</td><td>⬜</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="success-banner">
+<strong>✅ Checklist completo Tab 9 Nova:</strong> Auth JWT real (tabela usuarios) ✓ · Sem roles (qualquer autenticado) ✓ · 4º módulo (LojaApi.Modules.Auth) ✓ · MySQL agora + MongoDB-ready (IUsuarioRepository) ✓ · Token JWT com sub + name + exp ✓ · Senha texto puro (didático) ✓ · 21 testes AAA com emojis ✓ · Docker multi-stage ✓ · CI/CD GitHub + GitLab ✓ · Prism :4011 ✓ · Terminal comentado linha a linha ✓.
+</div>
+
+<div class="info-banner">
+<strong>📦 ZIP desta aba:</strong> o botão "📦 Baixar ZIP desta aba" no topo desta Tab 9 baixa todos os arquivos com <code>data-zip-path</code> (código-fonte + configs). O nome do ZIP é <code>loja-tab9-csharp-contextos.zip</code>.
+</div>
+
+<div class="warning-banner">
+<strong>⚠️ Para subir no GitHub Pages:</strong> o arquivo <code>tabs/tab9.html</code> é carregado via <code>fetch()</code> pelo <code>index.html</code>. Certifique-se de que:
+<ul style="margin-left:22px;margin-top:8px">
+<li>A estrutura de pastas está correta: <code>index.html</code> + <code>tabs/tab9.html</code> na raiz do repo</li>
+<li>O GitHub Pages está habilitado no repo (Settings → Pages)</li>
+<li>Os alunos acessam via HTTPS (GitHub Pages), não via <code>file://</code></li>
+</ul>
+</div>
+</div>
+<!-- ===== FIM DA PARTE 6/6 — TAB 9 NOVA COMPLETA ===== -->
+<!-- ⚠️ IMPORTANTE: adicione </section> aqui para fechar a Tab 9 -->  
+</section>  
