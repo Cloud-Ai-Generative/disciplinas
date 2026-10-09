@@ -1,0 +1,438 @@
+<section class="tab-panel" id="tab5">
+<div class="card">
+<h2 class="card-title">🐬🍃 Orquestração de Bancos: MySQL 8.4 + MongoDB 7.0 + Playground</h2>
+<p class="section-intro">Sobe os bancos, conecta, e um <strong>playground CRUD completo</strong> (INSERT/SELECT/UPDATE/DELETE + agregações + JOIN) com diagramas de dados nomeados.</p>
+
+<div class="deep-concept-box">
+<h3>🐳 Imagem vs Container vs Volume vs Porta</h3>
+<ul>
+<li><strong>Imagem:</strong> o "molde" leitura-only (camadas de filesystem + metadados). Feita por <code>docker build</code> ou baixada de um registry.</li>
+<li><strong>Container:</strong> uma <strong>instância em execução</strong> da imagem (processo isolado). Pode haver vários containers da mesma imagem.</li>
+<li><strong>Volume:</strong> armazenamento <strong>persistente</strong> gerenciado pelo Docker (sobrevive ao remover o container). Usado p/ dados dos bancos.</li>
+<li><strong>Porta (<code>ports:</code>):</strong> mapeamento <code>host:container</code> (ex.: <code>3306:3306</code>) que expõe o serviço ao host. Sem <code>ports:</code>, só outros containers na mesma rede acessam.</li>
+</ul>
+<h4>1. Rede Bridge</h4>
+<p>DNS interno pelo nome: <code>mysql-db:3306</code>, <code>mongo-db:27017</code>; só <code>ports:</code> expõe ao host.</p>
+<h4>2. Volumes vs Bind Mounts</h4>
+<ul>
+<li><strong>Volumes:</strong> persistem (dados).</li>
+<li><strong>Bind Mounts:</strong> pasta do host mapeada (scripts/configs).</li>
+</ul>
+<h4>3. Healthcheck</h4>
+<p>Teste periódico (ex.: <code>mysqladmin ping</code>) marca o container como <em>healthy</em>.</p>
+<p><strong>Aprofundar:</strong> <a class="ext" href="https://docs.docker.com/get-started/" target="_blank">Docker Get Started</a> · <a class="ext" href="https://docs.docker.com/storage/volumes/" target="_blank">Volumes</a>.</p>
+</div>
+
+<div class="deep-concept-box">
+<h3>🗄️ SQL, DDL e DML (o básico p/ entender os scripts)</h3>
+<ul>
+<li><strong>SQL:</strong> linguagem de consulta/manipulação de bancos relacionais.</li>
+<li><strong>DDL (Data Definition Language):</strong> define <strong>estruturas</strong> — <code>CREATE TABLE</code>, <code>ALTER</code>, <code>DROP</code>, <code>CREATE INDEX</code>.</li>
+<li><strong>DML (Data Manipulation Language):</strong> manipula <strong>dados</strong> — <code>INSERT</code>, <code>SELECT</code>, <code>UPDATE</code>, <code>DELETE</code>.</li>
+</ul>
+<p>No compose, a pasta <code>/docker-entrypoint-initdb.d</code> roda scripts <code>.sql</code>/<code>.js</code> uma vez no primeiro boot com volume vazio, em ordem alfanumérica. <strong>DDL</strong> cria estruturas; <strong>DML</strong> insere seed.</p>
+</div>
+
+<div class="lab-container">
+<div class="lab-header">
+<h3>🐳 Subir a infraestrutura</h3>
+<div class="lab-actions">
+<button class="btn btn-zip" onclick="openDlModal('tab5')">📦 Baixar ZIP</button>
+<button class="btn btn-primary" onclick="simulateMultiDbDockerUp()">▶ Simular <code>up -d</code></button>
+</div>
+</div>
+<div class="term-help"><strong>🖥️ Abrir terminal:</strong> <span class="ide-tag java">IntelliJ</span> <kbd>Alt+F12</kbd> · <span class="ide-tag cs">VS Code</span> <kbd>Ctrl+`</kbd>. Na pasta do <code>docker-compose.yml</code>.</div>
+<div class="grid-3">
+<div class="grid-card" style="border-left-color:var(--success)"><strong style="color:var(--success);font-family:var(--font-mono);display:block;margin-bottom:6px">up -d</strong><div class="text-sm text-muted">Cria volumes/redes, roda init, background.</div></div>
+<div class="grid-card" style="border-left-color:var(--primary)"><strong style="color:var(--primary);font-family:var(--font-mono);display:block;margin-bottom:6px">ps</strong><div class="text-sm text-muted">Status, portas, saúde.</div></div>
+<div class="grid-card" style="border-left-color:var(--warning)"><strong style="color:var(--warning);font-family:var(--font-mono);display:block;margin-bottom:6px">stop</strong><div class="text-sm text-muted">Para preservando volumes.</div></div>
+<div class="grid-card" style="border-left-color:var(--danger)"><strong style="color:var(--danger);font-family:var(--font-mono);display:block;margin-bottom:6px">down -v</strong><div class="text-sm text-muted">Derruba e APAGA volumes.</div></div>
+<div class="grid-card" style="border-left-color:var(--accent)"><strong style="color:var(--accent);font-family:var(--font-mono);display:block;margin-bottom:6px">logs -f</strong><div class="text-sm text-muted">Logs em tempo real.</div></div>
+<div class="grid-card" style="border-left-color:var(--primary)"><strong style="color:var(--primary);font-family:var(--font-mono);display:block;margin-bottom:6px">exec -it &lt;nome&gt; bash</strong><div class="text-sm text-muted">Shell no container.</div></div>
+</div>
+<div id="docker-multi-out" class="terminal-window" style="display:none">
+<div class="terminal-bar"><span class="terminal-dot dot-red"></span><span class="terminal-dot dot-yellow"></span><span class="terminal-dot dot-green"></span><span class="terminal-title">docker compose up -d</span></div>
+<div class="terminal-body" id="docker-multi-text"></div>
+</div>
+<h3 style="color:var(--primary);margin-top:24px;margin-bottom:14px">📄 docker-compose.yml (completo)</h3>
+<div class="code-editor-wrap">
+<span class="code-filepath">docker-compose.yml</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="docker-compose.yml"># COMPOSE DE INFRAESTRUTURA - SOMENTE BANCOS
+# =====================================================================
+# COMPOSE DE INFRAESTRUTURA - SOMENTE BANCOS
+# ---------------------------------------------------------------------
+# Este arquivo sobe APENAS os serviços de banco de dados (MySQL e MongoDB)
+# para desenvolvimento local. Aplicações (APIs, workers, etc.) devem
+# rodar em outro compose ou diretamente na máquina host.
+#
+# Uso:
+#   docker compose up -d          -> sobe os bancos em background
+#   docker compose ps             -> verifica status
+#   docker compose logs -f mysql-db
+#   docker compose down           -> derruba (mantém volumes)
+#   docker compose down -v        -> derruba e APAGA os volumes (perde dados)
+# =====================================================================
+
+services:
+
+  # -------------------------------------------------------------------
+  # MYSQL 8.4 - Banco relacional principal
+  # -------------------------------------------------------------------
+  mysql-db:
+    # Imagem oficial do MySQL. 8.4 = LTS (Long Term Support).
+    image: mysql:8.4
+
+    # Nome fixo do container (facilita 'docker exec -it dev_mysql_server ...').
+    # Útil em dev, mas evita usar em produção (nome global conflita).
+    container_name: dev_mysql_server
+
+    # Reinicia automaticamente o container se cair, exceto se for parado manualmente.
+    restart: unless-stopped
+
+    # Variáveis lidas pela imagem na PRIMEIRA inicialização do volume.
+    # Atenção: se o volume já existir, alterar aqui NÃO muda senhas/DB.
+    environment:
+      MYSQL_ROOT_PASSWORD: root123          # senha do usuário root
+      MYSQL_DATABASE: loja_db               # DB criado automaticamente
+      MYSQL_USER: devuser                   # usuário comum criado
+      MYSQL_PASSWORD: devpass               # senha do usuário comum
+      TZ: America/Sao_Paulo                 # fuso horário do container
+
+    # Mapeia porta do host -> container. Formato "host:container".
+    # Exposto no host para permitir conexão via DBeaver/Workbench/etc.
+    ports:
+      - "3306:3306"
+
+    # Volumes: persistência de dados + scripts de inicialização.
+    volumes:
+      # Volume nomeado: dados do MySQL persistem entre 'down/up'.
+      - mysql_dev_data:/var/lib/mysql
+      # Pasta local com .sql/.sh executados UMA vez na criação do DB.
+      # Coloque aqui seus scripts em ./init-sql/*.sql
+      - ./init-sql:/docker-entrypoint-initdb.d
+
+    # Anexa o container à rede customizada (permite DNS interno 'mysql-db').
+    networks:
+      - dev_network
+
+    # Healthcheck: permite que outras stacks esperem o MySQL estar pronto.
+    # 'mysqladmin ping' retorna OK quando o servidor aceita conexões.
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot123"]
+      interval: 10s      # intervalo entre checagens
+      timeout: 5s        # tempo máximo de cada checagem
+      retries: 5         # tentativas antes de marcar como unhealthy
+      start_period: 30s  # (extra) carência inicial p/ o MySQL subir
+
+  # -------------------------------------------------------------------
+  # MONGODB 7.0 - Banco NoSQL (documentos)
+  # -------------------------------------------------------------------
+  mongo-db:
+    image: mongo:7.0
+    container_name: dev_mongo_server
+    restart: unless-stopped
+
+    # Credenciais do usuário root do Mongo (admin).
+    # MONGO_INITDB_DATABASE cria o DB na primeira inicialização.
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root123
+      MONGO_INITDB_DATABASE: loja_nosql
+      TZ: America/Sao_Paulo
+
+    ports:
+      - "27017:27017"    # exposto p/ Mongo Compass / mongosh no host
+
+    volumes:
+      # Persistência dos dados do Mongo.
+      - mongo_dev_data:/data/db
+      # Scripts .js/.sh rodados na criação inicial do DB.
+      - ./init-mongo:/docker-entrypoint-initdb.d
+
+    networks:
+      - dev_network
+
+    # 'mongosh' é o shell oficial moderno (substitui 'mongo' legado).
+    # db.adminCommand('ping') retorna { ok: 1 } se o servidor responde.
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+# =====================================================================
+# VOLUMES NOMEADOS
+# ---------------------------------------------------------------------
+# Gerenciados pelo Docker. Persistem mesmo após 'docker compose down'.
+# Só são removidos com 'docker compose down -v' ou 'docker volume rm'.
+# =====================================================================
+volumes:
+  mysql_dev_data:
+    driver: local
+  mongo_dev_data:
+    driver: local
+
+# =====================================================================
+# REDE
+# ---------------------------------------------------------------------
+# Rede bridge isolada. Containers nela se enxergam pelo nome do serviço
+# (ex: 'mysql-db:3306' e 'mongo-db:27017' funcionam como hostname).
+# O 'name' fixa o nome real da rede (default seria algo como 'pasta_dev_network').
+# =====================================================================
+networks:
+  dev_network:
+    driver: bridge
+    name: loja_dev_network</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal da IDE - subir e verificar</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor"># Sobe MySQL + Mongo em background (-d = detached)
+docker compose up -d
+# Confere se ambos estão "Up" e healthy
+docker compose ps
+# Logs do MySQL (útil p/ ver o 01-init.sql no 1º boot)
+docker compose logs -f mysql-db</pre>
+</div>
+<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> porta 3306/27017 já em uso (outro banco local — pare-o ou mude a porta no compose); esquecer Docker Desktop aberto; editar init-sql sem recriar volume (use <code>down -v</code> + <code>up -d</code>).</div>
+<div class="success-banner"><strong>✅ Checklist:</strong> <code>docker compose ps</code> mostra ambos <em>healthy</em> · <code>SHOW TABLES</code> lista categorias/produtos · <code>db.produtos.find()</code> retorna seed.</div>
+</div>
+
+<div class="lab-container">
+<div class="lab-header"><h3>🔌 Passo 1: Conectar e explorar (terminal da IDE)</h3></div>
+<div class="term-help"><strong>🖥️ Abrir terminal:</strong> <span class="ide-tag java">IntelliJ</span> <kbd>Alt+F12</kbd> · <span class="ide-tag cs">VS Code</span> <kbd>Ctrl+`</kbd>.</div>
+<div class="info-banner"><strong>🔎 Entendendo o <code>docker exec -it</code>:</strong> <code>exec</code> roda um comando DENTRO do container · <code>-i</code> interativo · <code>-t</code> TTY · nome do container · comando interno.</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal da IDE - conexão comentada</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">
+# ── MySQL: abre o cliente mysql DENTRO do container ──
+docker exec -it dev_mysql_server mysql -u root -proot123 loja_db    
+-- ==========================================
+-- 0) PREPARAÇÃO: ver o que já existe
+-- ==========================================
+SHOW TABLES;                    -- deve listar: categorias, produtos
+DESCRIBE produtos;              -- confere colunas/tipos (bate com o schema)
+SELECT * FROM categorias;       -- ⚠️ PRECISA saber quais IDs existem!
+SELECT * FROM produtos;         -- estado atual dos dados (seed)
+
+-- ==========================================
+-- 1) READ (Ler)
+-- ==========================================
+-- Todos os produtos:
+SELECT * FROM produtos;
+
+-- Só alguns campos (mais enxuto):
+SELECT id, nome, preco, estoque, categoria_id FROM produtos;
+
+-- Filtrando por faixa de preço:
+SELECT nome, preco FROM produtos WHERE preco BETWEEN 50 AND 500;
+
+-- JOIN com categorias (mostra o nome da categoria em vez do ID):
+SELECT p.id, p.nome, p.preco, p.estoque, c.nome AS categoria
+  FROM produtos p
+  LEFT JOIN categorias c ON c.id = p.categoria_id
+ ORDER BY p.id;
+
+-- ==========================================
+-- 2) CREATE (Inserir) — +2 itens novos
+-- ==========================================
+-- 🔎 Passo 1: descobrir um categoria_id VÁLIDO (a FK exige isso)
+SELECT id, nome FROM categorias;
+
+-- 🔎 Passo 2: assumindo que existe categoria_id = 1 (ex.: "Periféricos")
+--            e categoria_id = 2 (ex.: "Áudio"), insira 2 produtos:
+
+INSERT INTO produtos (nome, preco, estoque, categoria_id)
+VALUES ('Teclado Mecânico', 349.90, 15, 1);
+
+INSERT INTO produtos (nome, preco, estoque, categoria_id)
+VALUES ('Mouse Gamer', 199.50, 30, 1);
+
+-- Alternativa: inserir os 2 de uma vez (mais eficiente):
+-- INSERT INTO produtos (nome, preco, estoque, categoria_id) VALUES
+--   ('Teclado Mecânico', 349.90, 15, 1),
+--   ('Mouse Gamer',      199.50, 30, 1);
+
+-- Conferir:
+SELECT id, nome, preco, estoque, categoria_id
+  FROM produtos
+ WHERE nome IN ('Teclado Mecânico', 'Mouse Gamer');
+
+-- 🧪 Teste de erro proposital (comentado) — descomente para ver as constraints agindo:
+-- INSERT INTO produtos (nome, preco) VALUES ('Inválido', -10);       -- ❌ CHECK preco > 0
+-- INSERT INTO produtos (nome, preco, categoria_id) VALUES ('X', 10, 999); -- ❌ FK inexistente
+
+-- ==========================================
+-- 3) UPDATE (Atualizar)
+-- ==========================================
+-- Aumenta 10% o preço do Teclado Mecânico:
+UPDATE produtos
+   SET preco = preco * 1.10
+ WHERE nome = 'Teclado Mecânico';
+
+-- Repõe estoque do Mouse Gamer em +20 unidades:
+UPDATE produtos
+   SET estoque = estoque + 20
+ WHERE nome = 'Mouse Gamer';
+
+-- Atualização múltipla (preço E estoque no mesmo comando):
+UPDATE produtos
+   SET preco = 219.90,
+       estoque = 50
+ WHERE nome = 'Mouse Gamer';
+
+-- Confere:
+SELECT id, nome, preco, estoque FROM produtos
+ WHERE nome IN ('Teclado Mecânico', 'Mouse Gamer');
+
+-- ==========================================
+-- 4) DELETE (Remover) — apaga 1 item
+-- ==========================================
+DELETE FROM produtos WHERE nome = 'Mouse Gamer';
+
+-- Conferir que sumiu (deve retornar 0 linhas):
+SELECT * FROM produtos WHERE nome = 'Mouse Gamer';
+
+-- ⚠️ CUIDADOS:
+-- DELETE FROM produtos;                    -- apaga TODOS os registros
+-- DELETE FROM produtos WHERE categoria_id = 1;  -- apaga por categoria
+-- (O AUTO_INCREMENT NÃO reinicia sozinho; use TRUNCATE se quiser resetar.)
+
+-- ==========================================
+-- 5) SAIR DO SHELL
+-- ==========================================
+EXIT;
+-- ou: \q
+-- ou: Ctrl + D</pre>
+</div>
+</div>
+
+<div class="lab-container">
+<div class="lab-header"><h3>📦 Passo 2: De onde vieram os dados? (DDL/DML)</h3></div>
+<div class="deep-concept-box" style="margin-bottom:14px">
+<h3>🚪 /docker-entrypoint-initdb.d</h3>
+<p>Arquivos <code>.sql</code>/<code>.js</code> montados aí rodam <strong>uma vez, no primeiro boot com volume vazio</strong>, em ordem alfanumérica. <strong>DDL</strong> cria estruturas; <strong>DML</strong> insere seed. Tabela <code>categorias</code> + FK habilita JOINs e um ER mais rico.</p>
+</div>
+<div class="split-view">
+<div class="split-col">
+<h4 style="color:var(--primary);margin-bottom:8px">🐬 init-sql/01-init.sql (com categorias p/ JOIN)</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">init-sql/01-init.sql</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="init-sql/01-init.sql">USE loja_db;
+-- DDL: tabela de categorias (lado "1")
+CREATE TABLE IF NOT EXISTS categorias (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nome VARCHAR(60) NOT NULL UNIQUE
+);
+-- DDL: tabela de produtos (lado "N"), com FK
+CREATE TABLE IF NOT EXISTS produtos (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  nome VARCHAR(100) NOT NULL,
+  preco DECIMAL(10,2) NOT NULL,
+  estoque INT NOT NULL DEFAULT 0,
+  categoria_id INT,
+  CONSTRAINT fk_cat FOREIGN KEY (categoria_id) REFERENCES categorias(id),
+  CONSTRAINT chk_preco CHECK (preco > 0),
+  CONSTRAINT chk_estoque CHECK (estoque >= 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- DML: seed de categorias
+INSERT INTO categorias (nome) VALUES ('Perifericos'),('Audio');
+-- DML: seed de produtos
+INSERT INTO produtos (nome,preco,estoque,categoria_id) VALUES
+ ('Teclado Mecanico RGB',349.90,15,1),
+ ('Mouse Gamer 16000 DPI',189.50,20,1),
+ ('Headset 7.1 Surround',420.00,10,2);
+CREATE INDEX idx_nome ON produtos(nome);</pre>
+</div>
+</div>
+<div class="split-col">
+<h4 style="color:var(--mongo-green);margin-bottom:8px">🍃 init-mongo/01-init.js</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">init-mongo/01-init.js</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="init-mongo/01-init.js">db = db.getSiblingDB('loja_nosql');
+db.createCollection('produtos');
+db.produtos.createIndex({ nome: 1 });
+// Seed BSON (espelho do relacional p/ testes de migração)
+db.produtos.insertMany([
+  { nome: "Teclado Mecanico RGB", preco: 349.90, estoque: 15,
+    tags: ["periferico"], origem: "seed-inicial", criadoEm: new Date() },
+  { nome: "Mouse Gamer 16000 DPI", preco: 189.50, estoque: 20,
+    tags: ["periferico"], origem: "seed-inicial", criadoEm: new Date() },
+  { nome: "Headset 7.1 Surround", preco: 420.00, estoque: 10,
+    tags: ["audio"], origem: "seed-inicial", criadoEm: new Date() }
+]);
+print("✅ Seed loja_nosql.produtos");</pre>
+</div>
+</div>
+</div>
+<div class="term-help"><strong>🖥️ Para REEXECUTAR os scripts:</strong> <code>docker compose down -v && docker compose up -d</code> (o <code>-v</code> apaga volumes, simulando primeiro boot).</div>
+</div>
+
+<div class="lab-container">
+<div class="lab-header"><h3>🧪 Playground de Dados (CRUD completo)</h3></div>
+<div class="split-view">
+<div class="split-col">
+<h4 style="color:var(--primary);margin-bottom:8px">🐬 MySQL: INSERT/SELECT/UPDATE/DELETE</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">shell MySQL (docker exec)</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor"># CREATE: insere mais um produto
+INSERT INTO produtos (nome,preco,estoque,categoria_id)
+VALUES ('Monitor 27 144Hz',1899.00,5,1);
+# READ: filtros + ordenação + limite
+SELECT nome, preco FROM produtos WHERE preco > 200 ORDER BY preco DESC LIMIT 2;
+# READ com JOIN + agregação por categoria
+SELECT c.nome AS categoria, COUNT(*) AS qtd, AVG(p.preco) AS preco_medio
+FROM produtos p JOIN categorias c ON c.id = p.categoria_id
+GROUP BY c.nome;
+# UPDATE: reajuste com WHERE (sem WHERE atualiza TUDO!)
+UPDATE produtos SET preco = preco * 1.10 WHERE categoria_id = 1;
+# DELETE: remove com WHERE
+DELETE FROM produtos WHERE nome LIKE 'Monitor%';</pre>
+</div>
+</div>
+<div class="split-col">
+<h4 style="color:var(--mongo-green);margin-bottom:8px">🍃 Mongo: insert/find/update/delete</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">mongosh (docker exec)</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">use loja_nosql
+// CREATE
+db.produtos.insertOne({ nome:"Monitor 27 144Hz", preco:1899.00, estoque:5, tags:["video"] })
+// READ com filtro + projeção + sort
+db.produtos.find({ preco: { $gt: 200 } }, { nome:1, preco:1 }).sort({ preco:-1 })
+// UPDATE: $set muda campo, $inc incrementa
+db.produtos.updateOne({ nome:"Teclado Mecanico RGB" }, { $set:{ preco:379.90 }, $inc:{ estoque:3 } })
+// DELETE
+db.produtos.deleteOne({ nome:"Monitor 27 144Hz" })
+db.produtos.countDocuments()</pre>
+</div>
+</div>
+</div>
+<h4 class="diag-title">📐 D-04 <span class="dt-type">ER</span> — Modelo relacional MySQL (categorias⟷produtos)</h4>
+<div class="mermaid-box er-small" data-code='erDiagram
+    CATEGORIAS ||--o{ PRODUTOS : possui
+    CATEGORIAS { int id PK string nome }
+    PRODUTOS { int id PK string nome decimal preco int estoque int categoria_id FK }'>
+<div class="mermaid"></div>
+</div>
+<h4 class="diag-title">📐 D-05 <span class="dt-type">Fluxo</span> — Mapeamento relacional→documento (BSON)</h4>
+<div class="mermaid-box er-small" data-code='flowchart LR
+    subgraph REL["Relacional (linhas)"]
+      R1["produto: id=1 nome=Teclado preco=349.90 cat=1"]
+    end
+    subgraph NOSQL["Documento (BSON)"]
+      N1["{ _id, nome, preco, estoque, tags:[...], atributos:{...} }"]
+    end
+    R1 -->|"migração (idLegado)"| N1'>
+<div class="mermaid"></div>
+</div>
+<div class="success-banner"><strong>✅ Checklist:</strong> CRUD MySQL ok · CRUD Mongo ok · JOIN por categoria ok · ER e mapeamento BSON entendidos.</div>
+</div>
+</div>
+</section>
