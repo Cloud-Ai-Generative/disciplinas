@@ -14,3 +14,4 @@ function copyCode(btn){const w=btn.closest('.code-editor-wrap')||btn.parentEleme
 /* ═══════════ TABS / SUBTABS ═══════════ */
 function switchTab(t){document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id===t));setTimeout(()=>renderMermaidIn(document.getElementById(t)),80);window.scrollTo({top:0,behavior:'smooth'});}
 function switchSubTab(s){document.querySelectorAll('.sub-tab-btn').forEach(b=>b.className='sub-tab-btn '+(b.dataset.sub===s?'btn btn-primary':'btn'));document.querySelectorAll('.sub-panel').forEach(p=>p.classList.toggle('active',p.id===s));setTimeout(()=>renderMermaidIn(document.querySelector('.sub-panel.active')),80);}
+</script> 
