@@ -12,24 +12,24 @@ function closeCodeModal(){document.getElementById('code-modal').classList.remove
 function copyModalCode(f){const c=document.getElementById('modal-code-content').textContent;const out=f==='gitlab'?'```mermaid\n'+c+'\n```':c;navigator.clipboard.writeText(out).then(()=>{const b=document.getElementById(f==='gitlab'?'modal-copy-gitlab':'modal-copy-raw');const o=b.innerHTML;b.innerHTML='✅ Copiado!';b.style.background='var(--success)';showToast(f==='gitlab'?'🦊 Formato GitLab copiado!':'📋 Mermaid copiado!');setTimeout(()=>{b.innerHTML=o;b.style.background='';},2000);});}
 function copyCode(btn){const w=btn.closest('.code-editor-wrap')||btn.parentElement;const p=w.querySelector('.code-editor,pre');if(!p)return;navigator.clipboard.writeText(p.textContent).then(()=>{const o=btn.textContent;btn.textContent='✅ Copiado!';btn.classList.add('copied');setTimeout(()=>{btn.textContent='📋 Copiar';btn.classList.remove('copied');},1500);});}
 /* ═══════════ TABS / SUBTABS ═══════════ */
-/* ── PATCH E2: lazy-load de abas (fetch tabs/*.html) ── */
+/* ── PATCH E2: lazy-load de abas (fetch tabs/*.html) — */
 function loadTab(t){
   const p=document.getElementById(t);
   if(!p)return Promise.reject(new Error('Painel '+t+' não existe no index.html'));
   if(p.dataset.loaded)return Promise.resolve();
   p.dataset.loaded='1';
   return fetch('tabs/'+t+'.html')
-    .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.text();})
-    .    .then(html=>{
-      // Descasca o wrapper <section class="tab-panel"> que veio na extração
-      const tmp=document.createElement('div');
-      tmp.innerHTML=html.trim();
-      const sec=tmp.querySelector(':scope > section.tab-panel')||tmp.querySelector('section.tab-panel');
-      p.innerHTML=sec?sec.innerHTML:html;
-      initTab(t);injectMermaidToolbars();renderMermaidIn(p);
-    })
-    .catch(e=>{p.dataset.loaded='';throw e;});
+  .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.text();})
+  .then(html=>{
+    const tmp=document.createElement('div');
+    tmp.innerHTML=html.trim();
+    const sec=tmp.querySelector('section.tab-panel');
+    p.innerHTML=sec?sec.innerHTML:html;
+    initTab(t);injectMermaidToolbars();renderMermaidIn(p);
+  })
+  .catch(e=>{p.dataset.loaded='';throw e;});
 }
+
 function initTab(t){
   if(t==='tab1'){switchBaseOs('win');}
   if(t==='tab2'){makeInitz('sim-lab');}
