@@ -20,7 +20,14 @@ function loadTab(t){
   p.dataset.loaded='1';
   return fetch('tabs/'+t+'.html')
     .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.text();})
-    .then(html=>{       // Descasca o wrapper <section class="tab-panel"> que veio na extração       const tmp=document.createElement('div');       tmp.innerHTML=html.trim();       const sec=tmp.querySelector(':scope > section.tab-panel')||tmp.querySelector('section.tab-panel');       p.innerHTML=sec?sec.innerHTML:html;       initTab(t);injectMermaidToolbars();renderMermaidIn(p);     })
+    .    .then(html=>{
+      // Descasca o wrapper <section class="tab-panel"> que veio na extração
+      const tmp=document.createElement('div');
+      tmp.innerHTML=html.trim();
+      const sec=tmp.querySelector(':scope > section.tab-panel')||tmp.querySelector('section.tab-panel');
+      p.innerHTML=sec?sec.innerHTML:html;
+      initTab(t);injectMermaidToolbars();renderMermaidIn(p);
+    })
     .catch(e=>{p.dataset.loaded='';throw e;});
 }
 function initTab(t){
