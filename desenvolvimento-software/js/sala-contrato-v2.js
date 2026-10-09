@@ -1,0 +1,64 @@
+/* ═══════════ SALA DE CONTRATO V2 (MULTI-CONTEXTOS) ═══════════ */
+const BEATS2=[
+{a:1,s:'neg',t:'A API cresceu: hoje é produtos, mas vêm pedidos e clientes. Precisamos de fronteiras claras antes que o contrato vire bola de neve.',fx:{op:'ctx',v:'Catálogo'}},
+{a:1,s:'back',t:'Proponho 3 bounded contexts: Catálogo, Pedidos e Clientes — cada um com prefixo de path e tag próprios.',fx:{op:'ctx',v:['Catálogo','Pedidos','Clientes']}},
+{a:1,s:'front',t:'O UI consome por contexto ou tudo junto? Preciso saber p/ organizar os clients.',fx:null},
+{a:1,s:'qa',t:'Testes por contexto: mocks isolados e erros tipados em cada fronteira.',fx:{op:'req',v:'Testes e erros por contexto'}},
+{a:2,s:'back',t:'Catálogo: leitura pública; escrita só CATALOGO_ADMIN; reserva de estoque é endpoint interno.',fx:{op:'eps',v:[['GET','/api/catalogo/produtos','público'],['POST','/api/catalogo/produtos','CATALOGO_ADMIN'],['POST','/api/catalogo/produtos/{id}/reservar','PEDIDOS_SERVICE']]}},
+{a:2,s:'neg',t:'Marketing quer criar produto pelo painel…',fx:null},
+{a:2,s:'back',t:'…via role ADMIN, sem endpoint novo. ⚖️ Poll: contrato único ou 1 YAML por contexto?',fx:{op:'poll',id:'yaml',q:'⚖️ Decisão: formato do contrato? (ADR-009)',opts:[{v:'single',l:'1 YAML único c/ tags por contexto'},{v:'multi',l:'1 YAML por contexto + N Prisms'}]}},
+{a:3,s:'qa',t:'Pedidos: user cria/lista/cancela os próprios; 409 quando estoque insuficiente.',fx:{op:'eps',v:[['POST','/api/pedidos','PEDIDOS_USER'],['GET','/api/pedidos','PEDIDOS_USER'],['POST','/api/pedidos/{id}/cancelar','PEDIDOS_USER']]}},
+{a:3,s:'front',t:'O card do pedido mostra status e total com snapshot de preço por item.',fx:{op:'req',v:'ItemPedido guarda precoUnitario (snapshot)'}},
+{a:4,s:'back',t:'Clientes: CRUD CLIENTES_ADMIN; endereços expostos p/ PEDIDOS_SERVICE validar o checkout.',fx:{op:'eps',v:[['POST','/api/clientes','CLIENTES_ADMIN'],['GET','/api/clientes/{id}','CLIENTES_ADMIN'],['PUT','/api/clientes/{id}','CLIENTES_ADMIN'],['POST','/api/clientes/{id}/desativar','CLIENTES_ADMIN'],['GET','/api/clientes/{id}/enderecos','PEDIDOS_SERVICE']]}},
+{a:4,s:'qa',t:'⚖️ Poll: JWT com roles por contexto ou scopes finos por operação?',fx:{op:'poll',id:'roles',q:'⚖️ Decisão: autorização por contexto? (ADR-010)',opts:[{v:'roles',l:'roles por contexto (+ token de serviço)'},{v:'scopes',l:'scopes finos por operação'}]}},
+{a:5,s:'back',t:'Checkout: Pedidos chama Catálogo (reservar) e Clientes (endereços). ⚖️ Poll: HTTP síncrono ou eventos?',fx:{op:'poll',id:'sync',q:'⚖️ Decisão: integração entre contextos? (ADR-012)',opts:[{v:'sync',l:'HTTP síncrono + compensação (saga-lite)'},{v:'events',l:'Eventos assíncronos (eventual consistency)'}]}},
+{a:5,s:'qa',t:'Se síncrono: timeout 2s, retry só em GET idempotente e 409/503 tipificados em RFC 7807.',fx:{op:'req',v:'Timeout 2s + erros 409/503 tipificados'}},
+{a:5,s:'front',t:'E versionamento? Quebra o contrato agora ou evolui aditivo?',fx:null},
+{a:5,s:'back',t:'⚖️ Poll: prefixo /v1 já ou versionamento aditivo com gatilhos de breaking?',fx:{op:'poll',id:'ver',q:'⚖️ Decisão: versionamento? (ADR-011)',opts:[{v:'additive',l:'Aditivo sem prefixo; breaking sobe /v2'},{v:'now',l:'Prefixo /v1 desde já'}]}},
+{a:5,s:'neg',t:'Consenso: 3 contextos, roles internas e checkout com compensação. Aprovado.',fx:null},
+{a:5,s:'qa',t:'Decisões viram ADRs 009–012 no padrão AWS.',fx:{op:'req',v:'ADRs 009–012 registrados'}},
+{a:5,s:'back',t:'Gero o openapi-multicontexto.yaml. Contrato v2 fechado!',fx:{op:'freeze'}}
+];
+const REACT2={
+yaml:{single:'💬 🧔 Rafael: 1 fonte única, refs compartilhadas. ✔\n💬 👨 Diego: 1 Prism só p/ validar.',multi:'💬 👨 Diego: isolamento maior.\n💬  Rafael: duplica infra; ressalva.'},
+roles:{roles:'💬 🧔 Rafael: roles bastam agora, simples de testar. ✔\n💬 👨 Diego: aprovo, mapeio nos testes.',scopes:'💬 👨 Diego: granularidade fina.\n💬 🧔 Rafael: complexidade; adiado (cedo).'},
+sync:{sync:'💬 🧔 Rafael: consistência imediata no checkout. ✔\n💬 👨 Diego: vou simular 409/503.',events:'💬 👨 Diego: menos acoplamento.\n💬 🧔 Rafael: reconciliação complexa; adiado.'},
+ver:{additive:'💬 🧔 Rafael: sem cerimônia enquanto não há consumidores externos. ✔\n💬 🧕🏾 Juliana: ok, matriz de compatibilidade em PR.',now:'💬 🧕🏾 Juliana: prefixo claro desde o início.\n💬 🧔 Rafael: URLs mais longas; ressalva.'}
+};
+const DEC_META2={
+yaml:{single:{adv:'🧔 Rafael',con:'—'},multi:{adv:'👨 Diego',con:' Rafael'}},
+roles:{roles:{adv:'🧔 Rafael',con:'👨🏿 Diego'},scopes:{adv:'👨 Diego',con:' Rafael'}},
+sync:{sync:{adv:'🧔 Rafael',con:'👨 Diego'},events:{adv:'👨🏿 Diego',con:'🧔 Rafael'}},
+ver:{additive:{adv:'🧔 Rafael',con:'🧕🏾 Juliana'},now:{adv:'🧕🏾 Juliana',con:'🧔 Rafael'}}
+};
+const LBL2={yaml:'contrato',roles:'auth',sync:'integração',ver:'versão'};
+let M2={i:0,st:{ctx:[],reqs:[],eps:[],dec:{}},auto:null,done:false,filter:null};
+function renderRoster2(){document.getElementById('roster2').innerHTML=Object.entries(PERSONAS).map(([k,P])=>'<span class="roster-chip'+(M2.filter===k?' on':'')+'" style="--rc:'+P.c+'" onclick="setFilter2(\''+k+'\')" title="Filtrar falas de '+P.n+'"><span class="pav">'+P.p+'</span>'+P.n+' · '+P.ri+' '+P.r+'</span>').join('');}
+function setFilter2(k){M2.filter=(M2.filter===k?null:k);renderRoster2();document.querySelectorAll('#meet-room2 .bubble').forEach(applyDim2);}
+function applyDim2(d){if(M2.filter&&d.dataset.s!==M2.filter)d.classList.add('dim');else d.classList.remove('dim');}
+function meet2Reset(){M2={i:0,st:{ctx:[],reqs:[],eps:[],dec:{}},auto:null,done:false,filter:null};document.getElementById('meet-room2').innerHTML='';document.getElementById('meet2-out').style.display='none';document.querySelectorAll('#phase-bar2 .phase').forEach(p=>p.classList.toggle('on',p.dataset.a==='1'));renderRoster2();renderCanvas2();meet2Status();}
+function meet2Status(){document.getElementById('meet2-status').textContent='Ato '+(BEATS2[Math.min(M2.i,BEATS2.length-1)].a)+' · fala '+M2.i+'/'+BEATS2.length;}
+function meet2Next(){if(M2.done)return;const b=BEATS2[M2.i];addBubble2(M2.i,b);applyFx2(b);M2.i++;document.querySelectorAll('#phase-bar2 .phase').forEach(p=>p.classList.toggle('on',+p.dataset.a<=b.a));renderCanvas2();meet2Status();if(b.fx&&b.fx.op==='poll'){stopAuto2();renderPoll2(b.fx);return;}if(M2.i>=BEATS2.length){M2.done=true;stopAuto2();finishMeeting2();}}
+function meet2ToggleAuto(){if(M2.auto){stopAuto2();return;}M2.auto=setInterval(()=>{if(M2.done){stopAuto2();return;}const r=document.getElementById('meet-room2');if(r.querySelector('.poll:not(.answered)')){stopAuto2();return;}meet2Next();},1400);document.getElementById('meet2-auto').textContent='⏸ Pausar';}
+function stopAuto2(){if(M2.auto){clearInterval(M2.auto);M2.auto=null;}const b=document.getElementById('meet2-auto');if(b)b.textContent='▶ Auto';}
+function addBubble2(i,b){const P=PERSONAS[b.s];const room=document.getElementById('meet-room2');const d=document.createElement('div');d.className='bubble';d.style.setProperty('--bc',P.c);d.dataset.idx=i;d.dataset.s=b.s;d.innerHTML='<span class="av">'+P.p+'</span><div><div class="who" style="color:'+P.c+'">'+P.p+' '+P.n+' · '+P.ri+' '+P.r+'</div><div class="txt">'+b.t+'</div></div>';room.appendChild(d);applyDim2(d);room.scrollTop=room.scrollHeight;}
+function applyFx2(b){const f=b.fx;if(!f)return;const s=M2.st;if(f.op==='ctx'){(Array.isArray(f.v)?f.v:[f.v]).forEach(v=>{if(!s.ctx.includes(v))s.ctx.push(v);});}if(f.op==='req')s.reqs.push({v:f.v,from:M2.i});if(f.op==='eps')f.v.forEach(e=>s.eps.push({m:e[0],p:e[1],a:e[2],from:M2.i}));}
+function renderPoll2(f){const room=document.getElementById('meet-room2');const d=document.createElement('div');d.className='poll';d.innerHTML='<div class="q">'+f.q+'</div>'+f.opts.map(o=>'<label><input type="radio" name="poll2-'+f.id+'" value="'+o.v+'"> '+o.l+'</label>').join('')+'<div class="react" style="display:none"></div>';d.querySelectorAll('input').forEach(inp=>inp.addEventListener('change',()=>{d.classList.add('answered');M2.st.dec[f.id]=inp.value;const rec=d.querySelector('.react');rec.style.display='block';rec.textContent=REACT2[f.id][inp.value];renderCanvas2();setTimeout(meet2Next,900);}));room.appendChild(d);room.scrollTop=room.scrollHeight;}
+function buildYaml2(s){const d=s.dec;const pre=(d.ver==='now'?'/v1':'');const sec=r=>(d.roles==='scopes'?"bearerAuth: ['"+r.toLowerCase()+":write']":'bearerAuth: ['+r+', ADMIN]');
+let paths='';
+paths+='  '+pre+'/api/catalogo/produtos:\n    get:\n      summary: Lista produtos (público)\n      tags: [Catalogo]\n      security: []\n    post:\n      summary: Cria produto\n      tags: [Catalogo]\n      security:\n        - '+sec('CATALOGO_ADMIN')+'\n';
+paths+='  '+pre+'/api/catalogo/produtos/{id}:\n    get:\n      summary: Busca por id (público)\n      tags: [Catalogo]\n      security: []\n    put:\n      summary: Atualiza produto\n      tags: [Catalogo]\n      security:\n        - '+sec('CATALOGO_ADMIN')+'\n    delete:\n      summary: Descontinua produto\n      tags: [Catalogo]\n      security:\n        - '+sec('CATALOGO_ADMIN')+'\n';
+paths+='  '+pre+'/api/catalogo/produtos/{id}/reservar:\n    post:\n      summary: Reserva estoque (interno)\n      tags: [Interno]\n      security:\n        - bearerAuth: [PEDIDOS_SERVICE]\n';
+paths+='  '+pre+'/api/pedidos:\n    post:\n      summary: Cria pedido (orquestra reserva+endereço)\n      tags: [Pedidos]\n      security:\n        - '+sec('PEDIDOS_USER')+'\n';
+paths+='  '+pre+'/api/clientes/{id}:\n    get:\n      summary: Busca cliente\n      tags: [Clientes]\n      security:\n        - '+sec('CLIENTES_ADMIN')+'\n    put:\n      summary: Atualiza cliente\n      tags: [Clientes]\n      security:\n        - '+sec('CLIENTES_ADMIN')+'\n';
+paths+='  '+pre+'/api/clientes/{id}/desativar:\n    post:\n      summary: Desativa cliente (LGPD)\n      tags: [Clientes]\n      security:\n        - '+sec('CLIENTES_ADMIN')+'\n';
+paths+='  '+pre+'/api/clientes/{id}/enderecos:\n    get:\n      summary: Endereços (interno)\n      tags: [Interno]\n      security:\n        - bearerAuth: [PEDIDOS_SERVICE, CLIENTES_ADMIN, ADMIN]\n';
+return 'openapi: 3.1.0\ninfo:\n  title: Loja REST API — Multi-Contextos\n  version: 2.0.0-draft\ntags:\n  - { name: Catalogo }\n  - { name: Pedidos }\n  - { name: Clientes }\n  - { name: Interno }\n# decisões: contrato='+(d.yaml||'single')+' · auth='+(d.roles||'roles')+' · integração='+(d.sync||'sync')+' · versão='+(d.ver||'additive')+'\npaths:\n'+paths;}
+function renderCanvas2(){const s=M2.st;document.getElementById('cv2-ctx').innerHTML=s.ctx.length?s.ctx.map(c=>'<div>• <strong>'+c+'</strong></div>').join(''):'—';document.getElementById('cv2-eps').innerHTML=s.eps.length?'<table><tr><th>Método</th><th>Rota</th><th>Auth</th></tr>'+s.eps.map(e=>'<tr><td>'+e.m+'</td><td>'+e.p+'</td><td>'+e.a+'</td></tr>').join('')+'</table>':'—';const decs=Object.entries(s.dec);document.getElementById('cv2-dec').innerHTML=decs.length?decs.map(([k,v])=>{const m=DEC_META2[k][v];return '<div>⚖️ '+LBL2[k]+' = '+v+' · defendeu: '+m.adv+(m.con!=='—'?' · cedeu: '+m.con:'')+' · → ADR-'+({yaml:'009',roles:'010',sync:'012',ver:'011'})[k]+'</div>';}).join(''):'—';document.getElementById('cv2-yaml').textContent=buildYaml2(s);}
+let CONTRACT2_YAML=null;
+function finishMeeting2(){CONTRACT2_YAML=buildYaml2(M2.st);document.getElementById('meet2-out').style.display='flex';showToast('🎉 Contrato v2 fechado! YAML multi-contextos gerado.');}
+function currentContract2(){return CONTRACT2_YAML||buildYaml2({ctx:['Catálogo','Pedidos','Clientes'],reqs:[],eps:[],dec:{yaml:'single',roles:'roles',sync:'sync',ver:'additive'}});}
+function copyContract2(){navigator.clipboard.writeText(currentContract2()).then(()=>showToast('📋 openapi-multicontexto.yaml copiado!'));}
+function downloadContract2(){const b=new Blob([currentContract2()],{type:'text/yaml'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='openapi-multicontexto.yaml';a.click();URL.revokeObjectURL(a.href);}
+function ata2Content(){const s=M2.st;const part=Object.values(PERSONAS).map(P=>'- '+P.p+' '+P.n+' — '+P.ri+' '+P.r).join('\n');const decs=Object.entries(s.dec).map(([k,v])=>{const m=DEC_META2[k][v];return '- '+LBL2[k]+' = '+v+' · defendeu: '+m.adv+(m.con!=='—'?' · cedeu: '+m.con:'')+' · → ADR-'+({yaml:'009',roles:'010',sync:'012',ver:'011'})[k];}).join('\n')||'- (padrão)';return '# Ata v2 — Sala de Contrato Multi-Contextos\n## Participantes\n'+part+'\n## Contextos\n'+(s.ctx.length?s.ctx.map(c=>'- '+c).join('\n'):'- (padrão)')+'\n## Requisitos\n'+(s.reqs.length?s.reqs.map(r=>'- '+r.v).join('\n'):'- (padrão)')+'\n## Endpoints\n'+(s.eps.length?s.eps.map(e=>'- '+e.m+' '+e.p+' ('+e.a+')').join('\n'):'- (padrão)')+'\n## Decisões (→ ADRs 009–012)\n'+decs+'\n';}
+function downloadAta2(){const b=new Blob([ata2Content()],{type:'text/markdown'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='ata-v2.md';a.click();URL.revokeObjectURL(a.href);showToast('📄 ata-v2.md baixada!');}
