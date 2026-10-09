@@ -60,4 +60,3 @@ document.getElementById('focus-toggle').onclick=()=>document.body.classList.togg
 document.getElementById('print-btn').onclick=()=>window.print();
 showToast('👋 B.25: 10 abas — agora com Contrato e API C# Multi-Contextos (Catálogo·Pedidos·Clientes)!');
 });
-</script>
