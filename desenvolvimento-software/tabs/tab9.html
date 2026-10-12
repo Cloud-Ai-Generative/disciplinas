@@ -2,26 +2,26 @@
 <section class="tab-panel" id="tab9">
 <div class="card">
 <h2 class="card-title">🔷 API C# Completa — Multi-Contextos + Auth JWT: Clean Arch + SOLID + DDD + HTTP Síncrono + JWT Real</h2>
-<p class="section-intro">Evolui a Tab 9 anterior adicionando o <strong>4º módulo: Auth (Usuários)</strong> com <strong>JWT real</strong> (tabela <code>usuarios</code> no MySQL, senha em texto puro — didático). Os contextos Catálogo, Pedidos e Clientes agora exigem <code>[Authorize]</code> (sem roles). Preparado para migração futura MySQL → MongoDB via interface <code>IUsuarioRepository</code>. <span class="ide-tag cs">IDE: VS Code</span></p>
+<p class="section-intro">Implementa o <strong>contrato multi-contextos da Tab 8</strong> (Catálogo · Pedidos · Clientes) como um <strong>monolito modular com 4 módulos</strong>, incluindo <strong>Auth (Usuários)</strong> com <strong>JWT real</strong> (tabela <code>usuarios</code> no MySQL, senha em texto puro — didático). Todos os contextos exigem <code>[Authorize]</code> (sem roles: qualquer usuário autenticado acessa). Preparado para migração futura MySQL → MongoDB via interface <code>IUsuarioRepository</code>. <span class="ide-tag cs">IDE: VS Code</span></p>
 <div class="doc-banner"><strong>🧔 Rafael Souza · 🔷 Backend (C# Multi-Contextos + Auth):</strong> esta solução é a <strong>implementação do contrato multi-contextos</strong> (Tab 8) com autenticação JWT real. Mini-fluxo: <em>Tab 8 → openapi-multicontexto.yaml → módulos + Auth (esta aba) → validação (testes + Prism :4011)</em>. <a href="javascript:switchTab('tab8')" style="color:var(--primary);text-decoration:underline">Contrato multi-contextos (Tab 8) →</a></div>
 
 <!-- ══════════ SEÇÃO 1: CONCEITOS AUTH + JWT ══════════ -->
 <div class="deep-concept-box">
-<h3>🔑 Auth JWT sem roles: o que muda em relação à Tab 9 anterior</h3>
-<p>Na Tab 9 anterior, usávamos <strong>roles JWT</strong> (<code>CATALOGO_ADMIN</code>, <code>PEDIDOS_USER</code>, etc.). Nesta versão, simplificamos: <strong>qualquer usuário autenticado acessa todos os endpoints</strong>. O JWT carrega apenas <code>sub</code> (userId), <code>name</code> e <code>exp</code> — sem claims de role.</p>
+<h3>🔑 Auth JWT sem roles: a regra de autorização desta API</h3>
+<p>Nesta API, <strong>qualquer usuário autenticado acessa todos os endpoints</strong>: não usamos roles. O JWT carrega apenas <code>sub</code> (userId), <code>name</code> e <code>exp</code> — o mínimo para identificar quem está logado e quando o token expira.</p>
 <div class="table-wrap" style="margin:12px 0">
 <table>
-<thead><tr><th>Aspecto</th><th>Tab 9 anterior (roles)</th><th>Tab 9 nova (sem roles)</th></tr></thead>
+<thead><tr><th>Aspecto</th><th>Como é nesta API</th></tr></thead>
 <tbody>
-<tr><td><strong>Autorização</strong></td><td><code>[Authorize(Roles="CATALOGO_ADMIN")]</code></td><td><code>[Authorize]</code> (qualquer autenticado)</td></tr>
-<tr><td><strong>Claims no JWT</strong></td><td><code>sub</code>, <code>role</code>, <code>exp</code></td><td><code>sub</code> (userId), <code>name</code>, <code>exp</code></td></tr>
-<tr><td><strong>Login</strong></td><td>Credenciais fixas no código</td><td><strong>Tabela <code>usuarios</code> no MySQL</strong></td></tr>
-<tr><td><strong>Módulo Auth</strong></td><td>Inexistente (mock no AuthController)</td><td><strong>4º módulo: <code>LojaApi.Modules.Auth</code></strong></td></tr>
-<tr><td><strong>Endpoints internos</strong></td><td>Token <code>PEDIDOS_SERVICE</code> (role)</td><td>Mesmo token de qualquer usuário autenticado</td></tr>
+<tr><td><strong>Autorização</strong></td><td><code>[Authorize]</code> em todos os endpoints (qualquer autenticado); <code>[AllowAnonymous]</code> apenas no login e na leitura pública do catálogo</td></tr>
+<tr><td><strong>Payload do JWT (claims)</strong></td><td><code>sub</code> (userId), <code>name</code>, <code>exp</code> — sem claim de role</td></tr>
+<tr><td><strong>Login</strong></td><td><strong>Tabela <code>usuarios</code> no MySQL</strong> (<code>auth_db</code>), senha em texto puro (didático)</td></tr>
+<tr><td><strong>Módulo Auth</strong></td><td><strong>4º módulo: <code>LojaApi.Modules.Auth</code></strong> (login + emissão do JWT)</td></tr>
+<tr><td><strong>Endpoints internos</strong></td><td>Mesmo token de qualquer usuário autenticado (sem token de serviço)</td></tr>
 </tbody>
 </table>
 </div>
-<div class="analogy-highlight"><span class="icon">🚪</span><div><strong>Analogia da portaria:</strong> antes, cada condômino tinha um cartão com permissões específicas (academia, garagem, piscina). Agora, <strong>basta ter o cartão de morador</strong> (estar autenticado) para acessar todas as áreas — a segurança é "está dentro ou fora", sem granularidade por área.</div></div>
+<div class="analogy-highlight"><span class="icon">🚪</span><div><strong>Analogia da portaria:</strong> cada condômino recebe o <strong>cartão de morador</strong>: estar autenticado basta para acessar todas as áreas — a segurança é "está dentro ou fora", sem granularidade por área.</div></div>
 </div>
 
 <div class="deep-concept-box">
@@ -35,13 +35,13 @@
 </div>
 
 <div class="deep-concept-box">
-<h3>🧱 Monolito modular: agora com 4 módulos + kernel</h3>
-<p>A Tab 9 anterior tinha 3 módulos (Catálogo, Pedidos, Clientes) + <code>Shared.Kernel</code>. Agora adicionamos o <strong>4º módulo: Auth</strong>. A regra de ouro permanece: <strong>módulo não referencia projeto de outro módulo</strong>.</p>
+<h3>🧱 Monolito modular: 4 módulos + kernel</h3>
+<p>A solução é um <strong>monolito modular com 4 módulos</strong> (Auth, Catálogo, Pedidos, Clientes) + <code>Shared.Kernel</code>. A regra de ouro: <strong>módulo não referencia projeto de outro módulo</strong>.</p>
 <div class="table-wrap" style="margin:12px 0">
 <table>
 <thead><tr><th>Contexto</th><th>Projeto-módulo</th><th>Prefixo / tags</th><th>DbContext (schema)</th><th>Auth</th></tr></thead>
 <tbody>
-<tr><td>🔑 Auth (NOVO)</td><td><code>LojaApi.Modules.Auth</code></td><td><code>/api/auth/**</code> · Auth</td><td><code>AuthDbContext</code> (auth_db)</td><td><strong>Público</strong> (é o login!)</td></tr>
+<tr><td>🔑 Auth</td><td><code>LojaApi.Modules.Auth</code></td><td><code>/api/auth/**</code> · Auth</td><td><code>AuthDbContext</code> (auth_db)</td><td><strong>Público</strong> (é o login!)</td></tr>
 <tr><td>📦 Catálogo</td><td><code>LojaApi.Modules.Catalogo</code></td><td><code>/api/catalogo/**</code> · Catalogo</td><td><code>CatalogoDbContext</code> (catalogo_db)</td><td><code>[Authorize]</code></td></tr>
 <tr><td>🛒 Pedidos</td><td><code>LojaApi.Modules.Pedidos</code></td><td><code>/api/pedidos/**</code> · Pedidos</td><td><code>PedidosDbContext</code> (pedidos_db)</td><td><code>[Authorize]</code></td></tr>
 <tr><td>🧾 Clientes</td><td><code>LojaApi.Modules.Clientes</code></td><td><code>/api/clientes/**</code> · Clientes</td><td><code>ClientesDbContext</code> (clientes_db)</td><td><code>[Authorize]</code></td></tr>
@@ -121,7 +121,7 @@ dotnet new sln -n LojaMulti
 # Shared.Kernel: exceções, eventos, contratos compartilhados
 dotnet new classlib -n LojaApi.Shared.Kernel -f net10.0
 
-# 🔑 NOVO: Módulo Auth (login, JWT, usuarios)
+# 🔑 Módulo Auth (login, JWT, usuarios)
 dotnet new classlib -n LojaApi.Modules.Auth -f net10.0
 
 # 📦 Módulo Catálogo (produtos, reserva de estoque)
@@ -192,7 +192,7 @@ code .</pre>
 ├── <span class="file">📄 LojaMulti.sln</span>
 ├── <span class="folder">📁 LojaApi.Shared.Kernel/</span>           <span class="comment"># 🔑 exceções, eventos, contratos de erro</span>
 │   └── DomainException.cs · IDomainEvent.cs · ProblemTypes.cs
-├── <span class="folder">📁 LojaApi.Modules.Auth/</span>             <span class="comment"># 🔑 NOVO: login, JWT, usuarios</span>
+├── <span class="folder">📁 LojaApi.Modules.Auth/</span>             <span class="comment"># 🔑 login, JWT, usuarios</span>
 │   ├── Domain/Usuario.cs
 │   ├── Interfaces/IUsuarioRepository.cs
 │   ├── Services/IAuthService.cs · AuthService.cs
@@ -1063,7 +1063,7 @@ public static class ModuleExtensions
 </div>
 
 <div class="warning-banner">
-<strong>⚠️ Próximo passo obrigatório:</strong> na Parte 3/6 vamos ajustar os módulos Catálogo, Pedidos e Clientes para usar <code>[Authorize]</code> sem roles e aceitar qualquer usuário autenticado.
+	 <strong>⚠️ Próximo passo:</strong> na Parte 3/6 vamos construir os módulos Catálogo, Pedidos e Clientes já com <code>[Authorize]</code> sem roles
 </div>
 </div>
 <!-- ===== FIM DA PARTE 2/6 — cole a Parte 3 (Catálogo/Pedidos/Clientes sem roles) logo após este comentário ===== -->  
@@ -1075,18 +1075,19 @@ public static class ModuleExtensions
 </div>
 
 <div class="info-banner">
-<strong>💡 O que mudou em relação à Tab 9 anterior:</strong> todos os <code>[Authorize(Roles = "...")]</code> viraram <code>[Authorize]</code>. Qualquer usuário autenticado acessa todos os endpoints. Os endpoints internos (reservar, endereços) também usam o mesmo token de qualquer usuário logado — sem token de serviço separado.
+<strong>🔐 Regra de autorização (sem roles):</strong> todos os endpoints usam apenas <code>[Authorize]</code>. Qualquer usuário autenticado acessa todos os endpoints, inclusive os internos (reservar, endereços) — sem token de serviço separado.
 </div>
 
 <div class="table-wrap" style="margin:12px 0">
 <table>
-<thead><tr><th>Endpoint</th><th>Tab 9 anterior (roles)</th><th>Tab 9 nova (sem roles)</th></tr></thead>
+<thead><tr><th>Endpoint</th><th>Quem acessa</th><th>Atributo</th></tr></thead>
 <tbody>
-<tr><td><code>POST /api/catalogo/produtos</code></td><td><code>[Authorize(Roles="CATALOGO_ADMIN,ADMIN")]</code></td><td><code>[Authorize]</code></td></tr>
-<tr><td><code>POST .../reservar</code> (interno)</td><td><code>[Authorize(Roles="PEDIDOS_SERVICE")]</code></td><td><code>[Authorize]</code></td></tr>
-<tr><td><code>POST /api/pedidos</code></td><td><code>[Authorize(Roles="PEDIDOS_USER,ADMIN")]</code></td><td><code>[Authorize]</code></td></tr>
-<tr><td><code>POST /api/clientes</code></td><td><code>[Authorize(Roles="CLIENTES_ADMIN,ADMIN")]</code></td><td><code>[Authorize]</code></td></tr>
-<tr><td><code>GET .../enderecos</code> (interno)</td><td><code>[Authorize(Roles="PEDIDOS_SERVICE,CLIENTES_ADMIN,ADMIN")]</code></td><td><code>[Authorize]</code></td></tr>
+<tr><td><code>POST /api/auth/login</code></td><td>Qualquer pessoa (público)</td><td><code>[AllowAnonymous]</code></td></tr>
+<tr><td><code>POST /api/catalogo/produtos</code></td><td>Qualquer autenticado</td><td><code>[Authorize]</code></td></tr>
+<tr><td><code>POST .../reservar</code> (interno)</td><td>Qualquer autenticado</td><td><code>[Authorize]</code></td></tr>
+<tr><td><code>POST /api/pedidos</code></td><td>Qualquer autenticado (cancela só o próprio)</td><td><code>[Authorize]</code></td></tr>
+<tr><td><code>POST /api/clientes</code></td><td>Qualquer autenticado</td><td><code>[Authorize]</code></td></tr>
+<tr><td><code>GET .../enderecos</code> (interno)</td><td>Qualquer autenticado</td><td><code>[Authorize]</code></td></tr>
 </tbody>
 </table>
 </div>
@@ -1103,7 +1104,6 @@ namespace LojaApi.Modules.Catalogo.Domain;
 
 /// &lt;summary&gt;
 /// Aggregate Root do Catálogo: estoque com reserva em duas fases.
-/// Sem alterações em relação à Tab 9 anterior — o domínio não muda.
 /// &lt;/summary&gt;
 public class Produto
 {
@@ -1404,7 +1404,6 @@ public class CatalogoController : ControllerBase
     /// &lt;summary&gt;
     /// POST /api/catalogo/produtos/{id}/reservar
     /// Reserva estoque. Qualquer usuário autenticado pode reservar.
-    /// Na Tab 9 anterior, exigia role PEDIDOS_SERVICE.
     /// &lt;/summary&gt;
     [HttpPost("produtos/{id:int}/reservar")]
     [Authorize]  // SEM ROLES — qualquer autenticado
@@ -1475,7 +1474,6 @@ namespace LojaApi.Modules.Catalogo;
 
 /// &lt;summary&gt;
 /// Extensão para registrar o módulo Catálogo no host.
-/// Sem alterações em relação à Tab 9 anterior.
 /// &lt;/summary&gt;
 public static class ModuleExtensions
 {
@@ -2455,7 +2453,6 @@ public class ClientesController : ControllerBase
     /// &lt;summary&gt;
     /// GET /api/clientes/{id}/enderecos
     /// Endereços do cliente. Qualquer usuário autenticado pode acessar.
-    /// Na Tab 9 anterior, exigia roles PEDIDOS_SERVICE/CLIENTES_ADMIN/ADMIN.
     /// &lt;/summary&gt;
     [HttpGet("{id:int}/enderecos")]
     [Authorize]  // SEM ROLES — qualquer autenticado
@@ -3689,7 +3686,7 @@ networks:
     driver: bridge
     name: loja_multi_network</pre>
 </div>
-
+"porta 3306 ocupada"
 <h4 style="color:var(--accent);margin:16px 0 8px">🖥️ Terminal — build, run e teste (comentado linha a linha)</h4>
 <div class="code-editor-wrap">
 <span class="code-filepath">terminal do VS Code - docker build/run/test</span>
@@ -3768,6 +3765,7 @@ docker compose down -v</pre>
 
 <div class="warning-banner">
 <strong>⚠️ Erros comuns:</strong> porta 3306/8080 já em uso; esquecer Docker Desktop aberto; editar init-sql sem <code>down -v</code> (o init só roda com volume vazio); API não acha o banco (use <code>--network loja_multi_network</code> e <code>Server=mysql-db</code>).
+"MSB1003 + legacy builder"
 </div>
 
 <div class="success-banner">
@@ -3957,7 +3955,7 @@ docker compose -f docker-compose.prism-contextos.yml down</pre>
 </div>
 
 <div class="success-banner">
-<strong>✅ Checklist completo Tab 9 Nova:</strong> Auth JWT real (tabela usuarios) ✓ · Sem roles (qualquer autenticado) ✓ · 4º módulo (LojaApi.Modules.Auth) ✓ · MySQL agora + MongoDB-ready (IUsuarioRepository) ✓ · Token JWT com sub + name + exp ✓ · Senha texto puro (didático) ✓ · 21 testes AAA com emojis ✓ · Docker multi-stage ✓ · CI/CD GitHub + GitLab ✓ · Prism :4011 ✓ · Terminal comentado linha a linha ✓.
+<strong>✅ Checklist completo da Tab 9:</strong> Auth JWT real (tabela usuarios) ✓ · Sem roles (qualquer autenticado) ✓ · 4º módulo (LojaApi.Modules.Auth) ✓ · MySQL agora + MongoDB-ready (IUsuarioRepository) ✓ · Token JWT com sub + name + exp ✓ · Senha texto puro (didático) ✓ · 21 testes AAA com emojis ✓ · Docker multi-stage ✓ · CI/CD GitHub + GitLab ✓ · Prism :4011 ✓ · Terminal comentado linha a linha ✓.
 </div>
 
 <div class="info-banner">
