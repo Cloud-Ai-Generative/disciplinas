@@ -1784,9 +1784,10 @@ public class PedidosDbContext : DbContext
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Pedidos/Integration/ICatalogoClient.cs + CatalogoClient.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor" data-zip-path="LojaApi.Modules.Pedidos/Integration/ICatalogoClient.cs">using LojaApi.Modules.Pedidos.Domain;
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Pedidos/Integration/ICatalogoClient.cs">
+using LojaApi.Modules.Pedidos.Domain;
 using LojaApi.Shared.Kernel;
-
+using System.Net.Http.Json;
 namespace LojaApi.Modules.Pedidos.Integration;
 
 /// &lt;summary&gt;DTO de reserva de estoque.&lt;/summary&gt;
@@ -1889,8 +1890,9 @@ public class CatalogoClient : ICatalogoClient
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Pedidos/Integration/IClientesClient.cs + ClientesClient.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor" data-zip-path="LojaApi.Modules.Pedidos/Integration/IClientesClient.cs">using LojaApi.Shared.Kernel;
-
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Pedidos/Integration/IClientesClient.cs">
+using LojaApi.Shared.Kernel;
+using System.Net.Http.Json;
 namespace LojaApi.Modules.Pedidos.Integration;
 
 /// &lt;summary&gt;DTO de fronteira: endereço vindo do contexto Clientes.&lt;/summary&gt;
@@ -2285,11 +2287,17 @@ public class Endereco
         string uf,
         string cep)
     {
-        // Valida formato do CEP
-        if (!Regex.IsMatch(cep ?? "", @"^[0-9]{5}-?[0-9]{3}$"))
-            throw new DomainException($"CEP inválido: {cep}");
-
-        // Atribui valores normalizando UF para maiúsculas
+		// Valida formato do CEP (null já é CEP inválido)
+		if (cep is null || !Regex.IsMatch(cep, @"^[0-9]{5}-?[0-9]{3}$"))
+		throw new DomainException($"CEP inválido: {cep}");
+		// Valida campos obrigatórios (elimina CS8601 e reforça o domínio)
+		if (string.IsNullOrWhiteSpace(logradouro))
+		throw new DomainException("Logradouro é obrigatório");
+		if (string.IsNullOrWhiteSpace(cidade))
+		throw new DomainException("Cidade é obrigatória");
+		if (string.IsNullOrWhiteSpace(uf))
+		throw new DomainException("UF é obrigatória");
+		// Atribui valores normalizando UF para maiúsculas
         Id = id;
         Logradouro = logradouro;
         Cidade = cidade;
@@ -2556,10 +2564,11 @@ public class ClientesController : ControllerBase
     public async Task&lt;ActionResult&gt; Enderecos(int id)
     {
         // Retorna endereços do cliente
-        return Ok(await _db.Enderecos
-            .AsNoTracking()
-            .Where(e =&gt; e.ClienteId == id)
-            .ToListAsync());
+		return Ok(await _db.Clientes
+		.AsNoTracking()
+		.Where(c => c.Id == id)
+		.SelectMany(c => c.Enderecos)
+		.ToListAsync());
     }
 }</pre>
 </div>
