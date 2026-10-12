@@ -1541,7 +1541,6 @@ public class ItemPedido
 
 /// &lt;summary&gt;
 /// Aggregate Root de Pedido com máquina de estados guardada.
-/// Sem alterações em relação à Tab 9 anterior.
 /// &lt;/summary&gt;
 public class Pedido
 {
@@ -3686,7 +3685,48 @@ networks:
     driver: bridge
     name: loja_multi_network</pre>
 </div>
-"porta 3306 ocupada"
+<div class="warning-banner">
+<strong>🚨 Erro clássico: <code>failed to bind host port 0.0.0.0:3306/tcp: address already in use</code></strong> — outro processo/container já usa a porta 3306 do host. A porta do host (lado esquerdo de "3306:3306") é única na máquina; a interna (lado direito) pode se repetir à vontade.
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal - diagnosticar e resolver porta 3306 ocupada</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor"># ── PASSO 1: DESCOBRIR QUEM ESTÁ USANDO A 3306 ──
+# Linux: processo escutando na porta
+sudo ss -tlnp | grep 3306
+# Windows (PowerShell): mesmo objetivo
+netstat -ano | findstr :3306
+# Containers que mapearam 3306 (ex.: MySQL da Tab 5)
+docker ps --format "table {{.Names}}\t{{.Ports}}" | grep 3306
+
+# ── OPÇÃO A: PARAR O CONCORRENTE (caso mais comum) ──
+# Container da Tab 5:
+docker stop dev_mysql_server
+# OU MySQL instalado como serviço (Linux):
+sudo systemctl stop mysql
+# Re-tentar:
+docker compose up -d
+
+# ── OPÇÃO B: MUDAR A PORTA DO HOST (mantém a interna 3306) ──
+# No docker-compose.yml: ports: "3306:3306"  →  "3307:3306"
+# Esquerda = porta do host (mude); direita = porta do container (NÃO mude).
+# Ajuste connection strings de quem roda FORA do Docker:
+#   Server=localhost;Port=3307;Database=auth_db;...
+# Containers na mesma rede continuam falando mysql-db:3306 (interna).
+
+# ── OPÇÃO C: NÃO EXPOR A PORTA (bancos só p/ containers) ──
+# Comente o bloco ports: do compose.
+# Consequência: DBeaver/Workbench no host param de conectar;
+# só serve se a API também rodar dentro da rede Docker.
+
+# ── OPÇÃO D: RESÍDUO DESTE PRÓPRIO COMPOSE ──
+# Um "up" anterior deixou container parado segurando a porta:
+docker compose down
+docker compose up -d</pre>
+</div>
+<div class="info-banner">
+<strong>💡 Por que acontece:</strong> o compose da Tab 5 já mapeia a 3306 (<code>dev_mysql_server</code>) — dois composes não compartilham a mesma porta do host. Ou um MySQL instalado como serviço está rodando "invisível" atrás do Docker.
+</div>
 <h4 style="color:var(--accent);margin:16px 0 8px">🖥️ Terminal — build, run e teste (comentado linha a linha)</h4>
 <div class="code-editor-wrap">
 <span class="code-filepath">terminal do VS Code - docker build/run/test</span>
@@ -3765,7 +3805,40 @@ docker compose down -v</pre>
 
 <div class="warning-banner">
 <strong>⚠️ Erros comuns:</strong> porta 3306/8080 já em uso; esquecer Docker Desktop aberto; editar init-sql sem <code>down -v</code> (o init só roda com volume vazio); API não acha o banco (use <code>--network loja_multi_network</code> e <code>Server=mysql-db</code>).
-"MSB1003 + legacy builder"
+</div>
+<div class="warning-banner">
+<strong>🚨 Erro clássico: <code>MSBUILD : error MSB1003: Specify a project or solution file</code></strong> — o <code>docker build</code> rodou numa pasta <strong>sem <code>.sln</code>/<code>.csproj</code></strong>. Se o ZIP não incluir o esqueleto da solução, ele contém apenas <strong>fontes</strong> (<code>.cs</code>, Dockerfile, compose, init-sql); o esqueleto (<code>.sln</code> + 7 <code>.csproj</code>) é criado pelos comandos de setup da Parte 1. Buildar o ZIP extraído direto falha exatamente por isso.
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal - diagnosticar e resolver MSB1003 + legacy builder</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor"># ── PASSO 1: CONFIRMAR A CAUSA (esqueleto ausente) ──
+# Lista .sln e .csproj na pasta atual (ZIP sem esqueleto = não mostra nada)
+ls *.sln */*.csproj 2>/dev/null
+# Windows (PowerShell):
+#   dir *.sln, */*.csproj
+
+# ── CAMINHO A: CRIAR O ESQUELETO ANTES (fluxo didático) ──
+# 1) Rode o setup da Parte 1 numa pasta vazia (sln + 7 projetos + refs + pacotes)
+# 2) Copie/sobrescreva os fontes do ZIP por cima dos projetos criados
+# 3) Aí sim, build:
+docker build -t loja-api-multicontextos:latest .
+
+# ── CAMINHO B: ZIP AUTO-CONTIDO (com .sln/.csproj dentro — lab "Esqueleto da solução") ──
+# Com o lab de esqueleto aplicado, basta extrair e buildar — sem setup prévio.
+
+# ── SOBRE O AVISO "DEPRECATED: The legacy builder..." ──
+# É WARNING (não erro): o Docker usou o builder legado.
+# Opção 1 (recomendada): usar buildx/BuildKit:
+docker buildx build -t loja-api-multicontextos:latest .
+#   Linux (apt): sudo apt-get install docker-buildx-plugin
+# Opção 2: manter o legacy (funciona hoje; será removido no futuro)
+# Opção 3: buildar via compose (BuildKit por padrão):
+docker compose build</pre>
+</div>
+<div class="info-banner">
+<strong>💡 Por que o MSB1003 aparece DENTRO do container:</strong> o Dockerfile faz <code>COPY . .</code> e depois <code>dotnet publish LojaApi.Api</code>. Se o build context não tiver <code>LojaApi.Api/LojaApi.Api.csproj</code>, o MSBuild não acha projeto/solução no <code>WORKDIR /src</code> e aborta no Step 4 — mesmo com o Dockerfile perfeito.
+</div>	
 </div>
 
 <div class="success-banner">
