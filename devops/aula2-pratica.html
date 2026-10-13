@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<!--
+  Disciplina: DevOps — Aula 02, Unidade 1, págs. 24 a 42
+  Título: Métricas e Modelos de Estimativa (COCOMO e PF)
+  Abas: 6 de conteúdo (5 em sala + 1 estudo próprio) + 1 Revisão
+  Cor destaque: #512da8 (roxo analytics/dados)
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aula 02 — Métricas e Modelos de Estimativa (COCOMO e PF)</title>
+<style>
+:root{
+  --cor:#512da8;
+  --cor-forte:#311b92;
+  --cor-suave:#ede7f6;
+  --fundo:#fdfdfd;
+  --texto:#1a1a1a;
+  --painel:#ffffff;
+  --borda:#d9d9d9;
+  --muted:#555;
+  --ok:#2e7d32;
+  --erro:#c62828;
+  --fonte:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --tam:18px;
+}
+*{box-sizing:border-box}
+body.dark{
+  --fundo:#121212;--texto:#e8e8e8;--painel:#1e1e1e;--borda:#333;
+  --muted:#b0b0b0;--cor-suave:#1d0f3a;--suave2:#232323;
+}
+html,body{margin:0;padding:0;background:var(--fundo);color:var(--texto);font-family:var(--fonte);font-size:var(--tam);line-height:1.55}
+header.topo{
+  position:sticky;top:0;z-index:100;background:var(--cor);color:#fff;
+  padding:10px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;
+  box-shadow:0 2px 6px rgba(0,0,0,.15)
+}
+header.topo h1{font-size:1.1rem;margin:0;font-weight:700}
+header.topo .meta{font-size:.85rem;opacity:.95}
+.acoes{display:flex;gap:6px;flex-wrap:wrap}
+.acoes button{
+  background:#fff;color:var(--cor);border:none;padding:6px 10px;border-radius:6px;
+  cursor:pointer;font-weight:600;font-size:.85rem
+}
+.acoes button:hover{background:var(--cor-suave)}
+nav.tabs{
+  position:sticky;top:56px;z-index:90;background:var(--painel);
+  border-bottom:2px solid var(--borda);overflow-x:auto;white-space:nowrap;
+  scrollbar-width:thin
+}
+nav.tabs button{
+  font-family:var(--fonte);font-size:var(--tam);background:transparent;color:var(--texto);
+  border:none;padding:12px 16px;cursor:pointer;border-bottom:4px solid transparent;
+  margin:0;font-weight:600;opacity:.75
+}
+nav.tabs button:hover{opacity:1}
+nav.tabs button[aria-selected="true"]{
+  color:var(--cor);border-bottom-color:var(--cor);opacity:1;
+  background:var(--painel);
+}
+nav.tabs button .selo{font-size:.7rem;background:var(--cor);color:#fff;padding:1px 5px;border-radius:8px;margin-left:4px;vertical-align:middle}
+main{max-width:980px;margin:0 auto;padding:20px}
+section.aba{display:none;animation:fade .3s ease}
+section.aba.ativa{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.card{background:var(--painel);border:2px solid var(--borda);border-radius:12px;padding:18px 20px;margin-bottom:18px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.card h2{margin-top:0;color:var(--cor);font-size:1.3rem;border-bottom:2px dashed var(--borda);padding-bottom:6px}
+.missao{
+  background:linear-gradient(135deg,var(--cor),var(--cor-forte));color:#fff;
+  padding:16px 18px;border-radius:10px;margin-bottom:18px;font-weight:500
+}
+.missao strong{display:block;font-size:1.1rem;margin-bottom:4px}
+.demo{
+  background:var(--suave2, #f3efff);border:2px solid var(--cor);border-radius:10px;
+  padding:16px;margin:18px 0
+}
+body.dark .demo{background:#1d0f3a}
+.demo h3{color:var(--cor);margin-top:0}
+.instru{
+  background:#fff8e1;border-left:5px solid #ffa000;padding:10px 14px;border-radius:6px;margin:10px 0;font-size:.95rem
+}
+body.dark .instru{background:#3a2d10}
+.preveja{
+  background:#e8f5e9;border-left:5px solid var(--ok);padding:10px 14px;border-radius:6px;
+  margin:10px 0;font-style:italic
+}
+body.dark .preveja{background:#1e3a1e}
+.obs{
+  background:#e3f2fd;border-left:5px solid #1976d2;padding:10px 14px;border-radius:6px;margin:10px 0;font-size:.95rem
+}
+body.dark .obs{background:#153047}
+button.btn{
+  background:var(--cor);color:#fff;border:none;padding:9px 16px;border-radius:8px;
+  cursor:pointer;font-weight:600;font-family:var(--fonte);font-size:.95rem;margin:4px 4px 4px 0
+}
+button.btn:hover{filter:brightness(1.08)}
+button.btn.sec{background:#6c757d}
+button.btn:disabled{opacity:.5;cursor:not-allowed}
+.quiz-perg{border:2px solid var(--borda);border-radius:10px;padding:14px;margin:12px 0;background:var(--painel)}
+.quiz-perg h4{margin:0 0 10px;color:var(--texto)}
+.quiz-perg .alts{display:flex;flex-direction:column;gap:8px}
+.alt{
+  text-align:left;background:var(--fundo);border:2px solid var(--borda);border-radius:8px;
+  padding:10px 14px;cursor:pointer;font-family:var(--fonte);font-size:1rem;
+  transition:all .2s
+}
+.alt:hover:not(:disabled){border-color:var(--cor);background:var(--cor-suave)}
+.alt:disabled{cursor:not-allowed;opacity:.85}
+.alt.certa{background:#d4edda;border-color:var(--ok);color:#155724}
+.alt.errada{background:#f8d7da;border-color:var(--erro);color:#721c24}
+body.dark .alt.certa{background:#1e3a1e;color:#a8e6a8}
+body.dark .alt.errada{background:#3a1e1e;color:#ffb3b3}
+.fb{margin-top:10px;padding:10px 14px;border-radius:8px;font-size:.95rem;display:none}
+.fb.ok{background:#d4edda;border-left:5px solid var(--ok);color:#155724;display:block}
+.fb.bad{background:#f8d7da;border-left:5px solid var(--erro);color:#721c24;display:block}
+body.dark .fb.ok{background:#1e3a1e;color:#a8e6a8}
+body.dark .fb.bad{background:#3a1e1e;color:#ffb3b3}
+details{background:var(--suave2,#fafafa);border:1px solid var(--borda);border-radius:8px;padding:8px 12px;margin:10px 0}
+body.dark details{background:#222}
+details summary{cursor:pointer;font-weight:600;color:var(--cor)}
+details[open] summary{margin-bottom:8px}
+details.lex{background:#fff3e0;border-color:#ffb74d}
+details.links{background:#e8f5e9;border-color:#81c784}
+details.links a{color:var(--cor);font-weight:600}
+.progresso{
+  background:var(--painel);border:2px solid var(--borda);border-radius:10px;
+  padding:10px 14px;margin-bottom:14px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:.95rem
+}
+.xp{background:var(--cor);color:#fff;padding:3px 10px;border-radius:20px;font-weight:700}
+.selos{display:flex;gap:6px;flex-wrap:wrap}
+.selo-chip{background:var(--cor-suave);color:var(--cor);padding:3px 8px;border-radius:20px;font-size:.8rem;font-weight:600}
+.rota{
+  background:#e0f7fa;border-left:5px solid #0097a7;padding:10px 14px;border-radius:6px;
+  margin:10px 0;font-size:.9rem
+}
+body.dark .rota{background:#0c2d33;color:#b3e5fc}
+body.apresentacao{font-size:22px}
+body.apresentacao nav.tabs button{font-size:22px}
+body.apresentacao .rota-apres{
+  position:fixed;bottom:0;left:0;right:0;background:#263238;color:#fff;
+  padding:14px 20px;font-size:1.05rem;box-shadow:0 -2px 8px rgba(0,0,0,.25);z-index:50
+}
+.revisao-mapa{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.revisao-mapa .no{
+  border:2px solid var(--cor);border-radius:8px;padding:10px;background:var(--cor-suave)
+}
+.revisao-mapa .no strong{color:var(--cor)}
+.cola{background:#fff3cd;border-left:5px solid #ffc107;padding:12px 16px;border-radius:8px;font-family:"Courier New",monospace;font-size:.95rem;white-space:pre-wrap}
+body.dark .cola{background:#3a2d10;color:#ffd980}
+.chefao{
+  background:linear-gradient(135deg,#263238,#37474f);color:#fff;padding:18px;border-radius:12px;margin-top:18px
+}
+.chefao h3{color:#ffd54f;margin-top:0}
+.chefao button{background:#ffd54f;color:#263238}
+.kpi-card{
+  background:var(--painel);border:2px solid var(--borda);border-radius:10px;padding:14px;
+  text-align:center;min-width:140px
+}
+.kpi-card .valor{font-size:2rem;font-weight:700;color:var(--cor);line-height:1}
+.kpi-card .rotulo{font-size:.85rem;color:var(--muted);margin-top:4px}
+.metrica-chip{
+  display:inline-block;padding:6px 12px;margin:3px;border-radius:20px;
+  border:2px solid var(--borda);background:var(--painel);cursor:grab;font-size:.9rem
+}
+.metrica-chip.correct{background:#d4edda;border-color:var(--ok)}
+.metrica-chip.wrong{background:#f8d7da;border-color:var(--erro)}
+.drop-zone{
+  min-height:90px;border:2px dashed var(--borda);border-radius:10px;padding:10px;margin:8px 0;
+  background:var(--painel);transition:all .2s
+}
+.drop-zone.hover{background:var(--cor-suave);border-color:var(--cor)}
+.slider-group{margin:10px 0;padding:10px;background:var(--painel);border-radius:8px;border:1px solid var(--borda)}
+.slider-group label{display:block;font-weight:600;margin-bottom:4px;font-size:.95rem}
+input[type=range]{width:100%}
+input[type=number]{width:100px;padding:6px;border-radius:6px;border:2px solid var(--borda);font-family:inherit;font-size:.95rem}
+.pf-row{
+  display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;padding:8px;border-bottom:1px solid var(--borda);
+  align-items:center
+}
+.pf-row.header{font-weight:700;background:var(--cor-suave);border-radius:6px}
+footer{max-width:980px;margin:30px auto;padding:20px;text-align:center;color:var(--muted);font-size:.85rem}
+@media(max-width:600px){
+  main{padding:12px}
+  .card{padding:14px}
+  header.topo h1{font-size:.95rem}
+  .pf-row{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div>
+    <h1>📊 Aula 02 — Métricas e Modelos de Estimativa (COCOMO e PF)</h1>
+    <div class="meta">DevOps • Unidade 1 • págs. 24 a 42</div>
+  </div>
+  <div class="acoes">
+    <button id="btnApres" title="Modo Apresentação">🎤</button>
+    <button id="btnDark" title="Modo Escuro">🌙</button>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist" id="tablist"></nav>
+
+<main id="main"></main>
+
+<footer>Aula gerada offline • XP e selos salvos localmente • Navegue com setas ← → no modo 🎤</footer>
+
+<script>
+const AULA_DADOS = {
+  disciplina:"DevOps",
+  aula:"02",
+  unidade:"Unidade 1",
+  paginas:"24 a 42",
+  titulo:"Métricas e Modelos de Estimativa (COCOMO e PF)",
+  cor:"#512da8",
+  abas:[
+    {
+      id:"aba-1",
+      titulo:"Por que medir software?",
+      missao:"Entender a frase de Tom DeMarco: 'Você não pode controlar o que não pode medir' — e por que métricas erradas destroem times.",
+      teoria:[
+        "<strong>Métrica de software</strong> é uma medida quantitativa de algum aspecto do produto, processo ou projeto. É a base para tomar decisões objetivas em vez de 'achar'.",
+        "Sem métricas, uma empresa não sabe: estamos ficando mais rápidos? Nosso código está mais ou menos bugado? Vale a pena investir em refatoração? Quando vamos terminar?",
+        "A <strong>Lei de Goodhart</strong> (1975) alerta: 'Quando uma métrica vira alvo, ela deixa de ser uma boa métrica'. Exemplo clássico: medir produtividade por <strong>linhas de código</strong> fez programadores escreverem código verboso e sem valor.",
+        "Exemplo real histórico: em 1985, a <strong>IBM</strong> media produtividade por linhas de código. O resultado? Times escreviam código em COBOL prolixo em vez de usar abstrações modernas. Métrica errada gerou comportamento errado.",
+        "Em contrapartida, a <strong>Netflix</strong> mede <strong>'joy of use'</strong> (satisfação do cliente) e <strong>tempo de recuperação de incidentes</strong>. Resultado: times inovam sem medo de errar.",
+        "Métricas boas são <strong>leading indicators</strong> (antecipam problemas); métricas ruins são <strong>lagging indicators</strong> (só mostram o que já aconteceu). DORA metrics (DevOps Research and Assessment) são o padrão-ouro atual."
+      ],
+      demo:{
+        tipo:"exploratorio",
+        titulo:"🏛️ Galeria: métricas que fizeram história (para o bem e para o mal)",
+        preveja:"Antes de explorar, preveja: qual métrica, ao ser usada como meta, levou programadores a escreverem código PIOR?",
+        instru:"Clique em cada caso para ver o que foi medido, o que deu errado (ou certo) e qual foi a lição aprendida.",
+        casos:[
+          {nome:"📏 IBM anos 80 — Linhas de código",contexto:"IBM media produtividade por LOC (Lines of Code). Times eram rankeados por volume de código produzido.",problema:"Programadores começaram a escrever código verboso, evitando abstrações e bibliotecas. COBOL ganhou sobrevida artificial.",licao:"Métrica de volume ≠ métrica de valor. Linhas de código incentivam quantidade, não qualidade."},
+          {nome:"🚀 NASA Apollo (1969) — Defeitos por KLOC",contexto:"NASA media defeitos por mil linhas de código (KLOC) no software do módulo lunar. Meta: < 0,1 defeito/KLOC.",resultado:"Software do Apollo 11 teve ZERO bugs críticos em voo. Margaret Hamilton liderou a equipe com foco obsessivo em qualidade.",licao:"Métrica de QUALIDADE (não quantidade) gera comportamento virtuoso. Defeitos/KLOC ainda é usada em sistemas críticos."},
+          {nome:"🎬 Netflix (2010+) — Recovery time",contexto:"Netflix mede tempo médio para recuperar serviço após incidente. Meta: < 1 hora. Usa Chaos Monkey para testar.",resultado:"Equipes projetam resiliência desde o design. Incidentes são raros e curtos. Cultura de 'fail fast, recover faster'.",licao:"Medir RECUPERAÇÃO em vez de evitar falhas gera sistemas mais robustos. Paradigma DevOps."},
+          {nome:"🛒 Amazon (2000+) — Lead time de mudança",contexto:"Amazon mede tempo entre commit e deploy em produção. Reduziu de semanas para minutos.",resultado:"Mais de 50 milhões de deploys por ano. Cultura de entrega contínua. Cada engenheiro faz deploy várias vezes ao dia.",licao:"Lead time curto permite experimentação rápida. É a métrica DORA mais correlacionada com alto desempenho."},
+          {nome:"⚠️ Wells Fargo (2016) — Contas abertas por funcionário",contexto:"Banco americano media funcionários por número de contas abertas por cliente. Meta agressiva.",problema:"Funcionários abriram 3,5 MILHÕES de contas FANTASMA sem autorização dos clientes. Escândalo bilionário.",licao:"Métrica quantitativa sem verificação qualitativa gera FRAUDE. Lei de Goodhart em estado puro."}
+        ],
+        guia:"Observe o padrão: métricas de VOLUME (linhas, quantidade) corrompem. Métricas de RESULTADO (qualidade, tempo de recuperação, satisfação) melhoram o sistema. A escolha da métrica molda a cultura da empresa."
+      },
+      aprofundar:{
+        lexico:[
+          {termo:"Métrica",def:"Medida quantitativa de um aspecto de software. Ex: tempo de resposta, densidade de defeitos."},
+          {termo:"Indicador (KPI)",def:"Métrica com meta definida usada para tomada de decisão. Ex: 'MTTR < 1h'."},
+          {termo:"Lei de Goodhart",def:"'Quando uma medida vira meta, ela deixa de ser boa medida'. Alerta clássico sobre métricas."},
+          {termo:"Leading vs Lagging",def:"Leading antecipa (ex: cobertura de testes); lagging mostra passado (ex: bugs em produção)."}
+        ],
+        links:[
+          {rotulo:"Métrica de software (Wikipédia)",url:"https://pt.wikipedia.org/wiki/M%C3%A9trica_de_software",lang:"pt"},
+          {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=m%C3%A9tricas+de+software+produtividade+goodhart"}
+        ]
+      },
+      quiz:[
+        {p:"Segundo a Lei de Goodhart (1975), o que acontece quando uma métrica vira meta?",
+          alts:[
+            {t:"Ela deixa de ser uma boa métrica porque as pessoas otimizam para ela em vez do resultado real",c:1,fb:"Correto! Goodhart mostrou que quando uma medida vira alvo, as pessoas 'gamificam' o sistema. Wells Fargo (2016) é o caso clássico: meta de contas abertas gerou 3,5 milhões de contas falsas."},
+            {t:"A métrica fica mais precisa e confiável",c:0,fb:"O oposto! Vira meta e as pessoas distorcem o comportamento para parecerem boas na métrica, não no resultado."},
+            {t:"A métrica deve ser abandonada imediatamente",c:0,fb:"Não é para abandonar — é para usar com CUIDADO. Métricas ainda são essenciais, mas não devem ser metas únicas nem absolutas."}
+          ]},
+        {p:"A NASA no projeto Apollo (1969) usou qual métrica para garantir qualidade?",
+          alts:[
+            {t:"Defeitos por mil linhas de código (KLOC) — meta de < 0,1 defeito/KLOC",c:1,fb:"Correto! O software do Apollo 11 teve ZERO bugs críticos em voo. Margaret Hamilton liderou com foco em qualidade, não em volume de código."},
+            {t:"Linhas de código produzidas por dia",c:0,fb:"NASA nunca mediu LOC. Seria desastroso em sistemas críticos onde código enxuto e testado é essencial."},
+            {t:"Número de programadores na equipe",c:0,fb:"Tamanho de equipe não é métrica de qualidade. NASA tinha equipes pequenas e altamente qualificadas."}
+          ]},
+        {p:"Qual tipo de métrica é MAIS útil para prever problemas ANTES que eles aconteçam?",
+          alts:[
+            {t:"Leading indicator (antecipador) — como cobertura de testes ou dívida técnica",c:1,fb:"Exato! Leading indicators mostram tendências. Ex: se cobertura de testes cai, bugs vão aumentar em semanas. Lagging mostra o passado (quantos bugs já aconteceram)."},
+            {t:"Lagging indicator (retroativo) — como bugs em produção",c:0,fb:"Lagging mostra o que JÁ aconteceu. Útil para auditoria, mas não para prevenir. Quando você vê, o dano já foi feito."},
+            {t:"Métricas financeiras trimestrais",c:0,fb:"Financeiras são lagging por natureza (mostram passado). Para prevenir problemas de software, use leading indicators técnicos."}
+          ]}
+      ]
+    },
+    {
+      id:"aba-2",
+      titulo:"Tipos de Métricas",
+      missao:"Classificar métricas em três famílias: Produto, Processo e Projeto — cada uma responde perguntas diferentes.",
+      teoria:[
+        "Métricas de software se dividem em <strong>três grandes famílias</strong> segundo a IEEE e o SEI (Software Engineering Institute):",
+        "<strong>Métricas de PRODUTO</strong>: medem o software em si. Ex: tamanho (KLOC, pontos de função), complexidade ciclomática (McCabe), densidade de defeitos (bugs/KLOC), cobertura de testes.",
+        "<strong>Métricas de PROCESSO</strong>: medem COMO o software é desenvolvido. Ex: lead time, cycle time, tempo de revisão de código, taxa de retrabalho, throughput.",
+        "<strong>Métricas de PROJETO</strong>: medem o esforço e o progresso. Ex: esforço (homem-hora), custo, desvio de cronograma, desvio de orçamento, velocidade da equipe (velocity).",
+        "Outra classificação útil: <strong>métricas diretas</strong> (medidas diretamente: LOC, horas, defeitos) vs <strong>indiretas</strong> (derivadas: produtividade = LOC/hora, densidade = defeitos/KLOC).",
+        "As <strong>DORA metrics</strong> (DevOps Research and Assessment, Google) são o padrão atual: <strong>Lead time</strong> (tempo até produção), <strong>Deployment frequency</strong> (quantos deploys), <strong>MTTR</strong> (tempo para recuperar) e <strong>Change failure rate</strong> (% de deploys que falham).",
+        "Exemplo real: o <strong>Spotify</strong> mede lead time (meta: horas), deployment frequency (várias/dia) e MTTR (minutos). São todas métricas de PROCESSO — porque processo eficiente gera produto bom."
+      ],
+      demo:{
+        tipo:"livre",
+        titulo:"🗂️ Classificador de Métricas",
+        preveja:"Antes de classificar, preveja: 'velocidade da equipe (velocity)' é métrica de produto, processo ou projeto?",
+        instru:"Clique em cada métrica e escolha a categoria correta (Produto/Processo/Projeto). Veja o feedback imediato com exemplo real.",
+        metricas:[
+          {nome:"Linhas de código (LOC)",tipo:"produto",exemplo:"Mede TAMANHO do software. IBM usava nos anos 80 — métrica controversa hoje.",cor:"#1976d2"},
+          {nome:"Complexidade ciclomática (McCabe)",tipo:"produto",exemplo:"Número de caminhos independentes no código. Acima de 10 indica código difícil de testar.",cor:"#1976d2"},
+          {nome:"Densidade de defeitos (bugs/KLOC)",tipo:"produto",exemplo:"Quantos bugs por mil linhas. NASA Apollo meta: < 0,1. Software comercial típico: 1-10.",cor:"#1976d2"},
+          {nome:"Lead time (commit → produção)",tipo:"processo",exemplo:"Amazon reduziu de semanas para minutos. Métrica DORA #1 para desempenho.",cor:"#388e3c"},
+          {nome:"Deployment frequency",tipo:"processo",exemplo:"Quantas vezes deployamos. Netflix: milhares/dia. Empresas maduras: várias/dia.",cor:"#388e3c"},
+          {nome:"MTTR (Mean Time To Recovery)",tipo:"processo",exemplo:"Tempo médio para recuperar após incidente. Meta DevOps: < 1 hora.",cor:"#388e3c"},
+          {nome:"Velocity (pontos/sprint)",tipo:"projeto",exemplo:"Capacidade da equipe por sprint. Usado para forecasting em Scrum.",cor:"#f57c00"},
+          {nome:"Esforço (homem-hora)",tipo:"projeto",exemplo:"Quantidade de trabalho investido. Base do COCOMO e de orçamentos.",cor:"#f57c00"},
+          {nome:"Desvio de cronograma (SPI)",tipo:"projeto",exemplo:"Índice de valor agregado. SPI < 1 significa projeto atrasado.",cor:"#f57c00"},
+          {nome:"Cobertura de testes (%)",tipo:"produto",exemplo:"% do código exercitado por testes automatizados. Meta comum: > 80%.",cor:"#1976d2"},
+          {nome:"Change failure rate",tipo:"processo",exemplo:"% de deploys que causam incidentes. DORA: elite < 5%.",cor:"#388e3c"},
+          {nome:"Custo do projeto (R$)",tipo:"projeto",exemplo:"Valor financeiro total investido. Base de ROI e business case.",cor:"#f57c00"}
+        ],
+        guia:"Observe que a MAIORIA das métricas DevOps modernas (DORA) são de PROCESSO. A indústria percebeu: processo bom gera produto bom, sem precisar medir o produto diretamente o tempo todo."
+      },
+      aprofundar:{
+        lexico:[
+          {termo:"Métrica de produto",def:"Mede atributos do software em si (tamanho, complexidade, qualidade)."},
+          {termo:"Métrica de processo",def:"Mede como o software é desenvolvido (velocidade, eficiência, fluxo)."},
+          {termo:"Métrica de projeto",def:"Mede esforço, custo e progresso do projeto (homem-hora, SPI, CPI)."},
+          {termo:"DORA metrics",def:"4 métricas do Google para avaliar desempenho DevOps: lead time, deploy freq, MTTR, change failure."}
+        ],
+        links:[
+          {rotulo:"Métricas DORA (Wikipédia)",url:"https://pt.wikipedia.org/wiki/DevOps",lang:"pt"},
+          {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=m%C3%A9tricas+DORA+devops+accelerate"}
+        ]
+      },
+      quiz:[
+        {p:"'Lead time' (tempo entre commit e deploy em produção) é uma métrica de:",
+          alts:[
+            {t:"PROCESSO — mede a eficiência do fluxo de entrega",c:1,fb:"Correto! Lead time é a métrica DORA #1. Mede a velocidade do processo de entrega. Amazon e Spotify monitoram obsessivamente."},
+            {t:"PRODUTO — mede a qualidade do software",c:0,fb:"Lead time não diz nada sobre a qualidade do software entregue. É sobre rapidez do PROCESSO de entrega."},
+            {t:"PROJETO — mede esforço investido",c:0,fb:"Esforço é homem-hora. Lead time é TEMPO DE FLUXO, não esforço humano. São conceitos diferentes."}
+          ]},
+        {p:"Qual é a classificação correta das 4 DORA metrics?",
+          alts:[
+            {t:"Lead time, Deployment frequency, MTTR e Change failure rate — todas métricas de processo",c:1,fb:"Exato! As 4 DORA medem o processo de entrega DevOps. Pesquisa com 32.000+ equipes mostra que times com bons números nessas 4 métricas têm performance 2× superior."},
+            {t:"LOC, complexidade ciclomática, densidade de defeitos e cobertura de testes",c:0,fb:"Essas são métricas de PRODUTO clássicas, não DORA. DORA foca em processo de entrega, não em atributos do código."},
+            {t:"Velocity, homem-hora, custo e cronograma",c:0,fb:"Essas são métricas de PROJETO (gestão). DORA é específico sobre DevOps e entrega contínua."}
+          ]},
+        {p:"Métrica DIRETA vs INDIRETA — qual é um exemplo de métrica INDIRETA?",
+          alts:[
+            {t:"Produtividade (linhas de código / homem-hora) — derivada de duas medidas",c:1,fb:"Correto! Produtividade é derivada (LOC ÷ horas). Diretas são medidas puras (LOC, horas, defeitos). Indiretas são calculadas a partir de diretas."},
+            {t:"Linhas de código — medida diretamente no fonte",c:0,fb:"LOC é direta: você conta as linhas do código. Nenhuma fórmula envolvida."},
+            {t:"Número de defeitos encontrados — contagem direta",c:0,fb:"Contar defeitos é medida direta. Só vira indireta quando combinada (ex: defeitos/KLOC)."}
+          ]}
+      ]
+    },
+    {
+      id:"aba-3",
+      titulo:"Indicadores de Produtividade",
+      missao:"Ir além das métricas brutas e construir INDICADORES que realmente medem a produtividade de um time de software.",
+      teoria:[
+        "<strong>Produtividade em software</strong> é a relação entre ENTREGA DE VALOR e ESFORÇO INVESTIDO. Fórmula clássica: Produtividade = Saída ÷ Entrada. Mas o que é 'saída'?",
+        "Medir produtividade por <strong>linhas de código (LOC)</strong> é considerado <strong>anti-padrão</strong> desde os anos 1990. Problemas: incentiva verbosidade, ignora reuso, penaliza refatoração, não mede valor.",
+        "Medidas melhores de produtividade:",
+        "• <strong>Velocity</strong> (Scrum): pontos de história entregues por sprint. Útil para forecasting da MESMA equipe, nunca para comparar equipes.",
+        "• <strong>Throughput</strong> (Kanban): itens entregues por unidade de tempo. Ex: 15 histórias/semana.",
+        "• <strong>Cycle time</strong>: tempo que um item leva do início ao fim. Menor é melhor.",
+        "• <strong>Lead time</strong>: tempo do pedido do cliente até entrega. Visão ponta-a-ponta.",
+        "• <strong>Valor de negócio entregue</strong>: receita gerada, clientes impactados, problemas resolvidos. A métrica DEFINITIVA.",
+        "O <strong>Estado da DevOps Report (DORA)</strong>, publicado anualmente pelo Google desde 2014, classifica times em 4 níveis: <strong>Elite, Alto, Médio, Baixo</strong>. Elite: deploy em minutos, MTTR < 1h, change failure < 5%.",
+        "Exemplo real: times <strong>Elite</strong> (3% das equipes globais) fazem <strong>208× mais deploys</strong> e têm <strong>106× mais rápido lead time</strong> que times de baixa performance (DORA 2023). Nubank e Mercado Livre estão no grupo Elite."
+      ],
+      demo:{
+        tipo:"livre",
+        titulo:"📈 Dashboard: analise 4 times diferentes",
+        preveja:"Antes de analisar, preveja: qual time é o MAIS produtivo — o que escreve mais linhas de código ou o que entrega mais rápido?",
+        instru:"Clique em cada time para ver suas métricas completas. Depois escolha qual você contrataria.",
+        times:[
+          {nome:"🐢 Time A — 'Código Monstro'",metricas:{loc:120000,velocity:45,lead_time:"8 semanas",mttr:"3 dias",deploy_freq:"1/mês",change_fail:"40%"},analise:"Escreve MUITO código (120K LOC/mês), mas entrega LENTA. Deploys raros e falham muito. Métrica LOC esconde ineficiência.",produtividade_real:"BAIXA",cor:"#c62828"},
+          {nome:"⚡ Time B — 'DevOps Elite'",metricas:{loc:15000,velocity:62,lead_time:"2 horas",mttr:"45 min",deploy_freq:"12/dia",change_fail:"3%"},analise:"Poucas linhas de código (15K), mas entregas RÁPIDAS e CONFIÁVEIS. Deploys várias vezes ao dia com baixa taxa de falha.",produtividade_real:"ALTA (Elite DORA)",cor:"#2e7d32"},
+          {nome:"📊 Time C — 'Métrica Vanidade'",metricas:{loc:80000,velocity:70,lead_time:"3 semanas",mttr:"8 horas",deploy_freq:"2/semana",change_fail:"15%"},analise:"Velocity alta (70 pts/sprint) mas lead time de semanas. Métrica velocity está DESACORRELACIONADA da entrega real.",produtividade_real:"MÉDIA",cor:"#f57c00"},
+          {nome:"🎯 Time D — 'Foco em Valor'",metricas:{loc:22000,velocity:55,lead_time:"1 dia",mttr:"1 hora",deploy_freq:"5/dia",change_fail:"6%"},analise:"Equilíbrio saudável. Valor de negócio reportado: R$ 2,3 milhões/mês em novas funcionalidades que geraram receita.",produtividade_real:"ALTA (com valor mensurável)",cor:"#1976d2"}
+        ],
+        guia:"Observe o CONTRASTE: Time A é o campeão de LINHAS DE CÓDIGO mas o pior em entregas. Time B escreve 8× menos código e entrega 672× mais rápido. A métrica certa revela a verdade que a métrica errada esconde."
+      },
+      aprofundar:{
+        lexico:[
+          {termo:"Velocity",def:"Pontos de história entregues por sprint em Scrum. Útil para forecasting, NÃO para comparar equipes."},
+          {termo:"Throughput",def:"Número de itens entregues por unidade de tempo. Métrica Kanban."},
+          {termo:"Cycle time",def:"Tempo entre início e fim de um item. Mede eficiência do fluxo."},
+          {termo:"DORA Elite",def:"Top 3% das equipes DevOps mundiais. Deploy em minutos, MTTR < 1h."}
+        ],
+        links:[
+          {rotulo:"DevOps Research and Assessment (Wikipédia)",url:"https://pt.wikipedia.org/wiki/DevOps",lang:"pt"},
+          {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=produtividade+desenvolvimento+software+dora+metrics"}
+        ]
+      },
+      quiz:[
+        {p:"Por que 'linhas de código por programador' é considerado anti-padrão?",
+          alts:[
+            {t:"Porque incentiva verbosidade, penaliza reuso e refatoração, e não mede valor de negócio",c:1,fb:"Correto! Programadores escrevem código prolixo para 'produzir mais'. Refatorar REDUZ LOC — então times evitam. Reuso de bibliotecas também reduz. Métrica destrói boas práticas."},
+            {t:"Porque é difícil de contar linhas automaticamente",c:0,fb:"Ferramentas como cloc contam LOC em segundos. A dificuldade técnica não é o problema — é a INCENTIVAÇÃO ERRADA que a métrica gera."},
+            {t:"Porque só funciona em linguagens antigas como COBOL",c:0,fb:"LOC é problemática em QUALQUER linguagem. Em Python é pior ainda (código enxuto por design)."}
+          ]},
+        {p:"Velocity (Scrum) deve ser usada PRIMARIAMENTE para:",
+          alts:[
+            {t:"Forecasting da própria equipe — quantos pontos consegue entregar na próxima sprint",c:1,fb:"Correto! Velocity é pessoal como IMC: útil para você monitorar a si mesmo. Comparar velocity entre equipes é absurdo — cada uma estima diferente."},
+            {t:"Comparar equipes e rankear as mais produtivas",c:0,fb:"Erro clássico! Equipes estimam em escalas diferentes. Comparar velocity entre squads gera 'corrida inflacionária' onde todos aumentam pontos artificialmente."},
+            {t:"Calcular bônus salarial dos desenvolvedores",c:0,fb:"NUNCA! Ligar bônus a velocity faz times inflarem estimativas. Métrica vira meta, Goodhart ataca de novo."}
+          ]},
+        {p:"Segundo o DORA Report 2023, times Elite fazem quantas vezes MAIS deploys que times de baixa performance?",
+          alts:[
+            {t:"208× mais deploys por unidade de tempo",c:1,fb:"Correto! Elite (3% das equipes) faz deploys sob demanda (vários/dia). Baixa performance faz < 1/mês. A diferença é de ORDEM DE GRANDEZA, não percentual."},
+            {t:"2× mais deploys",c:0,fb:"2× é pouco. DORA mostra diferença MASSIVA: 208×. Elite está em outra realidade operacional."},
+            {t:"10× mais deploys",c:0,fb:"10× seria significativo, mas DORA mostra 208×. É um abismo entre times maduros e imaturos."}
+          ]}
+      ]
+    },
+    {
+      id:"aba-4",
+      titulo:"COCOMO: Custo Construtivo",
+      missao:"Dominar o modelo de estimativa mais influente da história — criado por Barry Boehm em 1981 e ainda usado em contratos governamentais.",
+      teoria:[
+        "O <strong>COCOMO (Constructive Cost Model)</strong> foi criado por <strong>Barry Boehm</strong> em 1981, baseado em dados de 63 projetos da indústria. É um modelo <strong>algorítmico</strong>: usa fórmulas matemáticas para estimar esforço, tempo e custo.",
+        "A fórmula básica é: <strong>Esforço (PM) = a × (KSLOC)^b × Fatores</strong>. PM = Person-Months (homem-mês); KSLOC = milhares de linhas de código (excluindo comentários).",
+        "<strong>Três níveis do COCOMO</strong>:",
+        "• <strong>Básico</strong>: usa só tamanho (KSLOC) e tipo de projeto (orgânico, semi-detachado, embutido). Rápido, mas impreciso.",
+        "• <strong>Intermediário</strong>: adiciona 15 fatores de ajuste (experiência da equipe, complexidade, ferramentas). Mais preciso.",
+        "• <strong>Detalhado (COCOMO II, 2000)</strong>: considera fases do ciclo de vida, reuso de código e modelos modernos (orientado a objetos).",
+        "<strong>Tipos de projeto (modo)</strong>:",
+        "• <strong>Orgânico</strong>: projetos simples, times pequenos, requisitos flexíveis. Ex: sistema interno pequeno. a=2,4; b=1,05.",
+        "• <strong>Semi-Detachado</strong>: projetos médios, experiência mista. Ex: ERP corporativo. a=3,0; b=1,12.",
+        "• <strong>Embutido</strong>: projetos complexos, restrições rígidas, tempo real. Ex: sistema de avião, foguete. a=3,6; b=1,20.",
+        "Exemplo real: a <strong>Lockheed Martin</strong> usa COCOMO para orçamentar sistemas de caças F-35. O <strong>Governo Federal brasileiro</strong> usa COCOMO (via tabela de preços do SISP) para contratar desenvolvimento de software."
+      ],
+      demo:{
+        tipo:"livre",
+        titulo:"🧮 Calculadora COCOMO Interativa",
+        preveja:"Antes de calcular, preveja: se você DOBRAR o tamanho de um projeto embutido, o esforço dobra ou mais que dobra?",
+        instru:"Ajuste os sliders para tamanho (KSLOC) e tipo de projeto. Veja o esforço, tempo e custo estimados em tempo real.",
+        guia:"Observe que o expoente b > 1 significa que dobrar o tamanho MAIS QUE DOBRA o esforço (deseconomia de escala). Por isso projetos grandes têm custo exponencial. Um projeto de 10K linhas é mais de 10× mais caro que um de 1K."
+      },
+      aprofundar:{
+        lexico:[
+          {termo:"COCOMO",def:"Constructive Cost Model. Modelo de estimativa de Boehm (1981) baseado em tamanho e fatores."},
+          {termo:"KSLOC",def:"Kilo Source Lines of Code — milhares de linhas de código-fonte (sem comentários)."},
+          {termo:"Person-Month (PM)",def:"Esforço de uma pessoa trabalhando um mês. Unidade clássica de estimativa."},
+          {termo:"Modo embutido",def:"Projetos complexos com restrições rígidas (tempo real, hardware específico)."}
+        ],
+        links:[
+          {rotulo:"COCOMO (Wikipédia)",url:"https://pt.wikipedia.org/wiki/COCOMO",lang:"pt"},
+          {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=cocomo+barry+boehm+estimativa+software"}
+        ]
+      },
+      quiz:[
+        {p:"Quem criou o modelo COCOMO e em que ano?",
+          alts:[
+            {t:"Barry Boehm, em 1981, baseado em 63 projetos reais",c:1,fb:"Correto! Boehm publicou 'Software Engineering Economics' em 1981 com o COCOMO. Seu trabalho fundamenta a economia de software até hoje. COCOMO II foi publicado em 2000."},
+            {t:"Linus Torvalds, em 1991",c:0,fb:"Torvalds criou o Linux em 1991, não modelos de estimativa. São áreas completamente diferentes."},
+            {t:"Kent Beck, em 1999 (com XP)",c:0,fb:"Beck criou Extreme Programming (XP), não COCOMO. São gerações diferentes: Boehm (1981) é da era waterfall; Beck (1999) é ágil."}
+          ]},
+        {p:"Qual a fórmula básica do COCOMO?",
+          alts:[
+            {t:"Esforço = a × (KSLOC)^b × Fatores de ajuste",c:1,fb:"Correto! a e b dependem do modo (orgânico, semi, embutido). Fatores ajustam por experiência da equipe, complexidade etc. Fórmula elegante que cabe em uma linha."},
+            {t:"Esforço = Tempo × Pessoas × Complexidade",c:0,fb:"Essa seria a fórmula da tríade de ferro, não COCOMO. COCOMO é baseado em TAMANHO (LOC), não em tempo."},
+            {t:"Esforço = Pontos de Função × 10",c:0,fb:"Isso seria uma simplificação de Pontos de Função, não COCOMO. COCOMO usa LOC; PF usa funcionalidades entregues ao usuário."}
+          ]},
+        {p:"Por que dobrar o tamanho de um projeto MAIS QUE DOBRA seu esforço no COCOMO?",
+          alts:[
+            {t:"Porque o expoente b > 1 (ex: 1,20) — há deseconomia de escala e complexidade cresce não-linearmente",c:1,fb:"Exato! Projeto de 10K linhas leva ~36 PM; de 20K leva ~82 PM (mais que o dobro). Razões: mais comunicação, mais integrações, mais testes, mais bugs em interfaces."},
+            {t:"Porque os desenvolvedores ficam cansados e trabalham mais devagar",c:0,fb:"Cansaço é fator humano, mas a fórmula captura EFEITOS ESTRUTURAIS: comunicação em redes (n×(n-1)/2), integrações, complexidade algorítmica."},
+            {t:"Porque Boehm quis superestimar para ter margem de segurança",c:0,fb:"Boehm derivou a fórmula de DADOS REAIS de 63 projetos. Não é viés — é a realidade matemática de projetos grandes."}
+          ]}
+      ]
+    },
+    {
+      id:"aba-5",
+      titulo:"Pontos de Função (IFPUG)",
+      missao:"Entender o modelo que mede software pelo VALOR entregue ao usuário — independente da linguagem de programação usada.",
+      teoria:[
+        "<strong>Análise de Pontos de Função (APF)</strong> foi criada por <strong>Allan Albrecht</strong> na IBM em 1979. Padronizada pelo <strong>IFPUG</strong> (International Function Point Users Group) desde 1986.",
+        "A grande vantagem sobre COCOMO: Pontos de Função medem <strong>FUNCIONALIDADE entregue ao usuário</strong>, não linhas de código. 100 PF são 100 PF em Java, Python ou COBOL. Isso permite comparar projetos em tecnologias diferentes.",
+        "Os <strong>5 componentes funcionais</strong> contados:",
+        "• <strong>EE (Entrada Externa)</strong>: dados que entram no sistema (formulários, APIs de entrada). Ex: cadastro de cliente.",
+        "• <strong>SE (Saída Externa)</strong>: dados processados que saem (relatórios, cálculos). Ex: relatório de vendas.",
+        "• <strong>CE (Consulta Externa)</strong>: recupera dados sem processamento. Ex: busca de cliente.",
+        "• <strong>ALI (Arquivo Lógico Interno)</strong>: grupo de dados mantido dentro do sistema. Ex: tabela de clientes.",
+        "• <strong>AIE (Arquivo de Interface Externa)</strong>: dados mantidos por OUTRO sistema mas lidos. Ex: tabela de CEPs dos Correios.",
+        "Cada componente é classificado em <strong>baixa/média/alta complexidade</strong> e recebe pontos (ex: EE baixa = 3 pts, alta = 6 pts).",
+        "O <strong>Brasil é líder mundial em APF</strong>. O <strong>SISP</strong> (Sistema de Administração de Recursos de TI do Governo Federal) usa PF como unidade de contratação desde 2010. Um PF custa entre R$ 600 e R$ 1.500 dependendo da complexidade.",
+        "Exemplo real: o <strong>Banco do Brasil</strong> contrata desenvolvimento por Pontos de Função desde 2005. Em 2023, pagou ~R$ 800/PF para manutenção de sistemas críticos."
+      ],
+      demo:{
+        tipo:"livre",
+        titulo:"📋 Contador de Pontos de Função",
+        preveja:"Antes de contar, preveja: um sistema com 10 entradas complexas é maior ou menor que um com 20 entradas simples?",
+        instru:"Adicione componentes funcionais (EE, SE, CE, ALI, AIE) com diferentes complexidades e veja o total de PF em tempo real.",
+        guia:"Observe que a COMPLEXIDADE conta: 1 EE alta (6 pts) equivale a 2 EE baixas (3+3). Por isso um sistema com poucos componentes complexos pode ser maior que um com muitos simples."
+      },
+      aprofundar:{
+        lexico:[
+          {termo:"Ponto de Função (PF)",def:"Unidade de medida funcional do software. Independente de linguagem. Padrão IFPUG."},
+          {termo:"IFPUG",def:"International Function Point Users Group. Mantém o padrão global de contagem desde 1986."},
+          {termo:"EE, SE, CE, ALI, AIE",def:"Os 5 componentes funcionais contados na APF. Cada um tem tabela de pontos por complexidade."},
+          {termo:"SISP",def:"Sistema do Governo Federal brasileiro que usa PF para contratar software desde 2010."}
+        ],
+        links:[
+          {rotulo:"Análise de pontos de função (Wikipédia)",url:"https://pt.wikipedia.org/wiki/An%C3%A1lise_de_pontos_de_fun%C3%A7%C3%A3o",lang:"pt"},
+          {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=pontos+de+fun%C3%A7%C3%A3o+IFPUG+contagem"}
+        ]
+      },
+      quiz:[
+        {p:"Qual é a GRANDE vantagem de Pontos de Função sobre COCOMO/LOC?",
+          alts:[
+            {t:"Mede funcionalidade entregue ao usuário — independente da linguagem de programação",c:1,fb:"Correto! 100 PF são 100 PF em Java, Python, COBOL ou qualquer outra. Isso permite comparar projetos em tecnologias diferentes. COCOMO depende de LOC, que varia enormemente entre linguagens."},
+            {t:"É mais rápido de calcular que COCOMO",c:0,fb:"Na verdade, APF é MAIS trabalhosa que COCOMO básico — exige análise funcional detalhada. A vantagem é PRECISÃO e INDEPENDÊNCIA de tecnologia, não velocidade."},
+            {t:"Não precisa de nenhuma especialização para contar",c:0,fb:"Contar PF exige CERTIFICAÇÃO (CFPS). É uma técnica especializada. COCOMO básico qualquer um calcula com uma fórmula."}
+          ]},
+        {p:"Qual componente funcional representa dados que ENTRAM no sistema vindos do usuário?",
+          alts:[
+            {t:"EE (Entrada Externa) — ex: formulário de cadastro de cliente",c:1,fb:"Correto! EE é qualquer entrada que atualiza ou mantém dados internos. Cadastros, atualizações, exclusões. Cada EE é classificada por complexidade (baixa, média, alta)."},
+            {t:"SE (Saída Externa)",c:0,fb:"SE é o oposto: dados que SAEM do sistema processados. Ex: relatórios, cálculos, gráficos gerados."},
+            {t:"ALI (Arquivo Lógico Interno)",c:0,fb:"ALI são os dados ARMAZENADOS pelo sistema (tabelas). Não são entradas — são o destino das entradas."}
+          ]},
+        {p:"Como o Governo Federal brasileiro contrata desenvolvimento de software?",
+          alts:[
+            {t:"Por Pontos de Função via SISP, com preço entre R$ 600 e R$ 1.500 por PF",c:1,fb:"Correto! O SISP usa PF desde 2010 como unidade de contratação. É o maior caso de uso de APF no mundo. Bancos como BB e Caixa seguem o mesmo modelo."},
+            {t:"Por linhas de código (LOC) escritas pelos desenvolvedores",c:0,fb:"Governo abandonou LOC há décadas por ser métrica corrompível. PF é a unidade oficial."},
+            {t:"Por homem-hora trabalhada, sem medição de entrega",c:0,fb:"Homem-hora é usado como REFERÊNCIA de custo, mas a UNIDADE de contratação é PF. Você paga pelo que é ENTREGUE, não pelo tempo gasto."}
+          ]}
+      ]
+    },
+    {
+      id:"aba-6",
+      titulo:"Comparativo e Aplicação Prática 📖 Estudo próprio",
+      estudoProprio:true,
+      missao:"Saber QUANDO usar cada modelo — porque a escolha errada gera estimativas erradas e projetos fracassados.",
+      teoria:[
+        "Cada modelo tem sua <strong>situação ideal</strong>. Nenhum é universalmente melhor que o outro:",
+        "<strong>COCOMO</strong> é melhor quando: você tem estimativa de LOC (projetos novos em linguagem conhecida); contratos com base em esforço; projetos técnicos onde o tamanho do código é previsível; sistemas embarcados e de baixo nível.",
+        "<strong>Pontos de Função</strong> são melhores quando: você contrata terceiros (precisa de unidade independente de tecnologia); requisitos funcionais estão bem definidos; projetos corporativos (ERP, CRM); sistemas de informação em geral.",
+        "<strong>Planning Poker / Story Points</strong> (ágil): melhor para equipes Scrum, quando o foco é forecasting interno e não contratação externa.",
+        "<strong>Cenários híbridos</strong>: muitas empresas usam PF para orçar com fornecedores e velocity para planejar internamente. <strong>Itaú Unibanco</strong> usa essa abordagem dupla.",
+        "<strong>Limitações de todos os modelos</strong>:",
+        "• Nenhuma fórmula substitui EXPERIÊNCIA da equipe.",
+        "• Todos assumem 'condições normais' — projetos inovadores ou de P&D são difíceis de estimar.",
+        "• Contexto humano (moral da equipe, turnover, conflitos) raramente é capturado pelas fórmulas.",
+        "• Cone da Incerteza (Boehm): estimativas iniciais erram de 0,25× a 4×. Modelos ajudam, mas não eliminam incerteza.",
+        "<strong>Padrão brasileiro atual</strong>: Governo Federal e bancos usam PF para contratação. Startups ágeis usam velocity/story points. Empresas de sistemas críticos (aviação, automotivo) usam COCOMO ou métodos proprietários.",
+        "<strong>Tendência 2026</strong>: machine learning aplicado a estimativas. Plataformas como <strong>QSM SLIM</strong> e <strong>Proj estimators</strong> usam dados históricos de milhares de projetos para melhorar previsões. Mesmo assim, o julgamento humano continua essencial."
+      ],
+      demo:{
+        tipo:"exploratorio",
+        titulo:"🎯 Consultor por um dia: qual modelo usar?",
+        preveja:"Antes de decidir, preveja: para contratar uma fábrica de software para fazer um sistema bancário, qual modelo seria o mais adequado?",
+        instru:"Para cada cenário real, escolha o modelo de estimativa mais apropriado. Veja a justificativa e aprenda com os erros.",
+        cenarios:[
+          {nome:"🏦 Banco contrata fábrica para novo core bancário",
+            opcoes:[
+              {t:"Pontos de Função (APF/IFPUG)",c:1,fb:"Perfeito! Contratos entre empresas diferentes precisam de unidade INDEPENDENTE de tecnologia. PF permite comparar propostas de fábricas usando Java, C# ou COBOL em pé de igualdade. Padrão do setor financeiro brasileiro."},
+              {t:"COCOMO baseado em linhas de código",c:0,fb:"Problemático em contratação: cada fornecedor pode inflar LOC artificialmente. PF é à prova dessa manipulação por ser baseado em funcionalidade."},
+              {t:"Planning Poker com story points",c:0,fb:"Story points são INTERNOS à equipe — não servem para contratar terceiros. Cada equipe tem escala própria."}
+            ]
+          },
+          {nome:"🚗 Montadora desenvolvendo software do painel do carro (embarcado)",
+            opcoes:[
+              {t:"COCOMO (modo embutido)",c:1,fb:"Correto! Sistemas embarcados têm restrições rígidas (memória, tempo real) e código em C/C++ bem mensurável em LOC. COCOMO modo embutido foi feito exatamente para isso."},
+              {t:"Pontos de Função",c:0,fb:"PF foi criado para sistemas de informação (ERP, CRM). Para software embarcado com requisitos não-funcionais dominantes, PF não captura complexidade real."},
+              {t:"Chute do gerente de projeto",c:0,fb:"Sistemas críticos de automóvel exigem metodologia formal. 'Chute' seria irresponsável em software que pode afetar vidas."}
+            ]
+          },
+          {nome:"🛒 Startup de e-commerce planejando próxima sprint",
+            opcoes:[
+              {t:"Planning Poker com story points + velocity histórico",c:1,fb:"Perfeito! Para planejamento INTERNO de equipe ágil, story points são ideais. Velocity histórico dá forecasting realista sem burocracia."},
+              {t:"COCOMO completo com todos os 15 fatores",c:0,fb:"COCOMO é PESADO para planejamento de sprint de 2 semanas. Burocracia incompatível com agilidade."},
+              {t:"Pontos de Função contados por analista certificado",c:0,fb:"Contar PF leva semanas — muito lento para sprint planning de 2 semanas. PF é para contratos, não para sprints."}
+            ]
+          },
+          {nome:"🛩️ Fabricante de aviões orçando sistema de navegação",
+            opcoes:[
+              {t:"COCOMO modo embutido + análise de risco específica (DO-178C)",c:1,fb:"Exato! Sistemas aviônicos exigem COCOMO embutido (restrições rígidas) SOMADO a normas específicas como DO-178C para certificação. Airbus e Boeing usam essa combinação."},
+              {t:"Apenas Pontos de Função",c:0,fb:"PF sozinho não captura complexidade de sistemas críticos de aviação. Necessário complementar com análise de risco e certificação específica."},
+              {t:"Estimativa por analogia com projeto anterior",c:0,fb:"Analogia é útil como COMPLEMENTO, mas em sistemas críticos você precisa de metodologia formal auditável (COCOMO + DO-178C)."}
+            ]
+          },
+          {nome:"🏛️ Tribunal de Justiça licitando novo sistema de processos eletrônicos",
+            opcoes:[
+              {t:"Pontos de Função com tabela SISP de preços",c:1,fb:"Correto! Governo brasileiro usa SISP + PF como padrão para licitações. TCU (Tribunal de Contas) aceita e audita. É o modelo mais transparente para uso de verba pública."},
+              {t:"Orçamento por homem-hora estimado",c:0,fb:"Homem-hora abre brecha para superfaturamento. TCU recomenda PF justamente por ser mensurável e auditável."},
+              {t:"Deixar os fornecedores sugerirem o modelo",c:0,fb:"Abre margem para fornecedor escolher modelo que o favoreça. Órgão público DEVE definir a metodologia no edital — e PF/SISP é o padrão."}
+            ]
+          }
+        ],
+        guia:"Observe que NÃO existe modelo universal. A escolha depende de 3 fatores: QUEM está envolvido (cliente-fornecedor ou interno), TIPO de sistema (crítico, corporativo, ágil) e CONTEXT (governo, privado, startup)."
+      },
+      aprofundar:{
+        lexico:[
+          {termo:"Estimativa híbrida",def:"Combinação de métodos (PF + velocity, COCOMO + analogy) para cobrir diferentes aspectos do projeto."},
+          {termo:"Cone da Incerteza",def:"Modelo de Boehm: estimativas iniciais erram de 0,25× a 4×; precisão melhora ao longo do projeto."},
+          {termo:"SISP",def:"Tabela de preços do Governo Federal para contratação de software baseada em Pontos de Função."}
+        ],
+        links:[
+          {rotulo:"Estimativa de software (Wikipédia)",url:"https://pt.wikipedia.org/wiki/Estimativa_de_software",lang:"pt"},
+          {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=estimativa+software+compara%C3%A7%C3%A3o+cocomo+pontos+fun%C3%A7%C3%A3o"}
+        ]
+      },
+      quiz:[
+        {p:"Em qual situação Pontos de Função é claramente SUPERIOR ao COCOMO?",
+          alts:[
+            {t:"Contratação de fábrica de software para projeto corporativo",c:1,fb:"Correto! Em contratos cliente-fornecedor, PF é independente de tecnologia e à prova de manipulação de LOC. É o padrão brasileiro (SISP, bancos)."},
+            {t:"Planejamento interno de sprint em equipe ágil",c:0,fb:"Para planejamento ágil, story points são mais práticos. PF é burocrático demais para sprints de 2 semanas."},
+            {t:"Sistema embarcado de avião com restrições rígidas",c:0,fb:"Sistemas críticos são melhor estimados com COCOMO modo embutido. PF não captura bem restrições não-funcionais."}
+          ]},
+        {p:"Segundo o Cone da Incerteza de Boehm, qual é a faixa de erro TÍPICA no início de um projeto?",
+          alts:[
+            {t:"De 0,25× a 4× o valor real (pode errar em até 4 vezes para mais ou para menos)",c:1,fb:"Correto! No início (fase de visão), você tem tão pouca informação que a estimativa pode ser 4× maior ou 4× menor que o real. Por isso promessas fixas no início são perigosas."},
+            {t:"±10% — precisão razoável desde o início",c:0,fb:"10% de precisão só é alcançado no FINAL do projeto, quando tudo já foi definido. No início, a incerteza é muito maior."},
+            {t:"±50% — erro moderado e aceitável",c:0,fb:"50% seria bom, mas a realidade é pior: 0,25× a 4×. É uma ordem de grandeza completa de incerteza inicial."}
+          ]},
+        {p:"Qual combinação é MAIS usada por bancos brasileiros como Itaú e Bradesco?",
+          alts:[
+            {t:"PF para contratação externa + velocity/story points para planejamento interno",c:1,fb:"Exato! Abordagem híbrida: PF com fornecedores (unidade auditável) e velocity para o dia a dia das squads internas. Itaú pratica esse modelo há anos."},
+            {t:"Apenas COCOMO para tudo",c:0,fb:"COCOMO puro é raro em bancos. Não atende bem à contratação (LOC manipulável) nem ao ágil (muito pesado para sprints)."},
+            {t:"Apenas story points, sem métricas externas",c:0,fb:"Story points não servem para contratos com terceiros. Bancos precisam contratar fábricas e precisam de unidade objetiva como PF."}
+          ]}
+      ]
+    }
+  ],
+  revisao:{
+    titulo:"Revisão — Mapa completo e Chefão",
+    cola:[
+      "• Métricas: 'Você não pode controlar o que não pode medir' (DeMarco)",
+      "• Lei de Goodhart: métrica vira meta = deixa de ser boa métrica",
+      "• 3 famílias: Produto (LOC, defeitos) / Processo (lead time, DORA) / Projeto (esforço, velocity)",
+      "• DORA metrics: lead time, deploy freq, MTTR, change failure rate",
+      "• Anti-padrão: medir produtividade por linhas de código",
+      "• COCOMO (Boehm 1981): Esforço = a × (KSLOC)^b × Fatores",
+      "• 3 modos COCOMO: orgânico / semi / embutido",
+      "• PF (Albrecht 1979, IFPUG): 5 componentes (EE, SE, CE, ALI, AIE)",
+      "• PF é independente de linguagem; COCOMO depende de LOC",
+      "• Brasil é líder mundial em APF (SISP, bancos)",
+      "• Escolha: PF para contratação, velocity para ágil, COCOMO para sistemas críticos"
+    ],
+    chefao:{
+      pergunta:"Você é CTO de uma fintech que acabou de receber R$ 50 milhões em rodada Série B. Precisa: (a) contratar uma fábrica para construir um novo módulo de pagamentos, (b) organizar 8 squads internas para evoluir o core, (c) orçar o projeto com o board. Qual estratégia de estimativa você usa em cada frente e por quê?",
+      criterios:[
+        "Contratação da fábrica: Pontos de Função (IFPUG) com tabela SISP como referência de preço — unidade independente de tecnologia e auditável",
+        "Squads internas: Planning Poker com story points + velocity histórico — forecasting ágil sem burocracia",
+        "Orçamento com board: COCOMO ou PF como base + Cone da Incerteza para apresentar faixa (não valor único) + buffer de risco de 20-30%",
+        "Governança contínua: DORA metrics (lead time, deploy freq, MTTR, change failure) para acompanhar saúde DevOps",
+        "Citar pelo menos 1 exemplo real brasileiro (Itaú, Nubank, BB, SISP)"
+      ]
+    }
+  }
+};
+
+const estado = {xp:0,selos:new Set(),quizOk:new Set(),demoOk:new Set(),dark:false,apres:false,abaAtiva:null,demos:{}};
+
+function carregarEstado(){
+  try{
+    const s = JSON.parse(localStorage.getItem('devops_aula02')||'{}');
+    estado.xp = s.xp||0;
+    estado.selos = new Set(s.selos||[]);
+    estado.quizOk = new Set(s.quizOk||[]);
+    estado.demoOk = new Set(s.demoOk||[]);
+  }catch(e){}
+}
+function salvarEstado(){
+  localStorage.setItem('devops_aula02',JSON.stringify({
+    xp:estado.xp,
+    selos:Array.from(estado.selos),
+    quizOk:Array.from(estado.quizOk),
+    demoOk:Array.from(estado.demoOk)
+  }));
+}
+function ganhaXP(n,motivo){
+  estado.xp += n;
+  showToast(`+${n} XP — ${motivo}`);
+  atualizaProgresso();
+  salvarEstado();
+}
+function adicionaSelo(s){
+  if(!estado.selos.has(s)){
+    estado.selos.add(s);
+    showToast(`🏅 Selo: ${s}`);
+    atualizaProgresso();
+    salvarEstado();
+  }
+}
+function shuffle(a){
+  const b = a.slice();
+  for(let i=b.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [b[i],b[j]] = [b[j],b[i]];
+  }
+  return b;
+}
+function renderTabs(){
+  const nav = document.getElementById('tablist');
+  nav.innerHTML = '';
+  const todas = [...AULA_DADOS.abas,{id:'revisao',titulo:'Revisão'}];
+  todas.forEach((a,i)=>{
+    const btn = document.createElement('button');
+    btn.role = 'tab';
+    btn.setAttribute('aria-selected','false');
+    btn.setAttribute('aria-controls',a.id);
+    btn.dataset.id = a.id;
+    btn.innerHTML = `${i+1}. ${a.titulo}${a.estudoProprio?'<span class="selo">📖 Estudo próprio</span>':''}`;
+    btn.onclick = ()=>irPara(a.id);
+    btn.onkeydown = (e)=>{
+      if(e.key==='ArrowRight'){const next = btn.nextElementSibling||nav.firstElementChild; next.focus();}
+      else if(e.key==='ArrowLeft'){const prev = btn.previousElementSibling||nav.lastElementChild; prev.focus();}
+      else if(e.key==='Enter'||e.key===' '){e.preventDefault();irPara(a.id);}
+    };
+    nav.appendChild(btn);
+  });
+}
+function renderMain(){
+  const m = document.getElementById('main');
+  m.innerHTML = '';
+  const pr = document.createElement('div');
+  pr.className='progresso';pr.id='progresso';
+  m.appendChild(pr);
+  AULA_DADOS.abas.forEach(a=>{
+    const sec = document.createElement('section');
+    sec.className='aba';sec.id=a.id;
+    sec.setAttribute('role','tabpanel');
+    sec.innerHTML = renderAba(a);
+    m.appendChild(sec);
+  });
+  const rev = document.createElement('section');
+  rev.className='aba';rev.id='revisao';
+  rev.setAttribute('role','tabpanel');
+  rev.innerHTML = renderRevisao();
+  m.appendChild(rev);
+  atualizaProgresso();
+}
+function renderAba(a){
+  return `
+    <div class="missao"><strong>🎯 Missão</strong>${a.missao}</div>
+    <div class="card">
+      <h2>${a.titulo}</h2>
+      ${a.teoria.map(p=>`<p>${p}</p>`).join('')}
+    </div>
+    <div class="demo" id="demo-${a.id}">
+      <h3>🧪 Demo: ${a.demo.titulo}</h3>
+      <div class="preveja">💭 ${a.demo.preveja}</div>
+      <div class="instru">📋 <strong>Instruções passo a passo:</strong> ${a.demo.instru}</div>
+      <div id="demo-area-${a.id}"></div>
+      ${a.demo.guia?`<div class="obs">👀 <strong>O que observar:</strong> ${a.demo.guia}</div>`:''}
+      <button class="btn sec" onclick="reiniciarDemo('${a.id}')">🔄 Reiniciar demo</button>
+      ${!estado.demoOk.has(a.id)?`<button class="btn" onclick="marcarDemoOk('${a.id}')">✓ Concluí a demo</button>`:'<span class="selo-chip">✓ Demo concluída</span>'}
+    </div>
+    <details class="lex">
+      <summary>📘 Mini-dicionário</summary>
+      <ul>${a.aprofundar.lexico.map(l=>`<li><strong>${l.termo}:</strong> ${l.def}</li>`).join('')}</ul>
+    </details>
+    <details class="links">
+      <summary>🔗 Links para aprofundar</summary>
+      <ul>${a.aprofundar.links.map(l=>`<li><a href="${l.url}" target="_blank" rel="noopener">${l.rotulo}${l.lang&&l.lang!=='pt'?` <em>(${l.lang})</em>`:''}</a></li>`).join('')}</ul>
+    </details>
+    <div class="card">
+      <h2>📝 Quiz — 3 perguntas</h2>
+      ${a.quiz.map((q,i)=>renderQuiz(a.id,i,q)).join('')}
+    </div>
+    ${a.estudoProprio?`<div class="rota"><strong>🏠 Rota em casa:</strong> esta aba é estudo próprio. Em sala, o professor percorre as abas 1–5.</div>`:`<div class="rota"><strong>🎤 Roteiro do apresentador:</strong> 6 min nesta aba. Missão → previsão → demo 2 min → quiz.</div>`}
+  `;
+}
+function renderQuiz(abaId,idx,q){
+  const key = `${abaId}-${idx}`;
+  const misturadas = shuffle(q.alts);
+  return `
+    <div class="quiz-perg" data-key="${key}" data-aba="${abaId}">
+      <h4>Pergunta ${idx+1}. ${q.p}</h4>
+      <div class="alts">
+        ${misturadas.map(alt=>`<button class="alt" data-c="${alt.c?1:0}" data-fb='${alt.fb.replace(/'/g,'&#39;')}' onclick="respQuiz(this)">${alt.t}</button>`).join('')}
+      </div>
+      <div class="fb" id="fb-${key}"></div>
+    </div>
+  `;
+}
+function respQuiz(btn){
+  const p = btn.closest('.quiz-perg');
+  const key = p.dataset.key;
+  const abaId = p.dataset.aba;
+  const fb = btn.dataset.fb;
+  const c = btn.dataset.c === '1';
+  const fbd = p.querySelector('.fb');
+  if(c){
+    btn.classList.add('certa');
+    btn.innerHTML = '✓ '+btn.innerHTML;
+    p.querySelectorAll('.alt').forEach(b=>b.disabled=true);
+    fbd.className='fb ok';
+    fbd.innerHTML='✅ <strong>Por que esta está certa:</strong> '+fb;
+    if(!estado.quizOk.has(key)){
+      const wasRetry = sessionStorage.getItem(key+'-retry');
+      estado.quizOk.add(key);
+      ganhaXP(wasRetry?5:10, wasRetry?'Acerto no retry!':'Acerto de primeira!');
+      sessionStorage.removeItem(key+'-retry');
+      verificarAbaCompleta(abaId);
+      salvarEstado();
+    }
+  } else {
+    btn.classList.add('errada');
+    btn.innerHTML = '✗ '+btn.innerHTML;
+    btn.disabled = true;
+    fbd.className='fb bad';
+    fbd.innerHTML='❌ <strong>Por que esta está errada:</strong> '+fb+'<br><em>🔁 Tente outra alternativa.</em>';
+    if(!estado.quizOk.has(key)) sessionStorage.setItem(key+'-retry','1');
+  }
+}
+function verificarAbaCompleta(abaId){
+  const aba = AULA_DADOS.abas.find(a=>a.id===abaId);
+  if(!aba) return;
+  const todas = aba.quiz.every((_,i)=>estado.quizOk.has(`${abaId}-${i}`));
+  const demo = estado.demoOk.has(abaId);
+  if(todas && demo){
+    const nomeSelo = aba.titulo.split('📖')[0].replace(/[^\w\sÀ-ú]/g,'').trim().substring(0,25);
+    adicionaSelo(nomeSelo||aba.titulo.substring(0,25));
+  }
+}
+function marcarDemoOk(abaId){
+  if(!estado.demoOk.has(abaId)){
+    estado.demoOk.add(abaId);
+    ganhaXP(5,'Demo concluída');
+    verificarAbaCompleta(abaId);
+    salvarEstado();
+    const area = document.querySelector(`#demo-${abaId}`);
+    if(area){
+      area.querySelectorAll('button.btn').forEach(b=>{
+        if(b.textContent.includes('Concluí')){
+          const span = document.createElement('span');
+          span.className='selo-chip';
+          span.textContent='✓ Demo concluída';
+          b.replaceWith(span);
+        }
+      });
+    }
+  }
+}
+function renderRevisao(){
+  return `
+    <div class="missao"><strong>🎯 Revisão final</strong>Do LOC ao PF: a matemática por trás das estimativas.</div>
+    <div class="card">
+      <h2>🗺️ Mapa da aula</h2>
+      <div class="revisao-mapa">
+        ${AULA_DADOS.abas.map((a,i)=>`<div class="no"><strong>${i+1}.</strong> ${a.titulo.split('📖')[0].trim()}${a.estudoProprio?' <em>(estudo)</em>':''}<br><small>${a.estudoProprio?'🏠 estudo próprio':'🏫 em sala'}</small></div>`).join('')}
+      </div>
+    </div>
+    <div class="card">
+      <h2>🧾 Cola rápida</h2>
+      <div class="cola">${AULA_DADOS.revisao.cola.join('\n')}</div>
+    </div>
+    <div class="chefao" id="chefao">
+      <h3>👹 Chefão — o desafio final</h3>
+      <p><strong>${AULA_DADOS.revisao.chefao.pergunta}</strong></p>
+      <p>Sua estratégia deve cobrir 5 frentes:</p>
+      <ul>${AULA_DADOS.revisao.chefao.criterios.map(c=>`<li>${c}</li>`).join('')}</ul>
+      <textarea id="chefaoResp" rows="8" style="width:100%;padding:10px;border-radius:8px;border:2px solid #ffd54f;font-family:inherit;font-size:1rem" placeholder="Descreva sua estratégia em 5 frentes."></textarea><br>
+      <button class="btn" onclick="entregarChefao()">🏆 Entregar resposta</button>
+      <div id="chefaoFb" style="margin-top:10px"></div>
+    </div>
+  `;
+}
+function entregarChefao(){
+  const t = document.getElementById('chefaoResp').value.trim();
+  const fb = document.getElementById('chefaoFb');
+  if(t.length<160){
+    fb.className='fb bad';fb.style.display='block';
+    fb.innerHTML='❌ Resposta muito curta. Desenvolva as 5 frentes.';return;
+  }
+  const lower = t.toLowerCase();
+  let pontos = 0;
+  if(/pontos? de fun[çc][ãa]o|ifpug|apf|sisp/.test(lower)) pontos++;
+  if(/planning poker|story points?|velocity|scrum|sprint/.test(lower)) pontos++;
+  if(/cocomo|cone.{1,5}incerteza|buffer|faixa|risk/.test(lower)) pontos++;
+  if(/dora|lead time|mttr|deploy freq|change fail/.test(lower)) pontos++;
+  if(/ita[úu]|nubank|banco do brasil|bb|bradesco|caixa|governo/.test(lower)) pontos++;
+  fb.style.display='block';
+  if(pontos>=4){
+    fb.className='fb ok';
+    fb.innerHTML=`✅ <strong>Excelente!</strong> Você cobriu ${pontos}/5 frentes. Ganhou 50 XP e o selo "CTO de Fintech".`;
+    ganhaXP(50,'Chefão concluído');
+    adicionaSelo('CTO de Fintech');
+  } else {
+    fb.className='fb bad';
+    fb.innerHTML=`❌ Você cobriu apenas ${pontos}/5 frentes. Reveja: PF para contratação, velocity para squads, COCOMO+cone para board, DORA para governança, exemplo brasileiro.`;
+  }
+}
+
+/* =========================================================
+   DEMOS
+   ========================================================= */
+function renderDemos(){
+  AULA_DADOS.abas.forEach(a=>{
+    const area = document.getElementById(`demo-area-${a.id}`);
+    if(!area) return;
+    if(a.id==='aba-1') renderDemoAba1(area,a);
+    else if(a.id==='aba-2') renderDemoAba2(area,a);
+    else if(a.id==='aba-3') renderDemoAba3(area,a);
+    else if(a.id==='aba-4') renderDemoAba4(area,a);
+    else if(a.id==='aba-5') renderDemoAba5(area,a);
+    else if(a.id==='aba-6') renderDemoAba6(area,a);
+  });
+}
+
+/* ABA 1 — Galeria de casos históricos */
+function renderDemoAba1(area,a){
+  const wrap = document.createElement('div');
+  wrap.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">
+      ${a.demo.casos.map((c,i)=>`<button class="btn" data-i="${i}" style="background:#311b92">${c.nome.split('—')[0]}</button>`).join('')}
+    </div>
+    <div id="ab1-reveal" style="margin-top:14px;padding:14px;border-radius:8px;background:#ede7f6;min-height:140px;border-left:5px solid var(--cor)">
+      <em>👆 Clique em um caso histórico para ver contexto, resultado e lição.</em>
+    </div>
+  `;
+  area.appendChild(wrap);
+  wrap.querySelectorAll('button').forEach(b=>{
+    b.onclick=()=>{
+      const c = a.demo.casos[+b.dataset.i];
+      document.getElementById('ab1-reveal').innerHTML = `
+        <strong>${c.nome}</strong><br><br>
+        📖 <strong>Contexto:</strong> ${c.contexto}<br><br>
+        ${c.problema?`⚠️ <strong>O que deu errado:</strong> ${c.problema}`:''}
+        ${c.resultado?`✅ <strong>Resultado:</strong> ${c.resultado}`:''}
+        <br><br>
+        <div style="padding:10px;background:#fff8e1;border-radius:6px;border-left:4px solid #ffa000">
+          💡 <strong>Lição:</strong> ${c.licao}
+        </div>
+      `;
+    };
+  });
+}
+
+/* ABA 2 — Classificador de métricas */
+function renderDemoAba2(area,a){
+  const wrap = document.createElement('div');
+  const estadoLocal = {atual:0,acertos:0};
+  function desenha(){
+    if(estadoLocal.atual >= a.demo.metricas.length){
+      wrap.innerHTML = `
+        <div style="padding:14px;background:#d4edda;border-radius:8px;border-left:5px solid var(--ok)">
+          ✅ <strong>Você classificou todas as ${a.demo.metricas.length} métricas!</strong><br><br>
+          🎯 <strong>Acertos:</strong> ${estadoLocal.acertos}/${a.demo.metricas.length}<br><br>
+          💡 <strong>Insight final:</strong> A maioria das métricas DevOps modernas (DORA) é de PROCESSO. A indústria descobriu que processo eficiente é melhor indicador que métricas de produto em tempo real.
+        </div>`;
+      return;
+    }
+    const m = a.demo.metricas[estadoLocal.atual];
+    wrap.innerHTML = `
+      <div style="padding:14px;background:#fff;border-radius:8px;border:2px solid var(--cor);margin-bottom:10px;text-align:center">
+        <div style="font-size:.85rem;color:var(--muted)">Métrica ${estadoLocal.atual+1} de ${a.demo.metricas.length}</div>
+        <div style="font-size:1.4rem;font-weight:700;margin:10px 0;color:var(--cor)">${m.nome}</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" data-tipo="produto" style="background:#1976d2">📦 Produto</button>
+        <button class="btn" data-tipo="processo" style="background:#388e3c">⚙️ Processo</button>
+        <button class="btn" data-tipo="projeto" style="background:#f57c00">📊 Projeto</button>
+      </div>
+      <div id="ab2-fb" style="margin-top:10px"></div>
+    `;
+    wrap.querySelectorAll('[data-tipo]').forEach(btn=>{
+      btn.onclick = ()=>{
+        const escolha = btn.dataset.tipo;
+        const correto = escolha === m.tipo;
+        const fb = document.createElement('div');
+        fb.className = 'fb '+(correto?'ok':'bad');
+        if(correto){
+          estadoLocal.acertos++;
+          fb.innerHTML = `✅ <strong>Correto!</strong> ${m.nome} é métrica de ${m.tipo.toUpperCase()}.<br>💡 ${m.exemplo}<br><button class="btn" style="margin-top:8px">Próxima métrica →</button>`;
+          wrap.querySelectorAll('[data-tipo]').forEach(x=>x.disabled=true);
+          fb.querySelector('button').onclick=()=>{estadoLocal.atual++;desenha();};
+        } else {
+          fb.innerHTML = `❌ <strong>Incorreto.</strong> ${m.nome} é métrica de <strong>${m.tipo}</strong>, não ${escolho}.<br>💡 ${m.exemplo}<br><em>🔁 Tente outra categoria.</em>`;
+          btn.disabled = true;
+        }
+        wrap.appendChild(fb);
+      };
+    });
+  }
+  area.appendChild(wrap);
+  desenha();
+}
+
+/* ABA 3 — Dashboard de times */
+function renderDemoAba3(area,a){
+  const wrap = document.createElement('div');
+  wrap.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">
+      ${a.demo.times.map((t,i)=>`<button class="btn" data-i="${i}" style="background:${t.cor}">${t.nome}</button>`).join('')}
+    </div>
+    <div id="ab3-reveal" style="margin-top:14px;padding:14px;border-radius:8px;background:#ede7f6;min-height:160px;border-left:5px solid var(--cor)">
+      <em>👆 Clique em um time para ver suas métricas completas.</em>
+    </div>
+    <div id="ab3-veredicto" style="margin-top:14px"></div>
+  `;
+  area.appendChild(wrap);
+  const vistos = new Set();
+  wrap.querySelectorAll('button').forEach(b=>{
+    b.onclick=()=>{
+      const t = a.demo.times[+b.dataset.i];
+      vistos.add(+b.dataset.i);
+      const m = t.metricas;
+      document.getElementById('ab3-reveal').innerHTML = `
+        <strong>${t.nome}</strong> — produtividade real: <span style="color:${t.cor};font-weight:700">${t.produtividade_real}</span><br><br>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">
+          <div class="kpi-card"><div class="valor">${(m.loc/1000).toFixed(0)}K</div><div class="rotulo">LOC/mês</div></div>
+          <div class="kpi-card"><div class="valor">${m.velocity}</div><div class="rotulo">Velocity (pts/sprint)</div></div>
+          <div class="kpi-card"><div class="valor">${m.deploy_freq}</div><div class="rotulo">Deploy freq</div></div>
+          <div class="kpi-card"><div class="valor">${m.change_fail}</div><div class="rotulo">Change failure</div></div>
+          <div class="kpi-card"><div class="valor">${m.lead_time}</div><div class="rotulo">Lead time</div></div>
+          <div class="kpi-card"><div class="valor">${m.mttr}</div><div class="rotulo">MTTR</div></div>
+        </div>
+        <div style="margin-top:12px;padding:10px;background:#fff8e1;border-radius:6px;border-left:4px solid #ffa000">
+          📊 <strong>Análise:</strong> ${t.analise}
+        </div>
+      `;
+      if(vistos.size === a.demo.times.length){
+        document.getElementById('ab3-veredicto').innerHTML = `
+          <div style="padding:14px;background:#d4edda;border-radius:8px;border-left:5px solid var(--ok)">
+            🏆 <strong>Contrate o Time B (DevOps Elite) ou Time D (Foco em Valor).</strong><br><br>
+            💡 <strong>Lição principal:</strong> LOC alto (Time A) é <strong>métrica de vaidade</strong>. Velocity alto (Time C) pode estar descorrelacionado de entrega real. Times Elite entregam <strong>rapidamente E com confiabilidade</strong>.
+          </div>
+        `;
+      }
+    };
+  });
+}
+
+/* ABA 4 — Calculadora COCOMO */
+function renderDemoAba4(area,a){
+  const wrap = document.createElement('div');
+  const estadoLocal = {ksloc:10, modo:'organico'};
+  const parametros = {
+    organico:{a:2.4,b:1.05,t_a:2.5,t_b:0.38,nome:'Orgânico',desc:'Projetos simples, times pequenos, requisitos flexíveis'},
+    semi:{a:3.0,b:1.12,t_a:2.5,t_b:0.35,nome:'Semi-Detachado',desc:'Projetos médios, experiência mista, requisitos parcialmente conhecidos'},
+    embutido:{a:3.6,b:1.20,t_a:2.5,t_b:0.32,nome:'Embutido',desc:'Projetos complexos, restrições rígidas, tempo real, hardware específico'}
+  };
+  const salarioMensal = 12000; // R$/mês por dev
+  function atualiza(){
+    const p = parametros[estadoLocal.modo];
+    const esforco = p.a * Math.pow(estadoLocal.ksloc, p.b);
+    const tempo = p.t_a * Math.pow(esforco, p.t_b);
+    const devs = esforco / tempo;
+    const custo = esforco * salarioMensal;
+    wrap.innerHTML = `
+      <div class="slider-group">
+        <label>📏 Tamanho do projeto: <strong>${estadoLocal.ksloc} KSLOC</strong> (${(estadoLocal.ksloc*1000).toLocaleString('pt-BR')} linhas de código)</label>
+        <input type="range" id="ab4-ksloc" min="1" max="500" step="1" value="${estadoLocal.ksloc}">
+      </div>
+      <div class="slider-group">
+        <label>🎯 Modo do projeto:</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+          ${Object.keys(parametros).map(k=>`<button class="btn" data-modo="${k}" style="background:${k===estadoLocal.modo?'var(--cor)':'#6c757d'}">${parametros[k].nome}</button>`).join('')}
+        </div>
+        <div style="font-size:.85rem;color:var(--muted);margin-top:6px">${p.desc}</div>
+      </div>
+      <div style="padding:14px;background:var(--cor-suave);border-radius:8px;border:2px solid var(--cor);margin-top:10px">
+        <strong style="font-size:1.1rem">📊 Estimativas COCOMO</strong>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:10px">
+          <div class="kpi-card"><div class="valor">${esforco.toFixed(1)}</div><div class="rotulo">Esforço (PM)</div></div>
+          <div class="kpi-card"><div class="valor">${tempo.toFixed(1)}</div><div class="rotulo">Tempo (meses)</div></div>
+          <div class="kpi-card"><div class="valor">${devs.toFixed(1)}</div><div class="rotulo">Pessoas necessárias</div></div>
+          <div class="kpi-card"><div class="valor">R$ ${(custo/1000).toFixed(0)}K</div><div class="rotulo">Custo estimado</div></div>
+        </div>
+        <div style="margin-top:12px;padding:10px;background:#fff8e1;border-radius:6px;border-left:4px solid #ffa000;font-family:'Courier New',monospace;font-size:.9rem">
+          <strong>Fórmula aplicada:</strong><br>
+          Esforço = ${p.a} × (${estadoLocal.ksloc})^${p.b} = <strong>${esforco.toFixed(2)} PM</strong><br>
+          Tempo = ${p.t_a} × (${esforco.toFixed(2)})^${p.t_b} = <strong>${tempo.toFixed(2)} meses</strong><br>
+          Equipe = ${esforco.toFixed(2)} ÷ ${tempo.toFixed(2)} = <strong>${devs.toFixed(2)} pessoas</strong>
+        </div>
+        <div style="margin-top:10px;font-size:.85rem;color:var(--muted)">
+          💡 <em>Custo calculado com salário médio de R$ ${salarioMensal.toLocaleString('pt-BR')}/mês por desenvolvedor (referência Brasil 2026).</em>
+        </div>
+      </div>
+    `;
+    wrap.querySelector('#ab4-ksloc').oninput = (e)=>{ estadoLocal.ksloc = +e.target.value; atualiza(); };
+    wrap.querySelectorAll('[data-modo]').forEach(b=>{
+      b.onclick = ()=>{ estadoLocal.modo = b.dataset.modo; atualiza(); };
+    });
+  }
+  area.appendChild(wrap);
+  atualiza();
+}
+
+/* ABA 5 — Contador de Pontos de Função */
+function renderDemoAba5(area,a){
+  const wrap = document.createElement('div');
+  const componentes = {
+    EE:{nome:'Entrada Externa',desc:'Dados que entram (formulários, APIs)',pts:{baixa:3,media:4,alta:6}},
+    SE:{nome:'Saída Externa',desc:'Relatórios, cálculos processados',pts:{baixa:4,media:5,alta:7}},
+    CE:{nome:'Consulta Externa',desc:'Recupera dados sem processamento',pts:{baixa:3,media:4,alta:6}},
+    ALI:{nome:'Arquivo Lógico Interno',desc:'Dados mantidos internamente',pts:{baixa:7,media:10,alta:15}},
+    AIE:{nome:'Arquivo de Interface Externa',desc:'Dados de outro sistema',pts:{baixa:5,media:7,alta:10}}
+  };
+  const estadoLocal = {};
+  Object.keys(componentes).forEach(k=>{
+    estadoLocal[k] = {baixa:0,media:0,alta:0};
+  });
+  const precoPF = 900; // R$ por PF (referência SISP)
+  function calcular(){
+    let total = 0;
+    Object.keys(componentes).forEach(k=>{
+      const c = componentes[k];
+      total += estadoLocal[k].baixa * c.pts.baixa;
+      total += estadoLocal[k].media * c.pts.media;
+      total += estadoLocal[k].alta * c.pts.alta;
+    });
+    return total;
+  }
+  function desenha(){
+    const total = calcular();
+    const custo = total * precoPF;
+    let html = `
+      <div style="padding:10px;background:#ede7f6;border-radius:8px;margin-bottom:12px">
+        <strong>📋 Adicione componentes funcionais:</strong>
+      </div>
+      <div style="padding:12px;background:#fff;border-radius:8px;border:1px solid var(--borda)">
+        <div class="pf-row header">
+          <div>Componente</div><div>Baixa</div><div>Média / Alta</div>
+        </div>
+    `;
+    Object.keys(componentes).forEach(k=>{
+      const c = componentes[k];
+      html += `
+        <div class="pf-row">
+          <div>
+            <strong style="color:var(--cor)">${k}</strong> — ${c.nome}<br>
+            <small style="color:var(--muted)">${c.desc} | ${c.pts.baixa}/${c.pts.media}/${c.pts.alta} pts</small>
+          </div>
+          <div style="display:flex;gap:4px;align-items:center">
+            <button class="btn sec" data-k="${k}" data-c="baixa" data-d="-1" style="padding:4px 8px">−</button>
+            <span style="min-width:20px;text-align:center;font-weight:700">${estadoLocal[k].baixa}</span>
+            <button class="btn" data-k="${k}" data-c="baixa" data-d="1" style="padding:4px 8px">+</button>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <div style="display:flex;gap:4px;align-items:center">
+              <button class="btn sec" data-k="${k}" data-c="media" data-d="-1" style="padding:4px 8px">−</button>
+              <span style="min-width:20px;text-align:center;font-weight:700">${estadoLocal[k].media}</span>
+              <button class="btn" data-k="${k}" data-c="media" data-d="1" style="padding:4px 8px">+</button>
+              <small>M</small>
+            </div>
+            <div style="display:flex;gap:4px;align-items:center">
+              <button class="btn sec" data-k="${k}" data-c="alta" data-d="-1" style="padding:4px 8px">−</button>
+              <span style="min-width:20px;text-align:center;font-weight:700">${estadoLocal[k].alta}</span>
+              <button class="btn" data-k="${k}" data-c="alta" data-d="1" style="padding:4px 8px">+</button>
+              <small>A</small>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+    html += `</div>`;
+    html += `
+      <div style="padding:14px;background:var(--cor-suave);border-radius:8px;border:2px solid var(--cor);margin-top:12px">
+        <strong style="font-size:1.2rem">📊 Contagem de Pontos de Função</strong>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:10px">
+          <div class="kpi-card"><div class="valor">${total}</div><div class="rotulo">PF Totais</div></div>
+          <div class="kpi-card"><div class="valor">R$ ${(custo/1000).toFixed(1)}K</div><div class="rotulo">Custo estimado</div></div>
+          <div class="kpi-card"><div class="valor">${(total*8).toFixed(0)}</div><div class="rotulo">Horas estimadas*</div></div>
+          <div class="kpi-card"><div class="valor">${(total*8/160).toFixed(1)}</div><div class="rotulo">PMs (homem-mês)</div></div>
+        </div>
+        <div style="margin-top:12px;padding:10px;background:#fff8e1;border-radius:6px;border-left:4px solid #ffa000;font-size:.9rem">
+          💡 <em>* Estimativa de 8 horas por PF (produtividade média brasileira). Custo calculado a R$ ${precoPF}/PF (referência SISP 2026).</em>
+        </div>
+        <button class="btn sec" id="ab5-reset" style="margin-top:8px">🔄 Zerar contagem</button>
+        <button class="btn" id="ab5-exemplo" style="margin-top:8px">📝 Carregar exemplo (e-commerce)</button>
+      </div>
+    `;
+    wrap.innerHTML = html;
+    wrap.querySelectorAll('[data-k]').forEach(btn=>{
+      btn.onclick = ()=>{
+        const k = btn.dataset.k;
+        const c = btn.dataset.c;
+        const d = +btn.dataset.d;
+        estadoLocal[k][c] = Math.max(0, estadoLocal[k][c] + d);
+        desenha();
+      };
+    });
+    wrap.querySelector('#ab5-reset').onclick = ()=>{
+      Object.keys(componentes).forEach(k=>{
+        estadoLocal[k] = {baixa:0,media:0,alta:0};
+      });
+      desenha();
+    };
+    wrap.querySelector('#ab5-exemplo').onclick = ()=>{
+      // Exemplo: sistema de e-commerce pequeno
+      estadoLocal.EE = {baixa:3,media:5,alta:2}; // cadastros, pedidos
+      estadoLocal.SE = {baixa:2,media:4,alta:3}; // relatórios
+      estadoLocal.CE = {baixa:5,media:3,alta:1}; // buscas
+      estadoLocal.ALI = {baixa:2,media:3,alta:2}; // clientes, produtos, pedidos
+      estadoLocal.AIE = {baixa:1,media:2,alta:0}; // CEP, gateway pagamento
+      desenha();
+    };
+  }
+  area.appendChild(wrap);
+  desenha();
+}
+
+/* ABA 6 — Cenários de escolha */
+function renderDemoAba6(area,a){
+  const wrap = document.createElement('div');
+  let atual = 0;
+  let acertos = 0;
+  function desenha(){
+    if(atual >= a.demo.cenarios.length){
+      wrap.innerHTML = `
+        <div style="padding:14px;background:#d4edda;border-radius:8px;border-left:5px solid var(--ok)">
+          ✅ <strong>Você resolveu todos os ${a.demo.cenarios.length} cenários!</strong><br><br>
+          🎯 <strong>Acertos:</strong> ${acertos}/${a.demo.cenarios.length}<br><br>
+          💡 <strong>Princípio final:</strong> NÃO existe modelo universal. PF para contratação, velocity para ágil interno, COCOMO para sistemas críticos, DORA para governança contínua. Saber QUANDO usar cada um é o que diferencia um bom arquiteto.
+        </div>`;
+      return;
+    }
+    const c = a.demo.cenarios[atual];
+    wrap.innerHTML = `
+      <div style="padding:14px;background:#fff;border-radius:8px;border:2px solid var(--cor);margin-bottom:10px">
+        <strong>Cenário ${atual+1}/${a.demo.cenarios.length}:</strong><br><br>
+        ${c.nome}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${c.opcoes.map((o,i)=>`<button class="alt" data-i="${i}">${o.t}</button>`).join('')}
+      </div>
+      <div id="ab6-fb" style="margin-top:10px"></div>
+    `;
+    wrap.querySelectorAll('.alt').forEach(btn=>{
+      btn.onclick=()=>{
+        const o = c.opcoes[+btn.dataset.i];
+        const fb = document.createElement('div');
+        fb.className = 'fb '+(o.c?'ok':'bad');
+        fb.innerHTML = (o.c?'✅':'❌')+' '+o.fb;
+        if(o.c){
+          acertos++;
+          fb.innerHTML += '<br><button class="btn" style="margin-top:8px">Próximo cenário →</button>';
+          wrap.querySelectorAll('.alt').forEach(x=>x.disabled=true);
+          fb.querySelector('button').onclick=()=>{atual++;desenha();};
+        } else {
+          btn.disabled = true;
+          fb.innerHTML += '<br><em>🔁 As outras opções continuam disponíveis. Tente de novo!</em>';
+        }
+        wrap.appendChild(fb);
+      };
+    });
+  }
+  area.appendChild(wrap);
+  desenha();
+}
+
+function reiniciarDemo(abaId){
+  const area = document.getElementById(`demo-area-${abaId}`);
+  if(!area) return;
+  if(estado.demos[abaId] && estado.demos[abaId].parar) estado.demos[abaId].parar();
+  area.innerHTML = '';
+  const aba = AULA_DADOS.abas.find(a=>a.id===abaId);
+  if(abaId==='aba-1') renderDemoAba1(area,aba);
+  else if(abaId==='aba-2') renderDemoAba2(area,aba);
+  else if(abaId==='aba-3') renderDemoAba3(area,aba);
+  else if(abaId==='aba-4') renderDemoAba4(area,aba);
+  else if(abaId==='aba-5') renderDemoAba5(area,aba);
+  else if(abaId==='aba-6') renderDemoAba6(area,aba);
+  showToast('🔄 Demo reiniciada');
+}
+
+function irPara(id){location.hash=id;}
+function aplicarHash(){
+  let id = location.hash.replace('#','') || AULA_DADOS.abas[0].id;
+  if(!document.getElementById(id)) id = AULA_DADOS.abas[0].id;
+  document.querySelectorAll('section.aba').forEach(s=>s.classList.toggle('ativa',s.id===id));
+  document.querySelectorAll('nav.tabs button').forEach(b=>{
+    const sel = b.dataset.id===id;
+    b.setAttribute('aria-selected',sel?'true':'false');
+  });
+  estado.abaAtiva = id;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function atualizaProgresso(){
+  const pr = document.getElementById('progresso');
+  if(!pr) return;
+  pr.innerHTML = `
+    <span>⭐ XP: <span class="xp">${estado.xp}</span></span>
+    <span>🏅 Selos:</span>
+    <span class="selos">${estado.selos.size?Array.from(estado.selos).map(s=>`<span class="selo-chip">${s}</span>`).join(''):'<em style="color:var(--muted)">conquiste ao completar demos e quizzes</em>'}</span>
+  `;
+}
+function showToast(msg){
+  let t = document.getElementById('toast');
+  if(!t){
+    t = document.createElement('div');
+    t.id='toast';
+    t.style.cssText='position:fixed;bottom:20px;right:20px;background:#263238;color:#fff;padding:12px 18px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.3);z-index:200;font-weight:600;opacity:0;transition:opacity .3s';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity='1';
+  clearTimeout(t._tm);
+  t._tm = setTimeout(()=>t.style.opacity='0',2200);
+}
+document.getElementById('btnDark').onclick = ()=>{
+  estado.dark = !estado.dark;
+  document.body.classList.toggle('dark',estado.dark);
+  document.getElementById('btnDark').textContent = estado.dark?'☀️':'🌙';
+};
+document.getElementById('btnApres').onclick = ()=>{
+  estado.apres = !estado.apres;
+  document.body.classList.toggle('apresentacao',estado.apres);
+  document.getElementById('btnApres').textContent = estado.apres?'📖':'🎤';
+  if(estado.apres){
+    document.body.classList.remove('dark');
+    estado.dark=false;
+    document.getElementById('btnDark').textContent='🌙';
+    const r = document.createElement('div');
+    r.className='rota-apres';r.id='rotaApres';
+    r.innerHTML = '🎤 <strong>Modo Apresentação:</strong> use ← → para navegar. Roteiro: 6 min por aba (1–5). Aba 6 é estudo próprio.';
+    document.body.appendChild(r);
+  } else {
+    const r = document.getElementById('rotaApres');
+    if(r) r.remove();
+  }
+};
+document.addEventListener('keydown',(e)=>{
+  if(!estado.apres) return;
+  const abas = AULA_DADOS.abas.map(a=>a.id).concat(['revisao']);
+  const idx = abas.indexOf(estado.abaAtiva);
+  if(e.key==='ArrowRight' && idx<abas.length-1){irPara(abas[idx+1]);e.preventDefault();}
+  else if(e.key==='ArrowLeft' && idx>0){irPara(abas[idx-1]);e.preventDefault();}
+});
+
+carregarEstado();
+renderTabs();
+renderMain();
+renderDemos();
+window.addEventListener('hashchange',aplicarHash);
+aplicarHash();
+</script>
+</body>
+</html>
