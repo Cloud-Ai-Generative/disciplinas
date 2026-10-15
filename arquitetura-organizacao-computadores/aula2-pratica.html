@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<!--
+  Disciplina: Arquitetura e Organização de Computadores — Aula 02, Unidade 1, págs. 31 a 46
+  Título: Interfaces de E/S e a Arquitetura de Von Neumann
+  Abas: 6 de conteúdo (5 em sala + 1 estudo próprio) + 1 Revisão
+  Cor destaque: #37474f (slate blueprint / engenharia)
+  Assunções: sumário da imagem expandido em 6 abas (E/S, controle de E/S, Von Neumann,
+  gargalo, impacto moderno, alternativas Harvard/neuromórficas).
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aula 02 — Interfaces de E/S e a Arquitetura de Von Neumann</title>
+<style>
+:root{
+  --cor:#37474f;
+  --cor-forte:#263238;
+  --cor-suave:#eceff1;
+  --fundo:#fdfdfd;
+  --texto:#1a1a1a;
+  --painel:#ffffff;
+  --borda:#d9d9d9;
+  --muted:#555;
+  --ok:#2e7d32;
+  --erro:#c62828;
+  --fonte:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --tam:18px;
+}
+*{box-sizing:border-box}
+body.dark{
+  --fundo:#121212;--texto:#e8e8e8;--painel:#1e1e1e;--borda:#333;
+  --muted:#b0b0b0;--cor-suave:#1d272b;--suave2:#232323;
+}
+html,body{margin:0;padding:0;background:var(--fundo);color:var(--texto);font-family:var(--fonte);font-size:var(--tam);line-height:1.55}
+header.topo{
+  position:sticky;top:0;z-index:100;background:var(--cor);color:#fff;
+  padding:10px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;
+  box-shadow:0 2px 6px rgba(0,0,0,.15)
+}
+header.topo h1{font-size:1.1rem;margin:0;font-weight:700}
+header.topo .meta{font-size:.85rem;opacity:.95}
+.acoes{display:flex;gap:6px;flex-wrap:wrap}
+.acoes button{
+  background:#fff;color:var(--cor);border:none;padding:6px 10px;border-radius:6px;
+  cursor:pointer;font-weight:600;font-size:.85rem
+}
+.acoes button:hover{background:var(--cor-suave)}
+nav.tabs{
+  position:sticky;top:56px;z-index:90;background:var(--painel);
+  border-bottom:2px solid var(--borda);overflow-x:auto;white-space:nowrap;
+  scrollbar-width:thin
+}
+nav.tabs button{
+  font-family:var(--fonte);font-size:var(--tam);background:transparent;color:var(--texto);
+  border:none;padding:12px 16px;cursor:pointer;border-bottom:4px solid transparent;
+  margin:0;font-weight:600;opacity:.75
+}
+nav.tabs button:hover{opacity:1}
+nav.tabs button[aria-selected="true"]{
+  color:var(--cor);border-bottom-color:var(--cor);opacity:1;
+  background:var(--painel);
+}
+nav.tabs button .selo{font-size:.7rem;background:var(--cor);color:#fff;padding:1px 5px;border-radius:8px;margin-left:4px;vertical-align:middle}
+main{max-width:980px;margin:0 auto;padding:20px}
+section.aba{display:none;animation:fade .3s ease}
+section.aba.ativa{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.card{background:var(--painel);border:2px solid var(--borda);border-radius:12px;padding:18px 20px;margin-bottom:18px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.card h2{margin-top:0;color:var(--cor);font-size:1.3rem;border-bottom:2px dashed var(--borda);padding-bottom:6px}
+.missao{
+  background:linear-gradient(135deg,var(--cor),var(--cor-forte));color:#fff;
+  padding:16px 18px;border-radius:10px;margin-bottom:18px;font-weight:500
+}
+.missao strong{display:block;font-size:1.1rem;margin-bottom:4px}
+.demo{
+  background:var(--suave2, #f4f6f7);border:2px solid var(--cor);border-radius:10px;
+  padding:16px;margin:18px 0
+}
+body.dark .demo{background:#1d272b}
+.demo h3{color:var(--cor);margin-top:0}
+.instru{
+  background:#fff8e1;border-left:5px solid #ffa000;padding:10px 14px;border-radius:6px;margin:10px 0;font-size:.95rem
+}
+body.dark .instru{background:#3a2d10}
+.preveja{
+  background:#e8f5e9;border-left:5px solid var(--ok);padding:10px 14px;border-radius:6px;
+  margin:10px 0;font-style:italic
+}
+body.dark .preveja{background:#1e3a1e}
+.obs{
+  background:#e3f2fd;border-left:5px solid #1976d2;padding:10px 14px;border-radius:6px;margin:10px 0;font-size:.95rem
+}
+body.dark .obs{background:#153047}
+button.btn{
+  background:var(--cor);color:#fff;border:none;padding:9px 16px;border-radius:8px;
+  cursor:pointer;font-weight:600;font-family:var(--fonte);font-size:.95rem;margin:4px 4px 4px 0
+}
+button.btn:hover{filter:brightness(1.15)}
+button.btn.sec{background:#6c757d}
+button.btn:disabled{opacity:.5;cursor:not-allowed}
+.quiz-perg{border:2px solid var(--borda);border-radius:10px;padding:14px;margin:12px 0;background:var(--painel)}
+.quiz-perg h4{margin:0 0 10px;color:var(--texto)}
+.quiz-perg .alts{display:flex;flex-direction:column;gap:8px}
+.alt{
+  text-align:left;background:var(--fundo);border:2px solid var(--borda);border-radius:8px;
+  padding:10px 14px;cursor:pointer;font-family:var(--fonte);font-size:1rem;
+  transition:all .2s
+}
+.alt:hover:not(:disabled){border-color:var(--cor);background:var(--cor-suave)}
+.alt:disabled{cursor:not-allowed;opacity:.85}
+.alt.certa{background:#d4edda;border-color:var(--ok);color:#155724}
+.alt.errada{background:#f8d7da;border-color:var(--erro);color:#721c24}
+body.dark .alt.certa{background:#1e3a1e;color:#a8e6a8}
+body.dark .alt.errada{background:#3a1e1e;color:#ffb3b3}
+.fb{margin-top:10px;padding:10px 14px;border-radius:8px;font-size:.95rem;display:none}
+.fb.ok{background:#d4edda;border-left:5px solid var(--ok);color:#155724;display:block}
+.fb.bad{background:#f8d7da;border-left:5px solid var(--erro);color:#721c24;display:block}
+body.dark .fb.ok{background:#1e3a1e;color:#a8e6a8}
+body.dark .fb.bad{background:#3a1e1e;color:#ffb3b3}
+details{background:var(--suave2,#fafafa);border:1px solid var(--borda);border-radius:8px;padding:8px 12px;margin:10px 0}
+body.dark details{background:#222}
+details summary{cursor:pointer;font-weight:600;color:var(--cor)}
+details[open] summary{margin-bottom:8px}
+details.lex{background:#fff3e0;border-color:#ffb74d}
+details.links{background:#e8f5e9;border-color:#81c784}
+details.links a{color:var(--cor);font-weight:600}
+.progresso{
+  background:var(--painel);border:2px solid var(--borda);border-radius:10px;
+  padding:10px 14px;margin-bottom:14px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:.95rem
+}
+.xp{background:var(--cor);color:#fff;padding:3px 10px;border-radius:20px;font-weight:700}
+.selos{display:flex;gap:6px;flex-wrap:wrap}
+.selo-chip{background:var(--cor-suave);color:var(--cor);padding:3px 8px;border-radius:20px;font-size:.8rem;font-weight:600}
+.rota{
+  background:#e0f7fa;border-left:5px solid #0097a7;padding:10px 14px;border-radius:6px;
+  margin:10px 0;font-size:.9rem
+}
+body.dark .rota{background:#0c2d33;color:#b3e5fc}
+body.apresentacao{font-size:22px}
+body.apresentacao nav.tabs button{font-size:22px}
+body.apresentacao .rota-apres{
+  position:fixed;bottom:0;left:0;right:0;background:#263238;color:#fff;
+  padding:14px 20px;font-size:1.05rem;box-shadow:0 -2px 8px rgba(0,0,0,.25);z-index:50
+}
+.revisao-mapa{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.revisao-mapa .no{
+  border:2px solid var(--cor);border-radius:8px;padding:10px;background:var(--cor-suave)
+}
+.revisao-mapa .no strong{color:var(--cor)}
+.cola{background:#fff3cd;border-left:5px solid #ffc107;padding:12px 16px;border-radius:8px;font-family:"Courier New",monospace;font-size:.95rem;white-space:pre-wrap}
+body.dark .cola{background:#3a2d10;color:#ffd980}
+.chefao{
+  background:linear-gradient(135deg,#263238,#37474f);color:#fff;padding:18px;border-radius:12px;margin-top:18px
+}
+.chefao h3{color:#ffd54f;margin-top:0}
+.chefao button{background:#ffd54f;color:#263238}
+.reg{
+  display:inline-block;padding:8px 12px;margin:3px;border-radius:8px;background:#fff;
+  border:2px solid var(--borda);font-family:"Courier New",monospace;font-size:.9rem;min-width:90px;text-align:center
+}
+.reg.active{border-color:var(--cor);background:var(--cor-suave);font-weight:700}
+.memcell{
+  display:inline-block;width:74px;padding:6px 4px;margin:2px;border:2px solid #b0bec5;border-radius:6px;
+  background:#fff;font-family:"Courier New",monospace;font-size:.8rem;text-align:center
+}
+.memcell.hl{background:#fff9c4;border-color:#f9a825;font-weight:700}
+.memcell.data{background:#e8f5e9;border-color:#66bb6a}
+.cpu-bar{height:22px;border-radius:6px;background:#cfd8dc;overflow:hidden;margin:6px 0}
+.cpu-bar > div{height:100%;background:var(--cor);transition:width .25s}
+footer{max-width:980px;margin:30px auto;padding:20px;text-align:center;color:var(--muted);font-size:.85rem}
+@media(max-width:600px){
+  main{padding:12px}
+  .card{padding:14px}
+  header.topo h1{font-size:.95rem}
+  .memcell{width:60px;font-size:.7rem}
+}
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div>
+    <h1>🔌 Aula 02 — Interfaces de E/S e a Arquitetura de Von Neumann</h1>
+    <div class="meta">Arquitetura e Organização de Computadores • Unidade 1 • págs. 31 a 46</div>
+  </div>
+  <div class="acoes">
+    <button id="btnApres" title="Modo Apresentação">🎤</button>
+    <button id="btnDark" title="Modo Escuro">🌙</button>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist" id="tablist"></nav>
+
+<main id="main"></main>
+
+<footer>Aula gerada offline • XP e selos salvos localmente • Navegue com setas ← → no modo 🎤</footer>
+
+<script>
+const AULA_DADOS = {
+  disciplina:"Arquitetura e Organização de Computadores",
+  aula:"02",
+  unidade:"Unidade 1",
+  paginas:"31 a 46",
+  titulo:"Interfaces de E/S e a Arquitetura de Von Neumann",
+  cor:"#37474f",
+  abas:[
+    {
+      id:"aba-1",
+      titulo:"Dispositivos de E/S",
+      missao:"Mapear a fronteira entre o computador e o mundo externo: quem entra com dados, quem devolve resultados e quem faz os dois papéis.",
+      teoria:[
+        "<strong>Dispositivos de entrada e saída (E/S)</strong> são a interface do sistema computacional com o mundo externo: usuários, outras máquinas e o ambiente físico. Sem E/S, o computador seria uma caixa fechada que calcula sem ninguém ver.",
+        "<strong>Entrada</strong>: convertem informação externa em bits. Exemplos: teclado, mouse, microfone, scanner, câmera, sensores (temperatura, GPS, acelerômetro do celular).",
+        "<strong>Saída</strong>: convertem bits em ação perceptível. Exemplos: monitor, impressora, alto-falantes, atuadores (motor da fechadura smart, LED do roteador).",
+        "<strong>Mistos</strong>: fazem os dois papéis. Exemplos: touchscreen (exibe e captura toque), SSD/HD (grava e lê), placa de rede (transmite e recebe), modem.",
+        "Classificação pelo destinatário: <strong>legível por humanos</strong> (monitor, impressora), <strong>legível por máquina</strong> (discos, fitas de backup) e <strong>comunicação entre máquinas</strong> (placas de rede, Bluetooth, Wi-Fi).",
+        "As velocidades variam em <strong>ordens de grandeza</strong>: teclado gera ~10 bytes/s; um SSD NVMe transfere ~7 GB/s; uma rede 100 GbE move ~12,5 GB/s. Gerenciar essa disparidade é um dos papéis centrais do sistema operacional.",
+        "Exemplo real: um <strong>mouse gamer de 8000 Hz</strong> reporta posição 8.000 vezes por segundo, enquanto um teclado comum varre a 1.000 Hz — e um monitor 4K a 144 Hz redesenha 144 imagens por segundo. Tudo isso é E/S coordenada."
+      ],
+      demo:{
+        tipo:"exploratorio",
+        titulo:"🖱️ Museu de E/S: classifique os dispositivos",
+        preveja:"Antes de clicar, preveja: uma touchscreen de celular é dispositivo de entrada, de saída ou misto?",
+        instru:"Clique em cada dispositivo para ver sua classificação (entrada / saída / misto), a interface física usada e uma curiosidade real.",
+        dispositivos:[
+          {nome:"⌨️ Teclado",tipo:"ENTRADA",iface:"USB / Bluetooth",curiosidade:"Varre matrizes de teclas ~1.000 vezes por segundo. Cada tecla é um interruptor que vira um scancode binário."},
+          {nome:"🖥️ Monitor 4K 144Hz",tipo:"SAÍDA",iface:"HDMI 2.1 / DisplayPort",curiosidade:"Redesenha 8,3 milhões de pixels 144 vezes por segundo — ~1,2 bilhão de pixels/s saindo da GPU."},
+          {nome:"📱 Touchscreen",tipo:"MISTO",iface:"Controlador I²C / SPI",curiosidade:"Camada capacitiva detecta a diferença de carga do seu dedo (entrada) enquanto o painel OLED exibe imagem (saída)."},
+          {nome:"💿 SSD NVMe",tipo:"MISTO",iface:"PCIe 4.0 x4",curiosidade:"~7 GB/s de leitura. É E/S de 'legível por máquina': o destinatário dos dados é o próprio computador no futuro."},
+          {nome:"🎤 Microfone",tipo:"ENTRADA",iface:"USB / jack analógico",curiosidade:"Converte pressão sonora em tensão elétrica e depois em amostras digitais (44,1 kHz no padrão CD)."},
+          {nome:"🖨️ Impressora",tipo:"SAÍDA",iface:"USB / Wi-Fi",curiosidade:"Usa fila de spool: o SO libera a CPU imediatamente e a impressora consome o buffer no seu ritmo lento."},
+          {nome:"📡 Placa de rede 100GbE",tipo:"MISTO",iface:"PCIe / fibra óptica",curiosidade:"Transmite e recebe ~12,5 GB/s. Em data centers da Google, é o subsistema de E/S mais crítico."},
+          {nome:"🦾 Braço robótico",tipo:"MISTO",iface:"Barramento industrial",curiosidade:"Sensores de posição entram (entrada) e servomotores agem (saída) em malha fechada, milhares de vezes por segundo."}
+        ],
+        guia:"Observe que a maioria dos dispositivos modernos é MISTA e que a velocidade varia de bytes/s (teclado) a gigabytes/s (SSD, rede). Essa disparidade é o problema que controladores, interrupções e DMA resolvem."
+      },
+      aprofundar:{
+        lexico:[
+          {termo:"Dispositivo de E/S",def:"Componente que permite troca de dados entre o computador e o mundo externo."},
+          {termo:"Spool / buffer",def:"Fila temporária que desacopla dispositivos rápidos (CPU) de lentos (impressora)."},
+          {termo:"Scancode",def:"Código binário bruto gerado por uma tecla antes de virar caractere."}
+        ],
+        links:[
+          {rotulo:"Entrada/saída (Wikipédia)",url:"https://pt.wikipedia.org/wiki/Entrada_e_sa%C3%ADda",lang:"pt"},
+          {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=dispositivos+de+entrada+e+sa%C3%ADda+computadores"}
+        ]
+      },
+      quiz:[
+        {p:"Uma touchscreen de smartphone é classificada como:",
+          alts:[
+            {t:"Dispositivo misto: exibe imagem (saída) e captura toque (entrada)",c:1,fb:"Correto! A camada capacitiva sente a carga do dedo (entrada) enquanto o painel OLED/LED exibe pixels (saída). Por isso é mista."},
+            {t:"Somente entrada, pois o toque é o dado principal",c:0,fb:"Esquece a metade da história: a tela também EXIBE imagem, o que é saída. Sem saída, você tocaria no escuro."},
+            {t:"Somente saída, pois é uma tela como qualquer outra",c:0,fb:"Ignora o sensor de toque. Uma tela comum é só saída; a touchscreen agrega captura de entrada."}
+          ]},
+        {p:"Qual destes é um dispositivo de ENTRADA?",
+          alts:[
+            {t:"Microfone",c:1,fb:"Correto! O microfone converte pressão sonora em sinais digitais que ENTRAM no sistema. Alto-falante faz o caminho inverso (saída)."},
+            {t:"Impressora",c:0,fb:"Impressora recebe dados do computador e os transforma em papel — é saída."},
+            {t:"Alto-falante",c:0,fb:"Alto-falante converte bits em som audível — saída. O microfone é o par de entrada."}
+          ]},
+        {p:"Qual dispositivo tem a MAIOR taxa de transferência típica?",
+          alts:[
+            {t:"SSD NVMe em PCIe 4.0 (~7 GB/s)",c:1,fb:"Correto! SSDs NVMe movem gigabytes por segundo. Teclado (~10 B/s) e mouse ficam várias ordens de grandeza abaixo — daí a necessidade de técnicas como DMA."},
+            {t:"Teclado USB (~10 bytes/s)",c:0,fb:"Teclado é um dos dispositivos MAIS LENTOS: gera poucos bytes por segundo. Está no extremo oposto da escala."},
+            {t:"Mouse de 1.000 Hz (~12 kB/s)",c:0,fb:"Mouse é rápido em eventos, mas cada evento é minúsculo. O volume total fica muito abaixo de um SSD."}
+          ]}
+      ]
+    },
+    {
+      id:"aba-2",
+      titulo:"Controlando a E/S",
+      missao:"Entender as três técnicas clássicas de transferência: E/S programada (busy-wait), dirigida por interrupção e DMA — e por que a DMA liberta a CPU.",
+      teoria:[
+        "Todo dispositivo se conecta ao sistema por um <strong>controlador</strong> (hardware, com registradores próprios) e é comandado por um <strong>driver</strong> (software que traduz ordens do SO para o controlador).",
+        "<strong>E/S programada</strong>: a CPU consulta o registrador de status do dispositivo em loop (<em>busy-wait</em>) e copia byte a byte. Simples, mas desperdiça a CPU inteira durante a transferência.",
+        "<strong>E/S dirigida por interrupção</strong>: o dispositivo avisa ('interrompe') quando está pronto. A CPU executa outras tarefas enquanto espera e só atende o dispositivo no momento certo. Um handler do SO trata o evento.",
+        "<strong>Acesso Direto à Memória (DMA)</strong>: um controlador dedicado transfere blocos inteiros entre memória e dispositivo <strong>sem passar pela CPU</strong>. A CPU apenas configura a transferência e é interrompida no final.",
+        "Comparação prática: copiar 1 GB por E/S programada ocuparia um núcleo em ~100%; com DMA, a CPU gasta microssegundos para configurar e fica livre durante toda a transferência.",
+        "Exemplos reais: <strong>teclado e mouse</strong> usam interrupções (eventos raros e pequenos); <strong>SSDs NVMe e placas de rede</strong> usam DMA (blocos grandes e frequentes); impressoras antigas usavam E/S programada com fila de spool.",
+        "Sem interrupções e DMA, assistir a um vídeo em 4K travaria seu computador: a CPU passaria o tempo todo movendo bytes em vez de decodificar e desenhar imagens."
+      ],
+      demo:{
+        tipo:"livre",
+        titulo:"🚦 Simulador: E/S programada × interrupção × DMA",
+        preveja:"Antes de rodar, preveja: em qual dos três modos a CPU fica MAIS ociosa durante uma transferência de 1 MB?",
+        instru:"Escolha um modo e clique em 'Transferir 1 MB'. Observe a barra de ocupação da CPU tick a tick e o resumo final de ocupação.",
+        guia:"Observe que na E/S programada a CPU trabalha em 100% dos ticks; com interrupção ela só trabalha nos eventos; com DMA ela trabalha no início e no fim. É por isso que discos e redes usam DMA."
+      },
+      aprofundar:{
+        lexico:[
+          {termo:"Controlador",def:"Circuito de hardware que comanda um dispositivo e expõe registradores de comando/status."},
+          {termo:"Driver",def:"Software do SO que sabe conversar com um controlador específico."},
+          {termo:"Busy-wait",def:"Loop de consulta ativa ao status do dispositivo; desperdiça ciclos de CPU."},
+          {termo:"DMA",def:"Acesso Direto à Memória: transferência bloco-a-bloco sem participação contínua da CPU."}
+        ],
+        links:[
+          {rotulo:"Acesso direto à memória (Wikipédia)",url:"https://pt.wikipedia.org/wiki/Acesso_direto_%C3%A0_mem%C3%B3ria",lang:"pt"},
+          {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=interrup%C3%A7%C3%A3o+e+acesso+direto+%C3%A0+mem%C3%B3ria+dma"}
+        ]
+      },
+      quiz:[
+        {p:"Qual técnica libera a CPU durante transferências grandes de dados?",
+          alts:[
+            {t:"DMA — o controlador move blocos direto entre memória e dispositivo",c:1,fb:"Correto! Com DMA a CPU apenas configura a transferência e é avisada no fim. SSDs NVMe e placas de rede dependem disso para atingir GB/s."},
+            {t:"E/S programada com busy-wait",c:0,fb:"É o oposto: na E/S programada a CPU fica presa em loop consultando o dispositivo, ocupada em 100% durante toda a transferência."},
+            {t:"Spool de impressão",c:0,fb:"Spool é uma fila que desacopla velocidades, mas não elimina a participação da CPU na cópia dos dados. DMA sim."}
+          ]},
+        {p:"Na E/S dirigida por interrupção, o que a CPU faz enquanto o dispositivo prepara os dados?",
+          alts:[
+            {t:"Executa outras tarefas úteis e só atende o dispositivo quando ele interrompe",c:1,fb:"Exato! O dispositivo sinaliza quando está pronto; até lá a CPU roda outros processos. É o modelo usado por teclado, mouse e timers."},
+            {t:"Fica em loop consultando o registrador de status",c:0,fb:"Isso é busy-wait, característica da E/S PROGRAMADA. Na dirigida por interrupção não há consulta ativa."},
+            {t:"Desliga até o usuário pressionar algo",c:0,fb:"A CPU não desliga: ela continua executando a fila de processos. Interrupção é um desvio controlado, não um sono profundo."}
+          ]},
+        {p:"O que é um driver de dispositivo?",
+          alts:[
+            {t:"Software do SO que traduz comandos genéricos em ordens específicas do controlador",c:1,fb:"Correto! O driver conhece os registradores do controlador. Por isso cada impressora ou GPU precisa do seu driver, mesmo dentro do mesmo Windows ou Linux."},
+            {t:"O cabo físico que liga o dispositivo à placa-mãe",c:0,fb:"Cabo é meio físico (USB, PCIe). Driver é SOFTWARE, parte do sistema operacional."},
+            {t:"Um registrador dentro do controlador",c:0,fb:"Registradores são memória-mapeada do hardware. O driver é o código que os lê e escreve."}
+          ]}
+      ]
+    },
+    {
+      id:"aba-3",
+      titulo:"Von Neumann: princípios",
+      missao:"Dominar os princípios da arquitetura que definiu todos os computadores modernos: programa armazenado, memória única e execução sequencial.",
+      teoria:[
+        "Em 1945, <strong>John von Neumann</strong> publicou o 'First Draft of a Report on the EDVAC', descrevendo a arquitetura que se tornaria universal: a <strong>arquitetura de Von Neumann</strong>.",
+        "<strong>Princípio 1 — Programa armazenado</strong>: instruções e dados convivem na MESMA memória, codificados em binário. O computador pode carregar, trocar e até gerar programas como se fossem dados.",
+        "<strong>Princípio 2 — Unidades funcionais</strong>: memória, <strong>Unidade de Controle (UC)</strong>, <strong>ULA</strong> (UC+ULA formam a CPU) e dispositivos de E/S, interligados por barramentos.",
+        "<strong>Princípio 3 — Execução sequencial</strong>: o registrador <strong>PC (Program Counter)</strong> aponta a próxima instrução; a CPU busca, decodifica e executa, avançando em ordem (saltos alteram o PC).",
+        "<strong>Princípio 4 — Instruções são números</strong>: não há diferença física entre um dado e uma instrução na memória; o contexto (fase de busca vs. uso) é que define o papel.",
+        "Consequência revolucionária: o mesmo hardware roda qualquer programa — basta carregá-lo na memória. Nasce aí a indústria de software, os sistemas operacionais e os compiladores.",
+        "Exemplo real: quando você abre o Chrome, o executável que estava no SSD é <strong>carregado na memória</strong> e o PC começa a percorrê-lo instrução por instrução — exatamente como von Neumann descreveu em 1945."
+      ],
+      demo:{
+        tipo:"livre",
+        titulo:"⚙️ Ciclo buscar-decodificar-executar, passo a passo",
+        preveja:"Antes de avançar, preveja: após executar a instrução no endereço 2, qual valor terá o PC?",
+        instru:"Use 'Próximo passo' para percorrer um mini-programa de 4 instruções. Acompanhe PC, MAR, MDR, IR, R1 e as células de memória destacadas.",
+        guia:"Observe que a MESMA memória guarda instruções (end. 0-3) e dados (end. 20-21) — o princípio do programa armazenado em ação. O PC avança sequencialmente até o HALT."
+      },
+      aprofundar:{
+        lexico:[
+          {termo:"Programa armazenado",def:"Princípio de von Neumann: instruções residem na memória junto com os dados."},
+          {termo:"PC (Program Counter)",def:"Registrador com o endereço da próxima instrução a buscar."},
+          {termo:"IR (Instruction Register)",def:"Registrador que guarda a instrução atualmente em execução."},
+          {termo:"MAR / MDR",def:"Registradores de endereço e de dados da memória, usados nas transferências."}
+        ],
+        links:[
+          {rotulo:"Arquitetura de von Neumann (Wikipédia)",url:"https://pt.wikipedia.org/wiki/Arquitetura_de_von_Neumann",lang:"pt"},
+          {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=arquitetura+de+von+neumann+programa+armazenado"}
+        ]
+      },
+      quiz:[
+        {p:"Qual é o princípio CENTRAL da arquitetura de Von Neumann?",
+          alts:[
+            {t:"Programa armazenado: instruções e dados compartilham a mesma memória",c:1,fb:"Correto! Esse princípio permite carregar qualquer programa na memória e executá-lo — a base de toda a indústria de software."},
+            {t:"Memórias separadas para instruções e dados",c:0,fb:"Isso é a arquitetura HARVARD, a alternativa clássica a Von Neumann."},
+            {t:"Execução paralela de todas as instruções",c:0,fb:"Von Neumann é sequencial por definição. Paralelismo veio depois, como evolução (pipelines, multi-core)."}
+          ]},
+        {p:"Qual registrador aponta a PRÓXIMA instrução a ser buscada?",
+          alts:[
+            {t:"PC (Program Counter)",c:1,fb:"Exato! O PC é incrementado a cada busca e alterado por saltos (JMP, CALL). É o 'dedo' que percorre o programa na memória."},
+            {t:"IR (Instruction Register)",c:0,fb:"O IR guarda a instrução JÁ BUSCADA, em decodificação/execução. Quem aponta a próxima é o PC."},
+            {t:"MDR (Memory Data Register)",c:0,fb:"O MDR é um buffer de dados lidos/escritos da memória, não um ponteiro de programa."}
+          ]},
+        {p:"O que o fato de 'instruções serem codificadas como dados' tornou possível?",
+          alts:[
+            {t:"Programas que manipulam programas: compiladores, loaders, sistemas operacionais",c:1,fb:"Correto! Um compilador lê código-fonte e GRAVA instruções na memória como dados. Sem esse princípio, não haveria ferramenta de desenvolvimento moderna."},
+            {t:"Impedir que vírus existam",c:0,fb:"É o contrário: como código é dado gravável, malware pode injetar instruções. O princípio cria essa possibilidade (e esse risco)."},
+            {t:"Tornar a memória mais rápida",c:0,fb:"A codificação não afeta velocidade física da memória. O ganho é funcional/flexibilidade, não de performance."}
+          ]}
+      ]
+    },
+    {
+      id:"aba-4",
+      titulo:"O gargalo de Von Neumann",
+      missao:"Quantificar o limite estrutural da arquitetura: a CPU pensa rápido demais para a velocidade com que a memória entrega dados.",
+      teoria:[
+        "Na arquitetura de Von Neumann, instruções e dados trafegam pelo <strong>mesmo barramento</strong> entre CPU e memória. Esse canal único é o <strong>gargalo de Von Neumann</strong>.",
+        "O problema cresce porque CPU e memória evoluem em ritmos diferentes: historicamente a velocidade da CPU avançou ~50-60% ao ano, enquanto a latência da DRAM melhorou ~10% ao ano. Essa divergência é o <strong>memory wall</strong>.",
+        "Ordens de grandeza reais: um acesso a <strong>registrador</strong> leva <1 ns; à <strong>cache L1</strong> ~1 ns; à <strong>RAM DDR5</strong> ~60-100 ns. Em uma CPU de 5 GHz, cada acesso à RAM custa <strong>centenas de ciclos ociosos</strong>.",
+        "Consequência prática: programas que acessam memória de forma desorganizada (sem localidade) podem ser <strong>10× mais lentos</strong> que versões equivalentes com bom padrão de acesso — mesmo algoritmo, mesma CPU.",
+        "Mitigações clássicas: <strong>caches hierárquicas</strong> (L1/L2/L3), <strong>prefetching</strong> (buscar antes de precisar), barramentos mais largos (DDR5 com canais duplos de 64 bits) e <strong>localidade</strong> explorada pelo programador.",
+        "Exemplo real: percorrer uma matriz linha a linha (como ela está na memória) versus coluna a coluna pode mudar o tempo de 0,2 s para 2 s em um mesmo notebook — puro efeito de cache e do gargalo."
+      ],
+      demo:{
+        tipo:"livre",
+        titulo:"🐌 Laboratório do memory wall",
+        preveja:"Antes de mexer nos sliders, preveja: se a CPU for a 5 GHz e a RAM tiver latência de 100 ns, quantos ciclos a CPU espera POR ACESSO?",
+        instru:"Ajuste frequência da CPU e latência da memória; ligue/desligue a cache. Veja ciclos ociosos por acesso e o percentual de tempo perdido.",
+        guia:"Observe que sem cache o tempo perdido passa de 90% em CPUs rápidas; com cache (95% de acertos) cai para poucos por cento. As caches existem exatamente para tampar esse gargalo."
+      },
+      aprofundar:{
+        lexico:[
+          {termo:"Gargalo de Von Neumann",def:"Limitação de vazão causada pelo barramento único entre CPU e memória."},
+          {termo:"Memory wall",def:"Divergência crescente entre velocidade da CPU e latência da memória."},
+          {termo:"Prefetching",def:"Técnica de buscar dados/instruções antes de serem solicitados."},
+          {termo:"Localidade",def:"Tendência de reusar dados próximos (espacial) ou recentes (temporal); base das caches."}
+        ],
+        links:[
+          {rotulo:"Busca (Wikipédia): gargalo de von Neumann",url:"https://pt.wikipedia.org/w/index.php?search=gargalo+de+von+neumann",lang:"pt"},
+          {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=gargalo+de+von+neumann+mem%C3%B3ria+cache"}
+        ]
+      },
+      quiz:[
+        {p:"O que é o gargalo de Von Neumann?",
+          alts:[
+            {t:"O barramento único entre CPU e memória, que limita a vazão de instruções e dados",c:1,fb:"Correto! Como instruções e dados compartilham o mesmo canal, a CPU fica limitada pela velocidade desse canal e da memória — não pela sua própria velocidade."},
+            {t:"A lentidão dos dispositivos de entrada, como o teclado",c:0,fb:"E/S lenta é outro problema (resolvido com interrupções/DMA). O gargalo de Von Neumann é especificamente CPU↔memória."},
+            {t:"O número limitado de registradores da CPU",c:0,fb:"Registradores são poucos, mas isso é escolha de projeto de ISA. O gargalo clássico é o canal CPU-memória."}
+          ]},
+        {p:"Aproximadamente, quanto custa um acesso à RAM comparado a um registrador?",
+          alts:[
+            {t:"~60-100 ns contra <1 ns: centenas de ciclos de CPU por acesso",c:1,fb:"Exato! Em 5 GHz, 100 ns ≈ 500 ciclos. Por isso caches e localidade são decisivas para performance real."},
+            {t:"Mesmo custo: ambos levam 1 ciclo",c:0,fb:"Só registradores e L1 ficam na casa de 1 ciclo. RAM está duas ordens de grandeza acima em tempo."},
+            {t:"A RAM é mais rápida que os registradores",c:0,fb:"Invertido: registradores são o nível mais rápido da hierarquia, dentro do próprio núcleo."}
+          ]},
+        {p:"Qual técnica MITIGA diretamente o gargalo de Von Neumann?",
+          alts:[
+            {t:"Caches hierárquicas (L1/L2/L3) com prefetching",c:1,fb:"Correto! Caches mantêm perto da CPU os dados de uso frequente, reduzindo drasticamente as viagens pelo barramento até a RAM."},
+            {t:"Aumentar o clock do monitor",c:0,fb:"Monitor é dispositivo de saída; seu refresh não influencia o caminho CPU-memória."},
+            {t:"Usar E/S programada em vez de DMA",c:0,fb:"Além de não atacar o gargalo, E/S programada piora tudo ao ocupar a CPU. DMA é que é a boa prática."}
+          ]}
+      ]
+    },
+    {
+      id:"aba-5",
+      titulo:"Impacto nos computadores modernos",
+      missao:"Reconhecer como o projeto de 1945 ainda define PCs, smartphones, servidores e até carros — e por que ele foi tão determinante.",
+      teoria:[
+        "Praticamente todo computador de propósito geral moderno é, no nível lógico, uma <strong>máquina de Von Neumann</strong>: programa armazenado em memória, execução sequencial guiada por PC, CPU com UC+ULA e E/S controlada.",
+        "Linha do tempo do impacto: <strong>EDVAC (1949)</strong> primeiro computador de programa armazenado; <strong>IBM System/360 (1964)</strong> levou o modelo à indústria; <strong>Intel 4004 (1971)</strong> condensou a CPU em um chip; <strong>PC (1981)</strong> e <strong>smartphones (2007)</strong> a popularizaram.",
+        "O princípio do programa armazenado criou a <strong>indústria de software</strong>: o mesmo hardware serve para planilha, jogo ou navegador — basta carregar outro programa. Hardware virou plataforma; software, produto.",
+        "Ele também habilitou <strong>atualizações remotas</strong>: um Tesla Model 3 recebe novos recursos por OTA porque o comportamento do carro é software armazenado em memória/flash, não fiação fixa.",
+        "E trouxe o lado sombrio: como instruções são dados graváveis, existem <strong>vírus e malwares</strong> — código malicioso injetado e executado pela mesma CPU que roda seus programas legítimos.",
+        "Mesmo máquinas com aceleradores (GPU, TPU, NPU) mantêm o núcleo Von Neumann: os aceleradores são 'co-processadores' anexados por barramentos, como a E/S da aula anterior.",
+        "Exemplo real: seu smartphone tem vários núcleos Von Neumann (CPU ARM), mais GPU e NPU — todos compartilhando o conceito de programa armazenado, com caches para domar o gargalo."
+      ],
+      demo:{
+        tipo:"exploratorio",
+        titulo:"🌍 Von Neumann em ação: 6 marcos de impacto",
+        preveja:"Antes de explorar, preveja: qual foi o primeiro computador a implementar o programa armazenado?",
+        instru:"Clique em cada marco para ver como o princípio de 1945 se manifestou nele e qual consequência gerou até hoje.",
+        marcos:[
+          {ano:"1949",nome:"EDVAC",impacto:"Primeiro computador de programa armazenado a funcionar. Provou que instruções podiam viver na memória — fim da reprogramação por cabos do ENIAC."},
+          {ano:"1964",nome:"IBM System/360",impacto:"Industrializou o modelo: uma família inteira com a mesma arquitetura. Clientes trocavam de máquina sem reescrever software — nasceu o conceito de compatibilidade."},
+          {ano:"1971",nome:"Intel 4004",impacto:"Condensou UC+ULA em um único chip: o microprocessador. A arquitetura de Von Neumann coube em uma pastilha de silício."},
+          {ano:"1981",nome:"IBM PC",impacto:"Levou o modelo às mesas e casas. O 'programa armazenado' virou produto de prateleira: a indústria de software pessoal explodiu."},
+          {ano:"2007",nome:"iPhone",impacto:"Von Neumann no bolso: apps são programas carregados dinamicamente na memória. A App Store só existe porque software é dado carregável."},
+          {ano:"2020s",nome:"Nuvem e IA",impacto:"Data centers inteiros são fazendas de máquinas Von Neumann + aceleradores. Mesmo LLMs rodam, no fim, em CPUs que buscam-decodificam-executam."}
+        ],
+        guia:"Observe que cada marco é uma consequência do MESMO princípio: programa como dado carregável. Do EDVAC à nuvem, mudou a escala — não a lógica fundamental."
+      },
+      aprofundar:{
+        lexico:[
+          {termo:"EDVAC",def:"Primeiro computador de programa armazenado (1949), baseado no relatório de von Neumann."},
+          {termo:"Compatibilidade",def:"Capacidade de rodar o mesmo software em máquinas diferentes da mesma família (ex.: System/360)."},
+          {termo:"OTA (over-the-air)",def:"Atualização de software remota; possível porque o comportamento é programa armazenado."}
+        ],
+        links:[
+          {rotulo:"EDVAC (Wikipédia)",url:"https://pt.wikipedia.org/wiki/EDVAC",lang:"pt"},
+          {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=impacto+arquitetura+von+neumann+computadores+modernos"}
+        ]
+      },
+      quiz:[
+        {p:"O que o princípio do programa armazenado tornou possível, em escala industrial?",
+          alts:[
+            {t:"A indústria de software: mesmo hardware executando qualquer programa carregado na memória",c:1,fb:"Correto! Hardware virou plataforma genérica; o valor migrou para o software. É a razão econômica da existência de empresas como Microsoft, Adobe e Google."},
+            {t:"A eliminação da memória RAM",c:0,fb:"O princípio EXIGE memória para guardar o programa. Sem RAM não há programa armazenado."},
+            {t:"Computadores sem CPU",c:0,fb:"A arquitetura define justamente a CPU (UC+ULA) como executora do programa armazenado."}
+          ]},
+        {p:"Um carro Tesla recebendo nova funcionalidade por atualização OTA exemplifica:",
+          alts:[
+            {t:"Programa armazenado: o comportamento do carro é software carregável, não fiação fixa",c:1,fb:"Exato! Como as funções vivem em memória/flash como dados, a Tesla pode alterá-las remotamente — algo impossível em lógica puramente mecânica."},
+            {t:"Arquitetura Harvard pura",c:0,fb:"O carro usa memórias não-voláteis e RAM de forma unificada logicamente; o ponto ilustrado é o programa como dado, não a separação Harvard."},
+            {t:"E/S programada com busy-wait",c:0,fb:"OTA é atualização de software; não tem relação com técnica de transferência de E/S."}
+          ]},
+        {p:"Por que vírus e malwares são POSSÍVEIS em máquinas de Von Neumann?",
+          alts:[
+            {t:"Porque instruções são dados graváveis: código malicioso pode ser escrito e depois executado",c:1,fb:"Correto! O mesmo princípio que permite compiladores e loaders permite injetar código. Segurança moderna (NX bit, ASLR) tenta limitar esse efeito colateral."},
+            {t:"Porque a CPU é lenta demais para detectar invasões",c:0,fb:"Velocidade não é a causa. A causa é estrutural: não há distinção física entre dado e instrução na memória."},
+            {t:"Porque monitores exibem pixels maliciosos",c:0,fb:"Pixels não executam código sozinhos. Malware precisa de instruções gravadas e buscadas pela CPU."}
+          ]}
+      ]
+    },
+    {
+      id:"aba-6",
+      titulo:"Evolução e alternativas 📖 Estudo próprio",
+      estudoProprio:true,
+      missao:"Conhecer as alternativas à arquitetura de Von Neumann: Harvard, Harvard modificada, dataflow, neuromórficas e computação em memória.",
+      teoria:[
+        "<strong>Arquitetura Harvard</strong>: memórias FÍSICAMENTE separadas para instruções e dados, com dois barramentos independentes. Nome vem do Harvard Mark I (1944). Vantagem: buscar instrução e dado no mesmo ciclo.",
+        "Onde a Harvard pura vive hoje: <strong>microcontroladores</strong> (AVR do Arduino Uno, PIC) e <strong>DSPs</strong> de processamento de áudio/sinal, onde a vazão previsível é crítica.",
+        "<strong>Harvard modificada</strong>: separação apenas nas caches (L1-I e L1-D distintas), com memória unificada acima. É o que seu notebook usa por dentro: Von Neumann logicamente, Harvard nas caches.",
+        "<strong>Dataflow</strong>: execução disparada pela DISPONIBILIDADE dos dados, não por um PC sequencial. Influenciou GPUs e compiladores modernos, embora raramente apareça pura em produtos.",
+        "<strong>Neuromórficas</strong>: chips que imitam neurônios com spikes, como <strong>IBM TrueNorth</strong> e <strong>Intel Loihi</strong>. Memória e computação coexistem no mesmo elemento — atacam o gargalo pela raiz.",
+        "<strong>Computação em memória (in-memory / PIM)</strong>: opera DENTRO dos arrays de memória (ex.: memristores, ReRAM), eliminando o vai-e-vem do barramento. Promissora para IA de borda.",
+        "<strong>Quântica</strong>: muda o paradigma de informação (qubits, superposição). Não é 'Von Neumann vs Harvard': é outra física de computação, com controle clássico ainda Von Neumann ao redor.",
+        "Conclusão prática: o computador moderno é <strong>híbrido</strong> — Von Neumann no nível lógico, Harvard nas caches, DMA na E/S e aceleradores dataflow-like ao lado. As 'alternativas' viraram peças do mesmo sistema."
+      ],
+      demo:{
+        tipo:"escolha",
+        titulo:"🧭 Qual arquitetura é? Diagnóstico de casos reais",
+        preveja:"Antes de responder, preveja: o Arduino Uno (AVR ATmega328) usa Von Neumann ou Harvard?",
+        instru:"Leia cada caso e escolha a arquitetura. Erros explicam por que a opção falhou e liberam nova tentativa; acertos travam e avançam.",
+        cenarios:[
+          {pergunta:"🔧 Um Arduino Uno (microcontrolador AVR ATmega328P) guarda programa em flash e variáveis em SRAM, com barramentos separados.",
+            opcoes:[
+              {t:"Harvard pura",c:1,fb:"Correto! AVR tem memórias e barramentos separados para instruções (flash) e dados (SRAM). Por isso o PROGMEM existe no ecossistema Arduino."},
+              {t:"Von Neumann clássica",c:0,fb:"Em Von Neumann, programa e dados compartilham a mesma memória e barramento. No AVR eles são fisicamente distintos — Harvard."},
+              {t:"Neuromórfica",c:0,fb:"Neuromórficas imitam neurônios com spikes (TrueNorth, Loihi). Um AVR é um microcontrolador clássico determinístico."}
+            ]
+          },
+          {pergunta:"💻 Um processador de notebook tem caches L1-I (instruções) e L1-D (dados) separadas, mas uma única RAM acima delas.",
+            opcoes:[
+              {t:"Harvard modificada",c:1,fb:"Exato! Separação só nas caches, unificação acima: a definição de Harvard modificada. Ganha vazão sem perder a flexibilidade do programa armazenado."},
+              {t:"Harvard pura",c:0,fb:"Harvard pura separaria memórias em TODO o nível, inclusive a principal. Aqui a RAM é única — modificada."},
+              {t:"Dataflow pura",c:0,fb:"Dataflow não usa PC sequencial; executa por disponibilidade de dados. Um CPU de notebook continua sequencial no modelo lógico."}
+            ]
+          },
+          {pergunta:"🧠 Um chip de pesquisa com 'neurônios' de silício que disparam spikes e armazenam pesos no próprio elemento de computação.",
+            opcoes:[
+              {t:"Neuromórfica (ex.: IBM TrueNorth / Intel Loihi)",c:1,fb:"Correto! Computação e memória coexistem no mesmo elemento, atacando o gargalo de Von Neumann pela raiz. Ideal para eventos esparsos de sensores."},
+              {t:"Harvard modificada",c:0,fb:"Harvard modificada ainda separa apenas caches em uma CPU clássica. Chips com spikes e pesos locais são neuromórficos."},
+              {t:"Von Neumann com DMA",c:0,fb:"DMA melhora a E/S, mas mantém CPU e memória separadas. O chip descrito funde computação e memória — outra família."}
+            ]
+          },
+          {pergunta:"🎧 Um DSP de fone com cancelamento de ruído busca instrução e amostra de áudio no MESMO ciclo, por barramentos independentes.",
+            opcoes:[
+              {t:"Harvard (pura ou com forte separação)",c:1,fb:"Correto! Dois barramentos permitem fetch duplo no mesmo ciclo — exatamente por isso DSPs de sinal adotam Harvard."},
+              {t:"Von Neumann clássica",c:0,fb:"Com barramento único, instrução e dado disputariam o canal e não sairiam no mesmo ciclo. O caso descreve separação Harvard."},
+              {t:"Computação quântica",c:0,fb:"Cancelamento de ruído em tempo real usa DSP clássico. Quântica trata de qubits e superposição, outro paradigma."}
+            ]
+          }
+        ]
+      },
+      aprofundar:{
+        lexico:[
+          {termo:"Arquitetura Harvard",def:"Memórias e barramentos separados para instruções e dados."},
+          {termo:"Harvard modificada",def:"Separação apenas nas caches; memória principal unificada."},
+          {termo:"Dataflow",def:"Execução dirigida pela disponibilidade de dados, sem PC sequencial."},
+          {termo:"Neuromórfica",def:"Chips inspirados em neurônios; memória e computação no mesmo elemento."}
+        ],
+        links:[
+          {rotulo:"Arquitetura Harvard (Wikipédia)",url:"https://pt.wikipedia.org/wiki/Arquitetura_Harvard",lang:"pt"},
+          {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=arquitetura+harvard+alternativas+von+neumann"}
+        ]
+      },
+      quiz:[
+        {p:"Qual é a diferença central da arquitetura Harvard em relação a Von Neumann?",
+          alts:[
+            {t:"Memórias e barramentos SEPARADOS para instruções e dados",c:1,fb:"Correto! Com dois canais, é possível buscar instrução e dado no mesmo ciclo — vantagem em DSPs e microcontroladores."},
+            {t:"Uso de válvulas em vez de transistores",c:0,fb:"Tecnologia de componentes é independente do modelo arquitetural. Harvard e Von Neumann existem desde a era eletromecânica/eletrônica."},
+            {t:"Ausência de unidade de controle",c:0,fb:"Harvard também tem UC e ULA. A diferença é o organização da memória, não a ausência de controle."}
+          ]},
+        {p:"Onde a arquitetura Harvard PURA é mais comum hoje?",
+          alts:[
+            {t:"Microcontroladores (AVR/Arduino, PIC) e DSPs de sinal",c:1,fb:"Exato! Nesses chips, flash de programa e SRAM de dados têm barramentos próprios. É o caso clássico de Harvard pura em produção."},
+            {t:"Servidores de nuvem da AWS",c:0,fb:"Servidores usam CPUs x86/ARM com Harvard MODIFICADA (caches separadas, RAM unificada), não Harvard pura."},
+            {t:"Smartphones com iOS",c:0,fb:"iPhones usam ARM: Harvard modificada nas caches, Von Neumann logicamente. Não é Harvard pura."}
+          ]},
+        {p:"Caches L1-I e L1-D separadas com RAM unificada configuram:",
+          alts:[
+            {t:"Harvard modificada",c:1,fb:"Correto! É o híbrido universal: velocidade de Harvard nas caches, flexibilidade de Von Neumann no resto. Presente em praticamente toda CPU moderna."},
+            {t:"Von Neumann pura sem caches",c:0,fb:"Se há caches separadas, não é 'sem caches'. E a separação é justamente o traço Harvard (modificada)."},
+            {t:"Arquitetura dataflow",c:0,fb:"Dataflow muda o modelo de execução (sem PC sequencial). Caches separadas não implicam dataflow."}
+          ]}
+      ]
+    }
+  ],
+  revisao:{
+    titulo:"Revisão — Mapa completo e Chefão",
+    cola:[
+      "• E/S = fronteira com o mundo: entrada, saída e mistos (touchscreen, SSD, rede)",
+      "• Velocidades: teclado ~10 B/s ↔ SSD NVMe ~7 GB/s ↔ rede 100GbE ~12,5 GB/s",
+      "• Controle de E/S: programada (busy-wait) → interrupção → DMA (CPU livre)",
+      "• Controlador = hardware; driver = software que o comanda",
+      "• Von Neumann (1945, EDVAC): programa armazenado na MESMA memória que dados",
+      "• Componentes: memória + UC + ULA (CPU) + E/S, ligados por barramentos",
+      "• PC aponta próxima instrução; ciclo buscar → decodificar → executar",
+      "• Gargalo de Von Neumann: barramento único CPU↔memória; memory wall",
+      "• RAM ~60-100 ns vs registrador <1 ns = centenas de ciclos ociosos",
+      "• Mitigações: caches L1/L2/L3, prefetch, barramentos largos, localidade",
+      "• Impacto: indústria de software, OTA, App Stores — e também malware",
+      "• Alternativas: Harvard (AVR/DSP), Harvard modificada (caches), dataflow,",
+      "  neuromórficas (TrueNorth/Loihi), computação em memória, quântica"
+    ],
+    chefao:{
+      pergunta:"Você é engenheiro de arquitetura em 2026 e precisa justificar, em um documento técnico, o projeto de um novo dispositivo IoT de monitoramento cardíaco: ele deve (a) rodar firmware fixo e previsível, (b) transferir rajadas de dados do sensor para a memória sem travar a CPU, e (c) executar um modelo de IA minúsculo com baixo consumo. Para cada requisito, indique a escolha arquitetural adequada (modelo de memória, técnica de E/S e paradigma de aceleração) e explique o porquê com base nos princípios da aula.",
+      criterios:[
+        "Firmware fixo e previsível: arquitetura Harvard (ou Harvard modificada) no microcontrolador — fetch de instrução e dado no mesmo ciclo, timing determinístico",
+        "Rajadas do sensor: DMA (ou interrupções para eventos raros), liberando a CPU durante transferências de blocos",
+        "IA minúscula de baixo consumo: acelerador neuromórfico/computação em memória ou NPU dedicada, reduzindo o vai-e-vem do barramento (gargalo de Von Neumann)",
+        "Mencionar o gargalo de Von Neumann e como caches/localidade ou PIM o mitigam no dispositivo",
+        "Concluir que o sistema final é híbrido: Von Neumann no controle + Harvard no MCU + DMA na E/S + acelerador ao lado"
+      ]
+    }
+  }
+};
+
+const estado = {xp:0,selos:new Set(),quizOk:new Set(),demoOk:new Set(),dark:false,apres:false,abaAtiva:null,demos:{}};
+
+function carregarEstado(){
+  try{
+    const s = JSON.parse(localStorage.getItem('arqcomp_aula02')||'{}');
+    estado.xp = s.xp||0;
+    estado.selos = new Set(s.selos||[]);
+    estado.quizOk = new Set(s.quizOk||[]);
+    estado.demoOk = new Set(s.demoOk||[]);
+  }catch(e){}
+}
+function salvarEstado(){
+  localStorage.setItem('arqcomp_aula02',JSON.stringify({
+    xp:estado.xp,
+    selos:Array.from(estado.selos),
+    quizOk:Array.from(estado.quizOk),
+    demoOk:Array.from(estado.demoOk)
+  }));
+}
+function ganhaXP(n,motivo){
+  estado.xp += n;
+  showToast(`+${n} XP — ${motivo}`);
+  atualizaProgresso();
+  salvarEstado();
+}
+function adicionaSelo(s){
+  if(!estado.selos.has(s)){
+    estado.selos.add(s);
+    showToast(`🏅 Selo: ${s}`);
+    atualizaProgresso();
+    salvarEstado();
+  }
+}
+function shuffle(a){
+  const b = a.slice();
+  for(let i=b.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [b[i],b[j]] = [b[j],b[i]];
+  }
+  return b;
+}
+function renderTabs(){
+  const nav = document.getElementById('tablist');
+  nav.innerHTML = '';
+  const todas = [...AULA_DADOS.abas,{id:'revisao',titulo:'Revisão'}];
+  todas.forEach((a,i)=>{
+    const btn = document.createElement('button');
+    btn.role = 'tab';
+    btn.setAttribute('aria-selected','false');
+    btn.setAttribute('aria-controls',a.id);
+    btn.dataset.id = a.id;
+    btn.innerHTML = `${i+1}. ${a.titulo}${a.estudoProprio?'<span class="selo">📖 Estudo próprio</span>':''}`;
+    btn.onclick = ()=>irPara(a.id);
+    btn.onkeydown = (e)=>{
+      if(e.key==='ArrowRight'){const next = btn.nextElementSibling||nav.firstElementChild; next.focus();}
+      else if(e.key==='ArrowLeft'){const prev = btn.previousElementSibling||nav.lastElementChild; prev.focus();}
+      else if(e.key==='Enter'||e.key===' '){e.preventDefault();irPara(a.id);}
+    };
+    nav.appendChild(btn);
+  });
+}
+function renderMain(){
+  const m = document.getElementById('main');
+  m.innerHTML = '';
+  const pr = document.createElement('div');
+  pr.className='progresso';pr.id='progresso';
+  m.appendChild(pr);
+  AULA_DADOS.abas.forEach(a=>{
+    const sec = document.createElement('section');
+    sec.className='aba';sec.id=a.id;
+    sec.setAttribute('role','tabpanel');
+    sec.innerHTML = renderAba(a);
+    m.appendChild(sec);
+  });
+  const rev = document.createElement('section');
+  rev.className='aba';rev.id='revisao';
+  rev.setAttribute('role','tabpanel');
+  rev.innerHTML = renderRevisao();
+  m.appendChild(rev);
+  atualizaProgresso();
+}
+function renderAba(a){
+  return `
+    <div class="missao"><strong>🎯 Missão</strong>${a.missao}</div>
+    <div class="card">
+      <h2>${a.titulo}</h2>
+      ${a.teoria.map(p=>`<p>${p}</p>`).join('')}
+    </div>
+    <div class="demo" id="demo-${a.id}">
+      <h3>🧪 Demo: ${a.demo.titulo}</h3>
+      <div class="preveja">💭 ${a.demo.preveja}</div>
+      <div class="instru">📋 <strong>Instruções passo a passo:</strong> ${a.demo.instru}</div>
+      <div id="demo-area-${a.id}"></div>
+      ${a.demo.guia?`<div class="obs">👀 <strong>O que observar:</strong> ${a.demo.guia}</div>`:''}
+      <button class="btn sec" onclick="reiniciarDemo('${a.id}')">🔄 Reiniciar demo</button>
+      ${!estado.demoOk.has(a.id)?`<button class="btn" onclick="marcarDemoOk('${a.id}')">✓ Concluí a demo</button>`:'<span class="selo-chip">✓ Demo concluída</span>'}
+    </div>
+    <details class="lex">
+      <summary>📘 Mini-dicionário</summary>
+      <ul>${a.aprofundar.lexico.map(l=>`<li><strong>${l.termo}:</strong> ${l.def}</li>`).join('')}</ul>
+    </details>
+    <details class="links">
+      <summary>🔗 Links para aprofundar</summary>
+      <ul>${a.aprofundar.links.map(l=>`<li><a href="${l.url}" target="_blank" rel="noopener">${l.rotulo}${l.lang&&l.lang!=='pt'?` <em>(${l.lang})</em>`:''}</a></li>`).join('')}</ul>
+    </details>
+    <div class="card">
+      <h2>📝 Quiz — 3 perguntas</h2>
+      ${a.quiz.map((q,i)=>renderQuiz(a.id,i,q)).join('')}
+    </div>
+    ${a.estudoProprio?`<div class="rota"><strong>🏠 Rota em casa:</strong> esta aba é estudo próprio. Em sala, o professor percorre as abas 1–5.</div>`:`<div class="rota"><strong>🎤 Roteiro do apresentador:</strong> 6 min nesta aba. Missão → previsão → demo 2 min → quiz.</div>`}
+  `;
+}
+function renderQuiz(abaId,idx,q){
+  const key = `${abaId}-${idx}`;
+  const misturadas = shuffle(q.alts);
+  return `
+    <div class="quiz-perg" data-key="${key}" data-aba="${abaId}">
+      <h4>Pergunta ${idx+1}. ${q.p}</h4>
+      <div class="alts">
+        ${misturadas.map(alt=>`<button class="alt" data-c="${alt.c?1:0}" data-fb='${alt.fb.replace(/'/g,'&#39;')}' onclick="respQuiz(this)">${alt.t}</button>`).join('')}
+      </div>
+      <div class="fb" id="fb-${key}"></div>
+    </div>
+  `;
+}
+function respQuiz(btn){
+  const p = btn.closest('.quiz-perg');
+  const key = p.dataset.key;
+  const abaId = p.dataset.aba;
+  const fb = btn.dataset.fb;
+  const c = btn.dataset.c === '1';
+  const fbd = p.querySelector('.fb');
+  if(c){
+    btn.classList.add('certa');
+    btn.innerHTML = '✓ '+btn.innerHTML;
+    p.querySelectorAll('.alt').forEach(b=>b.disabled=true);
+    fbd.className='fb ok';
+    fbd.innerHTML='✅ <strong>Por que esta está certa:</strong> '+fb;
+    if(!estado.quizOk.has(key)){
+      const wasRetry = sessionStorage.getItem(key+'-retry');
+      estado.quizOk.add(key);
+      ganhaXP(wasRetry?5:10, wasRetry?'Acerto no retry!':'Acerto de primeira!');
+      sessionStorage.removeItem(key+'-retry');
+      verificarAbaCompleta(abaId);
+      salvarEstado();
+    }
+  } else {
+    btn.classList.add('errada');
+    btn.innerHTML = '✗ '+btn.innerHTML;
+    btn.disabled = true;
+    fbd.className='fb bad';
+    fbd.innerHTML='❌ <strong>Por que esta está errada:</strong> '+fb+'<br><em>🔁 Tente outra alternativa.</em>';
+    if(!estado.quizOk.has(key)) sessionStorage.setItem(key+'-retry','1');
+  }
+}
+function verificarAbaCompleta(abaId){
+  const aba = AULA_DADOS.abas.find(a=>a.id===abaId);
+  if(!aba) return;
+  const todas = aba.quiz.every((_,i)=>estado.quizOk.has(`${abaId}-${i}`));
+  const demo = estado.demoOk.has(abaId);
+  if(todas && demo){
+    const nomeSelo = aba.titulo.split('📖')[0].replace(/[^\w\sÀ-ú]/g,'').trim().substring(0,25);
+    adicionaSelo(nomeSelo||aba.titulo.substring(0,25));
+  }
+}
+function marcarDemoOk(abaId){
+  if(!estado.demoOk.has(abaId)){
+    estado.demoOk.add(abaId);
+    ganhaXP(5,'Demo concluída');
+    verificarAbaCompleta(abaId);
+    salvarEstado();
+    const area = document.querySelector(`#demo-${abaId}`);
+    if(area){
+      area.querySelectorAll('button.btn').forEach(b=>{
+        if(b.textContent.includes('Concluí')){
+          const span = document.createElement('span');
+          span.className='selo-chip';
+          span.textContent='✓ Demo concluída';
+          b.replaceWith(span);
+        }
+      });
+    }
+  }
+}
+function renderRevisao(){
+  return `
+    <div class="missao"><strong>🎯 Revisão final</strong>Da tomada do teclado ao programa armazenado: o sistema completo.</div>
+    <div class="card">
+      <h2>🗺️ Mapa da aula</h2>
+      <div class="revisao-mapa">
+        ${AULA_DADOS.abas.map((a,i)=>`<div class="no"><strong>${i+1}.</strong> ${a.titulo.split('📖')[0].trim()}${a.estudoProprio?' <em>(estudo)</em>':''}<br><small>${a.estudoProprio?'🏠 estudo próprio':'🏫 em sala'}</small></div>`).join('')}
+      </div>
+    </div>
+    <div class="card">
+      <h2>🧾 Cola rápida</h2>
+      <div class="cola">${AULA_DADOS.revisao.cola.join('\n')}</div>
+    </div>
+    <div class="chefao" id="chefao">
+      <h3>👹 Chefão — o desafio final</h3>
+      <p><strong>${AULA_DADOS.revisao.chefao.pergunta}</strong></p>
+      <p>Seu documento técnico deve cobrir:</p>
+      <ul>${AULA_DADOS.revisao.chefao.criterios.map(c=>`<li>${c}</li>`).join('')}</ul>
+      <textarea id="chefaoResp" rows="8" style="width:100%;padding:10px;border-radius:8px;border:2px solid #ffd54f;font-family:inherit;font-size:1rem" placeholder="Justifique cada escolha arquitetural do dispositivo IoT."></textarea><br>
+      <button class="btn" onclick="entregarChefao()">🏆 Entregar resposta</button>
+      <div id="chefaoFb" style="margin-top:10px"></div>
+    </div>
+  `;
+}
+function entregarChefao(){
+  const t = document.getElementById('chefaoResp').value.trim();
+  const fb = document.getElementById('chefaoFb');
+  if(t.length<150){
+    fb.className='fb bad';fb.style.display='block';
+    fb.innerHTML='❌ Resposta muito curta. Desenvolva os 5 pontos do documento.';return;
+  }
+  const lower = t.toLowerCase();
+  let pontos = 0;
+  if(/harvard/.test(lower)) pontos++;
+  if(/dma|interrup/.test(lower)) pontos++;
+  if(/neuromorf|npu|em.mem[óo]ria|pim|acelerad/.test(lower)) pontos++;
+  if(/gargalo|memory wall|cache|localidade/.test(lower)) pontos++;
+  if(/h[íi]brido|von neumann/.test(lower)) pontos++;
+  fb.style.display='block';
+  if(pontos>=4){
+    fb.className='fb ok';
+    fb.innerHTML=`✅ <strong>Excelente!</strong> Você cobriu ${pontos}/5 pontos. Ganhou 50 XP e o selo "Arquiteto de IoT".`;
+    ganhaXP(50,'Chefão concluído');
+    adicionaSelo('Arquiteto de IoT');
+  } else {
+    fb.className='fb bad';
+    fb.innerHTML=`❌ Você cobriu apenas ${pontos}/5 pontos. Reveja: Harvard no firmware, DMA nas rajadas, neuromórfico/NPU na IA, gargalo+cache, conclusão híbrida.`;
+  }
+}
+
+/* =========================================================
+   DEMOS
+   ========================================================= */
+function renderDemos(){
+  AULA_DADOS.abas.forEach(a=>{
+    const area = document.getElementById(`demo-area-${a.id}`);
+    if(!area) return;
+    if(a.id==='aba-1') renderDemoAba1(area,a);
+    else if(a.id==='aba-2') renderDemoAba2(area,a);
+    else if(a.id==='aba-3') renderDemoAba3(area,a);
+    else if(a.id==='aba-4') renderDemoAba4(area,a);
+    else if(a.id==='aba-5') renderDemoAba5(area,a);
+    else if(a.id==='aba-6') renderDemoAba6(area,a);
+  });
+}
+
+/* ABA 1 — Museu de E/S */
+function renderDemoAba1(area,a){
+  const wrap = document.createElement('div');
+  wrap.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px">
+      ${a.demo.dispositivos.map((d,i)=>`<button class="btn" data-i="${i}" style="background:#455a64">${d.nome}</button>`).join('')}
+    </div>
+    <div id="ab1-reveal" style="margin-top:14px;padding:14px;border-radius:8px;background:#eceff1;min-height:120px;border-left:5px solid var(--cor)">
+      <em>👆 Clique em um dispositivo para classificá-lo.</em>
+    </div>
+  `;
+  area.appendChild(wrap);
+  wrap.querySelectorAll('button').forEach(b=>{
+    b.onclick=()=>{
+      const d = a.demo.dispositivos[+b.dataset.i];
+      const corTipo = d.tipo==='ENTRADA' ? '#1976d2' : (d.tipo==='SAÍDA' ? '#f57c00' : '#2e7d32');
+      document.getElementById('ab1-reveal').innerHTML = `
+        <strong>${d.nome}</strong> — <span style="color:${corTipo};font-weight:700">${d.tipo}</span><br><br>
+        🔌 <strong>Interface:</strong> ${d.iface}<br><br>
+        <div style="padding:10px;background:#fff8e1;border-radius:6px;border-left:4px solid #ffa000">
+          💡 <strong>Curiosidade:</strong> ${d.curiosidade}
+        </div>
+      `;
+    };
+  });
+}
+
+/* ABA 2 — Simulador de modos de E/S */
+function renderDemoAba2(area,a){
+  const wrap = document.createElement('div');
+  const TOTAL = 12;
+  const modos = {
+    programada:{rotulo:"🐢 E/S programada (busy-wait)",ocupados:Array.from({length:TOTAL},(_,i)=>i),
+      desc:"CPU consulta o status e copia byte a byte. Ocupada em TODOS os ticks."},
+    interrupcao:{rotulo:"⚡ Dirigida por interrupção",ocupados:[0,1,6,7,10,11],
+      desc:"CPU trabalha só nos eventos (início, meio, fim). Nos demais ticks, o dispositivo age sozinho."},
+    dma:{rotulo:"🚀 DMA",ocupados:[0,1,11],
+      desc:"CPU configura (ticks 0-1), o controlador DMA transfere sozinho e a CPU só é interrompida no fim (tick 11)."}
+  };
+  let timer = null;
+  function parar(){ if(timer){clearInterval(timer);timer=null;} }
+  function desenha(logTexto, tick, modoKey){
+    const m = modos[modoKey||'programada'];
+    const ocupadoAgora = modoKey ? (m.ocupados.includes(tick) ? 100 : 0) : 0;
+    const ocupadosAte = modoKey ? m.ocupados.filter(x=>x<=tick).length : 0;
+    const pct = modoKey && tick>=0 ? Math.round(ocupadosAte/(tick+1)*100) : 0;
+    wrap.innerHTML = `
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        ${Object.keys(modos).map(k=>`<button class="btn" data-m="${k}" style="background:${modoKey===k?'var(--cor)':'#6c757d'}">${modos[k].rotulo}</button>`).join('')}
+      </div>
+      <div style="padding:12px;background:#fff;border-radius:8px;border:1px solid var(--borda)">
+        <strong>Ocupação da CPU no tick ${Math.max(tick,0)}/${TOTAL-1}:</strong>
+        <div class="cpu-bar"><div style="width:${ocupadoAgora}%"></div></div>
+        <div style="font-size:.9rem;color:var(--muted)">${modoKey?modos[modoKey].desc:'Escolha um modo e clique em Transferir.'}</div>
+        <div style="margin-top:8px;font-size:.95rem">Ocupação média até agora: <strong>${pct}%</strong></div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="ab2-run">📦 Transferir 1 MB</button>
+        <button class="btn sec" id="ab2-stop">⏹ Parar</button>
+      </div>
+      <div class="console" id="ab2-log" style="background:#0f172a;color:#7dd3fc;padding:10px;border-radius:8px;font-family:'Courier New',monospace;font-size:.88rem;white-space:pre-wrap;min-height:90px;margin-top:10px">${logTexto||'Aguardando transferência...'}</div>
+    `;
+    wrap.querySelectorAll('[data-m]').forEach(b=>{
+      b.onclick=()=>{ parar(); desenha('Modo selecionado. Clique em Transferir 1 MB.', -1, b.dataset.m); estado.demos.aba2 = {parar, modoSel:b.dataset.m}; };
+    });
+    wrap.querySelector('#ab2-stop').onclick=()=>{ parar(); };
+    wrap.querySelector('#ab2-run').onclick=()=>{
+      parar();
+      const mk = (estado.demos.aba2 && estado.demos.aba2.modoSel) || 'programada';
+      let t = -1;
+      let log = `Iniciando transferência de 1 MB via ${modos[mk].rotulo}...\n`;
+      timer = setInterval(()=>{
+        t++;
+        const oc = modos[mk].ocupados.includes(t);
+        log += `tick ${String(t).padStart(2,'0')}: CPU ${oc?'OCUPADA movendo dados':'livre (dispositivo/controlador trabalha)'}\n`;
+        desenha(log, t, mk);
+        if(t>=TOTAL-1){
+          parar();
+          const ocup = modos[mk].ocupados.length;
+          const fim = `\n✅ Concluído. CPU ocupada em ${ocup}/${TOTAL} ticks (${Math.round(ocup/TOTAL*100)}%).\n` +
+            (mk==='programada' ? '⚠️ Exemplo real: copiar 1 GB assim travaria um núcleo em 100%.' :
+             mk==='interrupcao' ? '💡 Usado por teclado/mouse: eventos raros, CPU quase livre.' :
+             '💡 Usado por SSDs NVMe e redes: CPU só configura e finaliza.');
+          desenha(log+fim, TOTAL-1, mk);
+        }
+      },450);
+    };
+  }
+  area.appendChild(wrap);
+  desenha('', -1, null);
+  estado.demos.aba2 = {parar};
+}
+
+/* ABA 3 — Ciclo de instrução */
+function renderDemoAba3(area,a){
+  const wrap = document.createElement('div');
+  const prog = [
+    {txt:"LOAD R1,[20]",fase:"EXEC",efeito:s=>{s.R1=s.mem[20];return `R1 ← mem[20] = ${s.mem[20]}`;}},
+    {txt:"ADD R1,#3",fase:"EXEC",efeito:s=>{s.R1=s.R1+3;return `R1 ← R1 + 3 = ${s.R1}`;}},
+    {txt:"STORE R1,[21]",fase:"EXEC",efeito:s=>{s.mem[21]=s.R1;return `mem[21] ← R1 = ${s.R1}`;}},
+    {txt:"HALT",fase:"EXEC",efeito:s=>{s.halt=true;return "Programa encerrado.";}},
+  ];
+  let s;
+  function reset(){
+    s = {pc:0,ir:'—',mar:'—',mdr:'—',R1:0,mem:{20:5,21:0},fase:0,hl:{},halt:false,log:'Pronto. Clique em Próximo passo.'};
+  }
+  reset();
+  function desenha(){
+    const fases = ['BUSCAR','DECODIFICAR','EXECUTAR'];
+    wrap.innerHTML = `
+      <div style="margin-bottom:10px">
+        <span class="reg ${s.hl.pc?'active':''}">PC = ${s.pc}</span>
+        <span class="reg ${s.hl.mar?'active':''}">MAR = ${s.mar}</span>
+        <span class="reg ${s.hl.mdr?'active':''}">MDR = ${s.mdr}</span>
+        <span class="reg ${s.hl.ir?'active':''}">IR = ${s.ir}</span>
+        <span class="reg ${s.hl.R1?'active':''}">R1 = ${s.R1}</span>
+      </div>
+      <div style="margin-bottom:10px">
+        <strong style="font-size:.9rem">Memória (instruções):</strong><br>
+        ${prog.map((p,i)=>`<span class="memcell ${s.hl['m'+i]?'hl':''}">${i}: ${p.txt}</span>`).join('')}
+        <br><strong style="font-size:.9rem">Memória (dados):</strong><br>
+        <span class="memcell data ${s.hl.m20?'hl':''}">20: ${s.mem[20]}</span>
+        <span class="memcell data ${s.hl.m21?'hl':''}">21: ${s.mem[21]}</span>
+      </div>
+      <div style="padding:10px;background:#fff;border-radius:8px;border-left:5px solid var(--cor);min-height:56px">
+        <strong>Fase: ${s.halt?'—':fases[s.fase]}</strong> — ${s.log}
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="ab3-next" ${s.halt?'disabled':''}>▶ Próximo passo</button>
+        <button class="btn sec" id="ab3-reset">🔄 Reiniciar</button>
+      </div>
+    `;
+    wrap.querySelector('#ab3-next').onclick = passo;
+    wrap.querySelector('#ab3-reset').onclick = ()=>{ reset(); desenha(); };
+  }
+  function passo(){
+    s.hl = {};
+    if(s.halt){ desenha(); return; }
+    const inst = prog[s.pc];
+    if(s.fase===0){ // BUSCAR
+      s.mar = s.pc; s.hl.pc=true; s.hl.mar=true; s.hl['m'+s.pc]=true;
+      s.mdr = inst.txt; s.hl.mdr=true;
+      s.ir = inst.txt; s.hl.ir=true;
+      s.log = `PC(${s.pc}) → MAR; memória[${s.pc}] → MDR → IR. Instrução buscada: ${inst.txt}`;
+      s.fase=1;
+    } else if(s.fase===1){ // DECODIFICAR
+      s.hl.ir=true;
+      s.log = `UC decodifica IR: "${inst.txt}". Prepara operandos e a ULA se necessário.`;
+      s.fase=2;
+    } else { // EXECUTAR
+      const msg = inst.efeito(s);
+      s.hl.R1=true;
+      if(inst.txt.startsWith('LOAD')) s.hl.m20=true;
+      if(inst.txt.startsWith('STORE')) s.hl.m21=true;
+      s.log = msg;
+      s.pc++;
+      s.fase=0;
+      if(s.halt){ s.log += ' (HALT)'; }
+    }
+    desenha();
+  }
+  area.appendChild(wrap);
+  desenha();
+}
+
+/* ABA 4 — Memory wall */
+function renderDemoAba4(area,a){
+  const wrap = document.createElement('div');
+  const st = {ghz:5, ns:100, cache:true};
+  function desenha(){
+    const ciclosEspera = st.ghz * st.ns; // ciclos = GHz * ns
+    const semCache = Math.round(ciclosEspera/(ciclosEspera+1)*100);
+    const efetivo = st.cache ? (0.05*ciclosEspera + 0.95*1) : ciclosEspera;
+    const comCache = Math.round(efetivo/(efetivo+1)*100);
+    wrap.innerHTML = `
+      <div class="slider-group" style="padding:10px;background:#fff;border-radius:8px;border:1px solid var(--borda);margin:8px 0">
+        <label>⚙️ Frequência da CPU: <strong>${st.ghz.toFixed(1)} GHz</strong></label>
+        <input type="range" id="ab4-g" min="1" max="6" step="0.5" value="${st.ghz}">
+      </div>
+      <div class="slider-group" style="padding:10px;background:#fff;border-radius:8px;border:1px solid var(--borda);margin:8px 0">
+        <label>🐌 Latência da RAM: <strong>${st.ns} ns</strong></label>
+        <input type="range" id="ab4-n" min="10" max="120" step="5" value="${st.ns}">
+      </div>
+      <label style="display:flex;gap:8px;align-items:center;margin:8px 0">
+        <input type="checkbox" id="ab4-c" ${st.cache?'checked':''} style="width:20px;height:20px">
+        <strong>Com caches L1/L2/L3 (95% de acertos)</strong>
+      </label>
+      <div style="padding:14px;background:var(--cor-suave);border-radius:8px;border:2px solid var(--cor)">
+        <div style="font-size:1.05rem">Ciclos ociosos POR ACESSO à RAM: <strong>${Math.round(ciclosEspera)}</strong></div>
+        <div style="margin-top:6px">Tempo perdido sem cache: <strong>${semCache}%</strong></div>
+        <div class="cpu-bar"><div style="width:${semCache}%;background:#c62828"></div></div>
+        <div style="margin-top:6px">Tempo perdido com cache: <strong>${comCache}%</strong></div>
+        <div class="cpu-bar"><div style="width:${comCache}%;background:#2e7d32"></div></div>
+        <div style="margin-top:10px;padding:10px;background:#fff8e1;border-radius:6px;border-left:4px solid #ffa000;font-size:.92rem">
+          💡 ${semCache>80?'Sem cache, a CPU passa a maior parte do tempo ESPERANDO a memória: é o memory wall em ação.':
+             semCache>50?'Metade do tempo da CPU se perde esperando a RAM. Caches e prefetch são obrigatórios.':
+             'Com RAM rápida e CPU modesta, o gargalo aperta menos — mas ainda existe.'}
+          ${st.cache?' Com cache, ~95% dos acessos param na L1 (~1 ciclo) e o desperdício despenca.':''}
+        </div>
+      </div>
+    `;
+    wrap.querySelector('#ab4-g').oninput=e=>{st.ghz=+e.target.value;desenha();};
+    wrap.querySelector('#ab4-n').oninput=e=>{st.ns=+e.target.value;desenha();};
+    wrap.querySelector('#ab4-c').onchange=e=>{st.cache=e.target.checked;desenha();};
+  }
+  area.appendChild(wrap);
+  desenha();
+}
+
+/* ABA 5 — Marcos de impacto */
+function renderDemoAba5(area,a){
+  const wrap = document.createElement('div');
+  wrap.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px">
+      ${a.demo.marcos.map((m,i)=>`<button class="btn" data-i="${i}" style="background:#455a64">${m.ano} — ${m.nome}</button>`).join('')}
+    </div>
+    <div id="ab5-reveal" style="margin-top:14px;padding:14px;border-radius:8px;background:#eceff1;min-height:100px;border-left:5px solid var(--cor)">
+      <em>👆 Clique em um marco para ver o impacto do princípio de Von Neumann.</em>
+    </div>
+  `;
+  area.appendChild(wrap);
+  wrap.querySelectorAll('button').forEach(b=>{
+    b.onclick=()=>{
+      const m = a.demo.marcos[+b.dataset.i];
+      document.getElementById('ab5-reveal').innerHTML = `
+        <strong>${m.ano} — ${m.nome}</strong><br><br>
+        🌍 <strong>Impacto:</strong> ${m.impacto}
+      `;
+    };
+  });
+}
+
+/* ABA 6 — Diagnóstico de arquiteturas */
+function renderDemoAba6(area,a){
+  const wrap = document.createElement('div');
+  let atual = 0;
+  function desenha(){
+    if(atual>=a.demo.cenarios.length){
+      wrap.innerHTML = `
+        <div style="padding:14px;background:#d4edda;border-radius:8px;border-left:5px solid var(--ok)">
+          ✅ <strong>Diagnóstico completo!</strong> Você identificou Harvard pura (AVR/DSP), Harvard modificada (caches de CPU), neuromórfica (TrueNorth/Loihi) e Harvard em DSP de áudio.<br><br>
+          💡 <strong>Lição:</strong> o computador moderno é HÍBRIDO — Von Neumann no nível lógico, Harvard nas caches, DMA na E/S e aceleradores ao lado.
+        </div>`;
+      return;
+    }
+    const c = a.demo.cenarios[atual];
+    wrap.innerHTML = `
+      <div style="padding:14px;background:#fff;border-radius:8px;border:2px solid var(--cor);margin-bottom:10px">
+        <strong>Caso ${atual+1}/${a.demo.cenarios.length}:</strong><br><br>${c.pergunta}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${c.opcoes.map((o,i)=>`<button class="alt" data-i="${i}">${o.t}</button>`).join('')}
+      </div>
+      <div id="ab6-fb" style="margin-top:10px"></div>
+    `;
+    wrap.querySelectorAll('.alt').forEach(btn=>{
+      btn.onclick=()=>{
+        const o = c.opcoes[+btn.dataset.i];
+        const fb = document.createElement('div');
+        fb.className = 'fb '+(o.c?'ok':'bad');
+        fb.innerHTML = (o.c?'✅':'❌')+' '+o.fb;
+        if(o.c){
+          fb.innerHTML += '<br><button class="btn" style="margin-top:8px">Próximo caso →</button>';
+          wrap.querySelectorAll('.alt').forEach(x=>x.disabled=true);
+          fb.querySelector('button').onclick=()=>{atual++;desenha();};
+        } else {
+          btn.disabled = true;
+          fb.innerHTML += '<br><em>🔁 As outras opções continuam disponíveis. Tente de novo!</em>';
+        }
+        wrap.appendChild(fb);
+      };
+    });
+  }
+  area.appendChild(wrap);
+  desenha();
+}
+
+function reiniciarDemo(abaId){
+  const area = document.getElementById(`demo-area-${abaId}`);
+  if(!area) return;
+  if(estado.demos[abaId] && estado.demos[abaId].parar) estado.demos[abaId].parar();
+  area.innerHTML = '';
+  const aba = AULA_DADOS.abas.find(a=>a.id===abaId);
+  if(abaId==='aba-1') renderDemoAba1(area,aba);
+  else if(abaId==='aba-2') renderDemoAba2(area,aba);
+  else if(abaId==='aba-3') renderDemoAba3(area,aba);
+  else if(abaId==='aba-4') renderDemoAba4(area,aba);
+  else if(abaId==='aba-5') renderDemoAba5(area,aba);
+  else if(abaId==='aba-6') renderDemoAba6(area,aba);
+  showToast('🔄 Demo reiniciada');
+}
+
+function irPara(id){location.hash=id;}
+function aplicarHash(){
+  let id = location.hash.replace('#','') || AULA_DADOS.abas[0].id;
+  if(!document.getElementById(id)) id = AULA_DADOS.abas[0].id;
+  document.querySelectorAll('section.aba').forEach(s=>s.classList.toggle('ativa',s.id===id));
+  document.querySelectorAll('nav.tabs button').forEach(b=>{
+    const sel = b.dataset.id===id;
+    b.setAttribute('aria-selected',sel?'true':'false');
+  });
+  estado.abaAtiva = id;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function atualizaProgresso(){
+  const pr = document.getElementById('progresso');
+  if(!pr) return;
+  pr.innerHTML = `
+    <span>⭐ XP: <span class="xp">${estado.xp}</span></span>
+    <span>🏅 Selos:</span>
+    <span class="selos">${estado.selos.size?Array.from(estado.selos).map(s=>`<span class="selo-chip">${s}</span>`).join(''):'<em style="color:var(--muted)">conquiste ao completar demos e quizzes</em>'}</span>
+  `;
+}
+function showToast(msg){
+  let t = document.getElementById('toast');
+  if(!t){
+    t = document.createElement('div');
+    t.id='toast';
+    t.style.cssText='position:fixed;bottom:20px;right:20px;background:#263238;color:#fff;padding:12px 18px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.3);z-index:200;font-weight:600;opacity:0;transition:opacity .3s';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity='1';
+  clearTimeout(t._tm);
+  t._tm = setTimeout(()=>t.style.opacity='0',2200);
+}
+document.getElementById('btnDark').onclick = ()=>{
+  estado.dark = !estado.dark;
+  document.body.classList.toggle('dark',estado.dark);
+  document.getElementById('btnDark').textContent = estado.dark?'☀️':'🌙';
+};
+document.getElementById('btnApres').onclick = ()=>{
+  estado.apres = !estado.apres;
+  document.body.classList.toggle('apresentacao',estado.apres);
+  document.getElementById('btnApres').textContent = estado.apres?'📖':'';
+  if(estado.apres){
+    document.body.classList.remove('dark');
+    estado.dark=false;
+    document.getElementById('btnDark').textContent='🌙';
+    const r = document.createElement('div');
+    r.className='rota-apres';r.id='rotaApres';
+    r.innerHTML = '🎤 <strong>Modo Apresentação:</strong> use ← → para navegar. Roteiro: 6 min por aba (1–5). Aba 6 é estudo próprio.';
+    document.body.appendChild(r);
+  } else {
+    const r = document.getElementById('rotaApres');
+    if(r) r.remove();
+  }
+};
+document.addEventListener('keydown',(e)=>{
+  if(!estado.apres) return;
+  const abas = AULA_DADOS.abas.map(a=>a.id).concat(['revisao']);
+  const idx = abas.indexOf(estado.abaAtiva);
+  if(e.key==='ArrowRight' && idx<abas.length-1){irPara(abas[idx+1]);e.preventDefault();}
+  else if(e.key==='ArrowLeft' && idx>0){irPara(abas[idx-1]);e.preventDefault();}
+});
+
+carregarEstado();
+renderTabs();
+renderMain();
+renderDemos();
+window.addEventListener('hashchange',aplicarHash);
+aplicarHash();
+</script>
+</body>
+</html>
