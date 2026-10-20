@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<!--
+  Disciplina: Sistemas Operacionais — Aula 03, Unidade 1, págs. 44 a 63
+  Título: Conceitos Iniciais, Estrutura e Shell Script
+  Abas: 6 de conteúdo (5 em sala + 1 estudo próprio) + 1 Revisão
+  Cor destaque: #1a237e (azul-marinho clássico)
+  Assunções: sumário da imagem organizado em 6 abas (memórias; E/S e barramentos;
+  arquiteturas de processadores; software/tradutor/linker/loader; concorrência e
+  processos; estrutura com arquivos, shell e shell scripts).
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aula 03 — Conceitos Iniciais, Estrutura e Shell Script</title>
+<style>
+:root{
+  --cor:#1a237e;
+  --cor-forte:#0d1240;
+  --cor-suave:#e8eaf6;
+  --fundo:#fdfdfd;
+  --texto:#1a1a1a;
+  --painel:#ffffff;
+  --borda:#d9d9d9;
+  --muted:#555;
+  --ok:#2e7d32;
+  --erro:#c62828;
+  --fonte:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --tam:18px;
+}
+*{box-sizing:border-box}
+body.dark{
+  --fundo:#121212;--texto:#e8e8e8;--painel:#1e1e1e;--borda:#333;
+  --muted:#b0b0b0;--cor-suave:#191e4a;--suave2:#232323;
+}
+html,body{margin:0;padding:0;background:var(--fundo);color:var(--texto);font-family:var(--fonte);font-size:var(--tam);line-height:1.55}
+header.topo{
+  position:sticky;top:0;z-index:100;background:var(--cor);color:#fff;
+  padding:10px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;
+  box-shadow:0 2px 6px rgba(0,0,0,.15)
+}
+header.topo h1{font-size:1.1rem;margin:0;font-weight:700}
+header.topo .meta{font-size:.85rem;opacity:.95}
+.acoes{display:flex;gap:6px;flex-wrap:wrap}
+.acoes button{
+  background:#fff;color:var(--cor);border:none;padding:6px 10px;border-radius:6px;
+  cursor:pointer;font-weight:600;font-size:.85rem
+}
+.acoes button:hover{background:var(--cor-suave)}
+nav.tabs{
+  position:sticky;top:56px;z-index:90;background:var(--painel);
+  border-bottom:2px solid var(--borda);overflow-x:auto;white-space:nowrap;
+  scrollbar-width:thin
+}
+nav.tabs button{
+  font-family:var(--fonte);font-size:var(--tam);background:transparent;color:var(--texto);
+  border:none;padding:12px 16px;cursor:pointer;border-bottom:4px solid transparent;
+  margin:0;font-weight:600;opacity:.75
+}
+nav.tabs button:hover{opacity:1}
+nav.tabs button[aria-selected="true"]{
+  color:var(--cor);border-bottom-color:var(--cor);opacity:1;
+  background:var(--painel);
+}
+nav.tabs button .selo{font-size:.7rem;background:var(--cor);color:#fff;padding:1px 5px;border-radius:8px;margin-left:4px;vertical-align:middle}
+main{max-width:980px;margin:0 auto;padding:20px}
+section.aba{display:none;animation:fade .3s ease}
+section.aba.ativa{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.card{background:var(--painel);border:2px solid var(--borda);border-radius:12px;padding:18px 20px;margin-bottom:18px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.card h2{margin-top:0;color:var(--cor);font-size:1.3rem;border-bottom:2px dashed var(--borda);padding-bottom:6px}
+.missao{
+  background:linear-gradient(135deg,var(--cor),var(--cor-forte));color:#fff;
+  padding:16px 18px;border-radius:10px;margin-bottom:18px;font-weight:500
+}
+.missao strong{display:block;font-size:1.1rem;margin-bottom:4px}
+.demo{
+  background:var(--suave2, #f2f3fb);border:2px solid var(--cor);border-radius:10px;
+  padding:16px;margin:18px 0
+}
+body.dark .demo{background:#191e4a}
+.demo h3{color:var(--cor);margin-top:0}
+.instru{
+  background:#fff8e1;border-left:5px solid #ffa000;padding:10px 14px;border-radius:6px;margin:10px 0;font-size:.95rem
+}
+body.dark .instru{background:#3a2d10}
+.preveja{
+  background:#e8f5e9;border-left:5px solid var(--ok);padding:10px 14px;border-radius:6px;
+  margin:10px 0;font-style:italic
+}
+body.dark .preveja{background:#1e3a1e}
+.obs{
+  background:#e3f2fd;border-left:5px solid #1976d2;padding:10px 14px;border-radius:6px;margin:10px 0;font-size:.95rem
+}
+body.dark .obs{background:#153047}
+button.btn{
+  background:var(--cor);color:#fff;border:none;padding:9px 16px;border-radius:8px;
+  cursor:pointer;font-weight:600;font-family:var(--fonte);font-size:.95rem;margin:4px 4px 4px 0
+}
+button.btn:hover{filter:brightness(1.25)}
+button.btn.sec{background:#6c757d}
+button.btn:disabled{opacity:.5;cursor:not-allowed}
+.quiz-perg{border:2px solid var(--borda);border-radius:10px;padding:14px;margin:12px 0;background:var(--painel)}
+.quiz-perg h4{margin:0 0 10px;color:var(--texto)}
+.quiz-perg .alts{display:flex;flex-direction:column;gap:8px}
+.alt{
+  text-align:left;background:var(--fundo);border:2px solid var(--borda);border-radius:8px;
+  padding:10px 14px;cursor:pointer;font-family:var(--fonte);font-size:1rem;
+  transition:all .2s
+}
+.alt:hover:not(:disabled){border-color:var(--cor);background:var(--cor-suave)}
+.alt:disabled{cursor:not-allowed;opacity:.85}
+.alt.certa{background:#d4edda;border-color:var(--ok);color:#155724}
+.alt.errada{background:#f8d7da;border-color:var(--erro);color:#721c24}
+body.dark .alt.certa{background:#1e3a1e;color:#a8e6a8}
+body.dark .alt.errada{background:#3a1e1e;color:#ffb3b3}
+.fb{margin-top:10px;padding:10px 14px;border-radius:8px;font-size:.95rem;display:none}
+.fb.ok{background:#d4edda;border-left:5px solid var(--ok);color:#155724;display:block}
+.fb.bad{background:#f8d7da;border-left:5px solid var(--erro);color:#721c24;display:block}
+body.dark .fb.ok{background:#1e3a1e;color:#a8e6a8}
+body.dark .fb.bad{background:#3a1e1e;color:#ffb3b3}
+details{background:var(--suave2,#fafafa);border:1px solid var(--borda);border-radius:8px;padding:8px 12px;margin:10px 0}
+body.dark details{background:#222}
+details summary{cursor:pointer;font-weight:600;color:var(--cor)}
+details[open] summary{margin-bottom:8px}
+details.lex{background:#fff3e0;border-color:#ffb74d}
+details.links{background:#e8f5e9;border-color:#81c784}
+details.links a{color:var(--cor);font-weight:600}
+.progresso{
+  background:var(--painel);border:2px solid var(--borda);border-radius:10px;
+  padding:10px 14px;margin-bottom:14px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:.95rem
+}
+.xp{background:var(--cor);color:#fff;padding:3px 10px;border-radius:20px;font-weight:700}
+.selos{display:flex;gap:6px;flex-wrap:wrap}
+.selo-chip{background:var(--cor-suave);color:var(--cor);padding:3px 8px;border-radius:20px;font-size:.8rem;font-weight:600}
+.rota{
+  background:#e0f7fa;border-left:5px solid #0097a7;padding:10px 14px;border-radius:6px;
+  margin:10px 0;font-size:.9rem
+}
+body.dark .rota{background:#0c2d33;color:#b3e5fc}
+body.apresentacao{font-size:22px}
+body.apresentacao nav.tabs button{font-size:22px}
+body.apresentacao .rota-apres{
+  position:fixed;bottom:0;left:0;right:0;background:#263238;color:#fff;
+  padding:14px 20px;font-size:1.05rem;box-shadow:0 -2px 8px rgba(0,0,0,.25);z-index:50
+}
+.revisao-mapa{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.revisao-mapa .no{
+  border:2px solid var(--cor);border-radius:8px;padding:10px;background:var(--cor-suave)
+}
+.revisao-mapa .no strong{color:var(--cor)}
+.cola{background:#fff3cd;border-left:5px solid #ffc107;padding:12px 16px;border-radius:8px;font-family:"Courier New",monospace;font-size:.95rem;white-space:pre-wrap}
+body.dark .cola{background:#3a2d10;color:#ffd980}
+.chefao{
+  background:linear-gradient(135deg,#263238,#37474f);color:#fff;padding:18px;border-radius:12px;margin-top:18px
+}
+.chefao h3{color:#ffd54f;margin-top:0}
+.chefao button{background:#ffd54f;color:#263238}
+.console{background:#0a0a0a;color:#00ff66;padding:12px;border-radius:8px;font-family:"Courier New",monospace;font-size:.88rem;white-space:pre-wrap;min-height:120px;border:2px solid #222}
+.busline{
+  height:34px;border-radius:6px;margin:4px 0;display:flex;align-items:center;padding:0 10px;
+  font-family:"Courier New",monospace;font-size:.85rem;color:#37474f;background:#eceff1;border:2px solid #b0bec5;
+  transition:all .2s
+}
+.busline.on{background:#fff9c4;border-color:#f9a825;font-weight:700;color:#5d4037}
+.stagebox{
+  display:inline-block;padding:10px 14px;margin:4px;border-radius:8px;border:2px solid var(--borda);
+  background:#fff;font-family:"Courier New",monospace;font-size:.9rem
+}
+.stagebox.active{border-color:var(--cor);background:var(--cor-suave);font-weight:700}
+input[type=number],input[type=text]{padding:6px 8px;border-radius:6px;border:2px solid var(--borda);font-family:inherit;font-size:.95rem;width:110px}
+textarea.script{width:100%;min-height:150px;padding:10px;border-radius:8px;border:2px solid var(--cor);font-family:"Courier New",monospace;font-size:.9rem;background:#0a0a0a;color:#00ff66}
+footer{max-width:980px;margin:30px auto;padding:20px;text-align:center;color:var(--muted);font-size:.85rem}
+@media(max-width:600px){
+  main{padding:12px}
+  .card{padding:14px}
+  header.topo h1{font-size:.95rem}
+}
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div>
+    <h1>️ Aula 03 — Conceitos Iniciais, Estrutura e Shell Script</h1>
+    <div class="meta">Sistemas Operacionais • Unidade 1 • págs. 44 a 63</div>
+  </div>
+  <div class="acoes">
+    <button id="btnApres" title="Modo Apresentação">🎤</button>
+    <button id="btnDark" title="Modo Escuro">🌙</button>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist" id="tablist"></nav>
+
+<main id="main"></main>
+
+<footer>Aula gerada offline • XP e selos salvos localmente • Navegue com setas ← → no modo 🎤</footer>
+
+<script>
+const AULA_DADOS = {
+  disciplina:"Sistemas Operacionais",
+  aula:"03",
+  unidade:"Unidade 1",
+  paginas:"44 a 63",
+  titulo:"Conceitos Iniciais, Estrutura e Shell Script",
+  cor:"#1a237e",
+  abas:[
+    {
+      id:"aba-1",
+      titulo:"Memórias",
+      missao:"Entender os tipos de memória, a hierarquia e como o SO protege cada processo com endereçamento base/limite.",
+      teoria:[
+        "A <strong>memória</strong> é onde instruções e dados residem para serem usados pela CPU. Sem ela, o processador não teria o que buscar — é o segundo pilar do modelo de Von Neumann.",
+        "<strong>RAM (Random Access Memory)</strong>: volátil, de leitura/escrita. Guarda os programas EM EXECUÇÃO. Tecnologias: DRAM (pentes DDR4/DDR5) e SRAM (caches). Desligou, apagou.",
+        "<strong>ROM / memória flash</strong>: não volátil. Guarda o firmware de inicialização (<strong>BIOS/UEFI</strong>) que acorda o hardware e chama o bootloader do SO.",
+        "<strong>Memória secundária</strong>: SSD/HD. Não é acessível diretamente pela CPU — os dados precisam ser carregados na RAM antes (é por isso que 'abrir um programa' demora).",
+        "<strong>Hierarquia</strong>: registradores (1 ciclo) → caches L1/L2/L3 (~1-40 ciclos) → RAM (~100 ciclos) → SSD (~10⁴ ciclos) → HD/nuvem (~10⁷ ciclos). O SO e o hardware exploram localidade para manter tudo rápido.",
+        "<strong>Endereçamento protegido</strong>: cada processo vê um <strong>endereço lógico</strong> próprio; a MMU soma o <strong>registrador base</strong> e compara com o <strong>registrador limite</strong>. Se o endereço lógico ≥ limite, a CPU gera <strong>trap de proteção</strong> e o SO mata o processo invasor.",
+        "Exemplo real: quando o Windows diz 'memória insuficiente', ele usa o <strong>arquivo de paginação (swap)</strong> no SSD como extensão da RAM — lento, mas evita o colapso."
+      ],
+      demo:{
+        tipo:"livre",
+        titulo:"🧮 MMU na prática: base + limite",
+        preveja:"Antes de calcular, preveja: com base=3000 e limite=2000, o endereço lógico 2500 vira qual endereço físico — ou vira erro?",
+        instru:"Ajuste base, limite e o endereço lógico gerado pelo processo. Veja a MMU traduzir (base + lógico) ou disparar trap de proteção.",
+        guia:"Observe que qualquer lógico ≥ limite gera TRAP: é assim que o SO impede um processo de ler a memória do vizinho. Isolamento de memória é a base da segurança moderna."
+      },
+      aprofundar:{
+        lexico:[
+          {termo:"MMU",def:"Memory Management Unit: traduz endereço lógico em físico usando base/limite ou tabelas de página."},
+          {termo:"Endereço lógico",def:"Endereço gerado pelo processo; também chamado de endereço virtual."},
+          {termo:"Trap de proteção",def:"Interrupção gerada quando um processo tenta acessar memória fora do seu limite."},
+          {termo:"Swap / paginação",def:"Uso do disco como extensão da RAM quando a memória física esgota."}
+        ],
+        links:[
+          {rotulo:"Memória de computador (Wikipédia)",url:"https://pt.wikipedia.org/wiki/Mem%C3%B3ria_de_computador",lang:"pt"},
+          {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=mem%C3%B3ria+computador+hierarquia+endere%C3%A7amento"}
+        ]
+      },
+      quiz:[
+        {p:"Qual memória é VOLÁTIL e guarda os programas em execução?",
+          alts:[
+            {t:"RAM",c:1,fb:"Correto! A RAM perde o conteúdo sem energia e é onde processos vivos residem. Por isso 'fechar abas libera memória' e reiniciar limpa tudo."},
+            {t:"ROM / flash do BIOS",c:0,fb:"ROM é não volátil e guarda firmware. Ela não armazena seus aplicativos em execução."},
+            {t:"SSD NVMe",c:0,fb:"SSD é memória secundária: persistente, mas a CPU não executa direto dele — o código precisa ser carregado na RAM antes."}
+          ]},
+        {p:"Com base=3000 e limite=2000, o endereço lógico 2500 resulta em:",
+          alts:[
+            {t:"Trap de proteção: 2500 ≥ limite 2000, acesso negado pelo SO",c:1,fb:"Exato! A MMU compara lógico com limite ANTES de somar a base. 2500 estoura o limite → interrupção de proteção → o SO encerra o processo infrator."},
+            {t:"Endereço físico 5500 (3000+2500)",c:0,fb:"A soma só acontece se o lógico for MENOR que o limite. Aqui a verificação falha primeiro: é violação, não tradução."},
+            {t:"Endereço físico 2500, sem tradução",c:0,fb:"Sem tradução não haveria proteção nem relocação. A MMU sempre traduz (ou bloqueia)."}
+          ]},
+        {p:"O que guarda o firmware BIOS/UEFI que inicializa o computador?",
+          alts:[
+            {t:"Memória não volátil (ROM/flash) na placa-mãe",c:1,fb:"Correto! O firmware precisa sobreviver sem energia para acordar o hardware e chamar o bootloader do SO a cada ligada."},
+            {t:"O arquivo de paginação no SSD",c:0,fb:"Swap é extensão da RAM para processos, não local de firmware de boot."},
+            {t:"A cache L3 do processador",c:0,fb:"Cache é volátil e serve para acelerar acessos à RAM. Nada sobrevive nela com o PC desligado."}
+          ]}
+      ]
+    },
+    {
+      id:"aba-2",
+      titulo:"E/S e Barramentos",
+      missao:"Ver como dispositivos e CPU conversam: controladores, drivers e os três barramentos que carregam dados, endereços e ordens.",
+      teoria:[
+        "<strong>Dispositivos de E/S</strong> conectam o computador ao mundo: entrada (teclado, mouse, microfone), saída (monitor, impressora) e mistos (touchscreen, SSD, placa de rede).",
+        "Cada dispositivo fala com o sistema por um <strong>controlador</strong> (hardware com registradores de comando/status/dados) comandado por um <strong>driver</strong> (software específico no SO).",
+        "<strong>Barramento</strong> é o caminho compartilhado de comunicação. Três feixes clássicos: <strong>barramento de dados</strong> (conteúdo), <strong>de endereços</strong> (onde) e <strong>de controle</strong> (ler/escrever, interrupções, clock).",
+        "Hierarquia de barramentos: <strong>barramento do sistema</strong> (CPU↔RAM, ex.: DDR5) e <strong>barramentos de E/S</strong> (PCIe para GPU/NVMe, USB para periféricos, SATA para discos legados).",
+        "Largura × clock = vazão: PCIe 4.0 x16 atinge ~32 GB/s por direção; USB 3.2, ~2,4 GB/s; o velho ISA dos anos 80 ficava em poucos MB/s. Gargalos de E/S nascem quando um dispositivo lento segura um barramento compartilhado.",
+        "Técnicas de transferência (Aula 02): <strong>E/S programada</strong>, <strong>interrupção</strong> e <strong>DMA</strong> — esta última move blocos inteiros sem ocupar a CPU.",
+        "Exemplo real: uma GPU RTX em PCIe 4.0 x16 transfere texturas da RAM dezenas de vezes mais rápido que em slot x4 — por isso gamers se importam com o barramento da placa-mãe."
+      ],
+      demo:{
+        tipo:"livre",
+        titulo:"🚌 Ciclo de leitura no barramento, tick a tick",
+        preveja:"Antes de rodar, preveja: em um ciclo de LEITURA da memória, qual barramento é ativado PRIMEIRO?",
+        instru:"Escolha a operação (leitura da RAM, escrita na RAM, leitura de E/S) e rode. Observe quais barramentos acendem em cada tick.",
+        guia:"Observe a coreografia: endereço + controle primeiro (diz ONDE e O QUÊ fazer), dados depois (o conteúdo viaja). Sem o barramento de controle, ninguém saberia se é leitura ou escrita."
+      },
+      aprofundar:{
+        lexico:[
+          {termo:"Controlador",def:"Hardware que comanda o dispositivo e expõe registradores ao SO."},
+          {termo:"Barramento de endereços",def:"Feixe que indica a posição de memória ou porta de E/S alvo da operação."},
+          {termo:"PCIe",def:"Barramento serial de alta velocidade para GPU, NVMe e rede (sucessor do PCI/AGP)."},
+          {termo:"DMA",def:"Transferência direta entre dispositivo e memória, sem ocupar a CPU."}
+        ],
+        links:[
+          {rotulo:"Barramento (Wikipédia)",url:"https://pt.wikipedia.org/wiki/Barramento",lang:"pt"},
+          {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=barramentos+entrada+sa%C3%ADda+computador"}
+        ]
+      },
+      quiz:[
+        {p:"Qual barramento indica ONDE (qual posição de memória ou porta) a operação vai acontecer?",
+          alts:[
+            {t:"Barramento de endereços",c:1,fb:"Correto! Ele carrega o endereço alvo. O de dados carrega o conteúdo; o de controle carrega as ordens (ler/escrever)."},
+            {t:"Barramento de dados",c:0,fb:"Dados transportam o CONTEÚDO lido/escrito. O 'onde' é papel exclusivo do barramento de endereços."},
+            {t:"Barramento de controle",c:0,fb:"Controle sinaliza o TIPO de operação (leitura/escrita, IRQ, clock), não o endereço alvo."}
+          ]},
+        {p:"Num ciclo de LEITURA da memória, qual é a primeira ação no barramento?",
+          alts:[
+            {t:"CPU coloca o endereço no barramento de endereços e sinaliza 'LER' no de controle",c:1,fb:"Exato! Primeiro se diz ONDE e O QUÊ; só então a memória devolve o conteúdo pelo barramento de dados."},
+            {t:"A memória empurra os dados espontaneamente",c:0,fb:"Memória é passiva: só responde a uma requisição com endereço e sinal de controle válidos."},
+            {t:"O dispositivo de E/S interrompe a CPU",c:0,fb:"Interrupção é mecanismo de aviso de dispositivo, não a primeira fase de um ciclo de leitura de memória."}
+          ]},
+        {p:"Qual barramento moderno conecta GPU e SSDs NVMe com dezenas de GB/s?",
+          alts:[
+            {t:"PCIe (Peripheral Component Interconnect Express)",c:1,fb:"Correto! PCIe 4.0/5.0 x16 entrega dezenas de GB/s por direção. É o barramento de E/S de alta performance dos PCs e servidores atuais."},
+            {t:"ISA (Industry Standard Architecture)",c:0,fb:"ISA é dos anos 1980, com poucos MB/s. Foi aposentado há décadas."},
+            {t:"PS/2",c:0,fb:"PS/2 é conector legado de teclado/mouse, de baixíssima velocidade. Nada a ver com GPU ou NVMe."}
+          ]}
+      ]
+    },
+    {
+      id:"aba-3",
+      titulo:"Arquiteturas de Processadores",
+      missao:"Comparar filosofias de projeto: CISC (x86) vs RISC (ARM, RISC-V) e entender pipeline e multi-core.",
+      teoria:[
+        "A <strong>arquitetura do processador</strong> (ISA) define o repertório de instruções que a CPU entende. Duas filosofias dominam a história:",
+        "<strong>CISC (Complex Instruction Set Computer)</strong>: muitas instruções, tamanhos variáveis, algumas fazem várias operações de uma vez. Ex.: <strong>x86/x86-64</strong> (Intel, AMD). Vantagem: código compacto; custo: decodificação complexa (microcódigo).",
+        "<strong>RISC (Reduced Instruction Set Computer)</strong>: poucas instruções simples, tamanho fixo, execução em 1 ciclo; operações de memória só via load/store. Ex.: <strong>ARM</strong>, MIPS, <strong>RISC-V</strong>. Vantagem: decodificação simples, eficiência energética.",
+        "<strong>Pipeline</strong>: dividir a execução em estágios (buscar, decodificar, executar, memória, escrita) para ter várias instruções em andamento — como linha de montagem.",
+        "<strong>Multi-core</strong>: várias CPUs completas no mesmo chip. Concorrência REAL (paralelismo), não só intercalação. Um i9 tem 24 núcleos; um Apple M2 Ultra, 24; servidores, 128+.",
+        "Mercado 2026: desktop/servidor tradicional = x86 (CISC); smartphones, tablets e Macs modernos = <strong>ARM (RISC)</strong>; nuvem adota ARM com <strong>AWS Graviton</strong> e <strong>Azure Cobalt</strong> por custo-performance; <strong>RISC-V</strong> cresce como ISA aberta sem licenças.",
+        "Exemplo real: a Apple trocou Intel por ARM (série M) em 2020 e dobrou performance por watt — a filosofia RISC venceu no quesito eficiência."
+      ],
+      demo:{
+        tipo:"exploratorio",
+        titulo:"🧠 Galeria de arquiteturas: clique e compare",
+        preveja:"Antes de clicar, preveja: qual filosofia domina os smartphones e os Macs atuais?",
+        instru:"Clique em cada arquitetura para ver filosofia, exemplos reais e pontos fortes.",
+        arqs:[
+          {nome:"🖥️ x86-64 (CISC)",filosofia:"Instruções complexas e variáveis; microcódigo interno; retrocompatibilidade desde 1978.",exemplos:"Intel Core i9, AMD Ryzen, servidores tradicionais",forte:"Ecossistema gigantesco e compatibilidade com décadas de software Windows/Linux."},
+          {nome:"📱 ARM (RISC)",filosofia:"Instruções simples de tamanho fixo; load/store; foco em eficiência energética.",exemplos:"Snapdragon, Apple M1-M4, AWS Graviton, Azure Cobalt",forte:"Performance por watt imbatível — dominou mobile e invadiu servidores e Macs."},
+          {nome:"🔓 RISC-V (RISC aberto)",filosofia:"ISA aberto e livre de royalties, extensível por qualquer fabricante.",exemplos:"Chips de IoT, controladores, projetos da SiFive e de universidades",forte:"Sem licença cara: ideal para chips customizados e pesquisa."},
+          {nome:"⚙️ Pipeline + Multi-core",filosofia:"Estágios em paralelo por núcleo + vários núcleos no chip.",exemplos:"Qualquer CPU moderna: 5+ estágios de pipeline, 4 a 128 núcleos",forte:"Multiplica vazão sem aumentar clock (que esbarra em calor/energia)."}
+        ],
+        guia:"Observe que a briga CISC×RISC hoje é menos religiosa: x86 decodifica instruções complexas em micro-operações RISC internamente. As filosofias convergiram — o mercado escolhe por eficiência e ecossistema."
+      },
+      aprofundar:{
+        lexico:[
+          {termo:"ISA",def:"Instruction Set Architecture: contrato entre hardware e software (repertório de instruções)."},
+          {termo:"CISC",def:"Filosofia de instruções complexas e variáveis (x86)."},
+          {termo:"RISC",def:"Filosofia de instruções simples e fixas (ARM, RISC-V)."},
+          {termo:"Pipeline",def:"Execução em estágios sobrepostos, como linha de montagem."}
+        ],
+        links:[
+          {rotulo:"Arquitetura de conjunto de instruções (Wikipédia)",url:"https://pt.wikipedia.org/wiki/Arquitetura_de_conjunto_de_instru%C3%A7%C3%B5es",lang:"pt"},
+          {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=arquitetura+de+processadores+cisc+risc"}
+        ]
+      },
+      quiz:[
+        {p:"Qual filosofia de ISA usa instruções simples, de tamanho fixo, com operações de memória só via load/store?",
+          alts:[
+            {t:"RISC",c:1,fb:"Correto! RISC (ARM, RISC-V, MIPS) aposta em instruções simples e rápidas de decodificar. A complexidade vai para o compilador, não para o hardware."},
+            {t:"CISC",c:0,fb:"CISC (x86) faz o oposto: instruções complexas e variáveis que podem acessar memória diretamente."},
+            {t:"VLIW",c:0,fb:"VLIW empacota várias operações por instrução confiando no compilador — é outra família, menos comum hoje."}
+          ]},
+        {p:"Os processadores Apple M1/M2/M3 e os smartphones em geral usam qual arquitetura?",
+          alts:[
+            {t:"ARM (família RISC)",c:1,fb:"Exato! Apple, Qualcomm, Samsung e até AWS (Graviton) adotam ARM pela eficiência energética. É a arquitetura mais fabricada do planeta."},
+            {t:"x86-64 (Intel/AMD)",c:0,fb:"x86 domina PCs Windows e servidores legados, mas a Apple migrou PARA ARM em 2020, não o contrário."},
+            {t:"PowerPC",c:0,fb:"PowerPC foi usado em Macs até 2006 e em consoles antigos. Hoje é nicho (embarcado/supercomputação histórica)."}
+          ]},
+        {p:"O que o pipeline permite em um processador?",
+          alts:[
+            {t:"Várias instruções em estágios diferentes ao mesmo tempo, aumentando a vazão",c:1,fb:"Correto! Como uma linha de montagem: cada estágio trabalha em uma instrução diferente. Com pipeline cheio, até 1 instrução concluída por ciclo."},
+            {t:"Executar instruções fora de qualquer ordem, sempre",c:0,fb:"Execução fora de ordem (out-of-order) é técnica ADICIONAL de algumas CPUs. Pipeline, por si, é sobreposição ordenada de estágios."},
+            {t:"Eliminar a necessidade de memória cache",c:0,fb:"Pipeline não remove o gargalo de memória — aliás, stalls de cache afetam o pipeline. Caches seguem essenciais."}
+          ]}
+      ]
+    },
+    {
+      id:"aba-4",
+      titulo:"Software, Tradutor, Linker e Loader",
+      missao:"Seguir o caminho do código: do arquivo-fonte ao programa rodando na RAM — compilador, linker e loader em ação.",
+      teoria:[
+        "<strong>Software</strong> é a parte lógica: <strong>software de sistema</strong> (SO, drivers), <strong>aplicativo</strong> (navegador, editor) e <strong>de desenvolvimento</strong> (compiladores, IDEs).",
+        "A CPU só entende <strong>linguagem de máquina</strong> (binário). Humanos escrevem em <strong>alto nível</strong> (C, Python, Java) ou <strong>assembly</strong>. Alguém precisa traduzir:",
+        "<strong>Tradutor</strong>: termo guarda-chuva. <strong>Compilador</strong> traduz o fonte INTEIRO de uma vez, gerando código-objeto (gcc, javac); <strong>interpretador</strong> executa linha a linha sem gerar executável (Python clássico, shells); <strong>assembler</strong> traduz assembly → máquina.",
+        "<strong>Linker (ligador)</strong>: junta vários módulos-objeto e bibliotecas (ex.: libc, printf) em UM executável, resolvendo símbolos e endereços relativos. Erro clássico: 'undefined reference' é o linker reclamando.",
+        "<strong>Loader (carregador)</strong>: coloca o executável na RAM, aplica relocação (base), prepara pilha/heap e seta o PC para o ponto de entrada. É o loader que torna o processo REALIDADE para o SO.",
+        "Cadeia completa: <code>hello.c → [compilador] hello.o → [linker + libs] hello → [loader] RAM → CPU</code>. Em bibliotecas dinâmicas (.dll/.so), parte da ligação acontece em tempo de execução — daí o erro 'DLL não encontrada' no Windows.",
+        "Exemplo real: <code>gcc hello.c -o hello</code> roda compilador + linker; ao digitar <code>./hello</code>, o shell pede ao SO que invoque o loader."
+      ],
+      demo:{
+        tipo:"livre",
+        titulo:"🔗 Cadeia de tradução: passo a passo até a RAM",
+        preveja:"Antes de avançar, preveja: em qual etapa o 'printf' da biblioteca C é efetivamente anexado ao seu código?",
+        instru:"Clique em 'Próxima etapa' e acompanhe hello.c virar objeto, executável e, finalmente, processo na memória.",
+        etapas:[
+          {nome:"hello.c",desc:"Fonte em C escrito pelo programador. Ilegível para a CPU.",ativo:[0]},
+          {nome:"Compilador (tradutor)",desc:"Analisa léxica/sintaticamente e traduz TUDO para linguagem de máquina relocável.",ativo:[0,1]},
+          {nome:"hello.o (objeto)",desc:"Binário parcial: falta resolver símbolos externos (printf, malloc...).",ativo:[1]},
+          {nome:"Linker (ligador)",desc:"Casa os símbolos com as bibliotecas (libc) e gera UM executável coeso.",ativo:[1,2]},
+          {nome:"hello (executável)",desc:"Arquivo pronto no disco (ELF/PE). Ainda não está rodando!",ativo:[2]},
+          {nome:"Loader (carregador)",desc:"Copia o executável para a RAM, reloca endereços, cria pilha/heap e seta o PC.",ativo:[3]},
+          {nome:"Processo na RAM",desc:"Agora sim: a CPU busca-decodifica-executa. O SO gerencia como processo concorrente.",ativo:[3,4]}
+        ],
+        guia:"Observe que compilar NÃO é rodar: entre o 'gcc' e o './hello' existem linker e loader trabalhando. Cada etapa resolve um problema diferente (tradução, ligação, carregamento)."
+      },
+      aprofundar:{
+        lexico:[
+          {termo:"Compilador",def:"Traduz o fonte inteiro para código-objeto de uma vez (gcc, clang, javac)."},
+          {termo:"Linker",def:"Une objetos e bibliotecas, resolvendo símbolos, gerando o executável."},
+          {termo:"Loader",def:"Carrega o executável na RAM, reloca e inicia a execução."},
+          {termo:"Biblioteca dinâmica",def:"Código ligado em tempo de execução (.dll no Windows, .so no Linux)."}
+        ],
+        links:[
+          {rotulo:"Compilador (Wikipédia)",url:"https://pt.wikipedia.org/wiki/Compilador",lang:"pt"},
+          {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=compilador+linker+loader+processo+de+tradu%C3%A7%C3%A3o"}
+        ]
+      },
+      quiz:[
+        {p:"Qual tradutor converte o programa-fonte INTEIRO de uma vez, gerando código-objeto?",
+          alts:[
+            {t:"Compilador",c:1,fb:"Correto! O compilador (gcc, clang) traduz todo o fonte antes da execução. Por isso programas compilados tendem a rodar mais rápido que interpretados."},
+            {t:"Interpretador",c:0,fb:"Interpretador executa linha a linha, sem gerar objeto/executável antecipado (Python clássico, bash)."},
+            {t:"Loader",c:0,fb:"Loader não traduz linguagem: ele carrega o executável PRONTO para a RAM."}
+          ]},
+        {p:"A mensagem 'undefined reference to printf' vem de qual etapa?",
+          alts:[
+            {t:"Linker — um símbolo usado não foi encontrado nas bibliotecas/objetos",c:1,fb:"Exato! O compilador gerou o objeto chamando 'printf', mas o linker não achou a definição (faltou ligar a biblioteca). Erro de LIGAÇÃO, não de sintaxe."},
+            {t:"Compilador — erro de sintaxe no fonte",c:0,fb:"Erro de sintaxe seria 'expected ; before...'. 'Undefined reference' aparece DEPOIS da compilação, na ligação."},
+            {t:"Loader — faltou memória para carregar",c:0,fb:"Loader falha com 'cannot execute' ou falta de memória, não com símbolos indefinidos."}
+          ]},
+        {p:"Quem coloca o executável na RAM, reloca endereços e seta o PC para iniciar?",
+          alts:[
+            {t:"Loader (carregador)",c:1,fb:"Correto! O loader é a ponte entre o arquivo no disco e o processo vivo: aloca memória, aplica base de relocação e entrega o controle à CPU."},
+            {t:"Linker",c:0,fb:"O linker trabalha ANTES, no disco, unindo objetos. Quem leva à RAM é o loader."},
+            {t:"Assembler",c:0,fb:"Assembler traduz assembly→máquina. Não carrega nada em memória."}
+          ]}
+      ]
+    },
+    {
+      id:"aba-5",
+      titulo:"Concorrência e Processos",
+      missao:"Entender processo (programa em execução), troca de contexto e o perigo silencioso da condição de corrida.",
+      teoria:[
+        "<strong>Concorrência</strong>: vários processos PROGREDEM no mesmo intervalo de tempo. Em 1 núcleo, por intercalação rápida (ilusão de simultaneidade); em multi-core, com paralelismo real.",
+        "<strong>Processo</strong> é um programa em execução + seu contexto. O SO mantém o <strong>PCB (Process Control Block)</strong>: PID, estado, PC, registradores, limites de memória, arquivos abertos, prioridade.",
+        "<strong>Estados clássicos</strong>: <em>pronto</em> (aguardando CPU), <em>executando</em> (com a CPU), <em>bloqueado</em> (esperando E/S). O <strong>escalador</strong> decide quem roda; a <strong>troca de contexto</strong> salva/restaura PCB (~microssegundos).",
+        "<strong>Endereçamento por processo</strong>: cada processo vive em seu espaço lógico isolado (base/limite ou páginas). Um processo não enxerga a RAM do outro — proteção garantida pela MMU + SO.",
+        "<strong>Condição de corrida</strong>: dois processos acessam um dado compartilhado sem sincronização e o resultado depende da ORDEM de intercalação. Exemplo clássico: contador++ feito por A e B pode resultar 1 em vez de 2 (leitura-leitura-escrita-escrita).",
+        "<strong>Sincronização</strong>: mutex/semáforos garantem <strong>seção crítica</strong>: só um processo por vez na região que mexe no dado compartilhado.",
+        "Exemplo real: dois caixas eletrônicos debitando a MESMA conta ao mesmo tempo sem tranção = saque em dobro. Bancos usam transações (locks) exatamente para isso."
+      ],
+      demo:{
+        tipo:"livre",
+        titulo:"🏁 Condição de corrida: veja o bug acontecer",
+        preveja:"Antes de rodar, preveja: se A e B fazem contador++ (inicial 0) SEM trava, numa intercalação ruim o resultado final será 2 ou menos?",
+        instru:"Rode 'Sem trava' e observe a intercalação perversa; depois 'Com mutex' e compare o resultado final.",
+        guia:"Observe que SEM trava o valor final pode ser 1 (perda de atualização); COM mutex cada incremento é atômico e o final é sempre 2. É por isso que bancos e kernels usam locks."
+      },
+      aprofundar:{
+        lexico:[
+          {termo:"PCB",def:"Bloco de controle do processo: PID, estado, PC, registradores, memória, arquivos."},
+          {termo:"Troca de contexto",def:"Salva o estado do processo atual e carrega o do próximo escolhido pelo escalador."},
+          {termo:"Seção crítica",def:"Trecho que acessa recurso compartilhado e deve ser executado com exclusão mútua."},
+          {termo:"Mutex / semáforo",def:"Mecanismos de sincronização que evitam condições de corrida."}
+        ],
+        links:[
+          {rotulo:"Processo (informática) (Wikipédia)",url:"https://pt.wikipedia.org/wiki/Processo_(inform%C3%A1tica)",lang:"pt"},
+          {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=concorr%C3%AAncia+processos+condi%C3%A7%C3%A3o+de+corrida"}
+        ]
+      },
+      quiz:[
+        {p:"O que o PCB (Process Control Block) armazena?",
+          alts:[
+            {t:"O contexto do processo: PID, estado, PC, registradores, memória e arquivos abertos",c:1,fb:"Correto! O PCB é a 'identidade' do processo para o SO. Na troca de contexto, o SO salva o PCB de quem sai e restaura o de quem entra."},
+            {t:"Somente o código-fonte do programa",c:0,fb:"O fonte nem existe em tempo de execução. O PCB guarda estado dinâmico, não texto de programa."},
+            {t:"A tabela de arquivos de TODOS os usuários",c:0,fb:"O PCB é POR PROCESSO. Tabelas globais (arquivos do sistema) vivem em outras estruturas do kernel."}
+          ]},
+        {p:"Quando ocorre uma condição de corrida (race condition)?",
+          alts:[
+            {t:"Quando processos acessam dados compartilhados sem sincronização e o resultado depende da ordem de execução",c:1,fb:"Exato! O clássico contador++ intercalado: leituras antes das escritas perdem atualizações. A solução é exclusão mútua (mutex/semaforo)."},
+            {t:"Quando dois processos rodam em núcleos diferentes",c:0,fb:"Paralelismo em si não é bug. O problema é o acesso NÃO PROTEGIDO a estado compartilhado — com ou sem multi-core."},
+            {t:"Quando o SO faz troca de contexto",c:0,fb:"Troca de contexto é rotina saudável. Corrida exige dado compartilhado sem sincronização."}
+          ]},
+        {p:"A troca de contexto entre dois processos consiste em:",
+          alts:[
+            {t:"Salvar o estado (PCB) do processo atual e restaurar o do próximo escolhido pelo escalador",c:1,fb:"Correto! Registradores, PC e limites são salvos/restaurados em microssegundos. É o mecanismo que cria a ilusão de 'vários programas ao mesmo tempo' em 1 núcleo."},
+            {t:"Reiniciar os dois processos do zero",c:0,fb:"Reiniciar perderia todo o progresso. O contexto existe justamente para RETOMAR de onde parou."},
+            {t:"Copiar a RAM inteira de um processo para o outro",c:0,fb:"Os espaços de memória permanecem ISOLADOS. Só o estado de CPU (registradores/PC) é trocado via PCB."}
+          ]}
+      ]
+    },
+    {
+      id:"aba-6",
+      titulo:"Estrutura: Arquivos, Shell e Script 📖 Estudo próprio",
+      estudoProprio:true,
+      missao:"Conhecer a camada visível do SO: arquivos, interpretador de comandos, shell scripts e comunicação entre processos.",
+      teoria:[
+        "<strong>Arquivo</strong>: abstração do SO para dados persistentes — nome, tipo, tamanho, permissões e conteúdo em disco. Operações: criar, abrir, ler, escrever, fechar, apagar. Organizam-se em <strong>diretórios</strong> (árvore).",
+        "<strong>Sistemas de arquivos</strong>: NTFS (Windows), ext4 (Linux), APFS (macOS). Eles mapeiam nomes humanos para blocos físicos e garantem integridade (journaling).",
+        "<strong>Interpretador de comandos (shell)</strong>: programa que lê o que você digita (ou um script), interpreta e pede ao SO via <strong>chamadas de sistema</strong>. Exemplos: <strong>bash, sh, zsh</strong> (Unix/Linux), <strong>PowerShell e cmd</strong> (Windows).",
+        "<strong>Shell script</strong>: arquivo de texto com sequência de comandos para o shell executar. Começa com <strong>shebang</strong> (<code>#!/bin/bash</code>) que indica o interpretador; vira executável com <code>chmod +x script.sh</code>.",
+        "Scripts automatizam rotinas: backup, deploy, limpeza de logs. Um script de 10 linhas substitui 10 minutos de cliques — e roda igual em 1.000 servidores.",
+        "<strong>Comunicação entre processos (IPC)</strong>: <strong>pipes</strong> (<code>ls | grep txt</code> — saída de um vira entrada do outro), filas de mensagens, memória compartilhada e sockets. O pipe é a IPC mais usada no dia a dia Unix.",
+        "Exemplo real: todo deploy de Linux em nuvem usa shell scripts (ou ferramentas que os geram). O 'pipeline' de CI/CD nada mais é que shell orquestrado."
+      ],
+      demo:{
+        tipo:"livre",
+        titulo:"⌨️ Mini-shell: escreva e execute um shell script",
+        preveja:"Antes de rodar, preveja: o que a linha 'echo ola > arquivo.txt' produz no sistema de arquivos virtual?",
+        instru:"Edite o script (comandos suportados: echo, echo X > F, mkdir, touch, ls, cat, rm, # comentário) e clique em Executar. Acompanhe saída e estado do sistema de arquivos.",
+        guia:"Observe que o shell é um PROCESSO como outro qualquer: ele lê cada linha, interpreta e dispara syscalls (open, write, mkdir). Script é só uma fila de comandos para esse interpretador."
+      },
+      aprofundar:{
+        lexico:[
+          {termo:"Shebang",def:"Primeira linha '#!/bin/bash' que indica ao SO qual interpretador usar no script."},
+          {termo:"chmod +x",def:"Comando que concede permissão de execução a um arquivo."},
+          {termo:"Pipe (|)",def:"Mecanismo de IPC que conecta a saída de um processo à entrada de outro."},
+          {termo:"Syscall",def:"Chamada de sistema: porta de entrada dos programas no kernel (open, read, fork...)."}
+        ],
+        links:[
+          {rotulo:"Shell script (Wikipédia)",url:"https://pt.wikipedia.org/wiki/Shell_script",lang:"pt"},
+          {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=shell+script+interpretador+de+comandos+automatiza%C3%A7%C3%A3o"}
+        ]
+      },
+      quiz:[
+        {p:"Qual linha define QUAL interpretador executará um shell script?",
+          alts:[
+            {t:"O shebang: #!/bin/bash na primeira linha",c:1,fb:"Correto! O shebang diz ao kernel: 'execute este arquivo com /bin/bash'. Sem ele, o SO usa o shell padrão do usuário — e o script pode quebrar."},
+            {t:"chmod +x script.sh",c:0,fb:"chmod dá PERMISSÃO de execução, mas não escolhe o interpretador. São papéis complementares."},
+            {t:"export PATH=/bin",c:0,fb:"PATH indica onde buscar comandos, não qual interpretador roda o arquivo."}
+          ]},
+        {p:"Para tornar o arquivo backup.sh executável no Linux, usa-se:",
+          alts:[
+            {t:"chmod +x backup.sh",c:1,fb:"Exato! chmod altera permissões; +x adiciona a de execução. Depois disso, ./backup.sh roda (se houver shebang válido)."},
+            {t:"run backup.sh",c:0,fb:"Não existe comando 'run' no shell Unix. Executa-se com ./arquivo, bash arquivo ou sh arquivo."},
+            {t:"exec ls backup.sh",c:0,fb:"exec substitui o processo atual por um comando; 'ls' apenas lista. Combinação sem sentido aqui."}
+          ]},
+        {p:"O pipe (|) em 'ls | grep .txt' é um mecanismo de:",
+          alts:[
+            {t:"Comunicação entre processos (IPC): a saída do ls vira entrada do grep",c:1,fb:"Correto! O pipe conecta stdout de um processo ao stdin do outro, sem arquivos intermediários. É a IPC mais clássica do mundo Unix."},
+            {t:"Criptografia de saída de comandos",c:0,fb:"Pipe não criptografa nada; apenas redireciona fluxo de bytes entre processos."},
+            {t:"Compactação de arquivos de texto",c:0,fb:"Compactação seria gzip/zip. Pipe é canal de comunicação, não compressor."}
+          ]}
+      ]
+    }
+  ],
+  revisao:{
+    titulo:"Revisão — Mapa completo e Chefão",
+    cola:[
+      "• Memórias: RAM volátil (programas vivos) • ROM/flash (BIOS/UEFI) • secundária (SSD)",
+      "• Hierarquia: registradores → caches → RAM → SSD → HD/nuvem",
+      "• MMU: físico = base + lógico, SE lógico < limite; senão TRAP de proteção",
+      "• E/S: controlador (hardware) + driver (software); técnicas: programada/interrupção/DMA",
+      "• Barramentos: dados (conteúdo) • endereços (onde) • controle (ordens)",
+      "• PCIe = barramento rápido (GPU/NVMe); DDR = barramento de memória",
+      "• CISC (x86): instruções complexas • RISC (ARM, RISC-V): simples e eficientes",
+      "• Pipeline = estágios sobrepostos • Multi-core = paralelismo real",
+      "• Cadeia: fonte → COMPILADOR → objeto → LINKER → executável → LOADER → RAM",
+      "• 'undefined reference' = erro de LINKER",
+      "• Processo = programa em execução; PCB guarda contexto; troca de contexto = salva/restaura",
+      "• Corrida = compartilhado sem sincronização; resolve com mutex/semaforo",
+      "• Shell = interpretador (bash, PowerShell); script = shebang + chmod +x",
+      "• Pipe (|) = IPC: saída de um → entrada de outro"
+    ],
+    chefao:{
+      pergunta:"Você recebeu a tarefa de automatizar o backup noturno de um servidor Linux: criar /backup/data-$(date), copiar arquivos de /var/app, registrar log e garantir que DUAS execuções simultâneas nunca corrompam o mesmo arquivo. Descreva: (1) o shell script com shebang e permissões; (2) as syscalls/estrutura de arquivos envolvidas; (3) como o SO isola esse processo em memória (base/limite ou páginas); (4) qual mecanismo evita a corrida entre as duas execuções; (5) como um pipe poderia conectar 'ls' e 'gzip' no fluxo.",
+      criterios:[
+        "Script: shebang #!/bin/bash + chmod +x + comandos (mkdir, cp, echo >> log)",
+        "Arquivos/syscalls: open/write/close, mkdir, unlink; sistema de arquivos ext4 e diretórios",
+        "Isolamento: endereço lógico por processo, MMU com base/limite ou paginação; trap em acesso inválido",
+        "Concorrência: lock/mutex ou flock no arquivo de log/diretório para evitar corrida entre execuções",
+        "IPC: pipe ex. 'ls /var/app | gzip > lista.gz' conectando saída e entrada de processos"
+      ]
+    }
+  }
+};
+
+const estado = {xp:0,selos:new Set(),quizOk:new Set(),demoOk:new Set(),dark:false,apres:false,abaAtiva:null,demos:{}};
+
+function carregarEstado(){
+  try{
+    const s = JSON.parse(localStorage.getItem('so_aula03')||'{}');
+    estado.xp = s.xp||0;
+    estado.selos = new Set(s.selos||[]);
+    estado.quizOk = new Set(s.quizOk||[]);
+    estado.demoOk = new Set(s.demoOk||[]);
+  }catch(e){}
+}
+function salvarEstado(){
+  localStorage.setItem('so_aula03',JSON.stringify({
+    xp:estado.xp,
+    selos:Array.from(estado.selos),
+    quizOk:Array.from(estado.quizOk),
+    demoOk:Array.from(estado.demoOk)
+  }));
+}
+function ganhaXP(n,motivo){
+  estado.xp += n;
+  showToast(`+${n} XP — ${motivo}`);
+  atualizaProgresso();
+  salvarEstado();
+}
+function adicionaSelo(s){
+  if(!estado.selos.has(s)){
+    estado.selos.add(s);
+    showToast(`🏅 Selo: ${s}`);
+    atualizaProgresso();
+    salvarEstado();
+  }
+}
+function shuffle(a){
+  const b = a.slice();
+  for(let i=b.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [b[i],b[j]] = [b[j],b[i]];
+  }
+  return b;
+}
+function renderTabs(){
+  const nav = document.getElementById('tablist');
+  nav.innerHTML = '';
+  const todas = [...AULA_DADOS.abas,{id:'revisao',titulo:'Revisão'}];
+  todas.forEach((a,i)=>{
+    const btn = document.createElement('button');
+    btn.role = 'tab';
+    btn.setAttribute('aria-selected','false');
+    btn.setAttribute('aria-controls',a.id);
+    btn.dataset.id = a.id;
+    btn.innerHTML = `${i+1}. ${a.titulo}${a.estudoProprio?'<span class="selo">📖 Estudo próprio</span>':''}`;
+    btn.onclick = ()=>irPara(a.id);
+    btn.onkeydown = (e)=>{
+      if(e.key==='ArrowRight'){const next = btn.nextElementSibling||nav.firstElementChild; next.focus();}
+      else if(e.key==='ArrowLeft'){const prev = btn.previousElementSibling||nav.lastElementChild; prev.focus();}
+      else if(e.key==='Enter'||e.key===' '){e.preventDefault();irPara(a.id);}
+    };
+    nav.appendChild(btn);
+  });
+}
+function renderMain(){
+  const m = document.getElementById('main');
+  m.innerHTML = '';
+  const pr = document.createElement('div');
+  pr.className='progresso';pr.id='progresso';
+  m.appendChild(pr);
+  AULA_DADOS.abas.forEach(a=>{
+    const sec = document.createElement('section');
+    sec.className='aba';sec.id=a.id;
+    sec.setAttribute('role','tabpanel');
+    sec.innerHTML = renderAba(a);
+    m.appendChild(sec);
+  });
+  const rev = document.createElement('section');
+  rev.className='aba';rev.id='revisao';
+  rev.setAttribute('role','tabpanel');
+  rev.innerHTML = renderRevisao();
+  m.appendChild(rev);
+  atualizaProgresso();
+}
+function renderAba(a){
+  return `
+    <div class="missao"><strong>🎯 Missão</strong>${a.missao}</div>
+    <div class="card">
+      <h2>${a.titulo}</h2>
+      ${a.teoria.map(p=>`<p>${p}</p>`).join('')}
+    </div>
+    <div class="demo" id="demo-${a.id}">
+      <h3>🧪 Demo: ${a.demo.titulo}</h3>
+      <div class="preveja">💭 ${a.demo.preveja}</div>
+      <div class="instru">📋 <strong>Instruções passo a passo:</strong> ${a.demo.instru}</div>
+      <div id="demo-area-${a.id}"></div>
+      ${a.demo.guia?`<div class="obs">👀 <strong>O que observar:</strong> ${a.demo.guia}</div>`:''}
+      <button class="btn sec" onclick="reiniciarDemo('${a.id}')">🔄 Reiniciar demo</button>
+      ${!estado.demoOk.has(a.id)?`<button class="btn" onclick="marcarDemoOk('${a.id}')">✓ Concluí a demo</button>`:'<span class="selo-chip">✓ Demo concluída</span>'}
+    </div>
+    <details class="lex">
+      <summary>📘 Mini-dicionário</summary>
+      <ul>${a.aprofundar.lexico.map(l=>`<li><strong>${l.termo}:</strong> ${l.def}</li>`).join('')}</ul>
+    </details>
+    <details class="links">
+      <summary>🔗 Links para aprofundar</summary>
+      <ul>${a.aprofundar.links.map(l=>`<li><a href="${l.url}" target="_blank" rel="noopener">${l.rotulo}${l.lang&&l.lang!=='pt'?` <em>(${l.lang})</em>`:''}</a></li>`).join('')}</ul>
+    </details>
+    <div class="card">
+      <h2>📝 Quiz — 3 perguntas</h2>
+      ${a.quiz.map((q,i)=>renderQuiz(a.id,i,q)).join('')}
+    </div>
+    ${a.estudoProprio?`<div class="rota"><strong>🏠 Rota em casa:</strong> esta aba é estudo próprio. Em sala, o professor percorre as abas 1–5.</div>`:`<div class="rota"><strong>🎤 Roteiro do apresentador:</strong> 6 min nesta aba. Missão → previsão → demo 2 min → quiz.</div>`}
+  `;
+}
+function renderQuiz(abaId,idx,q){
+  const key = `${abaId}-${idx}`;
+  const misturadas = shuffle(q.alts);
+  return `
+    <div class="quiz-perg" data-key="${key}" data-aba="${abaId}">
+      <h4>Pergunta ${idx+1}. ${q.p}</h4>
+      <div class="alts">
+        ${misturadas.map(alt=>`<button class="alt" data-c="${alt.c?1:0}" data-fb='${alt.fb.replace(/'/g,'&#39;')}' onclick="respQuiz(this)">${alt.t}</button>`).join('')}
+      </div>
+      <div class="fb" id="fb-${key}"></div>
+    </div>
+  `;
+}
+function respQuiz(btn){
+  const p = btn.closest('.quiz-perg');
+  const key = p.dataset.key;
+  const abaId = p.dataset.aba;
+  const fb = btn.dataset.fb;
+  const c = btn.dataset.c === '1';
+  const fbd = p.querySelector('.fb');
+  if(c){
+    btn.classList.add('certa');
+    btn.innerHTML = '✓ '+btn.innerHTML;
+    p.querySelectorAll('.alt').forEach(b=>b.disabled=true);
+    fbd.className='fb ok';
+    fbd.innerHTML='✅ <strong>Por que esta está certa:</strong> '+fb;
+    if(!estado.quizOk.has(key)){
+      const wasRetry = sessionStorage.getItem(key+'-retry');
+      estado.quizOk.add(key);
+      ganhaXP(wasRetry?5:10, wasRetry?'Acerto no retry!':'Acerto de primeira!');
+      sessionStorage.removeItem(key+'-retry');
+      verificarAbaCompleta(abaId);
+      salvarEstado();
+    }
+  } else {
+    btn.classList.add('errada');
+    btn.innerHTML = '✗ '+btn.innerHTML;
+    btn.disabled = true;
+    fbd.className='fb bad';
+    fbd.innerHTML='❌ <strong>Por que esta está errada:</strong> '+fb+'<br><em>🔁 Tente outra alternativa.</em>';
+    if(!estado.quizOk.has(key)) sessionStorage.setItem(key+'-retry','1');
+  }
+}
+function verificarAbaCompleta(abaId){
+  const aba = AULA_DADOS.abas.find(a=>a.id===abaId);
+  if(!aba) return;
+  const todas = aba.quiz.every((_,i)=>estado.quizOk.has(`${abaId}-${i}`));
+  const demo = estado.demoOk.has(abaId);
+  if(todas && demo){
+    const nomeSelo = aba.titulo.split('📖')[0].replace(/[^\w\sÀ-ú]/g,'').trim().substring(0,25);
+    adicionaSelo(nomeSelo||aba.titulo.substring(0,25));
+  }
+}
+function marcarDemoOk(abaId){
+  if(!estado.demoOk.has(abaId)){
+    estado.demoOk.add(abaId);
+    ganhaXP(5,'Demo concluída');
+    verificarAbaCompleta(abaId);
+    salvarEstado();
+    const area = document.querySelector(`#demo-${abaId}`);
+    if(area){
+      area.querySelectorAll('button.btn').forEach(b=>{
+        if(b.textContent.includes('Concluí')){
+          const span = document.createElement('span');
+          span.className='selo-chip';
+          span.textContent='✓ Demo concluída';
+          b.replaceWith(span);
+        }
+      });
+    }
+  }
+}
+function renderRevisao(){
+  return `
+    <div class="missao"><strong>🎯 Revisão final</strong>Do bit ao script: a máquina completa por dentro.</div>
+    <div class="card">
+      <h2>🗺️ Mapa da aula</h2>
+      <div class="revisao-mapa">
+        ${AULA_DADOS.abas.map((a,i)=>`<div class="no"><strong>${i+1}.</strong> ${a.titulo.split('📖')[0].trim()}${a.estudoProprio?' <em>(estudo)</em>':''}<br><small>${a.estudoProprio?'🏠 estudo próprio':'🏫 em sala'}</small></div>`).join('')}
+      </div>
+    </div>
+    <div class="card">
+      <h2>🧾 Cola rápida</h2>
+      <div class="cola">${AULA_DADOS.revisao.cola.join('\n')}</div>
+    </div>
+    <div class="chefao" id="chefao">
+      <h3>👹 Chefão — o desafio final</h3>
+      <p><strong>${AULA_DADOS.revisao.chefao.pergunta}</strong></p>
+      <p>Sua solução deve cobrir:</p>
+      <ul>${AULA_DADOS.revisao.chefao.criterios.map(c=>`<li>${c}</li>`).join('')}</ul>
+      <textarea id="chefaoResp" rows="9" style="width:100%;padding:10px;border-radius:8px;border:2px solid #ffd54f;font-family:inherit;font-size:1rem" placeholder="Descreva script, syscalls, isolamento, sincronização e pipe."></textarea><br>
+      <button class="btn" onclick="entregarChefao()">🏆 Entregar solução</button>
+      <div id="chefaoFb" style="margin-top:10px"></div>
+    </div>
+  `;
+}
+function entregarChefao(){
+  const t = document.getElementById('chefaoResp').value.trim();
+  const fb = document.getElementById('chefaoFb');
+  if(t.length<160){
+    fb.className='fb bad';fb.style.display='block';
+    fb.innerHTML='❌ Resposta muito curta. Cubra os 5 pontos.';return;
+  }
+  const lower = t.toLowerCase();
+  let pontos = 0;
+  if(/shebang|#!\/bin\/bash|chmod/.test(lower)) pontos++;
+  if(/syscall|open|write|mkdir|ext4|arquivo/.test(lower)) pontos++;
+  if(/base|limite|mmu|p[áa]gina|endere[çc]o l[óo]gico/.test(lower)) pontos++;
+  if(/mutex|lock|flock|semaforo|sem[áa]foro|corrida/.test(lower)) pontos++;
+  if(/pipe|\||gzip|ipc/.test(lower)) pontos++;
+  fb.style.display='block';
+  if(pontos>=4){
+    fb.className='fb ok';
+    fb.innerHTML=`✅ <strong>Solução aprovada!</strong> Você cobriu ${pontos}/5 pontos. Ganhou 50 XP e o selo "Mestre do Shell".`;
+    ganhaXP(50,'Chefão concluído');
+    adicionaSelo('Mestre do Shell');
+  } else {
+    fb.className='fb bad';
+    fb.innerHTML=`❌ Você cobriu apenas ${pontos}/5 pontos. Reveja: shebang+chmod, syscalls/arquivos, MMU base/limite, mutex/flock contra corrida, pipe como IPC.`;
+  }
+}
+
+/* =========================================================
+   DEMOS
+   ========================================================= */
+function renderDemos(){
+  AULA_DADOS.abas.forEach(a=>{
+    const area = document.getElementById(`demo-area-${a.id}`);
+    if(!area) return;
+    if(a.id==='aba-1') renderDemoAba1(area,a);
+    else if(a.id==='aba-2') renderDemoAba2(area,a);
+    else if(a.id==='aba-3') renderDemoAba3(area,a);
+    else if(a.id==='aba-4') renderDemoAba4(area,a);
+    else if(a.id==='aba-5') renderDemoAba5(area,a);
+    else if(a.id==='aba-6') renderDemoAba6(area,a);
+  });
+}
+
+/* ABA 1 — MMU base/limite */
+function renderDemoAba1(area,a){
+  const wrap = document.createElement('div');
+  const st = {base:3000, lim:2000, log:1500};
+  function desenha(){
+    const ok = st.log < st.lim;
+    const fis = st.base + st.log;
+    wrap.innerHTML = `
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end">
+        <label>Base:<br><input type="number" id="m-b" value="${st.base}"></label>
+        <label>Limite:<br><input type="number" id="m-l" value="${st.lim}"></label>
+        <label>End. lógico:<br><input type="number" id="m-a" value="${st.log}"></label>
+      </div>
+      <div style="margin-top:12px;padding:14px;background:#fff;border-radius:8px;border:2px solid var(--cor)">
+        <div style="font-family:'Courier New',monospace;font-size:.95rem">
+          CPU (processo) → [ lógico = ${st.log} ] → <strong>MMU</strong> → ${ok?`[ físico = ${st.base} + ${st.log} = <strong>${fis}</strong> ] → RAM ✅`:`<strong>TRAP! ${st.log} ≥ limite ${st.lim}</strong> → SO encerra o processo 🚫`}
+        </div>
+        <div style="margin-top:10px;padding:10px;border-radius:6px;background:${ok?'#e8f5e9':'#f8d7da'};border-left:5px solid ${ok?'var(--ok)':'var(--erro)'}">
+          ${ok?`✅ <strong>Acesso permitido.</strong> O físico ${fis} cai dentro da região alocada (base ${st.base} .. ${st.base+st.lim-1}).`
+              :`❌ <strong>Violação de proteção.</strong> O processo tentou ultrapassar seu limite. A MMU interrompe a CPU e o SO trata o erro (fim do processo).`}
+        </div>
+      </div>
+    `;
+    wrap.querySelector('#m-b').oninput=e=>{st.base=+e.target.value||0;desenha();};
+    wrap.querySelector('#m-l').oninput=e=>{st.lim=+e.target.value||0;desenha();};
+    wrap.querySelector('#m-a').oninput=e=>{st.log=+e.target.value||0;desenha();};
+  }
+  area.appendChild(wrap);
+  desenha();
+}
+
+/* ABA 2 — Ciclos de barramento */
+function renderDemoAba2(area,a){
+  const wrap = document.createElement('div');
+  const ops = {
+    leitura:{rot:"📖 Leitura da RAM",ticks:[
+      {d:"CPU coloca endereço no BARRAMENTO DE ENDEREÇOS + sinal LER no CONTROLE",b:[1,2]},
+      {d:"Memória decodifica o endereço e prepara o conteúdo",b:[2]},
+      {d:"Memória coloca o conteúdo no BARRAMENTO DE DADOS",b:[0,2]},
+      {d:"CPU captura o dado; ciclo concluído",b:[0]}
+    ]},
+    escrita:{rot:"✍️ Escrita na RAM",ticks:[
+      {d:"CPU coloca endereço no BARR. DE ENDEREÇOS + dado no BARR. DE DADOS",b:[0,1]},
+      {d:"CPU ativa sinal ESCREVER no BARRAMENTO DE CONTROLE",b:[2]},
+      {d:"Memória grava o dado na posição indicada",b:[2]},
+      {d:"Ciclo concluído; barramentos liberados",b:[]}
+    ]},
+    eSaida:{rot:"🖨️ Leitura de dispositivo de E/S (via controlador)",ticks:[
+      {d:"CPU coloca PORTA de E/S no BARR. DE ENDEREÇOS + LER no CONTROLE",b:[1,2]},
+      {d:"Controlador do dispositivo busca o dado no seu registrador",b:[2]},
+      {d:"Controlador coloca o dado no BARRAMENTO DE DADOS",b:[0,2]},
+      {d:"CPU lê o dado; se fosse DMA, a CPU nem participaria destes ticks",b:[0]}
+    ]}
+  };
+  let timer=null;
+  function parar(){if(timer){clearInterval(timer);timer=null;}}
+  function desenha(opKey,tick,log){
+    const op = ops[opKey||'leitura'];
+    const t = opKey ? op.ticks[Math.min(tick,op.ticks.length-1)] : null;
+    wrap.innerHTML = `
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        ${Object.keys(ops).map(k=>`<button class="btn" data-op="${k}" style="background:${opKey===k?'var(--cor)':'#6c757d'}">${ops[k].rot}</button>`).join('')}
+      </div>
+      <div class="busline ${t&&t.b.includes(0)?'on':''}">BARRAMENTO DE DADOS ${t&&t.b.includes(0)?'⚡ ATIVO':'—'}</div>
+      <div class="busline ${t&&t.b.includes(1)?'on':''}">BARRAMENTO DE ENDEREÇOS ${t&&t.b.includes(1)?'⚡ ATIVO':'—'}</div>
+      <div class="busline ${t&&t.b.includes(2)?'on':''}">BARRAMENTO DE CONTROLE ${t&&t.b.includes(2)?'⚡ ATIVO':'—'}</div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="b-run">▶ Executar ciclo</button>
+        <button class="btn sec" id="b-stop">⏹ Parar</button>
+      </div>
+      <div class="console" style="margin-top:10px;min-height:90px">${log||'Escolha a operação e execute o ciclo.'}</div>
+    `;
+    wrap.querySelectorAll('[data-op]').forEach(b=>{
+      b.onclick=()=>{parar();desenha(b.dataset.op,-1,'');};
+    });
+    wrap.querySelector('#b-stop').onclick=()=>parar();
+    wrap.querySelector('#b-run').onclick=()=>{
+      parar();
+      const k = opKey||'leitura';
+      let i=0; let log='';
+      timer=setInterval(()=>{
+        const tk = ops[k].ticks[i];
+        log += `tick ${i+1}: ${tk.d}\n`;
+        desenha(k,i,log);
+        i++;
+        if(i>=ops[k].ticks.length){
+          parar();
+          log += '✅ Ciclo completo.\n';
+          desenha(k,ops[k].ticks.length-1,log);
+        }
+      },900);
+    };
+  }
+  area.appendChild(wrap);
+  desenha(null,-1,'');
+  estado.demos.aba2 = {parar};
+}
+
+/* ABA 3 — Galeria de arquiteturas */
+function renderDemoAba3(area,a){
+  const wrap = document.createElement('div');
+  wrap.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">
+      ${a.demo.arqs.map((x,i)=>`<button class="btn" data-i="${i}" style="background:#3949ab">${x.nome}</button>`).join('')}
+    </div>
+    <div id="ab3-reveal" style="margin-top:14px;padding:14px;border-radius:8px;background:#e8eaf6;min-height:120px;border-left:5px solid var(--cor)">
+      <em>👆 Clique em uma arquitetura para ver filosofia, exemplos e ponto forte.</em>
+    </div>
+  `;
+  area.appendChild(wrap);
+  wrap.querySelectorAll('button').forEach(b=>{
+    b.onclick=()=>{
+      const x = a.demo.arqs[+b.dataset.i];
+      document.getElementById('ab3-reveal').innerHTML = `
+        <strong>${x.nome}</strong><br><br>
+        🧠 <strong>Filosofia:</strong> ${x.filosofia}<br>
+         <strong>Exemplos reais:</strong> ${x.exemplos}<br><br>
+        <div style="padding:10px;background:#fff8e1;border-radius:6px;border-left:4px solid #ffa000">
+          💪 <strong>Ponto forte:</strong> ${x.forte}
+        </div>
+      `;
+    };
+  });
+}
+
+/* ABA 4 — Cadeia de tradução */
+function renderDemoAba4(area,a){
+  const wrap = document.createElement('div');
+  let i = 0;
+  function desenha(){
+    const nomes = ["hello.c","Compilador","hello.o","Linker","hello (exec.)","Loader","Processo RAM"];
+    const et = a.demo.etapas[i];
+    wrap.innerHTML = `
+      <div style="text-align:center">
+        ${nomes.map((n,idx)=>`<span class="stagebox ${et.ativo.includes(idx)?'active':''}">${n}</span>${idx<nomes.length-1?'<span style="color:var(--cor);font-weight:700"> → </span>':''}`).join('')}
+      </div>
+      <div style="margin-top:12px;padding:12px;background:#fff;border-radius:8px;border-left:5px solid var(--cor)">
+        <strong>Etapa ${i+1}/${a.demo.etapas.length}: ${et.nome}</strong><br>${et.desc}
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="c-next">${i===a.demo.etapas.length-1?'🔄 Recomeçar':'▶ Próxima etapa'}</button>
+      </div>
+    `;
+    wrap.querySelector('#c-next').onclick=()=>{
+      i = (i===a.demo.etapas.length-1)?0:i+1;
+      desenha();
+    };
+  }
+  area.appendChild(wrap);
+  desenha();
+}
+
+/* ABA 5 — Condição de corrida */
+function renderDemoAba5(area,a){
+  const wrap = document.createElement('div');
+  let timer=null;
+  function parar(){if(timer){clearInterval(timer);timer=null;}}
+  function desenha(log,final){
+    wrap.innerHTML = `
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="r-sem" style="background:#c62828">🏃 Rodar SEM trava</button>
+        <button class="btn" id="r-com" style="background:#2e7d32">🔒 Rodar COM mutex</button>
+        <button class="btn sec" id="r-stop">⏹ Parar</button>
+      </div>
+      <div class="console" style="margin-top:10px;min-height:140px">${log||'Contador compartilhado = 0. Processos A e B farão contador++ cada um.\nEscolha um modo e observe a intercalação.'}</div>
+      ${final!==undefined?`<div style="margin-top:8px;padding:10px;border-radius:6px;background:${final===2?'#d4edda':'#f8d7da'};border-left:5px solid ${final===2?'var(--ok)':'var(--erro)'};font-weight:700">Resultado final do contador: ${final} ${final===2?'(correto ✅)':'(INCORRETO — atualização perdida 🐛)'}</div>`:''}
+    `;
+    wrap.querySelector('#r-stop').onclick=()=>parar();
+    wrap.querySelector('#r-sem').onclick=()=>rodar(false);
+    wrap.querySelector('#r-com').onclick=()=>rodar(true);
+  }
+  function rodar(comLock){
+    parar();
+    const passos = comLock ? [
+      'A: obtém mutex 🔒','A: lê contador (0)','A: soma 1 → 1','A: escreve 1','A: libera mutex 🔓',
+      'B: obtém mutex 🔒','B: lê contador (1)','B: soma 1 → 2','B: escreve 2','B: libera mutex 🔓','✅ Final: 2'
+    ] : [
+      'A: lê contador (0)','B: lê contador (0)  ← intercalação perversa','A: soma 1 → 1','B: soma 1 → 1',
+      'A: escreve 1','B: escreve 1  ← sobrescreve o valor de A!','🐛 Final: 1 (esperado 2)'
+    ];
+    let i=0; let log='';
+    timer=setInterval(()=>{
+      log += passos[i]+'\n';
+      const fim = (i===passos.length-1);
+      desenha(log, fim ? (comLock?2:1) : undefined);
+      i++;
+      if(i>=passos.length) parar();
+    },650);
+  }
+  area.appendChild(wrap);
+  desenha('');
+  estado.demos.aba5 = {parar};
+}
+
+/* ABA 6 — Mini-shell */
+function renderDemoAba6(area,a){
+  const wrap = document.createElement('div');
+  const scriptInicial = [
+    '#!/bin/bash',
+    '# backup.sh — demo de shell script',
+    'mkdir backup',
+    'touch backup/notas.txt',
+    'echo relatorio-2026 > backup/notas.txt',
+    'ls',
+    'cat backup/notas.txt'
+  ].join('\n');
+  let timer=null;
+  function parar(){if(timer){clearInterval(timer);timer=null;}}
+  function desenha(out,fs){
+    wrap.innerHTML = `
+      <textarea class="script" id="s-txt">${scriptAtual()}</textarea>
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="s-run">▶ Executar script</button>
+        <button class="btn sec" id="s-stop">⏹ Parar</button>
+      </div>
+      <div class="console" style="margin-top:10px">$ ./backup.sh\n${out||'(sem saída ainda)'}</div>
+      <div style="margin-top:10px;padding:10px;background:#fff;border-radius:8px;border:1px solid var(--borda);font-family:'Courier New',monospace;font-size:.85rem">
+        <strong>📁 Sistema de arquivos virtual:</strong><br>${fs && fs.size?Array.from(fs.entries()).map(([k,v])=>`${k.includes('.')?'📄':'📁'} ${k}${v!==null?` → "${v}"`:''}`).join('<br>'):'(vazio)'}
+      </div>
+    `;
+    wrap.querySelector('#s-stop').onclick=()=>parar();
+    wrap.querySelector('#s-run').onclick=()=>{
+      parar();
+      const linhas = wrap.querySelector('#s-txt').value.split('\n');
+      const fs = new Map();
+      let out=''; let i=0;
+      timer=setInterval(()=>{
+        if(i>=linhas.length){ parar(); out+='\n$ (script concluído — exit 0)'; desenha(out,fs); return; }
+        const raw = linhas[i].trim(); i++;
+        if(!raw || raw.startsWith('#')){ return; }
+        const mRedir = raw.match(/^echo\s+(.+?)\s*>\s*(\S+)$/);
+        if(mRedir){ fs.set(mRedir[2], mRedir[1]); out+=`$ ${raw}\n`; desenha(out,fs); return; }
+        const m = raw.match(/^(\w+)(?:\s+(.*))?$/);
+        if(!m){ out+=`bash: ${raw}: comando não encontrado\n`; desenha(out,fs); return; }
+        const cmd=m[1], arg=(m[2]||'').trim();
+        switch(cmd){
+          case 'echo': out+=`${arg}\n`; break;
+          case 'mkdir': fs.set(arg,null); out+=`$ mkdir ${arg}\n`; break;
+          case 'touch': fs.set(arg, fs.has(arg)?fs.get(arg):''); out+=`$ touch ${arg}\n`; break;
+          case 'rm': fs.delete(arg); out+=`$ rm ${arg}\n`; break;
+          case 'ls': out+=`$ ls\n${Array.from(fs.keys()).join('  ')||'(vazio)'}\n`; break;
+          case 'cat':
+            if(fs.has(arg)) out+=`$ cat ${arg}\n${fs.get(arg)}\n`;
+            else out+=`cat: ${arg}: arquivo não encontrado\n`;
+            break;
+          default: out+=`bash: ${cmd}: comando não encontrado (demo suporta: echo, mkdir, touch, rm, ls, cat)\n`;
+        }
+        desenha(out,fs);
+      },500);
+    };
+  }
+  function scriptAtual(){ return scriptInicial; }
+  area.appendChild(wrap);
+  desenha('',new Map());
+  estado.demos.aba6 = {parar};
+}
+
+function reiniciarDemo(abaId){
+  const area = document.getElementById(`demo-area-${abaId}`);
+  if(!area) return;
+  if(estado.demos[abaId] && estado.demos[abaId].parar) estado.demos[abaId].parar();
+  area.innerHTML = '';
+  const aba = AULA_DADOS.abas.find(a=>a.id===abaId);
+  if(abaId==='aba-1') renderDemoAba1(area,aba);
+  else if(abaId==='aba-2') renderDemoAba2(area,aba);
+  else if(abaId==='aba-3') renderDemoAba3(area,aba);
+  else if(abaId==='aba-4') renderDemoAba4(area,aba);
+  else if(abaId==='aba-5') renderDemoAba5(area,aba);
+  else if(abaId==='aba-6') renderDemoAba6(area,aba);
+  showToast('🔄 Demo reiniciada');
+}
+
+function irPara(id){location.hash=id;}
+function aplicarHash(){
+  let id = location.hash.replace('#','') || AULA_DADOS.abas[0].id;
+  if(!document.getElementById(id)) id = AULA_DADOS.abas[0].id;
+  document.querySelectorAll('section.aba').forEach(s=>s.classList.toggle('ativa',s.id===id));
+  document.querySelectorAll('nav.tabs button').forEach(b=>{
+    const sel = b.dataset.id===id;
+    b.setAttribute('aria-selected',sel?'true':'false');
+  });
+  estado.abaAtiva = id;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function atualizaProgresso(){
+  const pr = document.getElementById('progresso');
+  if(!pr) return;
+  pr.innerHTML = `
+    <span>⭐ XP: <span class="xp">${estado.xp}</span></span>
+    <span>🏅 Selos:</span>
+    <span class="selos">${estado.selos.size?Array.from(estado.selos).map(s=>`<span class="selo-chip">${s}</span>`).join(''):'<em style="color:var(--muted)">conquiste ao completar demos e quizzes</em>'}</span>
+  `;
+}
+function showToast(msg){
+  let t = document.getElementById('toast');
+  if(!t){
+    t = document.createElement('div');
+    t.id='toast';
+    t.style.cssText='position:fixed;bottom:20px;right:20px;background:#263238;color:#fff;padding:12px 18px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.3);z-index:200;font-weight:600;opacity:0;transition:opacity .3s';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity='1';
+  clearTimeout(t._tm);
+  t._tm = setTimeout(()=>t.style.opacity='0',2200);
+}
+document.getElementById('btnDark').onclick = ()=>{
+  estado.dark = !estado.dark;
+  document.body.classList.toggle('dark',estado.dark);
+  document.getElementById('btnDark').textContent = estado.dark?'☀️':'';
+};
+document.getElementById('btnApres').onclick = ()=>{
+  estado.apres = !estado.apres;
+  document.body.classList.toggle('apresentacao',estado.apres);
+  document.getElementById('btnApres').textContent = estado.apres?'📖':'🎤';
+  if(estado.apres){
+    document.body.classList.remove('dark');
+    estado.dark=false;
+    document.getElementById('btnDark').textContent='🌙';
+    const r = document.createElement('div');
+    r.className='rota-apres';r.id='rotaApres';
+    r.innerHTML = '🎤 <strong>Modo Apresentação:</strong> use ← → para navegar. Roteiro: 6 min por aba (1–5). Aba 6 é estudo próprio.';
+    document.body.appendChild(r);
+  } else {
+    const r = document.getElementById('rotaApres');
+    if(r) r.remove();
+  }
+};
+document.addEventListener('keydown',(e)=>{
+  if(!estado.apres) return;
+  const abas = AULA_DADOS.abas.map(a=>a.id).concat(['revisao']);
+  const idx = abas.indexOf(estado.abaAtiva);
+  if(e.key==='ArrowRight' && idx<abas.length-1){irPara(abas[idx+1]);e.preventDefault();}
+  else if(e.key==='ArrowLeft' && idx>0){irPara(abas[idx-1]);e.preventDefault();}
+});
+
+carregarEstado();
+renderTabs();
+renderMain();
+renderDemos();
+window.addEventListener('hashchange',aplicarHash);
+aplicarHash();
+</script>
+</body>
+</html>
