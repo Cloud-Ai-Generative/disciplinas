@@ -1,0 +1,90 @@
+<!-- ============ TAB 9-B (NOVA): MIGRAÇÃO MySQL → MongoDB ============ -->
+<section class="tab-panel" id="tab9b">
+<div class="card">
+<h2 class="card-title">🍃 Migração MySQL → MongoDB — Mesma API, Novo Banco: Portas por Contexto + Documentos + Cut-over Validado</h2>
+<p class="section-intro">Atende à exigência de evolução tecnológica: <strong>substituir o RDBMS por MongoDB</strong> mantendo a API <strong>idêntica em comportamento</strong> (mesmo contrato da Tab 9). Estratégia: <strong>portas de repositório</strong> nos 4 contextos com <strong>duas implementações</strong> (EF Core e MongoDB.Driver), <strong>migração de dados com validação</strong> e <strong>cut-over por configuração</strong> com janela de rollback. <span class="ide-tag cs">IDE: VS Code</span></p>
+<div class="doc-banner"><strong>🧔 Rafael Souza · 🍃 Backend (Migração):</strong> esta aba é a <strong>evolução controlada</strong> da Tab 9. Mini-fluxo: <em>Tab 9 (MySQL) → portas + providers (2/5) → migração de dados (3/5) → desempenho (4/5) → paridade + cut-over (5/5)</em>. <a href="javascript:switchTab('tab9')" style="color:var(--primary);text-decoration:underline">Ponto de partida (Tab 9) →</a></div>
+
+<!-- ══════════ SEÇÃO 1: O REQUISITO E A ESTRATÉGIA ══════════ -->
+<div class="deep-concept-box">
+<h3>📜 O requisito: evoluir o banco sem quebrar a API</h3>
+<p>O enunciado da evolução tem 5 pontos — e cada um vira <strong>critério de aceitação</strong> desta aba:</p>
+<ul>
+<li><strong>Substituir</strong> o banco de dados existente pelo MongoDB;</li>
+<li><strong>Adaptar</strong> as APIs para serem compatíveis com o novo banco;</li>
+<li>O sistema <strong>continuar funcionando como antes</strong> (mesmos endpoints, mesmos JSON, mesmos status);</li>
+<li><strong>Migrar os dados existentes com precisão</strong> (nada se perde, nada se altera);</li>
+<li><strong>Manter o desempenho adequado</strong> após a movimentação.</li>
+</ul>
+<p>A regra de ouro: <strong>o contrato HTTP não muda</strong>. Controllers, services, JWT, middleware e os 21 testes da Tab 9 permanecem intactos — só a <strong>camada de persistência</strong> é trocada.</p>
+</div>
+<div class="deep-concept-box">
+<h3>📄 Agregado = documento: o que era JOIN vira embed</h3>
+<p>No MySQL, a fronteira era <strong>tabela por agregado</strong> + tabelas filhas. No MongoDB, a fronteira vira <strong>documento por agregado</strong>: filhos que <em>não vivem fora do pai</em> são <strong>embutidos</strong> (embed), eliminando JOINs (que não existem no Mongo).</p>
+<div class="table-wrap" style="margin:12px 0">
+<table>
+<thead><tr><th>Contexto</th><th>MySQL (hoje)</th><th>MongoDB (destino)</th><th>_id do documento</th><th>O que vira embed</th></tr></thead>
+<tbody>
+<tr><td>🔑 Auth</td><td><code>auth_db.usuarios</code></td><td><code>loja_auth.usuarios</code></td><td>Guid original (string)</td><td>—</td></tr>
+<tr><td>📦 Catálogo</td><td><code>catalogo_db.produtos</code></td><td><code>loja_catalogo.produtos</code></td><td>int original</td><td>—</td></tr>
+<tr><td>🛒 Pedidos</td><td><code>pedidos_db.pedidos</code> + <code>pedido_itens</code></td><td><code>loja_pedidos.pedidos</code></td><td>int original</td><td><code>itens[]</code> (ex-tabela owned)</td></tr>
+<tr><td>🧾 Clientes</td><td><code>clientes_db.clientes</code> + <code>enderecos</code></td><td><code>loja_clientes.clientes</code></td><td>int original</td><td><code>enderecos[]</code> (ex-tabela 1:N)</td></tr>
+</tbody>
+</table>
+</div>
+<div class="info-banner">
+<strong>💡 Paridade de ids:</strong> mantemos os <strong>ids originais</strong> (int/Guid) como <code>_id</code> — URLs, FKs lógicas e contratos continuam idênticos, e a validação da migração vira comparação direta. ObjectId entraria apenas em dados <strong>novos</strong> pós-cut-over (decisão documentada na Parte 3).
+</div>
+</div>
+<div class="deep-concept-box">
+<h3>🔌 Uma porta, duas implementações (DIP aplicado 4×)</h3>
+<p>A Tab 9 já plantou o padrão no Auth (<code>IUsuarioRepository</code>). Agora ele vira <strong>regra dos 4 contextos</strong>: cada módulo expõe uma <strong>porta</strong> (interface) e ganha <strong>duas implementações</strong> — <code>Ef*Repository</code> (MySQL) e <code>Mongo*Repository</code> (MongoDB.Driver). Quem decide qual entra em produção é <strong>uma única chave de configuração</strong>: <code>Storage:Provider</code> = <code>MySql</code> | <code>Mongo</code>.</p>
+<ul>
+<li><strong>Services e controllers:</strong> zero alterações (dependem só da interface);</li>
+<li><strong>DI:</strong> o host registra <code>Ef*</code> ou <code>Mongo*</code> conforme o provider;</li>
+<li><strong>Rollback:</strong> voltar para MySQL = trocar a chave e reiniciar.</li>
+</ul>
+</div>
+<h4 class="diag-title">📐 D-32 <span class="dt-type">C4 · Nível 2</span> — Portas com provider duplo</h4>
+<div class="mermaid-box" data-code='flowchart LR
+subgraph API["🖥️ LojaApi.Api — controllers e services NÃO mudam"]
+CTRL["Controllers + Services (Tab 9)"]
+PORTS["🔌 Portas: IUsuarioRepository · IProdutoRepository · IPedidoRepository · IClienteRepository"]
+end
+CTRL --> PORTS
+PORTS -->|"Storage:Provider=MySql"| EF["🏭 Ef*Repository (EF Core/Pomelo)"]
+PORTS -->|"Storage:Provider=Mongo"| MG["🍃 Mongo*Repository (MongoDB.Driver)"]
+EF --> MY[("🐬 MySQL: 4 databases")]
+MG --> MO[("🍃 MongoDB: 4 databases espelho")]'>
+<div class="mermaid"></div>
+</div>
+<h4 class="diag-title">📐 D-33 <span class="dt-type">Fluxo</span> — As 6 fases da migração</h4>
+<div class="mermaid-box" data-code='flowchart LR
+F1["1️⃣ Congelar: baseline de paridade (21 testes + curls)"] --> F2["2️⃣ Extrair: SQL → JSON por agregado"]
+F2 --> F3["3️⃣ Carregar: import no Mongo preservando ids"]
+F3 --> F4["4️⃣ Validar: contagens + checksum + amostras"]
+F4 --> F5["5️⃣ Cut-over: Storage:Provider=Mongo"]
+F5 --> F6["6️⃣ Rollback ou sunset do MySQL"]'>
+<div class="mermaid"></div>
+</div>
+<div class="table-wrap" style="margin:12px 0">
+<table>
+<thead><tr><th>Requisito do enunciado</th><th>Parte que atende</th><th>Evidência de validação</th></tr></thead>
+<tbody>
+<tr><td>Substituir o banco pelo MongoDB</td><td>2/5</td><td><code>Mongo*Repository</code> + compose com MongoDB</td></tr>
+<tr><td>Adaptar as APIs ao novo banco</td><td>2/5</td><td>DI por <code>Storage:Provider</code>; controllers intactos</td></tr>
+<tr><td>Funcionar como antes</td><td>5/5</td><td>21 testes + curls + Prism idênticos nos 2 providers</td></tr>
+<tr><td>Migrar dados com precisão</td><td>3/5</td><td>Script extract/load + validação contagens/checksum</td></tr>
+<tr><td>Manter desempenho</td><td>4/5</td><td>Índices equivalentes + paginação + timeouts inalterados</td></tr>
+</tbody>
+</table>
+</div>
+<div class="warning-banner">
+<strong>⚠️ Didático:</strong> herdamos da Tab 9 o MongoDB <strong>sem auth</strong> e a senha em <strong>texto puro</strong> — aceitáveis apenas neste contexto educacional. Em produção real: auth no Mongo, hash forte e TLS.
+</div>
+<div class="success-banner">
+<strong>✅ Resultado desta parte:</strong> requisito mapeado em 5 critérios de aceitação · modelagem documento-por-agregado com embeds definidos · estratégia de porta dupla com cut-over por configuração · fases da migração diagramadas · traceabilidade requisito → parte → evidência.
+</div>
+</div>
+<!-- ===== FIM DA PARTE 1/5 — cole a Parte 2 (portas + implementações Ef/Mongo + switch de provider) logo após este comentário ===== -->
+  
