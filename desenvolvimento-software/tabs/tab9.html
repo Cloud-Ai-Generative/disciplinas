@@ -1252,13 +1252,19 @@ public class Produto
     protected Produto() { }
 
     /// &lt;summary&gt;Construtor principal.&lt;/summary&gt;
-    public Produto(int id, string nome, decimal preco, int estoque)
-    {
-        Id = id;
-        Nome = nome;
-        Preco = preco;
-        Estoque = estoque;
-    }
+	public Produto(int id, string nome, decimal preco, int estoque)
+	{
+		Id = id;
+		Nome = nome;
+		Preco = preco;
+		Estoque = estoque;
+	}
+	/// <summary>
+	/// Fábrica de reconstituição (persistência Ef/Mongo):
+	/// o estado vem do banco; sem validações de criação.
+	/// </summary>
+	public static Produto Reconstituir(int id, string nome, decimal preco, int estoque, int reservado)
+	=> new() { Id = id, Nome = nome, Preco = preco, Estoque = estoque, Reservado = reservado };
 
     /// &lt;summary&gt;
     /// Reserva quantidade do estoque.
@@ -1721,8 +1727,25 @@ public class Pedido
         if (p.Itens.Count == 0)
             throw new DomainException("Pedido sem itens");
 
-        // Retorna pedido criado
-        return p;
+		/// <summary>
+		/// Fábrica de reconstituição (persistência Ef/Mongo).
+		/// </summary>
+		public static Pedido Reconstituir(
+			int id,
+			string usuario,
+			int clienteId,
+			int enderecoId,
+			PedidoStatus status,
+		IEnumerable<ItemPedido> itens)
+		=> new()
+		{
+			Id = id,
+			Usuario = usuario,
+			ClienteId = clienteId,
+			EnderecoId = enderecoId,
+			Status = status,
+			Itens = itens.ToList()
+		};
     }
 
     /// &lt;summary&gt;
@@ -2355,12 +2378,16 @@ public class Cliente
     protected Cliente() { }
 
     /// &lt;summary&gt;Construtor principal.&lt;/summary&gt;
-    public Cliente(int id, string nome, string email)
-    {
-        Id = id;
-        Nome = nome;
-        Email = email;
-    }
+	/// <summary>
+	/// Fábrica de reconstituição (persistência Ef/Mongo).
+	/// </summary>
+	public static Cliente Reconstituir(
+		int id,
+		string nome,
+		string email,
+		bool ativo,
+	IEnumerable<Endereco> enderecos)
+	=> new() { Id = id, Nome = nome, Email = email, Ativo = ativo, Enderecos = enderecos.ToList() };
 
     /// &lt;summary&gt;Atualização validada (PUT do contrato).&lt;/summary&gt;
     public void Atualizar(string nome, string email)
