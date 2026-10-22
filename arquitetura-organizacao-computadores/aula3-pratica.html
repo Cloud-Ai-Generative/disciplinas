@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<!--
+  HTMLearning v2.10 (23/10/2026) — Autor: Professor Wellington Dimas da Cruz
+  · cloud.ai-generative@outlook.com · github.com/cloud-ai-Generative · lattes.cnpq.br/6801791839011321
+  Disciplina: Arquitetura e Organização de Computadores — Aula 3, Unidade 1, págs. 47 a 59
+  Título: Conjuntos de Instruções (RISC vs. CISC)
+  Abas: 6 de conteúdo (5 em sala + 1 estudo próprio) + 1 Revisão
+  Cor destaque: #7b1fa2
+  Campos não informados: nenhum metadado da aula; professor da disciplina não informado (linha omitida).
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aula 03 — Conjuntos de Instruções (RISC vs. CISC)</title>
+<style>
+:root{
+  --cor:#7b1fa2;
+  --cor-forte:#4a148c;
+  --cor-suave:#f3e5f5;
+  --fundo:#fdfdfd;
+  --texto:#1a1a1a;
+  --painel:#ffffff;
+  --borda:#d9d9d9;
+  --muted:#555;
+  --ok:#2e7d32;
+  --erro:#c62828;
+  --fonte:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --tam:18px;
+}
+*{box-sizing:border-box}
+body.dark{
+  --fundo:#121212;--texto:#e8e8e8;--painel:#1e1e1e;--borda:#333;
+  --muted:#b0b0b0;--cor-suave:#2a1030;--suave2:#232323;
+}
+html,body{margin:0;padding:0;background:var(--fundo);color:var(--texto);font-family:var(--fonte);font-size:var(--tam);line-height:1.55}
+header.topo{
+  position:sticky;top:0;z-index:100;background:var(--cor);color:#fff;
+  padding:10px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;
+  box-shadow:0 2px 6px rgba(0,0,0,.15)
+}
+header.topo h1{font-size:1.1rem;margin:0;font-weight:700}
+header.topo .meta{font-size:.85rem;opacity:.95}
+.acoes{display:flex;gap:6px;flex-wrap:wrap}
+.acoes button{
+  background:#fff;color:var(--cor);border:none;padding:6px 10px;border-radius:6px;
+  cursor:pointer;font-weight:600;font-size:.85rem
+}
+.acoes button:hover{background:var(--cor-suave)}
+nav.tabs{
+  position:sticky;top:56px;z-index:90;background:var(--painel);
+  border-bottom:2px solid var(--borda);overflow-x:auto;white-space:nowrap;
+  scrollbar-width:thin
+}
+nav.tabs button{
+  font-family:var(--fonte);font-size:var(--tam);background:transparent;color:var(--texto);
+  border:none;padding:12px 16px;cursor:pointer;border-bottom:4px solid transparent;
+  margin:0;font-weight:600;opacity:.75
+}
+nav.tabs button:hover{opacity:1}
+nav.tabs button[aria-selected="true"]{
+  color:var(--cor);border-bottom-color:var(--cor);opacity:1;
+  background:var(--painel);
+}
+nav.tabs button .selo{font-size:.7rem;background:var(--cor);color:#fff;padding:1px 5px;border-radius:8px;margin-left:6px;vertical-align:middle}
+main{max-width:980px;margin:0 auto;padding:20px}
+section.aba{display:none;animation:fade .3s ease}
+section.aba.ativa{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.card{background:var(--painel);border:2px solid var(--borda);border-radius:12px;padding:18px 20px;margin-bottom:18px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.card h2{margin-top:0;color:var(--cor);font-size:1.3rem;border-bottom:2px dashed var(--borda);padding-bottom:6px}
+.missao{
+  background:linear-gradient(135deg,var(--cor),var(--cor-forte));color:#fff;
+  padding:16px 18px;border-radius:10px;margin-bottom:18px;font-weight:500
+}
+.missao strong{display:block;font-size:1.1rem;margin-bottom:4px}
+.demo{
+  background:var(--suave2, #faf4fc);border:2px solid var(--cor);border-radius:10px;
+  padding:16px;margin:18px 0
+}
+body.dark .demo{background:#2a1030}
+.demo h3{color:var(--cor);margin-top:0}
+.instru{
+  background:#fff8e1;border-left:5px solid #ffa000;padding:10px 14px;border-radius:6px;margin:10px 0;font-size:.95rem
+}
+body.dark .instru{background:#3a2d10}
+.preveja{
+  background:#e8f5e9;border-left:5px solid var(--ok);padding:10px 14px;border-radius:6px;
+  margin:10px 0;font-style:italic
+}
+body.dark .preveja{background:#1e3a1e}
+.obs{
+  background:#e3f2fd;border-left:5px solid #1976d2;padding:10px 14px;border-radius:6px;margin:10px 0;font-size:.95rem
+}
+body.dark .obs{background:#153047}
+button.btn{
+  background:var(--cor);color:#fff;border:none;padding:9px 16px;border-radius:8px;
+  cursor:pointer;font-weight:600;font-family:var(--fonte);font-size:.95rem;margin:4px 4px 4px 0
+}
+button.btn:hover{filter:brightness(1.2)}
+button.btn.sec{background:#6c757d}
+button.btn:disabled{opacity:.5;cursor:not-allowed}
+.quiz-perg{border:2px solid var(--borda);border-radius:10px;padding:14px;margin:12px 0;background:var(--painel)}
+.quiz-perg h4{margin:0 0 10px;color:var(--texto)}
+.quiz-perg .alts{display:flex;flex-direction:column;gap:8px}
+.alt{
+  text-align:left;background:var(--fundo);border:2px solid var(--borda);border-radius:8px;
+  padding:10px 14px;cursor:pointer;font-family:var(--fonte);font-size:1rem;
+  transition:all .2s
+}
+.alt:hover:not(:disabled){border-color:var(--cor);background:var(--cor-suave)}
+.alt:disabled{cursor:not-allowed;opacity:.85}
+.alt.certa{background:#d4edda;border-color:var(--ok);color:#155724}
+.alt.errada{background:#f8d7da;border-color:var(--erro);color:#721c24}
+body.dark .alt.certa{background:#1e3a1e;color:#a8e6a8}
+body.dark .alt.errada{background:#3a1e1e;color:#ffb3b3}
+.fb{margin-top:10px;padding:10px 14px;border-radius:8px;font-size:.95rem;display:none}
+.fb.ok{background:#d4edda;border-left:5px solid var(--ok);color:#155724;display:block}
+.fb.bad{background:#f8d7da;border-left:5px solid var(--erro);color:#721c24;display:block}
+body.dark .fb.ok{background:#1e3a1e;color:#a8e6a8}
+body.dark .fb.bad{background:#3a1e1e;color:#ffb3b3}
+details{background:var(--suave2,#fafafa);border:1px solid var(--borda);border-radius:8px;padding:8px 12px;margin:10px 0}
+body.dark details{background:#222}
+details summary{cursor:pointer;font-weight:600;color:var(--cor)}
+details[open] summary{margin-bottom:8px}
+details.lex{background:#fff3e0;border-color:#ffb74d}
+details.links{background:#e8f5e9;border-color:#81c784}
+details.links a{color:var(--cor);font-weight:600}
+details.conc{background:#e8eaf6;border-color:#7986cb}
+.mito{background:var(--painel);border:2px dashed var(--cor);border-radius:10px;padding:14px;margin:14px 0}
+.mito h4{margin:0 0 8px;color:var(--cor)}
+.progresso{
+  background:var(--painel);border:2px solid var(--borda);border-radius:10px;
+  padding:10px 14px;margin-bottom:14px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:.95rem
+}
+.xp{background:var(--cor);color:#fff;padding:3px 10px;border-radius:20px;font-weight:700}
+.selos{display:flex;gap:6px;flex-wrap:wrap}
+.selo-chip{background:var(--cor-suave);color:var(--cor);padding:3px 8px;border-radius:20px;font-size:.8rem;font-weight:600}
+.rota{
+  background:#e0f7fa;border-left:5px solid #0097a7;padding:10px 14px;border-radius:6px;
+  margin:10px 0;font-size:.9rem
+}
+body.dark .rota{background:#0c2d33;color:#b3e5fc}
+body.apresentacao{font-size:22px}
+body.apresentacao nav.tabs button{font-size:22px}
+body.apresentacao .rota-apres{
+  position:fixed;bottom:0;left:0;right:0;background:#263238;color:#fff;
+  padding:14px 20px;font-size:1.05rem;box-shadow:0 -2px 8px rgba(0,0,0,.25);z-index:50
+}
+.revisao-mapa{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.revisao-mapa .no{
+  border:2px solid var(--cor);border-radius:8px;padding:10px;background:var(--cor-suave)
+}
+.revisao-mapa .no strong{color:var(--cor)}
+.cola{background:#fff3cd;border-left:5px solid #ffc107;padding:12px 16px;border-radius:8px;font-size:.95rem}
+body.dark .cola{background:#3a2d10;color:#ffd980}
+.cola b{color:var(--cor)}
+.chefao{
+  background:linear-gradient(135deg,#263238,#37474f);color:#fff;padding:18px;border-radius:12px;margin-top:18px
+}
+.chefao h3{color:#ffd54f;margin-top:0}
+.chefao button{background:#ffd54f;color:#263238}
+pre.code{
+  background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow-x:auto;
+  font-family:"Courier New",monospace;font-size:.9rem;line-height:1.6;margin:8px 0
+}
+pre.code .ln{display:block;padding:1px 6px;border-radius:4px;white-space:pre}
+pre.code .ln.cur{background:#7b1fa2;color:#fff;font-weight:700}
+pre.code .ln.done{color:#86efac}
+.watch{
+  display:inline-block;padding:6px 12px;margin:3px;border-radius:8px;background:#fff;
+  border:2px solid var(--borda);font-family:"Courier New",monospace;font-size:.95rem
+}
+.watch b{color:var(--cor)}
+footer.ficha{
+  max-width:980px;margin:30px auto;padding:16px 20px;color:var(--muted);font-size:.8rem;line-height:1.7
+}
+footer.ficha hr{border:none;border-top:1px solid var(--borda);margin-bottom:10px}
+footer.ficha a{color:var(--cor)}
+@media(max-width:600px){
+  main{padding:12px}
+  .card{padding:14px}
+  header.topo h1{font-size:.95rem}
+}
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div>
+    <h1>🧩 Aula 03 — Conjuntos de Instruções (RISC vs. CISC)</h1>
+    <div class="meta">Arquitetura e Organização de Computadores • Unidade 1 • págs. 47 a 59</div>
+  </div>
+  <div class="acoes">
+    <button id="btnApres" title="Modo Apresentação">🎤</button>
+    <button id="btnDark" title="Modo Escuro">🌙</button>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist" id="tablist" aria-label="Abas da aula"></nav>
+
+<main id="main"></main>
+
+<footer class="ficha">
+  <hr>
+  <div>📋 Ficha técnica · Arquitetura e Organização de Computadores — Aula 3, Unidade 1, págs. 47–59 · Gerado em 23/10/2026 · 6 abas · 18 perguntas · 6 demos · cor #7b1fa2</div>
+  <div>🎓 HTMLearning v2.10 (23/10/2026) — Autor: Professor Wellington Dimas da Cruz · e-mail: <a href="mailto:cloud.ai-generative@outlook.com">cloud.ai-generative@outlook.com</a> · GitHub: <a href="https://github.com/cloud-ai-Generative" target="_blank" rel="noopener">github.com/cloud-ai-Generative</a> · Lattes: <a href="https://lattes.cnpq.br/6801791839011321" target="_blank" rel="noopener">lattes.cnpq.br/6801791839011321</a></div>
+</footer>
+
+<script>
+/* =========================================================
+   AULA_DADOS — esquema v2.10 (campos obrigatórios por aba)
+   ========================================================= */
+var AULA_DADOS = {
+  disciplina:"Arquitetura e Organização de Computadores",
+  aula:"3",
+  unidade:"Unidade 1",
+  paginas:"47 a 59",
+  titulo:"Conjuntos de Instruções (RISC vs. CISC)",
+  cor:"#7b1fa2",
+  abas:[
+    {
+      id:"aba-1",
+      titulo:"ISA: contrato e funções",
+      estudoProprio:false,
+      narrativa:"Todo processador obedece a um contrato invisível chamado ISA. Aqui você descobre o que esse contrato define e as quatro funções que qualquer conjunto de instruções cumpre, do celular ao supercomputador.",
+      mundoReal:[
+        "Intel e AMD fabricam chips diferentes, mas ambos cumprem a ISA x86-64: por isso o mesmo Windows roda nos dois.",
+        "O bytecode da JVM é uma ISA de pilha: o mesmo arquivo .class executa em x86, ARM e RISC-V sem recompilar."
+      ],
+      ferramentas:[
+        "Compiler Explorer (godbolt.org): vê o assembly gerado para cada ISA",
+        "QEMU: emula MIPS, ARM e RISC-V no seu computador",
+        "objdump / ndisasm: desmonta binários e mostra opcodes reais"
+      ],
+      dicionario:[
+        {termo:"ISA",def:"Contrato hardware-software: instruções, registradores visíveis, tipos de dados, modos de endereçamento e exceções."},
+        {termo:"Opcode",def:"Campo da instrução que diz QUAL operação executar (o verbo da máquina)."},
+        {termo:"Registrador",def:"Memória interna da CPU, acesso em 1 ciclo; onde a ALU trabalha."},
+        {termo:"ULA",def:"Unidade Lógica e Aritmética: executa somas, comparações e operações lógicas."}
+      ],
+      conceitos:[
+        {
+          titulo:"ISA: o contrato entre hardware e software",
+          texto:"A ISA define o que o software pode exigir da máquina: repertório de instruções, registradores visíveis, tipos de dados, modos de endereçamento e comportamento de exceções. Como o chip implementa isso (pipeline, cache, microcódigo) fica fora do contrato.",
+          analogia:"💡 É o cardápio de um restaurante: lista o que você pode pedir, sem revelar as receitas da cozinha.",
+          exemploReal:"🌍 Apple M1, AWS Graviton e Snapdragon são cozinhas diferentes, mas todos servem o cardápio ARMv8: o mesmo binário iOS/Android roda nos três."
+        },
+        {
+          titulo:"As quatro funções de um conjunto de instruções",
+          texto:"Processamento de dados (ULA), movimentação de dados (memória e E/S), fluxo de controle (desvios, chamadas, retornos) e controle de sistema (instruções privilegiadas usadas pelo SO).",
+          analogia:"💡 Uma oficina completa: ferramentas que transformam, que transportam, que definem a ordem do trabalho e que travam a porta.",
+          exemploReal:"🌍 Ao salvar um documento no Google Docs: a CPU processa (compressão), move (escrita em disco), controla fluxo (loops) e eleva a modo privilegiado (syscall do Chrome OS/Linux)."
+        }
+      ],
+      roteiroDemo:{
+        passo0:"Antes de clicar, preveja: qual das quatro funções da ISA é acionada quando um loop repete um bloco 1000 vezes?",
+        passos:[
+          {acao:"Clique em Processamento de dados",ve:"A ULA soma R1+R2 e grava R3=12",significa:"Instruções de ALU transformam dados sem tocar a memória"},
+          {acao:"Clique em Movimentação de dados",ve:"LW carrega da RAM e SW devolve",significa:"Em load-store, só load/store cruzam a fronteira CPU-memória"},
+          {acao:"Clique em Fluxo de controle",ve:"O PC salta para o rótulo do loop",significa:"Desvios quebram a sequência linear e repetem blocos"},
+          {acao:"Clique em Controle de sistema",ve:"Trap eleva a CPU ao modo kernel",significa:"Instruções privilegiadas protegem o SO de aplicativos"}
+        ]
+      },
+      demo:{
+        tipo:"funcoes",
+        config:{
+          titulo:"🎛️ Painel das quatro funções da ISA",
+          registradores:{R1:5,R2:7,R3:0,PC:100},
+          grupos:[
+            {nome:"Processamento de dados",ex:"ADD R3, R1, R2",efeito:"ULA soma 5+7 e grava R3=12. Exemplo real: cada pixel de um filtro de foto passa por operações assim.",watch:"R3=12"},
+            {nome:"Movimentação de dados",ex:"LW R1, 0(R2) / SW R3, 0(R2)",efeito:"Dados viajam RAM-registrador. Exemplo real: carregar seu saldo do banco de dados para a memória do app.",watch:"R1=42 (veio da RAM)"},
+            {nome:"Fluxo de controle",ex:"BEQ R1, R0, fim",efeito:"PC desvia conforme comparação. Exemplo real: o if que decide aprovação de crédito num pagamento Pix.",watch:"PC=100 -> 140"},
+            {nome:"Controle de sistema",ex:"TRAP / instrução privilegiada",efeito:"CPU sobe ao modo kernel para o SO atender. Exemplo real: toda syscall de arquivo ou rede do Linux.",watch:"modo: user -> kernel"}
+          ],
+          guia:"Observe que as quatro funções aparecem em QUALQUER programa real: um login usa ALU (conferir hash), memória (buscar usuário), desvio (if de senha) e trap (syscall de rede)."
+        }
+      },
+      quiz:[
+        {p:"O que uma ISA define, exatamente?",
+          alts:[
+            {t:"A interface visível ao software: instruções, registradores, tipos, endereçamento e exceções",c:1,fb:"Correto! ISA é o contrato: diz O QUE a máquina garante. O COMO (pipeline, cache, microcódigo) é microarquitetura, invisível ao programador."},
+            {t:"O layout físico dos transistores no silício",c:0,fb:"Layout é projeto físico. Duas CPUs com a mesma ISA (Intel e AMD x86-64) têm layouts totalmente diferentes."},
+            {t:"As chamadas de sistema e o sistema de arquivos do SO",c:0,fb:"Syscalls e FS são interface do SO, não da ISA. A ISA termina no nível da instrução de máquina."}
+          ]},
+        {p:"Um aplicativo grava um arquivo e o SO valida permissões em modo privilegiado. Qual função da ISA predomina nesse trecho?",
+          alts:[
+            {t:"Controle de sistema: instrução privilegiada eleva ao modo kernel",c:1,fb:"Exato! Validação de permissão e escrita em disco passam por syscall: a CPU troca de anel de proteção, função de controle de sistema."},
+            {t:"Fluxo de controle: é apenas um desvio condicional",c:0,fb:"Há desvios, mas o traço definidor é a mudança de privilégio (user para kernel), que desvios comuns não fazem."},
+            {t:"Processamento de dados: a ULA confere a senha",c:0,fb:"A ULA pode comparar bytes, mas a proteção de permissões exige modo privilegiado: controle de sistema."}
+          ]},
+        {p:"O bytecode Java (iadd, imul, sem operandos nomeados) é uma ISA de qual classe?",
+          alts:[
+            {t:"Pilha: operandos implícitos no topo da pilha de operandos",c:1,fb:"Correto! Por isso bytecode Java é compacto e portável: o JIT depois traduz para a ISA nativa (x86, ARM) do hospedeiro."},
+            {t:"Acumulador: um registrador único implícito",c:0,fb:"Acumulador usa UM registrador implícito (estilo MOS 6502). A JVM usa pilha de operandos, não acumulador."},
+            {t:"Load-store com 32 registradores visíveis",c:0,fb:"A JVM não expõe registradores ao programador: expõe pilha. Registradores só aparecem após o JIT."}
+          ]}
+      ],
+      aprofundar:[
+        {rotulo:"🔎 Busca no Google (português)",url:"https://www.google.com/search?hl=pt-BR&q=conjunto+de+instru%C3%A7%C3%B5es+ISA+tipos+e+fun%C3%A7%C3%B5es"},
+        {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=conjunto+de+instru%C3%A7%C3%B5es+ISA+fun%C3%A7%C3%B5es+arquitetura"},
+        {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)",url:"https://www.youtube.com/results?search_query=conjunto+de+instru%C3%A7%C3%B5es+ISA+fun%C3%A7%C3%B5es+aula"}
+      ],
+      mitoOuVerdade:{
+        afirmacao:"Duas CPUs de fabricantes diferentes podem executar o mesmo binário se compartilharem a mesma ISA.",
+        verdade:true,
+        explicacao:"Verdade: o binário conversa com a ISA, não com os transistores. Intel e AMD rodam o mesmo Windows x86-64; Snapdragon e Exynos rodam o mesmo app Android (ARM)."
+      }
+    },
+    {
+      id:"aba-2",
+      titulo:"Tipos: pilha, acumulador, registradores",
+      estudoProprio:false,
+      narrativa:"Nem toda ISA guarda operandos no mesmo lugar. Compare as quatro classes históricas e entenda como essa escolha define tamanho de código, acessos à memória e facilidade de pipelining.",
+      mundoReal:[
+        "A MOS 6502 (Apple II, Commodore 64) é acumulador; o x86 do seu notebook é registrador-memória; o ARM do celular é load-store.",
+        "Microcontroladores AVR do Arduino usam banco de 32 registradores; a JVM usa pilha pura."
+      ],
+      ferramentas:[
+        "javap -c: mostra o bytecode de pilha da JVM",
+        "Simuladores online de 6502 para ver o acumulador em ação",
+        "Compiler Explorer comparando x86, ARM e RISC-V lado a lado"
+      ],
+      dicionario:[
+        {termo:"Pilha de operandos",def:"Estrutura LIFO onde a classe pilha busca e guarda operandos implicitamente."},
+        {termo:"Acumulador",def:"Registrador único implícito das máquinas de acumulador (6502, 8080)."},
+        {termo:"Load-store",def:"Classe em que somente load e store acessam a memória de dados."},
+        {termo:"Densidade de código",def:"Bytes de código por operação; pilha e CISC tendem a códigos mais densos."}
+      ],
+      conceitos:[
+        {
+          titulo:"Onde vivem os operandos: as quatro classes",
+          texto:"Pilha (topo implícito), acumulador (registrador único implícito), registrador-memória (operandos podem vir da RAM, como no x86) e load-store (só load/store tocam a RAM, como ARM, MIPS e RISC-V).",
+          analogia:"💡 Cozinhar: ingredientes na prateleira (memória), na bancada (registradores) ou já dentro da panela (acumulador).",
+          exemploReal:"🌍 O mesmo cálculo de juros de um empréstimo vira 6 instruções de pilha na JVM, 4 de acumulador num 6502 e 4 load-store num ARM."
+        },
+        {
+          titulo:"Trade-offs de cada classe",
+          texto:"Pilha: instruções curtas e compilador simples, mas tráfego constante no topo; acumulador: hardware mínimo e código denso, mas gargalo no registrador único; registrador-memória: menos instruções, decode complexo; load-store: pipeline limpo e CPI baixo, porém mais instruções e código maior.",
+          analogia:"💡 Malas de viagem: muitas pequenas (pilha), uma gigante (acumulador) ou despachar direto na esteira (memória).",
+          exemploReal:"🌍 O RISC venceu nos anos 80 porque load-store permite pipeline profundo: CPI próximo de 1, essencial para os clocks altos de hoje."
+        }
+      ],
+      roteiroDemo:{
+        passo0:"Antes de clicar, preveja: qual classe executa (a+b)*c com MENOS instruções - e qual faz MENOS acessos à memória?",
+        passos:[
+          {acao:"Abra cada uma das quatro máquinas",ve:"Programa gerado e contadores de instruções, acessos à memória e bytes",significa:"A classe define onde os operandos vivem e quantas viagens à RAM ocorrem"},
+          {acao:"Compare pilha com load-store",ve:"Pilha: 6 instruções e 4 memórias; load-store: 4 instruções e 3 memórias",significa:"Menos instruções não implica menos memória: cada classe equilibra de um jeito"}
+        ]
+      },
+      demo:{
+        tipo:"maquinas",
+        config:{
+          titulo:"🧮 Quatro máquinas, uma expressão: (a+b)*c",
+          maquinas:[
+            {nome:"Pilha (JVM)",prog:["PUSH a","PUSH b","ADD","PUSH c","MUL","POP a"],inst:6,mem:4,bytes:"6 bytes (1 por instr.)",nota:"Operandos implícitos no topo: instruções minúsculas, porém numerosas. É o bytecode Java rodando em qualquer hardware."},
+            {nome:"Acumulador (6502)",prog:["LOAD a","ADD b","MUL c","STORE a"],inst:4,mem:4,bytes:"8 bytes (2 por instr.)",nota:"Um registrador implícito. Apple II e Commodore 64 viveram assim nos anos 80."},
+            {nome:"Registrador-memória (x86)",prog:["MOV EAX,[b]","ADD EAX,[c]","MOV [a],EAX"],inst:3,mem:3,bytes:"cerca de 14 (variável)",nota:"CISC: operandos direto da memória reduzem a contagem de instruções, ao custo de decode complexo."},
+            {nome:"Load-store (MIPS/ARM/RISC-V)",prog:["LW R1,b","LW R2,c","ADD R3,R1,R2","SW R3,a"],inst:4,mem:3,bytes:"16 bytes (4 fixos)",nota:"RISC: ALU só em registradores; memória apenas via LW/SW. Decode trivial, pipeline fundo."}
+          ],
+          guia:"Observe o equilíbrio: pilha ganha em bytes e perde em instruções; load-store ganha em pipeline e perde em densidade. Não existe classe perfeita, existe escolha de projeto."
+        }
+      },
+      quiz:[
+        {p:"Em uma máquina load-store (RISC), quais instruções acessam a memória de dados?",
+          alts:[
+            {t:"Apenas load e store; a ALU opera somente sobre registradores",c:1,fb:"Exato! Em ARM, MIPS e RISC-V, ADD nunca toca a RAM: primeiro LW carrega, a ALU soma em registradores e SW devolve. Isso uniformiza o pipeline."},
+            {t:"Todas, inclusive ADD e SUB com operandos em memória",c:0,fb:"Isso descreve a classe registrador-memória (x86/CISC). Load-store proíbe operando de memória na ALU."},
+            {t:"Nenhuma: tudo permanece em cache",c:0,fb:"Cache é hierarquia transparente; load e store continuam sendo as instruções que referenciam o espaço de memória."}
+          ]},
+        {p:"Qual classe de ISA usa um único registrador implícito para quase toda operação aritmética?",
+          alts:[
+            {t:"Acumulador, como a MOS 6502 do Apple II",c:1,fb:"Correto! LOAD/ADD/STORE giram em torno do acumulador: hardware mínimo e código denso, com gargalo nesse registrador único."},
+            {t:"Pilha, como a JVM",c:0,fb:"A pilha não tem registrador implícito: tem topo de pilha. São conceitos distintos."},
+            {t:"Load-store, como o ARM",c:0,fb:"Load-store expõe muitos registradores nomeados (16 a 32), justamente para evitar gargalo de um só."}
+          ]},
+        {p:"Por que bytecode de pilha (JVM) tende a ser mais compacto?",
+          alts:[
+            {t:"Porque os operandos são implícitos: o opcode não precisa nomear registradores",c:1,fb:"Exato! Sem campos de registrador, cada instrução cabe em 1 byte com frequência. O custo é o tráfego constante de push/pop em tempo de execução."},
+            {t:"Porque a JVM comprime o arquivo em tempo de carga",c:0,fb:"Compactação de .jar é outra camada. O bytecode em si já é denso pela ausência de operandos nomeados."},
+            {t:"Porque pilha usa cache de instruções maior",c:0,fb:"Cache não muda o tamanho do código; densidade vem do formato da instrução."}
+          ]}
+      ],
+      aprofundar:[
+        {rotulo:"🔎 Busca no Google (português)",url:"https://www.google.com/search?hl=pt-BR&q=tipos+de+conjunto+de+instru%C3%A7%C3%B5es+pilha+acumulador+load-store"},
+        {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=classes+de+conjunto+de+instru%C3%A7%C3%B5es+pilha+acumulador+registradores"},
+        {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)",url:"https://www.youtube.com/results?search_query=tipos+de+conjunto+de+instru%C3%A7%C3%B5es+pilha+acumulador+aula"}
+      ],
+      mitoOuVerdade:{
+        afirmacao:"Instruções de pilha tendem a ser menores porque não precisam nomear operandos.",
+        verdade:true,
+        explicacao:"Verdade: com operandos implícitos no topo, o opcode ocupa poucos bits - por isso bytecode Java é compacto. O preço é o tráfego constante de push/pop."
+      }
+    },
+    {
+      id:"aba-3",
+      titulo:"RISC vs. CISC",
+      estudoProprio:false,
+      narrativa:"A grande disputa dos anos 80: instruções gordas que fazem muito por vez contra instruções magras que pipelinam perfeito. Veja a equação que arbitra a briga.",
+      mundoReal:[
+        "x86-64 (Intel, AMD) domina PCs e servidores; ARM, RISC-V e MIPS dominam mobile, embarcados e, crescentemente, nuvem.",
+        "Desde o Pentium Pro (1995), o x86 traduz instruções CISC em micro-operações RISC internamente: CISC por fora, RISC por dentro."
+      ],
+      ferramentas:[
+        "Compiler Explorer: compare o assembly x86 e ARM do mesmo C",
+        "CPU-Z ou lscpu: descubra a ISA e as extensões da sua máquina",
+        "SPEC CPU: benchmarks que medem o resultado dessas filosofias"
+      ],
+      dicionario:[
+        {termo:"CISC",def:"Filosofia de instruções complexas e de tamanho variável, com operandos em memória (x86, VAX)."},
+        {termo:"RISC",def:"Filosofia de instruções simples, fixas e load-store, com controle hardwired (ARM, MIPS, RISC-V)."},
+        {termo:"Microcódigo",def:"Camada interna que interpreta instruções complexas em passos simples; típica de CISC."},
+        {termo:"CPI",def:"Ciclos por instrução; um dos três fatores da equação do tempo de CPU."}
+      ],
+      conceitos:[
+        {
+          titulo:"CISC: complexidade a serviço da densidade",
+          texto:"Muitas instruções, tamanhos variáveis, operandos em memória e microcódigo. Objetivo histórico: reduzir o número de instruções por programa quando memória era cara e compiladores, rudimentares.",
+          analogia:"💡 Um canivete suíço: uma ferramenta faz várias coisas, mas é mais lenta de abrir e fechar.",
+          exemploReal:"🌍 O VAX da DEC tinha instrução única para avaliar polinômios; o x86 mantém ADD com operando em memória até hoje."
+        },
+        {
+          titulo:"RISC: simplicidade que pipelina",
+          texto:"Poucas instruções, formato fixo, execução em 1 ciclo ideal, muitos registradores e paradigma load-store. Objetivo: reduzir ciclos por instrução e permitir pipelines profundos.",
+          analogia:"💡 Uma linha de montagem com estações idênticas: cada estação faz pouco, mas o fluxo nunca para.",
+          exemploReal:"🌍 O ARM1 (1985) tinha cerca de 25 mil transistores contra 250 mil de um CISC da época: sobrava silício para cache e registradores."
+        },
+        {
+          titulo:"A equação que arbitra: Tempo = IC x CPI x Tclk",
+          texto:"CISC ataca IC (menos instruções por programa); RISC ataca CPI e Tclk (instruções magras que pipelinam fundo e clockam alto). Nenhum lado vence a equação inteira.",
+          analogia:"💡 Viagem: menos paradas longas (CISC) versus muitas paradas curtas (RISC); o tempo total depende da estrada.",
+          exemploReal:"🌍 Em mobile, Tclk e energia mandam: ARM vence. Em legado empresarial, IC e compatibilidade mandam: x86 resiste."
+        }
+      ],
+      roteiroDemo:{
+        passo0:"Antes de stepar, preveja: quantas instruções e quantos acessos à memória cada lado usará para a = b + c?",
+        passos:[
+          {acao:"Avance os dois programas em paralelo",ve:"x86 executa 3 instruções com 3 memórias; MIPS executa 4 com 3 memórias",significa:"CISC reduz IC; RISC troca IC por instruções uniformes"},
+          {acao:"Chegue ao fim e compare os bytes",ve:"x86 usa cerca de 14 bytes variáveis; MIPS usa 16 bytes fixos",significa:"Densidade versus decode simples: o trade-off central da disputa"}
+        ]
+      },
+      demo:{
+        tipo:"ladolado",
+        config:{
+          titulo:"⚖️ Lado a lado: a = b + c em x86 (CISC) e MIPS (RISC)",
+          esq:{nome:"x86 (CISC)",linhas:["MOV EAX,[b]  ; le b da RAM","ADD EAX,[c]  ; soma c da RAM","MOV [a],EAX  ; grava a na RAM"],mem:3,bytes:"cerca de 14 bytes variáveis"},
+          dir:{nome:"MIPS (RISC)",linhas:["LW  R1, b      ; le b da RAM","LW  R2, c      ; le c da RAM","ADD R3, R1, R2 ; soma em registrador","SW  R3, a      ; grava a na RAM"],mem:3,bytes:"16 bytes fixos"},
+          guia:"Observe que a diferença decisiva não está nas contagens, e sim no CPI: instruções uniformes do MIPS pipelinam fundo, enquanto o x86 precisa decodificar formatos variáveis (e por isso converte em micro-ops)."
+        }
+      },
+      quiz:[
+        {p:"Na equação Tempo = IC x CPI x Tclk, qual fator cada filosofia ataca prioritariamente?",
+          alts:[
+            {t:"CISC reduz IC (menos instruções); RISC reduz CPI e Tclk (instruções que pipelinam rápido)",c:1,fb:"Correto! CISC engorda a instrução para diminuir a contagem; RISC emagrece para diminuir ciclos e clockar alto. Ambas são estratégias legítimas sobre a mesma equação."},
+            {t:"CISC reduz Tclk; RISC reduz IC",c:0,fb:"Invertido: instruções complexas exigem MAIS ciclos e dificultam clock alto; quem reduz IC é a CISC."},
+            {t:"Ambas atacam somente o número de registradores",c:0,fb:"Registradores são recurso de projeto, não fator da equação. Os fatores são IC, CPI e Tclk."}
+          ]},
+        {p:"Qual característica é típica de uma ISA RISC?",
+          alts:[
+            {t:"Formato fixo, controle hardwired e paradigma load-store",c:1,fb:"Exato! Formato fixo torna o decode trivial (1 estágio), habilitando pipelines profundos - a grande vantagem de desempenho do RISC."},
+            {t:"Instruções de tamanho variável com microcódigo extenso",c:0,fb:"Isso é CISC (x86, VAX). O RISC nasceu exatamente contra o microcódigo complexo."},
+            {t:"Operandos de memória em quase toda instrução aritmética",c:0,fb:"Operando de memória na ALU é marca da classe registrador-memória (CISC). RISC isola memória em load/store."}
+          ]},
+        {p:"O artigo que popularizou o termo RISC (1980/82) é de:",
+          alts:[
+            {t:"David Patterson e Carlo Séquin, em Berkeley",c:1,fb:"Correto! O artigo deu nome ao movimento e originou o RISC-I; Patterson depois co-liderou o RISC-V e dividiu o Turing Award 2017 com Hennessy."},
+            {t:"Gordon Moore e Robert Noyce",c:0,fb:"Moore (lei dos transistores) e Noyce (circuito integrado) são pioneiros do silício, não do movimento RISC."},
+            {t:"Ken Thompson e Dennis Ritchie",c:0,fb:"Eles criaram Unix e C - que ajudaram o RISC ao exigir compiladores simples - mas não escreveram o artigo."}
+          ]}
+      ],
+      aprofundar:[
+        {rotulo:"🔎 Busca no Google (português)",url:"https://www.google.com/search?hl=pt-BR&q=risc+versus+cisc+compara%C3%A7%C3%A3o+de+arquiteturas"},
+        {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=risc+versus+cisc+conjunto+de+instru%C3%A7%C3%B5es+desempenho"},
+        {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)",url:"https://www.youtube.com/results?search_query=risc+vs+cisc+arquitetura+aula"}
+      ],
+      mitoOuVerdade:{
+        afirmacao:"Um processador x86 moderno executa instruções CISC diretamente, sem tradução interna.",
+        verdade:false,
+        explicacao:"Mito: desde o Pentium Pro (1995) o decodificador x86 converte instruções em micro-operações estilo RISC. Por fora CISC, por dentro RISC - foi essa convergência que encerrou a guerra das filosofias."
+      }
+    },
+    {
+      id:"aba-4",
+      titulo:"Evolução e impacto no desempenho",
+      estudoProprio:false,
+      narrativa:"De 1945 a 2026: o pêndulo entre simplicidade e complexidade, o power wall que mudou a métrica rainha e a convergência que redesenhou todos os chips modernos.",
+      mundoReal:[
+        "O Fugaku (ARM A64FX) foi o nº 1 do TOP500 em 2020: primeira liderança ARM da história da supercomputação.",
+        "Apple M1 (2020) e AWS Graviton provaram que núcleos ARM disputam desempenho de servidor com eficiência superior por watt."
+      ],
+      ferramentas:[
+        "Ranking TOP500 para ver a distribuição de ISAs em supercomputadores",
+        "Suíte SPEC CPU para comparar gerações de processadores",
+        "Geekbench para comparar desempenho por watt entre SoCs móveis"
+      ],
+      dicionario:[
+        {termo:"Power wall",def:"Limite térmico e energético que encerrou a corrida de clock e tornou eficiência a métrica central."},
+        {termo:"Micro-op",def:"Instrução interna estilo RISC gerada pelo decodificador x86 moderno."},
+        {termo:"Desempenho por watt",def:"Trabalho útil por joule; métrica rainha de mobile, edge e HPC com teto térmico."},
+        {termo:"SIMD",def:"Uma instrução, múltiplos dados: extensões vetoriais como SSE, AVX, NEON e SVE."}
+      ],
+      conceitos:[
+        {
+          titulo:"O pêndulo histórico: simplicidade, barroco e convergência",
+          texto:"1945-60: simplicidade por necessidade (memória caríssima). 1964-77: microcódigo permite CISC barroco (System/360, VAX). 1980-85: VLSI viabiliza RISC (RISC-I, MIPS, ARM1). 1995: Pentium Pro traduz x86 em micro-ops. 2007+: power wall entrega o mobile ao ARM.",
+          analogia:"💡 Moda: décadas de ombreiras largas (CISC) seguidas de corte minimalista (RISC) e depois mistura dos dois estilos.",
+          exemploReal:"🌍 O iPhone de 2007 selou o destino: bateria não negocia com instrução gorda; ARM virou padrão de bolso."
+        },
+        {
+          titulo:"Impacto mensurável no desempenho do sistema",
+          texto:"Pipelines RISC levaram o CPI a cerca de 1 (e abaixo disso com superscalar); instruções CISC complexas custavam dezenas de ciclos e travavam estágios. Em mobile, ARM chega a entregar ordem de grandeza a mais de desempenho por watt que x86 equivalente.",
+          analogia:"💡 Rodovia: pedágios caros e raros (CISC) versus pedágios baratos e frequentes (RISC); o fluxo total decide.",
+          exemploReal:"🌍 Benchmarks SPEC e o TOP500 de 2020 (Fugaku ARM) documentam a virada: eficiência virou desempenho."
+        }
+      ],
+      roteiroDemo:{
+        passo0:"Antes de avançar, preveja: em qual era o x86 passou a se comportar como RISC por dentro?",
+        passos:[
+          {acao:"Percorra as eras com Próxima era",ve:"Cada parada mostra a mudança arquitetural e seu efeito em desempenho ou energia",significa:"A métrica que manda muda com a tecnologia dominante da era"},
+          {acao:"Chegue a 1995 e depois a 2007",ve:"Convergência (micro-ops) e power wall (mobile ARM)",significa:"Desempenho absoluto cede lugar a desempenho por watt como critério de projeto"}
+        ]
+      },
+      demo:{
+        tipo:"linha",
+        config:{
+          titulo:"🕰️ Linha do tempo: cada era e seu efeito no desempenho",
+          eras:[
+            {ano:"1945-60",nome:"Simplicidade por necessidade",impacto:"EDVAC e IAS com poucas instruções; memória caríssima força códigos curtos e CPI alto."},
+            {ano:"1964-77",nome:"CISC barroco via microcódigo",impacto:"System/360 e VAX: famílias compatíveis e instruções gordas; compatibilidade vira valor de mercado."},
+            {ano:"1980-85",nome:"Nasce o RISC",impacto:"Patterson e Séquin, RISC-I, MIPS e ARM1: pipelines simples atingem CPI próximo de 1."},
+            {ano:"1995",nome:"Convergência (Pentium Pro)",impacto:"x86 vira micro-ops RISC internamente: compatibilidade por fora, pipeline eficiente por dentro."},
+            {ano:"2007-10",nome:"Power wall e mobile",impacto:"iPhone e Android escolhem ARM; desempenho por watt vira a métrica rainha."},
+            {ano:"2010-20",nome:"Abertura e coroação ARM",impacto:"RISC-V (2010) abre a ISA; Apple M1 (2020) e Fugaku TOP500 (2020) provam ARM em desktop e HPC."},
+            {ano:"2020-26",nome:"DSAs e heterogeneidade",impacto:"TPU, NPU, SVE2 e AVX-512: ganhos vêm do domínio específico, não da filosofia de ISA."}
+          ],
+          guia:"Observe que a complexidade não desapareceu: migrou de lugar (microcódigo, micro-ops, SIMD, DSA). O que ficou é a métrica: desempenho por watt e por dólar."
+        }
+      },
+      quiz:[
+        {p:"O que tornou o CISC complexo viável nos anos 1960-70?",
+          alts:[
+            {t:"O microcódigo: instruções complexas interpretadas por passos simples em ROM interna",c:1,fb:"Correto! Microcódigo barateou a complexidade: System/360 e VAX ofereciam dezenas de instruções gordas sem hardware dedicado para cada uma."},
+            {t:"A abundância de transistores em VLSI",c:0,fb:"VLSI abundante é o que depois viabilizou o RISC (pipelines, bancos de registradores). Nos 60-70 transistores eram caros."},
+            {t:"Compiladores otimizados maduros",c:0,fb:"Compiladores da época eram rudimentares; parte da motivação do CISC era justamente ajudar código gerado por compiladores fracos."}
+          ]},
+        {p:"O Pentium Pro (1995) é marco de qual fenômeno?",
+          alts:[
+            {t:"Convergência: x86 decodifica instruções CISC em micro-operações RISC internamente",c:1,fb:"Exato! Compatibilidade CISC por fora, núcleo RISC superscalar por dentro. É por isso que RISC versus CISC hoje é mais história do que fronteira técnica."},
+            {t:"O fim do x86 no mercado",c:0,fb:"O contrário: a tradução em micro-ops salvou o x86, unindo compatibilidade e desempenho - e ele domina servidores e PCs até hoje."},
+            {t:"A primeira CPU ARM de 64 bits",c:0,fb:"ARMv8-A (AArch64) só chegou em 2011. Pentium Pro é Intel x86 da família P6."}
+          ]},
+        {p:"Por que o ARM dominou o mercado mobile a partir dos anos 2000?",
+          alts:[
+            {t:"Desempenho por watt superior: pipelines simples e eficientes, ideais para bateria",c:1,fb:"Correto! Em mobile o recurso escasso é energia, não compatibilidade legacy. ARM entrega mais trabalho por joule - por isso iPhone, Android, Apple M e Graviton."},
+            {t:"Porque o x86 não tinha ponto flutuante",c:0,fb:"x86 tem FPU desde o 8087 (1980). A derrota no mobile foi energética e econômica, não aritmética."},
+            {t:"Porque a ARM subsidiava os fabricantes",c:0,fb:"O modelo ARM é de licenciamento com royalties, não subsídio. O sucesso vem de eficiência e ecossistema."}
+          ]}
+      ],
+      aprofundar:[
+        {rotulo:"🔎 Busca no Google (português)",url:"https://www.google.com/search?hl=pt-BR&q=evolu%C3%A7%C3%A3o+dos+conjuntos+de+instru%C3%A7%C3%B5es+impacto+no+desempenho"},
+        {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=evolu%C3%A7%C3%A3o+conjuntos+de+instru%C3%A7%C3%B5es+desempenho+de+sistemas"},
+        {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)",url:"https://www.youtube.com/results?search_query=hist%C3%B3ria+risc+cisc+desempenho+aula"}
+      ],
+      mitoOuVerdade:{
+        afirmacao:"O ranking TOP500 de supercomputadores já foi liderado por um processador ARM.",
+        verdade:true,
+        explicacao:"Verdade: o Fugaku (A64FX, ARM) foi nº 1 em junho de 2020, quebrando décadas de domínio x86 no topo da supercomputação - prova de que eficiência escala até o extremo."
+      }
+    },
+    {
+      id:"aba-5",
+      titulo:"Aplicações: qual ISA em cada mercado",
+      estudoProprio:false,
+      narrativa:"Mobile, servidor, embarcado e HPC: cada mercado elegeu sua ISA por motivos diferentes. Aprenda a regra prática que explica todas essas escolhas.",
+      mundoReal:[
+        "AWS Graviton (ARM) promete até 40 por cento melhor custo-performance em várias cargas de nuvem.",
+        "Nintendo Switch usa Tegra (ARM); ESP32-C3 usa RISC-V; data centers bancários seguem majoritariamente x86 por legado."
+      ],
+      ferramentas:[
+        "lscpu ou cat /proc/cpuinfo: descubra a ISA da sua máquina",
+        "Comparador de preços AWS entre instâncias x86 e Graviton",
+        "docker buildx: gere imagens multi-arch (x86 e ARM) do mesmo código"
+      ],
+      dicionario:[
+        {termo:"SoC",def:"System-on-Chip: CPU, GPU, memória e rádios no mesmo silício; padrão do mundo ARM."},
+        {termo:"Compatibilidade binária",def:"Capacidade de executar binários antigos sem recompilar; grande ativo do x86."},
+        {termo:"Royalty",def:"Taxa por unidade licenciada (modelo ARM); RISC-V elimina essa camada."},
+        {termo:"Tradução binária",def:"Executar binários de outra ISA convertindo instruções em tempo real, como o Rosetta 2."}
+      ],
+      conceitos:[
+        {
+          titulo:"O mapa dos mercados por ISA",
+          texto:"Mobile e wearables: ARM (eficiência). Servidores e nuvem: x86 majoritário com ARM crescendo (Graviton, Cobalt). Embarcado e IoT: ARM Cortex-M, AVR, PIC e RISC-V. HPC: misto, com Fugaku ARM e aceleradores GPU.",
+          analogia:"💡 Transporte: bicicleta para o bairro (watt), caminhão para a mudança (legado), drone para a entrega específica (DSA).",
+          exemploReal:"🌍 Um smartphone tem dezenas de núcleos: ARM para aplicação, RISC-V ou Cortex-M para controle de câmera, rádio e carregamento."
+        },
+        {
+          titulo:"Migração e compatibilidade na prática",
+          texto:"Mudar de ISA exige recompilar, traduzir (Rosetta 2) ou emular (QEMU). Por isso migrações reais são graduais: containers multi-arch, builds duplos e camadas de tradução durante a transição.",
+          analogia:"💡 Mudar de idioma: você pode traduzir ao vivo (emulação), usar intérprete (tradução binária) ou reaprender (recompilar).",
+          exemploReal:"🌍 A transição da Apple para ARM (2020) usou Rosetta 2 por dois anos até que todos os apps importantes tivessem binários nativos."
+        }
+      ],
+      roteiroDemo:{
+        passo0:"Antes de decidir, preveja: qual ISA você escolheria para um sensor vestível com bateria de 1 ano?",
+        passos:[
+          {acao:"Resolva os quatro produtos do comitê",ve:"Feedback imediato explica por que cada escolha falha ou vence",significa:"Compatibilidade manda no legado, eficiência manda na bateria, abertura manda no custom, watt manda no HPC"},
+          {acao:"Revise o placar final",ve:"A regra prática resumida com exemplos reais de mercado",significa:"Escolher ISA é decisão de negócio tanto quanto técnica"}
+        ]
+      },
+      demo:{
+        tipo:"cenario",
+        config:{
+          titulo:"🛒 Comitê de silicon: escolha a ISA de cada produto",
+          cenarios:[
+            {pergunta:"Sensor vestível: bateria de 1 ano, firmware pequeno, custo-alvo de 2 dólares.",
+              opcoes:[
+                {t:"ARM Cortex-M (ou RISC-V mínimo): núcleo simples consumindo microwatts",c:1,fb:"Correto! Em wearables, energia e custo dominam. Cortex-M0/M4 ou núcleos RISC-V mínimos entregam microwatts por MHz - x86 seria absurdo térmico e econômico."},
+                {t:"x86-64 de baixo consumo",c:0,fb:"Mesmo x86 low-power carrega overhead de decode e estados legacy que custam bateria e silício. Errado para microwatts."},
+                {t:"CISC clássico estilo VAX",c:0,fb:"Microcódigo barroco consome área e energia justamente onde não há sobra. Não existe em produto moderno."}
+              ]},
+            {pergunta:"Banco com 30 anos de binários COBOL e C compilados para x86, sem código-fonte completo.",
+              opcoes:[
+                {t:"Manter x86: compatibilidade binária é o ativo crítico",c:1,fb:"Exato! Sem fonte para recompilar, migrar ISA exigiria emulação (perda de desempenho) ou reescrita (risco). Compatibilidade legacy é o critério número 1."},
+                {t:"Migrar tudo para RISC-V pela economia de licença",c:0,fb:"Economia de royalty não paga o risco de re-plataformar binários sem fonte. Migração de ISA exige fonte ou tradução madura."},
+                {t:"Migrar para ARM nativo sem camada de tradução",c:0,fb:"Binários x86 não rodam nativamente em ARM. Sem Rosetta-like ou emulação, o sistema simplesmente não executa."}
+              ]},
+            {pergunta:"Startup de IoT quer extensões custom de criptografia e zero royalty por unidade.",
+              opcoes:[
+                {t:"RISC-V: ISA aberta, extensível e sem royalties",c:1,fb:"Correto! RISC-V reserva espaço de opcodes para extensões custom e não cobra por unidade - ideal para diferenciação em volume gigantesco de IoT."},
+                {t:"ARM com licença de extensão custom",c:0,fb:"ARM não permite instruções custom arbitrárias no ecossistema padrão e cobra royalty por unidade - exatamente o que a startup quer evitar."},
+                {t:"x86 embarcado licenciado",c:0,fb:"x86 não é licenciável para fabricação própria (duopólio Intel e AMD). Inviável para silicon custom de IoT."}
+              ]},
+            {pergunta:"Centro de HPC nacional com teto de energia e meta de desempenho por watt.",
+              opcoes:[
+                {t:"ARM de alto desempenho, estilo Fugaku e Graviton",c:1,fb:"Exato! O Fugaku provou em 2020 que ARM lidera TOP500 com eficiência. Com teto de watt, desempenho por joule decide - e ARM entrega."},
+                {t:"x86 sempre, porque o TOP500 só teve x86",c:0,fb:"O TOP500 de junho de 2020 foi liderado pelo Fugaku (ARM). Sempre x86 ignora a métrica imposta: watt."},
+                {t:"Somente GPU, sem CPU",c:0,fb:"GPU acelera kernels, mas o sistema precisa de CPUs para controle, E/S e código serial. A escolha da ISA de CPU permanece."}
+              ]}
+          ],
+          guia:"Observe a regra prática: compatibilidade manda no legado; eficiência manda na bateria; abertura manda no custom; watt manda no HPC. É assim que Apple, AWS e Espressif decidem."
+        }
+      },
+      quiz:[
+        {p:"Por que instâncias AWS Graviton (ARM) oferecem melhor custo-performance na nuvem?",
+          alts:[
+            {t:"Núcleos ARM simples e eficientes permitem mais cores por watt e por dólar em cargas escaláveis",c:1,fb:"Correto! Eficiência vira densidade: mais vCPUs úteis por rack e por conta de energia. A AWS reporta até 40 por cento de ganho em várias cargas."},
+            {t:"Porque ARM executa binários x86 nativamente",c:0,fb:"ARM não executa x86 nativamente: é preciso recompilar (multi-arch) ou emular. A vantagem vem da eficiência, não de compatibilidade."},
+            {t:"Porque ARM dispensa sistema operacional",c:0,fb:"Graviton roda Linux e Windows on ARM normalmente. ISA não elimina SO."}
+          ]},
+        {p:"Qual é o principal atrativo do RISC-V para produtos de alto volume?",
+          alts:[
+            {t:"ISA aberta e livre de royalties, com espaço para extensões custom",c:1,fb:"Exato! Sem royalty por unidade e com extensões customizáveis, o RISC-V vira o Linux das ISAs - atraente para IoT, storage e silicon próprio."},
+            {t:"Ser a ISA de clock mais alto do mercado",c:0,fb:"Clock depende de implementação, não da ISA. RISC-V não é mais rápido por definição; é aberto e barato de projetar."},
+            {t:"Ter compatibilidade binária com x86",c:0,fb:"RISC-V é ISA própria; binários x86 exigem tradução ou emulação. Não há compatibilidade herdada."}
+          ]},
+        {p:"Por que o x86 ainda domina servidores corporativos apesar da eficiência do ARM?",
+          alts:[
+            {t:"Compatibilidade binária histórica e ecossistema maduro de SO, tools e certificações",c:1,fb:"Correto! Décadas de binários, drivers e certificações ISV tornam a migração cara e arriscada. Compatibilidade é um fosso competitivo real."},
+            {t:"Porque x86 consome menos energia que ARM",c:0,fb:"Em geral vale o oposto em desempenho por watt. A persistência do x86 é ecossistêmica, não energética."},
+            {t:"Porque ARM não suporta virtualização",c:0,fb:"ARMv8 tem extensões de virtualização (EL2) amplamente usadas em KVM e hypervisors comerciais."}
+          ]}
+      ],
+      aprofundar:[
+        {rotulo:"🔎 Busca no Google (português)",url:"https://www.google.com/search?hl=pt-BR&q=aplica%C3%A7%C3%B5es+de+conjuntos+de+instru%C3%A7%C3%B5es+arm+x86+risc-v"},
+        {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=aplica%C3%A7%C3%B5es+e+escolha+de+conjuntos+de+instru%C3%A7%C3%B5es"},
+        {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)",url:"https://www.youtube.com/results?search_query=arm+x86+risc-v+qual+escolher+aula"}
+      ],
+      mitoOuVerdade:{
+        afirmacao:"Binários compilados para x86 rodam nativamente em chips ARM.",
+        verdade:false,
+        explicacao:"Mito: ISAs diferentes exigem recompilação, tradução binária (Rosetta 2) ou emulação (QEMU). Nativo só existe se o binário foi gerado para aquela ISA - por isso containers multi-arch existem."
+      }
+    },
+    {
+      id:"aba-6",
+      titulo:"Considerações técnicas na escolha",
+      estudoProprio:true,
+      narrativa:"Além do mercado: formatos de instrução, modos de endereçamento e densidade de código são os critérios técnicos finos que pesam na escolha de uma ISA.",
+      mundoReal:[
+        "O x86 usa formatos variáveis de 1 a 15 bytes para densidade; MIPS e RISC-V usam 32 bits fixos; ARM Thumb e RISC-V C comprimem para 16 bits.",
+        "Loops sobre vetores usam base mais deslocamento em todas as ISAs: o compilador GCC gera padrões diferentes, mas o endereço efetivo calculado é o mesmo conceito."
+      ],
+      ferramentas:[
+        "objdump -d para medir densidade de código entre ISAs",
+        "riscv.org: especificação oficial com extensões M, A, F, D, C e V",
+        "ARM Developer: documentação de modos de endereçamento e Thumb"
+      ],
+      dicionario:[
+        {termo:"Formato fixo",def:"Todas as instruções com o mesmo tamanho (32 bits em MIPS/RISC-V): decode trivial."},
+        {termo:"Formato variável",def:"Instruções de tamanhos diferentes (1 a 15 bytes no x86): densidade com decode complexo."},
+        {termo:"Endereço efetivo",def:"Endereço final de memória calculado pelo modo de endereçamento."},
+        {termo:"PC-relativo",def:"Endereçamento relativo ao contador de programa; base de desvios e código independente de posição."}
+      ],
+      conceitos:[
+        {
+          titulo:"Critérios técnicos: formato, densidade e decode",
+          texto:"Formato fixo simplifica decode e pipeline (RISC); formato variável aumenta densidade de código (CISC); extensões comprimidas (Thumb, RISC-V C) devolvem densidade ao RISC com 16 bits para as operações frequentes.",
+          analogia:"💡 Malas padronizadas embarcam rápido no avião; malas de todos os tamanhos aproveitam melhor o porta-malas, mas atrasam o check-in.",
+          exemploReal:"🌍 Em microcontroladores com 64 KB de flash, a extensão C do RISC-V pode decidir se o firmware cabe ou não."
+        },
+        {
+          titulo:"Modos de endereçamento como critério de escolha",
+          texto:"Imediato, direto, indireto, registrador, base mais deslocamento, indexado e PC-relativo. CISC oferece muitos modos (até base mais índice vezes escala no x86); RISC oferece poucos e delega combinações ao compilador.",
+          analogia:"💡 Endereços: nome da rua (direto), ponto de referência (base mais deslocamento), entregar ao porteiro (indireto).",
+          exemploReal:"🌍 LW R1, 8(R2) em MIPS, LDR R1, [R2, #8] em ARM e MOV EAX, [EBX+8] em x86 calculam o mesmo endereço efetivo: R[base] mais 8."
+        }
+      ],
+      roteiroDemo:{
+        passo0:"Antes de calcular, preveja: com R2 valendo 1000 e deslocamento 8, qual é o endereço efetivo de LW R1, 8(R2)?",
+        passos:[
+          {acao:"Escolha cada modo de endereçamento",ve:"O endereço efetivo calculado e o dado lido da memória simulada",significa:"Cada modo é uma regra diferente de calcular o mesmo conceito: onde está o operando"},
+          {acao:"Teste o modo indireto",ve:"Dois acessos: buscar o ponteiro e depois o dado",significa:"Indireção custa acesso extra - é o preço da flexibilidade de ponteiros"}
+        ]
+      },
+      demo:{
+        tipo:"ea",
+        config:{
+          titulo:"🧭 Laboratório de endereço efetivo",
+          mem:{"1000":99,"1008":42,"1016":7,"2044":55},
+          modos:[
+            {id:"base",nome:"Base + deslocamento",formula:"EA = R[base] + disp",isas:"MIPS e RISC-V: LW R1, 8(R2); ARM: LDR R1, [R2, #8]; x86: MOV EAX, [EBX+8]"},
+            {id:"index",nome:"Indexado",formula:"EA = R[base] + R[indice]",isas:"x86: MOV EAX, [EBX+ECX]; clássico em vetores e mainframes"},
+            {id:"ind",nome:"Indireto",formula:"EA = M[R[ponteiro]]",isas:"x86: MOV EAX, [EBX] com ponteiro; PDP-11: MOV @(R2)"},
+            {id:"pc",nome:"PC-relativo",formula:"EA = PC + offset",isas:"Desvios BEQ e BNE; ARM: literal pool LDR R0, [PC, #off]"}
+          ],
+          guia:"Observe que o indireto faz dois acessos (ponteiro e dado) e que o PC-relativo dispensa registrador de base: o próprio PC ancora o cálculo, permitindo código independente de posição."
+        }
+      },
+      quiz:[
+        {p:"O modo PC-relativo é essencial principalmente para:",
+          alts:[
+            {t:"Desvios e código independente de posição (PIC e PIE)",c:1,fb:"Correto! O alvo é um offset do PC, então o código funciona carregado em qualquer endereço - base de shared libraries e ASLR moderno."},
+            {t:"Acessar vetores com passo variável",c:0,fb:"Vetores usam indexado ou base mais deslocamento. PC-relativo mede distância de código, não de dados."},
+            {t:"Ler constantes grandes da pilha",c:0,fb:"Constantes grandes podem vir de literal pool com PC-relativo em algumas ISAs, mas o uso definidor é o desvio."}
+          ]},
+        {p:"Qual é o trade-off do formato de instrução variável do x86?",
+          alts:[
+            {t:"Maior densidade de código ao custo de decodificação complexa",c:1,fb:"Exato! Instruções de 1 a 15 bytes economizam memória e cache de instruções, mas transformam o decode em quebra-cabeça - daí os micro-ops do Pentium Pro em diante."},
+            {t:"Decode simples ao custo de código gigante",c:0,fb:"É o inverso: isso descreveria formato fixo sem compressão. Variável significa decode difícil e código denso."},
+            {t:"Nenhum trade-off: é estritamente superior",c:0,fb:"Não existe almoço grátis: densidade versus complexidade de decode é exatamente o trade-off histórico entre CISC e RISC."}
+          ]},
+        {p:"Em MIPS e RISC-V, a instrução ADD R3, R1, R2 acessa a memória de dados?",
+          alts:[
+            {t:"Não: opera apenas em registradores; memória somente via LW e SW",c:1,fb:"Correto! Paradigma load-store: a ALU nunca vê a RAM. Isso mantém o estágio de execução uniforme e o pipeline simples."},
+            {t:"Sim: busca R1 e R2 da memória antes de somar",c:0,fb:"Registradores vivem na CPU, não na RAM. Buscar operandos da memória seria estilo registrador-memória (CISC)."},
+            {t:"Sim, mas apenas em modo kernel",c:0,fb:"Modo kernel muda privilégio, não o paradigma load-store. ADD continua sem acesso à memória em qualquer modo."}
+          ]}
+      ],
+      aprofundar:[
+        {rotulo:"🔎 Busca no Google (português)",url:"https://www.google.com/search?hl=pt-BR&q=modos+de+endere%C3%A7amento+e+formato+de+instru%C3%A7%C3%A3o"},
+        {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=modos+de+endere%C3%A7amento+formatos+de+instru%C3%A7%C3%A3o+isa"},
+        {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)",url:"https://www.youtube.com/results?search_query=modos+de+endere%C3%A7amento+arquitetura+aula"}
+      ],
+      mitoOuVerdade:{
+        afirmacao:"Modos de endereçamento complexos eliminam a necessidade de compiladores inteligentes.",
+        verdade:false,
+        explicacao:"Mito: compiladores modernos geram sequências eficientes mesmo com poucos modos; modos complexos custam decode lento - por isso o RISC delega as combinações ao compilador."
+      }
+    }
+  ],
+  revisao:{
+    mapa:[
+      "1. ISA: contrato e funções — o cardápio entre hardware e software",
+      "2. Tipos: pilha, acumulador, registrador-memória, load-store",
+      "3. RISC vs. CISC — a equação IC x CPI x Tclk",
+      "4. Evolução e impacto — do microcódigo ao power wall",
+      "5. Aplicações — mobile, servidor, IoT e HPC",
+      "6. Considerações técnicas — formatos e endereçamento (estudo próprio)"
+    ],
+    cola:[
+      {termo:"ISA",linha:"contrato visível: instruções, registradores, tipos, endereçamento, exceções"},
+      {termo:"Funções",linha:"processar dados, mover dados, fluxo de controle, controle de sistema"},
+      {termo:"Classes",linha:"pilha (JVM), acumulador (6502), registrador-memória (x86), load-store (ARM/MIPS/RISC-V)"},
+      {termo:"CISC",linha:"instruções complexas e variáveis, microcódigo, densidade de código"},
+      {termo:"RISC",linha:"instruções simples e fixas, load-store, hardwired, pipeline profundo"},
+      {termo:"Equação",linha:"Tempo = IC x CPI x Tclk; CISC ataca IC, RISC ataca CPI e Tclk"},
+      {termo:"1980/82",linha:"Patterson e Séquin popularizam o termo RISC (Berkeley)"},
+      {termo:"1995",linha:"Pentium Pro: x86 vira micro-ops RISC por dentro (convergência)"},
+      {termo:"2007/2020",linha:"power wall mobile (ARM); Fugaku TOP500 e Apple M1 coroam eficiência"},
+      {termo:"Escolha",linha:"compatibilidade no legado, watt na bateria, abertura no custom, watt no HPC"},
+      {termo:"Formatos",linha:"fixo 32 bits (MIPS/RISC-V) versus variável 1-15 bytes (x86) versus comprimido 16 bits (C/Thumb)"},
+      {termo:"Endereçamento",linha:"imediato, direto, indireto, registrador, base+disp, indexado, PC-relativo"}
+    ],
+    desafio:"Sua startup lançará três produtos: P1 tag logística com bateria de 5 anos; P2 appliance de banco de dados para data centers com clientes que exigem binários x86 certificados; P3 acelerador de inferência de IA na borda. Para cada produto: escolha a ISA ou arquitetura, justifique com a equação IC x CPI x Tclk ou com desempenho por watt, cite um caso real análogo e aponte o maior risco da escolha (ecossistema, licença ou compatibilidade)."
+  }
+};
+
+/* =========================================================
+   MOTOR v2.10 — boot seguro, routing file://, esquema rígido
+   ========================================================= */
+var estado = {xp:0,selos:{},quizOk:{},demoOk:{},dark:false,apres:false,abaAtiva:null};
+
+function seloTem(s){return !!estado.selos[s];}
+function seloAdd(s){estado.selos[s]=1;}
+function quizTem(k){return !!estado.quizOk[k];}
+function quizAdd(k){estado.quizOk[k]=1;}
+function demoTem(k){return !!estado.demoOk[k];}
+function demoAdd(k){estado.demoOk[k]=1;}
+
+function carregarEstado(){
+  try{
+    var s = JSON.parse(localStorage.getItem('htaaula03v210')||'{}');
+    estado.xp = s.xp||0;
+    estado.selos = s.selos||{};
+    estado.quizOk = s.quizOk||{};
+    estado.demoOk = s.demoOk||{};
+  }catch(e){}
+}
+function salvarEstado(){
+  try{
+    localStorage.setItem('htaaula03v210',JSON.stringify({xp:estado.xp,selos:estado.selos,quizOk:estado.quizOk,demoOk:estado.demoOk}));
+  }catch(e){}
+}
+function ganhaXP(n,motivo){
+  estado.xp += n;
+  showToast('+'+n+' XP — '+motivo);
+  atualizaProgresso();
+  salvarEstado();
+}
+function adicionaSelo(s){
+  if(!seloTem(s)){
+    seloAdd(s);
+    showToast('🏅 Selo: '+s);
+    atualizaProgresso();
+    salvarEstado();
+  }
+}
+function shuffle(a){
+  var b = a.slice();
+  for(var i=b.length-1;i>0;i--){
+    var j = Math.floor(Math.random()*(i+1));
+    var t = b[i]; b[i]=b[j]; b[j]=t;
+  }
+  return b;
+}
+function esc(s){return String(s);}
+
+function renderTabs(){
+  var nav = document.getElementById('tablist');
+  nav.innerHTML = '';
+  var todas = AULA_DADOS.abas.concat([{id:'revisao',titulo:'Revisão'}]);
+  todas.forEach(function(a,i){
+    var btn = document.createElement('button');
+    btn.setAttribute('role','tab');
+    btn.setAttribute('aria-selected','false');
+    btn.setAttribute('aria-controls',a.id);
+    btn.dataset.id = a.id;
+    btn.innerHTML = (i+1)+'. '+esc(a.titulo)+(a.estudoProprio?'<span class="selo">📖 Estudo próprio</span>':'');
+    btn.addEventListener('click',function(){ ativar(a.id); if(location.hash !== '#'+a.id){ location.hash = a.id; } });
+    btn.addEventListener('keydown',function(e){
+      if(e.key==='ArrowRight'){var n=btn.nextElementSibling||nav.firstElementChild;n.focus();}
+      else if(e.key==='ArrowLeft'){var p=btn.previousElementSibling||nav.lastElementChild;p.focus();}
+      else if(e.key==='Enter'||e.key===' '){e.preventDefault();ativar(a.id);if(location.hash !== '#'+a.id){location.hash=a.id;}}
+    });
+    nav.appendChild(btn);
+  });
+}
+
+function renderMain(){
+  var m = document.getElementById('main');
+  m.innerHTML = '';
+  var pr = document.createElement('div');
+  pr.className='progresso';pr.id='progresso';
+  m.appendChild(pr);
+  AULA_DADOS.abas.forEach(function(a){
+    var sec = document.createElement('section');
+    sec.className='aba';sec.id=a.id;
+    sec.setAttribute('role','tabpanel');
+    sec.innerHTML = renderAba(a);
+    m.appendChild(sec);
+  });
+  var rev = document.createElement('section');
+  rev.className='aba';rev.id='revisao';
+  rev.setAttribute('role','tabpanel');
+  rev.innerHTML = renderRevisao();
+  m.appendChild(rev);
+  atualizaProgresso();
+}
+
+function renderAba(a){
+  var h = '';
+  h += '<div class="missao"><strong>🎯 Missão</strong>'+esc(a.narrativa)+'</div>';
+  h += '<div class="card"><h2>'+esc(a.titulo)+'</h2>';
+  a.conceitos.forEach(function(c){
+    h += '<h3 style="color:var(--cor)">'+esc(c.titulo)+'</h3>';
+    h += '<p>'+esc(c.texto)+'</p>';
+    h += '<div class="obs">'+esc(c.analogia)+'</div>';
+    h += '<div class="preveja" style="font-style:normal">'+esc(c.exemploReal)+'</div>';
+  });
+  h += '<h3 style="color:var(--cor)">🌍 No mundo real</h3><ul>'+a.mundoReal.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>';
+  h += '<h3 style="color:var(--cor)">🧰 Ferramentas para explorar</h3><ul>'+a.ferramentas.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>';
+  h += '</div>';
+  h += '<div class="demo" id="demo-'+a.id+'">';
+  h += '<h3>🧪 Demo: '+esc(a.demo.config.titulo)+'</h3>';
+  h += '<div class="preveja">💭 '+esc(a.roteiroDemo.passo0)+'</div>';
+  h += '<div class="instru">📋 <strong>INSTRUÇÕES PASSO A PASSO:</strong><ol style="margin:6px 0 0 18px">';
+  a.roteiroDemo.passos.forEach(function(p){ h += '<li>'+esc(p.acao)+'</li>'; });
+  h += '</ol></div>';
+  h += '<details class="conc"><summary>🎬 Roteiro do apresentador (o que ver e o que significa)</summary><ul>';
+  a.roteiroDemo.passos.forEach(function(p){ h += '<li><strong>'+esc(p.acao)+'</strong> → 👀 '+esc(p.ve)+' → 💭 '+esc(p.significa)+'</li>'; });
+  h += '</ul></details>';
+  h += '<div id="demo-area-'+a.id+'"></div>';
+  if(a.demo.config.guia){ h += '<div class="obs">👀 <strong>O que observar:</strong> '+esc(a.demo.config.guia)+'</div>'; }
+  h += '<button class="btn sec" data-restart="'+a.id+'">🔄 Reiniciar demo</button> ';
+  h += demoTem(a.id) ? '<span class="selo-chip">✓ Demo concluída</span>' : '<button class="btn" data-done="'+a.id+'">✓ Concluí a demo</button>';
+  h += '</div>';
+  h += '<div class="mito"><h4>🎭 Mito ou verdade?</h4><p>'+esc(a.mitoOuVerdade.afirmacao)+'</p><div data-mito="'+a.id+'"></div></div>';
+  h += '<details class="lex"><summary>📘 Mini-dicionário</summary><ul>'+a.dicionario.map(function(l){return '<li><strong>'+esc(l.termo)+':</strong> '+esc(l.def)+'</li>';}).join('')+'</ul></details>';
+  h += '<details class="links"><summary>🔗 Aprofundar (3 buscas em português)</summary><ul>'+a.aprofundar.map(function(l){return '<li><a href="'+l.url+'" target="_blank" rel="noopener">'+esc(l.rotulo)+'</a></li>';}).join('')+'</ul></details>';
+  h += '<div class="card"><h2>📝 Quiz — 3 perguntas</h2>';
+  a.quiz.forEach(function(q,i){ h += renderQuiz(a.id,i,q); });
+  h += '</div>';
+  h += a.estudoProprio
+    ? '<div class="rota"><strong>🏠 Rota em casa:</strong> esta aba é estudo próprio. Em sala, o professor percorre as abas 1–5.</div>'
+    : '<div class="rota"><strong>🎤 Roteiro do apresentador:</strong> 6 min nesta aba. Passo 0: lance a previsão da demo; depois demo 2 min e feche com o quiz.</div>';
+  return h;
+}
+
+function renderQuiz(abaId,idx,q){
+  var key = abaId+'-'+idx;
+  var misturadas = shuffle(q.alts);
+  var h = '<div class="quiz-perg" data-key="'+key+'" data-aba="'+abaId+'"><h4>Pergunta '+(idx+1)+'. '+esc(q.p)+'</h4><div class="alts">';
+  misturadas.forEach(function(alt){
+    h += '<button class="alt" data-c="'+(alt.c?1:0)+'" data-fb="'+esc(alt.fb).replace(/"/g,'&quot;')+'">'+esc(alt.t)+'</button>';
+  });
+  h += '</div><div class="fb" id="fb-'+key+'"></div></div>';
+  return h;
+}
+
+function renderRevisao(){
+  var r = AULA_DADOS.revisao;
+  var h = '<div class="missao"><strong>🎯 Revisão final</strong>Do contrato da ISA ao endereço efetivo: o espectro completo dos conjuntos de instruções.</div>';
+  h += '<div class="card"><h2>🗺️ Mapa da aula</h2><div class="revisao-mapa">';
+  r.mapa.forEach(function(s){ h += '<div class="no">'+esc(s)+'</div>'; });
+  h += '</div></div>';
+  h += '<div class="card"><h2>🧾 Cola rápida</h2><div class="cola">';
+  r.cola.forEach(function(c){ h += '<b>'+esc(c.termo)+'</b> → '+esc(c.linha)+'<br>'; });
+  h += '</div></div>';
+  h += '<div class="chefao"><h3>👹 Chefão — o desafio final</h3><p><strong>'+esc(r.desafio)+'</strong></p>';
+  h += '<textarea id="chefaoResp" rows="8" style="width:100%;padding:10px;border-radius:8px;border:2px solid #ffd54f;font-family:inherit;font-size:1rem" placeholder="P1, P2 e P3: ISA + justificativa + caso real + risco."></textarea><br>';
+  h += '<button class="btn" id="chefaoBtn">🏆 Entregar parecer</button><div id="chefaoFb" style="margin-top:10px"></div></div>';
+  return h;
+}
+
+/* ---------- interação: quiz ---------- */
+function ligarQuiz(root){
+  root.querySelectorAll('.quiz-perg').forEach(function(p){
+    p.querySelectorAll('.alt').forEach(function(btn){
+      btn.addEventListener('click',function(){ respQuiz(btn); });
+    });
+  });
+}
+function respQuiz(btn){
+  var p = btn.closest('.quiz-perg');
+  var key = p.dataset.key;
+  var abaId = p.dataset.aba;
+  var fb = btn.dataset.fb;
+  var c = btn.dataset.c === '1';
+  var fbd = p.querySelector('.fb');
+  if(c){
+    btn.classList.add('certa');
+    btn.innerHTML = '✓ '+btn.innerHTML;
+    p.querySelectorAll('.alt').forEach(function(b){b.disabled=true;});
+    fbd.className='fb ok';
+    fbd.innerHTML='✅ <strong>Por que esta está certa:</strong> '+fb;
+    if(!quizTem(key)){
+      var wasRetry = sessionStorage.getItem(key+'-retry');
+      quizAdd(key);
+      ganhaXP(wasRetry?5:10, wasRetry?'Acerto no retry!':'Acerto de primeira!');
+      sessionStorage.removeItem(key+'-retry');
+      verificarAbaCompleta(abaId);
+      salvarEstado();
+    }
+  } else {
+    btn.classList.add('errada');
+    btn.innerHTML = '✗ '+btn.innerHTML;
+    btn.disabled = true;
+    fbd.className='fb bad';
+    fbd.innerHTML='❌ <strong>Por que esta está errada:</strong> '+fb+'<br><em>🔁 Tente outra alternativa.</em>';
+    if(!quizTem(key)){ sessionStorage.setItem(key+'-retry','1'); }
+  }
+}
+function verificarAbaCompleta(abaId){
+  var aba = null;
+  AULA_DADOS.abas.forEach(function(a){ if(a.id===abaId) aba=a; });
+  if(!aba) return;
+  var todas = aba.quiz.every(function(q,i){ return quizTem(abaId+'-'+i); });
+  if(todas && demoTem(abaId)){
+    adicionaSelo(aba.titulo.substring(0,25));
+  }
+}
+
+/* ---------- interação: mito ou verdade ---------- */
+function ligarMito(root){
+  root.querySelectorAll('[data-mito]').forEach(function(box){
+    var abaId = box.dataset.mito;
+    var aba = null;
+    AULA_DADOS.abas.forEach(function(a){ if(a.id===abaId) aba=a; });
+    var m = aba.mitoOuVerdade;
+    function desenha(msg){
+      box.innerHTML = '<button class="btn" data-v="1" style="background:#2e7d32">✅ Verdade</button>'+
+        '<button class="btn" data-v="0" style="background:#c62828">🚫 Mito</button>'+
+        '<div class="fbbox" style="margin-top:8px">'+(msg||'')+'</div>';
+      box.querySelectorAll('button').forEach(function(b){
+        b.addEventListener('click',function(){
+          var escolha = b.dataset.v === '1';
+          if(escolha === m.verdade){
+            box.innerHTML = '<div class="fb ok">'+(m.verdade?'✅ <strong>Verdade!</strong>':'✅ <strong>Isso é MITO!</strong>')+' '+esc(m.explicacao)+'</div>';
+          } else {
+            b.disabled = true;
+            b.classList.add('errada');
+            box.querySelector('.fbbox').innerHTML = '<div class="fb bad">❌ Não é por aí. '+ (escolha?'Você marcou verdade, mas pense de novo.':'Você marcou mito, mas pense de novo.')+' <em>🔁 Tente a outra opção.</em></div>';
+          }
+        });
+      });
+    }
+    desenha('');
+  });
+}
+
+/* ---------- demos por tipo ---------- */
+function renderDemo(aba){
+  var area = document.getElementById('demo-area-'+aba.id);
+  if(!area) return;
+  area.innerHTML = '';
+  var cfg = aba.demo.config;
+  var tipo = aba.demo.tipo;
+  if(tipo==='funcoes') demoFuncoes(area,cfg);
+  else if(tipo==='maquinas') demoMaquinas(area,cfg);
+  else if(tipo==='ladolado') demoLadoLado(area,cfg);
+  else if(tipo==='linha') demoLinha(area,cfg);
+  else if(tipo==='cenario') demoCenario(area,cfg);
+  else if(tipo==='ea') demoEA(area,cfg);
+}
+
+function demoFuncoes(area,cfg){
+  var wrap = document.createElement('div');
+  function desenha(sel){
+    var g = sel!==null ? cfg.grupos[sel] : null;
+    var h = '<div style="display:flex;gap:6px;flex-wrap:wrap">';
+    cfg.grupos.forEach(function(gr,i){
+      h += '<button class="btn" data-g="'+i+'" style="background:'+(sel===i?'var(--cor)':'#6c757d')+'">'+esc(gr.nome)+'</button>';
+    });
+    h += '</div>';
+    h += '<div style="margin-top:8px"><span class="watch">R1=<b>'+cfg.registradores.R1+'</b></span><span class="watch">R2=<b>'+cfg.registradores.R2+'</b></span><span class="watch">R3=<b>'+(g&&g.watch.indexOf('R3=')===0?g.watch.split('=')[1]:cfg.registradores.R3)+'</b></span><span class="watch">PC=<b>'+cfg.registradores.PC+'</b></span></div>';
+    if(g){
+      h += '<pre class="code" style="cursor:default">'+esc(g.ex)+'</pre>';
+      h += '<div class="fb ok" style="display:block">👀 '+esc(g.efeito)+'</div>';
+    } else {
+      h += '<div style="padding:10px;background:#fff;border-radius:8px;border:1px solid var(--borda);margin-top:8px"><em>Clique em uma função para ver a instrução e o efeito na CPU.</em></div>';
+    }
+    wrap.innerHTML = h;
+    wrap.querySelectorAll('[data-g]').forEach(function(b){
+      b.addEventListener('click',function(){ desenha(+b.dataset.g); });
+    });
+  }
+  area.appendChild(wrap);
+  desenha(null);
+}
+
+function demoMaquinas(area,cfg){
+  var wrap = document.createElement('div');
+  function desenha(){
+    var h = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">';
+    cfg.maquinas.forEach(function(m,i){ h += '<button class="btn" data-m="'+i+'" style="background:#455a64">'+esc(m.nome)+'</button>'; });
+    h += '</div><div id="mq-reveal" style="margin-top:12px;padding:14px;border-radius:8px;background:#fff;border-left:5px solid var(--cor);min-height:120px"><em>👆 Clique em uma máquina para ver o programa de (a+b)*c e os contadores.</em></div>';
+    wrap.innerHTML = h;
+    wrap.querySelectorAll('[data-m]').forEach(function(b){
+      b.addEventListener('click',function(){
+        var m = cfg.maquinas[+b.dataset.m];
+        wrap.querySelector('#mq-reveal').innerHTML =
+          '<strong>'+esc(m.nome)+'</strong><pre class="code" style="cursor:default">'+m.prog.map(function(p,i){return ('0'+(i+1)).slice(-2)+'  '+esc(p);}).join('\n')+'</pre>'+
+          '<span class="watch">instruções: <b>'+m.inst+'</b></span><span class="watch">acessos mem: <b>'+m.mem+'</b></span><span class="watch">código: <b>'+esc(m.bytes)+'</b></span>'+
+          '<div style="margin-top:8px;font-size:.92rem">💡 '+esc(m.nota)+'</div>';
+      });
+    });
+  }
+  area.appendChild(wrap);
+  desenha();
+}
+
+function demoLadoLado(area,cfg){
+  var wrap = document.createElement('div');
+  var px=0, pm=0;
+  function desenha(){
+    var fimX = px>=cfg.esq.linhas.length, fimM = pm>=cfg.dir.linhas.length;
+    var h = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+    h += '<div><strong style="color:var(--cor)">'+esc(cfg.esq.nome)+'</strong><pre class="code">'+cfg.esq.linhas.map(function(l,i){return '<span class="ln '+(i<px?'done':i===px?'cur':'')+'">'+esc(l)+'</span>';}).join('')+'</pre></div>';
+    h += '<div><strong style="color:var(--cor)">'+esc(cfg.dir.nome)+'</strong><pre class="code">'+cfg.dir.linhas.map(function(l,i){return '<span class="ln '+(i<pm?'done':i===pm?'cur':'')+'">'+esc(l)+'</span>';}).join('')+'</pre></div>';
+    h += '</div>';
+    h += '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="ll-step" '+((fimX&&fimM)?'disabled':'')+'>▶ Próximo passo</button><button class="btn sec" id="ll-reset">🔄 Zerar</button></div>';
+    h += '<div style="margin-top:8px"><span class="watch">x86: <b>'+Math.min(px,cfg.esq.linhas.length)+'/'+cfg.esq.linhas.length+'</b> instr · <b>'+Math.min(px,cfg.esq.mem)+'</b> mem</span><span class="watch">MIPS: <b>'+Math.min(pm,cfg.dir.linhas.length)+'/'+cfg.dir.linhas.length+'</b> instr · <b>'+Math.min(pm,cfg.dir.mem)+'</b> mem</span></div>';
+    if(fimX&&fimM){
+      h += '<div style="margin-top:10px;padding:10px;background:#d4edda;border-radius:6px;border-left:5px solid var(--ok)">✅ Fim: x86 usou '+cfg.esq.linhas.length+' instruções e '+cfg.esq.mem+' memórias em '+esc(cfg.esq.bytes)+'; MIPS usou '+cfg.dir.linhas.length+' instruções e '+cfg.dir.mem+' memórias em '+esc(cfg.dir.bytes)+'. Em CPUs reais (Apple M, Graviton, Xeon), a diferença decisiva aparece no CPI do pipeline.</div>';
+    }
+    wrap.innerHTML = h;
+    wrap.querySelector('#ll-reset').addEventListener('click',function(){px=0;pm=0;desenha();});
+    var st = wrap.querySelector('#ll-step');
+    if(st) st.addEventListener('click',function(){
+      if(px<cfg.esq.linhas.length) px++;
+      if(pm<cfg.dir.linhas.length) pm++;
+      desenha();
+    });
+  }
+  area.appendChild(wrap);
+  desenha();
+}
+
+function demoLinha(area,cfg){
+  var wrap = document.createElement('div');
+  var i = 0;
+  function desenha(){
+    var e = cfg.eras[i];
+    var h = '<div style="padding:14px;background:#fff;border-radius:8px;border:2px solid var(--cor)">';
+    h += '<div style="font-size:1.2rem;font-weight:700;color:var(--cor)">'+esc(e.ano)+'</div>';
+    h += '<div style="font-size:1.05rem;font-weight:600;margin:4px 0">'+esc(e.nome)+'</div>';
+    h += '<div>📈 <strong>Impacto no desempenho:</strong> '+esc(e.impacto)+'</div></div>';
+    h += '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn sec" id="ln-prev" '+(i===0?'disabled':'')+'>← Era anterior</button><button class="btn" id="ln-next">'+(i===cfg.eras.length-1?'🔄 Recomeçar':'Próxima era →')+'</button></div>';
+    h += '<div style="margin-top:8px;font-size:.85rem;color:var(--muted)">Era '+(i+1)+' de '+cfg.eras.length+'</div>';
+    wrap.innerHTML = h;
+    wrap.querySelector('#ln-prev').addEventListener('click',function(){ if(i>0){i--;desenha();} });
+    wrap.querySelector('#ln-next').addEventListener('click',function(){ i=(i===cfg.eras.length-1)?0:i+1; desenha(); });
+  }
+  area.appendChild(wrap);
+  desenha();
+}
+
+function demoCenario(area,cfg){
+  var wrap = document.createElement('div');
+  var atual = 0;
+  function desenha(){
+    if(atual>=cfg.cenarios.length){
+      wrap.innerHTML = '<div style="padding:14px;background:#d4edda;border-radius:8px;border-left:5px solid var(--ok)">✅ <strong>Portfólio aprovado!</strong> Você aplicou a regra: compatibilidade no legado, eficiência na bateria, abertura no custom e watt no HPC. É assim que Apple, AWS e Espressif decidem.</div>';
+      return;
+    }
+    var c = cfg.cenarios[atual];
+    var h = '<div style="padding:14px;background:#fff;border-radius:8px;border:2px solid var(--cor);margin-bottom:10px"><strong>Produto '+(atual+1)+'/'+cfg.cenarios.length+':</strong><br><br>'+esc(c.pergunta)+'</div>';
+    h += '<div style="display:flex;flex-direction:column;gap:8px">';
+    c.opcoes.forEach(function(o,i){ h += '<button class="alt" data-i="'+i+'">'+esc(o.t)+'</button>'; });
+    h += '</div><div id="cn-fb" style="margin-top:10px"></div>';
+    wrap.innerHTML = h;
+    wrap.querySelectorAll('.alt').forEach(function(btn){
+      btn.addEventListener('click',function(){
+        var o = c.opcoes[+btn.dataset.i];
+        var fb = document.createElement('div');
+        fb.className = 'fb '+(o.c?'ok':'bad');
+        fb.innerHTML = (o.c?'✅':'❌')+' '+esc(o.fb);
+        if(o.c){
+          fb.innerHTML += '<br><button class="btn" style="margin-top:8px">Próximo produto →</button>';
+          wrap.querySelectorAll('.alt').forEach(function(x){x.disabled=true;});
+          fb.querySelector('button').addEventListener('click',function(){atual++;desenha();});
+        } else {
+          btn.disabled = true;
+          fb.innerHTML += '<br><em>🔁 As outras opções continuam na mesa. Tente de novo!</em>';
+        }
+        wrap.appendChild(fb);
+      });
+    });
+  }
+  area.appendChild(wrap);
+  desenha();
+}
+
+function demoEA(area,cfg){
+  var wrap = document.createElement('div');
+  var st = {modo:'base', base:1000, idx:16, disp:8, pc:2048, off:-4, ptr:1000};
+  function desenha(){
+    var h = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">';
+    cfg.modos.forEach(function(m){ h += '<button class="btn" data-m="'+m.id+'" style="background:'+(st.modo===m.id?'var(--cor)':'#6c757d')+'">'+esc(m.nome)+'</button>'; });
+    h += '</div>';
+    h += '<div style="padding:10px;background:#fff;border-radius:8px;border:1px solid var(--borda)">';
+    h += '<label>R[base]=<input type="number" id="e-base" value="'+st.base+'" style="width:90px"></label> ';
+    h += '<label>R[indice]=<input type="number" id="e-idx" value="'+st.idx+'" style="width:90px"></label> ';
+    h += '<label>disp=<input type="number" id="e-disp" value="'+st.disp+'" style="width:80px"></label> ';
+    h += '<label>PC=<input type="number" id="e-pc" value="'+st.pc+'" style="width:90px"></label> ';
+    h += '<label>offset=<input type="number" id="e-off" value="'+st.off+'" style="width:80px"></label> ';
+    h += '<label>R[ponteiro]=<input type="number" id="e-ptr" value="'+st.ptr+'" style="width:90px"></label></div>';
+    var resultado='';
+    if(st.modo==='ind'){
+      var p1 = cfg.mem[String(st.ptr)];
+      resultado = (p1===undefined) ? ('M['+st.ptr+'] fora do mapa: ponteiro inválido') : ('1º acesso: M['+st.ptr+'] = '+p1+' (ponteiro) → EA = '+p1+'; 2º acesso: M['+p1+'] = '+(cfg.mem[String(p1)]!==undefined?cfg.mem[String(p1)]:'(fora do mapa)'));
+    } else {
+      var e = (st.modo==='pc') ? st.pc+st.off : (st.modo==='index' ? st.base+st.idx : st.base+st.disp);
+      resultado = 'EA = '+e+' → '+(cfg.mem[String(e)]!==undefined?('dado M['+e+'] = '+cfg.mem[String(e)]):('M['+e+'] fora do mapa simulado'));
+    }
+    var modo = null;
+    cfg.modos.forEach(function(m){ if(m.id===st.modo) modo=m; });
+    h += '<div style="margin-top:10px;padding:12px;background:#f3e5f5;border-radius:8px;border-left:5px solid var(--cor)">🧮 '+resultado+'<br><span style="font-size:.85rem">Fórmula: '+esc(modo.formula)+'</span></div>';
+    h += '<div style="margin-top:8px;font-size:.9rem">🌍 <strong>Onde aparece:</strong> '+esc(modo.isas)+'</div>';
+    wrap.innerHTML = h;
+    wrap.querySelectorAll('[data-m]').forEach(function(b){ b.addEventListener('click',function(){ st.modo=b.dataset.m; desenha(); }); });
+    function bind(id,k){ var el=wrap.querySelector(id); if(el) el.addEventListener('input',function(ev){ st[k]=+ev.target.value||0; desenha(); }); }
+    bind('#e-base','base');bind('#e-idx','idx');bind('#e-disp','disp');bind('#e-pc','pc');bind('#e-off','off');bind('#e-ptr','ptr');
+  }
+  area.appendChild(wrap);
+  desenha();
+}
+
+/* ---------- boot, ativação e routing ---------- */
+function ativar(id){
+  var alvo = document.getElementById(id) ? id : AULA_DADOS.abas[0].id;
+  document.querySelectorAll('section.aba').forEach(function(s){ s.classList.toggle('ativa', s.id===alvo); });
+  document.querySelectorAll('nav.tabs button').forEach(function(b){
+    b.setAttribute('aria-selected', b.dataset.id===alvo ? 'true':'false');
+  });
+  estado.abaAtiva = alvo;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function hashAtual(){
+  var h = location.hash.replace('#','');
+  return h || AULA_DADOS.abas[0].id;
+}
+function ligarBotoesGerais(root){
+  root.querySelectorAll('[data-restart]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var id = b.dataset.restart;
+      var aba = null;
+      AULA_DADOS.abas.forEach(function(a){ if(a.id===id) aba=a; });
+      renderDemo(aba);
+      showToast('🔄 Demo reiniciada');
+    });
+  });
+  root.querySelectorAll('[data-done]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var id = b.dataset.done;
+      if(!demoTem(id)){
+        demoAdd(id);
+        ganhaXP(5,'Demo concluída');
+        verificarAbaCompleta(id);
+        salvarEstado();
+        var span = document.createElement('span');
+        span.className='selo-chip';
+        span.textContent='✓ Demo concluída';
+        b.replaceWith(span);
+      }
+    });
+  });
+}
+function entregarChefao(){
+  var t = (document.getElementById('chefaoResp').value||'').trim();
+  var fb = document.getElementById('chefaoFb');
+  if(t.length<180){
+    fb.className='fb bad';fb.style.display='block';
+    fb.innerHTML='❌ Resposta muito curta. Cubra os 3 produtos com ISA, justificativa, caso real e risco.';return;
+  }
+  var lower = t.toLowerCase();
+  var pontos = 0;
+  if(/(risc-v|cortex|arm).{0,120}(watt|bateria|energia)|(watt|bateria|energia).{0,120}(risc-v|cortex|arm)/.test(lower)) pontos++;
+  if(/x86/.test(lower) && /compat|certific|bin[áa]rio|legado/.test(lower)) pontos++;
+  if(/dsa|npu|tpu|vetorial|extens/.test(lower)) pontos++;
+  if(/ic\s*[x×*]\s*cpi|cpi|tclk|por watt|desempenho\/watt/.test(lower)) pontos++;
+  if(/graviton|apple|fugaku|esp32|western|tpu|npu|switch/.test(lower)) pontos++;
+  fb.style.display='block';
+  if(pontos>=4){
+    fb.className='fb ok';
+    fb.innerHTML='✅ <strong>Parecer aprovado!</strong> Você cobriu '+pontos+'/5 critérios. Ganhou 50 XP e o selo Arquiteto de ISAs.';
+    ganhaXP(50,'Chefão concluído');
+    adicionaSelo('Arquiteto de ISAs');
+  } else {
+    fb.className='fb bad';
+    fb.innerHTML='❌ Você cobriu apenas '+pontos+'/5 critérios. Reveja: P1 ARM ou RISC-V por watt, P2 x86 por compatibilidade, P3 DSA ou vetorial, equação IC x CPI x Tclk, casos reais (Graviton, Fugaku, ESP32).';
+  }
+}
+
+function showToast(msg){
+  var t = document.getElementById('toast');
+  if(!t){
+    t = document.createElement('div');
+    t.id='toast';
+    t.style.cssText='position:fixed;bottom:20px;right:20px;background:#263238;color:#fff;padding:12px 18px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.3);z-index:200;font-weight:600;opacity:0;transition:opacity .3s';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity='1';
+  clearTimeout(t._tm);
+  t._tm = setTimeout(function(){t.style.opacity='0';},2200);
+}
+function atualizaProgresso(){
+  var pr = document.getElementById('progresso');
+  if(!pr) return;
+  var chips = Object.keys(estado.selos).map(function(s){return '<span class="selo-chip">'+esc(s)+'</span>';}).join('');
+  pr.innerHTML = '<span>⭐ XP: <span class="xp">'+estado.xp+'</span></span><span>🏅 Selos:</span><span class="selos">'+(chips||'<em style="color:var(--muted)">conquiste ao completar demos e quizzes</em>')+'</span>';
+}
+
+/* ---------- init ---------- */
+carregarEstado();
+renderTabs();
+renderMain();
+AULA_DADOS.abas.forEach(function(a){ renderDemo(a); });
+ligarQuiz(document.getElementById('main'));
+ligarMito(document.getElementById('main'));
+ligarBotoesGerais(document.getElementById('main'));
+var cb = document.getElementById('chefaoBtn');
+if(cb) cb.addEventListener('click',entregarChefao);
+document.getElementById('btnDark').addEventListener('click',function(){
+  estado.dark = !estado.dark;
+  document.body.classList.toggle('dark',estado.dark);
+  document.getElementById('btnDark').textContent = estado.dark?'☀️':'🌙';
+});
+document.getElementById('btnApres').addEventListener('click',function(){
+  estado.apres = !estado.apres;
+  document.body.classList.toggle('apresentacao',estado.apres);
+  document.getElementById('btnApres').textContent = estado.apres?'📖':'';
+  if(estado.apres){
+    document.body.classList.remove('dark');
+    estado.dark=false;
+    document.getElementById('btnDark').textContent='🌙';
+    var r = document.createElement('div');
+    r.className='rota-apres';r.id='rotaApres';
+    r.innerHTML = '🎤 <strong>Modo Apresentação:</strong> use ← → para navegar. Roteiro: 6 min por aba (1–5); Passo 0 = previsão da demo. Aba 6 é estudo próprio.';
+    document.body.appendChild(r);
+  } else {
+    var r2 = document.getElementById('rotaApres');
+    if(r2) r2.remove();
+  }
+});
+document.addEventListener('keydown',function(e){
+  if(!estado.apres) return;
+  var ids = AULA_DADOS.abas.map(function(a){return a.id;}).concat(['revisao']);
+  var idx = ids.indexOf(estado.abaAtiva);
+  if(e.key==='ArrowRight' && idx<ids.length-1){ ativar(ids[idx+1]); location.hash = ids[idx+1]; e.preventDefault(); }
+  else if(e.key==='ArrowLeft' && idx>0){ ativar(ids[idx-1]); location.hash = ids[idx-1]; e.preventDefault(); }
+});
+window.addEventListener('hashchange',function(){ ativar(hashAtual()); });
+/* CARGA INICIAL: exatamente UM painel ativo */
+ativar(hashAtual());
+</script>
+</body>
+</html>
