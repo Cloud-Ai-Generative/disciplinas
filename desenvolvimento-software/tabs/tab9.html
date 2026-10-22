@@ -2944,7 +2944,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
   senha VARCHAR(255) NOT NULL,
 
   -- Data de criação do usuário
-  criado_em DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  CriadoEm DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
 
   -- Índice único no login para evitar duplicados
   UNIQUE INDEX ix_usuarios_login (login)
@@ -2952,7 +2952,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
 
 -- Seed: usuário admin inicial
 -- Login: admin / Senha: admin123
-INSERT INTO usuarios (id, login, nome, senha, criado_em)
+INSERT INTO usuarios (id, login, nome, senha, CriadoEm)
 VALUES (UUID(), 'admin', 'Administrador', 'admin123', UTC_TIMESTAMP());
 
 -- ──────────────────────────────────────────────────────────────
@@ -2997,10 +2997,10 @@ CREATE TABLE IF NOT EXISTS pedidos (
   usuario VARCHAR(200) NOT NULL,
 
   -- Id do cliente (contexto Clientes)
-  cliente_id INT NOT NULL,
+  ClienteId INT NOT NULL,
 
   -- Id do endereço de entrega (contexto Clientes)
-  endereco_id INT NOT NULL,
+  EnderecoId INT NOT NULL,
 
   -- Status do pedido (CRIADO, RESERVADO, CONFIRMADO, ENVIADO, CANCELADO)
   status VARCHAR(20) NOT NULL DEFAULT 'CRIADO'
@@ -3008,28 +3008,23 @@ CREATE TABLE IF NOT EXISTS pedidos (
 
 -- Tabela de itens do pedido (owned entity do EF Core)
 CREATE TABLE IF NOT EXISTS pedido_itens (
-  -- FK para o pedido
-  pedido_id INT NOT NULL,
-
-  -- Id do item dentro do pedido (auto-incremento por pedido)
-  id INT NOT NULL AUTO_INCREMENT,
-
-  -- Id do produto (contexto Catálogo)
-  produto_id INT NOT NULL,
-
-  -- Quantidade
-  quantidade INT NOT NULL,
-
-  -- Snapshot do preço no momento do checkout
-  preco_unitario DECIMAL(10,2) NOT NULL,
-
-  -- Chave primária composta
-  PRIMARY KEY (pedido_id, id),
-
-  -- FK para pedidos
-  CONSTRAINT fk_pedido_itens_pedido
-    FOREIGN KEY (pedido_id) REFERENCES pedidos(id)
-    ON DELETE CASCADE
+-- Id auto-incremento (PRECISA ser a 1ª coluna do índice no InnoDB)
+Id INT NOT NULL AUTO_INCREMENT,
+-- FK para o pedido
+PedidoId INT NOT NULL,
+-- Id do produto (contexto Catálogo)
+ProdutoId INT NOT NULL,
+-- Quantidade
+Quantidade INT NOT NULL,
+-- Snapshot do preço no momento do checkout
+PrecoUnitario DECIMAL(10,2) NOT NULL,
+-- Chave primária simples (Id); unicidade do par garantida pelo índice
+PRIMARY KEY (Id),
+-- Índice p/ join e FK
+INDEX ix_pedido_itens_pedido (PedidoId),
+CONSTRAINT fk_pedido_itens_pedido
+FOREIGN KEY (PedidoId) REFERENCES pedidos(id)
+ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ──────────────────────────────────────────────────────────────
@@ -3070,11 +3065,11 @@ CREATE TABLE IF NOT EXISTS enderecos (
   cep VARCHAR(9) NOT NULL,
 
   -- FK para o cliente
-  cliente_id INT NOT NULL,
+  ClienteId INT NOT NULL,
 
   -- FK para clientes
   CONSTRAINT fk_enderecos_cliente
-    FOREIGN KEY (cliente_id) REFERENCES clientes(id)
+	FOREIGN KEY (ClienteId) REFERENCES clientes(id)
     ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -3082,7 +3077,7 @@ CREATE TABLE IF NOT EXISTS enderecos (
 INSERT INTO clientes (nome, email, ativo) VALUES
 ('Ana Souza', 'ana@example.com', 1);
 
-INSERT INTO enderecos (logradouro, cidade, uf, cep, cliente_id) VALUES
+INSERT INTO enderecos (logradouro, cidade, uf, cep, ClienteId) VALUES
 ('Rua A, 123', 'São Paulo', 'SP', '01001-000', 1);</pre>
 </div>
 
