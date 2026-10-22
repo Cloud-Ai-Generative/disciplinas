@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<!--
+  HTMLearning v2.10 (23/10/2026) — Autor: Professor Wellington Dimas da Cruz
+  · cloud.ai-generative@outlook.com · github.com/cloud-ai-Generative · lattes.cnpq.br/6801791839011321
+  Disciplina: Segurança e Auditoria de Sistemas — Aula 3, Unidade 1, págs. 58 a 83
+  Título: Mitigação, Resposta a Incidentes e Políticas
+  Abas: 6 de conteúdo (5 em sala + 1 estudo próprio) + 1 Revisão
+  Cor destaque: #d84315
+  Professor(a) da disciplina informado: Wellington Cruz (demais subcampos não fornecidos — omitidos com elegância).
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aula 03 — Mitigação, Resposta a Incidentes e Políticas</title>
+<style>
+:root{
+  --cor:#d84315;
+  --cor-forte:#9f0000;
+  --cor-suave:#fbe9e7;
+  --fundo:#fdfdfd;
+  --texto:#1a1a1a;
+  --painel:#ffffff;
+  --borda:#d9d9d9;
+  --muted:#555;
+  --ok:#2e7d32;
+  --erro:#c62828;
+  --fonte:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --tam:18px;
+}
+*{box-sizing:border-box}
+body.dark{
+  --fundo:#121212;--texto:#e8e8e8;--painel:#1e1e1e;--borda:#333;
+  --muted:#b0b0b0;--cor-suave:#3a1408;--suave2:#232323;
+}
+html,body{margin:0;padding:0;background:var(--fundo);color:var(--texto);font-family:var(--fonte);font-size:var(--tam);line-height:1.55}
+header.topo{
+  position:sticky;top:0;z-index:100;background:var(--cor);color:#fff;
+  padding:10px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;
+  box-shadow:0 2px 6px rgba(0,0,0,.15)
+}
+header.topo h1{font-size:1.1rem;margin:0;font-weight:700}
+header.topo .meta{font-size:.85rem;opacity:.95}
+.acoes{display:flex;gap:6px;flex-wrap:wrap}
+.acoes button{
+  background:#fff;color:var(--cor);border:none;padding:6px 10px;border-radius:6px;
+  cursor:pointer;font-weight:600;font-size:.85rem
+}
+.acoes button:hover{background:var(--cor-suave)}
+nav.tabs{
+  position:sticky;top:56px;z-index:90;background:var(--painel);
+  border-bottom:2px solid var(--borda);overflow-x:auto;white-space:nowrap;
+  scrollbar-width:thin
+}
+nav.tabs button{
+  font-family:var(--fonte);font-size:var(--tam);background:transparent;color:var(--texto);
+  border:none;padding:12px 16px;cursor:pointer;border-bottom:4px solid transparent;
+  margin:0;font-weight:600;opacity:.75
+}
+nav.tabs button:hover{opacity:1}
+nav.tabs button[aria-selected="true"]{
+  color:var(--cor);border-bottom-color:var(--cor);opacity:1;
+  background:var(--painel);
+}
+nav.tabs button .selo{font-size:.7rem;background:var(--cor);color:#fff;padding:1px 5px;border-radius:8px;margin-left:6px;vertical-align:middle}
+main{max-width:980px;margin:0 auto;padding:20px}
+section.aba{display:none;animation:fade .3s ease}
+section.aba.ativa{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.card{background:var(--painel);border:2px solid var(--borda);border-radius:12px;padding:18px 20px;margin-bottom:18px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.card h2{margin-top:0;color:var(--cor);font-size:1.3rem;border-bottom:2px dashed var(--borda);padding-bottom:6px}
+.card h3{color:var(--cor);font-size:1.1rem;margin-top:14px;margin-bottom:6px}
+.missao{
+  background:linear-gradient(135deg,var(--cor),var(--cor-forte));color:#fff;
+  padding:16px 18px;border-radius:10px;margin-bottom:18px;font-weight:500
+}
+.missao strong{display:block;font-size:1.1rem;margin-bottom:4px}
+.demo{
+  background:var(--suave2, #fef0ec);border:2px solid var(--cor);border-radius:10px;
+  padding:16px;margin:18px 0
+}
+body.dark .demo{background:#3a1408}
+.demo h3{color:var(--cor);margin-top:0}
+.instru{
+  background:#fff8e1;border-left:5px solid #ffa000;padding:10px 14px;border-radius:6px;margin:10px 0;font-size:.95rem
+}
+body.dark .instru{background:#3a2d10}
+.preveja{
+  background:#e8f5e9;border-left:5px solid var(--ok);padding:10px 14px;border-radius:6px;
+  margin:10px 0;font-style:italic
+}
+body.dark .preveja{background:#1e3a1e}
+.obs{
+  background:#e3f2fd;border-left:5px solid #1976d2;padding:10px 14px;border-radius:6px;margin:10px 0;font-size:.95rem
+}
+body.dark .obs{background:#153047}
+button.btn{
+  background:var(--cor);color:#fff;border:none;padding:9px 16px;border-radius:8px;
+  cursor:pointer;font-weight:600;font-family:var(--fonte);font-size:.95rem;margin:4px 4px 4px 0
+}
+button.btn:hover{filter:brightness(1.15)}
+button.btn.sec{background:#6c757d}
+button.btn:disabled{opacity:.5;cursor:not-allowed}
+.quiz-perg{border:2px solid var(--borda);border-radius:10px;padding:14px;margin:12px 0;background:var(--painel)}
+.quiz-perg h4{margin:0 0 10px;color:var(--texto)}
+.quiz-perg .alts{display:flex;flex-direction:column;gap:8px}
+.alt{
+  text-align:left;background:var(--fundo);border:2px solid var(--borda);border-radius:8px;
+  padding:10px 14px;cursor:pointer;font-family:var(--fonte);font-size:1rem;
+  transition:all .2s
+}
+.alt:hover:not(:disabled){border-color:var(--cor);background:var(--cor-suave)}
+.alt:disabled{cursor:not-allowed;opacity:.85}
+.alt.certa{background:#d4edda;border-color:var(--ok);color:#155724}
+.alt.errada{background:#f8d7da;border-color:var(--erro);color:#721c24}
+body.dark .alt.certa{background:#1e3a1e;color:#a8e6a8}
+body.dark .alt.errada{background:#3a1e1e;color:#ffb3b3}
+.fb{margin-top:10px;padding:10px 14px;border-radius:8px;font-size:.95rem;display:none}
+.fb.ok{background:#d4edda;border-left:5px solid var(--ok);color:#155724;display:block}
+.fb.bad{background:#f8d7da;border-left:5px solid var(--erro);color:#721c24;display:block}
+body.dark .fb.ok{background:#1e3a1e;color:#a8e6a8}
+body.dark .fb.bad{background:#3a1e1e;color:#ffb3b3}
+details{background:var(--suave2,#fafafa);border:1px solid var(--borda);border-radius:8px;padding:8px 12px;margin:10px 0}
+body.dark details{background:#222}
+details summary{cursor:pointer;font-weight:600;color:var(--cor)}
+details[open] summary{margin-bottom:8px}
+details.lex{background:#fff3e0;border-color:#ffb74d}
+details.links{background:#e8f5e9;border-color:#81c784}
+details.links a{color:var(--cor);font-weight:600}
+details.conc{background:#ffebee;border-color:#e57373}
+body.dark details.conc{background:#3a1e1e}
+.mito{background:var(--painel);border:2px dashed var(--cor);border-radius:10px;padding:14px;margin:14px 0}
+.mito h4{margin:0 0 8px;color:var(--cor)}
+.progresso{
+  background:var(--painel);border:2px solid var(--borda);border-radius:10px;
+  padding:10px 14px;margin-bottom:14px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:.95rem
+}
+.xp{background:var(--cor);color:#fff;padding:3px 10px;border-radius:20px;font-weight:700}
+.selos{display:flex;gap:6px;flex-wrap:wrap}
+.selo-chip{background:var(--cor-suave);color:var(--cor);padding:3px 8px;border-radius:20px;font-size:.8rem;font-weight:600}
+.rota{
+  background:#e0f7fa;border-left:5px solid #0097a7;padding:10px 14px;border-radius:6px;
+  margin:10px 0;font-size:.9rem
+}
+body.dark .rota{background:#0c2d33;color:#b3e5fc}
+body.apresentacao{font-size:22px}
+body.apresentacao nav.tabs button{font-size:22px}
+body.apresentacao .rota-apres{
+  position:fixed;bottom:0;left:0;right:0;background:#263238;color:#fff;
+  padding:14px 20px;font-size:1.05rem;box-shadow:0 -2px 8px rgba(0,0,0,.25);z-index:50
+}
+.revisao-mapa{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.revisao-mapa .no{
+  border:2px solid var(--cor);border-radius:8px;padding:10px;background:var(--cor-suave)
+}
+.revisao-mapa .no strong{color:var(--cor)}
+.cola{background:#fff3cd;border-left:5px solid #ffc107;padding:12px 16px;border-radius:8px;font-size:.95rem}
+body.dark .cola{background:#3a2d10;color:#ffd980}
+.cola b{color:var(--cor)}
+.chefao{
+  background:linear-gradient(135deg,#263238,#37474f);color:#fff;padding:18px;border-radius:12px;margin-top:18px
+}
+.chefao h3{color:#ffd54f;margin-top:0}
+.chefao button{background:#ffd54f;color:#263238}
+.watch{
+  display:inline-block;padding:6px 12px;margin:3px;border-radius:8px;background:#fff;
+  border:2px solid var(--borda);font-family:"Courier New",monospace;font-size:.95rem
+}
+.watch b{color:var(--cor)}
+.celula{
+  padding:10px 6px;border-radius:6px;text-align:center;cursor:pointer;border:2px solid transparent;
+  font-family:var(--fonte);font-size:.82rem;font-weight:600;min-height:44px
+}
+.celula:hover{border-color:#263238}
+.celula.hdr{background:transparent;cursor:default;font-weight:700;color:var(--texto)}
+.timeline{
+  border-left:4px solid var(--cor);padding-left:16px;margin:10px 0
+}
+.timeline .ev{
+  padding:8px 12px;background:#fff;border-radius:8px;border:1px solid var(--borda);margin-bottom:8px
+}
+.timeline .ev.active{border-color:var(--cor);background:var(--cor-suave)}
+.timeline .ev strong{color:var(--cor)}
+.slider{display:flex;flex-direction:column;gap:4px;margin:6px 0}
+.slider label{font-weight:600}
+.slider input[type=range]{width:100%}
+.checklist{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.checklist label{
+  display:flex;gap:10px;align-items:flex-start;padding:10px;background:#fff;
+  border-radius:8px;border:1px solid var(--borda);cursor:pointer
+}
+.checklist input{width:20px;height:20px;margin-top:2px}
+.barra{height:24px;border-radius:6px;background:#eceff1;overflow:hidden;margin:4px 0}
+.barra > div{height:100%;display:flex;align-items:center;padding-left:8px;color:#fff;font-size:.82rem;font-weight:700;white-space:nowrap}
+footer.ficha{
+  max-width:980px;margin:30px auto;padding:16px 20px;color:var(--muted);font-size:.8rem;line-height:1.7
+}
+footer.ficha hr{border:none;border-top:1px solid var(--borda);margin-bottom:10px}
+footer.ficha a{color:var(--cor)}
+@media(max-width:600px){
+  main{padding:12px}
+  .card{padding:14px}
+  header.topo h1{font-size:.95rem}
+}
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div>
+    <h1>🛡️ Aula 03 — Mitigação, Resposta a Incidentes e Políticas</h1>
+    <div class="meta">Segurança e Auditoria de Sistemas • Unidade 1 • págs. 58 a 83</div>
+  </div>
+  <div class="acoes">
+    <button id="btnApres" title="Modo Apresentação">🎤</button>
+    <button id="btnDark" title="Modo Escuro">🌙</button>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist" id="tablist" aria-label="Abas da aula"></nav>
+
+<main id="main"></main>
+
+<footer class="ficha">
+  <hr>
+  <div>📋 Ficha técnica · Segurança e Auditoria de Sistemas — Aula 3, Unidade 1, págs. 58–83 · Gerado em 23/10/2026 · 6 abas · 18 perguntas · 6 demos · cor #d84315</div>
+  <div>🎓 Professor(a): Wellington Cruz</div>
+  <div>🎓 HTMLearning v2.10 (23/10/2026) — Autor: Professor Wellington Dimas da Cruz · e-mail: <a href="mailto:cloud.ai-generative@outlook.com">cloud.ai-generative@outlook.com</a> · GitHub: <a href="https://github.com/cloud-ai-Generative" target="_blank" rel="noopener">github.com/cloud-ai-Generative</a> · Lattes: <a href="https://lattes.cnpq.br/6801791839011321" target="_blank" rel="noopener">lattes.cnpq.br/6801791839011321</a></div>
+</footer>
+
+<script>
+/* =========================================================
+   AULA_DADOS — esquema v2.10 (campos obrigatórios por aba)
+   ========================================================= */
+var AULA_DADOS = {
+  disciplina:"Segurança e Auditoria de Sistemas",
+  aula:"3",
+  unidade:"Unidade 1",
+  paginas:"58 a 83",
+  titulo:"Mitigação, Resposta a Incidentes e Políticas",
+  cor:"#d84315",
+  professor:{nome:"Wellington Cruz"},
+  abas:[
+    {
+      id:"aba-1",
+      titulo:"Gestão de riscos e vulnerabilidades",
+      estudoProprio:false,
+      narrativa:"Retomamos o ciclo de gestão de riscos agora com foco em vulnerabilidades e no cálculo que decide onde investir primeiro: risco = ameaça x vulnerabilidade x impacto.",
+      mundoReal:[
+        "O CVE-2021-44228 (Log4Shell) atingiu milhões de sistemas Java em 2021; empresas que tinham inventário de ativos priorizaram a correção em horas, não semanas.",
+        "A ANPD (Autoridade Nacional de Proteção de Dados) aplica multas com base na exposição real da vulnerabilidade — o cálculo de risco é peça de defesa jurídica."
+      ],
+      ferramentas:[
+        "Nessus e OpenVAS: scanners automatizados de vulnerabilidades",
+        "NVD (National Vulnerability Database): catálogo público de CVEs com CVSS",
+        "OWASP ZAP: scanner gratuito de vulnerabilidades em aplicações web"
+      ],
+      dicionario:[
+        {termo:"Vulnerabilidade",def:"Fraqueza técnica, processual ou humana que pode ser explorada por uma ameaça."},
+        {termo:"Ameaça",def:"Evento ou agente capaz de explorar uma vulnerabilidade e causar dano."},
+        {termo:"CVSS",def:"Common Vulnerability Scoring System: nota de 0 a 10 que padroniza severidade."},
+        {termo:"Risco residual",def:"Risco remanescente após a aplicação dos controles de mitigação."}
+      ],
+      conceitos:[
+        {
+          titulo:"A equação fundamental do risco",
+          texto:"Risco = ameaça x vulnerabilidade x impacto. Três fatores se multiplicam: se qualquer um é zero, o risco é zero. Mitigar é atacar um dos três.",
+          analogia:"💡 Uma casa com porta trancada (vulnerabilidade reduzida) num bairro sem ladrões (ameaça zero) não tem risco, mesmo com jóias dentro.",
+          exemploReal:"🌍 O CVE-2021-44228 tinha CVSS 10.0 (impacto crítico), explorabilidade trivial e exposição global — risco máximo. Servidores isolados tinham o mesmo CVE, mas risco baixo."
+        },
+        {
+          titulo:"Do inventário à priorização",
+          texto:"Sem inventário de ativos (hardware, software, dados), não há como medir vulnerabilidade. O passo zero é saber o que existe; o passo seguinte é medir o risco; o terceiro é tratar.",
+          analogia:"💡 Não se pode proteger uma casa cujas portas você não sabe onde estão — primeiro mapear, depois trancar.",
+          exemploReal:"🌍 O Colonial Pipeline (2021) foi invadido por uma VPN com senha vazada e sem MFA: o inventário de acessos externos era fraco, a priorização falhou."
+        }
+      ],
+      roteiroDemo:{
+        passo0:"Antes de mexer nos sliders, preveja: se um sistema crítico tem vulnerabilidade alta mas está isolado da internet, o risco calculado é alto ou baixo?",
+        passos:[
+          {acao:"Ajuste ameaça, vulnerabilidade e impacto",ve:"O score de risco é recalculado e o tratamento sugerido muda",significa:"Mitigar é atacar um dos três fatores; isolamento reduz ameaça, patch reduz vulnerabilidade, backup reduz impacto"},
+          {acao:"Compare dois cenários: exposto x isolado",ve:"Mesmo CVE produz riscos muito diferentes conforme exposição",significa:"CVSS sozinho não decide prioridade: exposição e valor do ativo também contam"}
+        ]
+      },
+      demo:{
+        tipo:"risco",
+        config:{
+          titulo:"🧮 Calculadora de risco: ameaça x vulnerabilidade x impacto",
+          guia:"Observe que o tratamento sugerido muda conforme o score: aceitar (baixo), mitigar (médio/alto) ou evitar/transferir (extremo). É assim que comitês de risco decidem onde investir."
+        }
+      },
+      quiz:[
+        {p:"Na fórmula Risco = ameaça x vulnerabilidade x impacto, zerar qual fator elimina o risco?",
+          alts:[
+            {t:"Qualquer um dos três — se qualquer fator for zero, o produto é zero",c:1,fb:"Correto! Por isso isolamento (ameaça zero), patch (vulnerabilidade zero) ou descontinuação (impacto zero) são tratamentos legítimos e eficazes."},
+            {t:"Somente a vulnerabilidade — os outros não importam",c:0,fb:"Os três fatores se multiplicam. Uma vulnerabilidade crítica num sistema isolado (ameaça zero) produz risco zero."},
+            {t:"Somente o impacto — os demais continuam agindo",c:0,fb:"Impacto zero anula o produto, mas não é o único caminho. Os três fatores são simétricos na equação."}
+          ]},
+        {p:"O CVE-2021-44228 (Log4Shell) tinha CVSS 10.0. Isso significa que:",
+          alts:[
+            {t:"A severidade é crítica (máxima), mas o risco real depende também da exposição e do valor do ativo",c:1,fb:"Exato! CVSS mede severidade intrínseca, não risco. Um servidor Java exposto à internet tem risco máximo; o mesmo CVE em sistema isolado tem risco baixo."},
+            {t:"Todas as empresas com Log4j foram invadidas automaticamente",c:0,fb:"CVSS não mede exploração real, apenas facilidade e impacto potenciais. Muitas empresas corrigiram antes de qualquer invasão."},
+            {t:"O CVSS substitui a análise de riscos corporativa",c:0,fb:"CVSS é insumo da análise, não a análise completa. Exposição, valor do ativo e apetite corporativo também decidem."}
+          ]},
+        {p:"O primeiro passo prático de um programa de gestão de vulnerabilidades é:",
+          alts:[
+            {t:"Inventariar ativos (hardware, software, dados) para saber o que existe e onde está",c:1,fb:"Correto! Sem inventário não há como varrer, corrigir ou priorizar. O ditado é antigo: não se protege o que não se conhece."},
+            {t:"Contratar um antivírus corporativo caro",c:0,fb:"Antivírus trata sintoma, não causa. Sem inventário, o antivírus fica cego para ativos desconhecidos."},
+            {t:"Fazer backup de tudo imediatamente",c:0,fb:"Backup é controle de disponibilidade, não de vulnerabilidade. E backup sem inventário vira caos de restauração."}
+          ]}
+      ],
+      aprofundar:[
+        {rotulo:"🔎 Busca no Google (português)",url:"https://www.google.com/search?hl=pt-BR&q=gest%C3%A3o+de+riscos+e+vulnerabilidades+seguran%C3%A7a+da+informa%C3%A7%C3%A3o"},
+        {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=gest%C3%A3o+de+vulnerabilidades+cvss+invent%C3%A1rio+de+ativos"},
+        {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)",url:"https://www.youtube.com/results?search_query=gest%C3%A3o+de+vulnerabilidades+cvss+aula"}
+      ],
+      mitoOuVerdade:{
+        afirmacao:"Um CVE crítico (CVSS 10.0) em um servidor sem internet e sem dados sensíveis ainda é prioridade máxima.",
+        verdade:false,
+        explicacao:"Mito: severidade é apenas um fator. Exposição zero e impacto baixo reduzem o risco real a nível aceitável. Prioridade depende do risco, não só do CVSS."
+      }
+    },
+    {
+      id:"aba-2",
+      titulo:"Estratégias de mitigação",
+      estudoProprio:false,
+      narrativa:"Uma vez medido o risco, quatro estratégias estão disponíveis: mitigar, transferir, aceitar ou evitar. Saber escolher é o que separa um gestor de um apostador.",
+      mundoReal:[
+        "Após o ataque ao Colonial Pipeline (2021), o mercado de seguro cyber subiu prêmios e exigiu MFA como pré-requisito — transferir ficou mais caro para quem não mitiga.",
+        "Empresas como Google e AWS publicam relatórios de transparência mostrando riscos aceitos conscientemente e os controles aplicados."
+      ],
+      ferramentas:[
+        "ISO/IEC 27005: norma internacional de gestão de riscos de SI",
+        "Matriz de riscos 5x5: artefato padrão em comitês executivos",
+        "Apólices de seguro cyber com cláusulas de controles mínimos"
+      ],
+      dicionario:[
+        {termo:"Mitigar",def:"Reduzir probabilidade ou impacto do risco com controles técnicos ou processuais."},
+        {termo:"Transferir",def:"Passar o impacto financeiro a terceiros (seguro, cláusulas contratuais)."},
+        {termo:"Aceitar",def:"Assumir o risco conscientemente com registro formal da decisão."},
+        {termo:"Evitar",def:"Eliminar a atividade que gera o risco (descontinuar sistema, sair de mercado)."}
+      ],
+      conceitos:[
+        {
+          titulo:"As quatro estratégias clássicas",
+          texto:"Mitigar ataca o risco com controles; transferir passa o impacto financeiro a terceiros; aceitar registra a decisão de conviver com o risco; evitar elimina a atividade que gera o risco.",
+          analogia:"💡 Dirigir com risco de acidente: mitigar é cinto e airbag; transferir é seguro; aceitar é saber que o risco existe; evitar é não dirigir.",
+          exemploReal:"🌍 Após o ataque à Knight Capital (2012, US$ 440 mi em 45 min), seguradoras elevaram prêmios e exigiram controles explícitos — transferir sem mitigar virou inviável."
+        },
+        {
+          titulo:"Defesa em profundidade",
+          texto:"Nenhum controle único é perfeito. A estratégia madura empilha controles complementares: prevenção, detecção e resposta, em camadas distintas.",
+          analogia:"💡 Castelo medieval: muro, fosso, portão, torre de vigia e guarda interna — cada camada atrasa ou impede um tipo diferente de invasão.",
+          exemploReal:"🌍 Um banco combina firewall (prevenção), IDS/SIEM (detecção), backups imutáveis (resposta) e seguro cyber (transferência) — cada camada cobre o que a anterior falha."
+        }
+      ],
+      roteiroDemo:{
+        passo0:"Antes de explorar, preveja: qual estratégia zera o risco de verdade (reduz a zero)?",
+        passos:[
+          {acao:"Clique em cada uma das quatro estratégias",ve:"Definição, exemplo real e em qual situação ela é a escolha ideal",significa:"Cada estratégia ataca uma dimensão diferente; a escolha depende do apetite e do custo do controle"},
+          {acao:"Compare mitigar com evitar",ve:"Mitigar reduz, evitar elimina",significa:"Eliminar atividade tem custo de negócio — por isso evitar é raro e só cabe quando o risco excede muito o valor da atividade"}
+        ]
+      },
+      demo:{
+        tipo:"mitigacao",
+        config:{
+          titulo:"🎯 Galeria das quatro estratégias de tratamento",
+          guia:"Observe que as quatro estratégias são complementares, não excludentes: um mesmo risco pode ser parcialmente mitigado, parcialmente transferido (seguro) e ter um residual aceito documentado."
+        }
+      },
+      quiz:[
+        {p:"Contratar um seguro cyber com cobertura de R$ 20 milhões é qual estratégia?",
+          alts:[
+            {t:"Transferir — o impacto financeiro passa à seguradora",c:1,fb:"Correto! Transferência move a consequência financeira a terceiros. Não reduz probabilidade do incidente, apenas seu impacto econômico."},
+            {t:"Mitigar — o seguro previne o ataque",c:0,fb:"Seguro não previne ataque algum: ele indeniza após o fato. Probabilidade do incidente segue igual."},
+            {t:"Evitar — elimina o risco",c:0,fb:"A atividade continua operando; evitar seria descontinuá-la. O risco persiste, apenas o impacto financeiro migrou."}
+          ]},
+        {p:"Qual é a ÚNICA estratégia que reduz o risco a zero?",
+          alts:[
+            {t:"Evitar — eliminar a atividade que gera o risco",c:1,fb:"Exato! Descontinuar um sistema vulnerável, sair de um mercado perigoso ou encerrar um processo eliminam o risco na raiz. É o único tratamento que zera."},
+            {t:"Mitigar com controles fortes",c:0,fb:"Mitigar reduz, mas nunca zera. Sempre sobra risco residual — e é ele que a auditoria verifica."},
+            {t:"Transferir com seguro amplo",c:0,fb:"Transferir move o impacto financeiro, mas o incidente ainda ocorre. O risco operacional continua existindo."}
+          ]},
+        {p:"Defesa em profundidade significa:",
+          alts:[
+            {t:"Empilhar controles complementares de prevenção, detecção e resposta em camadas",c:1,fb:"Correto! Cada camada cobre falhas da anterior: firewall + IDS + backup + seguro + plano de resposta. Quando uma falha, outra segura."},
+            {t:"Investir todo o orçamento em um único controle caro",c:0,fb:"Um único controle, mesmo excelente, cria ponto único de falha. Profundidade exige diversidade de mecanismos."},
+            {t:"Treinar somente a equipe de segurança, ignorando usuários",c:0,fb:"Profundidade inclui pessoas, processos e tecnologia. Usuários são camada crítica (phishing, senhas) e não podem ser ignorados."}
+          ]}
+      ],
+      aprofundar:[
+        {rotulo:"🔎 Busca no Google (português)",url:"https://www.google.com/search?hl=pt-BR&q=estrat%C3%A9gias+de+mitiga%C3%A7%C3%A3o+de+riscos+de+seguran%C3%A7a"},
+        {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=tratamento+de+riscos+seguran%C3%A7a+informa%C3%A7%C3%A3o+iso+27005"},
+        {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)",url:"https://www.youtube.com/results?search_query=mitigar+transferir+aceitar+evitar+risco+aula"}
+      ],
+      mitoOuVerdade:{
+        afirmacao:"Mitigar um risco com controles técnicos elimina completamente o risco residual.",
+        verdade:false,
+        explicacao:"Mito: sempre sobra risco residual. Controles reduzem probabilidade ou impacto, mas nunca zeram ambos. A auditoria verifica se o residual está dentro do apetite declarado."
+      }
+    },
+    {
+      id:"aba-3",
+      titulo:"Resposta a incidentes",
+      estudoProprio:false,
+      narrativa:"Quando o controle falha, o plano de resposta entra em ação. Um incidente bem gerenciado custa 10x menos que um gerenciado no improviso.",
+      mundoReal:[
+        "O ataque ao Hospital das Clínicas de São Paulo (2023) paralisou cirurgias por semanas; a resposta coordenada com o CERT.br reduziu o tempo de recuperação.",
+        "A Uber em 2022 foi invadida por MFA fatigue: o atacante cansou o usuário com notificações até ele aprovar o acesso — e o plano de resposta detectou tarde demais."
+      ],
+      ferramentas:[
+        "NIST SP 800-61: guia oficial de resposta a incidentes de computador",
+        "SIEM (Splunk, Elastic, Wazuh): agrega logs para detecção",
+        "Tabletop exercises: simulações de incidente em sala com a liderança"
+      ],
+      dicionario:[
+        {termo:"Incidente",def:"Evento adverso que compromete confidencialidade, integridade ou disponibilidade."},
+        {termo:"CSIRT",def:"Computer Security Incident Response Team: equipe dedicada à resposta."},
+        {termo:"Containment",def:"Contenção: limitar o alcance do atacante antes da erradicação."},
+        {termo:"Lessons learned",def:"Lições aprendidas: revisão pós-incidente que atualiza controles."}
+      ],
+      conceitos:[
+        {
+          titulo:"As seis fases do NIST SP 800-61",
+          texto:"Preparação, identificação, contenção, erradicação, recuperação e lições aprendidas. O ciclo se fecha quando as lições atualizam os controles de preparação — melhoria contínua.",
+          analogia:"💡 Corpo de bombeiros: treina antes (preparação), detecta o incêndio (identificação), isola a área (contenção), apaga (erradicação), restabelece (recuperação) e aprende (lições).",
+          exemploReal:"🌍 O CERT.br (Centro de Estudos, Resposta e Tratamento de Incidentes no Brasil) segue exatamente esse ciclo ao responder a incidentes nacionais."
+        },
+        {
+          titulo:"Contenção antes da erradicação",
+          texto:"O erro mais comum é correr para apagar o malware antes de isolar a rede. O atacante ainda ativo usa o apagão de evidências para fugir e voltar. Contenção primeiro, depois erradicação.",
+          analogia:"💡 Ladrão dentro de casa: trancar os cômodos antes de chamar a polícia — não sair gritando que ele está lá.",
+          exemploReal:"🌍 No incidente da Target (2013), a falta de contenção rápida permitiu que o atacante acessasse 40 milhões de cartões por semanas antes da detecção."
+        }
+      ],
+      roteiroDemo:{
+        passo0:"Antes de avançar, preveja: qual fase deve vir ANTES da erradicação para preservar evidências?",
+        passos:[
+          {acao:"Percorra as seis fases com Próxima fase",ve:"Cada fase mostra ações típicas, artefatos produzidos e um caso real análogo",significa:"A ordem importa: contenção antes de erradicação, recuperação depois de limpar o ambiente"},
+          {acao:"Compare dois cenários: com e sem plano prévio",ve:"Tempo de detecção, contenção e recuperação diferem em horas ou semanas",significa:"Plano testado (tabletop) reduz drasticamente o tempo e o custo do incidente"}
+        ]
+      },
+      demo:{
+        tipo:"incidente",
+        config:{
+          titulo:"🚨 Linha do tempo: as seis fases do NIST SP 800-61",
+          guia:"Observe que a fase de lições aprendidas alimenta a preparação do próximo ciclo — é aí que o plano melhora. Sem essa fase, a organização repete o mesmo erro."
+        }
+      },
+      quiz:[
+        {p:"Qual é a ordem correta das fases do NIST SP 800-61?",
+          alts:[
+            {t:"Preparação, identificação, contenção, erradicação, recuperação, lições aprendidas",c:1,fb:"Correto! Essa ordem reflete a lógica operacional: preparar, perceber, limitar o dano, eliminar a causa, restaurar e aprender."},
+            {t:"Identificação, erradicação, preparação, contenção, recuperação, lições aprendidas",c:0,fb:"Erradicar antes de conter permite que o atacante fuja e destrua evidências. Contenção vem primeiro."},
+            {t:"Preparação, contenção, identificação, recuperação, erradicação, lições aprendidas",c:0,fb:"Conter antes de identificar é agir no escuro. Identificar vem antes de conter para saber o que conter."}
+          ]},
+        {p:"Por que a fase de contenção deve vir ANTES da erradicação?",
+          alts:[
+            {t:"Para limitar o alcance do atacante e preservar evidências antes de remover o malware",c:1,fb:"Exato! Isolar hosts e redes corta o canal do atacante; apagar o malware sem isolamento permite reinfecção e destruição de logs."},
+            {t:"Porque a erradicação é a fase mais cara",c:0,fb:"Custo não define a ordem. A ordem é técnica: conter antes para preservar evidências e limitar propagação."},
+            {t:"Porque a contenção é opcional em incidentes pequenos",c:0,fb:"Contenção é obrigatória em qualquer incidente. Incidentes pequenos podem crescer sem contenção adequada."}
+          ]},
+        {p:"A fase de lições aprendidas produz:",
+          alts:[
+            {t:"Atualização dos controles de preparação e do plano, fechando o ciclo de melhoria contínua",c:1,fb:"Correto! O relatório pós-incidente gera novos controles, treinamento e revisões do plano. Sem lições, o próximo incidente repete o mesmo roteiro."},
+            {t:"Apenas um relatório formal para a diretoria, sem efeito prático",c:0,fb:"Relatório sem ação é teatro. O valor das lições é justamente mudar a preparação e os controles."},
+            {t:"Punição dos responsáveis pelo incidente",c:0,fb:"Cultura de culpa mata a transparência: ninguém reporta incidentes se for punido. Lições aprendidas focam em sistema, não em culpados."}
+          ]}
+      ],
+      aprofundar:[
+        {rotulo:"🔎 Busca no Google (português)",url:"https://www.google.com/search?hl=pt-BR&q=resposta+a+incidentes+de+seguran%C3%A7a+nist+800-61"},
+        {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=resposta+a+incidentes+csirt+gest%C3%A3o+de+crise"},
+        {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)",url:"https://www.youtube.com/results?search_query=resposta+a+incidentes+conten%C3%A7%C3%A3o+erradica%C3%A7%C3%A3o+aula"}
+      ],
+      mitoOuVerdade:{
+        afirmacao:"A primeira ação em um incidente confirmado deve ser apagar imediatamente o malware detectado.",
+        verdade:false,
+        explicacao:"Mito: apagar sem conter destrói evidências e permite reinfecção. A ordem correta é conter (isolar), preservar logs, erradicar e então recuperar. Pressa errada custa caro."
+      }
+    },
+    {
+      id:"aba-4",
+      titulo:"Políticas de segurança da informação",
+      estudoProprio:false,
+      narrativa:"Política é a lei interna da organização: o documento que traduz princípios de segurança em regras aplicáveis a todos, do estagiário ao CEO.",
+      mundoReal:[
+        "A LGPD (Lei 13.709/2018) exige que controladores demonstrem medidas técnicas e administrativas — políticas documentadas são a primeira evidência.",
+        "A ISO/IEC 27001 exige política de segurança aprovada pela alta direção como requisito para certificação."
+      ],
+      ferramentas:[
+        "ISO/IEC 27001: norma internacional de sistemas de gestão de SI",
+        "Modelo de política do SANS Institute (templates gratuitos)",
+        "Confluence ou Notion: repositórios vivos de políticas com versionamento"
+      ],
+      dicionario:[
+        {termo:"Política",def:"Documento formal de alto nível que estabelece princípios e regras de segurança."},
+        {termo:"Procedimento",def:"Passo a passo detalhado que implementa uma política em tarefas operacionais."},
+        {termo:"Diretriz (guideline)",def:"Recomendação não obrigatória que orienta boas práticas."},
+        {termo:"Aprovação da alta direção",def:"Assinatura executiva que dá força normativa à política."}
+      ],
+      conceitos:[
+        {
+          titulo:"Por que políticas são obrigatórias",
+          texto:"Sem política documentada e aprovada, não há base para exigir comportamento seguro, aplicar sanções ou demonstrar conformidade à LGPD e à ISO 27001.",
+          analogia:"💡 Uma cidade sem código de obras: cada um constrói como quer e ninguém responde quando o prédio cai.",
+          exemploReal:"🌍 A multa da ANPD ao Serasa (2024) considerou a ausência de políticas de controle de acesso como agravante — políticas são prova de governança."
+        },
+        {
+          titulo:"Hierarquia: política, norma, procedimento, diretriz",
+          texto:"Política é o alto nível (o quê e por quê); norma detalha regras; procedimento é o passo a passo; diretriz é recomendação. Juntas formam a pirâmide documental da segurança.",
+          analogia:"💡 Constituição, leis, decretos e manuais: cada nível desce o detalhe, mas o topo dá autoridade.",
+          exemploReal:"🌍 Um banco tem política de senhas (exigir MFA), norma técnica (padrão FIDO2), procedimento (como cadastrar a chave) e diretriz (usar gerenciador de senhas)."
+        }
+      ],
+      roteiroDemo:{
+        passo0:"Antes de testar, preveja: a senha 123456 é rejeitada por qualquer política séria — mas qual cláusula específica a barra?",
+        passos:[
+          {acao:"Teste diferentes senhas no validador de política",ve:"Cada cláusula que a senha viola é destacada em vermelho com a regra correspondente",significa:"Políticas bem escritas são testáveis: cada cláusula vira um check automático"},
+          {acao:"Ajuste os parâmetros da política",ve:"O mesmo password passa ou falha conforme o rigor configurado",significa:"Política é escolha de negócio: rigor alto em sistemas críticos, médio em sistemas comuns"}
+        ]
+      },
+      demo:{
+        tipo:"politica",
+        config:{
+          titulo:"🔐 Validador: teste senhas contra uma política corporativa",
+          guia:"Observe que políticas bem estruturadas são automáticas: cada cláusula vira um check. Senhas que passam no validador ainda podem ser vazadas — por isso a política exige MFA como segunda camada."
+        }
+      },
+      quiz:[
+        {p:"Por que a LGPD exige políticas documentadas?",
+          alts:[
+            {t:"Como evidência de que o controlador adota medidas técnicas e administrativas adequadas",c:1,fb:"Correto! Políticas documentadas provam governança. A ANPD aplica multas menores quando há evidência de programa de segurança estruturado."},
+            {t:"Porque políticas substituem a necessidade de criptografia",c:0,fb:"Política é documento; criptografia é controle técnico. Ambos são necessários e complementares."},
+            {t:"Porque a LGPD obriga publicação no Diário Oficial",c:0,fb:"A LGPD não exige publicação pública de políticas internas. Exige demonstração à autoridade quando solicitada."}
+          ]},
+        {p:"A hierarquia correta dos documentos de segurança é:",
+          alts:[
+            {t:"Política (alto nível) > norma > procedimento > diretriz (recomendação)",c:1,fb:"Exato! A pirâmide documental vai do geral ao específico. Política dá autoridade; procedimento dá passo a passo; diretriz orienta sem obrigar."},
+            {t:"Procedimento > política > diretriz > norma",c:0,fb:"Invertido. Procedimento é o nível mais operacional, não o mais alto. A autoridade vem da política."},
+            {t:"Todos os documentos têm o mesmo peso hierárquico",c:0,fb:"Sem hierarquia, documentos contraditórios geram confusão e inconsistência. A pirâmide resolve conflitos."}
+          ]},
+        {p:"Para uma política ter força normativa dentro da organização, é necessário:",
+          alts:[
+            {t:"Aprovação formal da alta direção e ampla divulgação aos colaboradores",c:1,fb:"Correto! Sem aprovação executiva a política é rascunho; sem divulgação, ninguém pode ser cobrado. Publicação em repositório oficial e treinamento completam o ciclo."},
+            {t:"Apenas assinatura do gerente de TI",c:0,fb:"TI não tem autoridade para criar obrigações corporativas. A aprovação deve vir da alta direção (C-level, conselho)."},
+            {t:"Registro em cartório",c:0,fb:"Cartório não dá força normativa interna. A força vem da aprovação executiva e da divulgação formal."}
+          ]}
+      ],
+      aprofundar:[
+        {rotulo:"🔎 Busca no Google (português)",url:"https://www.google.com/search?hl=pt-BR&q=pol%C3%ADticas+de+seguran%C3%A7a+da+informa%C3%A7%C3%A3o+lgpd+iso+27001"},
+        {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=pol%C3%ADtica+de+seguran%C3%A7a+da+informa%C3%A7%C3%A3o+estrutura+implementa%C3%A7%C3%A3o"},
+        {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)",url:"https://www.youtube.com/results?search_query=pol%C3%ADtica+de+seguran%C3%A7a+da+informa%C3%A7%C3%A3o+lgpd+aula"}
+      ],
+      mitoOuVerdade:{
+        afirmacao:"Uma política bem escrita dispensa treinamento dos colaboradores.",
+        verdade:false,
+        explicacao:"Mito: política sem treinamento é letra morta. Colaboradores precisam entender não só o que é proibido, mas por quê. Treinamento periódico é requisito da ISO 27001 e da LGPD."
+      }
+    },
+    {
+      id:"aba-5",
+      titulo:"Estruturação e implementação",
+      estudoProprio:false,
+      narrativa:"Política no papel não protege ninguém. Implementar é transformar o documento em processos, controles técnicos e cultura — com métricas que provam que está funcionando.",
+      mundoReal:[
+        "Empresas certificadas ISO 27001 passam por auditorias anuais que verificam implementação real — não apenas a existência do documento.",
+        "O programa de security champions do Spotify distribui embaixadores de segurança em cada squad, transformando política em cultura."
+      ],
+      ferramentas:[
+        "ISO/IEC 27001:2022: última versão com 93 controles organizados em 4 temas",
+        "Frameworks de maturidade (CMMI, Gartner): avaliam o quão implementado está o programa",
+        "KPIs de segurança: tempo médio de detecção, cobertura de MFA, taxa de phishing"
+      ],
+      dicionario:[
+        {termo:"Implementação",def:"Traduzir a política em controles técnicos, processos e treinamento efetivos."},
+        {termo:"KPI",def:"Indicador-chave de desempenho: métrica que mede eficácia do controle."},
+        {termo:"Auditoria interna",def:"Verificação independente de que a implementação segue a política."},
+        {termo:"Melhoria contínua",def:"Ciclo PDCA (Plan-Do-Check-Act) aplicado ao programa de segurança."}
+      ],
+      conceitos:[
+        {
+          titulo:"Do documento ao controle vivo",
+          texto:"Implementar é fazer cada cláusula virar um controle mensurável: política exige MFA → KPI é cobertura de MFA por sistema; política exige backup → KPI é teste de restauração mensal.",
+          analogia:"💡 Uma dieta no papel não emagrece ninguém: implementar é comprar os alimentos, cozinhar, medir o peso e ajustar.",
+          exemploReal:"🌍 O programa de bug bounty do Google só funciona porque a política de divulgação responsável foi implementada em processos, ferramentas e pessoas dedicadas."
+        },
+        {
+          titulo:"Ciclo PDCA aplicado à segurança",
+          texto:"Plan (planejar controles), Do (implementar), Check (auditar e medir), Act (corrigir e melhorar). O ciclo nunca termina: cada incidente e cada auditoria alimentam o próximo Plan.",
+          analogia:"💡 Roda que gira: parar é retroceder, porque ameaças evoluem continuamente.",
+          exemploReal:"🌍 A ISO 27001 exige o PDCA explicitamente; auditorias anuais são o Check formal que força o Act."
+        }
+      ],
+      roteiroDemo:{
+        passo0:"Antes de escolher os controles, preveja: qual KPI mede melhor se a política de senhas está implementada de verdade?",
+        passos:[
+          {acao:"Escolha uma política e veja os controles sugeridos",ve:"Cada controle tem um KPI associado que mede eficácia real",significa:"Política sem KPI é promessa; com KPI vira programa gerenciável"},
+          {acao:"Ajuste a maturidade de cada controle",ve:"O score geral do programa muda conforme implementação",significa:"Maturidade é mensurável: auditorias e frameworks como CMMI avaliam isso"}
+        ]
+      },
+      demo:{
+        tipo:"implementacao",
+        config:{
+          titulo:"🏗️ Dashboard de implementação: políticas em KPIs",
+          guia:"Observe que o mesmo programa pode estar em maturidades diferentes por controle: MFA em 95% (avançado) mas treinamento em 40% (incipiente). O dashboard mostra onde agir."
+        }
+      },
+      quiz:[
+        {p:"Qual KPI melhor mede a implementação real de uma política de MFA?",
+          alts:[
+            {t:"Percentual de sistemas críticos com MFA ativo e testado",c:1,fb:"Correto! Percentual de cobertura é mensurável e auditável. Ter a política no papel não é KPI — o que conta é quantos sistemas efetivamente exigem MFA."},
+            {t:"Número de páginas da política de MFA",c:0,fb:"Tamanho do documento não mede implementação. Política de 3 páginas implementada supera política de 300 páginas engavetada."},
+            {t:"Quantidade de reuniões sobre MFA realizadas",c:0,fb:"Reuniões são atividade, não resultado. KPI mede o efeito (cobertura), não o esforço."}
+          ]},
+        {p:"No ciclo PDCA aplicado à segurança, a fase Check é:",
+          alts:[
+            {t:"Auditoria e medição de KPIs para verificar se os controles funcionam",c:1,fb:"Exato! Check é a verificação objetiva: auditorias internas, métricas, testes de penetração e simulações de incidente."},
+            {t:"Escrever a política pela primeira vez",c:0,fb:"Escrever a política é Plan (planejamento). Check é medir o que foi implementado."},
+            {t:"Aplicar sanções a quem descumpre",c:0,fb:"Sanção é parte do Act (ação corretiva), não do Check. Check apenas mede e reporta."}
+          ]},
+        {p:"Uma auditoria ISO 27001 verifica principalmente:",
+          alts:[
+            {t:"Se a implementação real dos controles corresponde à política documentada",c:1,fb:"Correto! O auditor confronta documento com prática: a política diz X, o sistema faz X? Evidências (logs, entrevistas, testes) comprovam."},
+            {t:"Se a empresa tem o maior número possível de controles",c:0,fb:"ISO 27001 não exige todos os controles: exige os aplicáveis ao contexto de risco. Quantidade sem critério não é conformidade."},
+            {t:"Se o gerente de TI sabe a política de cor",c:0,fb:"Memorização não é evidência. Auditoria verifica implementação sistêmica, não conhecimento individual."}
+          ]}
+      ],
+      aprofundar:[
+        {rotulo:"🔎 Busca no Google (português)",url:"https://www.google.com/search?hl=pt-BR&q=implementa%C3%A7%C3%A3o+de+pol%C3%ADticas+de+seguran%C3%A7a+iso+27001"},
+        {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=implementa%C3%A7%C3%A3o+de+programa+de+seguran%C3%A7a+da+informa%C3%A7%C3%A3o+indicadores"},
+        {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)",url:"https://www.youtube.com/results?search_query=implementa%C3%A7%C3%A3o+iso+27001+controles+aula"}
+      ],
+      mitoOuVerdade:{
+        afirmacao:"Ter a política publicada em PDF no servidor já conta como implementação.",
+        verdade:false,
+        explicacao:"Mito: implementação exige que o controle esteja operando. Política em PDF é documento; implementação é controle técnico, processo e treinamento funcionando, com KPI medido."
+      }
+    },
+    {
+      id:"aba-6",
+      titulo:"Conformidade legal e LGPD",
+      estudoProprio:true,
+      narrativa:"A LGPD (Lei 13.709/2018) transformou segurança da informação em obrigação legal no Brasil. Entender as bases legais, os direitos do titular e as sanções é imperativo para qualquer auditor.",
+      mundoReal:[
+        "A primeira multa significativa da ANPD foi aplicada em 2023; em 2024, sanções a grandes empresas (como o caso Serasa) mostraram que a fiscalização está ativa.",
+        "Empresas brasileiras que operam na Europa precisam cumprir também a GDPR, que tem multas de até 4% do faturamento global — o caso Meta (US$ 1,3 bi em 2023) virou referência."
+      ],
+      ferramentas:[
+        "Portal da ANPD (gov.br/anpd): resoluções, guias e processos administrativos",
+        "Guia de Boas Práticas da ANPD: orientação oficial para agentes de tratamento",
+        "Mapeamento de dados pessoais (data mapping): base de toda conformidade LGPD"
+      ],
+      dicionario:[
+        {termo:"LGPD",def:"Lei Geral de Proteção de Dados (Lei 13.709/2018), marco brasileiro de privacidade."},
+        {termo:"Controlador",def:"Pessoa ou empresa que decide sobre o tratamento de dados pessoais."},
+        {termo:"Operador",def:"Quem trata dados em nome do controlador (ex.: nuvem, processador de pagamentos)."},
+        {termo:"ANPD",def:"Autoridade Nacional de Proteção de Dados: órgão fiscalizador e normativo."}
+      ],
+      conceitos:[
+        {
+          titulo:"As dez bases legais da LGPD",
+          texto:"Todo tratamento de dados pessoais precisa de uma base legal: consentimento, obrigação legal, execução de contrato, legítimo interesse, proteção da vida, tutela da saúde, execução de políticas públicas, pesquisa, exercício regular de direitos e proteção do crédito.",
+          analogia:"💡 Portas de entrada legítimas: sem uma base legal aberta, o tratamento é ilegal desde o início.",
+          exemploReal:"🌍 Um banco usa obrigação legal (Banco Central) para tratar dados de clientes; marketing exige consentimento ou legítimo intereste com teste de平衡."
+        },
+        {
+          titulo:"Sanções e o papel do DPO",
+          texto:"Sanções da LGPD vão de advertência a multa de até 2% do faturamento (limitada a R$ 50 milhões por infração), publicização e bloqueio de dados. O DPO (Encarregado) é o canal entre controlador, titular e ANPD.",
+          analogia:"💡 Um árbitro com apito e cartão: do amarelo (advertência) ao vermelho (bloqueio de dados).",
+          exemploReal:"🌍 A multa da Meta na Europa (1,2 bi de euros, 2023) foi por transferência ilegal de dados — mostra que sanções podem ser devastadoras quando a conformidade é ignorada."
+        }
+      ],
+      roteiroDemo:{
+        passo0:"Antes de escolher, preveja: qual base legal uma clínica médica usa para tratar prontuários sem pedir consentimento a cada consulta?",
+        passos:[
+          {acao:"Analise cada cenário de tratamento de dados",ve:"A base legal correta aparece com a justificativa normativa",significa:"Base legal errada torna o tratamento ilegal desde o início, mesmo com segurança técnica perfeita"},
+          {acao:"Teste cenários ambíguos (marketing, crédito, pesquisa)",ve:"Mais de uma base pode parecer aplicável; a escolha precisa ser justificada",significa:"Base legal é decisão documentada e defensável, não chute"}
+        ]
+      },
+      demo:{
+        tipo:"lgpd",
+        config:{
+          titulo:"⚖️ LGPD em ação: escolha a base legal de cada cenário",
+          guia:"Observe que segurança técnica não substitui base legal: um banco de dados criptografado mas sem base legal é uma infração à LGPD. Conformidade legal e técnica caminham juntas."
+        }
+      },
+      quiz:[
+        {p:"Uma clínica médica trata prontuários de pacientes. Qual base legal da LGPD é mais apropriada?",
+          alts:[
+            {t:"Tutela da saúde, em procedimento realizado por profissionais da área",c:1,fb:"Correto! A tutela da saúde dispensa consentimento para tratamentos médicos necessários. É a base específica para o contexto clínico."},
+            {t:"Consentimento explícito para cada consulta",c:0,fb:"Consentimento seria inviável e inadequado: em emergência, o paciente não pode consentir. A tutela da saúde cobre isso."},
+            {t:"Legítimo interesse do médico",c:0,fb:"Legítimo interesse exige teste de ponderação com direitos do titular. Saúde tem base específica (tutela), mais adequada e segura juridicamente."}
+          ]},
+        {p:"Qual é o limite máximo de multa da LGPD por infração?",
+          alts:[
+            {t:"2% do faturamento da empresa no último exercício, limitado a R$ 50 milhões por infração",c:1,fb:"Correto! É o teto legal (artigo 52 da LGPD). A ANPD aplica com proporcionalidade, considerando gravidade, reincidência e cooperação."},
+            {t:"4% do faturamento global, sem limite",c:0,fb:"Esse é o teto da GDPR europeia, não da LGPD brasileira. Confundir as duas leis é erro comum em multinacionais."},
+            {t:"R$ 50 milhões fixos, independente do tamanho da empresa",c:0,fb:"A multa é variável (2% do faturamento) até o teto de R$ 50 milhões. Empresas pequenas pagam menos; grandes podem chegar ao teto."}
+          ]},
+        {p:"O papel do DPO (Encarregado) na LGPD é:",
+          alts:[
+            {t:"Atuar como canal de comunicação entre controlador, titulares e ANPD",c:1,fb:"Exato! O DPO recebe reclamações de titulares, orienta o controlador e responde à ANPD. É figura obrigatória para a maioria dos controladores."},
+            {t:"Substituir o gerente de TI na gestão de segurança",c:0,fb:"DPO não é função técnica: é função de governança e interface. TI executa controles; DPO supervisiona conformidade e comunicação."},
+            {t:"Decidir sozinho quais dados podem ser tratados",c:0,fb:"A decisão é do controlador. O DPO orienta e fiscaliza, mas não decide tratamento — isso violaria a separação de papéis."}
+          ]}
+      ],
+      aprofundar:[
+        {rotulo:"🔎 Busca no Google (português)",url:"https://www.google.com/search?hl=pt-BR&q=lgpd+bases+legais+conformidade+anpd"},
+        {rotulo:"🎓 Pesquisa científica (Google Scholar, português)",url:"https://scholar.google.com/scholar?hl=pt-BR&q=lgpd+lei+geral+de+prote%C3%A7%C3%A3o+de+dados+san%C3%A7%C3%B5es+anpd"},
+        {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)",url:"https://www.youtube.com/results?search_query=lgpd+bases+legais+san%C3%A7%C3%B5es+aula"}
+      ],
+      mitoOuVerdade:{
+        afirmacao:"Se a empresa tem criptografia forte em todos os dados, a LGPD não se aplica.",
+        verdade:false,
+        explicacao:"Mito: segurança técnica não substitui base legal. Dados criptografados ainda são dados pessoais sob a LGPD; a conformidade exige base legal, finalidade e direitos do titular, além de segurança."
+      }
+    }
+  ],
+  revisao:{
+    mapa:[
+      "1. Gestão de riscos e vulnerabilidades — a equação fundamental",
+      "2. Estratégias de mitigação — mitigar, transferir, aceitar, evitar",
+      "3. Resposta a incidentes — as seis fases do NIST SP 800-61",
+      "4. Políticas de segurança da informação — a lei interna",
+      "5. Estruturação e implementação — do papel ao controle vivo",
+      "6. Conformidade legal e LGPD — bases legais e sanções (estudo próprio)"
+    ],
+    cola:[
+      {termo:"Risco",linha:"ameaça x vulnerabilidade x impacto — zerar um zera o risco"},
+      {termo:"Mitigar",linha:"reduzir probabilidade ou impacto com controles"},
+      {termo:"Transferir",linha:"passar o impacto financeiro (seguro, cláusulas)"},
+      {termo:"Aceitar",linha:"assumir o risco residual conscientemente, documentado"},
+      {termo:"Evitar",linha:"eliminar a atividade — única estratégia que zera o risco"},
+      {termo:"NIST SP 800-61",linha:"preparação, identificação, contenção, erradicação, recuperação, lições"},
+      {termo:"Contenção",linha:"sempre antes da erradicação para preservar evidências"},
+      {termo:"Política",linha:"documento de alto nível aprovado pela alta direção"},
+      {termo:"Hierarquia",linha:"política > norma > procedimento > diretriz"},
+      {termo:"LGPD",linha:"Lei 13.709/2018 — 10 bases legais, multa até 2% faturamento (R$ 50M)"},
+      {termo:"DPO",linha:"canal entre controlador, titular e ANPD"},
+      {termo:"ISO 27001",linha:"exige PDCA, política aprovada e auditorias periódicas"}
+    ],
+    desafio:"Uma fintech com 500 mil clientes sofreu um incidente: um atacante explorou uma vulnerabilidade Log4j antiga num servidor exposto e exfiltrou CPFs e e-mails por 72 horas. Como auditor, elabore um parecer contendo: (1) a equação de risco aplicada ao caso; (2) a estratégia de mitigação que deveria ter sido aplicada antes; (3) as fases do NIST SP 800-61 em ordem e onde a resposta falhou; (4) a política interna que faltou; (5) a base legal da LGPD aplicável e as sanções potenciais."
+  }
+};
+
+/* =========================================================
+   MOTOR v2.10 — boot seguro, routing file://, esquema rígido
+   ========================================================= */
+var estado = {xp:0,selos:{},quizOk:{},demoOk:{},dark:false,apres:false,abaAtiva:null};
+
+function seloTem(s){return !!estado.selos[s];}
+function seloAdd(s){estado.selos[s]=1;}
+function quizTem(k){return !!estado.quizOk[k];}
+function quizAdd(k){estado.quizOk[k]=1;}
+function demoTem(k){return !!estado.demoOk[k];}
+function demoAdd(k){estado.demoOk[k]=1;}
+
+function carregarEstado(){
+  try{
+    var s = JSON.parse(localStorage.getItem('htaseg_aula03_v210')||'{}');
+    estado.xp = s.xp||0;
+    estado.selos = s.selos||{};
+    estado.quizOk = s.quizOk||{};
+    estado.demoOk = s.demoOk||{};
+  }catch(e){}
+}
+function salvarEstado(){
+  try{
+    localStorage.setItem('htaseg_aula03_v210',JSON.stringify({xp:estado.xp,selos:estado.selos,quizOk:estado.quizOk,demoOk:estado.demoOk}));
+  }catch(e){}
+}
+function ganhaXP(n,motivo){
+  estado.xp += n;
+  showToast('+'+n+' XP — '+motivo);
+  atualizaProgresso();
+  salvarEstado();
+}
+function adicionaSelo(s){
+  if(!seloTem(s)){
+    seloAdd(s);
+    showToast('🏅 Selo: '+s);
+    atualizaProgresso();
+    salvarEstado();
+  }
+}
+function shuffle(a){
+  var b = a.slice();
+  for(var i=b.length-1;i>0;i--){
+    var j = Math.floor(Math.random()*(i+1));
+    var t = b[i]; b[i]=b[j]; b[j]=t;
+  }
+  return b;
+}
+function esc(s){return String(s);}
+
+function renderTabs(){
+  var nav = document.getElementById('tablist');
+  nav.innerHTML = '';
+  var todas = AULA_DADOS.abas.concat([{id:'revisao',titulo:'Revisão'}]);
+  todas.forEach(function(a,i){
+    var btn = document.createElement('button');
+    btn.setAttribute('role','tab');
+    btn.setAttribute('aria-selected','false');
+    btn.setAttribute('aria-controls',a.id);
+    btn.dataset.id = a.id;
+    btn.innerHTML = (i+1)+'. '+esc(a.titulo)+(a.estudoProprio?'<span class="selo">📖 Estudo próprio</span>':'');
+    btn.addEventListener('click',function(){ ativar(a.id); if(location.hash !== '#'+a.id){ location.hash = a.id; } });
+    btn.addEventListener('keydown',function(e){
+      if(e.key==='ArrowRight'){var n=btn.nextElementSibling||nav.firstElementChild;n.focus();}
+      else if(e.key==='ArrowLeft'){var p=btn.previousElementSibling||nav.lastElementChild;p.focus();}
+      else if(e.key==='Enter'||e.key===' '){e.preventDefault();ativar(a.id);if(location.hash !== '#'+a.id){location.hash=a.id;}}
+    });
+    nav.appendChild(btn);
+  });
+}
+
+function renderMain(){
+  var m = document.getElementById('main');
+  m.innerHTML = '';
+  var pr = document.createElement('div');
+  pr.className='progresso';pr.id='progresso';
+  m.appendChild(pr);
+  AULA_DADOS.abas.forEach(function(a){
+    var sec = document.createElement('section');
+    sec.className='aba';sec.id=a.id;
+    sec.setAttribute('role','tabpanel');
+    sec.innerHTML = renderAba(a);
+    m.appendChild(sec);
+  });
+  var rev = document.createElement('section');
+  rev.className='aba';rev.id='revisao';
+  rev.setAttribute('role','tabpanel');
+  rev.innerHTML = renderRevisao();
+  m.appendChild(rev);
+  atualizaProgresso();
+}
+
+function renderAba(a){
+  var h = '';
+  h += '<div class="missao"><strong>🎯 Missão</strong>'+esc(a.narrativa)+'</div>';
+  h += '<div class="card"><h2>'+esc(a.titulo)+'</h2>';
+  a.conceitos.forEach(function(c){
+    h += '<h3>'+esc(c.titulo)+'</h3>';
+    h += '<p>'+esc(c.texto)+'</p>';
+    h += '<div class="obs">'+esc(c.analogia)+'</div>';
+    h += '<div class="preveja" style="font-style:normal">'+esc(c.exemploReal)+'</div>';
+  });
+  h += '<h3>🌍 No mundo real</h3><ul>'+a.mundoReal.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>';
+  h += '<h3>🧰 Ferramentas para explorar</h3><ul>'+a.ferramentas.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>';
+  h += '</div>';
+  h += '<div class="demo" id="demo-'+a.id+'">';
+  h += '<h3>🧪 Demo: '+esc(a.demo.config.titulo)+'</h3>';
+  h += '<div class="preveja">💭 '+esc(a.roteiroDemo.passo0)+'</div>';
+  h += '<div class="instru">📋 <strong>INSTRUÇÕES PASSO A PASSO:</strong><ol style="margin:6px 0 0 18px">';
+  a.roteiroDemo.passos.forEach(function(p){ h += '<li>'+esc(p.acao)+'</li>'; });
+  h += '</ol></div>';
+  h += '<details class="conc"><summary>🎬 Roteiro do apresentador (o que ver e o que significa)</summary><ul>';
+  a.roteiroDemo.passos.forEach(function(p){ h += '<li><strong>'+esc(p.acao)+'</strong> → 👀 '+esc(p.ve)+' → 💭 '+esc(p.significa)+'</li>'; });
+  h += '</ul></details>';
+  h += '<div id="demo-area-'+a.id+'"></div>';
+  if(a.demo.config.guia){ h += '<div class="obs">👀 <strong>O que observar:</strong> '+esc(a.demo.config.guia)+'</div>'; }
+  h += '<button class="btn sec" data-restart="'+a.id+'">🔄 Reiniciar demo</button> ';
+  h += demoTem(a.id) ? '<span class="selo-chip">✓ Demo concluída</span>' : '<button class="btn" data-done="'+a.id+'">✓ Concluí a demo</button>';
+  h += '</div>';
+  h += '<div class="mito"><h4>🎭 Mito ou verdade?</h4><p>'+esc(a.mitoOuVerdade.afirmacao)+'</p><div data-mito="'+a.id+'"></div></div>';
+  h += '<details class="lex"><summary>📘 Mini-dicionário</summary><ul>'+a.dicionario.map(function(l){return '<li><strong>'+esc(l.termo)+':</strong> '+esc(l.def)+'</li>';}).join('')+'</ul></details>';
+  h += '<details class="links"><summary>🔗 Aprofundar (3 buscas em português)</summary><ul>'+a.aprofundar.map(function(l){return '<li><a href="'+l.url+'" target="_blank" rel="noopener">'+esc(l.rotulo)+'</a></li>';}).join('')+'</ul></details>';
+  h += '<div class="card"><h2>📝 Quiz — 3 perguntas</h2>';
+  a.quiz.forEach(function(q,i){ h += renderQuiz(a.id,i,q); });
+  h += '</div>';
+  h += a.estudoProprio
+    ? '<div class="rota"><strong>🏠 Rota em casa:</strong> esta aba é estudo próprio. Em sala, o professor percorre as abas 1–5.</div>'
+    : '<div class="rota"><strong>🎤 Roteiro do apresentador:</strong> 6 min nesta aba. Passo 0: lance a previsão da demo; depois demo 2 min e feche com o quiz.</div>';
+  return h;
+}
+
+function renderQuiz(abaId,idx,q){
+  var key = abaId+'-'+idx;
+  var misturadas = shuffle(q.alts);
+  var h = '<div class="quiz-perg" data-key="'+key+'" data-aba="'+abaId+'"><h4>Pergunta '+(idx+1)+'. '+esc(q.p)+'</h4><div class="alts">';
+  misturadas.forEach(function(alt){
+    h += '<button class="alt" data-c="'+(alt.c?1:0)+'" data-fb="'+esc(alt.fb).replace(/"/g,'&quot;')+'">'+esc(alt.t)+'</button>';
+  });
+  h += '</div><div class="fb" id="fb-'+key+'"></div></div>';
+  return h;
+}
+
+function renderRevisao(){
+  var r = AULA_DADOS.revisao;
+  var h = '<div class="missao"><strong>🎯 Revisão final</strong>Do risco medido à conformidade legal: o ciclo completo do auditor.</div>';
+  h += '<div class="card"><h2>🗺️ Mapa da aula</h2><div class="revisao-mapa">';
+  r.mapa.forEach(function(s){ h += '<div class="no">'+esc(s)+'</div>'; });
+  h += '</div></div>';
+  h += '<div class="card"><h2>🧾 Cola rápida</h2><div class="cola">';
+  r.cola.forEach(function(c){ h += '<b>'+esc(c.termo)+'</b> → '+esc(c.linha)+'<br>'; });
+  h += '</div></div>';
+  h += '<div class="chefao"><h3>👹 Chefão — o parecer do auditor</h3><p><strong>'+esc(r.desafio)+'</strong></p>';
+  h += '<textarea id="chefaoResp" rows="9" style="width:100%;padding:10px;border-radius:8px;border:2px solid #ffd54f;font-family:inherit;font-size:1rem" placeholder="Parecer com 5 pontos: equação de risco, mitigação, fases NIST, política faltante e base legal LGPD."></textarea><br>';
+  h += '<button class="btn" id="chefaoBtn">🏆 Entregar parecer</button><div id="chefaoFb" style="margin-top:10px"></div></div>';
+  return h;
+}
+
+/* ---------- interação: quiz ---------- */
+function ligarQuiz(root){
+  root.querySelectorAll('.quiz-perg').forEach(function(p){
+    p.querySelectorAll('.alt').forEach(function(btn){
+      btn.addEventListener('click',function(){ respQuiz(btn); });
+    });
+  });
+}
+function respQuiz(btn){
+  var p = btn.closest('.quiz-perg');
+  var key = p.dataset.key;
+  var abaId = p.dataset.aba;
+  var fb = btn.dataset.fb;
+  var c = btn.dataset.c === '1';
+  var fbd = p.querySelector('.fb');
+  if(c){
+    btn.classList.add('certa');
+    btn.innerHTML = '✓ '+btn.innerHTML;
+    p.querySelectorAll('.alt').forEach(function(b){b.disabled=true;});
+    fbd.className='fb ok';
+    fbd.innerHTML='✅ <strong>Por que esta está certa:</strong> '+fb;
+    if(!quizTem(key)){
+      var wasRetry = sessionStorage.getItem(key+'-retry');
+      quizAdd(key);
+      ganhaXP(wasRetry?5:10, wasRetry?'Acerto no retry!':'Acerto de primeira!');
+      sessionStorage.removeItem(key+'-retry');
+      verificarAbaCompleta(abaId);
+      salvarEstado();
+    }
+  } else {
+    btn.classList.add('errada');
+    btn.innerHTML = '✗ '+btn.innerHTML;
+    btn.disabled = true;
+    fbd.className='fb bad';
+    fbd.innerHTML='❌ <strong>Por que esta está errada:</strong> '+fb+'<br><em>🔁 Tente outra alternativa.</em>';
+    if(!quizTem(key)){ sessionStorage.setItem(key+'-retry','1'); }
+  }
+}
+function verificarAbaCompleta(abaId){
+  var aba = null;
+  AULA_DADOS.abas.forEach(function(a){ if(a.id===abaId) aba=a; });
+  if(!aba) return;
+  var todas = aba.quiz.every(function(q,i){ return quizTem(abaId+'-'+i); });
+  if(todas && demoTem(abaId)){
+    adicionaSelo(aba.titulo.substring(0,25));
+  }
+}
+
+/* ---------- interação: mito ou verdade ---------- */
+function ligarMito(root){
+  root.querySelectorAll('[data-mito]').forEach(function(box){
+    var abaId = box.dataset.mito;
+    var aba = null;
+    AULA_DADOS.abas.forEach(function(a){ if(a.id===abaId) aba=a; });
+    var m = aba.mitoOuVerdade;
+    function desenha(msg){
+      box.innerHTML = '<button class="btn" data-v="1" style="background:#2e7d32">✅ Verdade</button>'+
+        '<button class="btn" data-v="0" style="background:#c62828">🚫 Mito</button>'+
+        '<div class="fbbox" style="margin-top:8px">'+(msg||'')+'</div>';
+      box.querySelectorAll('button').forEach(function(b){
+        b.addEventListener('click',function(){
+          var escolha = b.dataset.v === '1';
+          if(escolha === m.verdade){
+            box.innerHTML = '<div class="fb ok">'+(m.verdade?'✅ <strong>Verdade!</strong>':'✅ <strong>Isso é MITO!</strong>')+' '+esc(m.explicacao)+'</div>';
+          } else {
+            b.disabled = true;
+            b.classList.add('errada');
+            box.querySelector('.fbbox').innerHTML = '<div class="fb bad">❌ Não é por aí. '+ (escolha?'Você marcou verdade, mas pense de novo.':'Você marcou mito, mas pense de novo.')+' <em>🔁 Tente a outra opção.</em></div>';
+          }
+        });
+      });
+    }
+    desenha('');
+  });
+}
+
+/* ---------- demos por tipo ---------- */
+function renderDemo(aba){
+  var area = document.getElementById('demo-area-'+aba.id);
+  if(!area) return;
+  area.innerHTML = '';
+  var tipo = aba.demo.tipo;
+  if(tipo==='risco') demoRisco(area);
+  else if(tipo==='mitigacao') demoMitigacao(area);
+  else if(tipo==='incidente') demoIncidente(area);
+  else if(tipo==='politica') demoPolitica(area);
+  else if(tipo==='implementacao') demoImplementacao(area);
+  else if(tipo==='lgpd') demoLGPD(area);
+}
+
+function demoRisco(area){
+  var wrap = document.createElement('div');
+  var st = {ameaca:4, vuln:5, impacto:4};
+  function nivel(score){
+    if(score<=8) return {nome:'Baixo',cor:'#2e7d32',trat:'Aceitar com monitoramento'};
+    if(score<=27) return {nome:'Médio',cor:'#f9a825',trat:'Mitigar com controles proporcionais'};
+    if(score<=64) return {nome:'Alto',cor:'#e65100',trat:'Mitigar urgente + transferência parcial'};
+    return {nome:'Extremo',cor:'#c62828',trat:'Evitar ou mitigar emergencial'};
+  }
+  function desenha(){
+    var score = st.ameaca * st.vuln * st.impacto;
+    var n = nivel(score);
+    wrap.innerHTML =
+      '<div class="slider"><label>🎯 Ameaça: <strong>'+st.ameaca+'/5</strong></label><input type="range" id="r-a" min="0" max="5" value="'+st.ameaca+'"></div>'+
+      '<div class="slider"><label>🐛 Vulnerabilidade: <strong>'+st.vuln+'/5</strong></label><input type="range" id="r-v" min="0" max="5" value="'+st.vuln+'"></div>'+
+      '<div class="slider"><label>💥 Impacto: <strong>'+st.impacto+'/5</strong></label><input type="range" id="r-i" min="0" max="5" value="'+st.impacto+'"></div>'+
+      '<div style="padding:14px;background:#fff;border-radius:8px;border:2px solid var(--cor);margin-top:10px">'+
+        '<div style="font-size:1.2rem">Risco = '+st.ameaca+' × '+st.vuln+' × '+st.impacto+' = <strong>'+score+'</strong> / 125</div>'+
+        '<div class="barra" style="height:30px;margin-top:6px"><div style="width:'+(score/125*100)+'%;background:'+n.cor+'">Zona: '+n.nome+'</div></div>'+
+        '<div style="margin-top:8px">🎯 <strong>Tratamento sugerido:</strong> '+n.trat+'</div>'+
+        '<div style="margin-top:6px;font-size:.88rem;color:var(--muted)">Exemplo real: Colonial Pipeline (2021) tinha VPN com senha vazada sem MFA — ameça alta, vulnerabilidade alta, impacto crítico → risco extremo. O tratamento correto teria sido mitigar com MFA antes do incidente.</div>'+
+      '</div>';
+    wrap.querySelector('#r-a').addEventListener('input',function(e){st.ameaca=+e.target.value;desenha();});
+    wrap.querySelector('#r-v').addEventListener('input',function(e){st.vuln=+e.target.value;desenha();});
+    wrap.querySelector('#r-i').addEventListener('input',function(e){st.impacto=+e.target.value;desenha();});
+  }
+  area.appendChild(wrap);
+  desenha();
+}
+
+function demoMitigacao(area){
+  var wrap = document.createElement('div');
+  var estrategias = [
+    {nome:'Mitigar',icon:'🛡️',desc:'Reduzir probabilidade ou impacto com controles técnicos e processuais.',ex:'Aplicar patch do Log4Shell (CVE-2021-44228) em 72 horas; habilitar MFA em todos os acessos administrativos; backups imutáveis.',quando:'Quando o risco é alto/médio e o controle tem custo proporcional ao benefício.'},
+    {nome:'Transferir',icon:'🤝',desc:'Passar o impacto financeiro a terceiros — o incidente ainda ocorre, mas a conta vai para outro.',ex:'Seguro cyber com cobertura de R$ 50 mi; cláusulas contratuais com fornecedores (responsabilização por vazamento).',quando:'Quando o impacto é grande mas a probabilidade é baixa; nunca como substituto de mitigação.'},
+    {nome:'Aceitar',icon:'📝',desc:'Assumir o risco conscientemente com registro formal da decisão e do responsável.',ex:'Sistema legado isolado da internet, sem dados sensíveis — documentado em ata de comitê com revisão anual.',quando:'Quando o controle custa mais que o prejuízo esperado, ou quando o risco está dentro do apetite declarado.'},
+    {nome:'Evitar',icon:'🚫',desc:'Eliminar a atividade que gera o risco — é a única estratégia que reduz risco a ZERO.',ex:'Descontinuar o portal de jogos que atrai fraudes recorrentes; sair de um mercado com regulação impossível.',quando:'Quando o risco excede muito o valor da atividade e mitigação é inviável.'}
+  ];
+  function desenha(){
+    var h = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">';
+    estrategias.forEach(function(e,i){ h += '<button class="btn" data-i="'+i+'" style="background:#455a64">'+e.icon+' '+esc(e.nome)+'</button>'; });
+    h += '</div><div id="mg-reveal" style="margin-top:12px;padding:14px;border-radius:8px;background:#fff;border-left:5px solid var(--cor);min-height:120px"><em>👆 Clique em uma estratégia para ver definição, exemplo real e quando usar.</em></div>';
+    wrap.innerHTML = h;
+    wrap.querySelectorAll('[data-i]').forEach(function(b){
+      b.addEventListener('click',function(){
+        var e = estrategias[+b.dataset.i];
+        wrap.querySelector('#mg-reveal').innerHTML =
+          '<strong>'+e.icon+' '+esc(e.nome)+'</strong><br><br>'+
+          '📖 <strong>O que é:</strong> '+esc(e.desc)+'<br>'+
+          '🌍 <strong>Exemplo real:</strong> '+esc(e.ex)+'<br><br>'+
+          '<div style="padding:10px;background:#fff8e1;border-radius:6px;border-left:4px solid #ffa000">'+
+          '⏰ <strong>Quando usar:</strong> '+esc(e.quando)+'</div>';
+      });
+    });
+  }
+  area.appendChild(wrap);
+  desenha();
+}
+
+function demoIncidente(area){
+  var wrap = document.createElement('div');
+  var fases = [
+    {nome:'Preparação',icone:'🎯',acoes:'Plano de resposta, CSIRT treinado, ferramentas (SIEM), tabletop exercises, contatos externos (CERT, ANPD).',artefato:'Plano documentado e testado.',caso:'CERT.br mantém equipe 24x7 e faz exercícios trimestrais.'},
+    {nome:'Identificação',icone:'🔍',acoes:'Detectar anomalia, confirmar incidente, classificar severidade, abrir registro formal.',artefato:'Ticket de incidente com classificação.',caso:'Uber 2022: identificação tardia porque alerta de MFA fatigue foi ignorado.'},
+    {nome:'Contenção',icone:'🚧',acoes:'Isolar hosts e redes afetadas, bloquear contas comprometidas, PRESERVAR evidências (não apagar logs!).',artefato:'Lista de sistemas isolados e evidências preservadas.',caso:'Target 2013: falta de contenção permitiu 40 mi de cartões vazados por semanas.'},
+    {nome:'Erradicação',icone:'🧹',acoes:'Remover malware, fechar backdoors, aplicar patches que causaram a brecha, trocar credenciais.',artefato:'Relatório de remoção e patches aplicados.',caso:'WannaCry 2017: patch MS17-010 erradicou a vulnerabilidade SMB usada pelo worm.'},
+    {nome:'Recuperação',icone:'🔄',acoes:'Restaurar backups testados, reintroduzir sistemas com monitoramento reforçado, validar funcionamento.',artefato:'Sistemas restaurados e validados.',caso:'Hospital das Clínicas SP (2023): restauração levou semanas por falta de backup testado.'},
+    {nome:'Lições aprendidas',icone:'📚',acoes:'Relatório pós-incidente, atualização do plano, novos controles, treinamento da equipe.',artefato:'Relatório final com ações implementadas.',caso:'AWS pós-incidentes publica post-mortems públicos que viram novos controles do serviço.'}
+  ];
+  var idx = 0;
+  function desenha(){
+    var f = fases[idx];
+    var h = '<div class="timeline">';
+    fases.forEach(function(ff,i){
+      h += '<div class="ev'+(i===idx?' active':'')+'"><strong>'+(i+1)+'. '+esc(ff.nome)+'</strong> '+esc(ff.icone)+'</div>';
+    });
+    h += '</div>';
+    h += '<div style="padding:14px;background:#fff;border-radius:8px;border:2px solid var(--cor)">';
+    h += '<strong>'+f.icone+' '+esc(f.nome)+'</strong><br><br>';
+    h += '⚙️ <strong>Ações:</strong> '+esc(f.acoes)+'<br>';
+    h += '📄 <strong>Artefato:</strong> '+esc(f.artefato)+'<br><br>';
+    h += '<div style="padding:10px;background:#fff8e1;border-radius:6px;border-left:4px solid #ffa000">🌍 <strong>Caso real:</strong> '+esc(f.caso)+'</div></div>';
+    h += '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">'+
+      '<button class="btn sec" id="i-prev" '+(idx===0?'disabled':'')+'>← Fase anterior</button>'+
+      '<button class="btn" id="i-next">'+(idx===fases.length-1?'🔄 Recomeçar':'Próxima fase →')+'</button></div>';
+    wrap.innerHTML = h;
+    wrap.querySelector('#i-prev').addEventListener('click',function(){if(idx>0){idx--;desenha();}});
+    wrap.querySelector('#i-next').addEventListener('click',function(){idx=(idx===fases.length-1)?0:idx+1;desenha();});
+  }
+  area.appendChild(wrap);
+  desenha();
+}
+
+function demoPolitica(area){
+  var wrap = document.createElement('div');
+  var pol = {min:8, maius:true, numero:true, especial:true, maxTentativas:5};
+  var senhaTeste = 'MinhaSenha123!';
+  function validar(s){
+    var falhas = [];
+    if(s.length < pol.min) falhas.push('Comprimento mínimo é '+pol.min+' caracteres');
+    if(pol.maius && !/[A-Z]/.test(s)) falhas.push('Deve conter letra maiúscula');
+    if(pol.numero && !/[0-9]/.test(s)) falhas.push('Deve conter número');
+    if(pol.especial && !/[^A-Za-z0-9]/.test(s)) falhas.push('Deve conter caractere especial');
+    return falhas;
+  }
+  function desenha(){
+    var falhas = validar(senhaTeste);
+    var passou = falhas.length===0;
+    var h = '<div style="padding:10px;background:#fff;border-radius:8px;border:1px solid var(--borda);margin-bottom:8px">'+
+      '<label><strong>Senha em teste:</strong></label>'+
+      '<input type="text" id="p-s" value="'+esc(senhaTeste)+'" style="width:100%;padding:8px;border-radius:6px;border:2px solid var(--cor);font-family:monospace;font-size:1rem;margin-top:4px"></div>';
+    h += '<div style="padding:10px;background:#fff;border-radius:8px;border:1px solid var(--borda)">';
+    h += '<strong>Cláusulas da política:</strong>';
+    h += '<div class="checklist">';
+    h += '<label><input type="checkbox" id="p-c1" '+(pol.maius?'checked':'')+'><span>Exigir letra maiúscula</span></label>';
+    h += '<label><input type="checkbox" id="p-c2" '+(pol.numero?'checked':'')+'><span>Exigir número</span></label>';
+    h += '<label><input type="checkbox" id="p-c3" '+(pol.especial?'checked':'')+'><span>Exigir caractere especial</span></label>';
+    h += '</div>';
+    h += '<label>Comprimento mínimo: <strong>'+pol.min+'</strong><br><input type="range" id="p-n" min="4" max="20" value="'+pol.min+'" style="width:100%"></label>';
+    h += '</div>';
+    h += '<div style="padding:12px;background:'+(passou?'#d4edda':'#f8d7da')+';border-radius:8px;border-left:5px solid '+(passou?'var(--ok)':'var(--erro)')+';margin-top:10px">';
+    if(passou){
+      h += '✅ <strong>Senha aceita pela política.</strong> Exemplo real: senhas como "MinhaSenha123!" atendem políticas corporativas padrão (ISO 27001 e NIST).';
+    } else {
+      h += '❌ <strong>Senha REJEITADA pelas cláusulas:</strong><ul style="margin:6px 0 0 18px">';
+      falhas.forEach(function(f){ h += '<li>'+esc(f)+'</li>'; });
+      h += '</ul>Exemplo real: senhas como "123456", "senha" e "qwerty" são barradas por qualquer política séria e figuram no top 10 de senhas mais vazadas do mundo.';
+    }
+    h += '</div>';
+    wrap.innerHTML = h;
+    wrap.querySelector('#p-s').addEventListener('input',function(e){senhaTeste=e.target.value;desenha();});
+    wrap.querySelector('#p-n').addEventListener('input',function(e){pol.min=+e.target.value;desenha();});
+    wrap.querySelector('#p-c1').addEventListener('change',function(e){pol.maius=e.target.checked;desenha();});
+    wrap.querySelector('#p-c2').addEventListener('change',function(e){pol.numero=e.target.checked;desenha();});
+    wrap.querySelector('#p-c3').addEventListener('change',function(e){pol.especial=e.target.checked;desenha();});
+  }
+  area.appendChild(wrap);
+  desenha();
+}
+
+function demoImplementacao(area){
+  var wrap = document.createElement('div');
+  var controles = [
+    {nome:'MFA em sistemas críticos',meta:100,kpi:92},
+    {nome:'Backups testados mensalmente',meta:100,kpi:78},
+    {nome:'Treinamento de conscientização',meta:100,kpi:45},
+    {nome:'Patches críticos em 72h',meta:100,kpi:63},
+    {nome:'Logs centralizados em SIEM',meta:100,kpi:88}
+  ];
+  function maturidade(kpi){
+    if(kpi>=90) return {nome:'Otimizado',cor:'#2e7d32'};
+    if(kpi>=70) return {nome:'Gerenciado',cor:'#66bb6a'};
+    if(kpi>=50) return {nome:'Definido',cor:'#f9a825'};
+    if(kpi>=30) return {nome:'Repetível',cor:'#fb8c00'};
+    return {nome:'Inicial',cor:'#c62828'};
+  }
+  function desenha(){
+    var media = controles.reduce(function(a,c){return a+c.kpi;},0)/controles.length;
+    var mGeral = maturidade(media);
+    var h = '<div style="padding:12px;background:#fff;border-radius:8px;border:2px solid var(--cor);margin-bottom:10px">'+
+      '<div style="font-size:1.1rem">Maturidade geral do programa: <strong style="color:'+mGeral.cor+'">'+mGeral.nome+'</strong> ('+media.toFixed(0)+'%)</div>'+
+      '<div style="font-size:.88rem;color:var(--muted);margin-top:4px">Baseado em frameworks como CMMI. Auditoria ISO 27001 verifica exatamente isso.</div></div>';
+    controles.forEach(function(c,i){
+      var m = maturidade(c.kpi);
+      h += '<div style="padding:10px;background:#fff;border-radius:8px;border:1px solid var(--borda);margin-bottom:6px">'+
+        '<div style="display:flex;justify-content:space-between"><strong>'+esc(c.nome)+'</strong><span style="color:'+m.cor+';font-weight:700">'+m.nome+'</span></div>'+
+        '<div class="barra"><div style="width:'+c.kpi+'%;background:'+m.cor+'">'+c.kpi+'% da meta</div></div>'+
+        '<label>KPI atual: <strong>'+c.kpi+'%</strong> <input type="range" data-i="'+i+'" min="0" max="100" value="'+c.kpi+'" style="width:70%"></label></div>';
+    });
+    h += '<div style="padding:10px;background:#fff8e1;border-radius:6px;border-left:5px solid #ffa000;margin-top:10px;font-size:.92rem">💡 Observe que diferentes controles têm maturidades diferentes: o programa não é homogêneo. O dashboard aponta onde agir primeiro (o controle com menor KPI). Exemplo real: o programa security champions do Spotify distribui embaixadores para equalizar maturidade entre squads.</div>';
+    wrap.innerHTML = h;
+    wrap.querySelectorAll('input[type=range]').forEach(function(r){
+      r.addEventListener('input',function(e){controles[+e.target.dataset.i].kpi=+e.target.value;desenha();});
+    });
+  }
+  area.appendChild(wrap);
+  desenha();
+}
+
+function demoLGPD(area){
+  var wrap = document.createElement('div');
+  var cenarios = [
+    {pergunta:'⚕️ Clínica médica tratando prontuários de pacientes.',certa:'tutela',
+      opcoes:[
+        {id:'tutela',t:'Tutela da saúde',fb:'✅ Correto! Tutela da saúde é a base específica para procedimentos de saúde, dispensando consentimento em contextos clínicos.'},
+        {id:'consent',t:'Consentimento explícito',fb:'❌ Consentimento seria inviável em emergências e desnecessário quando há base específica (tutela da saúde).'},
+        {id:'legit',t:'Legítimo interesse',fb:'❌ Legítimo interesse exige teste de ponderação. Saúde tem base própria mais adequada.'}
+      ]},
+    {pergunta:'🏦 Banco enviando extrato mensal ao cliente.',certa:'contrato',
+      opcoes:[
+        {id:'contrato',t:'Execução de contrato',fb:'✅ Correto! O envio do extrato é parte do contrato bancário; não precisa de consentimento adicional.'},
+        {id:'consent',t:'Consentimento',fb:'❌ Consentimento seria burocrático e inadequado para obrigação contratual essencial.'},
+        {id:'legal',t:'Obrigação legal',fb:'❌ Há elementos legais, mas a base mais precisa aqui é execução de contrato (o extrato é cláusula contratual).'}
+      ]},
+    {pergunta:'📧 E-commerce enviando ofertas de marketing por e-mail.',certa:'consent',
+      opcoes:[
+        {id:'consent',t:'Consentimento do titular',fb:'✅ Correto! Marketing direto geralmente exige consentimento livre, informado e inequívoco. Clientes podem revogar a qualquer momento.'},
+        {id:'contrato',t:'Execução de contrato',fb:'❌ Ofertas não são execução do contrato de compra — são atividade adicional que exige base própria.'},
+        {id:'legal',t:'Obrigação legal',fb:'❌ Nenhuma lei obriga a empresa a fazer marketing. A base correta é consentimento.'}
+      ]},
+    {pergunta:'🏛️ Prefeitura processando dados para o Bolsa Família.',certa:'politicas',
+      opcoes:[
+        {id:'politicas',t:'Execução de políticas públicas',fb:'✅ Correto! Programas sociais previstos em lei têm base específica na LGPD, sem necessidade de consentimento individual.'},
+        {id:'consent',t:'Consentimento',fb:'❌ Políticas públicas previstas em lei não dependem de consentimento individual — seria inviável e contra o interesse coletivo.'},
+        {id:'tutela',t:'Tutela da saúde',fb:'❌ Bolsa Família é assistência social, não procedimento de saúde. A base correta é execução de políticas públicas.'}
+      ]},
+    {pergunta:'🔍 Birô de crédito analisando score para empréstimo.',certa:'credito',
+      opcoes:[
+        {id:'credito',t:'Proteção do crédito',fb:'✅ Correto! A LGPD prevê base específica para proteção do crédito, incluindo scoring e análise de risco (artigo 7, X).'},
+        {id:'consent',t:'Consentimento',fb:'❌ Score de crédito não exige consentimento individual; tem base legal própria na LGPD.'},
+        {id:'contrato',t:'Execução de contrato',fb:'❌ A análise de crédito antecede o contrato e é feita por terceiros (birôs), não pelas partes do contrato.'}
+      ]}
+  ];
+  var atual = 0;
+  function desenha(){
+    if(atual>=cenarios.length){
+      wrap.innerHTML = '<div style="padding:14px;background:#d4edda;border-radius:8px;border-left:5px solid var(--ok)">✅ <strong>Análise completa!</strong> Você identificou as bases legais corretas em 5 cenários típicos. Base legal errada torna o tratamento ilegal desde o início — por isso o data mapping (mapeamento de dados) é a primeira tarefa de conformidade LGPD.</div>';
+      return;
+    }
+    var c = cenarios[atual];
+    var h = '<div style="padding:14px;background:#fff;border-radius:8px;border:2px solid var(--cor);margin-bottom:10px"><strong>Cenário '+(atual+1)+'/'+cenarios.length+':</strong><br><br>'+esc(c.pergunta)+'</div>';
+    h += '<div style="display:flex;flex-direction:column;gap:8px">';
+    c.opcoes.forEach(function(o){
+      h += '<button class="alt" data-id="'+o.id+'">'+esc(o.t)+'</button>';
+    });
+    h += '</div><div id="l-fb" style="margin-top:10px"></div>';
+    wrap.innerHTML = h;
+    wrap.querySelectorAll('.alt').forEach(function(btn){
+      btn.addEventListener('click',function(){
+        var id = btn.dataset.id;
+        var op = null; c.opcoes.forEach(function(o){if(o.id===id) op=o;});
+        var fb = document.createElement('div');
+        var correta = (id===c.certa);
+        fb.className = 'fb '+(correta?'ok':'bad');
+        fb.innerHTML = (correta?'':'❌ ') + esc(op.fb);
+        if(correta){
+          fb.innerHTML += '<br><button class="btn" style="margin-top:8px">Próximo cenário →</button>';
+          wrap.querySelectorAll('.alt').forEach(function(x){x.disabled=true;});
+          fb.querySelector('button').addEventListener('click',function(){atual++;desenha();});
+        } else {
+          btn.disabled = true;
+          fb.innerHTML += '<br><em>🔁 As outras opções continuam disponíveis. Tente de novo!</em>';
+        }
+        wrap.appendChild(fb);
+      });
+    });
+  }
+  area.appendChild(wrap);
+  desenha();
+}
+
+/* ---------- boot, ativação e routing ---------- */
+function ativar(id){
+  var alvo = document.getElementById(id) ? id : AULA_DADOS.abas[0].id;
+  document.querySelectorAll('section.aba').forEach(function(s){ s.classList.toggle('ativa', s.id===alvo); });
+  document.querySelectorAll('nav.tabs button').forEach(function(b){
+    b.setAttribute('aria-selected', b.dataset.id===alvo ? 'true':'false');
+  });
+  estado.abaAtiva = alvo;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function hashAtual(){
+  var h = location.hash.replace('#','');
+  return h || AULA_DADOS.abas[0].id;
+}
+function ligarBotoesGerais(root){
+  root.querySelectorAll('[data-restart]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var id = b.dataset.restart;
+      var aba = null;
+      AULA_DADOS.abas.forEach(function(a){ if(a.id===id) aba=a; });
+      renderDemo(aba);
+      showToast('🔄 Demo reiniciada');
+    });
+  });
+  root.querySelectorAll('[data-done]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var id = b.dataset.done;
+      if(!demoTem(id)){
+        demoAdd(id);
+        ganhaXP(5,'Demo concluída');
+        verificarAbaCompleta(id);
+        salvarEstado();
+        var span = document.createElement('span');
+        span.className='selo-chip';
+        span.textContent='✓ Demo concluída';
+        b.replaceWith(span);
+      }
+    });
+  });
+}
+function entregarChefao(){
+  var t = (document.getElementById('chefaoResp').value||'').trim();
+  var fb = document.getElementById('chefaoFb');
+  if(t.length<200){
+    fb.className='fb bad';fb.style.display='block';
+    fb.innerHTML='❌ Resposta muito curta. Cubra os 5 pontos do parecer.';return;
+  }
+  var lower = t.toLowerCase();
+  var pontos = 0;
+  if(/amea[çc]a.*vulnerab|vulnerab.*amea[çc]a|equa[çc][ãa]o.*risco|risco.*equa[çc][ãa]o/.test(lower)) pontos++;
+  if(/mitigar|mitiga[çc][ãa]o|patch|mfa|atualiza[çc][ãa]o/.test(lower)) pontos++;
+  if(/nist|prepara[çc][ãa]o|identifica[çc][ãa]o|conten[çc][ãa]o|erradica[çc][ãa]o|recupera[çc][ãa]o|li[çc][õo]es/.test(lower)) pontos++;
+  if(/pol[íi]tica|norma|documento|acesso|controle/.test(lower)) pontos++;
+  if(/lgpd|13.709|base legal|anpd|dado pessoal|san[çc][ãa]o/.test(lower)) pontos++;
+  fb.style.display='block';
+  if(pontos>=4){
+    fb.className='fb ok';
+    fb.innerHTML='✅ <strong>Parecer aprovado!</strong> Você cobriu '+pontos+'/5 pontos. Ganhou 50 XP e o selo Auditor de Incidentes.';
+    ganhaXP(50,'Chefão concluído');
+    adicionaSelo('Auditor de Incidentes');
+  } else {
+    fb.className='fb bad';
+    fb.innerHTML='❌ Você cobriu apenas '+pontos+'/5 pontos. Reveja: equação de risco, mitigação prévia (patch Log4j, MFA), fases NIST (onde falhou — identificação tardia e falta de contenção), política de gestão de vulnerabilidades e base legal LGPD (provável obrigação legal + sanções).';
+  }
+}
+
+function showToast(msg){
+  var t = document.getElementById('toast');
+  if(!t){
+    t = document.createElement('div');
+    t.id='toast';
+    t.style.cssText='position:fixed;bottom:20px;right:20px;background:#263238;color:#fff;padding:12px 18px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.3);z-index:200;font-weight:600;opacity:0;transition:opacity .3s';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity='1';
+  clearTimeout(t._tm);
+  t._tm = setTimeout(function(){t.style.opacity='0';},2200);
+}
+function atualizaProgresso(){
+  var pr = document.getElementById('progresso');
+  if(!pr) return;
+  var chips = Object.keys(estado.selos).map(function(s){return '<span class="selo-chip">'+esc(s)+'</span>';}).join('');
+  pr.innerHTML = '<span>⭐ XP: <span class="xp">'+estado.xp+'</span></span><span>🏅 Selos:</span><span class="selos">'+(chips||'<em style="color:var(--muted)">conquiste ao completar demos e quizzes</em>')+'</span>';
+}
+
+/* ---------- init ---------- */
+carregarEstado();
+renderTabs();
+renderMain();
+AULA_DADOS.abas.forEach(function(a){ renderDemo(a); });
+ligarQuiz(document.getElementById('main'));
+ligarMito(document.getElementById('main'));
+ligarBotoesGerais(document.getElementById('main'));
+var cb = document.getElementById('chefaoBtn');
+if(cb) cb.addEventListener('click',entregarChefao);
+document.getElementById('btnDark').addEventListener('click',function(){
+  estado.dark = !estado.dark;
+  document.body.classList.toggle('dark',estado.dark);
+  document.getElementById('btnDark').textContent = estado.dark?'☀️':'🌙';
+});
+document.getElementById('btnApres').addEventListener('click',function(){
+  estado.apres = !estado.apres;
+  document.body.classList.toggle('apresentacao',estado.apres);
+  document.getElementById('btnApres').textContent = estado.apres?'📖':'';
+  if(estado.apres){
+    document.body.classList.remove('dark');
+    estado.dark=false;
+    document.getElementById('btnDark').textContent='🌙';
+    var r = document.createElement('div');
+    r.className='rota-apres';r.id='rotaApres';
+    r.innerHTML = '🎤 <strong>Modo Apresentação:</strong> use ← → para navegar. Roteiro: 6 min por aba (1–5); Passo 0 = previsão da demo. Aba 6 é estudo próprio.';
+    document.body.appendChild(r);
+  } else {
+    var r2 = document.getElementById('rotaApres');
+    if(r2) r2.remove();
+  }
+});
+document.addEventListener('keydown',function(e){
+  if(!estado.apres) return;
+  var ids = AULA_DADOS.abas.map(function(a){return a.id;}).concat(['revisao']);
+  var idx = ids.indexOf(estado.abaAtiva);
+  if(e.key==='ArrowRight' && idx<ids.length-1){ ativar(ids[idx+1]); location.hash = ids[idx+1]; e.preventDefault(); }
+  else if(e.key==='ArrowLeft' && idx>0){ ativar(ids[idx-1]); location.hash = ids[idx-1]; e.preventDefault(); }
+});
+window.addEventListener('hashchange',function(){ ativar(hashAtual()); });
+/* CARGA INICIAL: exatamente UM painel ativo */
+ativar(hashAtual());
+</script>
+</body>
+</html>
