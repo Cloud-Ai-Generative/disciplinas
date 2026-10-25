@@ -65,5 +65,5 @@ setTimeout(()=>renderMermaidIn(document.querySelector('.tab-panel.active')),150)
 document.getElementById('theme-toggle').onclick=()=>{const n=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',n);document.querySelectorAll('.mermaid-box').forEach(b=>b.removeAttribute('data-rendered'));initMermaid();renderMermaidIn(document.querySelector('.tab-panel.active'));};
 document.getElementById('focus-toggle').onclick=()=>document.body.classList.toggle('focus-mode');
 document.getElementById('print-btn').onclick=()=>window.print();
-showToast('👋 B.25: 10 abas — agora com Contrato e API C# Multi-Contextos (Catálogo·Pedidos·Clientes)!');
+showToast('👋 B.26: 12 abas — agora com migração MySQL → MongoDB em Java (6-B, online) e C# (9-B, offline)!');
 });
