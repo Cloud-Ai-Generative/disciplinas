@@ -1,89 +1,3351 @@
-<!-- ============ TAB 9-B (NOVA): MIGRAÇÃO MySQL → MongoDB ============ -->
+<!-- ============ TAB 9-B: MIGRAÇÃO MySQL → MongoDB (C# MULTI-CONTEXTOS + AUTH JWT) ============ -->
 <section class="tab-panel" id="tab9b">
 <div class="card">
-<h2 class="card-title">🍃 Migração MySQL → MongoDB — Mesma API, Novo Banco: Portas por Contexto + Documentos + Cut-over Validado</h2>
-<p class="section-intro">Atende à exigência de evolução tecnológica: <strong>substituir o RDBMS por MongoDB</strong> mantendo a API <strong>idêntica em comportamento</strong> (mesmo contrato da Tab 9). Estratégia: <strong>portas de repositório</strong> nos 4 contextos com <strong>duas implementações</strong> (EF Core e MongoDB.Driver), <strong>migração de dados com validação</strong> e <strong>cut-over por configuração</strong> com janela de rollback. <span class="ide-tag cs">IDE: VS Code</span></p>
-<div class="doc-banner"><strong>🧔 Rafael Souza · 🍃 Backend (Migração):</strong> esta aba é a <strong>evolução controlada</strong> da Tab 9. Mini-fluxo: <em>Tab 9 (MySQL) → portas + Ef* (2/5) → Mongo* + switch (3/5) → migração de dados (4/5) → desempenho + paridade + cut-over (5/5)</em>. <a href="javascript:switchTab('tab9')" style="color:var(--primary);text-decoration:underline">Ponto de partida (Tab 9) →</a></div>
+<h2 class="card-title">🍃 Migração MySQL → MongoDB — Multi-Contextos + Auth JWT: Ports &amp; Adapters + Migração de Dados Validada + Mesmo Comportamento</h2>
+<p class="section-intro">Continua a <strong>Tab 9</strong>: a mesma API (Auth · Catálogo · Pedidos · Clientes), agora com o banco <strong>substituído por MongoDB</strong>. Como a Tab 9 já foi preparada com <strong>portas de repositório</strong> (<code>I*Repository</code>) e a chave <code>Persistence:Provider</code>, a migração mexe <strong>só na infraestrutura</strong>: controllers, serviços, domínio, contrato da API e os 21 testes <strong>não mudam</strong>. Guia passo a passo, com o porquê de cada decisão, código comentado, como conferir e erros comuns. <span class="ide-tag cs">IDE: VS Code</span></p>
+<div class="doc-banner"><strong>🧔 Rafael Souza · 🔷 Backend (Migração MongoDB):</strong> esta aba é a <strong>fase de troca de banco</strong> da solução multi-contextos. Mini-fluxo: <em>Tab 9 (MySQL + portas) → adapters Mongo → migrador + validação → virar a chave → provar comportamento e desempenho</em>. <a href="javascript:switchTab('tab9')" style="color:var(--primary);text-decoration:underline">← Solução MySQL preparada (Tab 9)</a></div>
 
-<!-- ══════════ SEÇÃO 1: O REQUISITO E A ESTRATÉGIA ══════════ -->
+<!-- ══════════ CONCEITOS ══════════ -->
 <div class="deep-concept-box">
-<h3>📜 O requisito: evoluir o banco sem quebrar a API</h3>
-<p>O enunciado da evolução tem 5 pontos — e cada um vira <strong>critério de aceitação</strong> desta aba:</p>
-<ul>
-<li><strong>Substituir</strong> o banco de dados existente pelo MongoDB;</li>
-<li><strong>Adaptar</strong> as APIs para serem compatíveis com o novo banco;</li>
-<li>O sistema <strong>continuar funcionando como antes</strong> (mesmos endpoints, mesmos JSON, mesmos status);</li>
-<li><strong>Migrar os dados existentes com precisão</strong> (nada se perde, nada se altera);</li>
-<li><strong>Manter o desempenho adequado</strong> após a movimentação.</li>
-</ul>
-<p>A regra de ouro: <strong>o contrato HTTP não muda</strong>. Controllers, services, JWT, middleware e os 21 testes da Tab 9 permanecem intactos — só a <strong>camada de persistência</strong> é trocada.</p>
-</div>
-<div class="deep-concept-box">
-<h3>📄 Agregado = documento: o que era JOIN vira embed</h3>
-<p>No MySQL, a fronteira era <strong>tabela por agregado</strong> + tabelas filhas. No MongoDB, a fronteira vira <strong>documento por agregado</strong>: filhos que <em>não vivem fora do pai</em> são <strong>embutidos</strong> (embed), eliminando JOINs (que não existem no Mongo).</p>
+<h3>📜 O que esta fase exige — e onde cada requisito é atendido</h3>
 <div class="table-wrap" style="margin:12px 0">
 <table>
-<thead><tr><th>Contexto</th><th>MySQL (hoje)</th><th>MongoDB (destino)</th><th>_id do documento</th><th>O que vira embed</th></tr></thead>
+<thead><tr><th>#</th><th>Requisito da especificação</th><th>Como atendemos</th><th>Passos</th></tr></thead>
 <tbody>
-<tr><td>🔑 Auth</td><td><code>auth_db.usuarios</code></td><td><code>loja_auth.usuarios</code></td><td>Guid original (string)</td><td>—</td></tr>
-<tr><td>📦 Catálogo</td><td><code>catalogo_db.produtos</code></td><td><code>loja_catalogo.produtos</code></td><td>int original</td><td>—</td></tr>
-<tr><td>🛒 Pedidos</td><td><code>pedidos_db.pedidos</code> + <code>pedido_itens</code></td><td><code>loja_pedidos.pedidos</code></td><td>int original</td><td><code>itens[]</code> (ex-tabela owned)</td></tr>
-<tr><td>🧾 Clientes</td><td><code>clientes_db.clientes</code> + <code>enderecos</code></td><td><code>loja_clientes.clientes</code></td><td>int original</td><td><code>enderecos[]</code> (ex-tabela 1:N)</td></tr>
+<tr><td>1</td><td><strong>Substitua o banco de dados existente pelo MongoDB</strong></td><td>Adapters <code>Mongo*Repository</code> nos 4 módulos + <code>Persistence:Provider = "Mongo"</code></td><td>2 – 10, 13</td></tr>
+<tr><td>2</td><td><strong>Adapte as APIs para serem compatíveis com o novo banco</strong></td><td>Só a camada de infraestrutura muda; endpoints, JSON e contrato OpenAPI (Tab 8) ficam idênticos</td><td>6 – 10</td></tr>
+<tr><td>3</td><td><strong>O sistema deve continuar a funcionar como antes</strong></td><td>Os mesmos 21 testes + o mesmo <code>smoke.sh</code> rodado nos dois bancos com resultado idêntico</td><td>13</td></tr>
+<tr><td>4</td><td><strong>Migre os dados existentes com precisão</strong> <sup>*</sup></td><td><code>LojaApi.Migrator</code>: cópia idempotente + relatório (contagens, somas de controle, comparação campo a campo)</td><td>11 – 12</td></tr>
+<tr><td>5</td><td><strong>Mantenha o desempenho adequado após a movimentação</strong></td><td>Mesmos índices nos dois bancos, <code>IMongoClient</code> singleton, projeções, teste de carga k6 antes × depois e <code>explain()</code></td><td>5, 10, 14</td></tr>
 </tbody>
 </table>
+</div>
+<p style="font-size:.9em"><sup>*</sup> O enunciado original diz "migre os dados existentes para o banco de dados <em>original</em>" — entendemos como o <strong>novo</strong> banco (MongoDB). Vale confirmar com o professor.</p>
+</div>
+
+<div class="deep-concept-box">
+<h3>🧩 Do relacional aos documentos: o mapeamento</h3>
+<p>No MySQL, um agregado do DDD fica "espalhado" em várias tabelas ligadas por chaves estrangeiras. No MongoDB, <strong>um agregado vira um documento</strong>: o que pertence a ele vai <strong>embutido</strong>. Como a Tab 9 já organizou os repositórios por agregado, o encaixe é direto.</p>
+<div class="table-wrap" style="margin:12px 0">
+<table>
+<thead><tr><th>MySQL (Tab 9)</th><th>MongoDB (Tab 9-B)</th><th>Decisão e porquê</th></tr></thead>
+<tbody>
+<tr><td><code>auth_db.usuarios</code></td><td><code>auth_db.usuarios</code></td><td><code>_id</code> = o mesmo <strong>Guid</strong> (UUID padrão): os tokens já emitidos (claim <code>sub</code>) continuam válidos</td></tr>
+<tr><td><code>catalogo_db.produtos</code></td><td><code>catalogo_db.produtos</code></td><td><code>_id</code> <strong>inteiro</strong>; preço em <strong>Decimal128</strong> (exato, sem perder centavos)</td></tr>
+<tr><td><code>clientes_db.clientes</code> + <code>enderecos</code> (FK)</td><td><code>clientes_db.clientes</code> com <code>enderecos: [ ... ]</code></td><td>Endereço <strong>embutido</strong>, mas mantendo seu <code>id</code> — Pedidos referencia <code>enderecoId</code></td></tr>
+<tr><td><code>pedidos_db.pedidos</code> + <code>pedido_itens</code> (FK)</td><td><code>pedidos_db.pedidos</code> com <code>itens: [ ... ]</code></td><td>Item <strong>embutido</strong> e <strong>sem</strong> chave própria; <code>reservaIds</code> passa a ser persistido</td></tr>
+<tr><td><code>AUTO_INCREMENT</code></td><td>coleção <code>counters</code> + <code>$inc</code></td><td>Mantém ids inteiros → URLs e contrato da API não mudam</td></tr>
+<tr><td>4 databases (1 por contexto)</td><td>4 databases (1 por contexto)</td><td>A fronteira de dados do monolito modular é preservada</td></tr>
+</tbody>
+</table>
+</div>
+<div class="analogy-highlight"><span class="icon">🗂️</span><div><strong>Analogia da pasta de arquivo:</strong> no relacional, o pedido é uma ficha numa gaveta e os itens são fichas em <em>outra</em> gaveta, ligadas pelo número do pedido. No MongoDB, o pedido é uma <strong>pasta</strong> com os itens grampeados dentro: abriu a pasta, está tudo ali — sem ir a outra gaveta (sem JOIN).</div></div>
+</div>
+
+<div class="deep-concept-box">
+<h3>🧠 Três decisões que guiam toda a migração</h3>
+<ol>
+<li><strong>Modelo de persistência separado do domínio.</strong> Não gravamos <code>Produto</code> direto no Mongo. Cada módulo ganha classes <code>*Document</code> (formato do banco, com <code>[BsonElement]</code>) e converte com <code>FromDomain(...)</code> / <code>ToDomain()</code> — esta última usando o <code>Reconstituir(...)</code> preparado na Tab 9. O formato no banco fica <strong>explícito</strong> e o domínio continua <strong>limpo</strong>.</li>
+<li><strong>Mesmo comportamento observável.</strong> Cada método do adapter Mongo reproduz exatamente o efeito do adapter EF: mesma ordenação, mesma normalização de login, mesma reserva atômica (agora com <code>$expr</code> + <code>$inc</code>), mesmos códigos HTTP.</li>
+<li><strong>Migração reversível e provada.</strong> O MySQL fica intacto durante a validação; voltar é trocar <code>Provider</code> para <code>MySql</code>. E "funciona igual" não é opinião: é relatório de validação, testes e smoke test.</li>
+</ol>
+</div>
+
+<h4 class="diag-title">📐 D-9B.1 <span class="dt-type">C4 · Nível 2 (Container)</span> — Durante a migração: dois bancos, um interruptor</h4>
+<div class="mermaid-box" data-code='flowchart LR
+U["👤 Usuário"] -->|"Bearer JWT"| API
+subgraph API["🖥️ LojaApi.Api"]
+MOD["4 módulos (portas I*Repository)"]
+end
+MOD -->|"Provider = MySql (antes / rollback)"| MY["🐬 MySQL · 4 databases"]
+MOD -->|"Provider = Mongo (depois)"| MO["🍃 MongoDB · 4 databases"]
+MIG["🚚 LojaApi.Migrator"] -->|"1. lê (EF)"| MY
+MIG -->|"2. grava (bulkWrite upsert)"| MO
+MIG -->|"3. compara"| REL["📋 relatorio-migracao.md"]'>
+<div class="mermaid"></div>
+</div>
+
+<h4 class="diag-title">📐 D-9B.2 <span class="dt-type">UML · Sequência</span> — Runbook da virada (janela de manutenção)</h4>
+<div class="mermaid-box" data-code='sequenceDiagram
+participant Op as 👩‍💻 Operador
+participant API as LojaApi.Api
+participant Mig as Migrator
+participant My as MySQL
+participant Mo as MongoDB
+Op->>API: 1. parar a API (congela escritas)
+Op->>Mig: 2. dotnet run -- migrar
+Mig->>My: lê usuarios, produtos, clientes, pedidos
+Mig->>Mo: bulkWrite upsert + ajusta counters
+Op->>Mig: 3. dotnet run -- validar
+Mig->>My: lê origem
+Mig->>Mo: lê destino
+Mig-->>Op: relatório APROVADO / REPROVADO
+alt APROVADO
+Op->>API: 4. subir com Provider = Mongo
+Op->>API: 5. smoke.sh + testes
+else REPROVADO
+Op->>API: subir com Provider = MySql (nada mudou)
+end'>
+<div class="mermaid"></div>
+</div>
+
+<!-- ══════════ PARTE 1 ══════════ -->
+<div class="lab-container">
+<div class="lab-header">
+<h3>🧭 Parte 1 — Preparar o terreno (Passos 0 a 2)</h3>
+<div class="lab-actions"><button class="btn btn-zip" onclick="openDlModal('tab9b')">📦 Baixar ZIP desta aba</button></div>
 </div>
 <div class="info-banner">
-<strong>💡 Paridade de ids:</strong> mantemos os <strong>ids originais</strong> (int/Guid) como <code>_id</code> — URLs, FKs lógicas e contratos continuam idênticos, e a validação da migração vira comparação direta. ObjectId entraria apenas em dados <strong>novos</strong> pós-cut-over (decisão documentada na Parte 4).
+<strong>📦 Como usar o ZIP desta aba:</strong> ele contém <strong>só os arquivos novos e alterados</strong> da Tab 9-B. Extraia <strong>por cima</strong> da pasta <code>LojaMulti/</code> da Tab 9 (aceite substituir). O <code>LojaMulti.sln</code> do ZIP já inclui os 2 projetos novos (<code>LojaApi.Shared.Mongo</code> e <code>LojaApi.Migrator</code>).
 </div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🟢 Passo 0 — Ponto de partida seguro</h4>
+<p>Para provar que o sistema "continua funcionando como antes", primeiro precisamos de um <strong>"antes" comprovado</strong>. E toda migração começa com <strong>backup</strong>.</p>
+<div class="term-help"><strong>🖥️ Terminal:</strong> <span class="ide-tag cs">VS Code</span> <kbd>Ctrl+`</kbd>, na pasta da solução da Tab 9 (onde está o <code>.sln</code>).</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal do VS Code - Passo 0: linha de base + backup</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor"># ──────────────────────────────────────────────────────────────
+# 1) A Tab 9 precisa estar VERDE antes de qualquer mudança
+# ──────────────────────────────────────────────────────────────
+dotnet build
+dotnet test          # esperado: Passed: 21, Failed: 0
+
+# ──────────────────────────────────────────────────────────────
+# 2) MySQL da Tab 9 no ar (ele é a ORIGEM dos dados)
+# ──────────────────────────────────────────────────────────────
+docker compose up -d
+docker compose ps    # mysql-db deve estar "healthy"
+
+# ──────────────────────────────────────────────────────────────
+# 3) BACKUP dos 4 databases (plano B se algo der muito errado)
+# ──────────────────────────────────────────────────────────────
+docker exec dev_mysql_multicontextos mysqldump -uroot -proot123 \
+  --databases auth_db catalogo_db pedidos_db clientes_db &gt; backup-antes-da-migracao.sql
+
+# Confere que o arquivo não está vazio
+ls -lh backup-antes-da-migracao.sql</pre>
 </div>
-<div class="deep-concept-box">
-<h3>🔌 Uma porta, duas implementações (DIP aplicado 4×)</h3>
-<p>A Tab 9 já plantou o padrão no Auth (<code>IUsuarioRepository</code>). Agora ele vira <strong>regra dos 4 contextos</strong>: cada módulo expõe uma <strong>porta</strong> (interface) e ganha <strong>duas implementações</strong> — <code>Ef*Repository</code> (MySQL) e <code>Mongo*Repository</code> (MongoDB.Driver). Quem decide qual entra em produção é <strong>uma única chave de configuração</strong>: <code>Storage:Provider</code> = <code>MySql</code> | <code>Mongo</code>.</p>
-<ul>
-<li><strong>Services e controllers:</strong> zero alterações (dependem só da interface);</li>
-<li><strong>DI:</strong> o host registra <code>Ef*</code> ou <code>Mongo*</code> conforme o provider;</li>
-<li><strong>Rollback:</strong> voltar para MySQL = trocar a chave e reiniciar.</li>
-</ul>
+<div class="success-banner"><strong>✅ Como conferir:</strong> 21 testes verdes · <code>mysql-db</code> healthy · <code>backup-antes-da-migracao.sql</code> com alguns KB (contém os <code>CREATE TABLE</code> e <code>INSERT</code>).</div>
+<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> testes vermelhos → resolva na Tab 9 antes de seguir (migrar sobre uma base quebrada esconde a origem dos erros); <code>mysqldump: Access denied</code> → use o usuário <code>root</code>, como acima.</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🧩 Passo 1 — Desenhar os documentos (antes de escrever código)</h4>
+<p>Modelar é decidir <strong>o que fica junto</strong>. A regra prática: <em>embuta o que pertence ao agregado e é lido junto; referencie (por id) o que é de outro agregado ou outro contexto.</em> Por isso o pedido embute os itens, mas guarda <code>clienteId</code>, <code>enderecoId</code> e <code>produtoId</code> como <strong>referências</strong> — são de outros contextos.</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">documentos de exemplo (formato mongosh)</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">// auth_db.usuarios
+{ _id: UUID("3f2b..."), login: "admin", nome: "Administrador",
+  senha: "admin123", criadoEm: ISODate("2026-10-24T22:00:00.000Z") }
+
+// catalogo_db.produtos
+{ _id: 1, nome: "Teclado Mecânico RGB", preco: NumberDecimal("349.90"),
+  estoque: 15, reservado: 0 }
+
+// clientes_db.clientes  → endereços EMBUTIDOS (com id preservado)
+{ _id: 1, nome: "Ana Souza", email: "ana@example.com", ativo: true,
+  enderecos: [ { id: 1, logradouro: "Rua A, 123", cidade: "São Paulo",
+                 uf: "SP", cep: "01001-000" } ] }
+
+// pedidos_db.pedidos  → itens EMBUTIDOS; cliente/endereço/produto por REFERÊNCIA
+{ _id: 1, usuario: "3f2b...", clienteId: 1, enderecoId: 1, status: "RESERVADO",
+  itens: [ { produtoId: 1, quantidade: 2, precoUnitario: NumberDecimal("349.90") } ],
+  reservaIds: [ "a1b2c3d4" ] }
+
+// &lt;qualquer database&gt;.counters  → substitui o AUTO_INCREMENT
+{ _id: "produtos", seq: 3 }</pre>
 </div>
-<h4 class="diag-title">📐 D-32 <span class="dt-type">C4 · Nível 2</span> — Portas com provider duplo</h4>
-<div class="mermaid-box" data-code='flowchart LR
-subgraph API["🖥️ LojaApi.Api — controllers e services NÃO mudam"]
-CTRL["Controllers + Services (Tab 9)"]
-PORTS["🔌 Portas: IUsuarioRepository · IProdutoRepository · IPedidoRepository · IClienteRepository"]
-end
-CTRL --> PORTS
-PORTS -->|"Storage:Provider=MySql"| EF["🏭 Ef*Repository (EF Core/Pomelo)"]
-PORTS -->|"Storage:Provider=Mongo"| MG["🍃 Mongo*Repository (MongoDB.Driver)"]
-EF --> MY[("🐬 MySQL: 4 databases")]
-MG --> MO[("🍃 MongoDB: 4 databases espelho")]'>
-<div class="mermaid"></div>
+<div class="analogy-highlight"><span class="icon">⚖️</span><div><strong>Embutir ou referenciar?</strong> Embutir dá leitura em <strong>1 acesso</strong> e escrita atômica do agregado inteiro; o custo é duplicar dados se a mesma informação for compartilhada. Como itens e endereços pertencem a <strong>um só</strong> pedido/cliente, embutir é a escolha certa. Já o produto é compartilhado por muitos pedidos — por isso o pedido guarda só <code>produtoId</code> + o <strong>snapshot</strong> do preço.</div></div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🍃 Passo 2 — Subir o MongoDB ao lado do MySQL</h4>
+<p>Durante a migração os <strong>dois bancos</strong> ficam no ar: o MySQL é a origem e o plano de rollback; o MongoDB é o destino. Usamos um compose <strong>separado</strong>, ligado à mesma rede da Tab 9.</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">docker-compose.mongo.yml</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="docker-compose.mongo.yml"># ══════════════════════════════════════════════════════════
+# COMPOSE DO MONGODB (Tab 9-B) — roda AO LADO do MySQL da Tab 9
+# ══════════════════════════════════════════════════════════
+# Por que um arquivo SEPARADO e não editar o docker-compose.yml da Tab 9?
+# Durante a migração precisamos dos DOIS bancos no ar: o MySQL é a ORIGEM
+# (e o plano de rollback); o Mongo é o DESTINO.
+#
+# Pré-requisito: o compose da Tab 9 já rodando (ele cria a rede
+# loja_multi_network, usada aqui como "external").
+#
+# Uso:
+#   docker compose -f docker-compose.mongo.yml up -d     → sobe o Mongo
+#   docker compose -f docker-compose.mongo.yml ps        → status (healthy?)
+#   docker compose -f docker-compose.mongo.yml down      → derruba (mantém dados)
+#   docker compose -f docker-compose.mongo.yml down -v   → derruba e APAGA os dados
+# ══════════════════════════════════════════════════════════
+
+services:
+  mongo-db:
+    # MongoDB 8 (inclui o shell mongosh dentro da imagem)
+    image: mongo:8
+
+    # Nome fixo do container (facilita docker exec)
+    container_name: dev_mongo_multicontextos
+
+    restart: unless-stopped
+
+    # Usuário administrador criado no PRIMEIRO boot (volume vazio)
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root123
+      TZ: America/Sao_Paulo
+
+    # Porta padrão do MongoDB
+    ports:
+      - "27017:27017"
+
+    volumes:
+      # Volume nomeado: dados persistem entre down/up
+      - mongo_multi_data:/data/db
+
+    networks:
+      - loja_multi_network
+
+    # Healthcheck: "ping" administrativo via mongosh
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "-u", "root", "-p", "root123", "--authenticationDatabase", "admin", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  mongo_multi_data:
+    driver: local
+
+# A rede JÁ EXISTE (criada pelo compose da Tab 9): não recriamos, só usamos.
+# Assim a API em container enxerga "mysql-db" E "mongo-db" pelo nome.
+networks:
+  loja_multi_network:
+    external: true</pre>
 </div>
-<h4 class="diag-title">📐 D-33 <span class="dt-type">Fluxo</span> — As 6 fases da migração</h4>
-<div class="mermaid-box" data-code='flowchart LR
-F1["1️⃣ Congelar: baseline de paridade (21 testes + curls)"] --> F2["2️⃣ Extrair: SQL → JSON por agregado"]
-F2 --> F3["3️⃣ Carregar: import no Mongo preservando ids"]
-F3 --> F4["4️⃣ Validar: contagens + checksum + amostras"]
-F4 --> F5["5️⃣ Cut-over: Storage:Provider=Mongo"]
-F5 --> F6["6️⃣ Rollback ou sunset do MySQL"]'>
-<div class="mermaid"></div>
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal do VS Code - Passo 2: subir e testar o MongoDB</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor"># Sobe o MongoDB (a rede loja_multi_network já existe por causa da Tab 9)
+docker compose -f docker-compose.mongo.yml up -d
+
+# Espere ficar "healthy"
+docker compose -f docker-compose.mongo.yml ps
+
+# Abre o shell do MongoDB (mongosh) dentro do container
+docker exec -it dev_mongo_multicontextos mongosh -u root -p root123 --authenticationDatabase admin
+
+# Dentro do mongosh:
+#   show dbs            → por enquanto só admin, config, local
+#   db.version()        → 8.x
+#   exit</pre>
 </div>
+<div class="success-banner"><strong>✅ Como conferir:</strong> <code>ps</code> mostra <code>dev_mongo_multicontextos</code> como <strong>healthy</strong> e o <code>mongosh</code> conecta e responde a <code>db.version()</code>.</div>
+<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> <code>network loja_multi_network declared as external, but could not be found</code> → suba antes o compose da Tab 9 (<code>docker compose up -d</code>); <code>port 27017 already in use</code> → outro MongoDB rodando (pare-o ou troque para <code>"27018:27017"</code> e ajuste a connection string); <code>Authentication failed</code> → o usuário root só é criado no <strong>primeiro</strong> boot: se mudou a senha depois, rode <code>down -v</code>.</div>
+</div>
+
+<!-- ══════════ PARTE 2 ══════════ -->
+<div class="lab-container">
+<div class="lab-header">
+<h3>🔧 Parte 2 — Ensinar o C# a falar com o MongoDB (Passos 3 a 5)</h3>
+<div class="lab-actions"><span class="ide-tag cs">VS Code</span></div>
+</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">📦 Passo 3 — Projeto de infraestrutura Mongo, pacote e configuração</h4>
+<p>Criamos o projeto <code>LojaApi.Shared.Mongo</code>: código Mongo <strong>compartilhado</strong> pelos módulos (cliente, contadores, índices). Ele <strong>não</strong> vai no <code>Shared.Kernel</code>, porque o Kernel é vocabulário de domínio e não deve depender de banco nenhum.</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal do VS Code - Passo 3: criar o projeto (ou use o ZIP)</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor"># Projeto de infraestrutura Mongo compartilhada
+dotnet new classlib -n LojaApi.Shared.Mongo -f net10.0
+dotnet sln add LojaApi.Shared.Mongo --in-root
+dotnet add LojaApi.Shared.Mongo package MongoDB.Driver --version 3.4.0
+
+# Cada módulo passa a referenciar o Shared.Mongo (o driver vem junto)
+dotnet add LojaApi.Modules.Auth     reference LojaApi.Shared.Mongo
+dotnet add LojaApi.Modules.Catalogo reference LojaApi.Shared.Mongo
+dotnet add LojaApi.Modules.Pedidos  reference LojaApi.Shared.Mongo
+dotnet add LojaApi.Modules.Clientes reference LojaApi.Shared.Mongo
+
+# Atalho: os .csproj e o .sln prontos estão no ZIP desta aba</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Shared.Mongo/LojaApi.Shared.Mongo.csproj</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Shared.Mongo/LojaApi.Shared.Mongo.csproj">&lt;Project Sdk="Microsoft.NET.Sdk"&gt;
+  &lt;!--
+    🍃 LojaApi.Shared.Mongo — infraestrutura MongoDB COMPARTILHADA pelos módulos.
+    Por que um projeto separado (e não dentro do Shared.Kernel)?
+    O Kernel é "vocabulário de domínio" (exceções, eventos, tipos de erro) e
+    não deve depender de nenhum banco. Este projeto é INFRAESTRUTURA:
+    cliente Mongo, contadores de id e criação de índices.
+  --&gt;
+  &lt;PropertyGroup&gt;
+    &lt;TargetFramework&gt;net10.0&lt;/TargetFramework&gt;
+    &lt;ImplicitUsings&gt;enable&lt;/ImplicitUsings&gt;
+    &lt;Nullable&gt;enable&lt;/Nullable&gt;
+  &lt;/PropertyGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;!-- IHostedService / DI / Configuration (mesmo padrão dos módulos) --&gt;
+    &lt;FrameworkReference Include="Microsoft.AspNetCore.App" /&gt;
+  &lt;/ItemGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;!-- Driver oficial do MongoDB para .NET --&gt;
+    &lt;PackageReference Include="MongoDB.Driver" Version="3.4.0" /&gt;
+  &lt;/ItemGroup&gt;
+&lt;/Project&gt;</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Auth/LojaApi.Modules.Auth.csproj</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Auth/LojaApi.Modules.Auth.csproj">&lt;Project Sdk="Microsoft.NET.Sdk"&gt;
+  &lt;PropertyGroup&gt;
+    &lt;TargetFramework&gt;net10.0&lt;/TargetFramework&gt;
+    &lt;ImplicitUsings&gt;enable&lt;/ImplicitUsings&gt;
+    &lt;Nullable&gt;enable&lt;/Nullable&gt;
+  &lt;/PropertyGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;FrameworkReference Include="Microsoft.AspNetCore.App" /&gt;
+  &lt;/ItemGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;!-- MySQL (EF Core) continua aqui: rollback + leitura pelo migrador --&gt;
+    &lt;PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" /&gt;
+    &lt;PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" /&gt;
+    &lt;PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.12.0" /&gt;
+  &lt;/ItemGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;ProjectReference Include="..\LojaApi.Shared.Kernel\LojaApi.Shared.Kernel.csproj" /&gt;
+    &lt;!-- 🍃 NOVO na Tab 9-B: infraestrutura Mongo (traz o MongoDB.Driver) --&gt;
+    &lt;ProjectReference Include="..\LojaApi.Shared.Mongo\LojaApi.Shared.Mongo.csproj" /&gt;
+  &lt;/ItemGroup&gt;
+&lt;/Project&gt;</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Catalogo/LojaApi.Modules.Catalogo.csproj</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Catalogo/LojaApi.Modules.Catalogo.csproj">&lt;Project Sdk="Microsoft.NET.Sdk"&gt;
+  &lt;PropertyGroup&gt;
+    &lt;TargetFramework&gt;net10.0&lt;/TargetFramework&gt;
+    &lt;ImplicitUsings&gt;enable&lt;/ImplicitUsings&gt;
+    &lt;Nullable&gt;enable&lt;/Nullable&gt;
+  &lt;/PropertyGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;FrameworkReference Include="Microsoft.AspNetCore.App" /&gt;
+  &lt;/ItemGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;!-- MySQL (EF Core) continua aqui: rollback + leitura pelo migrador --&gt;
+    &lt;PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" /&gt;
+    &lt;PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" /&gt;
+  &lt;/ItemGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;ProjectReference Include="..\LojaApi.Shared.Kernel\LojaApi.Shared.Kernel.csproj" /&gt;
+    &lt;!-- 🍃 NOVO na Tab 9-B: infraestrutura Mongo (traz o MongoDB.Driver) --&gt;
+    &lt;ProjectReference Include="..\LojaApi.Shared.Mongo\LojaApi.Shared.Mongo.csproj" /&gt;
+  &lt;/ItemGroup&gt;
+&lt;/Project&gt;</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Pedidos/LojaApi.Modules.Pedidos.csproj</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Pedidos/LojaApi.Modules.Pedidos.csproj">&lt;Project Sdk="Microsoft.NET.Sdk"&gt;
+  &lt;PropertyGroup&gt;
+    &lt;TargetFramework&gt;net10.0&lt;/TargetFramework&gt;
+    &lt;ImplicitUsings&gt;enable&lt;/ImplicitUsings&gt;
+    &lt;Nullable&gt;enable&lt;/Nullable&gt;
+  &lt;/PropertyGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;FrameworkReference Include="Microsoft.AspNetCore.App" /&gt;
+  &lt;/ItemGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;!-- MySQL (EF Core) continua aqui: rollback + leitura pelo migrador --&gt;
+    &lt;PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" /&gt;
+    &lt;PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" /&gt;
+  &lt;/ItemGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;ProjectReference Include="..\LojaApi.Shared.Kernel\LojaApi.Shared.Kernel.csproj" /&gt;
+    &lt;!-- 🍃 NOVO na Tab 9-B: infraestrutura Mongo (traz o MongoDB.Driver) --&gt;
+    &lt;ProjectReference Include="..\LojaApi.Shared.Mongo\LojaApi.Shared.Mongo.csproj" /&gt;
+  &lt;/ItemGroup&gt;
+&lt;/Project&gt;</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Clientes/LojaApi.Modules.Clientes.csproj</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Clientes/LojaApi.Modules.Clientes.csproj">&lt;Project Sdk="Microsoft.NET.Sdk"&gt;
+  &lt;PropertyGroup&gt;
+    &lt;TargetFramework&gt;net10.0&lt;/TargetFramework&gt;
+    &lt;ImplicitUsings&gt;enable&lt;/ImplicitUsings&gt;
+    &lt;Nullable&gt;enable&lt;/Nullable&gt;
+  &lt;/PropertyGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;FrameworkReference Include="Microsoft.AspNetCore.App" /&gt;
+  &lt;/ItemGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;!-- MySQL (EF Core) continua aqui: rollback + leitura pelo migrador --&gt;
+    &lt;PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" /&gt;
+    &lt;PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" /&gt;
+  &lt;/ItemGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;ProjectReference Include="..\LojaApi.Shared.Kernel\LojaApi.Shared.Kernel.csproj" /&gt;
+    &lt;!-- 🍃 NOVO na Tab 9-B: infraestrutura Mongo (traz o MongoDB.Driver) --&gt;
+    &lt;ProjectReference Include="..\LojaApi.Shared.Mongo\LojaApi.Shared.Mongo.csproj" /&gt;
+  &lt;/ItemGroup&gt;
+&lt;/Project&gt;</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaMulti.sln (9 projetos: + Shared.Mongo + Migrator)</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaMulti.sln">Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LojaApi.Shared.Kernel", "LojaApi.Shared.Kernel\LojaApi.Shared.Kernel.csproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LojaApi.Shared.Mongo", "LojaApi.Shared.Mongo\LojaApi.Shared.Mongo.csproj", "{A0B1C2D3-E4F5-6789-ABCD-EF0123456789}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LojaApi.Modules.Auth", "LojaApi.Modules.Auth\LojaApi.Modules.Auth.csproj", "{A2B3C4D5-E6F7-8901-ABCD-EF1234567891}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LojaApi.Modules.Catalogo", "LojaApi.Modules.Catalogo\LojaApi.Modules.Catalogo.csproj", "{B2C3D4E5-F6A7-8901-BCDE-F12345678901}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LojaApi.Modules.Pedidos", "LojaApi.Modules.Pedidos\LojaApi.Modules.Pedidos.csproj", "{C3D4E5F6-A7B8-9012-CDEF-123456789012}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LojaApi.Modules.Clientes", "LojaApi.Modules.Clientes\LojaApi.Modules.Clientes.csproj", "{D4E5F6A7-B8C9-0123-DEF0-234567890123}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LojaApi.Api", "LojaApi.Api\LojaApi.Api.csproj", "{E5F6A7B8-C9D0-1234-EF01-345678901234}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LojaApi.Migrator", "LojaApi.Migrator\LojaApi.Migrator.csproj", "{F7A8B9C0-D1E2-3456-0123-567890123456}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LojaApi.Tests", "LojaApi.Tests\LojaApi.Tests.csproj", "{F6A7B8C9-D0E1-2345-F012-456789012345}"
+EndProject
+Global
+  GlobalSection(SolutionConfigurationPlatforms) = preSolution
+    Debug|Any CPU = Debug|Any CPU
+    Release|Any CPU = Release|Any CPU
+  EndGlobalSection
+  GlobalSection(ProjectConfigurationPlatforms) = postSolution
+    {A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+    {A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug|Any CPU.Build.0 = Debug|Any CPU
+    {A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|Any CPU.ActiveCfg = Release|Any CPU
+    {A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|Any CPU.Build.0 = Release|Any CPU
+    {A0B1C2D3-E4F5-6789-ABCD-EF0123456789}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+    {A0B1C2D3-E4F5-6789-ABCD-EF0123456789}.Debug|Any CPU.Build.0 = Debug|Any CPU
+    {A0B1C2D3-E4F5-6789-ABCD-EF0123456789}.Release|Any CPU.ActiveCfg = Release|Any CPU
+    {A0B1C2D3-E4F5-6789-ABCD-EF0123456789}.Release|Any CPU.Build.0 = Release|Any CPU
+    {A2B3C4D5-E6F7-8901-ABCD-EF1234567891}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+    {A2B3C4D5-E6F7-8901-ABCD-EF1234567891}.Debug|Any CPU.Build.0 = Debug|Any CPU
+    {A2B3C4D5-E6F7-8901-ABCD-EF1234567891}.Release|Any CPU.ActiveCfg = Release|Any CPU
+    {A2B3C4D5-E6F7-8901-ABCD-EF1234567891}.Release|Any CPU.Build.0 = Release|Any CPU
+    {B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+    {B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Debug|Any CPU.Build.0 = Debug|Any CPU
+    {B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Release|Any CPU.ActiveCfg = Release|Any CPU
+    {B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Release|Any CPU.Build.0 = Release|Any CPU
+    {C3D4E5F6-A7B8-9012-CDEF-123456789012}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+    {C3D4E5F6-A7B8-9012-CDEF-123456789012}.Debug|Any CPU.Build.0 = Debug|Any CPU
+    {C3D4E5F6-A7B8-9012-CDEF-123456789012}.Release|Any CPU.ActiveCfg = Release|Any CPU
+    {C3D4E5F6-A7B8-9012-CDEF-123456789012}.Release|Any CPU.Build.0 = Release|Any CPU
+    {D4E5F6A7-B8C9-0123-DEF0-234567890123}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+    {D4E5F6A7-B8C9-0123-DEF0-234567890123}.Debug|Any CPU.Build.0 = Debug|Any CPU
+    {D4E5F6A7-B8C9-0123-DEF0-234567890123}.Release|Any CPU.ActiveCfg = Release|Any CPU
+    {D4E5F6A7-B8C9-0123-DEF0-234567890123}.Release|Any CPU.Build.0 = Release|Any CPU
+    {E5F6A7B8-C9D0-1234-EF01-345678901234}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+    {E5F6A7B8-C9D0-1234-EF01-345678901234}.Debug|Any CPU.Build.0 = Debug|Any CPU
+    {E5F6A7B8-C9D0-1234-EF01-345678901234}.Release|Any CPU.ActiveCfg = Release|Any CPU
+    {E5F6A7B8-C9D0-1234-EF01-345678901234}.Release|Any CPU.Build.0 = Release|Any CPU
+    {F7A8B9C0-D1E2-3456-0123-567890123456}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+    {F7A8B9C0-D1E2-3456-0123-567890123456}.Debug|Any CPU.Build.0 = Debug|Any CPU
+    {F7A8B9C0-D1E2-3456-0123-567890123456}.Release|Any CPU.ActiveCfg = Release|Any CPU
+    {F7A8B9C0-D1E2-3456-0123-567890123456}.Release|Any CPU.Build.0 = Release|Any CPU
+    {F6A7B8C9-D0E1-2345-F012-456789012345}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+    {F6A7B8C9-D0E1-2345-F012-456789012345}.Debug|Any CPU.Build.0 = Debug|Any CPU
+    {F6A7B8C9-D0E1-2345-F012-456789012345}.Release|Any CPU.ActiveCfg = Release|Any CPU
+    {F6A7B8C9-D0E1-2345-F012-456789012345}.Release|Any CPU.Build.0 = Release|Any CPU
+  EndGlobalSection
+EndGlobal</pre>
+</div>
+<p>O registro do cliente Mongo no DI fica num método de extensão que cada módulo chama no seu <code>case "Mongo"</code>. Como os 4 módulos chamam, ele usa <code>TryAdd</code>: resultado, <strong>um único</strong> <code>IMongoClient</code> — que é quem guarda o pool de conexões.</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Shared.Mongo/MongoSetup.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Shared.Mongo/MongoSetup.cs">using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using MongoDB.Driver;
+
+namespace LojaApi.Shared.Mongo;
+
+/// &lt;summary&gt;
+/// 🍃 Registro da infraestrutura Mongo no DI (chamado por cada módulo).
+///
+/// Cada módulo chama AddMongoInfra(...) no seu "case Mongo". Como os 4 módulos
+/// chamam, usamos TryAdd*: o PRIMEIRO registra, os outros reaproveitam.
+/// Resultado: UM único IMongoClient para a aplicação inteira.
+/// &lt;/summary&gt;
+public static class MongoSetup
+{
+    /// &lt;summary&gt;
+    /// Registra IMongoClient (singleton) e o serviço que cria os índices na
+    /// inicialização.
+    /// &lt;/summary&gt;
+    public static IServiceCollection AddMongoInfra(
+        this IServiceCollection services,
+        string? connectionString,
+        string modulo)
+    {
+        // Fail fast: sem connection string, a API nem sobe
+        if (string.IsNullOrWhiteSpace(connectionString))
+            throw new InvalidOperationException(
+                $"[{modulo}] ConnectionStrings:Mongo ausente. " +
+                "Ex.: mongodb://root:root123@localhost:27017/?authSource=admin");
+
+        // ⚡ DESEMPENHO: o MongoClient guarda o POOL DE CONEXÕES.
+        // Ele é thread-safe e caro de criar → SINGLETON, sempre.
+        // (Criar um MongoClient por request esgota conexões e derruba a performance.)
+        services.TryAddSingleton&lt;IMongoClient&gt;(_ =&gt;
+        {
+            var settings = MongoClientSettings.FromConnectionString(connectionString);
+
+            // Se o Mongo estiver fora do ar, falha em 5s (o padrão é 30s)
+            settings.ServerSelectionTimeout = TimeSpan.FromSeconds(5);
+
+            return new MongoClient(settings);
+        });
+
+        // Cria os índices de todos os módulos ao iniciar (ver MongoIndexes.cs).
+        // AddHostedService não duplica: registrar 4 vezes = 1 serviço.
+        services.AddHostedService&lt;MongoIndexHostedService&gt;();
+
+        return services;
+    }
+}</pre>
+</div>
+<p>No Kernel, o <code>PersistenceProviders</code> perde o "ainda não implementado" da Tab 9 e ganha uma regra nova: cada módulo exige <strong>só</strong> a connection string do provider escolhido (com Mongo, o MySQL pode estar desligado).</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Shared.Kernel/PersistenceProviders.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Shared.Kernel/PersistenceProviders.cs">namespace LojaApi.Shared.Kernel;
+
+/// &lt;summary&gt;
+/// 🔀 PONTO DE TROCA DO BANCO.
+///
+/// O appsettings.json tem a chave "Persistence:Provider". Cada módulo lê
+/// esse valor no seu ModuleExtensions e decide QUAL implementação dos
+/// repositórios registrar no DI:
+///
+///   "MySql" → Ef*Repository    (EF Core + Pomelo)   ← Tab 9
+///   "Mongo" → Mongo*Repository (MongoDB.Driver)     ← Tab 9-B (agora!)
+///
+/// Por que uma CHAVE de configuração e não "trocar o código"?
+/// 1) A troca vira uma decisão de DEPLOY, não de programação.
+/// 2) Rollback trivial: se o Mongo der problema, volta para "MySql".
+/// 3) Os dois adapters convivem no mesmo build — dá para rodar os mesmos
+///    testes e scripts contra os dois e PROVAR que o comportamento é idêntico.
+/// &lt;/summary&gt;
+public static class PersistenceProviders
+{
+    /// &lt;summary&gt;MySQL via EF Core.&lt;/summary&gt;
+    public const string MySql = "MySql";
+
+    /// &lt;summary&gt;MongoDB via MongoDB.Driver.&lt;/summary&gt;
+    public const string Mongo = "Mongo";
+
+    /// &lt;summary&gt;
+    /// Garante que a connection string exigida pelo provider foi informada.
+    /// Com Provider = "Mongo", as connection strings do MySQL podem ficar vazias
+    /// (e vice-versa) — cada módulo só exige a que vai usar.
+    /// &lt;/summary&gt;
+    public static string ExigirConnectionString(string? valor, string nome, string modulo) =&gt;
+        string.IsNullOrWhiteSpace(valor)
+            ? throw new InvalidOperationException(
+                $"[{modulo}] ConnectionStrings:{nome} ausente (exigida pelo provider atual).")
+            : valor;
+
+    /// &lt;summary&gt;Erro para valores desconhecidos na configuração.&lt;/summary&gt;
+    public static InvalidOperationException ProviderInvalido(string modulo, string? valor) =&gt;
+        new($"[{modulo}] Persistence:Provider inválido: \"{valor}\". " +
+            $"Valores aceitos: \"{MySql}\" ou \"{Mongo}\".");
+}</pre>
+</div>
+<p>No host, entra a connection string do Mongo e o <code>Provider</code> passa a ser <code>"Mongo"</code> — o <strong>estado final</strong> desta aba. Nos passos de comparação, sobrescrevemos pela variável de ambiente <code>Persistence__Provider</code>.</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Api/appsettings.json</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Api/appsettings.json">{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+
+  "Persistence": {
+    "Provider": "Mongo"
+  },
+
+  "ConnectionStrings": {
+    "Auth": "Server=localhost;Port=3306;Database=auth_db;User=devuser;Password=devpass;",
+    "Catalogo": "Server=localhost;Port=3306;Database=catalogo_db;User=devuser;Password=devpass;",
+    "Pedidos": "Server=localhost;Port=3306;Database=pedidos_db;User=devuser;Password=devpass;",
+    "Clientes": "Server=localhost;Port=3306;Database=clientes_db;User=devuser;Password=devpass;",
+    "Mongo": "mongodb://root:root123@localhost:27017/?authSource=admin"
+  },
+
+  "Services": {
+    "Catalogo": "http://localhost:5000",
+    "Clientes": "http://localhost:5000"
+  },
+
+  "Jwt": {
+    "Secret": "MinhaChaveSecretaSuperSeguraLojaAPI2026DeveTerMin32Caracteres",
+    "ExpirationMinutes": 60
+  }
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Api/Program.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Api/Program.cs">using LojaApi.Api.Middleware;
+using LojaApi.Modules.Auth;
+using LojaApi.Modules.Catalogo;
+using LojaApi.Modules.Clientes;
+using LojaApi.Modules.Pedidos;
+using LojaApi.Shared.Kernel;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+
+// ──────────────────────────────────────────────────────────────
+// PASSO 1: Criar o builder da aplicação web
+// ──────────────────────────────────────────────────────────────
+var builder = WebApplication.CreateBuilder(args);
+
+// ──────────────────────────────────────────────────────────────
+// PASSO 2: Registrar serviços básicos
+// ──────────────────────────────────────────────────────────────
+// Controllers dos 4 módulos (ficam em class libraries:
+// AddApplicationPart garante que o MVC os encontre)
+builder.Services.AddControllers()
+    .AddApplicationPart(typeof(LojaApi.Modules.Auth.Controllers.AuthController).Assembly)
+    .AddApplicationPart(typeof(CatalogoController).Assembly)
+    .AddApplicationPart(typeof(PedidosController).Assembly)
+    .AddApplicationPart(typeof(ClientesController).Assembly);
+
+// Swagger para documentação
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// ──────────────────────────────────────────────────────────────
+// PASSO 3: Ler configurações do appsettings.json
+// ──────────────────────────────────────────────────────────────
+// Connection strings do MySQL (1 por contexto) — usadas com Provider = MySql.
+// Na Tab 9-B elas deixam de ser obrigatórias aqui: cada módulo exige SÓ a
+// connection string do provider escolhido (com Mongo, o MySQL pode nem existir).
+var authCs = builder.Configuration.GetConnectionString("Auth");
+var catalogoCs = builder.Configuration.GetConnectionString("Catalogo");
+var pedidosCs = builder.Configuration.GetConnectionString("Pedidos");
+var clientesCs = builder.Configuration.GetConnectionString("Clientes");
+
+// 🍃 Connection string do MongoDB — UMA só: o mesmo servidor guarda os 4
+// databases (auth_db, catalogo_db, pedidos_db, clientes_db), como no MySQL.
+var mongoCs = builder.Configuration.GetConnectionString("Mongo");
+// JWT
+var jwtSecret = builder.Configuration["Jwt:Secret"]
+    ?? throw new InvalidOperationException("Jwt:Secret ausente no appsettings.json");
+var jwtExpiration = int.Parse(builder.Configuration["Jwt:ExpirationMinutes"] ?? "60");
+
+// Endereços base para chamadas internas (Pedidos → Catálogo/Clientes)
+var catalogoBase = new Uri(builder.Configuration["Services:Catalogo"] ?? "http://localhost:5000");
+var clientesBase = new Uri(builder.Configuration["Services:Clientes"] ?? "http://localhost:5000");
+
+// 🔀 PONTO DE TROCA DO BANCO
+// "MySql" (Tab 9) ou "Mongo" (Tab 9-B — padrão no appsettings desta aba).
+// Pode ser sobrescrito sem recompilar, por variável de ambiente:
+//   Persistence__Provider=Mongo   (dois "_" = ":" no .NET)
+var provider = builder.Configuration["Persistence:Provider"] ?? PersistenceProviders.MySql;
+
+// ──────────────────────────────────────────────────────────────
+// PASSO 4: Registrar os 4 módulos (cada um registra suas deps)
+// ──────────────────────────────────────────────────────────────
+// Todos recebem o MESMO provider: o sistema inteiro usa um banco por vez.
+// (Migração "módulo a módulo" também seria possível: bastaria uma chave
+//  por módulo. Mantemos uma só para simplificar a aula.)
+
+// 🔑 Auth: login, JWT, usuarios
+builder.Services.AddAuthModule(provider, authCs, mongoCs, jwtSecret, jwtExpiration);
+
+// 📦 Catálogo: produtos, reserva de estoque
+builder.Services.AddCatalogoModule(provider, catalogoCs, mongoCs);
+
+// 🛒 Pedidos: checkout, orquestração, clients HTTP
+builder.Services.AddPedidosModule(provider, pedidosCs, mongoCs, catalogoBase, clientesBase);
+
+// 🧾 Clientes: cadastro, endereços
+builder.Services.AddClientesModule(provider, clientesCs, mongoCs);
+
+// ──────────────────────────────────────────────────────────────
+// PASSO 5: Configurar JWT Bearer SEM ROLES
+// ──────────────────────────────────────────────────────────────
+// Qualquer token válido é aceito. Sem verificação de roles.
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =&gt;
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            // Não valida issuer nem audience (didático)
+            ValidateIssuer = false,
+            ValidateAudience = false,
+
+            // Valida expiração e assinatura
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+
+            // Chave simétrica (mesma usada para gerar o token)
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwtSecret)),
+
+            // Tolerância de 1 minuto para expiração
+            ClockSkew = TimeSpan.FromMinutes(1),
+
+            // Mapeia o claim "name" para User.Identity.Name
+            // Assim, User.Identity.Name retorna o nome do usuário
+            NameClaimType = "name"
+        };
+    });
+
+// Habilita autorização (mas sem policies de role)
+builder.Services.AddAuthorization();
+
+// ──────────────────────────────────────────────────────────────
+// PASSO 6: Construir o pipeline de middleware
+// ──────────────────────────────────────────────────────────────
+var app = builder.Build();
+
+// ExceptionMiddleware: DomainException → RFC 7807 (problem+json)
+app.UseMiddleware&lt;ExceptionMiddleware&gt;();
+
+// Swagger (documentação)
+app.UseSwagger();
+app.UseSwaggerUI();
+
+// Autenticação ANTES de autorização (ordem importa!)
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Mapeia os controllers dos 4 módulos
+app.MapControllers();
+
+// ──────────────────────────────────────────────────────────────
+// PASSO 7: Iniciar a aplicação
+// ──────────────────────────────────────────────────────────────
+app.Run();</pre>
+</div>
+<div class="success-banner"><strong>✅ Como conferir:</strong> ainda não compila 100% — os <code>ModuleExtensions</code> dos módulos mudam nos Passos 6–9. Se estiver aplicando o ZIP inteiro, <code>dotnet build</code> já deve passar.</div>
+<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> <code>CS0246: AddMongoInfra não encontrado</code> → faltou a referência ao <code>LojaApi.Shared.Mongo</code> no módulo; <code>NU1605</code> (downgrade de pacote) → mantenha as versões fixas dos <code>.csproj</code>; <code>dotnet sln add</code> criou pasta de solução → use <code>--in-root</code>.</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">📄 Passo 4 — Modelos de persistência (<code>*Document</code>): os detalhes que garantem precisão</h4>
+<p>Cada módulo terá classes <code>*Document</code> que descrevem <strong>exatamente</strong> o formato no banco. Estes atributos são o coração da "migração com precisão":</p>
 <div class="table-wrap" style="margin:12px 0">
 <table>
-<thead><tr><th>Requisito do enunciado</th><th>Parte que atende</th><th>Evidência de validação</th></tr></thead>
+<thead><tr><th>Atributo</th><th>Para quê</th><th>O que acontece sem ele</th></tr></thead>
 <tbody>
-<tr><td>Substituir o banco pelo MongoDB</td><td>3/5</td><td><code>Mongo*Repository</code> + compose com mongo-db</td></tr>
-<tr><td>Adaptar as APIs ao novo banco</td><td>2/5–3/5</td><td>portas na 2/5; DI por <code>Storage:Provider</code> na 3/5; controllers intactos</td></tr>
-<tr><td>Funcionar como antes</td><td>5/5</td><td>21 testes + diff de paridade + Prism idênticos nos 2 providers</td></tr>
-<tr><td>Migrar dados com precisão</td><td>4/5</td><td>migrador idempotente + relatório contagens/checksums</td></tr>
-<tr><td>Manter desempenho</td><td>5/5</td><td>índices equivalentes + embeds sem JOIN + paginação 1:1</td></tr>
+<tr><td><code>[BsonId]</code></td><td>Marca a propriedade que vira o <code>_id</code></td><td>O driver procura uma propriedade "Id" por convenção — implícito demais para aula</td></tr>
+<tr><td><code>[BsonElement("preco")]</code></td><td>Nome do campo no banco (camelCase, igual ao mongosh)</td><td>O campo se chamaria <code>Preco</code>; consultas manuais no mongosh ficam confusas</td></tr>
+<tr><td><code>[BsonRepresentation(BsonType.Decimal128)]</code></td><td><code>decimal</code> exato de 128 bits</td><td>Risco de virar <code>double</code>/texto: 349.90 → 349.89999… ou ordenação errada</td></tr>
+<tr><td><code>[BsonGuidRepresentation(GuidRepresentation.Standard)]</code></td><td>Guid como UUID padrão (binário subtipo 4)</td><td>O driver 3.x <strong>recusa</strong> gravar Guid sem representação definida</td></tr>
+<tr><td><code>[BsonRepresentation(BsonType.String)]</code> no enum</td><td>Status gravado como <code>"RESERVADO"</code></td><td>Gravaria <code>1</code> — reordenar o enum corromperia os dados</td></tr>
+<tr><td><code>[BsonDateTimeOptions(Kind = Utc)]</code></td><td>Datas sempre em UTC</td><td>Conversões de fuso indesejadas na leitura</td></tr>
+<tr><td><code>[BsonIgnoreExtraElements]</code></td><td>Campos desconhecidos no documento são ignorados</td><td>Adicionar um campo no futuro quebraria a leitura dos documentos antigos</td></tr>
 </tbody>
 </table>
 </div>
-<div class="warning-banner">
-<strong>⚠️ Didático:</strong> herdamos da Tab 9 o MongoDB <strong>sem auth</strong> e a senha em <strong>texto puro</strong> — aceitáveis apenas neste contexto educacional. Em produção real: auth no Mongo, hash forte e TLS.
+<div class="info-banner"><strong>🔬 Precisão de datas (perda conhecida):</strong> o MySQL <code>DATETIME(6)</code> guarda <strong>micro</strong>ssegundos; o BSON Date guarda <strong>mili</strong>ssegundos. Na migração, <code>12:00:00.123456</code> vira <code>12:00:00.123</code>. É uma perda <strong>conhecida, pequena e documentada</strong>: o validador (Passo 12) compara datas truncadas em milissegundos — esconder essa diferença seria pior do que explicá-la.</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🔢 Passo 5 — Ids inteiros e índices</h4>
+<p><strong>Ids:</strong> o MongoDB não tem <code>AUTO_INCREMENT</code>, e o id nativo (<code>ObjectId</code>) quebraria as URLs da API (<code>/api/catalogo/produtos/1</code>). A solução clássica é a coleção <code>counters</code> com <code>$inc</code> atômico.</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Shared.Mongo/IdGenerator.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Shared.Mongo/IdGenerator.cs">using MongoDB.Bson.Serialization.Attributes;
+using MongoDB.Driver;
+
+namespace LojaApi.Shared.Mongo;
+
+/// &lt;summary&gt;
+/// Documento da coleção "counters": um contador por sequência.
+/// Exemplo no banco: { _id: "produtos", seq: 3 }
+/// &lt;/summary&gt;
+public class ContadorDocument
+{
+    /// &lt;summary&gt;Nome da sequência (ex.: "produtos", "pedidos").&lt;/summary&gt;
+    [BsonId]
+    public string Id { get; set; } = string.Empty;
+
+    /// &lt;summary&gt;Último valor entregue.&lt;/summary&gt;
+    [BsonElement("seq")]
+    public int Seq { get; set; }
+}
+
+/// &lt;summary&gt;
+/// 🔢 GERADOR DE IDS INTEIROS para o MongoDB.
+///
+/// O problema: o MySQL tem AUTO_INCREMENT; o Mongo não. O id "nativo" do
+/// Mongo é o ObjectId (ex.: "65f1c2..."), que QUEBRARIA o contrato da API
+/// (Tab 8 usa ids inteiros: /api/catalogo/produtos/1).
+///
+/// A solução clássica: uma coleção "counters" e um $inc atômico.
+///   db.counters.findOneAndUpdate(
+///       { _id: "produtos" },
+///       { $inc: { seq: 1 } },
+///       { upsert: true, returnDocument: "after" })
+/// Duas requests simultâneas NUNCA recebem o mesmo número: o $inc num único
+/// documento é atômico.
+/// &lt;/summary&gt;
+public static class IdGenerator
+{
+    /// &lt;summary&gt;Nome da coleção de contadores (uma por database/contexto).&lt;/summary&gt;
+    public const string Colecao = "counters";
+
+    /// &lt;summary&gt;
+    /// Reserva e devolve o próximo id da sequência (1, 2, 3...).
+    /// Se a sequência não existir, o upsert a cria começando em 1.
+    /// &lt;/summary&gt;
+    public static async Task&lt;int&gt; ProximoAsync(
+        IMongoDatabase db,
+        string sequencia,
+        CancellationToken ct = default)
+    {
+        var contadores = db.GetCollection&lt;ContadorDocument&gt;(Colecao);
+
+        var atualizado = await contadores.FindOneAndUpdateAsync(
+            Builders&lt;ContadorDocument&gt;.Filter.Eq(c =&gt; c.Id, sequencia),
+            Builders&lt;ContadorDocument&gt;.Update.Inc(c =&gt; c.Seq, 1),
+            new FindOneAndUpdateOptions&lt;ContadorDocument&gt;
+            {
+                IsUpsert = true,                         // cria se não existir
+                ReturnDocument = ReturnDocument.After    // devolve o valor JÁ incrementado
+            },
+            ct);
+
+        return atualizado.Seq;
+    }
+
+    /// &lt;summary&gt;
+    /// Garante que a sequência esteja, NO MÍNIMO, em &lt;paramref name="valorMinimo"/&gt;.
+    /// Usado pelo MIGRADOR: depois de copiar produtos com ids 1..3, o contador
+    /// precisa ficar em 3 — senão o próximo produto criado receberia o id 1
+    /// (duplicado!). $max nunca diminui o contador → rodar 2x é seguro.
+    /// &lt;/summary&gt;
+    public static Task AjustarMinimoAsync(
+        IMongoDatabase db,
+        string sequencia,
+        int valorMinimo,
+        CancellationToken ct = default)
+    {
+        var contadores = db.GetCollection&lt;ContadorDocument&gt;(Colecao);
+
+        return contadores.UpdateOneAsync(
+            Builders&lt;ContadorDocument&gt;.Filter.Eq(c =&gt; c.Id, sequencia),
+            Builders&lt;ContadorDocument&gt;.Update.Max(c =&gt; c.Seq, valorMinimo),
+            new UpdateOptions { IsUpsert = true },
+            ct);
+    }
+}</pre>
+</div>
+<p><strong>Índices:</strong> são o principal fator de <strong>desempenho</strong>. Recriamos no Mongo os mesmos índices que o MySQL tinha. Um serviço de inicialização chama o <code>CriarIndicesAsync</code> de cada módulo quando a API sobe (<code>createIndex</code> é idempotente).</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Shared.Mongo/MongoIndexes.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Shared.Mongo/MongoIndexes.cs">using Microsoft.Extensions.Hosting;
+
+namespace LojaApi.Shared.Mongo;
+
+/// &lt;summary&gt;
+/// Contrato implementado por cada "MongoContext" de módulo que precisa de índices.
+/// &lt;/summary&gt;
+public interface IMongoIndexInitializer
+{
+    /// &lt;summary&gt;Cria (se ainda não existirem) os índices do módulo.&lt;/summary&gt;
+    Task CriarIndicesAsync(CancellationToken ct);
+}
+
+/// &lt;summary&gt;
+/// ⚡ Cria os índices de TODOS os módulos quando a API inicia.
+///
+/// Por que índices importam tanto (requisito "manter o desempenho")?
+/// No MySQL, o init-sql já criava índices (ix_pedidos_usuario, login único).
+/// No Mongo, sem índice, "meus pedidos" faz COLLSCAN (lê a coleção inteira).
+/// Recriar os MESMOS índices é o que mantém o desempenho equivalente.
+///
+/// createIndex é IDEMPOTENTE: se o índice já existe com a mesma definição,
+/// o Mongo não faz nada. Por isso é seguro rodar a cada inicialização.
+/// &lt;/summary&gt;
+public class MongoIndexHostedService : IHostedService
+{
+    // Todos os módulos que registraram um IMongoIndexInitializer
+    private readonly IEnumerable&lt;IMongoIndexInitializer&gt; _inicializadores;
+
+    public MongoIndexHostedService(IEnumerable&lt;IMongoIndexInitializer&gt; inicializadores)
+    {
+        _inicializadores = inicializadores;
+    }
+
+    /// &lt;summary&gt;
+    /// Roda na subida da API. Se o Mongo estiver fora do ar, a exceção
+    /// impede a API de subir (fail fast) — melhor que falhar na 1ª request.
+    /// &lt;/summary&gt;
+    public async Task StartAsync(CancellationToken ct)
+    {
+        foreach (var inicializador in _inicializadores)
+            await inicializador.CriarIndicesAsync(ct);
+    }
+
+    public Task StopAsync(CancellationToken ct) =&gt; Task.CompletedTask;
+}</pre>
+</div>
+<div class="warning-banner"><strong>⚠️ Erro clássico: <code>E11000 duplicate key error ... _id: 1</code></strong> — a API tentou criar um registro com um id que já existe. Quase sempre significa que o contador <strong>não foi ajustado</strong> depois da migração (o Migrator faz isso com <code>AjustarMinimoAsync</code>). Conferência no mongosh: <code>use catalogo_db; db.counters.find()</code>.</div>
+</div>
+
+<!-- ══════════ PARTE 3 ══════════ -->
+<div class="lab-container">
+<div class="lab-header">
+<h3>🔌 Parte 3 — Os adapters Mongo, um módulo por vez (Passos 6 a 10)</h3>
+<div class="lab-actions"><span class="ide-tag cs">VS Code</span></div>
+</div>
+<div class="info-banner">
+<strong>🧭 A mesma receita nos 4 módulos:</strong> (1) <code>Mongo/*Document.cs</code> — formato no banco + conversão com <code>Reconstituir</code>; (2) <code>Mongo/*MongoContext.cs</code> — database, coleções e índices; (3) <code>Repositories/Mongo*Repository.cs</code> — implementa a <strong>mesma porta</strong> da Tab 9; (4) <code>ModuleExtensions.cs</code> — o <code>case "Mongo"</code> registra o adapter novo. <strong>Nenhum controller, serviço ou entidade de domínio é alterado.</strong>
+</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🔑 Passo 6 — Auth (o mais simples, para aquecer)</h4>
+<p>Uma coleção, sem contador (o id é Guid), um índice único em <code>login</code>. O <code>SalvarAsync</code> mostra o <strong>upsert</strong>: uma operação só, no lugar do "existe? insere : atualiza" do EF.</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Auth/Mongo/UsuarioDocument.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Auth/Mongo/UsuarioDocument.cs">using LojaApi.Modules.Auth.Domain;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+
+namespace LojaApi.Modules.Auth.Mongo;
+
+/// &lt;summary&gt;
+/// 📄 MODELO DE PERSISTÊNCIA do usuário no MongoDB (coleção "usuarios").
+///
+/// Por que NÃO salvar a entidade Usuario diretamente?
+/// 1) Usuario tem setters privados e construtor protegido: o driver até
+///    consegue usar reflexão, mas fica "mágico" e frágil.
+/// 2) Separar DOMÍNIO (regras) de DOCUMENTO (formato no banco) permite mudar
+///    um sem quebrar o outro — e deixa o formato do banco EXPLÍCITO.
+/// 3) A conversão usa Usuario.Reconstituir(...), criado na Tab 9 justamente
+///    para isto.
+///
+/// Documento resultante:
+/// { _id: UUID("..."), login: "admin", nome: "Administrador",
+///   senha: "admin123", criadoEm: ISODate("2026-10-24T22:00:00.000Z") }
+/// &lt;/summary&gt;
+[BsonIgnoreExtraElements] // campos extras no banco (versões futuras) não quebram a leitura
+public class UsuarioDocument
+{
+    /// &lt;summary&gt;
+    /// _id = o mesmo Guid do MySQL (preserva o claim "sub" dos tokens!).
+    /// GuidRepresentation.Standard = UUID binário (subtipo 4), o formato
+    /// portável. Sem isso, o driver 3.x se recusa a gravar Guid.
+    /// &lt;/summary&gt;
+    [BsonId]
+    [BsonGuidRepresentation(GuidRepresentation.Standard)]
+    public Guid Id { get; set; }
+
+    [BsonElement("login")]
+    public string Login { get; set; } = string.Empty;
+
+    [BsonElement("nome")]
+    public string Nome { get; set; } = string.Empty;
+
+    /// &lt;summary&gt;Texto puro (didático) — igual ao MySQL. Produção: hash.&lt;/summary&gt;
+    [BsonElement("senha")]
+    public string Senha { get; set; } = string.Empty;
+
+    /// &lt;summary&gt;
+    /// Sempre UTC. Atenção à PRECISÃO: o MySQL DATETIME(6) guarda
+    /// MICROssegundos; o BSON Date guarda MILIssegundos. O migrador e o
+    /// validador tratam essa diferença explicitamente.
+    /// &lt;/summary&gt;
+    [BsonElement("criadoEm")]
+    [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+    public DateTime CriadoEm { get; set; }
+
+    /// &lt;summary&gt;Domínio → documento (para gravar).&lt;/summary&gt;
+    public static UsuarioDocument FromDomain(Usuario u) =&gt; new()
+    {
+        Id = u.Id,
+        Login = u.Login,
+        Nome = u.Nome,
+        Senha = u.Senha,
+        // O EF lê DATETIME do MySQL como Kind=Unspecified. Declaramos que é UTC
+        // (o seed usa UTC_TIMESTAMP) para o driver não "converter fuso" errado.
+        CriadoEm = DateTime.SpecifyKind(u.CriadoEm, DateTimeKind.Utc)
+    };
+
+    /// &lt;summary&gt;Documento → domínio (para ler), via fábrica de reconstituição.&lt;/summary&gt;
+    public Usuario ToDomain() =&gt;
+        Usuario.Reconstituir(Id, Login, Nome, Senha, CriadoEm);
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Auth/Mongo/AuthMongoContext.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Auth/Mongo/AuthMongoContext.cs">using LojaApi.Shared.Mongo;
+using MongoDB.Driver;
+
+namespace LojaApi.Modules.Auth.Mongo;
+
+/// &lt;summary&gt;
+/// 🍃 "DbContext" do Auth no MongoDB: dá acesso ao database e às coleções.
+///
+/// Paralelo com a Tab 9:
+///   AuthDbContext (EF)   → database auth_db, tabela usuarios
+///   AuthMongoContext     → database auth_db, coleção usuarios
+/// Mesmos nomes de propósito: a fronteira de dados por contexto continua
+/// a mesma (um database por módulo), só muda a tecnologia.
+///
+/// É SINGLETON: IMongoDatabase e IMongoCollection são thread-safe e baratos.
+/// &lt;/summary&gt;
+public class AuthMongoContext : IMongoIndexInitializer
+{
+    /// &lt;summary&gt;Nome do database (igual ao do MySQL).&lt;/summary&gt;
+    public const string Database = "auth_db";
+
+    public IMongoDatabase Db { get; }
+
+    /// &lt;summary&gt;Coleção "usuarios".&lt;/summary&gt;
+    public IMongoCollection&lt;UsuarioDocument&gt; Usuarios { get; }
+
+    public AuthMongoContext(IMongoClient client)
+    {
+        Db = client.GetDatabase(Database);
+        Usuarios = Db.GetCollection&lt;UsuarioDocument&gt;("usuarios");
+    }
+
+    /// &lt;summary&gt;
+    /// Índice ÚNICO em login — o mesmo UNIQUE INDEX ix_usuarios_login do MySQL.
+    /// Garante a regra (login não se repete) e acelera o login.
+    /// mongosh: db.usuarios.createIndex({ login: 1 }, { unique: true })
+    /// &lt;/summary&gt;
+    public Task CriarIndicesAsync(CancellationToken ct) =&gt;
+        Usuarios.Indexes.CreateOneAsync(
+            new CreateIndexModel&lt;UsuarioDocument&gt;(
+                Builders&lt;UsuarioDocument&gt;.IndexKeys.Ascending(u =&gt; u.Login),
+                new CreateIndexOptions { Unique = true, Name = "ux_usuarios_login" }),
+            cancellationToken: ct);
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Auth/Repositories/MongoUsuarioRepository.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Auth/Repositories/MongoUsuarioRepository.cs">using LojaApi.Modules.Auth.Domain;
+using LojaApi.Modules.Auth.Interfaces;
+using LojaApi.Modules.Auth.Mongo;
+using MongoDB.Driver;
+
+namespace LojaApi.Modules.Auth.Repositories;
+
+/// &lt;summary&gt;
+/// 🔌 ADAPTER MongoDB da porta IUsuarioRepository.
+///
+/// Compare com EfUsuarioRepository (Tab 9): mesma interface, mesmo
+/// comportamento observável, outra tecnologia. O AuthService não percebe
+/// a diferença — e os 5 testes do Auth continuam passando sem alteração.
+/// &lt;/summary&gt;
+public class MongoUsuarioRepository : IUsuarioRepository
+{
+    private readonly AuthMongoContext _ctx;
+
+    public MongoUsuarioRepository(AuthMongoContext ctx)
+    {
+        _ctx = ctx;
+    }
+
+    /// &lt;summary&gt;
+    /// mongosh: db.usuarios.findOne({ login: "admin" })
+    /// Usa o índice único ux_usuarios_login.
+    /// &lt;/summary&gt;
+    public async Task&lt;Usuario?&gt; BuscarPorLoginAsync(string login, CancellationToken ct = default)
+    {
+        // MESMA normalização do adapter EF (comportamento idêntico)
+        var loginNormalizado = login.Trim().ToLower();
+
+        var doc = await _ctx.Usuarios
+            .Find(u =&gt; u.Login == loginNormalizado)
+            .FirstOrDefaultAsync(ct);
+
+        // Documento → domínio (Reconstituir). null continua null.
+        return doc?.ToDomain();
+    }
+
+    /// &lt;summary&gt;
+    /// "Upsert": substitui o documento com esse _id ou insere se não existir.
+    /// mongosh: db.usuarios.replaceOne({ _id: ... }, {...}, { upsert: true })
+    /// Uma operação só — no EF eram duas (AnyAsync + Add/Update).
+    /// &lt;/summary&gt;
+    public async Task&lt;Usuario&gt; SalvarAsync(Usuario usuario, CancellationToken ct = default)
+    {
+        var doc = UsuarioDocument.FromDomain(usuario);
+
+        await _ctx.Usuarios.ReplaceOneAsync(
+            u =&gt; u.Id == doc.Id,
+            doc,
+            new ReplaceOptions { IsUpsert = true },
+            ct);
+
+        return usuario;
+    }
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Auth/ModuleExtensions.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Auth/ModuleExtensions.cs">using LojaApi.Modules.Auth.Data;
+using LojaApi.Modules.Auth.Interfaces;
+using LojaApi.Modules.Auth.Mongo;
+using LojaApi.Modules.Auth.Repositories;
+using LojaApi.Modules.Auth.Services;
+using LojaApi.Shared.Kernel;
+using LojaApi.Shared.Mongo;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace LojaApi.Modules.Auth;
+
+/// &lt;summary&gt;
+/// Extensão para registrar o módulo Auth no host.
+///
+/// 🔀 Na Tab 9 o "case Mongo" lançava "ainda não implementado".
+/// Agora (Tab 9-B) ele registra o adapter Mongo. REPARE no que NÃO mudou:
+/// o bloco "2) REGRAS DE NEGÓCIO" é idêntico — AuthService e JwtService
+/// não sabem qual banco está por trás.
+/// &lt;/summary&gt;
+public static class ModuleExtensions
+{
+    /// &lt;summary&gt;
+    /// Registra persistência (conforme o provider), serviço de login e JWT.
+    /// &lt;/summary&gt;
+    /// &lt;param name="provider"&gt;Valor de "Persistence:Provider" (MySql | Mongo).&lt;/param&gt;
+    /// &lt;param name="mysqlConnectionString"&gt;ConnectionStrings:Auth (usada com MySql).&lt;/param&gt;
+    /// &lt;param name="mongoConnectionString"&gt;ConnectionStrings:Mongo (usada com Mongo).&lt;/param&gt;
+    public static IServiceCollection AddAuthModule(
+        this IServiceCollection services,
+        string provider,
+        string? mysqlConnectionString,
+        string? mongoConnectionString,
+        string jwtSecret,
+        int jwtExpirationMinutes)
+    {
+        // ── 1) PERSISTÊNCIA: escolhe o adapter conforme o provider ──
+        switch (provider)
+        {
+            case PersistenceProviders.MySql:
+                var cs = PersistenceProviders.ExigirConnectionString(mysqlConnectionString, "Auth", "Auth");
+
+                // DbContext do Auth usando MySQL
+                services.AddDbContext&lt;AuthDbContext&gt;(options =&gt;
+                    options.UseMySql(
+                        cs,
+                        // Versão fixa = imagem mysql:8.4 (AutoDetect abriria conexão a cada DbContext)
+                        new MySqlServerVersion(new Version(8, 4, 0))));
+
+                // Porta → adapter EF
+                services.AddScoped&lt;IUsuarioRepository, EfUsuarioRepository&gt;();
+                break;
+
+            case PersistenceProviders.Mongo:
+                // IMongoClient (singleton, compartilhado) + criação de índices
+                services.AddMongoInfra(mongoConnectionString, "Auth");
+
+                // Contexto Mongo do módulo (singleton) — e ele também é o
+                // "inicializador de índices" do módulo
+                services.AddSingleton&lt;AuthMongoContext&gt;();
+                services.AddSingleton&lt;IMongoIndexInitializer&gt;(sp =&gt; sp.GetRequiredService&lt;AuthMongoContext&gt;());
+
+                // Porta → adapter Mongo  ⭐ A TROCA ACONTECE AQUI
+                services.AddScoped&lt;IUsuarioRepository, MongoUsuarioRepository&gt;();
+                break;
+
+            default:
+                throw PersistenceProviders.ProviderInvalido("Auth", provider);
+        }
+
+        // ── 2) REGRAS DE NEGÓCIO: idênticas para qualquer banco ──
+        // Serviço de JWT como singleton (não guarda estado por request)
+        services.AddSingleton&lt;IJwtService&gt;(
+            new JwtService(jwtSecret, jwtExpirationMinutes));
+
+        // Caso de uso de autenticação: depende de IUsuarioRepository (porta)
+        services.AddScoped&lt;IAuthService, AuthService&gt;();
+
+        // Retorna services para permitir encadeamento
+        return services;
+    }
+}</pre>
+</div>
+<div class="success-banner"><strong>✅ Como conferir:</strong> <code>dotnet test --filter "FullyQualifiedName~AuthServiceTests"</code> → <strong>5 testes verdes, sem alterar nenhum</strong>. Eles mockam a porta <code>IUsuarioRepository</code>, então não percebem a troca — essa é a recompensa da preparação da Tab 9.</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">📦 Passo 7 — Catálogo (o ponto alto: reserva atômica no Mongo)</h4>
+<p>A reserva de estoque precisa ser <strong>atômica</strong>: "reserve somente se ainda houver disponível". No MySQL era <code>UPDATE ... WHERE estoque - reservado &gt;= qtd</code>. No MongoDB, o equivalente é um <code>findOneAndUpdate</code> cujo filtro usa <code>$expr</code> (para comparar <strong>dois campos do próprio documento</strong>) e cuja atualização usa <code>$inc</code>.</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">mongosh - a reserva atômica, para testar à mão</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">use catalogo_db
+
+// Reserva 2 unidades do produto 1 SOMENTE se disponível &gt;= 2
+db.produtos.findOneAndUpdate(
+  { _id: 1, $expr: { $gte: [ { $subtract: ["$estoque", "$reservado"] }, 2 ] } },
+  { $inc: { reservado: 2 } },
+  { returnDocument: "after" }
+)
+// → devolve o documento com reservado aumentado, OU null se não havia estoque
+
+// Desfaz (libera 2, sem deixar negativo) — update com PIPELINE
+db.produtos.updateOne(
+  { _id: 1 },
+  [ { $set: { reservado: { $max: [ 0, { $subtract: ["$reservado", 2] } ] } } } ]
+)</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Catalogo/Mongo/ProdutoDocument.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Catalogo/Mongo/ProdutoDocument.cs">using LojaApi.Modules.Catalogo.Domain;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+
+namespace LojaApi.Modules.Catalogo.Mongo;
+
+/// &lt;summary&gt;
+/// 📄 MODELO DE PERSISTÊNCIA do produto (coleção "produtos").
+///
+/// Documento resultante:
+/// { _id: 1, nome: "Teclado Mecânico RGB", preco: NumberDecimal("349.90"),
+///   estoque: 15, reservado: 0 }
+///
+/// Repare no que NÃO está aqui: "disponivel". Ele é CALCULADO pelo domínio
+/// (estoque - reservado); gravar um valor derivado criaria o risco de ele
+/// ficar desatualizado em relação aos campos de origem.
+/// &lt;/summary&gt;
+[BsonIgnoreExtraElements]
+public class ProdutoDocument
+{
+    /// &lt;summary&gt;
+    /// _id INTEIRO (o Mongo aceita qualquer tipo de _id, não só ObjectId).
+    /// Mantém os ids do MySQL → URLs e contrato da API não mudam.
+    /// &lt;/summary&gt;
+    [BsonId]
+    public int Id { get; set; }
+
+    [BsonElement("nome")]
+    public string Nome { get; set; } = string.Empty;
+
+    /// &lt;summary&gt;
+    /// 💰 Decimal128: decimal EXATO de 128 bits. Sem isto, o valor poderia
+    /// virar double (349.90 → 349.89999999999998) — inaceitável para dinheiro
+    /// e fatal para o requisito "migrar com precisão".
+    /// &lt;/summary&gt;
+    [BsonElement("preco")]
+    [BsonRepresentation(BsonType.Decimal128)]
+    public decimal Preco { get; set; }
+
+    [BsonElement("estoque")]
+    public int Estoque { get; set; }
+
+    [BsonElement("reservado")]
+    public int Reservado { get; set; }
+
+    /// &lt;summary&gt;Domínio → documento.&lt;/summary&gt;
+    public static ProdutoDocument FromDomain(Produto p) =&gt; new()
+    {
+        Id = p.Id,
+        Nome = p.Nome,
+        Preco = p.Preco,
+        Estoque = p.Estoque,
+        Reservado = p.Reservado
+    };
+
+    /// &lt;summary&gt;Documento → domínio, via fábrica de reconstituição.&lt;/summary&gt;
+    public Produto ToDomain() =&gt;
+        Produto.Reconstituir(Id, Nome, Preco, Estoque, Reservado);
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Catalogo/Mongo/CatalogoMongoContext.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Catalogo/Mongo/CatalogoMongoContext.cs">using LojaApi.Shared.Mongo;
+using MongoDB.Driver;
+
+namespace LojaApi.Modules.Catalogo.Mongo;
+
+/// &lt;summary&gt;
+/// 🍃 Acesso ao database catalogo_db no MongoDB (paralelo do CatalogoDbContext).
+/// &lt;/summary&gt;
+public class CatalogoMongoContext : IMongoIndexInitializer
+{
+    /// &lt;summary&gt;Nome do database (igual ao do MySQL).&lt;/summary&gt;
+    public const string Database = "catalogo_db";
+
+    /// &lt;summary&gt;Nome da sequência de ids na coleção "counters".&lt;/summary&gt;
+    public const string SequenciaProdutos = "produtos";
+
+    public IMongoDatabase Db { get; }
+
+    /// &lt;summary&gt;Coleção "produtos".&lt;/summary&gt;
+    public IMongoCollection&lt;ProdutoDocument&gt; Produtos { get; }
+
+    public CatalogoMongoContext(IMongoClient client)
+    {
+        Db = client.GetDatabase(Database);
+        Produtos = Db.GetCollection&lt;ProdutoDocument&gt;("produtos");
+    }
+
+    /// &lt;summary&gt;
+    /// Produtos são buscados sempre por _id, que o Mongo JÁ indexa
+    /// automaticamente (assim como a PRIMARY KEY no MySQL). Nada a criar.
+    /// Exercício: se a API ganhar "buscar por nome", crie aqui
+    /// Builders&amp;lt;ProdutoDocument&amp;gt;.IndexKeys.Ascending(p =&amp;gt; p.Nome).
+    /// &lt;/summary&gt;
+    public Task CriarIndicesAsync(CancellationToken ct) =&gt; Task.CompletedTask;
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Catalogo/Repositories/MongoProdutoRepository.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Catalogo/Repositories/MongoProdutoRepository.cs">using LojaApi.Modules.Catalogo.Domain;
+using LojaApi.Modules.Catalogo.Interfaces;
+using LojaApi.Modules.Catalogo.Mongo;
+using LojaApi.Shared.Mongo;
+using MongoDB.Bson;
+using MongoDB.Driver;
+
+namespace LojaApi.Modules.Catalogo.Repositories;
+
+/// &lt;summary&gt;
+/// 🔌 ADAPTER MongoDB da porta IProdutoRepository.
+///
+/// Tabela de equivalências com o EfProdutoRepository (Tab 9):
+/// | Operação           | EF Core / MySQL                      | MongoDB                                  |
+/// |--------------------|--------------------------------------|------------------------------------------|
+/// | Listar paginado    | OrderBy(Id).Skip.Take                | Find({}).Sort({_id:1}).Skip.Limit        |
+/// | Atualizar dados    | ExecuteUpdate (3 colunas)            | updateOne + $set (3 campos)              |
+/// | Remover            | ExecuteDelete                        | deleteOne                                |
+/// | Reservar (atômico) | UPDATE ... WHERE estoque-reservado&amp;gt;=q | findOneAndUpdate + $expr + $inc          |
+/// | Liberar            | SET reservado = CASE ... END         | updateOne com pipeline + $max            |
+/// | Novo id            | AUTO_INCREMENT                       | coleção "counters" + $inc                |
+/// &lt;/summary&gt;
+public class MongoProdutoRepository : IProdutoRepository
+{
+    private readonly CatalogoMongoContext _ctx;
+
+    public MongoProdutoRepository(CatalogoMongoContext ctx)
+    {
+        _ctx = ctx;
+    }
+
+    /// &lt;summary&gt;mongosh: db.produtos.find({}).sort({ _id: 1 }).skip(p*s).limit(s)&lt;/summary&gt;
+    public async Task&lt;IReadOnlyList&lt;Produto&gt;&gt; ListarAsync(int page, int size, CancellationToken ct = default)
+    {
+        var docs = await _ctx.Produtos
+            .Find(Builders&lt;ProdutoDocument&gt;.Filter.Empty)
+            .SortBy(p =&gt; p.Id)          // mesma ordem do adapter EF
+            .Skip(page * size)
+            .Limit(size)
+            .ToListAsync(ct);
+
+        return docs.Select(d =&gt; d.ToDomain()).ToList();
+    }
+
+    /// &lt;summary&gt;mongosh: db.produtos.findOne({ _id: 1 })&lt;/summary&gt;
+    public async Task&lt;Produto?&gt; ObterAsync(int id, CancellationToken ct = default)
+    {
+        var doc = await _ctx.Produtos.Find(p =&gt; p.Id == id).FirstOrDefaultAsync(ct);
+        return doc?.ToDomain();
+    }
+
+    /// &lt;summary&gt;
+    /// Insere produto NOVO. O id vem da coleção "counters" (não há AUTO_INCREMENT).
+    /// Como Produto.Id tem setter privado, devolvemos um NOVO objeto
+    /// reconstituído com o id — por isso a porta diz "use o retorno".
+    /// &lt;/summary&gt;
+    public async Task&lt;Produto&gt; AdicionarAsync(Produto produto, CancellationToken ct = default)
+    {
+        var doc = ProdutoDocument.FromDomain(produto);
+
+        // Id = 0 → "o banco gera" (mesma convenção do EF)
+        if (doc.Id == 0)
+            doc.Id = await IdGenerator.ProximoAsync(_ctx.Db, CatalogoMongoContext.SequenciaProdutos, ct);
+
+        await _ctx.Produtos.InsertOneAsync(doc, cancellationToken: ct);
+
+        return doc.ToDomain();
+    }
+
+    /// &lt;summary&gt;
+    /// mongosh: db.produtos.updateOne({ _id: 1 },
+    ///            { $set: { nome: "...", preco: NumberDecimal("..."), estoque: 10 } })
+    /// "reservado" fica de fora (evita lost update — igual ao adapter EF).
+    /// &lt;/summary&gt;
+    public async Task&lt;bool&gt; AtualizarDadosAsync(Produto produto, CancellationToken ct = default)
+    {
+        var resultado = await _ctx.Produtos.UpdateOneAsync(
+            p =&gt; p.Id == produto.Id,
+            Builders&lt;ProdutoDocument&gt;.Update
+                .Set(p =&gt; p.Nome, produto.Nome)
+                .Set(p =&gt; p.Preco, produto.Preco)
+                .Set(p =&gt; p.Estoque, produto.Estoque),
+            cancellationToken: ct);
+
+        // MatchedCount (e não ModifiedCount): um PUT com os MESMOS valores
+        // "encontra" o documento mas não o "modifica" — e isso não é 404.
+        return resultado.MatchedCount &gt; 0;
+    }
+
+    /// &lt;summary&gt;mongosh: db.produtos.deleteOne({ _id: 1 })&lt;/summary&gt;
+    public async Task&lt;bool&gt; RemoverAsync(int id, CancellationToken ct = default)
+    {
+        var resultado = await _ctx.Produtos.DeleteOneAsync(p =&gt; p.Id == id, ct);
+        return resultado.DeletedCount &gt; 0;
+    }
+
+    /// &lt;summary&gt;
+    /// ⚛️ RESERVA ATÔMICA — o equivalente exato do UPDATE condicional do MySQL:
+    ///
+    ///   db.produtos.findOneAndUpdate(
+    ///     { _id: 1, $expr: { $gte: [ { $subtract: ["$estoque", "$reservado"] }, 2 ] } },
+    ///     { $inc: { reservado: 2 } },
+    ///     { returnDocument: "after" })
+    ///
+    /// - O FILTRO só casa se houver disponível suficiente ($expr permite
+    ///   comparar campos do próprio documento: estoque - reservado).
+    /// - O $inc só acontece se o filtro casar — tudo numa operação atômica
+    ///   no documento. Duas requests disputando a última unidade: só uma vence.
+    /// - findOneAndUpdate devolve o documento atualizado → já temos o PREÇO
+    ///   para o snapshot, sem uma segunda consulta (o adapter EF precisa de 2).
+    /// &lt;/summary&gt;
+    public async Task&lt;ResultadoReserva&gt; TentarReservarAsync(int id, int quantidade, CancellationToken ct = default)
+    {
+        // Filtro escrito como BsonDocument: fica IGUAL ao que você digitaria
+        // no mongosh — ótimo para estudar e para depurar.
+        FilterDefinition&lt;ProdutoDocument&gt; filtro = new BsonDocument
+        {
+            { "_id", id },
+            { "$expr", new BsonDocument("$gte", new BsonArray
+                {
+                    new BsonDocument("$subtract", new BsonArray { "$estoque", "$reservado" }),
+                    quantidade
+                })
+            }
+        };
+
+        var atualizado = await _ctx.Produtos.FindOneAndUpdateAsync(
+            filtro,
+            Builders&lt;ProdutoDocument&gt;.Update.Inc(p =&gt; p.Reservado, quantidade),
+            new FindOneAndUpdateOptions&lt;ProdutoDocument&gt;
+            {
+                ReturnDocument = ReturnDocument.After
+            },
+            ct);
+
+        if (atualizado is not null)
+            return new ResultadoReserva(StatusReserva.Reservado, atualizado.Preco);
+
+        // Nenhum documento casou: ou não existe, ou faltou estoque (404 vs 409)
+        var existe = await _ctx.Produtos.CountDocumentsAsync(
+            p =&gt; p.Id == id,
+            new CountOptions { Limit = 1 },   // para no 1º encontrado: barato
+            ct) &gt; 0;
+
+        return new ResultadoReserva(existe
+            ? StatusReserva.EstoqueInsuficiente
+            : StatusReserva.ProdutoInexistente);
+    }
+
+    /// &lt;summary&gt;
+    /// Libera reserva sem deixar "reservado" negativo, de forma atômica.
+    /// Usa um UPDATE COM PIPELINE (MongoDB 4.2+), que permite expressões:
+    ///
+    ///   db.produtos.updateOne({ _id: 1 },
+    ///     [ { $set: { reservado: { $max: [ 0, { $subtract: ["$reservado", 2] } ] } } } ])
+    ///
+    /// É a mesma regra de Produto.Liberar: Math.Max(0, Reservado - qtd).
+    /// &lt;/summary&gt;
+    public async Task&lt;bool&gt; LiberarAsync(int id, int quantidade, CancellationToken ct = default)
+    {
+        var pipeline = new BsonDocument[]
+        {
+            new BsonDocument("$set", new BsonDocument("reservado",
+                new BsonDocument("$max", new BsonArray
+                {
+                    0,
+                    new BsonDocument("$subtract", new BsonArray { "$reservado", quantidade })
+                })))
+        };
+
+        var resultado = await _ctx.Produtos.UpdateOneAsync(
+            Builders&lt;ProdutoDocument&gt;.Filter.Eq(p =&gt; p.Id, id),
+            Builders&lt;ProdutoDocument&gt;.Update.Pipeline(pipeline),
+            cancellationToken: ct);
+
+        return resultado.MatchedCount &gt; 0;
+    }
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Catalogo/ModuleExtensions.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Catalogo/ModuleExtensions.cs">using LojaApi.Modules.Catalogo.Data;
+using LojaApi.Modules.Catalogo.Interfaces;
+using LojaApi.Modules.Catalogo.Mongo;
+using LojaApi.Modules.Catalogo.Repositories;
+using LojaApi.Shared.Kernel;
+using LojaApi.Shared.Mongo;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace LojaApi.Modules.Catalogo;
+
+/// &lt;summary&gt;
+/// Extensão para registrar o módulo Catálogo no host.
+/// 🔀 Único ponto do módulo que sabe qual banco está em uso.
+/// &lt;/summary&gt;
+public static class ModuleExtensions
+{
+    /// &lt;summary&gt;
+    /// Registra a persistência do Catálogo conforme "Persistence:Provider".
+    /// &lt;/summary&gt;
+    public static IServiceCollection AddCatalogoModule(
+        this IServiceCollection services,
+        string provider,
+        string? mysqlConnectionString,
+        string? mongoConnectionString)
+    {
+        switch (provider)
+        {
+            case PersistenceProviders.MySql:
+                var cs = PersistenceProviders.ExigirConnectionString(mysqlConnectionString, "Catalogo", "Catalogo");
+
+                // DbContext do Catálogo usando MySQL
+                services.AddDbContext&lt;CatalogoDbContext&gt;(options =&gt;
+                    options.UseMySql(
+                        cs,
+                        // Versão fixa = imagem mysql:8.4 (AutoDetect abriria conexão a cada DbContext)
+                        new MySqlServerVersion(new Version(8, 4, 0))));
+
+                // Porta → adapter EF
+                services.AddScoped&lt;IProdutoRepository, EfProdutoRepository&gt;();
+                break;
+
+            case PersistenceProviders.Mongo:
+                // IMongoClient compartilhado + criação de índices na subida
+                services.AddMongoInfra(mongoConnectionString, "Catalogo");
+
+                // Contexto Mongo do módulo (singleton) + seus índices
+                services.AddSingleton&lt;CatalogoMongoContext&gt;();
+                services.AddSingleton&lt;IMongoIndexInitializer&gt;(sp =&gt; sp.GetRequiredService&lt;CatalogoMongoContext&gt;());
+
+                // Porta → adapter Mongo  ⭐ A TROCA ACONTECE AQUI
+                services.AddScoped&lt;IProdutoRepository, MongoProdutoRepository&gt;();
+                break;
+
+            default:
+                throw PersistenceProviders.ProviderInvalido("Catalogo", provider);
+        }
+
+        // Retorna services para permitir encadeamento
+        return services;
+    }
+}</pre>
+</div>
+<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> escrever <code>"estoque"</code> em vez de <code>"$estoque"</code> dentro do <code>$expr</code> (sem o <code>$</code> é um texto literal, não o campo); nome do campo diferente do <code>[BsonElement]</code> (o filtro escrito à mão usa o nome <strong>do banco</strong>: <code>estoque</code>, não <code>Estoque</code>); usar <code>ModifiedCount</code> em vez de <code>MatchedCount</code> no PUT (um PUT com os mesmos valores viraria 404 por engano).</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🧾 Passo 8 — Clientes (endereços embutidos)</h4>
+<p>O agregado inteiro vira um documento: o <code>Include</code> (JOIN) do EF desaparece. Atenção ao detalhe que mais derruba migrações: o <strong>id do endereço é preservado</strong>, porque o contexto Pedidos o referencia. E o <code>ListarEnderecosAsync</code> usa <strong>projeção</strong> — traz só o array, não o documento inteiro.</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Clientes/Mongo/ClienteDocument.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Clientes/Mongo/ClienteDocument.cs">using LojaApi.Modules.Clientes.Domain;
+using MongoDB.Bson.Serialization.Attributes;
+
+namespace LojaApi.Modules.Clientes.Mongo;
+
+/// &lt;summary&gt;
+/// 📄 Endereço EMBUTIDO no documento do cliente.
+///
+/// ⚠️ Diferente do item de pedido, aqui MANTEMOS o "id": os pedidos guardam
+/// "enderecoId" e o checkout valida o endereço por esse número. Se a migração
+/// descartasse o id, os pedidos antigos apontariam para o nada.
+/// Regra geral: embuta, mas preserve as chaves que OUTROS contextos referenciam.
+/// &lt;/summary&gt;
+public class EnderecoDocument
+{
+    [BsonElement("id")]
+    public int Id { get; set; }
+
+    [BsonElement("logradouro")]
+    public string Logradouro { get; set; } = string.Empty;
+
+    [BsonElement("cidade")]
+    public string Cidade { get; set; } = string.Empty;
+
+    [BsonElement("uf")]
+    public string Uf { get; set; } = string.Empty;
+
+    [BsonElement("cep")]
+    public string Cep { get; set; } = string.Empty;
+
+    public static EnderecoDocument FromDomain(Endereco e) =&gt; new()
+    {
+        Id = e.Id,
+        Logradouro = e.Logradouro,
+        Cidade = e.Cidade,
+        Uf = e.Uf,
+        Cep = e.Cep
+    };
+
+    public Endereco ToDomain() =&gt;
+        Endereco.Reconstituir(Id, Logradouro, Cidade, Uf, Cep);
+}
+
+/// &lt;summary&gt;
+/// 📄 MODELO DE PERSISTÊNCIA do cliente (coleção "clientes").
+///
+/// Documento resultante:
+/// { _id: 1, nome: "Ana Souza", email: "ana@example.com", ativo: true,
+///   enderecos: [ { id: 1, logradouro: "Rua A, 123", cidade: "São Paulo",
+///                  uf: "SP", cep: "01001-000" } ] }
+///
+/// A FK "ClienteId" da tabela enderecos desaparece: o endereço está DENTRO
+/// do cliente, então "a qual cliente pertence" é óbvio pela posição.
+/// &lt;/summary&gt;
+[BsonIgnoreExtraElements]
+public class ClienteDocument
+{
+    [BsonId]
+    public int Id { get; set; }
+
+    [BsonElement("nome")]
+    public string Nome { get; set; } = string.Empty;
+
+    [BsonElement("email")]
+    public string Email { get; set; } = string.Empty;
+
+    /// &lt;summary&gt;LGPD: desativação lógica preservada na migração.&lt;/summary&gt;
+    [BsonElement("ativo")]
+    public bool Ativo { get; set; }
+
+    [BsonElement("enderecos")]
+    public List&lt;EnderecoDocument&gt; Enderecos { get; set; } = new();
+
+    public static ClienteDocument FromDomain(Cliente c) =&gt; new()
+    {
+        Id = c.Id,
+        Nome = c.Nome,
+        Email = c.Email,
+        Ativo = c.Ativo,
+        Enderecos = c.Enderecos.Select(EnderecoDocument.FromDomain).ToList()
+    };
+
+    /// &lt;summary&gt;
+    /// Reconstituir (e não o construtor): o construtor sempre cria cliente
+    /// ATIVO e sem endereços — e um cliente desativado precisa voltar
+    /// desativado do banco.
+    /// &lt;/summary&gt;
+    public Cliente ToDomain() =&gt; Cliente.Reconstituir(
+        Id, Nome, Email, Ativo,
+        Enderecos.Select(e =&gt; e.ToDomain()));
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Clientes/Mongo/ClientesMongoContext.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Clientes/Mongo/ClientesMongoContext.cs">using LojaApi.Shared.Mongo;
+using MongoDB.Driver;
+
+namespace LojaApi.Modules.Clientes.Mongo;
+
+/// &lt;summary&gt;
+/// 🍃 Acesso ao database clientes_db no MongoDB (paralelo do ClientesDbContext).
+/// &lt;/summary&gt;
+public class ClientesMongoContext : IMongoIndexInitializer
+{
+    /// &lt;summary&gt;Nome do database (igual ao do MySQL).&lt;/summary&gt;
+    public const string Database = "clientes_db";
+
+    /// &lt;summary&gt;Sequências de ids na coleção "counters".&lt;/summary&gt;
+    public const string SequenciaClientes = "clientes";
+    public const string SequenciaEnderecos = "enderecos";
+
+    public IMongoDatabase Db { get; }
+
+    /// &lt;summary&gt;Coleção "clientes" (endereços embutidos).&lt;/summary&gt;
+    public IMongoCollection&lt;ClienteDocument&gt; Clientes { get; }
+
+    public ClientesMongoContext(IMongoClient client)
+    {
+        Db = client.GetDatabase(Database);
+        Clientes = Db.GetCollection&lt;ClienteDocument&gt;("clientes");
+    }
+
+    /// &lt;summary&gt;
+    /// Todas as consultas de Clientes são por _id (já indexado pelo Mongo).
+    /// Nada a criar. (A tabela enderecos tinha índice na FK ClienteId;
+    /// embutido no documento, esse índice deixa de ser necessário.)
+    /// &lt;/summary&gt;
+    public Task CriarIndicesAsync(CancellationToken ct) =&gt; Task.CompletedTask;
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Clientes/Repositories/MongoClienteRepository.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Clientes/Repositories/MongoClienteRepository.cs">using LojaApi.Modules.Clientes.Domain;
+using LojaApi.Modules.Clientes.Interfaces;
+using LojaApi.Modules.Clientes.Mongo;
+using LojaApi.Shared.Mongo;
+using MongoDB.Driver;
+
+namespace LojaApi.Modules.Clientes.Repositories;
+
+/// &lt;summary&gt;
+/// 🔌 ADAPTER MongoDB da porta IClienteRepository.
+///
+/// No EF, ObterAsync precisava de Include (JOIN com enderecos).
+/// Aqui o agregado inteiro já é UM documento: um findOne basta.
+/// &lt;/summary&gt;
+public class MongoClienteRepository : IClienteRepository
+{
+    private readonly ClientesMongoContext _ctx;
+
+    public MongoClienteRepository(ClientesMongoContext ctx)
+    {
+        _ctx = ctx;
+    }
+
+    /// &lt;summary&gt;Insere cliente NOVO com id da coleção "counters".&lt;/summary&gt;
+    public async Task&lt;Cliente&gt; AdicionarAsync(Cliente cliente, CancellationToken ct = default)
+    {
+        var doc = ClienteDocument.FromDomain(cliente);
+
+        if (doc.Id == 0)
+            doc.Id = await IdGenerator.ProximoAsync(_ctx.Db, ClientesMongoContext.SequenciaClientes, ct);
+
+        // Endereços novos (id 0) também ganham id da sua própria sequência,
+        // para continuarem únicos e referenciáveis por "enderecoId".
+        foreach (var e in doc.Enderecos.Where(e =&gt; e.Id == 0))
+            e.Id = await IdGenerator.ProximoAsync(_ctx.Db, ClientesMongoContext.SequenciaEnderecos, ct);
+
+        await _ctx.Clientes.InsertOneAsync(doc, cancellationToken: ct);
+
+        return doc.ToDomain();
+    }
+
+    /// &lt;summary&gt;mongosh: db.clientes.findOne({ _id: 1 })  → endereços já vêm junto&lt;/summary&gt;
+    public async Task&lt;Cliente?&gt; ObterAsync(int id, CancellationToken ct = default)
+    {
+        var doc = await _ctx.Clientes.Find(c =&gt; c.Id == id).FirstOrDefaultAsync(ct);
+        return doc?.ToDomain();
+    }
+
+    /// &lt;summary&gt;
+    /// mongosh: db.clientes.updateOne({ _id: 1 },
+    ///            { $set: { nome: "...", email: "...", ativo: false } })
+    /// &lt;/summary&gt;
+    public async Task&lt;bool&gt; AtualizarDadosAsync(Cliente cliente, CancellationToken ct = default)
+    {
+        var resultado = await _ctx.Clientes.UpdateOneAsync(
+            c =&gt; c.Id == cliente.Id,
+            Builders&lt;ClienteDocument&gt;.Update
+                .Set(c =&gt; c.Nome, cliente.Nome)
+                .Set(c =&gt; c.Email, cliente.Email)
+                .Set(c =&gt; c.Ativo, cliente.Ativo),
+            cancellationToken: ct);
+
+        return resultado.MatchedCount &gt; 0;
+    }
+
+    /// &lt;summary&gt;mongosh: db.clientes.countDocuments({ _id: 1 }, { limit: 1 })&lt;/summary&gt;
+    public async Task&lt;bool&gt; ExisteAsync(int id, CancellationToken ct = default)
+        =&gt; await _ctx.Clientes.CountDocumentsAsync(
+            c =&gt; c.Id == id,
+            new CountOptions { Limit = 1 },
+            ct) &gt; 0;
+
+    /// &lt;summary&gt;
+    /// ⚡ PROJEÇÃO: traz SÓ o array de endereços, não o documento inteiro.
+    /// mongosh: db.clientes.findOne({ _id: 1 }, { enderecos: 1, _id: 0 })
+    /// Menos bytes na rede = mais desempenho (o checkout chama isto sempre).
+    /// &lt;/summary&gt;
+    public async Task&lt;IReadOnlyList&lt;Endereco&gt;&gt; ListarEnderecosAsync(int clienteId, CancellationToken ct = default)
+    {
+        var enderecos = await _ctx.Clientes
+            .Find(c =&gt; c.Id == clienteId)
+            .Project(c =&gt; c.Enderecos)
+            .FirstOrDefaultAsync(ct);
+
+        return (enderecos ?? new List&lt;EnderecoDocument&gt;())
+            .Select(e =&gt; e.ToDomain())
+            .ToList();
+    }
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Clientes/ModuleExtensions.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Clientes/ModuleExtensions.cs">using LojaApi.Modules.Clientes.Data;
+using LojaApi.Modules.Clientes.Interfaces;
+using LojaApi.Modules.Clientes.Mongo;
+using LojaApi.Modules.Clientes.Repositories;
+using LojaApi.Shared.Kernel;
+using LojaApi.Shared.Mongo;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace LojaApi.Modules.Clientes;
+
+/// &lt;summary&gt;
+/// Extensão para registrar o módulo Clientes no host.
+/// 🔀 Único ponto do módulo que sabe qual banco está em uso.
+/// &lt;/summary&gt;
+public static class ModuleExtensions
+{
+    /// &lt;summary&gt;
+    /// Registra a persistência de Clientes conforme "Persistence:Provider".
+    /// &lt;/summary&gt;
+    public static IServiceCollection AddClientesModule(
+        this IServiceCollection services,
+        string provider,
+        string? mysqlConnectionString,
+        string? mongoConnectionString)
+    {
+        switch (provider)
+        {
+            case PersistenceProviders.MySql:
+                var cs = PersistenceProviders.ExigirConnectionString(mysqlConnectionString, "Clientes", "Clientes");
+
+                // DbContext dos Clientes usando MySQL
+                services.AddDbContext&lt;ClientesDbContext&gt;(options =&gt;
+                    options.UseMySql(
+                        cs,
+                        // Versão fixa = imagem mysql:8.4 (AutoDetect abriria conexão a cada DbContext)
+                        new MySqlServerVersion(new Version(8, 4, 0))));
+
+                // Porta → adapter EF
+                services.AddScoped&lt;IClienteRepository, EfClienteRepository&gt;();
+                break;
+
+            case PersistenceProviders.Mongo:
+                // IMongoClient compartilhado + criação de índices na subida
+                services.AddMongoInfra(mongoConnectionString, "Clientes");
+
+                // Contexto Mongo do módulo (singleton)
+                services.AddSingleton&lt;ClientesMongoContext&gt;();
+                services.AddSingleton&lt;IMongoIndexInitializer&gt;(sp =&gt; sp.GetRequiredService&lt;ClientesMongoContext&gt;());
+
+                // Porta → adapter Mongo  ⭐ A TROCA ACONTECE AQUI
+                services.AddScoped&lt;IClienteRepository, MongoClienteRepository&gt;();
+                break;
+
+            default:
+                throw PersistenceProviders.ProviderInvalido("Clientes", provider);
+        }
+
+        // Retorna services para permitir encadeamento
+        return services;
+    }
+}</pre>
+</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🛒 Passo 9 — Pedidos (itens embutidos)</h4>
+<p>No MySQL, gravar um pedido eram vários <code>INSERT</code> (pedido + itens) dentro de uma transação. No MongoDB é <strong>um</strong> <code>insertOne</code> — atômico por natureza, porque é um documento só. O status continua texto, e <code>reservaIds</code> finalmente é persistido.</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Pedidos/Mongo/PedidoDocument.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Pedidos/Mongo/PedidoDocument.cs">using LojaApi.Modules.Pedidos.Domain;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+
+namespace LojaApi.Modules.Pedidos.Mongo;
+
+/// &lt;summary&gt;
+/// 📄 Item do pedido EMBUTIDO no documento do pedido (sem coleção própria).
+///
+/// No MySQL o item tinha Id e PedidoId (chaves técnicas do relacional).
+/// Aqui elas SOMEM: o item mora dentro do pedido, então não precisa de chave
+/// própria nem de FK. É o encaixe natural "agregado DDD = documento".
+/// &lt;/summary&gt;
+public class ItemPedidoDocument
+{
+    [BsonElement("produtoId")]
+    public int ProdutoId { get; set; }
+
+    [BsonElement("quantidade")]
+    public int Quantidade { get; set; }
+
+    /// &lt;summary&gt;Snapshot do preço — Decimal128 para não perder centavos.&lt;/summary&gt;
+    [BsonElement("precoUnitario")]
+    [BsonRepresentation(BsonType.Decimal128)]
+    public decimal PrecoUnitario { get; set; }
+}
+
+/// &lt;summary&gt;
+/// 📄 MODELO DE PERSISTÊNCIA do pedido (coleção "pedidos").
+///
+/// Documento resultante:
+/// { _id: 1, usuario: "c0a8...", clienteId: 1, enderecoId: 1, status: "RESERVADO",
+///   itens: [ { produtoId: 1, quantidade: 2, precoUnitario: NumberDecimal("349.90") } ],
+///   reservaIds: [ "a1b2c3d4" ] }
+///
+/// Relacional (Tab 9): 2 tabelas + JOIN. Documento: 1 leitura traz tudo.
+/// &lt;/summary&gt;
+[BsonIgnoreExtraElements]
+public class PedidoDocument
+{
+    [BsonId]
+    public int Id { get; set; }
+
+    /// &lt;summary&gt;Id do usuário (claim sub). Tem índice: "meus pedidos".&lt;/summary&gt;
+    [BsonElement("usuario")]
+    public string Usuario { get; set; } = string.Empty;
+
+    [BsonElement("clienteId")]
+    public int ClienteId { get; set; }
+
+    [BsonElement("enderecoId")]
+    public int EnderecoId { get; set; }
+
+    /// &lt;summary&gt;
+    /// Enum gravado como TEXTO ("RESERVADO"), igual ao MySQL. Gravar como
+    /// número (2) quebraria os dados se alguém reordenasse o enum.
+    /// &lt;/summary&gt;
+    [BsonElement("status")]
+    [BsonRepresentation(BsonType.String)]
+    public PedidoStatus Status { get; set; }
+
+    [BsonElement("itens")]
+    public List&lt;ItemPedidoDocument&gt; Itens { get; set; } = new();
+
+    /// &lt;summary&gt;
+    /// No MySQL era ignorado (exigiria outra tabela). Aqui é só um array —
+    /// o modelo de documentos guarda listas simples "de graça".
+    /// &lt;/summary&gt;
+    [BsonElement("reservaIds")]
+    public List&lt;string&gt; ReservaIds { get; set; } = new();
+
+    /// &lt;summary&gt;Domínio → documento.&lt;/summary&gt;
+    public static PedidoDocument FromDomain(Pedido p) =&gt; new()
+    {
+        Id = p.Id,
+        Usuario = p.Usuario,
+        ClienteId = p.ClienteId,
+        EnderecoId = p.EnderecoId,
+        Status = p.Status,
+        Itens = p.Itens.Select(i =&gt; new ItemPedidoDocument
+        {
+            ProdutoId = i.ProdutoId,
+            Quantidade = i.Quantidade,
+            PrecoUnitario = i.PrecoUnitario
+        }).ToList(),
+        ReservaIds = p.ReservaIds.ToList()
+    };
+
+    /// &lt;summary&gt;Documento → domínio, via fábrica de reconstituição.&lt;/summary&gt;
+    public Pedido ToDomain() =&gt; Pedido.Reconstituir(
+        Id,
+        Usuario,
+        ClienteId,
+        EnderecoId,
+        Status,
+        Itens.Select(i =&gt; new ItemPedido(i.ProdutoId, i.Quantidade, i.PrecoUnitario)),
+        ReservaIds);
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Pedidos/Mongo/PedidosMongoContext.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Pedidos/Mongo/PedidosMongoContext.cs">using LojaApi.Shared.Mongo;
+using MongoDB.Driver;
+
+namespace LojaApi.Modules.Pedidos.Mongo;
+
+/// &lt;summary&gt;
+/// 🍃 Acesso ao database pedidos_db no MongoDB (paralelo do PedidosDbContext).
+/// &lt;/summary&gt;
+public class PedidosMongoContext : IMongoIndexInitializer
+{
+    /// &lt;summary&gt;Nome do database (igual ao do MySQL).&lt;/summary&gt;
+    public const string Database = "pedidos_db";
+
+    /// &lt;summary&gt;Nome da sequência de ids na coleção "counters".&lt;/summary&gt;
+    public const string SequenciaPedidos = "pedidos";
+
+    public IMongoDatabase Db { get; }
+
+    /// &lt;summary&gt;Coleção "pedidos" (itens embutidos).&lt;/summary&gt;
+    public IMongoCollection&lt;PedidoDocument&gt; Pedidos { get; }
+
+    public PedidosMongoContext(IMongoClient client)
+    {
+        Db = client.GetDatabase(Database);
+        Pedidos = Db.GetCollection&lt;PedidoDocument&gt;("pedidos");
+    }
+
+    /// &lt;summary&gt;
+    /// ⚡ Índice de "meus pedidos" — o mesmo ix_pedidos_usuario do MySQL.
+    /// mongosh: db.pedidos.createIndex({ usuario: 1 }, { name: "ix_pedidos_usuario" })
+    /// Sem ele: COLLSCAN (lê todos os pedidos). Com ele: IXSCAN (vai direto).
+    /// &lt;/summary&gt;
+    public Task CriarIndicesAsync(CancellationToken ct) =&gt;
+        Pedidos.Indexes.CreateOneAsync(
+            new CreateIndexModel&lt;PedidoDocument&gt;(
+                Builders&lt;PedidoDocument&gt;.IndexKeys.Ascending(p =&gt; p.Usuario),
+                new CreateIndexOptions { Name = "ix_pedidos_usuario" }),
+            cancellationToken: ct);
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Pedidos/Repositories/MongoPedidoRepository.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Pedidos/Repositories/MongoPedidoRepository.cs">using LojaApi.Modules.Pedidos.Domain;
+using LojaApi.Modules.Pedidos.Interfaces;
+using LojaApi.Modules.Pedidos.Mongo;
+using LojaApi.Shared.Mongo;
+using MongoDB.Driver;
+
+namespace LojaApi.Modules.Pedidos.Repositories;
+
+/// &lt;summary&gt;
+/// 🔌 ADAPTER MongoDB da porta IPedidoRepository.
+///
+/// Destaque didático: no MySQL, gravar um pedido = INSERT em "pedidos" +
+/// N INSERTs em "pedido_itens" (o SaveChanges os envolve numa transação).
+/// No Mongo, o pedido INTEIRO é UM documento → um insertOne só, atômico
+/// por natureza. Não precisamos de transação multi-documento.
+/// &lt;/summary&gt;
+public class MongoPedidoRepository : IPedidoRepository
+{
+    private readonly PedidosMongoContext _ctx;
+
+    public MongoPedidoRepository(PedidosMongoContext ctx)
+    {
+        _ctx = ctx;
+    }
+
+    /// &lt;summary&gt;
+    /// Insere pedido NOVO com id da coleção "counters".
+    /// mongosh: db.pedidos.insertOne({ _id: 5, usuario: "...", itens: [...] })
+    /// &lt;/summary&gt;
+    public async Task&lt;Pedido&gt; AdicionarAsync(Pedido pedido, CancellationToken ct = default)
+    {
+        var doc = PedidoDocument.FromDomain(pedido);
+
+        if (doc.Id == 0)
+            doc.Id = await IdGenerator.ProximoAsync(_ctx.Db, PedidosMongoContext.SequenciaPedidos, ct);
+
+        await _ctx.Pedidos.InsertOneAsync(doc, cancellationToken: ct);
+
+        // Devolve um Pedido reconstituído COM o id (Pedido.Id tem setter privado)
+        return doc.ToDomain();
+    }
+
+    /// &lt;summary&gt;mongosh: db.pedidos.findOne({ _id: 5 })  → itens já vêm junto&lt;/summary&gt;
+    public async Task&lt;Pedido?&gt; ObterAsync(int id, CancellationToken ct = default)
+    {
+        var doc = await _ctx.Pedidos.Find(p =&gt; p.Id == id).FirstOrDefaultAsync(ct);
+        return doc?.ToDomain();
+    }
+
+    /// &lt;summary&gt;
+    /// mongosh: db.pedidos.find({ usuario: "..." }).sort({ _id: 1 })
+    /// Usa o índice ix_pedidos_usuario (confira com .explain() no Passo 14).
+    /// &lt;/summary&gt;
+    public async Task&lt;IReadOnlyList&lt;Pedido&gt;&gt; ListarPorUsuarioAsync(string usuario, CancellationToken ct = default)
+    {
+        var docs = await _ctx.Pedidos
+            .Find(p =&gt; p.Usuario == usuario)
+            .SortBy(p =&gt; p.Id)
+            .ToListAsync(ct);
+
+        return docs.Select(d =&gt; d.ToDomain()).ToList();
+    }
+
+    /// &lt;summary&gt;
+    /// mongosh: db.pedidos.updateOne({ _id: 5 }, { $set: { status: "CANCELADO" } })
+    /// Altera SÓ o status — itens e reservaIds ficam intactos.
+    /// &lt;/summary&gt;
+    public async Task&lt;bool&gt; AtualizarStatusAsync(int id, PedidoStatus status, CancellationToken ct = default)
+    {
+        var resultado = await _ctx.Pedidos.UpdateOneAsync(
+            p =&gt; p.Id == id,
+            Builders&lt;PedidoDocument&gt;.Update.Set(p =&gt; p.Status, status),
+            cancellationToken: ct);
+
+        return resultado.MatchedCount &gt; 0;
+    }
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Modules.Pedidos/ModuleExtensions.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Pedidos/ModuleExtensions.cs">using LojaApi.Modules.Pedidos.Data;
+using LojaApi.Modules.Pedidos.Integration;
+using LojaApi.Modules.Pedidos.Interfaces;
+using LojaApi.Modules.Pedidos.Mongo;
+using LojaApi.Modules.Pedidos.Repositories;
+using LojaApi.Shared.Kernel;
+using LojaApi.Shared.Mongo;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace LojaApi.Modules.Pedidos;
+
+/// &lt;summary&gt;
+/// Extensão para registrar o módulo Pedidos no host.
+/// 🔀 Único ponto do módulo que sabe qual banco está em uso.
+/// &lt;/summary&gt;
+public static class ModuleExtensions
+{
+    /// &lt;summary&gt;
+    /// Registra persistência (conforme o provider), clients HTTP e PedidoService.
+    /// &lt;/summary&gt;
+    public static IServiceCollection AddPedidosModule(
+        this IServiceCollection services,
+        string provider,
+        string? mysqlConnectionString,
+        string? mongoConnectionString,
+        Uri catalogoBaseAddress,
+        Uri clientesBaseAddress)
+    {
+        // ── 1) PERSISTÊNCIA: escolhe o adapter conforme o provider ──
+        switch (provider)
+        {
+            case PersistenceProviders.MySql:
+                var cs = PersistenceProviders.ExigirConnectionString(mysqlConnectionString, "Pedidos", "Pedidos");
+
+                // DbContext dos Pedidos usando MySQL
+                services.AddDbContext&lt;PedidosDbContext&gt;(options =&gt;
+                    options.UseMySql(
+                        cs,
+                        // Versão fixa = imagem mysql:8.4 (AutoDetect abriria conexão a cada DbContext)
+                        new MySqlServerVersion(new Version(8, 4, 0))));
+
+                // Porta → adapter EF
+                services.AddScoped&lt;IPedidoRepository, EfPedidoRepository&gt;();
+                break;
+
+            case PersistenceProviders.Mongo:
+                // IMongoClient compartilhado + criação de índices na subida
+                services.AddMongoInfra(mongoConnectionString, "Pedidos");
+
+                // Contexto Mongo do módulo (singleton) + índice ix_pedidos_usuario
+                services.AddSingleton&lt;PedidosMongoContext&gt;();
+                services.AddSingleton&lt;IMongoIndexInitializer&gt;(sp =&gt; sp.GetRequiredService&lt;PedidosMongoContext&gt;());
+
+                // Porta → adapter Mongo  ⭐ A TROCA ACONTECE AQUI
+                services.AddScoped&lt;IPedidoRepository, MongoPedidoRepository&gt;();
+                break;
+
+            default:
+                throw PersistenceProviders.ProviderInvalido("Pedidos", provider);
+        }
+
+        // ── 2) INTEGRAÇÃO E REGRAS: idênticas para qualquer banco ──
+        // A comunicação com Catálogo/Clientes é HTTP: trocar o banco de
+        // Pedidos não afeta em nada essas chamadas.
+
+        // Necessário para o handler ler o token da request atual
+        services.AddHttpContextAccessor();
+        services.AddTransient&lt;BearerTokenForwardingHandler&gt;();
+
+        // Registra client HTTP para o Catálogo (repassando o Bearer token)
+        services.AddHttpClient&lt;ICatalogoClient, CatalogoClient&gt;(
+                options =&gt; options.BaseAddress = catalogoBaseAddress)
+            .AddHttpMessageHandler&lt;BearerTokenForwardingHandler&gt;();
+
+        // Registra client HTTP para os Clientes (repassando o Bearer token)
+        services.AddHttpClient&lt;IClientesClient, ClientesClient&gt;(
+                options =&gt; options.BaseAddress = clientesBaseAddress)
+            .AddHttpMessageHandler&lt;BearerTokenForwardingHandler&gt;();
+
+        // Caso de uso de checkout (depende de IPedidoRepository, não do banco)
+        services.AddScoped&lt;PedidoService&gt;();
+
+        // Retorna services para permitir encadeamento
+        return services;
+    }
+}</pre>
+</div>
+<div class="success-banner"><strong>✅ Como conferir (Passos 6–9):</strong> <code>dotnet build</code> sem erros e <code>dotnet test</code> → <strong>21 testes verdes, nenhum alterado</strong>. Compare as pastas: <code>Controllers</code>, <code>Services</code>, <code>Domain</code> e <code>Interfaces</code> estão idênticos aos da Tab 9.</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">⚡ Passo 10 — Ligar o Mongo pela primeira vez (ainda vazio)</h4>
+<p>Vamos subir a API em modo Mongo <strong>antes</strong> de migrar os dados. O objetivo é conferir a infraestrutura: conexão, criação de índices e o comportamento com o banco vazio.</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal do VS Code - Passo 10: primeira subida em modo Mongo</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">cd LojaApi.Api
+
+# appsettings desta aba já usa "Mongo"; a variável deixa isso explícito
+# (Windows PowerShell:  $env:Persistence__Provider="Mongo"; dotnet run --urls http://localhost:5000)
+Persistence__Provider=Mongo dotnet run --urls http://localhost:5000
+
+# ── Em OUTRO terminal ──
+# Login falha: o banco Mongo ainda NÃO tem usuários → 401 (esperado!)
+curl -i -X POST http://localhost:5000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"login":"admin","password":"admin123"}'
+
+# Catálogo vazio → 200 com []
+curl -s http://localhost:5000/api/catalogo/produtos
+
+# Os índices já foram criados na subida:
+docker exec dev_mongo_multicontextos mongosh -u root -p root123 --authenticationDatabase admin --quiet \
+  --eval 'db.getSiblingDB("auth_db").usuarios.getIndexes(); db.getSiblingDB("pedidos_db").pedidos.getIndexes()'</pre>
+</div>
+<div class="success-banner"><strong>✅ Como conferir:</strong> a API sobe; login retorna <code>401</code> (não há usuários — <strong>é por isso que precisamos migrar</strong>); catálogo retorna <code>[]</code>; <code>getIndexes()</code> lista <code>ux_usuarios_login</code> e <code>ix_pedidos_usuario</code>. Pare a API (<kbd>Ctrl+C</kbd>) antes do próximo passo.</div>
+<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> a API não sobe com <code>TimeoutException ... A timeout occurred after 5000ms</code> → o MongoDB não está no ar ou a porta/host estão errados; <code>Authentication failed</code> → faltou <code>?authSource=admin</code> na connection string (o usuário root vive no database <code>admin</code>); <code>ConnectionStrings:Mongo ausente</code> → confira o <code>appsettings.json</code> do <code>LojaApi.Api</code>.</div>
+</div>
+
+<!-- ══════════ PARTE 4 ══════════ -->
+<div class="lab-container">
+<div class="lab-header">
+<h3>🚚 Parte 4 — Migrar os dados com precisão (Passos 11 e 12)</h3>
+<div class="lab-actions"><span class="ide-tag cs">VS Code</span></div>
+</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🚚 Passo 11 — O migrador (<code>LojaApi.Migrator</code>)</h4>
+<p>Um aplicativo de console que <strong>reaproveita a própria solução</strong>: lê o MySQL com os <code>DbContext</code> da Tab 9 e grava no MongoDB com os mesmos <code>*Document</code> e <code>*MongoContext</code> que a API usa. Assim existe <strong>um único mapeamento</strong> domínio ↔ documento, e a migração não pode "discordar" da API.</p>
+<div class="table-wrap" style="margin:12px 0">
+<table>
+<thead><tr><th>Propriedade</th><th>Como é garantida</th><th>Por que importa</th></tr></thead>
+<tbody>
+<tr><td><strong>Fiel</strong></td><td>Leitura pelo EF → domínio → <code>FromDomain</code>; ids, datas, status, preços e <code>ativo</code> preservados</td><td>Requisito "migrar com precisão"</td></tr>
+<tr><td><strong>Idempotente</strong></td><td>Upsert por <code>_id</code> (<code>replaceOne</code> com <code>upsert: true</code>)</td><td>Caiu no meio? Rode de novo, sem duplicar nada</td></tr>
+<tr><td><strong>Eficiente</strong></td><td><code>bulkWrite</code> em lotes de 1.000, <code>ordered: false</code></td><td>1 ida ao banco por lote, não por documento</td></tr>
+<tr><td><strong>Consistente</strong></td><td>Ajusta <code>counters</code> ao maior id migrado</td><td>Evita <code>E11000 duplicate key</code> no próximo cadastro</td></tr>
+</tbody>
+</table>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal do VS Code - Passo 11: criar o projeto (ou use o ZIP)</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">dotnet new console -n LojaApi.Migrator -f net10.0
+dotnet sln add LojaApi.Migrator --in-root
+dotnet add LojaApi.Migrator reference LojaApi.Modules.Auth LojaApi.Modules.Catalogo LojaApi.Modules.Pedidos LojaApi.Modules.Clientes
+# Depois, substitua o .csproj e os .cs pelos do ZIP (ou copie os blocos abaixo)</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Migrator/LojaApi.Migrator.csproj</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Migrator/LojaApi.Migrator.csproj">&lt;Project Sdk="Microsoft.NET.Sdk"&gt;
+  &lt;!--
+    🚚 LojaApi.Migrator — aplicativo de console que copia os dados do MySQL
+    para o MongoDB e gera o relatório de validação.
+
+    Ele REAPROVEITA o que os módulos já têm:
+    - os DbContexts (EF) para LER o MySQL;
+    - os documentos Mongo (*Document.FromDomain) e os MongoContexts para GRAVAR.
+    Assim o mapeamento domínio ↔ documento é UM SÓ: o mesmo que a API usa.
+  --&gt;
+  &lt;PropertyGroup&gt;
+    &lt;OutputType&gt;Exe&lt;/OutputType&gt;
+    &lt;TargetFramework&gt;net10.0&lt;/TargetFramework&gt;
+    &lt;ImplicitUsings&gt;enable&lt;/ImplicitUsings&gt;
+    &lt;Nullable&gt;enable&lt;/Nullable&gt;
+  &lt;/PropertyGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;!-- Configuration (appsettings + variáveis de ambiente) --&gt;
+    &lt;FrameworkReference Include="Microsoft.AspNetCore.App" /&gt;
+  &lt;/ItemGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;ProjectReference Include="..\LojaApi.Modules.Auth\LojaApi.Modules.Auth.csproj" /&gt;
+    &lt;ProjectReference Include="..\LojaApi.Modules.Catalogo\LojaApi.Modules.Catalogo.csproj" /&gt;
+    &lt;ProjectReference Include="..\LojaApi.Modules.Pedidos\LojaApi.Modules.Pedidos.csproj" /&gt;
+    &lt;ProjectReference Include="..\LojaApi.Modules.Clientes\LojaApi.Modules.Clientes.csproj" /&gt;
+  &lt;/ItemGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;!-- Copia o appsettings.json para a pasta de saída (bin/...) --&gt;
+    &lt;None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" /&gt;
+  &lt;/ItemGroup&gt;
+&lt;/Project&gt;</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Migrator/appsettings.json</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Migrator/appsettings.json">{
+  "ConnectionStrings": {
+    "Auth": "Server=localhost;Port=3306;Database=auth_db;User=devuser;Password=devpass;",
+    "Catalogo": "Server=localhost;Port=3306;Database=catalogo_db;User=devuser;Password=devpass;",
+    "Pedidos": "Server=localhost;Port=3306;Database=pedidos_db;User=devuser;Password=devpass;",
+    "Clientes": "Server=localhost;Port=3306;Database=clientes_db;User=devuser;Password=devpass;",
+    "Mongo": "mongodb://root:root123@localhost:27017/?authSource=admin"
+  },
+  "Migracao": {
+    "TamanhoLote": 1000
+  }
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Migrator/Program.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Migrator/Program.cs">using LojaApi.Migrator;
+using Microsoft.Extensions.Configuration;
+
+// ══════════════════════════════════════════════════════════════
+// 🚚 LojaApi.Migrator — MySQL → MongoDB
+//
+// Uso (na pasta LojaApi.Migrator):
+//   dotnet run -- migrar    → só copia os dados
+//   dotnet run -- validar   → só compara MySQL × Mongo e gera o relatório
+//   dotnet run              → "tudo": copia e depois valida
+//
+// Código de saída (útil em scripts/CI):
+//   0 = aprovada · 1 = validação reprovada · 2 = modo inválido
+// ══════════════════════════════════════════════════════════════
+
+// 1) Configuração: appsettings.json + variáveis de ambiente (que sobrescrevem).
+//    Ex.: ConnectionStrings__Mongo="mongodb://..." dotnet run
+var config = new ConfigurationBuilder()
+    .SetBasePath(AppContext.BaseDirectory)
+    .AddJsonFile("appsettings.json", optional: false)
+    .AddEnvironmentVariables()
+    .Build();
+
+var modo = (args.Length &gt; 0 ? args[0] : "tudo").ToLowerInvariant();
+if (modo is not ("migrar" or "validar" or "tudo"))
+{
+    Console.Error.WriteLine($"Modo inválido: \"{modo}\". Use: migrar | validar | tudo");
+    return 2;
+}
+
+// 2) Ctrl+C cancela com elegância (o upsert permite rodar de novo depois)
+using var cts = new CancellationTokenSource();
+Console.CancelKeyPress += (_, e) =&gt; { e.Cancel = true; cts.Cancel(); };
+
+var tamanhoLote = int.Parse(config["Migracao:TamanhoLote"] ?? "1000");
+var fontes = new Fontes(config);
+
+// 3) Executa
+if (modo is "migrar" or "tudo")
+    await new Migrador(fontes, tamanhoLote).ExecutarAsync(cts.Token);
+
+if (modo is "validar" or "tudo")
+{
+    var aprovado = await new Validador(fontes).ExecutarAsync(cts.Token);
+    return aprovado ? 0 : 1;
+}
+
+return 0;</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Migrator/Fontes.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Migrator/Fontes.cs">using LojaApi.Modules.Auth.Data;
+using LojaApi.Modules.Auth.Mongo;
+using LojaApi.Modules.Catalogo.Data;
+using LojaApi.Modules.Catalogo.Mongo;
+using LojaApi.Modules.Clientes.Data;
+using LojaApi.Modules.Clientes.Mongo;
+using LojaApi.Modules.Pedidos.Data;
+using LojaApi.Modules.Pedidos.Mongo;
+using LojaApi.Shared.Kernel;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using MongoDB.Driver;
+
+namespace LojaApi.Migrator;
+
+/// &lt;summary&gt;
+/// 🔌 "Fábrica" das conexões usadas pelo migrador:
+/// - ORIGEM: os 4 DbContexts do MySQL (os MESMOS da API, criados à mão aqui,
+///   sem DI, porque é um app de console simples);
+/// - DESTINO: os 4 MongoContexts (os MESMOS da API).
+/// &lt;/summary&gt;
+public sealed class Fontes
+{
+    private readonly IConfiguration _config;
+
+    public Fontes(IConfiguration config)
+    {
+        _config = config;
+
+        var mongoCs = PersistenceProviders.ExigirConnectionString(
+            config.GetConnectionString("Mongo"), "Mongo", "Migrator");
+
+        // UM cliente para todos os databases (ele guarda o pool de conexões)
+        var cliente = new MongoClient(mongoCs);
+
+        AuthMongo = new AuthMongoContext(cliente);
+        CatalogoMongo = new CatalogoMongoContext(cliente);
+        PedidosMongo = new PedidosMongoContext(cliente);
+        ClientesMongo = new ClientesMongoContext(cliente);
+    }
+
+    // ── DESTINO (MongoDB) ──
+    public AuthMongoContext AuthMongo { get; }
+    public CatalogoMongoContext CatalogoMongo { get; }
+    public PedidosMongoContext PedidosMongo { get; }
+    public ClientesMongoContext ClientesMongo { get; }
+
+    // ── ORIGEM (MySQL): um DbContext novo a cada uso (use com "await using") ──
+    public AuthDbContext AuthMySql() =&gt; new(Opcoes&lt;AuthDbContext&gt;("Auth"));
+    public CatalogoDbContext CatalogoMySql() =&gt; new(Opcoes&lt;CatalogoDbContext&gt;("Catalogo"));
+    public PedidosDbContext PedidosMySql() =&gt; new(Opcoes&lt;PedidosDbContext&gt;("Pedidos"));
+    public ClientesDbContext ClientesMySql() =&gt; new(Opcoes&lt;ClientesDbContext&gt;("Clientes"));
+
+    /// &lt;summary&gt;Monta as opções do EF para a connection string informada.&lt;/summary&gt;
+    private DbContextOptions&lt;T&gt; Opcoes&lt;T&gt;(string nome) where T : DbContext
+    {
+        var cs = PersistenceProviders.ExigirConnectionString(
+            _config.GetConnectionString(nome), nome, "Migrator");
+
+        return new DbContextOptionsBuilder&lt;T&gt;()
+            .UseMySql(cs, new MySqlServerVersion(new Version(8, 4, 0)))
+            .Options;
+    }
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Migrator/Migrador.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Migrator/Migrador.cs">using LojaApi.Modules.Auth.Mongo;
+using LojaApi.Modules.Catalogo.Mongo;
+using LojaApi.Modules.Clientes.Mongo;
+using LojaApi.Modules.Pedidos.Mongo;
+using LojaApi.Shared.Mongo;
+using Microsoft.EntityFrameworkCore;
+using MongoDB.Driver;
+
+namespace LojaApi.Migrator;
+
+/// &lt;summary&gt;
+/// 🚚 COPIA os dados MySQL → MongoDB, contexto por contexto.
+///
+/// Três propriedades que tornam a migração CONFIÁVEL:
+///
+/// 1) FIEL: lê o domínio pelo EF e grava pelo MESMO mapeamento que a API usa
+///    (*Document.FromDomain). Ids, datas, status, preços e o flag "ativo"
+///    são preservados (Reconstituir garante isso na leitura).
+///
+/// 2) IDEMPOTENTE: cada documento é gravado com "upsert por _id"
+///    (replaceOne com upsert:true). Rodar 2, 3, 10 vezes dá o MESMO resultado,
+///    sem duplicar nada. Se a migração cair no meio, é só rodar de novo.
+///
+/// 3) EFICIENTE: grava em LOTES com bulkWrite (1 ida ao banco a cada N
+///    documentos, em vez de N idas). Com ordered:false, o Mongo pode
+///    processar o lote em paralelo.
+///
+/// ⚠️ Rode com a API PARADA (janela de manutenção): se alguém gravar no
+/// MySQL durante a cópia, esse dado pode ficar de fora.
+/// &lt;/summary&gt;
+public sealed class Migrador
+{
+    private readonly Fontes _f;
+    private readonly int _tamanhoLote;
+
+    public Migrador(Fontes fontes, int tamanhoLote)
+    {
+        _f = fontes;
+        _tamanhoLote = tamanhoLote;
+    }
+
+    public async Task ExecutarAsync(CancellationToken ct)
+    {
+        Console.WriteLine("🚚 MIGRAÇÃO MySQL → MongoDB");
+        Console.WriteLine($"   lote: {_tamanhoLote} documentos por bulkWrite\n");
+
+        // Ordem: não importa para o Mongo (não há FKs), mas seguimos a ordem
+        // "de quem é referenciado para quem referencia" por clareza.
+        await MigrarUsuariosAsync(ct);
+        await MigrarProdutosAsync(ct);
+        await MigrarClientesAsync(ct);
+        await MigrarPedidosAsync(ct);
+
+        Console.WriteLine("\n✅ Cópia concluída. Agora rode a VALIDAÇÃO (modo \"validar\").");
+    }
+
+    // ══════════ AUTH ══════════
+    private async Task MigrarUsuariosAsync(CancellationToken ct)
+    {
+        await using var db = _f.AuthMySql();
+
+        // AsNoTracking: só leitura, sem custo de rastreamento do EF.
+        // (Para tabelas com milhões de linhas, leia em páginas por Id —
+        //  "keyset pagination" — em vez de trazer tudo para a memória.)
+        var usuarios = await db.Usuarios.AsNoTracking().ToListAsync(ct);
+
+        await UpsertEmLotesAsync(
+            _f.AuthMongo.Usuarios,
+            usuarios.Select(UsuarioDocument.FromDomain),
+            d =&gt; Builders&lt;UsuarioDocument&gt;.Filter.Eq(x =&gt; x.Id, d.Id),
+            "auth_db.usuarios",
+            ct);
+
+        // Usuários têm id Guid: não usam a coleção "counters".
+    }
+
+    // ══════════ CATÁLOGO ══════════
+    private async Task MigrarProdutosAsync(CancellationToken ct)
+    {
+        await using var db = _f.CatalogoMySql();
+        var produtos = await db.Produtos.AsNoTracking().OrderBy(p =&gt; p.Id).ToListAsync(ct);
+
+        await UpsertEmLotesAsync(
+            _f.CatalogoMongo.Produtos,
+            produtos.Select(ProdutoDocument.FromDomain),
+            d =&gt; Builders&lt;ProdutoDocument&gt;.Filter.Eq(x =&gt; x.Id, d.Id),
+            "catalogo_db.produtos",
+            ct);
+
+        // 🔢 O contador precisa "saber" do maior id migrado,
+        // senão o próximo produto criado pela API receberia id 1 (duplicado).
+        if (produtos.Count &gt; 0)
+            await IdGenerator.AjustarMinimoAsync(
+                _f.CatalogoMongo.Db, CatalogoMongoContext.SequenciaProdutos, produtos.Max(p =&gt; p.Id), ct);
+    }
+
+    // ══════════ CLIENTES ══════════
+    private async Task MigrarClientesAsync(CancellationToken ct)
+    {
+        await using var db = _f.ClientesMySql();
+
+        // Include: junta cliente + endereços (2 tabelas) → 1 documento
+        var clientes = await db.Clientes
+            .AsNoTracking()
+            .Include(c =&gt; c.Enderecos)
+            .OrderBy(c =&gt; c.Id)
+            .ToListAsync(ct);
+
+        await UpsertEmLotesAsync(
+            _f.ClientesMongo.Clientes,
+            clientes.Select(ClienteDocument.FromDomain),
+            d =&gt; Builders&lt;ClienteDocument&gt;.Filter.Eq(x =&gt; x.Id, d.Id),
+            "clientes_db.clientes",
+            ct);
+
+        if (clientes.Count &gt; 0)
+            await IdGenerator.AjustarMinimoAsync(
+                _f.ClientesMongo.Db, ClientesMongoContext.SequenciaClientes, clientes.Max(c =&gt; c.Id), ct);
+
+        // Endereços embutidos também têm sequência própria (ids referenciados por Pedidos)
+        var maiorEndereco = clientes.SelectMany(c =&gt; c.Enderecos).Select(e =&gt; e.Id).DefaultIfEmpty(0).Max();
+        if (maiorEndereco &gt; 0)
+            await IdGenerator.AjustarMinimoAsync(
+                _f.ClientesMongo.Db, ClientesMongoContext.SequenciaEnderecos, maiorEndereco, ct);
+    }
+
+    // ══════════ PEDIDOS ══════════
+    private async Task MigrarPedidosAsync(CancellationToken ct)
+    {
+        await using var db = _f.PedidosMySql();
+
+        // Itens são "owned": o EF já os traz junto (pedidos + pedido_itens)
+        var pedidos = await db.Pedidos.AsNoTracking().OrderBy(p =&gt; p.Id).ToListAsync(ct);
+
+        await UpsertEmLotesAsync(
+            _f.PedidosMongo.Pedidos,
+            pedidos.Select(PedidoDocument.FromDomain),
+            d =&gt; Builders&lt;PedidoDocument&gt;.Filter.Eq(x =&gt; x.Id, d.Id),
+            "pedidos_db.pedidos",
+            ct);
+
+        if (pedidos.Count &gt; 0)
+            await IdGenerator.AjustarMinimoAsync(
+                _f.PedidosMongo.Db, PedidosMongoContext.SequenciaPedidos, pedidos.Max(p =&gt; p.Id), ct);
+    }
+
+    /// &lt;summary&gt;
+    /// Grava documentos em lotes com "upsert por _id" (idempotente).
+    /// Equivalente mongosh de UM lote:
+    ///   db.produtos.bulkWrite([
+    ///     { replaceOne: { filter: { _id: 1 }, replacement: {...}, upsert: true } },
+    ///     { replaceOne: { filter: { _id: 2 }, replacement: {...}, upsert: true } }
+    ///   ], { ordered: false })
+    /// &lt;/summary&gt;
+    private async Task UpsertEmLotesAsync&lt;TDoc&gt;(
+        IMongoCollection&lt;TDoc&gt; colecao,
+        IEnumerable&lt;TDoc&gt; documentos,
+        Func&lt;TDoc, FilterDefinition&lt;TDoc&gt;&gt; filtroPorId,
+        string nome,
+        CancellationToken ct)
+    {
+        var total = 0;
+
+        // Chunk divide a sequência em pedaços de _tamanhoLote itens
+        foreach (var lote in documentos.Chunk(_tamanhoLote))
+        {
+            var operacoes = lote
+                .Select(doc =&gt; new ReplaceOneModel&lt;TDoc&gt;(filtroPorId(doc), doc) { IsUpsert = true })
+                .ToList();
+
+            await colecao.BulkWriteAsync(
+                operacoes,
+                new BulkWriteOptions { IsOrdered = false },
+                ct);
+
+            total += lote.Length;
+        }
+
+        Console.WriteLine($"   ✔ {nome,-24} {total,7} documento(s) gravado(s) (upsert)");
+    }
+}</pre>
+</div>
+<div class="info-banner"><strong>📈 (Opcional, recomendado) Gere volume antes de migrar:</strong> com 3 produtos qualquer migração e qualquer banco são instantâneos. O script abaixo cria 10 mil produtos e 20 mil pedidos de 500 usuários — o suficiente para a migração em lotes e os índices fazerem diferença visível no Passo 14.</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">perf/seed-volume.sql</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="perf/seed-volume.sql">-- ══════════════════════════════════════════════════════════════
+-- 📈 (OPCIONAL) VOLUME DE DADOS para a migração e o teste de desempenho
+--
+-- Com só 3 produtos e 1 cliente, QUALQUER banco é rápido — e não dá para
+-- ver o efeito de índices nem o custo de migrar. Este script gera:
+--   10.000 produtos · 20.000 pedidos de 500 usuários diferentes (+ itens)
+--
+-- Rode ANTES da migração (Passo 11), no MySQL:
+--   docker exec -i dev_mysql_multicontextos mysql -uroot -proot123 &lt; perf/seed-volume.sql
+-- ══════════════════════════════════════════════════════════════
+
+-- Permite CTE recursiva com até 25.000 níveis (o padrão é 1.000)
+SET SESSION cte_max_recursion_depth = 25000;
+
+-- ── 10.000 produtos ──
+USE catalogo_db;
+INSERT INTO produtos (nome, preco, estoque, reservado)
+WITH RECURSIVE seq(n) AS (
+  SELECT 1 UNION ALL SELECT n + 1 FROM seq WHERE n &lt; 10000
+)
+SELECT CONCAT('Produto de carga ', n),
+       ROUND(10 + RAND() * 990, 2),     -- preço entre 10 e 1000
+       FLOOR(RAND() * 100),             -- estoque entre 0 e 99
+       0
+FROM seq;
+
+-- ── 20.000 pedidos de 500 "usuários" (carga-0 ... carga-499) ──
+USE pedidos_db;
+INSERT INTO pedidos (usuario, ClienteId, EnderecoId, status)
+WITH RECURSIVE seq(n) AS (
+  SELECT 1 UNION ALL SELECT n + 1 FROM seq WHERE n &lt; 20000
+)
+SELECT CONCAT('carga-', n % 500), 1, 1, 'CANCELADO'
+FROM seq;
+
+-- Um item por pedido de carga
+INSERT INTO pedido_itens (PedidoId, ProdutoId, Quantidade, PrecoUnitario)
+SELECT id, 1 + (id % 3), 1 + (id % 5), 10.00 + (id % 100)
+FROM pedidos
+WHERE usuario LIKE 'carga-%';
+
+-- Conferência
+SELECT COUNT(*) AS produtos FROM catalogo_db.produtos;
+SELECT COUNT(*) AS pedidos, COUNT(DISTINCT usuario) AS usuarios FROM pedidos_db.pedidos;
+SELECT COUNT(*) AS itens FROM pedidos_db.pedido_itens;</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal do VS Code - Passo 11: executar a migração</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor"># ⚠️ A API deve estar PARADA (janela de manutenção): nada pode gravar no MySQL agora
+
+# (Opcional) volume de dados no MySQL
+docker exec -i dev_mysql_multicontextos mysql -uroot -proot123 &lt; perf/seed-volume.sql
+
+# Copia MySQL → MongoDB
+cd LojaApi.Migrator
+dotnet run -- migrar
+
+# Saída esperada (com os dados do seed da Tab 9):
+#   🚚 MIGRAÇÃO MySQL → MongoDB
+#      ✔ auth_db.usuarios               1 documento(s) gravado(s) (upsert)
+#      ✔ catalogo_db.produtos           3 documento(s) gravado(s) (upsert)
+#      ✔ clientes_db.clientes           1 documento(s) gravado(s) (upsert)
+#      ✔ pedidos_db.pedidos             1 documento(s) gravado(s) (upsert)
+
+# Confere no mongosh
+docker exec dev_mongo_multicontextos mongosh -u root -p root123 --authenticationDatabase admin --quiet \
+  --eval 'db.getSiblingDB("catalogo_db").produtos.find().limit(3); db.getSiblingDB("catalogo_db").counters.find()'
+
+# IDEMPOTÊNCIA: rode de novo → mesmas quantidades, NENHUM documento duplicado
+dotnet run -- migrar</pre>
+</div>
+<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> <code>Access denied for user 'devuser'</code> → o volume do MySQL é anterior aos <code>GRANT</code>s do init-sql da Tab 9: rode o migrador com usuário root (<code>ConnectionStrings__Catalogo="Server=localhost;...;User=root;Password=root123;"</code>) ou recrie o volume (<code>docker compose down -v</code> — <strong>só se puder perder os dados</strong>); <code>appsettings.json not found</code> → confira o <code>CopyToOutputDirectory</code> no <code>.csproj</code>; quantidade de pedidos diferente do esperado → você criou/cancelou pedidos na Tab 9 (normal: o validador compara com o que <strong>existe</strong> no MySQL).</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🔍 Passo 12 — Provar a precisão: o relatório de validação</h4>
+<p>"Migrei com precisão" precisa ser <strong>demonstrado</strong>. O validador lê os dois bancos e confere em três camadas — cada uma pega um tipo diferente de erro:</p>
+<div class="table-wrap" style="margin:12px 0">
+<table>
+<thead><tr><th>Camada</th><th>O que compara</th><th>Erro que ela pega</th></tr></thead>
+<tbody>
+<tr><td>1. Contagem</td><td>Nº de registros por tabela/coleção</td><td>Registros perdidos ou duplicados</td></tr>
+<tr><td>2. Somas de controle</td><td>Σ estoque, Σ reservado, Σ valor dos pedidos, Σ endereços, clientes ativos…</td><td>Conversões erradas (ex.: decimal virando double) mesmo com a contagem certa</td></tr>
+<tr><td>3. Campo a campo</td><td>"Assinatura" de <strong>cada</strong> registro nos dois lados</td><td>Qualquer campo diferente, em qualquer registro</td></tr>
+<tr><td>+ Contadores</td><td><code>counters.seq</code> ≥ maior id migrado</td><td>Ids duplicados no próximo cadastro</td></tr>
+</tbody>
+</table>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Migrator/Assinaturas.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Migrator/Assinaturas.cs">using System.Globalization;
+using LojaApi.Modules.Auth.Domain;
+using LojaApi.Modules.Catalogo.Domain;
+using LojaApi.Modules.Clientes.Domain;
+using LojaApi.Modules.Pedidos.Domain;
+
+namespace LojaApi.Migrator;
+
+/// &lt;summary&gt;
+/// 🔏 "ASSINATURA" de cada registro: uma string com TODOS os campos que
+/// importam, num formato normalizado. Se a assinatura de um produto no MySQL
+/// for igual à do mesmo produto no Mongo, os dois são iguais campo a campo.
+///
+/// As assinaturas são calculadas sobre os objetos de DOMÍNIO dos dois lados
+/// (MySQL via EF; Mongo via *Document.ToDomain()). Assim comparamos
+/// "o que a API enxerga", não detalhes de formato de cada banco.
+///
+/// Normalizações (e POR QUÊ):
+/// - decimal com 6 casas e cultura invariante → 349.90 e 349.9 são o mesmo valor;
+/// - datas truncadas em MILIssegundos e em UTC → o BSON Date não guarda
+///   microssegundos (o MySQL DATETIME(6) guarda): é uma perda CONHECIDA e
+///   aceitável, e por isso documentada aqui em vez de "escondida";
+/// - listas (itens, endereços) ordenadas → a ordem física não é um dado.
+/// &lt;/summary&gt;
+public static class Assinaturas
+{
+    private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
+
+    private static string Dec(decimal v) =&gt; v.ToString("F6", Inv);
+
+    /// &lt;summary&gt;Trunca para milissegundos e marca como UTC.&lt;/summary&gt;
+    private static string Data(DateTime d) =&gt;
+        new DateTime(d.Ticks - d.Ticks % TimeSpan.TicksPerMillisecond, DateTimeKind.Utc)
+            .ToString("O", Inv);
+
+    public static string De(Usuario u) =&gt;
+        $"{u.Id}|{u.Login}|{u.Nome}|{u.Senha}|{Data(u.CriadoEm)}";
+
+    public static string De(Produto p) =&gt;
+        $"{p.Id}|{p.Nome}|{Dec(p.Preco)}|{p.Estoque}|{p.Reservado}";
+
+    /// &lt;summary&gt;
+    /// ReservaIds NÃO entra: no MySQL esse campo nunca foi persistido
+    /// (era ignorado pelo EF). Comparar algo que a origem não tem geraria
+    /// falso alarme.
+    /// &lt;/summary&gt;
+    public static string De(Pedido p) =&gt;
+        $"{p.Id}|{p.Usuario}|{p.ClienteId}|{p.EnderecoId}|{p.Status}|" +
+        string.Join(";", p.Itens
+            .OrderBy(i =&gt; i.ProdutoId).ThenBy(i =&gt; i.Quantidade).ThenBy(i =&gt; i.PrecoUnitario)
+            .Select(i =&gt; $"{i.ProdutoId}x{i.Quantidade}@{Dec(i.PrecoUnitario)}"));
+
+    public static string De(Cliente c) =&gt;
+        $"{c.Id}|{c.Nome}|{c.Email}|{c.Ativo}|" +
+        string.Join(";", c.Enderecos
+            .OrderBy(e =&gt; e.Id)
+            .Select(e =&gt; $"{e.Id}:{e.Logradouro}:{e.Cidade}:{e.Uf}:{e.Cep}"));
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Migrator/Relatorio.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Migrator/Relatorio.cs">using System.Text;
+
+namespace LojaApi.Migrator;
+
+/// &lt;summary&gt;
+/// 📋 Relatório de validação: acumula as verificações e decide se a
+/// migração foi APROVADA (todas as linhas OK) ou REPROVADA.
+/// Imprime no console e salva em Markdown (evidência para entregar).
+/// &lt;/summary&gt;
+public sealed class Relatorio
+{
+    private record Linha(string Secao, string Verificacao, string MySql, string Mongo, bool Ok);
+
+    private readonly List&lt;Linha&gt; _linhas = new();
+    private readonly List&lt;string&gt; _divergencias = new();
+
+    /// &lt;summary&gt;true somente se NENHUMA verificação falhou.&lt;/summary&gt;
+    public bool Aprovado =&gt; _linhas.All(l =&gt; l.Ok);
+
+    /// &lt;summary&gt;
+    /// Compara dois conjuntos de registros pela chave e pela assinatura.
+    /// Detecta: registros FALTANDO no Mongo, SOBRANDO no Mongo e DIFERENTES.
+    /// &lt;/summary&gt;
+    public void CompararRegistros&lt;T&gt;(
+        string secao,
+        IReadOnlyCollection&lt;T&gt; mysql,
+        IReadOnlyCollection&lt;T&gt; mongo,
+        Func&lt;T, string&gt; chave,
+        Func&lt;T, string&gt; assinatura)
+    {
+        var origem = mysql.ToDictionary(chave, assinatura);
+        var destino = mongo.ToDictionary(chave, assinatura);
+
+        var faltando = origem.Keys.Except(destino.Keys).ToList();
+        var sobrando = destino.Keys.Except(origem.Keys).ToList();
+        var diferentes = origem.Keys.Intersect(destino.Keys)
+            .Where(k =&gt; origem[k] != destino[k])
+            .ToList();
+
+        // 1) Contagem
+        Adicionar(secao, "quantidade de registros", mysql.Count, mongo.Count);
+
+        // 2) Igualdade campo a campo (via assinatura)
+        var identicos = origem.Count - faltando.Count - diferentes.Count;
+        _linhas.Add(new Linha(secao, "registros idênticos (campo a campo)",
+            $"{origem.Count}", $"{identicos}",
+            faltando.Count == 0 &amp;&amp; sobrando.Count == 0 &amp;&amp; diferentes.Count == 0));
+
+        // Detalhes (no máximo 5 por tipo, para não poluir)
+        foreach (var k in faltando.Take(5)) _divergencias.Add($"[{secao}] FALTANDO no Mongo: id {k}");
+        foreach (var k in sobrando.Take(5)) _divergencias.Add($"[{secao}] SOBRANDO no Mongo: id {k}");
+        foreach (var k in diferentes.Take(5))
+            _divergencias.Add($"[{secao}] DIFERENTE id {k}\n      MySQL: {origem[k]}\n      Mongo: {destino[k]}");
+    }
+
+    /// &lt;summary&gt;Soma/contagem de controle: o total precisa bater EXATAMENTE.&lt;/summary&gt;
+    public void Adicionar&lt;TValor&gt;(string secao, string verificacao, TValor mysql, TValor mongo)
+        where TValor : IEquatable&lt;TValor&gt;
+    {
+        _linhas.Add(new Linha(secao, verificacao, $"{mysql}", $"{mongo}", mysql.Equals(mongo)));
+    }
+
+    /// &lt;summary&gt;Verificação booleana livre (ex.: contador &amp;gt;= maior id).&lt;/summary&gt;
+    public void Verificar(string secao, string verificacao, string detalhe, bool ok)
+    {
+        _linhas.Add(new Linha(secao, verificacao, "—", detalhe, ok));
+    }
+
+    /// &lt;summary&gt;Imprime no console.&lt;/summary&gt;
+    public void Imprimir()
+    {
+        Console.WriteLine();
+        Console.WriteLine($"{"SEÇÃO",-10} {"VERIFICAÇÃO",-40} {"MySQL",14} {"Mongo",14}  OK");
+        Console.WriteLine(new string('─', 88));
+        foreach (var l in _linhas)
+            Console.WriteLine($"{l.Secao,-10} {l.Verificacao,-40} {l.MySql,14} {l.Mongo,14}  {(l.Ok ? "✅" : "❌")}");
+
+        if (_divergencias.Count &gt; 0)
+        {
+            Console.WriteLine("\nDivergências encontradas:");
+            foreach (var d in _divergencias) Console.WriteLine($"  • {d}");
+        }
+
+        Console.WriteLine();
+        Console.WriteLine(Aprovado
+            ? "🟢 MIGRAÇÃO APROVADA: origem e destino são equivalentes."
+            : "🔴 MIGRAÇÃO REPROVADA: corrija as divergências e rode novamente.");
+    }
+
+    /// &lt;summary&gt;Salva o relatório em Markdown (evidência da validação).&lt;/summary&gt;
+    public void SalvarMarkdown(string caminho)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("# Relatório de validação — Migração MySQL → MongoDB");
+        sb.AppendLine();
+        sb.AppendLine($"Gerado em: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
+        sb.AppendLine();
+        sb.AppendLine($"**Resultado: {(Aprovado ? "🟢 APROVADA" : "🔴 REPROVADA")}**");
+        sb.AppendLine();
+        sb.AppendLine("| Seção | Verificação | MySQL | Mongo | OK |");
+        sb.AppendLine("|---|---|---:|---:|:-:|");
+        foreach (var l in _linhas)
+            sb.AppendLine($"| {l.Secao} | {l.Verificacao} | {l.MySql} | {l.Mongo} | {(l.Ok ? "✅" : "❌")} |");
+
+        if (_divergencias.Count &gt; 0)
+        {
+            sb.AppendLine();
+            sb.AppendLine("## Divergências");
+            sb.AppendLine("```");
+            foreach (var d in _divergencias) sb.AppendLine(d);
+            sb.AppendLine("```");
+        }
+
+        File.WriteAllText(caminho, sb.ToString());
+        Console.WriteLine($"📝 Relatório salvo em: {Path.GetFullPath(caminho)}");
+    }
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Migrator/Validador.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Migrator/Validador.cs">using LojaApi.Modules.Auth.Mongo;
+using LojaApi.Modules.Catalogo.Mongo;
+using LojaApi.Modules.Clientes.Mongo;
+using LojaApi.Modules.Pedidos.Mongo;
+using LojaApi.Shared.Mongo;
+using Microsoft.EntityFrameworkCore;
+using MongoDB.Driver;
+
+namespace LojaApi.Migrator;
+
+/// &lt;summary&gt;
+/// 🔍 VALIDA a migração comparando MySQL (origem) e MongoDB (destino).
+///
+/// "Migrar com precisão" precisa ser PROVADO, não presumido. Três camadas:
+///
+/// 1) CONTAGEM — mesma quantidade de registros em cada tabela/coleção.
+///    Pega: registros perdidos ou duplicados.
+/// 2) SOMAS DE CONTROLE — totais de negócio (estoque, reservado, valor dos
+///    pedidos, endereços...). Pega: erros de conversão (ex.: decimal virando
+///    double e perdendo centavos) mesmo quando a contagem bate.
+/// 3) COMPARAÇÃO CAMPO A CAMPO — assinatura de cada registro dos dois lados.
+///    Pega: qualquer campo diferente, em qualquer registro.
+///    (Bases enormes: compare uma AMOSTRA aleatória + as somas de controle.)
+///
+/// Também confere os CONTADORES de id (counters &amp;gt;= maior id migrado).
+/// &lt;/summary&gt;
+public sealed class Validador
+{
+    private readonly Fontes _f;
+
+    public Validador(Fontes fontes)
+    {
+        _f = fontes;
+    }
+
+    /// &lt;summary&gt;Executa todas as verificações; retorna true se APROVADA.&lt;/summary&gt;
+    public async Task&lt;bool&gt; ExecutarAsync(CancellationToken ct)
+    {
+        Console.WriteLine("\n🔍 VALIDAÇÃO MySQL × MongoDB");
+
+        var r = new Relatorio();
+
+        await ValidarUsuariosAsync(r, ct);
+        await ValidarProdutosAsync(r, ct);
+        await ValidarClientesAsync(r, ct);
+        await ValidarPedidosAsync(r, ct);
+
+        r.Imprimir();
+        r.SalvarMarkdown("relatorio-migracao.md");
+
+        return r.Aprovado;
+    }
+
+    // ══════════ AUTH ══════════
+    private async Task ValidarUsuariosAsync(Relatorio r, CancellationToken ct)
+    {
+        await using var db = _f.AuthMySql();
+        var mysql = await db.Usuarios.AsNoTracking().ToListAsync(ct);
+
+        var mongo = (await _f.AuthMongo.Usuarios
+                .Find(Builders&lt;UsuarioDocument&gt;.Filter.Empty)
+                .ToListAsync(ct))
+            .Select(d =&gt; d.ToDomain())
+            .ToList();
+
+        r.CompararRegistros("usuarios", mysql, mongo, u =&gt; u.Id.ToString(), Assinaturas.De);
+    }
+
+    // ══════════ CATÁLOGO ══════════
+    private async Task ValidarProdutosAsync(Relatorio r, CancellationToken ct)
+    {
+        await using var db = _f.CatalogoMySql();
+        var mysql = await db.Produtos.AsNoTracking().ToListAsync(ct);
+
+        var mongo = (await _f.CatalogoMongo.Produtos
+                .Find(Builders&lt;ProdutoDocument&gt;.Filter.Empty)
+                .ToListAsync(ct))
+            .Select(d =&gt; d.ToDomain())
+            .ToList();
+
+        r.CompararRegistros("produtos", mysql, mongo, p =&gt; p.Id.ToString(), Assinaturas.De);
+
+        // Somas de controle
+        r.Adicionar("produtos", "Σ estoque", mysql.Sum(p =&gt; p.Estoque), mongo.Sum(p =&gt; p.Estoque));
+        r.Adicionar("produtos", "Σ reservado", mysql.Sum(p =&gt; p.Reservado), mongo.Sum(p =&gt; p.Reservado));
+        r.Adicionar("produtos", "Σ preço × estoque (R$)",
+            mysql.Sum(p =&gt; p.Preco * p.Estoque), mongo.Sum(p =&gt; p.Preco * p.Estoque));
+
+        await VerificarContadorAsync(r, "produtos", _f.CatalogoMongo.Db,
+            CatalogoMongoContext.SequenciaProdutos, mysql.Select(p =&gt; p.Id).DefaultIfEmpty(0).Max(), ct);
+    }
+
+    // ══════════ CLIENTES ══════════
+    private async Task ValidarClientesAsync(Relatorio r, CancellationToken ct)
+    {
+        await using var db = _f.ClientesMySql();
+        var mysql = await db.Clientes.AsNoTracking().Include(c =&gt; c.Enderecos).ToListAsync(ct);
+
+        var mongo = (await _f.ClientesMongo.Clientes
+                .Find(Builders&lt;ClienteDocument&gt;.Filter.Empty)
+                .ToListAsync(ct))
+            .Select(d =&gt; d.ToDomain())
+            .ToList();
+
+        r.CompararRegistros("clientes", mysql, mongo, c =&gt; c.Id.ToString(), Assinaturas.De);
+
+        r.Adicionar("clientes", "Σ endereços", mysql.Sum(c =&gt; c.Enderecos.Count), mongo.Sum(c =&gt; c.Enderecos.Count));
+        r.Adicionar("clientes", "clientes ativos", mysql.Count(c =&gt; c.Ativo), mongo.Count(c =&gt; c.Ativo));
+
+        await VerificarContadorAsync(r, "clientes", _f.ClientesMongo.Db,
+            ClientesMongoContext.SequenciaClientes, mysql.Select(c =&gt; c.Id).DefaultIfEmpty(0).Max(), ct);
+        await VerificarContadorAsync(r, "clientes", _f.ClientesMongo.Db,
+            ClientesMongoContext.SequenciaEnderecos,
+            mysql.SelectMany(c =&gt; c.Enderecos).Select(e =&gt; e.Id).DefaultIfEmpty(0).Max(), ct);
+    }
+
+    // ══════════ PEDIDOS ══════════
+    private async Task ValidarPedidosAsync(Relatorio r, CancellationToken ct)
+    {
+        await using var db = _f.PedidosMySql();
+        var mysql = await db.Pedidos.AsNoTracking().ToListAsync(ct);
+
+        var mongo = (await _f.PedidosMongo.Pedidos
+                .Find(Builders&lt;PedidoDocument&gt;.Filter.Empty)
+                .ToListAsync(ct))
+            .Select(d =&gt; d.ToDomain())
+            .ToList();
+
+        r.CompararRegistros("pedidos", mysql, mongo, p =&gt; p.Id.ToString(), Assinaturas.De);
+
+        r.Adicionar("pedidos", "Σ itens (linhas)", mysql.Sum(p =&gt; p.Itens.Count), mongo.Sum(p =&gt; p.Itens.Count));
+        r.Adicionar("pedidos", "Σ unidades", mysql.Sum(p =&gt; p.Itens.Sum(i =&gt; i.Quantidade)),
+            mongo.Sum(p =&gt; p.Itens.Sum(i =&gt; i.Quantidade)));
+        r.Adicionar("pedidos", "Σ valor total (R$)", mysql.Sum(p =&gt; p.Total), mongo.Sum(p =&gt; p.Total));
+
+        await VerificarContadorAsync(r, "pedidos", _f.PedidosMongo.Db,
+            PedidosMongoContext.SequenciaPedidos, mysql.Select(p =&gt; p.Id).DefaultIfEmpty(0).Max(), ct);
+    }
+
+    /// &lt;summary&gt;
+    /// O contador precisa estar &amp;gt;= maior id migrado; senão a API geraria
+    /// ids repetidos ao criar o próximo registro.
+    /// &lt;/summary&gt;
+    private static async Task VerificarContadorAsync(
+        Relatorio r, string secao, IMongoDatabase db, string sequencia, int maiorId, CancellationToken ct)
+    {
+        if (maiorId == 0)
+            return; // nada migrado nessa sequência
+
+        var contador = await db.GetCollection&lt;ContadorDocument&gt;(IdGenerator.Colecao)
+            .Find(c =&gt; c.Id == sequencia)
+            .FirstOrDefaultAsync(ct);
+
+        var valor = contador?.Seq ?? 0;
+        r.Verificar(secao, $"counters.{sequencia} ≥ maior id ({maiorId})", $"{valor}", valor &gt;= maiorId);
+    }
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal do VS Code - Passo 12: validar (e provar que o validador funciona)</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">cd LojaApi.Migrator
+dotnet run -- validar
+echo "código de saída: $?"       # 0 = APROVADA · 1 = REPROVADA
+
+# Saída esperada (exemplo — seus números dependem dos seus dados):
+# SEÇÃO      VERIFICAÇÃO                                       MySQL          Mongo  OK
+# ────────────────────────────────────────────────────────────────────────────────────────
+# usuarios   quantidade de registros                               1              1  ✅
+# usuarios   registros idênticos (campo a campo)                   1              1  ✅
+# produtos   quantidade de registros                               3              3  ✅
+# produtos   registros idênticos (campo a campo)                   3              3  ✅
+# produtos   Σ estoque                                            45             45  ✅
+# produtos   Σ reservado                                           0              0  ✅
+# produtos   Σ preço × estoque (R$)                         13238,50       13238,50  ✅
+# produtos   counters.produtos ≥ maior id (3)                      —              3  ✅
+# clientes   ...                                                                     ✅
+# pedidos    Σ valor total (R$)                               699,80         699,80  ✅
+# 🟢 MIGRAÇÃO APROVADA: origem e destino são equivalentes.
+# 📝 Relatório salvo em: .../relatorio-migracao.md
+
+# ── TESTE DO TESTE: o validador pega mesmo um erro? ──
+# 1) "Estrague" um preço no Mongo
+docker exec dev_mongo_multicontextos mongosh -u root -p root123 --authenticationDatabase admin --quiet \
+  --eval 'db.getSiblingDB("catalogo_db").produtos.updateOne({_id: 1}, {$set: {preco: NumberDecimal("1.00")}})'
+
+# 2) Valide → REPROVADA, apontando "DIFERENTE id 1" e a soma Σ preço × estoque
+dotnet run -- validar
+
+# 3) Corrija rodando a migração de novo (idempotente) e valide → APROVADA
+dotnet run -- migrar
+dotnet run -- validar</pre>
+</div>
+<div class="success-banner"><strong>✅ Como conferir:</strong> <code>🟢 MIGRAÇÃO APROVADA</code>, código de saída <code>0</code> e o arquivo <code>relatorio-migracao.md</code> gerado — anexe-o na entrega como <strong>evidência do requisito 4</strong>. E o "teste do teste" mostrou que o validador realmente detecta divergências.</div>
+<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> divergência só em <code>usuarios</code>, na data → confira se a assinatura trunca em milissegundos (o BSON não guarda microssegundos); valores em R$ com vírgula ou ponto conforme a cultura do seu sistema → é só exibição, a comparação usa <code>decimal</code>; <code>counters ... ❌</code> → rode <code>migrar</code> de novo (ele ajusta os contadores).</div>
+</div>
+
+<!-- ══════════ PARTE 5 ══════════ -->
+<div class="lab-container">
+<div class="lab-header">
+<h3>✅ Parte 5 — Provar que deu certo (Passos 13 a 15)</h3>
+<div class="lab-actions"><span class="ide-tag cs">VS Code</span></div>
+</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">🔀 Passo 13 — Virar a chave e provar "funciona como antes"</h4>
+<p>A prova tem três partes: os <strong>testes automatizados</strong> (lógica), o <strong>smoke test</strong> (fluxo de negócio de ponta a ponta, contra a API real) e o <strong>contrato</strong> (o Prism da Tab 8 continua valendo, porque nenhum endpoint mudou). O smoke test é rodado <strong>duas vezes</strong> — MySQL e Mongo — e o resultado precisa ser idêntico.</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">scripts/smoke.sh</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="scripts/smoke.sh">#!/usr/bin/env bash
+# ══════════════════════════════════════════════════════════════
+# 🔥 SMOKE TEST de ponta a ponta — "o sistema funciona como antes?"
+#
+# Roda o MESMO roteiro de negócio contra a API, seja qual for o banco.
+# A prova da migração é rodar este script DUAS vezes:
+#   1) API com Persistence__Provider=MySql  → anotar o resultado
+#   2) API com Persistence__Provider=Mongo  → o resultado tem que ser IGUAL
+#
+# Uso:   ./scripts/smoke.sh [BASE_URL]      (padrão: http://localhost:5000)
+# Requer: bash, curl e jq.   Saída: 0 = tudo OK · N = quantidade de falhas
+#
+# ⚠️ Ele cria e cancela um pedido de teste: o estoque volta ao valor original.
+# ══════════════════════════════════════════════════════════════
+set -u
+
+BASE="${1:-http://localhost:5000}"
+PRODUTO=1     # "Teclado Mecânico RGB" do seed
+CLIENTE=1     # "Ana Souza" do seed
+ENDERECO=1    # endereço da Ana
+QTD=2
+
+falhas=0
+ok()      { echo "  ✅ $1"; }
+falha()   { echo "  ❌ $1"; falhas=$((falhas + 1)); }
+# esperar &lt;descrição&gt; &lt;esperado&gt; &lt;obtido&gt;
+esperar() { if [ "$2" = "$3" ]; then ok "$1 ($3)"; else falha "$1 — esperado: $2 · obtido: $3"; fi; }
+# status &lt;curl args...&gt;  → só o código HTTP
+status()  { curl -s -o /dev/null -w '%{http_code}' "$@"; }
+# disponivel  → estoque - reservado do produto de teste
+disponivel() { curl -s "$BASE/api/catalogo/produtos/$PRODUTO" | jq '.disponivel'; }
+
+echo "🔥 SMOKE TEST — $BASE"
+
+# 1) Login (público) devolve token
+TOKEN=$(curl -s -X POST "$BASE/api/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"login":"admin","password":"admin123"}' | jq -r '.token')
+if [ -n "$TOKEN" ] &amp;&amp; [ "$TOKEN" != "null" ]; then ok "login devolve token JWT"; else falha "login"; exit 1; fi
+AUTH="Authorization: Bearer $TOKEN"
+
+# 2) Autenticação continua exigida
+esperar "GET /api/pedidos sem token" 401 "$(status "$BASE/api/pedidos")"
+
+# 3) Leitura pública do catálogo
+esperar "GET /api/catalogo/produtos (público)" 200 "$(status "$BASE/api/catalogo/produtos")"
+
+# 4) Checkout feliz: reserva estoque e persiste o pedido
+ANTES=$(disponivel)
+RESP=$(curl -s -w '\n%{http_code}' -X POST "$BASE/api/pedidos" -H "$AUTH" \
+  -H "Content-Type: application/json" \
+  -d "{\"clienteId\":$CLIENTE,\"enderecoId\":$ENDERECO,\"itens\":[{\"produtoId\":$PRODUTO,\"quantidade\":$QTD}]}")
+esperar "POST /api/pedidos" 201 "$(echo "$RESP" | tail -n1)"
+PEDIDO=$(echo "$RESP" | sed '$d' | jq '.id')
+esperar "disponível caiu $QTD (reserva atômica)" "$((ANTES - QTD))" "$(disponivel)"
+
+# 5) O pedido aparece em "meus pedidos" (índice por usuário)
+esperar "pedido $PEDIDO aparece em GET /api/pedidos" 1 \
+  "$(curl -s "$BASE/api/pedidos" -H "$AUTH" | jq "[.[] | select(.id == $PEDIDO)] | length")"
+
+# 6) Cancelar devolve o estoque
+esperar "POST /api/pedidos/$PEDIDO/cancelar" 204 "$(status -X POST "$BASE/api/pedidos/$PEDIDO/cancelar" -H "$AUTH")"
+esperar "disponível restaurado após cancelar" "$ANTES" "$(disponivel)"
+
+# 7) Regra de domínio: cancelar 2x é bloqueado
+esperar "cancelar o mesmo pedido de novo" 409 "$(status -X POST "$BASE/api/pedidos/$PEDIDO/cancelar" -H "$AUTH")"
+
+# 8) Estoque insuficiente → 409
+esperar "pedido acima do estoque" 409 "$(status -X POST "$BASE/api/pedidos" -H "$AUTH" \
+  -H "Content-Type: application/json" \
+  -d "{\"clienteId\":$CLIENTE,\"enderecoId\":$ENDERECO,\"itens\":[{\"produtoId\":$PRODUTO,\"quantidade\":999999}]}")"
+
+# 9) Cliente inexistente → 400, e a COMPENSAÇÃO libera a reserva
+esperar "pedido para cliente inexistente" 400 "$(status -X POST "$BASE/api/pedidos" -H "$AUTH" \
+  -H "Content-Type: application/json" \
+  -d "{\"clienteId\":999,\"enderecoId\":1,\"itens\":[{\"produtoId\":$PRODUTO,\"quantidade\":1}]}")"
+esperar "compensação devolveu a reserva" "$ANTES" "$(disponivel)"
+
+echo
+if [ "$falhas" -eq 0 ]; then echo "🟢 SMOKE APROVADO — comportamento esperado em $BASE"; else echo "🔴 $falhas falha(s)"; fi
+exit "$falhas"</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal do VS Code - Passo 13: a prova lado a lado</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor"># 1) Testes automatizados (independem de banco: mockam as portas)
+dotnet test                       # esperado: Passed: 21, Failed: 0
+chmod +x scripts/smoke.sh
+
+# 2) LINHA DE BASE — API com MySQL
+cd LojaApi.Api
+Persistence__Provider=MySql dotnet run --urls http://localhost:5000
+#    (em outro terminal, na raiz da solução)
+./scripts/smoke.sh http://localhost:5000      # anote: 🟢 SMOKE APROVADO
+#    pare a API (Ctrl+C)
+
+# 3) DEPOIS — API com MongoDB
+Persistence__Provider=Mongo dotnet run --urls http://localhost:5000
+#    (em outro terminal)
+./scripts/smoke.sh http://localhost:5000      # esperado: o MESMO resultado
+
+# 4) A API em container, já apontando para o Mongo
+docker build -t loja-api-multicontextos:mongo .
+docker run -d --name loja-multi-api -p 8080:8080 \
+  --network loja_multi_network \
+  -e Persistence__Provider=Mongo \
+  -e ConnectionStrings__Mongo="mongodb://root:root123@mongo-db:27017/?authSource=admin" \
+  -e Services__Catalogo="http://localhost:8080" \
+  -e Services__Clientes="http://localhost:8080" \
+  loja-api-multicontextos:mongo
+./scripts/smoke.sh http://localhost:8080
+
+# 5) Contrato: o Prism da Tab 8 (:4011) valida o MESMO openapi-multicontexto.yaml
+#    — nenhum endpoint, campo ou status code mudou na migração.</pre>
+</div>
+<div class="success-banner"><strong>✅ Como conferir:</strong> 21 testes verdes e <code>🟢 SMOKE APROVADO</code> nos <strong>dois</strong> bancos (e no container). O smoke cobre login, 401 sem token, leitura pública, checkout com reserva atômica, "meus pedidos", cancelamento com devolução de estoque, bloqueio de cancelamento duplo, estoque insuficiente (409) e compensação (400 + estoque devolvido). <strong>Evidência do requisito 3.</strong></div>
+<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> <code>jq: command not found</code> → instale o <code>jq</code>; no Windows, rode o script no <strong>Git Bash</strong> ou WSL; smoke falha só no Mongo em "disponível caiu 2" → revise o filtro <code>$expr</code> do Passo 7; container sem acesso ao Mongo → use <code>mongo-db</code> (nome do serviço) e não <code>localhost</code> na connection string, e <code>--network loja_multi_network</code>.</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">⚡ Passo 14 — Desempenho: medir, comparar, explicar</h4>
+<p>"Manter o desempenho adequado" se prova com <strong>números</strong>. Rodamos a mesma carga (k6) contra os dois bancos e comparamos o <strong>p95</strong> — o tempo em que 95% das requisições foram respondidas. Depois, conferimos com <code>explain()</code> que as consultas usam os índices.</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">perf/carga.js</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="perf/carga.js">// ══════════════════════════════════════════════════════════════
+// ⚡ TESTE DE CARGA (k6) — "o desempenho se manteve?"
+//
+// Roda as MESMAS leituras contra a API e mede o tempo de resposta.
+// Execute DUAS vezes (API em MySql e depois em Mongo) e compare o p(95):
+// "95% das requisições responderam em até X ms".
+//
+// Uso (Linux):
+//   docker run --rm -i --network host -e BASE_URL=http://localhost:5000 \
+//     grafana/k6 run - &lt; perf/carga.js
+// Uso (Windows/macOS — Docker Desktop):
+//   docker run --rm -i -e BASE_URL=http://host.docker.internal:5000 \
+//     grafana/k6 run - &lt; perf/carga.js
+// ══════════════════════════════════════════════════════════════
+import http from 'k6/http';
+import { check } from 'k6';
+
+export const options = {
+  vus: 20,            // 20 "usuários virtuais" simultâneos
+  duration: '30s',    // durante 30 segundos
+  thresholds: {
+    // Critério de aceite (ajuste à sua máquina): p95 abaixo de 300 ms
+    http_req_duration: ['p(95)&lt;300'],
+    // e menos de 1% de erros
+    http_req_failed: ['rate&lt;0.01'],
+  },
+};
+
+const BASE = __ENV.BASE_URL || 'http://localhost:5000';
+
+// setup() roda UMA vez: faz login e entrega o token para os usuários virtuais
+export function setup() {
+  const r = http.post(`${BASE}/api/auth/login`,
+    JSON.stringify({ login: 'admin', password: 'admin123' }),
+    { headers: { 'Content-Type': 'application/json' } });
+  check(r, { 'login 200': (res) =&gt; res.status === 200 });
+  return { token: r.json('token') };
+}
+
+// Cada usuário virtual repete este roteiro de LEITURAS em loop
+export default function (data) {
+  const auth = { headers: { Authorization: `Bearer ${data.token}` } };
+
+  // Listagem paginada (Mongo: find + sort + skip/limit)
+  check(http.get(`${BASE}/api/catalogo/produtos?page=0&amp;size=20`),
+    { 'catálogo 200': (r) =&gt; r.status === 200 });
+
+  // Busca por _id
+  check(http.get(`${BASE}/api/catalogo/produtos/1`),
+    { 'produto 200': (r) =&gt; r.status === 200 });
+
+  // "Meus pedidos" (Mongo: usa o índice ix_pedidos_usuario)
+  check(http.get(`${BASE}/api/pedidos`, auth),
+    { 'meus pedidos 200': (r) =&gt; r.status === 200 });
+
+  // Cliente com endereços embutidos (1 documento, sem JOIN)
+  check(http.get(`${BASE}/api/clientes/1`, auth),
+    { 'cliente 200': (r) =&gt; r.status === 200 });
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal do VS Code - Passo 14: carga + explain</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor"># ── 1) Carga contra MySQL ──  (API rodando com Persistence__Provider=MySql)
+docker run --rm -i --network host -e BASE_URL=http://localhost:5000 grafana/k6 run - &lt; perf/carga.js
+#   Windows/macOS: troque "--network host" por nada e use BASE_URL=http://host.docker.internal:5000
+
+# ── 2) Carga contra MongoDB ──  (API rodando com Persistence__Provider=Mongo)
+docker run --rm -i --network host -e BASE_URL=http://localhost:5000 grafana/k6 run - &lt; perf/carga.js
+
+# Compare nas duas saídas:  http_req_duration ... p(95)=___ms   e   http_req_failed ... ___%
+
+# ── 3) Os índices estão sendo usados? ──
+# MongoDB: espere "IXSCAN" (usou índice). "COLLSCAN" = varreu a coleção inteira
+docker exec dev_mongo_multicontextos mongosh -u root -p root123 --authenticationDatabase admin --quiet \
+  --eval 'db.getSiblingDB("pedidos_db").pedidos.find({usuario: "carga-7"}).explain("executionStats").queryPlanner.winningPlan'
+
+# MySQL: espere key = ix_pedidos_usuario
+docker exec dev_mysql_multicontextos mysql -uroot -proot123 pedidos_db \
+  -e "EXPLAIN SELECT * FROM pedidos WHERE usuario = 'carga-7';"</pre>
+</div>
+<div class="table-wrap" style="margin:12px 0">
+<table>
+<thead><tr><th>Métrica (preencha com os seus números)</th><th>🐬 MySQL</th><th>🍃 MongoDB</th><th>Critério</th></tr></thead>
+<tbody>
+<tr><td><code>http_req_duration p(95)</code></td><td>___ ms</td><td>___ ms</td><td>Mesma ordem de grandeza e abaixo de 300 ms</td></tr>
+<tr><td><code>http_req_failed</code></td><td>___ %</td><td>___ %</td><td>&lt; 1%</td></tr>
+<tr><td>Plano de "meus pedidos"</td><td><code>ix_pedidos_usuario</code></td><td><code>IXSCAN</code></td><td>Índice usado nos dois</td></tr>
+</tbody>
+</table>
+</div>
+<div class="analogy-highlight"><span class="icon">⚡</span><div><strong>O que fizemos pelo desempenho, e por quê:</strong> <strong>índices equivalentes</strong> (login único, pedidos por usuário) — sem eles, "meus pedidos" lê a coleção inteira; <strong><code>IMongoClient</code> singleton</strong> — o pool de conexões é reaproveitado; <strong>agregados embutidos</strong> — cliente e pedido chegam em 1 leitura, sem JOIN; <strong>projeção</strong> em <code>ListarEnderecosAsync</code> — trafega só o necessário; <strong>reserva com <code>findOneAndUpdate</code></strong> — atualiza e já devolve o preço em 1 ida ao banco (o EF precisava de 2).</div></div>
+<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> comparar números de máquinas ou momentos diferentes (rode os dois testes em sequência, na mesma máquina); a primeira execução sai mais lenta (aquecimento do .NET e dos bancos: rode cada teste duas vezes e use a segunda); <code>COLLSCAN</code> no explain → a API não subiu em modo Mongo depois da criação da coleção (os índices são criados na subida) ou o nome do campo no filtro está errado.</div>
+
+<h4 style="color:var(--accent);margin:16px 0 8px">↩️ Passo 15 — Plano de rollback e checklist final</h4>
+<p>Toda migração profissional tem um <strong>caminho de volta</strong>. Aqui ele é simples, graças ao ponto de troca da Tab 9:</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal - rollback para MySQL</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor"># Volta a API para o MySQL — nenhum código muda
+Persistence__Provider=MySql dotnet run --urls http://localhost:5000
+# (container: troque -e Persistence__Provider=Mongo por MySql e recrie o container)
+
+# ⚠️ ATENÇÃO: o MySQL tem os dados de ANTES da virada.
+# Pedidos e cadastros feitos DEPOIS, no Mongo, não estão no MySQL.
+# Por isso o rollback "barato" vale durante a janela de validação; depois dela,
+# voltar exigiria uma migração reversa (Mongo → MySQL), fora do escopo desta aba.
+
+# Último recurso: restaurar o backup do Passo 0
+docker exec -i dev_mysql_multicontextos mysql -uroot -proot123 &lt; backup-antes-da-migracao.sql</pre>
+</div>
+<div class="table-wrap" style="margin:12px 0">
+<table>
+<thead><tr><th>#</th><th>Requisito</th><th>Evidência para entregar</th><th>Passo</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Substituir o banco pelo MongoDB</td><td><code>appsettings.json</code> com <code>Provider = "Mongo"</code> + adapters <code>Mongo*Repository</code></td><td>6–10, 13</td><td>⬜</td></tr>
+<tr><td>2</td><td>Adaptar as APIs</td><td>Diff mostrando que só <code>Mongo/</code>, <code>Repositories/</code> e <code>ModuleExtensions</code> mudaram; Prism :4011 ok</td><td>6–10, 13</td><td>⬜</td></tr>
+<tr><td>3</td><td>Funcionar como antes</td><td>21 testes verdes + <code>smoke.sh</code> aprovado nos dois bancos</td><td>13</td><td>⬜</td></tr>
+<tr><td>4</td><td>Migrar com precisão</td><td><code>relatorio-migracao.md</code> APROVADO + "teste do teste"</td><td>11–12</td><td>⬜</td></tr>
+<tr><td>5</td><td>Manter o desempenho</td><td>Tabela de p95 MySQL × Mongo + <code>IXSCAN</code> no explain</td><td>14</td><td>⬜</td></tr>
+</tbody>
+</table>
+</div>
+<div class="table-wrap" style="margin:12px 0">
+<table>
+<thead><tr><th>#</th><th>Item técnico</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Backup do MySQL feito e Tab 9 verde (Passo 0)</td><td>⬜</td></tr>
+<tr><td>2</td><td>MongoDB healthy em <code>loja_multi_network</code> (Passo 2)</td><td>⬜</td></tr>
+<tr><td>3</td><td><code>LojaApi.Shared.Mongo</code> com <code>MongoSetup</code>, <code>IdGenerator</code> e <code>MongoIndexes</code> (Passos 3 e 5)</td><td>⬜</td></tr>
+<tr><td>4</td><td>4 <code>*Document</code> com Decimal128, Guid Standard, enum como texto (Passo 4)</td><td>⬜</td></tr>
+<tr><td>5</td><td>4 adapters <code>Mongo*Repository</code> implementando as portas da Tab 9 (Passos 6–9)</td><td>⬜</td></tr>
+<tr><td>6</td><td>Reserva atômica com <code>$expr</code> + <code>$inc</code> (Passo 7)</td><td>⬜</td></tr>
+<tr><td>7</td><td>Índices <code>ux_usuarios_login</code> e <code>ix_pedidos_usuario</code> criados na subida (Passo 10)</td><td>⬜</td></tr>
+<tr><td>8</td><td>Migrador idempotente + contadores ajustados (Passo 11)</td><td>⬜</td></tr>
+<tr><td>9</td><td>Relatório APROVADO + validador provado com dado "estragado" (Passo 12)</td><td>⬜</td></tr>
+<tr><td>10</td><td>Plano de rollback testado (Passo 15)</td><td>⬜</td></tr>
+</tbody>
+</table>
 </div>
 <div class="success-banner">
-<strong>✅ Resultado desta parte:</strong> requisito mapeado em 5 critérios de aceitação · modelagem documento-por-agregado com embeds definidos · estratégia de porta dupla com cut-over por configuração · fases da migração diagramadas · traceabilidade requisito → parte → evidência.
+<strong>✅ Tab 9-B completa:</strong> MongoDB no lugar do MySQL ✓ · mesma API e mesmo contrato ✓ · 21 testes sem alteração ✓ · migração idempotente e validada em 3 camadas ✓ · desempenho medido e índices comprovados ✓ · rollback documentado ✓. A lição central: <strong>a preparação da Tab 9 (portas + <code>Reconstituir</code> + ponto de troca) fez a troca de banco virar uma mudança de infraestrutura, e não uma reescrita.</strong>
 </div>
-<!-- ===== FIM DA PARTE 1/5 — cole a Parte 2 (portas + implementações Ef/Mongo + switch de provider) logo após este comentário ===== -->
-  
+<div class="info-banner">
+<strong>📦 ZIP desta aba:</strong> o botão "📦 Baixar ZIP desta aba" (Parte 1) baixa todos os arquivos com <code>data-zip-path</code>: projetos novos (<code>LojaApi.Shared.Mongo</code>, <code>LojaApi.Migrator</code>), arquivos alterados dos módulos, <code>docker-compose.mongo.yml</code>, <code>scripts/</code> e <code>perf/</code>. Extraia <strong>por cima</strong> da solução da Tab 9.
+</div>
+<div class="warning-banner">
+<strong>⚠️ Para subir no GitHub Pages:</strong> salve esta aba como <code>tabs/tab9b.html</code> e adicione no <code>index.html</code> o botão da aba (rótulo sugerido: <code>🍃 9-B · MongoDB</code>) chamando <code>switchTab('tab9b')</code>. Confira se o carregamento via <code>fetch()</code> e o gerador de ZIP (<code>openDlModal</code>) aceitam um id com letra (<code>tab9b</code>).
+</div>
+</div>
+</div>
+</section>
