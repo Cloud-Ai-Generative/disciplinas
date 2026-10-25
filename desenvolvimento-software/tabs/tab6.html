@@ -1,7 +1,7 @@
 <section class="tab-panel" id="tab6">
 <div class="card">
 <h2 class="card-title">☕ API Java Completa — Clean Arch + SOLID + TDD + Migração + Docker + CI/CD</h2>
-<p class="section-intro">Aba <strong>100% auto-contida para Java/IntelliJ</strong>: conceitos detalhados (Clean Arch, SOLID, padrões, DI, ORM, JPA) com links, todos os arquivos do projeto, TDD com 6 testes, migração Strangler Fig, Docker, CI/CD e diagramas. <span class="ide-tag java">IDE: IntelliJ</span></p>
+<p class="section-intro">Aba <strong>100% auto-contida para Java/IntelliJ</strong>: conceitos detalhados (Clean Arch, SOLID, padrões, DI, ORM, JPA) com links, todos os arquivos do projeto, TDD com 11 testes, código <strong>preparado para a migração MySQL → MongoDB</strong> (executada na <a href="javascript:switchTab('tab6b')" style="color:var(--primary);text-decoration:underline">Tab 6-B</a>), Docker, CI/CD e diagramas. <span class="ide-tag java">IDE: IntelliJ</span></p>
 <div class="doc-banner"><strong>🧔 Rafael Souza · ☕ Backend (Java):</strong> esta API é a <strong>implementação backend do contrato</strong> definido na Sala de Contrato (Tab 4). Mini-fluxo: <em>Sala de Contrato → <code>openapi.yaml</code> → implementação (esta aba) → validação (testes + Prism)</em>. <a href="javascript:switchTab('tab4')" style="color:var(--primary);text-decoration:underline">Ir p/ Sala/Contrato (Tab 4) →</a></div>
 <!-- ══════════ SEÇÃO 1: CONCEITOS ══════════ -->
 <div class="deep-concept-box">
@@ -27,9 +27,9 @@
 <thead><tr><th>Princípio</th><th>O que diz</th><th>Onde aparece no projeto Java</th></tr></thead>
 <tbody>
 <tr><td><strong>S</strong> — Single Responsibility</td><td>Uma classe, uma razão para mudar</td><td><code>ProdutoController</code> só recebe/responde HTTP; <code>ProdutoServiceImpl</code> só orquestra regras; <code>ProdutoRepositoryAdapter</code> só persiste.</td></tr>
-<tr><td><strong>O</strong> — Open/Closed</td><td>Aberta para extensão, fechada para modificação</td><td>Novo adapter (Mongo) sem alterar <code>ProdutoServiceImpl</code> — basta implementar <code>ProdutoRepository</code>.</td></tr>
-<tr><td><strong>L</strong> — Liskov Substitution</td><td>Subtipos substituem o tipo base sem quebrar</td><td><code>ProdutoRepositoryAdapter</code> e <code>MongoProdutoRepository</code> são intercambiáveis via interface.</td></tr>
-<tr><td><strong>I</strong> — Interface Segregation</td><td>Interfaces coesas, não "gordas"</td><td><code>ProdutoRepository</code> tem só 5 métodos de persistência; <code>ProdutoService</code> tem só 4 métodos de caso de uso.</td></tr>
+<tr><td><strong>O</strong> — Open/Closed</td><td>Aberta para extensão, fechada para modificação</td><td>Novo adapter (Mongo, na Tab 6-B) sem alterar <code>ProdutoServiceImpl</code> — basta implementar <code>ProdutoRepository</code> e registrá-lo no <code>PersistenceConfig</code>.</td></tr>
+<tr><td><strong>L</strong> — Liskov Substitution</td><td>Subtipos substituem o tipo base sem quebrar</td><td><code>ProdutoRepositoryAdapter</code> (JPA) e, na Tab 6-B, <code>MongoProdutoRepository</code> são intercambiáveis via interface — os mesmos 11 testes valem para ambos.</td></tr>
+<tr><td><strong>I</strong> — Interface Segregation</td><td>Interfaces coesas, não "gordas"</td><td><code>ProdutoRepository</code> tem só 6 métodos de persistência; <code>ProdutoService</code> tem só os 5 casos de uso que o controller usa.</td></tr>
 <tr><td><strong>D</strong> — Dependency Inversion</td><td>Depender de abstrações, não de concreções</td><td><code>ProdutoServiceImpl(ProdutoRepository repo)</code> — o construtor recebe a <strong>interface</strong>, nunca a classe concreta JPA/Mongo.</td></tr>
 </tbody>
 </table>
@@ -44,7 +44,8 @@
 <thead><tr><th>Padrão / peça</th><th>O que é</th><th>Para que serve</th><th>Arquivo Java</th></tr></thead>
 <tbody>
 <tr><td><strong>Repository</strong></td><td><a class="ext" href="https://martinfowler.com/eaaCatalog/repository.html" target="_blank">Interface que abstrai persistência</a></td><td>Trocar banco sem tocar no domínio</td><td><code>ProdutoRepository.java</code></td></tr>
-<tr><td><strong>Adapter</strong></td><td><a class="ext" href="https://alistair.cockburn.us/hexagonal-architecture/" target="_blank">Concretiza a porta p/ tecnologia</a></td><td>Ligar domínio a JPA/Mongo</td><td><code>ProdutoRepositoryAdapter.java</code>, <code>MongoProdutoRepository.java</code></td></tr>
+<tr><td><strong>Adapter</strong></td><td><a class="ext" href="https://alistair.cockburn.us/hexagonal-architecture/" target="_blank">Concretiza a porta p/ tecnologia</a></td><td>Ligar domínio a JPA (e ao Mongo na Tab 6-B)</td><td><code>ProdutoRepositoryAdapter.java</code></td></tr>
+<tr><td><strong>Factory de beans (ponto de troca)</strong></td><td><a class="ext" href="https://docs.spring.io/spring-framework/reference/core/beans/java/bean-annotation.html" target="_blank"><code>@Bean</code> com escolha por configuração</a></td><td>Decidir o adapter em UM lugar</td><td><code>PersistenceConfig.java</code></td></tr>
 <tr><td><strong>Service Interface</strong></td><td><a class="ext" href="https://martinfowler.com/eaaCatalog/serviceLayer.html" target="_blank">Contrato do caso de uso</a></td><td>Testar c/ mock; trocar impl.</td><td><code>ProdutoService.java</code> → <code>ProdutoServiceImpl.java</code></td></tr>
 <tr><td><strong>DTO</strong></td><td><a class="ext" href="https://martinfowler.com/eaaCatalog/dataTransferObject.html" target="_blank">Objeto p/ transporte</a></td><td>Não expor a entidade</td><td><code>CriarProdutoRequest.java</code>, <code>ProdutoResponse.java</code></td></tr>
 <tr><td><strong>Mapper</strong></td><td><a class="ext" href="https://en.wikipedia.org/wiki/Data_mapper_pattern" target="_blank">Converte entidade ↔ DTO</a></td><td>Isolar formato externo</td><td><code>ProdutoMapper.java</code></td></tr>
@@ -87,8 +88,7 @@
   end
   subgraph I["🏭 Infrastructure"]
     ADP["ProdutoRepositoryAdapter (JPA)"]
-    MONGO["MongoProdutoRepository"]
-    DUAL["DualWriteProdutoRepository"]
+    PCFG["PersistenceConfig 🔀"]
     CFG["CoreBeansConfig"]
   end
   subgraph T["🧪 Tests"]
@@ -96,8 +96,7 @@
   end
   P --> A --> D
   ADP -.->|implements| IR
-  MONGO -.->|implements| IR
-  DUAL -.->|implements| IR
+  PCFG -->|escolhe o adapter| ADP
   SVC -.->|implements| IS
   UT -.->|testa| A'>
 <div class="mermaid"></div>
@@ -122,13 +121,15 @@
 <div class="tree-view"><span class="folder">📁 loja-api/</span>
 ├── <span class="file">📄 pom.xml</span>                           <span class="comment"># POM pai (multi-module)</span>
 ├── <span class="folder">📁 produtos-core-domain/</span>              <span class="comment"># 🧠 puro, zero frameworks</span>
-│   └── Produto.java, ProdutoRepository.java, ProdutoService.java, DomainException.java
+│   └── Produto.java, ProdutoRepository.java, ProdutoService.java, DomainException.java, RecursoNaoEncontradoException.java
 ├── <span class="folder">📁 produtos-core-application/</span>         <span class="comment"># ⚙️ casos de uso + DTOs + testes</span>
 │   └── ProdutoServiceImpl.java, DTOs, Mapper, ProdutoServiceTest.java
-├── <span class="folder">📁 produtos-infrastructure/</span>           <span class="comment"># 🏭 JPA/Mongo adapters + config</span>
-│   └── Adapters, JpaEntity, SpringDataRepo, MongoDoc, CoreBeansConfig, BackfillJob
-└── <span class="folder">📁 produtos-presentation/</span>             <span class="comment"># 🎯 REST/JWT + exception handler</span>
-    └── Main.java, ProdutoController, AuthController, JwtService, JwtFilter, SecurityConfig, GlobalExceptionHandler, application.yml</div>
+├── <span class="folder">📁 produtos-infrastructure/</span>           <span class="comment"># 🏭 adapter JPA + ponto de troca (Mongo: Tab 6-B)</span>
+│   └── ProdutoRepositoryAdapter, ProdutoJpaEntity, SpringDataProdutoRepository, PersistenceConfig 🔀, CoreBeansConfig
+├── <span class="folder">📁 produtos-presentation/</span>             <span class="comment"># 🎯 REST/JWT + exception handler</span>
+│   └── Main.java, ProdutoController, AuthController, JwtService, JwtTokenFilter, SecurityConfig, GlobalExceptionHandler, application.yml
+├── <span class="file">📄 Dockerfile</span>                        <span class="comment"># 🐳 multi-stage (na raiz)</span>
+└── <span class="file">📄 .dockerignore</span></div>
 </div>
 </div>
 
@@ -137,18 +138,30 @@
 <div class="lab-header"><h3>☕ POMs (pai + 4 módulos)</h3></div>
 <div class="code-editor-wrap"><span class="code-filepath">loja-api/pom.xml (pai)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="pom.xml">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
-&lt;project xmlns="http://maven.apache.org/POM/4.0.0"&gt;
+&lt;project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"&gt;
   &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+
+  &lt;!-- Herda versões gerenciadas (BOM) e plugins do Spring Boot 4 --&gt;
   &lt;parent&gt;
     &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
     &lt;artifactId&gt;spring-boot-starter-parent&lt;/artifactId&gt;
     &lt;version&gt;4.1.1&lt;/version&gt;
+    &lt;relativePath/&gt; &lt;!-- busca o parent no repositório Maven, não em ../pom.xml --&gt;
   &lt;/parent&gt;
+
   &lt;groupId&gt;com.loja&lt;/groupId&gt;
   &lt;artifactId&gt;loja-api&lt;/artifactId&gt;
   &lt;version&gt;1.0.0&lt;/version&gt;
   &lt;packaging&gt;pom&lt;/packaging&gt;
-  &lt;properties&gt;&lt;java.version&gt;21&lt;/java.version&gt;&lt;/properties&gt;
+
+  &lt;properties&gt;
+    &lt;java.version&gt;21&lt;/java.version&gt;
+    &lt;jjwt.version&gt;0.12.6&lt;/jjwt.version&gt;
+  &lt;/properties&gt;
+
+  &lt;!-- Ordem = ordem de build (de dentro para fora, igual à Regra de Dependência) --&gt;
   &lt;modules&gt;
     &lt;module&gt;produtos-core-domain&lt;/module&gt;
     &lt;module&gt;produtos-core-application&lt;/module&gt;
@@ -157,49 +170,153 @@
   &lt;/modules&gt;
 &lt;/project&gt;</pre></div>
 <div class="code-editor-wrap"><span class="code-filepath">produtos-core-domain/pom.xml</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor" data-zip-path="produtos-core-domain/pom.xml">&lt;project&gt;
-  &lt;parent&gt;&lt;groupId&gt;com.loja&lt;/groupId&gt;&lt;artifactId&gt;loja-api&lt;/artifactId&gt;&lt;version&gt;1.0.0&lt;/version&gt;&lt;/parent&gt;
+<pre class="code-editor" data-zip-path="produtos-core-domain/pom.xml">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"&gt;
+  &lt;!-- modelVersion é OBRIGATÓRIO em todo POM (inclusive nos filhos) --&gt;
+  &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+  &lt;parent&gt;
+    &lt;groupId&gt;com.loja&lt;/groupId&gt;
+    &lt;artifactId&gt;loja-api&lt;/artifactId&gt;
+    &lt;version&gt;1.0.0&lt;/version&gt;
+  &lt;/parent&gt;
   &lt;artifactId&gt;produtos-core-domain&lt;/artifactId&gt;
-  &lt;!-- SEM DEPENDÊNCIAS: o domínio não conhece frameworks --&gt;
+  &lt;!-- SEM DEPENDÊNCIAS: o domínio não conhece frameworks nem bancos.
+       É por isso que trocar MySQL por MongoDB (Tab 6-B) não toca neste módulo. --&gt;
 &lt;/project&gt;</pre></div>
 <div class="code-editor-wrap"><span class="code-filepath">produtos-core-application/pom.xml</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor" data-zip-path="produtos-core-application/pom.xml">&lt;project&gt;
-  &lt;parent&gt;&lt;groupId&gt;com.loja&lt;/groupId&gt;&lt;artifactId&gt;loja-api&lt;/artifactId&gt;&lt;version&gt;1.0.0&lt;/version&gt;&lt;/parent&gt;
+<pre class="code-editor" data-zip-path="produtos-core-application/pom.xml">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"&gt;
+  &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+  &lt;parent&gt;
+    &lt;groupId&gt;com.loja&lt;/groupId&gt;
+    &lt;artifactId&gt;loja-api&lt;/artifactId&gt;
+    &lt;version&gt;1.0.0&lt;/version&gt;
+  &lt;/parent&gt;
   &lt;artifactId&gt;produtos-core-application&lt;/artifactId&gt;
   &lt;dependencies&gt;
-    &lt;dependency&gt;&lt;groupId&gt;com.loja&lt;/groupId&gt;&lt;artifactId&gt;produtos-core-domain&lt;/artifactId&gt;&lt;version&gt;1.0.0&lt;/version&gt;&lt;/dependency&gt;
-    &lt;dependency&gt;&lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;&lt;artifactId&gt;spring-boot-starter-test&lt;/artifactId&gt;&lt;scope&gt;test&lt;/scope&gt;&lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;com.loja&lt;/groupId&gt;
+      &lt;artifactId&gt;produtos-core-domain&lt;/artifactId&gt;
+      &lt;version&gt;${project.version}&lt;/version&gt;
+    &lt;/dependency&gt;
+    &lt;!-- Só a API das anotações de validação (@NotBlank, @Positive) usadas nos DTOs.
+         Sem isto, CriarProdutoRequest NÃO compila. Versão gerenciada pelo Boot. --&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;jakarta.validation&lt;/groupId&gt;
+      &lt;artifactId&gt;jakarta.validation-api&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+    &lt;!-- JUnit 5 + Mockito (somente testes) --&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-boot-starter-test&lt;/artifactId&gt;
+      &lt;scope&gt;test&lt;/scope&gt;
+    &lt;/dependency&gt;
   &lt;/dependencies&gt;
 &lt;/project&gt;</pre></div>
 <div class="code-editor-wrap"><span class="code-filepath">produtos-infrastructure/pom.xml</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor" data-zip-path="produtos-infrastructure/pom.xml">&lt;project&gt;
-  &lt;parent&gt;&lt;groupId&gt;com.loja&lt;/groupId&gt;&lt;artifactId&gt;loja-api&lt;/artifactId&gt;&lt;version&gt;1.0.0&lt;/version&gt;&lt;/parent&gt;
+<pre class="code-editor" data-zip-path="produtos-infrastructure/pom.xml">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"&gt;
+  &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+  &lt;parent&gt;
+    &lt;groupId&gt;com.loja&lt;/groupId&gt;
+    &lt;artifactId&gt;loja-api&lt;/artifactId&gt;
+    &lt;version&gt;1.0.0&lt;/version&gt;
+  &lt;/parent&gt;
   &lt;artifactId&gt;produtos-infrastructure&lt;/artifactId&gt;
   &lt;dependencies&gt;
-    &lt;dependency&gt;&lt;groupId&gt;com.loja&lt;/groupId&gt;&lt;artifactId&gt;produtos-core-domain&lt;/artifactId&gt;&lt;version&gt;1.0.0&lt;/version&gt;&lt;/dependency&gt;
-    &lt;dependency&gt;&lt;groupId&gt;com.loja&lt;/groupId&gt;&lt;artifactId&gt;produtos-core-application&lt;/artifactId&gt;&lt;version&gt;1.0.0&lt;/version&gt;&lt;/dependency&gt;
-    &lt;dependency&gt;&lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;&lt;artifactId&gt;spring-boot-starter-data-jpa&lt;/artifactId&gt;&lt;/dependency&gt;
-    &lt;dependency&gt;&lt;groupId&gt;com.mysql&lt;/groupId&gt;&lt;artifactId&gt;mysql-connector-j&lt;/artifactId&gt;&lt;scope&gt;runtime&lt;/scope&gt;&lt;/dependency&gt;
-    &lt;dependency&gt;&lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;&lt;artifactId&gt;spring-boot-starter-data-mongodb&lt;/artifactId&gt;&lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;com.loja&lt;/groupId&gt;
+      &lt;artifactId&gt;produtos-core-domain&lt;/artifactId&gt;
+      &lt;version&gt;${project.version}&lt;/version&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;com.loja&lt;/groupId&gt;
+      &lt;artifactId&gt;produtos-core-application&lt;/artifactId&gt;
+      &lt;version&gt;${project.version}&lt;/version&gt;
+    &lt;/dependency&gt;
+    &lt;!-- JPA/Hibernate + driver MySQL --&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-boot-starter-data-jpa&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;com.mysql&lt;/groupId&gt;
+      &lt;artifactId&gt;mysql-connector-j&lt;/artifactId&gt;
+      &lt;scope&gt;runtime&lt;/scope&gt;
+    &lt;/dependency&gt;
+    &lt;!-- 🍃 spring-boot-starter-data-mongodb entra só na Tab 6-B (migração) --&gt;
   &lt;/dependencies&gt;
 &lt;/project&gt;</pre></div>
 <div class="code-editor-wrap"><span class="code-filepath">produtos-presentation/pom.xml</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor" data-zip-path="produtos-presentation/pom.xml">&lt;project&gt;
-  &lt;parent&gt;&lt;groupId&gt;com.loja&lt;/groupId&gt;&lt;artifactId&gt;loja-api&lt;/artifactId&gt;&lt;version&gt;1.0.0&lt;/version&gt;&lt;/parent&gt;
+<pre class="code-editor" data-zip-path="produtos-presentation/pom.xml">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"&gt;
+  &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+  &lt;parent&gt;
+    &lt;groupId&gt;com.loja&lt;/groupId&gt;
+    &lt;artifactId&gt;loja-api&lt;/artifactId&gt;
+    &lt;version&gt;1.0.0&lt;/version&gt;
+  &lt;/parent&gt;
   &lt;artifactId&gt;produtos-presentation&lt;/artifactId&gt;
   &lt;dependencies&gt;
-    &lt;dependency&gt;&lt;groupId&gt;com.loja&lt;/groupId&gt;&lt;artifactId&gt;produtos-core-application&lt;/artifactId&gt;&lt;version&gt;1.0.0&lt;/version&gt;&lt;/dependency&gt;
-    &lt;dependency&gt;&lt;groupId&gt;com.loja&lt;/groupId&gt;&lt;artifactId&gt;produtos-infrastructure&lt;/artifactId&gt;&lt;version&gt;1.0.0&lt;/version&gt;&lt;/dependency&gt;
-    &lt;dependency&gt;&lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;&lt;artifactId&gt;spring-boot-starter-web&lt;/artifactId&gt;&lt;/dependency&gt;
-    &lt;dependency&gt;&lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;&lt;artifactId&gt;spring-boot-starter-security&lt;/artifactId&gt;&lt;/dependency&gt;
-    &lt;dependency&gt;&lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;&lt;artifactId&gt;spring-boot-starter-validation&lt;/artifactId&gt;&lt;/dependency&gt;
-    &lt;dependency&gt;&lt;groupId&gt;io.jsonwebtoken&lt;/groupId&gt;&lt;artifactId&gt;jjwt-api&lt;/artifactId&gt;&lt;version&gt;0.11.5&lt;/version&gt;&lt;/dependency&gt;
-    &lt;dependency&gt;&lt;groupId&gt;io.jsonwebtoken&lt;/groupId&gt;&lt;artifactId&gt;jjwt-impl&lt;/artifactId&gt;&lt;version&gt;0.11.5&lt;/version&gt;&lt;scope&gt;runtime&lt;/scope&gt;&lt;/dependency&gt;
-    &lt;dependency&gt;&lt;groupId&gt;io.jsonwebtoken&lt;/groupId&gt;&lt;artifactId&gt;jjwt-jackson&lt;/artifactId&gt;&lt;version&gt;0.11.5&lt;/version&gt;&lt;scope&gt;runtime&lt;/scope&gt;&lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;com.loja&lt;/groupId&gt;
+      &lt;artifactId&gt;produtos-core-application&lt;/artifactId&gt;
+      &lt;version&gt;${project.version}&lt;/version&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;com.loja&lt;/groupId&gt;
+      &lt;artifactId&gt;produtos-infrastructure&lt;/artifactId&gt;
+      &lt;version&gt;${project.version}&lt;/version&gt;
+    &lt;/dependency&gt;
+    &lt;!-- Spring Boot 4: o starter "web" foi renomeado para "webmvc" --&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-boot-starter-webmvc&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-boot-starter-security&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-boot-starter-validation&lt;/artifactId&gt;
+    &lt;/dependency&gt;
+    &lt;!-- JWT (jjwt 0.12.x: API nova subject()/verifyWith()) --&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;io.jsonwebtoken&lt;/groupId&gt;
+      &lt;artifactId&gt;jjwt-api&lt;/artifactId&gt;
+      &lt;version&gt;${jjwt.version}&lt;/version&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;io.jsonwebtoken&lt;/groupId&gt;
+      &lt;artifactId&gt;jjwt-impl&lt;/artifactId&gt;
+      &lt;version&gt;${jjwt.version}&lt;/version&gt;
+      &lt;scope&gt;runtime&lt;/scope&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;io.jsonwebtoken&lt;/groupId&gt;
+      &lt;artifactId&gt;jjwt-jackson&lt;/artifactId&gt;
+      &lt;version&gt;${jjwt.version}&lt;/version&gt;
+      &lt;scope&gt;runtime&lt;/scope&gt;
+    &lt;/dependency&gt;
   &lt;/dependencies&gt;
-  &lt;build&gt;&lt;plugins&gt;
-    &lt;plugin&gt;&lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;&lt;artifactId&gt;spring-boot-maven-plugin&lt;/artifactId&gt;&lt;/plugin&gt;
-  &lt;/plugins&gt;&lt;/build&gt;
+  &lt;build&gt;
+    &lt;plugins&gt;
+      &lt;!-- Gera o JAR executável (java -jar) --&gt;
+      &lt;plugin&gt;
+        &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+        &lt;artifactId&gt;spring-boot-maven-plugin&lt;/artifactId&gt;
+      &lt;/plugin&gt;
+    &lt;/plugins&gt;
+  &lt;/build&gt;
 &lt;/project&gt;</pre></div>
 </div>
 
@@ -215,7 +332,14 @@ import java.math.BigDecimal;
 
 /**
  * Entidade de domínio Produto (POJO puro, anêmico — sem anotações ORM).
- * A lógica de negócio fica no Use Case (ProdutoServiceImpl).
+ * A lógica de negócio fica no Use Case (ProdutoServiceImpl) — ver ADR-J1.
+ *
+ * 🧭 PREPARAÇÃO PARA A MIGRAÇÃO (Tab 6-B):
+ * - Nenhuma anotação de banco aqui (@Entity, @Document, @Id...). O mapeamento
+ *   MySQL fica em ProdutoJpaEntity; o do MongoDB ficará em ProdutoDocument.
+ *   Trocar de banco = trocar o adapter, nunca esta classe.
+ * - id é Long: no MongoDB ele vira o próprio _id (numérico), preservando os
+ *   ids do MySQL e as URLs da API (/api/produtos/1).
  *
  * @since 1.0.0
  */
@@ -227,6 +351,13 @@ public class Produto {
 
     public Produto() {}
 
+    /**
+     * Construtor completo. Também serve para RECONSTITUIR um produto lido do
+     * banco (por isso não valida nada: no modelo anêmico, as regras de criação
+     * ficam no ProdutoServiceImpl, e um dado já salvo não é "criado" de novo).
+     *
+     * @param id null = produto novo (o banco/adapter gera o id)
+     */
     public Produto(Long id, String nome, BigDecimal preco, Integer estoque) {
         this.id = id;
         this.nome = nome;
@@ -247,10 +378,30 @@ public class Produto {
 <div class="code-editor-wrap"><span class="code-filepath">domain/exception/DomainException.java</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-core-domain/src/main/java/com/loja/domain/exception/DomainException.java">package com.loja.domain.exception;
 
-/** Exceção de domínio (regra de negócio violada). Capturada pelo GlobalExceptionHandler. */
+/**
+ * Exceção de domínio (regra de negócio violada) → HTTP 400.
+ * Capturada pelo GlobalExceptionHandler e convertida em RFC 7807.
+ */
 public class DomainException extends RuntimeException {
     public DomainException(String message) { super(message); }
 }</pre></div>
+<div class="code-editor-wrap"><span class="code-filepath">domain/exception/RecursoNaoEncontradoException.java (→ 404)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="produtos-core-domain/src/main/java/com/loja/domain/exception/RecursoNaoEncontradoException.java">package com.loja.domain.exception;
+
+/**
+ * Recurso inexistente → HTTP 404.
+ *
+ * Por que uma exceção própria? Antes, "produto não encontrado" era uma
+ * DomainException genérica e virava 400 Bad Request — mas o pedido não estava
+ * "mal formado": o recurso é que não existe. O contrato REST pede 404.
+ *
+ * Herda de DomainException: quem só trata DomainException continua funcionando;
+ * o GlobalExceptionHandler trata esta subclasse de forma mais específica.
+ */
+public class RecursoNaoEncontradoException extends DomainException {
+    public RecursoNaoEncontradoException(String message) { super(message); }
+}</pre></div>
+
 
 <div class="code-editor-wrap"><span class="code-filepath">domain/ProdutoRepository.java (porta de saída — DIP)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-core-domain/src/main/java/com/loja/domain/ProdutoRepository.java">package com.loja.domain;
@@ -259,14 +410,43 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Porta de saída do domínio (Dependency Inversion Principle).
+ * 🚪 PORTA DE SAÍDA do domínio (Dependency Inversion Principle).
  * O domínio define O QUE precisa; a infraestrutura decide COMO fazer.
+ *
+ *   ProdutoRepositoryAdapter  → MySQL via JPA      (esta Tab 6)
+ *   MongoProdutoRepository    → MongoDB            (Tab 6-B)
+ *   DualWriteProdutoRepository→ MySQL + MongoDB    (Tab 6-B, fase de migração)
+ *
+ * ✅ Regras para uma porta "migrável":
+ * 1) Nenhum tipo de framework na assinatura (nada de Page, Pageable, Specification
+ *    do Spring Data): a porta fala a língua do domínio.
+ * 2) Todo método precisa ser implementável com a MESMA semântica em SQL e em
+ *    MongoDB — por isso a paginação é (page, size) e a ordem é por id.
  */
 public interface ProdutoRepository {
+
+    /**
+     * Insere (id == null) ou atualiza (id != null) e DEVOLVE o produto salvo.
+     * Use sempre o retorno: é ele que traz o id gerado — pelo AUTO_INCREMENT no
+     * MySQL ou, na Tab 6-B, por uma sequência no MongoDB.
+     */
     Produto salvar(Produto produto);
+
     Optional&lt;Produto&gt; buscarPorId(Long id);
+
+    /**
+     * Página de produtos ordenada por id (page começa em 0).
+     * A paginação acontece NO BANCO (LIMIT/OFFSET no MySQL; skip/limit no Mongo).
+     * Antes, a API carregava TODOS os produtos e cortava a lista em memória:
+     * com 1 milhão de produtos, cada GET traria 1 milhão de linhas.
+     */
+    List&lt;Produto&gt; listarPagina(int page, int size);
+
+    /** Todos os produtos — uso administrativo (ex.: backfill da Tab 6-B). */
     List&lt;Produto&gt; listarTodos();
+
     boolean existePorId(Long id);
+
     void deletarPorId(Long id);
 }</pre></div>
 
@@ -277,14 +457,13 @@ import java.util.List;
 
 /**
  * Contrato do caso de uso "Produtos".
- * Interface Segregation: apenas os métodos que o controller precisa.
+ * Interface Segregation: só os 5 métodos que o controller usa.
  */
 public interface ProdutoService {
     Produto criarProduto(Produto produto);
-    List&lt;Produto&gt; listarProdutos();
     List&lt;Produto&gt; listarProdutos(int page, int size);
-    Produto atualizarProduto(Long id, Produto produto);
     Produto obterPorId(Long id);
+    Produto atualizarProduto(Long id, Produto produto);
     void excluirProduto(Long id);
 }</pre></div>
 
@@ -296,14 +475,21 @@ import com.loja.domain.Produto;
 import com.loja.domain.ProdutoRepository;
 import com.loja.domain.ProdutoService;
 import com.loja.domain.exception.DomainException;
+import com.loja.domain.exception.RecursoNaoEncontradoException;
 import java.math.BigDecimal;
 import java.util.List;
 
 /**
  * Implementa os casos de uso. Recebe a INTERFACE ProdutoRepository (DIP).
  * Registrado como bean via CoreBeansConfig (não tem @Service — é classe pura).
+ *
+ * 🧭 Esta classe NÃO muda na migração para MongoDB (Tab 6-B): ela só conhece
+ * a porta ProdutoRepository, nunca JPA ou Mongo.
  */
 public class ProdutoServiceImpl implements ProdutoService {
+
+    /** Limite de itens por página: protege o banco de "size=1000000". */
+    static final int TAMANHO_MAXIMO_PAGINA = 100;
 
     private final ProdutoRepository repository;
 
@@ -313,53 +499,57 @@ public class ProdutoServiceImpl implements ProdutoService {
 
     @Override
     public Produto criarProduto(Produto p) {
-        if (p.getNome() == null || p.getNome().trim().isEmpty())
-            throw new DomainException("O nome do produto é obrigatório");
-        if (p.getNome().trim().length() < 2)
-            throw new DomainException("O nome deve ter pelo menos 2 caracteres");
-        if (p.getPreco() == null || p.getPreco().compareTo(BigDecimal.ZERO) <= 0)
-            throw new DomainException("O preço deve ser maior que zero");
-        if (p.getEstoque() == null || p.getEstoque() < 0)
-            throw new DomainException("O estoque não pode ser negativo");
-        return repository.salvar(p);
+        validar(p);
+        p.setNome(p.getNome().trim());
+        p.setId(null);                 // criação: quem gera o id é o banco/adapter
+        return repository.salvar(p);   // usa o RETORNO (traz o id gerado)
     }
 
     @Override
-    public List&lt;Produto&gt; listarProdutos() {
-        return repository.listarTodos();
-    }
-    @Override
     public List&lt;Produto&gt; listarProdutos(int page, int size) {
-        var all = repository.listarTodos();
-        int from = Math.min(page * size, todos.size());
-        int to = Math.min(from + size, todos.size());
-        return todos.subList(from, to);
-    @Override
-    public Produto atualizarProduto(Long id, Produto p) {
-    Produto existente = repository.buscarPorId(id)
-    .orElseThrow(() -> new DomainException("Produto não encontrado: " + id));
-    if (p.getNome() == null || p.getNome().trim().length() < 2)
-    throw new DomainException("O nome deve ter pelo menos 2 caracteres");
-    if (p.getPreco() == null || p.getPreco().compareTo(BigDecimal.ZERO) <= 0)
-    throw new DomainException("O preço deve ser maior que zero");
-    if (p.getEstoque() == null || p.getEstoque() < 0)
-    throw new DomainException("O estoque não pode ser negativo");
-    existente.setNome(p.getNome());
-    existente.setPreco(p.getPreco());
-    existente.setEstoque(p.getEstoque());
-    return repository.salvar(existente);
+        // Validação de entrada: antes, page negativo derrubava a API com erro 500
+        if (page &lt; 0)
+            throw new DomainException("page deve ser &gt;= 0");
+        if (size &lt; 1 || size &gt; TAMANHO_MAXIMO_PAGINA)
+            throw new DomainException("size deve estar entre 1 e " + TAMANHO_MAXIMO_PAGINA);
+
+        // Paginação feita NO BANCO, pela porta (não mais em memória)
+        return repository.listarPagina(page, size);
     }
+
     @Override
     public Produto obterPorId(Long id) {
         return repository.buscarPorId(id)
-                .orElseThrow(() -> new DomainException("Produto não encontrado: " + id));
+                .orElseThrow(() -&gt; new RecursoNaoEncontradoException("Produto não encontrado: " + id));
+    }
+
+    @Override
+    public Produto atualizarProduto(Long id, Produto p) {
+        Produto existente = obterPorId(id);   // 404 se não existir
+        validar(p);
+        existente.setNome(p.getNome().trim());
+        existente.setPreco(p.getPreco());
+        existente.setEstoque(p.getEstoque());
+        return repository.salvar(existente);
     }
 
     @Override
     public void excluirProduto(Long id) {
         if (!repository.existePorId(id))
-            throw new DomainException("Produto inexistente: " + id);
+            throw new RecursoNaoEncontradoException("Produto não encontrado: " + id);
         repository.deletarPorId(id);
+    }
+
+    /** Regras de negócio comuns a criar e atualizar (um lugar só = sem duplicação). */
+    private static void validar(Produto p) {
+        if (p.getNome() == null || p.getNome().trim().isEmpty())
+            throw new DomainException("O nome do produto é obrigatório");
+        if (p.getNome().trim().length() &lt; 2)
+            throw new DomainException("O nome deve ter pelo menos 2 caracteres");
+        if (p.getPreco() == null || p.getPreco().compareTo(BigDecimal.ZERO) &lt;= 0)
+            throw new DomainException("O preço deve ser maior que zero");
+        if (p.getEstoque() == null || p.getEstoque() &lt; 0)
+            throw new DomainException("O estoque não pode ser negativo");
     }
 }</pre></div>
 
@@ -367,15 +557,19 @@ public class ProdutoServiceImpl implements ProdutoService {
 <pre class="code-editor" data-zip-path="produtos-core-application/src/main/java/com/loja/application/dto/CriarProdutoRequest.java">package com.loja.application.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import java.math.BigDecimal;
 
-/** DTO de entrada (não expõe a entidade). Bean Validation valida no controller. */
+/**
+ * DTO de entrada (não expõe a entidade). Bean Validation valida no controller.
+ * Obs.: @Positive/@PositiveOrZero ACEITAM null — por isso o @NotNull junto.
+ */
 public record CriarProdutoRequest(
     @NotBlank(message = "Nome é obrigatório") String nome,
-    @Positive(message = "Preço deve ser > 0") BigDecimal preco,
-    @PositiveOrZero(message = "Estoque >= 0") Integer estoque
+    @NotNull(message = "Preço é obrigatório") @Positive(message = "Preço deve ser &gt; 0") BigDecimal preco,
+    @NotNull(message = "Estoque é obrigatório") @PositiveOrZero(message = "Estoque &gt;= 0") Integer estoque
 ) {}</pre></div>
 
 <div class="code-editor-wrap"><span class="code-filepath">application/dto/ProdutoResponse.java</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -383,7 +577,10 @@ public record CriarProdutoRequest(
 
 import java.math.BigDecimal;
 
-/** DTO de saída — o que o cliente recebe (nunca a entidade de domínio). */
+/**
+ * DTO de saída — o que o cliente recebe (nunca a entidade de domínio).
+ * 🧭 Este é o CONTRATO da API: ele é o mesmo com MySQL ou MongoDB (Tab 6-B).
+ */
 public record ProdutoResponse(Long id, String nome, BigDecimal preco, Integer estoque) {}</pre></div>
 
 <div class="code-editor-wrap"><span class="code-filepath">application/mapper/ProdutoMapper.java</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -406,18 +603,27 @@ public final class ProdutoMapper {
     }
 }</pre></div>
 
-<h4 style="color:var(--accent);margin:16px 0 8px">🏭 Camada Infrastructure (JPA + Mongo + Config)</h4>
+<h4 style="color:var(--accent);margin:16px 0 8px">🏭 Camada Infrastructure (JPA + ponto de troca + Config)</h4>
 <div class="code-editor-wrap"><span class="code-filepath">infrastructure/persistence/ProdutoJpaEntity.java</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-infrastructure/src/main/java/com/loja/infrastructure/persistence/ProdutoJpaEntity.java">package com.loja.infrastructure.persistence;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 
-/** Entidade JPA — representação da tabela "produtos" no MySQL. */
+/**
+ * Entidade JPA — representação da tabela "produtos" no MySQL.
+ *
+ * Separada do domínio de propósito: as anotações @Entity/@Column ficam AQUI,
+ * e o Produto (domínio) continua puro. Na Tab 6-B, o MongoDB terá a sua
+ * própria representação (ProdutoDocument) — e o domínio não muda.
+ *
+ * ⚠️ ddl-auto: validate → a tabela precisa existir com tipos compatíveis:
+ *    id BIGINT (Long), nome VARCHAR(100), preco DECIMAL(10,2), estoque INT.
+ */
 @Entity
 @Table(name = "produtos")
 public class ProdutoJpaEntity {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)   // AUTO_INCREMENT
     private Long id;
     @Column(nullable = false, length = 100) private String nome;
     @Column(nullable = false, precision = 10, scale = 2) private BigDecimal preco;
@@ -434,22 +640,33 @@ public class ProdutoJpaEntity {
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-/** Spring Data JPA — SQL derivado automaticamente dos nomes dos métodos. */
+/**
+ * Spring Data JPA — o Spring gera a implementação (findAll, save, findById...).
+ * É detalhe de infraestrutura: só o ProdutoRepositoryAdapter o conhece.
+ */
 public interface SpringDataProdutoRepository extends JpaRepository&lt;ProdutoJpaEntity, Long&gt; {}</pre></div>
 
-<div class="code-editor-wrap"><span class="code-filepath">infrastructure/persistence/ProdutoRepositoryAdapter.java (Adapter JPA)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<div class="code-editor-wrap"><span class="code-filepath">infrastructure/persistence/ProdutoRepositoryAdapter.java (🔌 Adapter JPA)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-infrastructure/src/main/java/com/loja/infrastructure/persistence/ProdutoRepositoryAdapter.java">package com.loja.infrastructure.persistence;
 
 import com.loja.domain.Produto;
 import com.loja.domain.ProdutoRepository;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
-/** Adapter JPA — implementa a porta do domínio (Hexagonal). */
-@Repository
-@ConditionalOnProperty(name = "persistence.provider", havingValue = "relational", matchIfMissing = true)
+/**
+ * 🔌 ADAPTER JPA/MySQL — implementa a porta do domínio (Hexagonal).
+ *
+ * Repare: SEM @Repository e SEM @ConditionalOnProperty. Quem decide se este
+ * adapter é usado é o PersistenceConfig (um único ponto de escolha).
+ * Antes, cada adapter tinha sua própria condição, espalhadas pelo código —
+ * e a combinação delas impedia a aplicação de subir em qualquer modo.
+ *
+ * Na Tab 6-B, este mesmo adapter é reaproveitado DENTRO do
+ * DualWriteProdutoRepository e como ORIGEM do backfill.
+ */
 public class ProdutoRepositoryAdapter implements ProdutoRepository {
 
     private final SpringDataProdutoRepository jpaRepo;
@@ -458,139 +675,116 @@ public class ProdutoRepositoryAdapter implements ProdutoRepository {
         this.jpaRepo = jpaRepo;
     }
 
-    @Override public Produto salvar(Produto p) { return toDomain(jpaRepo.save(toJpa(p))); }
-    @Override public Optional&lt;Produto&gt; buscarPorId(Long id) { return jpaRepo.findById(id).map(this::toDomain); }
-    @Override public List&lt;Produto&gt; listarTodos() { return jpaRepo.findAll().stream().map(this::toDomain).toList(); }
-    @Override public boolean existePorId(Long id) { return jpaRepo.existsById(id); }
-    @Override public void deletarPorId(Long id) { jpaRepo.deleteById(id); }
+    @Override
+    public Produto salvar(Produto p) {
+        // id null → INSERT (AUTO_INCREMENT gera o id); id preenchido → UPDATE
+        return toDomain(jpaRepo.save(toJpa(p)));
+    }
 
+    @Override
+    public Optional&lt;Produto&gt; buscarPorId(Long id) {
+        return jpaRepo.findById(id).map(this::toDomain);
+    }
+
+    @Override
+    public List&lt;Produto&gt; listarPagina(int page, int size) {
+        // SELECT ... ORDER BY id LIMIT :size OFFSET :page*size  (paginação NO BANCO)
+        // Ordenar por id garante a MESMA ordem que o MongoDB usará (sort _id).
+        return jpaRepo.findAll(PageRequest.of(page, size, Sort.by("id")))
+                .getContent().stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public List&lt;Produto&gt; listarTodos() {
+        return jpaRepo.findAll(Sort.by("id")).stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public boolean existePorId(Long id) { return jpaRepo.existsById(id); }
+
+    @Override
+    public void deletarPorId(Long id) { jpaRepo.deleteById(id); }
+
+    // ── Conversões domínio ↔ entidade JPA (o domínio nunca vê a @Entity) ──
     private ProdutoJpaEntity toJpa(Produto d) {
         ProdutoJpaEntity e = new ProdutoJpaEntity();
         e.setId(d.getId()); e.setNome(d.getNome()); e.setPreco(d.getPreco()); e.setEstoque(d.getEstoque());
         return e;
     }
+
     private Produto toDomain(ProdutoJpaEntity e) {
         return new Produto(e.getId(), e.getNome(), e.getPreco(), e.getEstoque());
     }
 }</pre></div>
 
-<div class="code-editor-wrap"><span class="code-filepath">infrastructure/mongo/ProdutoMongoDocument.java</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor" data-zip-path="produtos-infrastructure/src/main/java/com/loja/infrastructure/mongo/ProdutoMongoDocument.java">package com.loja.infrastructure.mongo;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-import java.math.BigDecimal;
 
-/** Documento MongoDB — representação BSON do Produto. */
-@Document(collection = "produtos")
-public class ProdutoMongoDocument {
-    @Id private String mongoId;
-    private Long idLegado;   // referência ao id relacional (p/ backfill)
-    private String nome;
-    private BigDecimal preco;
-    private Integer estoque;
 
-    public String getMongoId() { return mongoId; } public void setMongoId(String v) { mongoId = v; }
-    public Long getIdLegado() { return idLegado; } public void setIdLegado(Long v) { idLegado = v; }
-    public String getNome() { return nome; }       public void setNome(String v) { nome = v; }
-    public BigDecimal getPreco() { return preco; } public void setPreco(BigDecimal v) { preco = v; }
-    public Integer getEstoque() { return estoque; } public void setEstoque(Integer v) { estoque = v; }
-}</pre></div>
+<div class="info-banner"><strong>🔀 Ponto de troca do banco:</strong> antes, cada adapter tinha seu próprio <code>@ConditionalOnProperty</code> e o <code>BackfillJob</code> exigia os dois adapters ao mesmo tempo — com isso a aplicação <strong>não subia em nenhum modo</strong>. Agora um único <code>@Bean</code> lê <code>persistence.provider</code> e devolve <strong>exatamente um</strong> <code>ProdutoRepository</code>. Na Tab 6-B, os casos <code>dual</code> e <code>nosql</code> ganham seus adapters — e nada mais muda.</div>
+<div class="code-editor-wrap"><span class="code-filepath">infrastructure/config/PersistenceConfig.java (🔀 ponto de troca)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="produtos-infrastructure/src/main/java/com/loja/infrastructure/config/PersistenceConfig.java">package com.loja.infrastructure.config;
 
-<div class="code-editor-wrap"><span class="code-filepath">infrastructure/mongo/MongoProdutoRepository.java (Adapter Mongo)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor" data-zip-path="produtos-infrastructure/src/main/java/com/loja/infrastructure/mongo/MongoProdutoRepository.java">package com.loja.infrastructure.mongo;
-
-import com.loja.domain.Produto;
 import com.loja.domain.ProdutoRepository;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.stereotype.Repository;
-import java.util.List;
-import java.util.Optional;
+import com.loja.infrastructure.persistence.ProdutoRepositoryAdapter;
+import com.loja.infrastructure.persistence.SpringDataProdutoRepository;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-/** Adapter Mongo — mesma porta, tecnologia diferente (Liskov/Open-Closed). */
-@Repository
-@ConditionalOnProperty(name = "persistence.provider", havingValue = "nosql")
-public class MongoProdutoRepository implements ProdutoRepository {
+/**
+ * 🔀 PONTO DE TROCA DO BANCO — o ÚNICO lugar que decide qual adapter
+ * implementa a porta ProdutoRepository.
+ *
+ * Chave no application.yml:  persistence.provider
+ *   relational → ProdutoRepositoryAdapter (JPA/MySQL)      ← esta Tab 6
+ *   dual       → DualWriteProdutoRepository (MySQL+Mongo)  ← Tab 6-B (fase 1–2)
+ *   nosql      → MongoProdutoRepository (MongoDB)         ← Tab 6-B (fase 3–4)
+ *
+ * Por que um @Bean com switch, e não @ConditionalOnProperty em cada adapter?
+ * 1) Um só ponto de decisão, fácil de ler e de testar.
+ * 2) Sempre existe EXATAMENTE UM bean ProdutoRepository → nada de
+ *    "NoSuchBeanDefinition" nem "NoUniqueBeanDefinition".
+ * 3) Valor inválido falha NA SUBIDA, com mensagem clara (fail fast).
+ *
+ * Pode ser trocado sem recompilar:  PERSISTENCE_PROVIDER=dual java -jar app.jar
+ */
+@Configuration
+public class PersistenceConfig {
 
-    private final MongoTemplate mongo;
+    @Bean
+    public ProdutoRepository produtoRepository(
+            @Value("${persistence.provider:relational}") String provider,
+            SpringDataProdutoRepository jpaRepo) {
 
-    public MongoProdutoRepository(MongoTemplate mongo) { this.mongo = mongo; }
+        return switch (provider) {
+            case "relational" -&gt; new ProdutoRepositoryAdapter(jpaRepo);
 
-    @Override public Produto salvar(Produto p) {
-        ProdutoMongoDocument doc = toDoc(p);
-        doc = mongo.save(doc);
-        return toDomain(doc);
+            // Os adapters Mongo e Dual-Write são criados na Tab 6-B
+            case "dual", "nosql" -&gt; throw new IllegalStateException(
+                    "persistence.provider=" + provider + " ainda não implementado: "
+                    + "os adapters MongoDB chegam na Tab 6-B. Use 'relational'.");
+
+            default -&gt; throw new IllegalStateException(
+                    "persistence.provider inválido: '" + provider
+                    + "'. Valores aceitos: relational | dual | nosql");
+        };
     }
-    @Override public Optional&lt;Produto&gt; buscarPorId(Long id) {
-        Query q = new Query(Criteria.where("idLegado").is(id));
-        return Optional.ofNullable(mongo.findOne(q, ProdutoMongoDocument.class)).map(this::toDomain);
-    }
-    @Override public List&lt;Produto&gt; listarTodos() {
-        return mongo.findAll(ProdutoMongoDocument.class).stream().map(this::toDomain).toList();
-    }
-    @Override public boolean existePorId(Long id) { return buscarPorId(id).isPresent(); }
-    @Override public void deletarPorId(Long id) {
-        mongo.remove(new Query(Criteria.where("idLegado").is(id)), ProdutoMongoDocument.class);
-    }
-
-    private ProdutoMongoDocument toDoc(Produto d) {
-        ProdutoMongoDocument doc = new ProdutoMongoDocument();
-        doc.setIdLegado(d.getId()); doc.setNome(d.getNome());
-        doc.setPreco(d.getPreco()); doc.setEstoque(d.getEstoque());
-        return doc;
-    }
-    private Produto toDomain(ProdutoMongoDocument doc) {
-        return new Produto(doc.getIdLegado(), doc.getNome(), doc.getPreco(), doc.getEstoque());
-    }
-}</pre></div>
-
-<div class="code-editor-wrap"><span class="code-filepath">infrastructure/persistence/DualWriteProdutoRepository.java</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor" data-zip-path="produtos-infrastructure/src/main/java/com/loja/infrastructure/persistence/DualWriteProdutoRepository.java">package com.loja.infrastructure.persistence;
-
-import com.loja.domain.Produto;
-import com.loja.domain.ProdutoRepository;
-import com.loja.infrastructure.mongo.MongoProdutoRepository;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Repository;
-import java.util.List;
-import java.util.Optional;
-
-/** Dual-write: escreve nos dois bancos; lê do relacional (fase 1 da migração). */
-@Repository
-@ConditionalOnProperty(name = "persistence.provider", havingValue = "dual")
-public class DualWriteProdutoRepository implements ProdutoRepository {
-
-    private final ProdutoRepositoryAdapter jpa;
-    private final MongoProdutoRepository mongo;
-
-    public DualWriteProdutoRepository(ProdutoRepositoryAdapter jpa, MongoProdutoRepository mongo) {
-        this.jpa = jpa; this.mongo = mongo;
-    }
-
-    @Override public Produto salvar(Produto p) {
-        Produto saved = jpa.salvar(p);
-        mongo.salvar(saved);       // write-through
-        return saved;
-    }
-    @Override public Optional&lt;Produto&gt; buscarPorId(Long id) { return jpa.buscarPorId(id); }
-    @Override public List&lt;Produto&gt; listarTodos() { return jpa.listarTodos(); }
-    @Override public boolean existePorId(Long id) { return jpa.existePorId(id); }
-    @Override public void deletarPorId(Long id) { jpa.deletarPorId(id); mongo.deletarPorId(id); }
 }</pre></div>
 
 <div class="code-editor-wrap"><span class="code-filepath">infrastructure/config/CoreBeansConfig.java</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-infrastructure/src/main/java/com/loja/infrastructure/config/CoreBeansConfig.java">package com.loja.infrastructure.config;
 
+import com.loja.application.ProdutoServiceImpl;
 import com.loja.domain.ProdutoRepository;
 import com.loja.domain.ProdutoService;
-import com.loja.application.ProdutoServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/** Ponte Spring → classes puras (domain/application). Não polui o domínio com @Service. */
+/**
+ * Ponte Spring → classes puras (domain/application). Não polui o domínio com @Service.
+ * O ProdutoRepository injetado aqui é o escolhido pelo PersistenceConfig —
+ * o service não sabe (nem precisa saber) qual banco está por trás.
+ */
 @Configuration
 public class CoreBeansConfig {
     @Bean
@@ -605,9 +799,16 @@ public class CoreBeansConfig {
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.domain.EntityScan;
+// Spring Boot 4: @EntityScan mudou de pacote (antes: org.springframework.boot.autoconfigure.domain)
+import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
+/**
+ * Ponto de entrada. Como a Main está em com.loja.presentation, o Spring só
+ * enxergaria esse pacote por padrão — por isso indicamos explicitamente:
+ * - scanBasePackages: todos os @Configuration/@RestController de com.loja;
+ * - @EnableJpaRepositories / @EntityScan: onde estão o repositório e a @Entity JPA.
+ */
 @SpringBootApplication(scanBasePackages = "com.loja")
 @EnableJpaRepositories(basePackages = "com.loja.infrastructure.persistence")
 @EntityScan(basePackages = "com.loja.infrastructure.persistence")
@@ -623,12 +824,16 @@ import com.loja.application.dto.ProdutoResponse;
 import com.loja.application.mapper.ProdutoMapper;
 import com.loja.domain.ProdutoService;
 import jakarta.validation.Valid;
+import java.net.URI;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 
-/** Controller REST — Single Responsibility: só recebe/responde HTTP. */
+/**
+ * Controller REST — Single Responsibility: só recebe/responde HTTP.
+ * 🧭 Não muda na migração para MongoDB (Tab 6-B): depende só de ProdutoService.
+ */
 @RestController
 @RequestMapping("/api/produtos")
 public class ProdutoController {
@@ -637,27 +842,39 @@ public class ProdutoController {
 
     public ProdutoController(ProdutoService service) { this.service = service; }
 
+    /** GET /api/produtos?page=0&amp;size=20 — leitura pública, paginada no banco. */
     @GetMapping
-    public List&lt;ProdutoResponse&gt; listar(@RequestParam(defaultValue="0") int page,
-                                              @RequestParam(defaultValue="20") int size)
-        return service.listarProdutos(page, size).stream().map(ProdutoMapper::toResponse).toList();
+    public List&lt;ProdutoResponse&gt; listar(@RequestParam(defaultValue = "0") int page,
+                                        @RequestParam(defaultValue = "20") int size) {
+        return service.listarProdutos(page, size).stream()
+                .map(ProdutoMapper::toResponse)
+                .toList();
     }
 
+    /** GET /api/produtos/{id} — 404 se não existir. */
     @GetMapping("/{id}")
     public ProdutoResponse obter(@PathVariable Long id) {
         return ProdutoMapper.toResponse(service.obterPorId(id));
     }
 
+    /** POST /api/produtos — 201 + header Location apontando para o recurso criado. */
     @PostMapping
     public ResponseEntity&lt;ProdutoResponse&gt; criar(@Valid @RequestBody CriarProdutoRequest req) {
         var p = service.criarProduto(ProdutoMapper.toDomain(req));
-        return ResponseEntity.status(HttpStatus.CREATED).body(ProdutoMapper.toResponse(p));
+        return ResponseEntity
+                .created(URI.create("/api/produtos/" + p.getId()))
+                .body(ProdutoMapper.toResponse(p));
     }
+
+    /** PUT /api/produtos/{id} — 200 com o produto atualizado; 404 se não existir. */
     @PutMapping("/{id}")
-    public ResponseEntity&lt;ProdutoResponse&gt; atualizar(@PathVariable Long id, @Valid @RequestBody CriarProdutoRequest req) {
-    var p = service.atualizarProduto(id, ProdutoMapper.toDomain(req));
-    return ResponseEntity.ok(ProdutoMapper.toResponse(p));
+    public ResponseEntity&lt;ProdutoResponse&gt; atualizar(@PathVariable Long id,
+                                                     @Valid @RequestBody CriarProdutoRequest req) {
+        var p = service.atualizarProduto(id, ProdutoMapper.toDomain(req));
+        return ResponseEntity.ok(ProdutoMapper.toResponse(p));
     }
+
+    /** DELETE /api/produtos/{id} — 204; 404 se não existir. */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void excluir(@PathVariable Long id) {
@@ -669,11 +886,16 @@ public class ProdutoController {
 <pre class="code-editor" data-zip-path="produtos-presentation/src/main/java/com/loja/presentation/controller/AuthController.java">package com.loja.presentation.controller;
 
 import com.loja.presentation.security.JwtService;
+import java.util.Map;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.Map;
 
-/** Endpoint público de login — emite JWT. */
+/**
+ * Endpoint público de login — emite JWT.
+ * Didático: credencial fixa (a mesma do contrato da Tab 4). Em produção,
+ * valide contra uma base de usuários com senha em hash (BCrypt/Argon2).
+ */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -686,80 +908,113 @@ public class AuthController {
     public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; login(@RequestBody Map&lt;String, String&gt; body) {
         String email = body.get("email");
         String senha = body.get("senha");
-        // TODO: validar contra base de usuários real
+
         if (!"dev@loja.com.br".equals(email) || !"SenhaForte#2026".equals(senha)) {
-            return ResponseEntity.status(401).body(Map.of(
-                "type", "https://example.com/erros/auth",
-                "title", "Unauthorized", "status", 401,
-                "detail", "Credenciais inválidas"));
+            return ResponseEntity.status(401)
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .body(Map.of(
+                    "type", "https://example.com/erros/auth",
+                    "title", "Unauthorized", "status", 401,
+                    "detail", "Credenciais inválidas"));
         }
+
         String token = jwtService.gerarToken(email, "ADMIN");
         return ResponseEntity.ok(Map.of(
-            "tokenAcesso", token, "tipo", "Bearer", "expiraEm", 3600));
+            "tokenAcesso", token,
+            "tipo", "Bearer",
+            "expiraEm", jwtService.getExpiracaoSegundos()));
     }
 }</pre></div>
 
 <div class="code-editor-wrap"><span class="code-filepath">presentation/security/JwtService.java</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-presentation/src/main/java/com/loja/presentation/security/JwtService.java">package com.loja.presentation.security;
 
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
+import java.util.Optional;
+import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import java.security.Key;
-import java.util.Date;
 
-/** Gera e valida JWT (HMAC-SHA256). */
+/**
+ * Gera e valida JWT (HMAC-SHA256) com a API do jjwt 0.12.x.
+ * (0.11 usava setSubject/parserBuilder/parseClaimsJws — hoje depreciados.)
+ */
 @Service
 public class JwtService {
 
-    private final Key key;
-    private final long expiration;
+    private final SecretKey key;
+    private final long expirationMs;
 
     public JwtService(@Value("${jwt.secret}") String secret,
-                      @Value("${jwt.expiration}") long expiration) {
-        this.key = Keys.hmacShaKeyFor(secret.getBytes());
-        this.expiration = expiration;
+                      @Value("${jwt.expiration}") long expirationMs) {
+        // UTF-8 explícito: getBytes() sem charset depende do sistema operacional
+        // (a mesma chave poderia gerar bytes diferentes em Windows e Linux).
+        // HS256 exige chave de no mínimo 256 bits (32 bytes).
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.expirationMs = expirationMs;
     }
 
     public String gerarToken(String username, String role) {
+        Date agora = new Date();
         return Jwts.builder()
-                .setSubject(username)
-                .claim("role", role)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(key, SignatureAlgorithm.HS256)
+                .subject(username)                                      // sub
+                .claim("role", role)                                    // claim própria
+                .issuedAt(agora)                                        // iat
+                .expiration(new Date(agora.getTime() + expirationMs))   // exp
+                .signWith(key, Jwts.SIG.HS256)
                 .compact();
     }
 
-    public Claims extrairClaims(String token) {
-        return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
+    /**
+     * Valida assinatura + expiração e devolve as claims, num ÚNICO parse.
+     * (Antes: isTokenValido() + extrairClaims() = o token era verificado 2x.)
+     * Token inválido, expirado ou malformado → Optional.empty().
+     */
+    public Optional&lt;Claims&gt; validar(String token) {
+        try {
+            return Optional.of(Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload());
+        } catch (JwtException | IllegalArgumentException e) {
+            return Optional.empty();
+        }
     }
 
-    public boolean isTokenValido(String token) {
-        try { extrairClaims(token); return true; }
-        catch (JwtException e) { return false; }
-    }
+    public long getExpiracaoSegundos() { return expirationMs / 1000; }
 }</pre></div>
 
 <div class="code-editor-wrap"><span class="code-filepath">presentation/security/JwtTokenFilter.java</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-presentation/src/main/java/com/loja/presentation/security/JwtTokenFilter.java">package com.loja.presentation.security;
 
-import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.List;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import java.io.IOException;
-import java.util.List;
 
-/** Filtra requisições, valida "Bearer ...", popula SecurityContext. */
-@Component
+/**
+ * Lê "Authorization: Bearer ...", valida o token e popula o SecurityContext.
+ *
+ * NÃO é @Component de propósito: o Spring Boot registra todo Filter que é bean
+ * como filtro de servlet GLOBAL — ele rodaria fora da cadeia do Spring Security
+ * também. Criado à mão no SecurityConfig, ele existe só dentro da cadeia.
+ *
+ * Se o token faltar ou for inválido, este filtro NÃO responde nada: ele só
+ * deixa a requisição sem autenticação, e o Spring Security decide — endpoint
+ * público passa; protegido cai no authenticationEntryPoint (401).
+ */
 public class JwtTokenFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
@@ -771,14 +1026,14 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         String header = req.getHeader("Authorization");
         if (header != null &amp;&amp; header.startsWith("Bearer ")) {
-            String token = header.substring(7);
-            if (jwtService.isTokenValido(token)) {
-                Claims claims = jwtService.extrairClaims(token);
+            jwtService.validar(header.substring(7)).ifPresent(claims -&gt; {
+                // Sem claim "role"? Assume USER (evita a autoridade "ROLE_null")
+                String role = claims.get("role", String.class);
                 var auth = new UsernamePasswordAuthenticationToken(
                     claims.getSubject(), null,
-                    List.of(new SimpleGrantedAuthority("ROLE_" + claims.get("role", String.class))));
+                    List.of(new SimpleGrantedAuthority("ROLE_" + (role != null ? role : "USER"))));
                 SecurityContextHolder.getContext().setAuthentication(auth);
-            }
+            });
         }
         chain.doFilter(req, res);
     }
@@ -787,6 +1042,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 <div class="code-editor-wrap"><span class="code-filepath">presentation/security/SecurityConfig.java</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-presentation/src/main/java/com/loja/presentation/security/SecurityConfig.java">package com.loja.presentation.security;
 
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -795,23 +1052,50 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+/**
+ * Regras de acesso:
+ *   /api/auth/**           → público (é o login)
+ *   GET /api/produtos/**   → público (leitura do catálogo)
+ *   /error                 → público (senão, todo erro viraria 401)
+ *   qualquer outra         → exige JWT válido
+ */
 @Configuration
 public class SecurityConfig {
 
-    private final JwtTokenFilter jwtFilter;
-
-    public SecurityConfig(JwtTokenFilter jwtFilter) { this.jwtFilter = jwtFilter; }
-
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        return http.csrf(c -> c.disable())
-            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(a -> a
-                .requestMatchers("/api/auth/**", "/hello", "/").permitAll()
+    public SecurityFilterChain filterChain(HttpSecurity http, JwtService jwtService) throws Exception {
+        // Criado aqui (não é bean) → roda só dentro da cadeia do Spring Security
+        JwtTokenFilter jwtFilter = new JwtTokenFilter(jwtService);
+
+        return http
+            .csrf(c -&gt; c.disable())                       // API stateless com token (sem cookie de sessão)
+            .sessionManagement(s -&gt; s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(e -&gt; e
+                // Sem token / token inválido → 401 (o padrão do Spring seria 403!)
+                .authenticationEntryPoint((req, res, ex) -&gt; problema(res, 401,
+                    "Unauthorized", "Token ausente, inválido ou expirado",
+                    "https://example.com/erros/auth"))
+                // Autenticado mas sem permissão → 403
+                .accessDeniedHandler((req, res, ex) -&gt; problema(res, 403,
+                    "Forbidden", "Acesso negado",
+                    "https://example.com/erros/acesso-negado")))
+            .authorizeHttpRequests(a -&gt; a
+                .requestMatchers("/api/auth/**", "/error").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/produtos/**").permitAll()
                 .anyRequest().authenticated())
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
             .build();
+    }
+
+    /** Escreve um application/problem+json (RFC 7807) direto na resposta. */
+    private static void problema(HttpServletResponse res, int status, String title,
+                                 String detail, String type) throws IOException {
+        res.setStatus(status);
+        res.setContentType("application/problem+json");
+        res.setCharacterEncoding("UTF-8");
+        res.getWriter().write(
+            "{\"type\":\"" + type + "\",\"title\":\"" + title + "\",\"status\":" + status
+            + ",\"detail\":\"" + detail + "\"}");
     }
 }</pre></div>
 
@@ -819,43 +1103,77 @@ public class SecurityConfig {
 <pre class="code-editor" data-zip-path="produtos-presentation/src/main/java/com/loja/presentation/exception/GlobalExceptionHandler.java">package com.loja.presentation.exception;
 
 import com.loja.domain.exception.DomainException;
-import org.springframework.http.*;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.*;
+import com.loja.domain.exception.RecursoNaoEncontradoException;
 import java.net.URI;
 import java.util.stream.Collectors;
+import org.springframework.http.*;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-/** Captura exceções e retorna RFC 7807 (application/problem+json). */
+/**
+ * Captura exceções e retorna RFC 7807 (application/problem+json).
+ * O Spring escolhe o handler MAIS ESPECÍFICO: RecursoNaoEncontradoException
+ * (subclasse) vai para o 404, as demais DomainException para o 400.
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(DomainException.class)
-    public ResponseEntity&lt;ProblemDetail&gt; handleDomain(DomainException ex) {
-        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
-        pd.setType(URI.create("https://example.com/erros/dominio"));
-        pd.setTitle("Regra de negócio violada");
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .contentType(MediaType.APPLICATION_PROBLEM_JSON).body(pd);
+    /** 404 — recurso inexistente (GET/PUT/DELETE de id que não existe). */
+    @ExceptionHandler(RecursoNaoEncontradoException.class)
+    public ResponseEntity&lt;ProblemDetail&gt; handleNotFound(RecursoNaoEncontradoException ex) {
+        return problema(HttpStatus.NOT_FOUND, "https://example.com/erros/nao-encontrado",
+                "Recurso não encontrado", ex.getMessage());
     }
 
+    /** 400 — regra de negócio violada. */
+    @ExceptionHandler(DomainException.class)
+    public ResponseEntity&lt;ProblemDetail&gt; handleDomain(DomainException ex) {
+        return problema(HttpStatus.BAD_REQUEST, "https://example.com/erros/dominio",
+                "Regra de negócio violada", ex.getMessage());
+    }
+
+    /** 400 — Bean Validation (@Valid no DTO). */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity&lt;ProblemDetail&gt; handleValidation(MethodArgumentNotValidException ex) {
         String detail = ex.getBindingResult().getFieldErrors().stream()
-                .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
+                .map(fe -&gt; fe.getField() + ": " + fe.getDefaultMessage())
                 .collect(Collectors.joining("; "));
-        ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, detail);
-        pd.setType(URI.create("https://example.com/erros/validacao"));
-        pd.setTitle("Requisição inválida");
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .contentType(MediaType.APPLICATION_PROBLEM_JSON).body(pd);
+        return problema(HttpStatus.BAD_REQUEST, "https://example.com/erros/validacao",
+                "Requisição inválida", detail);
+    }
+
+    /** 400 — JSON malformado no corpo. */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity&lt;ProblemDetail&gt; handleJsonInvalido(HttpMessageNotReadableException ex) {
+        return problema(HttpStatus.BAD_REQUEST, "https://example.com/erros/validacao",
+                "Requisição inválida", "Corpo JSON malformado");
+    }
+
+    /** 400 — parâmetro com tipo errado (ex.: /api/produtos/abc). */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity&lt;ProblemDetail&gt; handleTipo(MethodArgumentTypeMismatchException ex) {
+        return problema(HttpStatus.BAD_REQUEST, "https://example.com/erros/validacao",
+                "Requisição inválida", "Parâmetro '" + ex.getName() + "' com formato inválido");
+    }
+
+    private static ResponseEntity&lt;ProblemDetail&gt; problema(HttpStatus status, String type,
+                                                          String title, String detail) {
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(status, detail);
+        pd.setType(URI.create(type));
+        pd.setTitle(title);
+        return ResponseEntity.status(status)
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .body(pd);
     }
 }</pre></div>
 <div class="lab-container">
 <div class="lab-header"><h3>🔑 JWT na prática (Java): quem faz o quê</h3></div>
 <ol class="step-number-list">
 <li><strong>Emissão — <code>JwtService.gerarToken()</code>:</strong> monta claims (<code>sub</code>, <code>role</code>, <code>iat</code>, <code>exp</code>) e assina com <code>HS256</code> usando o secret vindo de <code>${jwt.secret}</code>.</li>
-<li><strong>Verificação — <code>JwtTokenFilter</code>:</strong> em <strong>toda</strong> request, lê <code>Authorization: Bearer …</code>, valida assinatura/expiração e popula o <code>SecurityContext</code>; se inválido → 401 problem+json.</li>
-<li><strong>Fio condutor — <code>SecurityConfig</code>:</strong> registra o filtro antes do <code>UsernamePasswordAuthenticationFilter</code>, sessão <code>STATELESS</code>, libera <code>/api/auth/**</code> e GETs públicos, exige auth no resto.</li>
+<li><strong>Verificação — <code>JwtTokenFilter</code>:</strong> em <strong>toda</strong> request, lê <code>Authorization: Bearer …</code>, valida assinatura/expiração num único parse e popula o <code>SecurityContext</code>. Se o token faltar ou for inválido, o filtro <strong>não responde</strong>: a request segue sem autenticação e, se o endpoint for protegido, o <code>authenticationEntryPoint</code> responde <strong>401 problem+json</strong> (sem ele, o Spring responderia 403).</li>
+<li><strong>Fio condutor — <code>SecurityConfig</code>:</strong> cria o filtro (ele <strong>não</strong> é <code>@Component</code>, para não ser registrado também como filtro global do servlet), sessão <code>STATELESS</code>, libera <code>/api/auth/**</code>, <code>/error</code> e GETs de produtos, exige auth no resto.</li>
 <li><strong>Secret:</strong> vem de <code>${jwt.secret}</code> no <code>application.yml</code> em dev; em produção use <strong>variável de ambiente</strong> (<code>export JWT_SECRET=…</code>) ou secret manager — nunca commitado.</li>
 </ol>
 <div class="term-help"><strong>🖥️ Testar:</strong> <span class="ide-tag java">IntelliJ</span> <kbd>Alt+F12</kbd> → login p/ obter token → <code>curl -H "Authorization: Bearer $TOKEN" …</code> (roteiro completo na Tab 4).</div>
@@ -863,26 +1181,71 @@ public class GlobalExceptionHandler {
 <div class="code-editor-wrap"><span class="code-filepath">presentation/src/main/resources/application.yml</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-presentation/src/main/resources/application.yml">server:
   port: 8080
+
 spring:
   datasource:
+    # Banco da Tab 5 (container mysql-db). Em Docker: SPRING_DATASOURCE_URL
     url: jdbc:mysql://localhost:3306/loja_db?useSSL=false&amp;serverTimezone=UTC
     username: devuser
     password: devpass
   jpa:
-    hibernate: { ddl-auto: validate }
-  data:
-    mongodb:
-      uri: mongodb://root:root123@localhost:27017/loja_nosql?authSource=admin
+    hibernate:
+      ddl-auto: validate      # o schema vem dos scripts SQL; o Hibernate só CONFERE
+    open-in-view: false       # não segura conexão aberta durante a renderização da resposta
+
+# 🔀 Ponto de troca do banco (lido pelo PersistenceConfig)
+#   relational → MySQL (esta Tab 6)
+#   dual | nosql → MongoDB (implementados na Tab 6-B)
 persistence:
-  provider: relational   # relational | nosql | dual
+  provider: relational
+
 jwt:
+  # Dev apenas! Produção: variável de ambiente JWT_SECRET (nunca commitar)
   secret: MinhaChaveSecretaSuperSeguraLojaAPI2026DeveTerMin32Caracteres
-  expiration: 3600000</pre></div>
+  expiration: 3600000       # 1 hora, em milissegundos</pre></div>
+<div class="code-editor-wrap"><span class="code-filepath">terminal do IntelliJ - compilar, subir e testar com curl</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor"># ──────────────────────────────────────────────────────────────
+# 1) Compilar e instalar os 4 módulos (na raiz, onde está o pom.xml pai)
+#    install = coloca domain/application/infrastructure no repositório local,
+#    para o módulo de apresentação encontrá-los
+# ──────────────────────────────────────────────────────────────
+mvn -q -DskipTests install
+
+# 2) MySQL da Tab 5 no ar (banco loja_db com a tabela produtos)
+#    e então subir a API
+mvn -pl produtos-presentation spring-boot:run
+
+# ── Em OUTRO terminal ──
+# 3) Login (público) → token
+TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"dev@loja.com.br","senha":"SenhaForte#2026"}' | jq -r '.tokenAcesso')
+
+# 4) GET público, paginado no banco → 200
+curl -i "http://localhost:8080/api/produtos?page=0&amp;size=10"
+
+# 5) POST SEM token → 401 problem+json (antes: 403)
+curl -i -X POST http://localhost:8080/api/produtos \
+  -H "Content-Type: application/json" -d '{"nome":"Mouse","preco":99.90,"estoque":5}'
+
+# 6) POST COM token → 201 + header Location
+curl -i -X POST http://localhost:8080/api/produtos \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"nome":"Mouse","preco":99.90,"estoque":5}'
+
+# 7) GET de id inexistente → 404 problem+json (antes: 400)
+curl -i http://localhost:8080/api/produtos/999999
+
+# 8) Paginação inválida → 400 (antes: 500)
+curl -i "http://localhost:8080/api/produtos?page=-1"</pre></div>
+<div class="success-banner"><strong>✅ Sucesso esperado:</strong> login 200 com <code>tokenAcesso</code> · GET 200 · POST sem token <strong>401</strong> · POST com token <strong>201</strong> + <code>Location</code> · id inexistente <strong>404</strong> · <code>page=-1</code> <strong>400</strong>.</div>
+<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> <code>Schema-validation: wrong column type ... found [int], but expecting [bigint]</code> → o <code>ddl-auto: validate</code> confere a tabela: <code>id</code> precisa ser <code>BIGINT</code> (o campo é <code>Long</code>) — ajuste o script SQL da Tab 5; <code>Could not resolve dependencies ... produtos-core-domain</code> → rode o <code>mvn install</code> na raiz antes do <code>-pl</code>; <code>Communications link failure</code> → MySQL da Tab 5 fora do ar.</div>
+
 </div>
 
 <!-- ══════════ SEÇÃO 5: TDD ══════════ -->
 <div class="lab-container">
-<div class="lab-header"><h3>🧪 TDD: 9 testes (JUnit 5 + Mockito)</h3></div>
+<div class="lab-header"><h3>🧪 TDD: 11 testes (JUnit 5 + Mockito)</h3></div>
 <h4 class="diag-title">📐 D-13 <span class="dt-type">Fluxo</span> — Ciclo TDD Red-Green-Refactor</h4>
 <div class="mermaid-box er-small" data-code='flowchart LR
     R["🔴 RED: escreve teste que falha"] --> G["🟢 GREEN: código mínimo p/ passar"]
@@ -890,19 +1253,26 @@ jwt:
     RF --> R'>
 <div class="mermaid"></div>
 </div>
-<div class="code-editor-wrap"><span class="code-filepath">application/ProdutoServiceTest.java (9 testes — AAA: Arrange, Act, Assert)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<div class="code-editor-wrap"><span class="code-filepath">application/ProdutoServiceTest.java (11 testes — AAA: Arrange, Act, Assert)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-core-application/src/test/java/com/loja/application/ProdutoServiceTest.java">package com.loja.application;
 
 import com.loja.domain.Produto;
 import com.loja.domain.ProdutoRepository;
 import com.loja.domain.exception.DomainException;
+import com.loja.domain.exception.RecursoNaoEncontradoException;
 import org.junit.jupiter.api.*;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-/** Suíte TDD completa (padrão AAA: Arrange→Act→Assert). */
+/**
+ * Suíte TDD completa (padrão AAA: Arrange → Act → Assert).
+ *
+ * 🧭 Estes testes mockam a PORTA ProdutoRepository: não sabem se o banco é
+ * MySQL ou MongoDB. Por isso continuam valendo, sem alteração, na Tab 6-B.
+ */
 class ProdutoServiceTest {
 
     private ProdutoRepository repoMock;
@@ -916,40 +1286,91 @@ class ProdutoServiceTest {
 
     private Produto valido() { return new Produto(null, "Teclado", BigDecimal.TEN, 1); }
 
+    // ══════════ CRIAR ══════════
+
     @Test @DisplayName("🟢 cria quando válido e delega persistência")
     void criaQuandoValido() {
-        when(repoMock.salvar(any())).thenAnswer(i -> i.getArgument(0));
+        // Arrange: o "banco" devolve o produto com id gerado
+        when(repoMock.salvar(any())).thenAnswer(i -&gt; {
+            Produto p = i.getArgument(0);
+            return new Produto(1L, p.getNome(), p.getPreco(), p.getEstoque());
+        });
+        // Act
         Produto p = service.criarProduto(valido());
-        assertNotNull(p);
+        // Assert: usa o RETORNO da porta (que traz o id)
+        assertEquals(1L, p.getId());
         verify(repoMock).salvar(any());
     }
 
-    @Test @DisplayName("🔴 recusa preço <= 0")
+    @Test @DisplayName("🔴 recusa preço &lt;= 0")
     void recusaPrecoInvalido() {
         assertThrows(DomainException.class,
-            () -> service.criarProduto(new Produto(null, "X", BigDecimal.ZERO, 1)));
+            () -&gt; service.criarProduto(new Produto(null, "Xa", BigDecimal.ZERO, 1)));
         verify(repoMock, never()).salvar(any());
     }
 
     @Test @DisplayName("🔴 recusa nome vazio")
     void recusaNomeVazio() {
         assertThrows(DomainException.class,
-            () -> service.criarProduto(new Produto(null, "  ", BigDecimal.TEN, 1)));
+            () -&gt; service.criarProduto(new Produto(null, "  ", BigDecimal.TEN, 1)));
         verify(repoMock, never()).salvar(any());
     }
 
-    @Test @DisplayName("🔴 recusa nome curto (< 2 chars)")
+    @Test @DisplayName("🔴 recusa nome curto (&lt; 2 chars)")
     void recusaNomeCurto() {
         assertThrows(DomainException.class,
-            () -> service.criarProduto(new Produto(null, "A", BigDecimal.TEN, 1)));
+            () -&gt; service.criarProduto(new Produto(null, "A", BigDecimal.TEN, 1)));
         verify(repoMock, never()).salvar(any());
     }
 
-    @Test @DisplayName("🟢 obter inexistente lança DomainException")
+    // ══════════ LISTAR (paginado) ══════════
+
+    @Test @DisplayName("🟢 listar delega a paginação ao repositório (no banco)")
+    void listarDelegaPaginacao() {
+        when(repoMock.listarPagina(0, 20)).thenReturn(List.of(new Produto(1L, "Teclado", BigDecimal.TEN, 1)));
+        List&lt;Produto&gt; pagina = service.listarProdutos(0, 20);
+        assertEquals(1, pagina.size());
+        verify(repoMock).listarPagina(0, 20);
+        verify(repoMock, never()).listarTodos();   // nada de carregar tudo em memória
+    }
+
+    @Test @DisplayName("🔴 listar recusa page negativa e size fora de 1..100")
+    void listarRecusaPaginacaoInvalida() {
+        assertThrows(DomainException.class, () -&gt; service.listarProdutos(-1, 20));
+        assertThrows(DomainException.class, () -&gt; service.listarProdutos(0, 0));
+        assertThrows(DomainException.class, () -&gt; service.listarProdutos(0, 101));
+        verifyNoInteractions(repoMock);
+    }
+
+    // ══════════ OBTER ══════════
+
+    @Test @DisplayName("🔴 obter inexistente lança RecursoNaoEncontradoException (404)")
     void obterInexistenteLanca() {
         when(repoMock.buscarPorId(999L)).thenReturn(Optional.empty());
-        assertThrows(DomainException.class, () -> service.obterPorId(999L));
+        assertThrows(RecursoNaoEncontradoException.class, () -&gt; service.obterPorId(999L));
     }
+
+    // ══════════ ATUALIZAR ══════════
+
+    @Test @DisplayName("🟢 atualiza existente e delega persistência")
+    void atualizarExistente() {
+        when(repoMock.buscarPorId(1L)).thenReturn(Optional.of(new Produto(1L, "Teclado", BigDecimal.TEN, 1)));
+        when(repoMock.salvar(any())).thenAnswer(i -&gt; i.getArgument(0));
+        Produto p = service.atualizarProduto(1L, new Produto(null, "Teclado V2", BigDecimal.TEN, 2));
+        assertEquals("Teclado V2", p.getNome());
+        assertEquals(1L, p.getId());               // o id é o do produto existente
+        verify(repoMock).salvar(any());
+    }
+
+    @Test @DisplayName("🔴 atualizar inexistente lança RecursoNaoEncontradoException (404)")
+    void atualizarInexistenteLanca() {
+        when(repoMock.buscarPorId(999L)).thenReturn(Optional.empty());
+        assertThrows(RecursoNaoEncontradoException.class,
+            () -&gt; service.atualizarProduto(999L, new Produto(null, "Xa", BigDecimal.TEN, 1)));
+        verify(repoMock, never()).salvar(any());
+    }
+
+    // ══════════ EXCLUIR ══════════
 
     @Test @DisplayName("🟢 excluir existente delega ao repositório")
     void excluirExistente() {
@@ -958,40 +1379,40 @@ class ProdutoServiceTest {
         verify(repoMock).deletarPorId(1L);
     }
 
-    @Test @DisplayName("🔴 não exclui inexistente")
+    @Test @DisplayName("🔴 não exclui inexistente (404)")
     void excluirInexistenteLanca() {
         when(repoMock.existePorId(2L)).thenReturn(false);
-        assertThrows(DomainException.class, () -> service.excluirProduto(2L));
+        assertThrows(RecursoNaoEncontradoException.class, () -&gt; service.excluirProduto(2L));
         verify(repoMock, never()).deletarPorId(anyLong());
-        }
-        @Test @DisplayName("🟢 atualiza existente e delega persistência")
-        void atualizarExistente() {
-        when(repoMock.buscarPorId(1L)).thenReturn(Optional.of(new Produto(1L, "Teclado", BigDecimal.TEN, 1)));
-        when(repoMock.salvar(any())).thenAnswer(i -> i.getArgument(0));
-        Produto p = service.atualizarProduto(1L, new Produto(1L, "Teclado V2", BigDecimal.TEN, 2));
-        assertEquals("Teclado V2", p.getNome());
-        verify(repoMock).salvar(any());
-        }
-        @Test @DisplayName("🔴 atualizar inexistente lança DomainException")
-        void atualizarInexistenteLanca() {
-        when(repoMock.buscarPorId(999L)).thenReturn(Optional.empty());
-        assertThrows(DomainException.class, () -> service.atualizarProduto(999L, new Produto(999L, "X", BigDecimal.TEN, 1)));
-        verify(repoMock, never()).salvar(any());
-        }
     }
-</pre></div>
-<div class="term-help"><strong>🖥️ Rodar testes:</strong> <span class="ide-tag java">IntelliJ</span> <kbd>Alt+F12</kbd> → <code>./mvnw -pl produtos-core-application test</code>. Ou clique no ▶ verde ao lado da classe de teste.</div>
-<div class="success-banner"><strong>✅ Checklist:</strong> 9 testes de service (criar, listar, obter, atualizar, excluir + bordas) → todos verdes.</div>
+}</pre></div>
+<div class="term-help"><strong>🖥️ Rodar testes:</strong> <span class="ide-tag java">IntelliJ</span> <kbd>Alt+F12</kbd> → <code>mvn -pl produtos-core-application -am test</code> (<code>-am</code> = "also make": compila junto o <code>produtos-core-domain</code>, do qual o módulo depende). Ou clique no ▶ verde ao lado da classe de teste.</div>
+<div class="success-banner"><strong>✅ Checklist:</strong> 11 testes de service (criar, listar paginado, obter, atualizar, excluir + bordas e 404) → todos verdes. 🧭 Eles mockam a porta <code>ProdutoRepository</code>: valem sem alteração para MySQL e para MongoDB (Tab 6-B).</div>
 </div>
 
-<!-- ══════════ SEÇÃO 6: MIGRAÇÃO ══════════ -->
+<!-- ══════════ SEÇÃO 6: PREPARAÇÃO PARA A MIGRAÇÃO ══════════ -->
 <div class="lab-container">
-<div class="lab-header"><h3>🔄 Migração relacional → NoSQL (Strangler Fig — Java)</h3></div>
+<div class="lab-header"><h3>🧭 Preparação para a migração relacional → MongoDB (executada na Tab 6-B)</h3></div>
 <div class="deep-concept-box" style="margin-bottom:14px">
-<p><strong>Motivações:</strong> escala horizontal, schema flexível. <strong>Riscos:</strong> perda de ACID, consistência eventual. A migração acontece DENTRO da API, via toggle <code>persistence.provider</code> no <code>application.yml</code>, trocando qual adapter é injetado.</p>
-<p><strong>Aprofundar:</strong> <a class="ext" href="https://martinfowler.com/bliki/PolyglotPersistence.html" target="_blank">Polyglot Persistence</a> · <a class="ext" href="https://en.wikipedia.org/wiki/Strangler_fig_pattern" target="_blank">Strangler Fig</a>.</p>
+<p><strong>Motivações:</strong> escala horizontal, schema flexível. <strong>Riscos:</strong> perda de ACID entre documentos, consistência eventual. A migração acontece <strong>dentro da API</strong>, sem downtime, via toggle <code>persistence.provider</code> trocando qual adapter implementa a porta <code>ProdutoRepository</code>.</p>
+<p>Esta aba <strong>não migra</strong> — ela deixa o código <strong>pronto</strong> para migrar. A execução (adapters Mongo, dual-write, backfill e reconciliação) está na <a href="javascript:switchTab('tab6b')" style="color:var(--primary);text-decoration:underline">Tab 6-B</a>.</p>
+<p><strong>Aprofundar:</strong> <a class="ext" href="https://martinfowler.com/bliki/StranglerFigApplication.html" target="_blank">Strangler Fig (Fowler)</a> · <a class="ext" href="https://martinfowler.com/bliki/ParallelChange.html" target="_blank">Parallel Change</a>.</p>
 </div>
-<div class="adr"><h5>ADR-004 · Migração Strangler Fig com toggle <span class="stack-tag">☕ Java</span><span class="status">Aceita</span></h5>
+<div class="table-wrap mb-3">
+<table>
+<thead><tr><th>O que foi preparado</th><th>Onde</th><th>Por que facilita a migração</th></tr></thead>
+<tbody>
+<tr><td>Porta sem tipos do Spring Data, com paginação <code>(page, size)</code> ordenada por id</td><td><code>ProdutoRepository</code></td><td>O adapter Mongo implementa a mesma semântica (<code>sort _id · skip · limit</code>)</td></tr>
+<tr><td><code>salvar</code> devolve o produto com o id gerado</td><td><code>ProdutoRepository</code> / service</td><td>No Mongo o id virá de uma sequência — quem chama já usa o retorno</td></tr>
+<tr><td>Um único ponto de escolha do adapter</td><td><code>PersistenceConfig</code></td><td>A Tab 6-B só adiciona os <code>case "dual"</code> e <code>"nosql"</code></td></tr>
+<tr><td>Adapter JPA sem anotações de condição</td><td><code>ProdutoRepositoryAdapter</code></td><td>Reaproveitado dentro do dual-write e como origem do backfill</td></tr>
+<tr><td>Domínio e DTOs sem anotações de banco</td><td><code>Produto</code>, <code>ProdutoResponse</code></td><td>O contrato da API não muda com o banco</td></tr>
+<tr><td>Testes mockam a porta</td><td><code>ProdutoServiceTest</code></td><td>Os 11 testes provam "funciona como antes" nos dois bancos</td></tr>
+<tr><td><code>id</code> <code>Long</code> preservado</td><td>Domínio</td><td>No Mongo vira o próprio <code>_id</code> — URLs e ids migrados não mudam</td></tr>
+</tbody>
+</table>
+</div>
+<div class="adr"><h5>ADR-004 · Migração Strangler Fig com toggle <span class="stack-tag">☕ Java</span><span class="status">Aceita · executada na Tab 6-B</span></h5>
 <p><b>Contexto:</b> catálogo com atributos variáveis cresce; o relacional limita o schema; necessidade de escala horizontal sem downtime.</p>
 <p><b>Decisão:</b> migrar em 4 fases (dual-write → backfill → cut-over → desligamento) controladas por toggle (<code>persistence.provider</code> / <code>Persistence:Provider</code>), com a API escrevendo/lendo via porta <code>ProdutoRepository</code>/<code>IProdutoRepository</code>.</p>
 <p><b>Alternativas consideradas:</b> big-bang (rejeitada: downtime e risco); manter só relacional (rejeitada: limite de schema); CDC + ETL externo (rejeitada: complexidade de infra).</p>
@@ -1014,52 +1435,52 @@ class ProdutoServiceTest {
 </tbody>
 </table>
 </div>
-<div class="code-editor-wrap"><span class="code-filepath">infrastructure/migration/BackfillJob.java (fase 2)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor" data-zip-path="produtos-infrastructure/src/main/java/com/loja/infrastructure/migration/BackfillJob.java">package com.loja.infrastructure.migration;
-
-import com.loja.domain.Produto;
-import com.loja.infrastructure.persistence.ProdutoRepositoryAdapter;
-import com.loja.infrastructure.mongo.MongoProdutoRepository;
-import org.springframework.stereotype.Component;
-
-/** Backfill idempotente: copia dados históricos do MySQL → Mongo (fase 2). */
-@Component
-public class BackfillJob {
-
-    private final ProdutoRepositoryAdapter jpa;
-    private final MongoProdutoRepository mongo;
-
-    public BackfillJob(ProdutoRepositoryAdapter jpa, MongoProdutoRepository mongo) {
-        this.jpa = jpa; this.mongo = mongo;
-    }
-
-    public void run() {
-        for (Produto p : jpa.listarTodos()) {
-            mongo.salvar(p);   // upsert via idLegado (idempotente)
-        }
-    }
-}</pre></div>
-<div class="code-editor-wrap"><span class="code-filepath">application.yml (toggle)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<div class="code-editor-wrap"><span class="code-filepath">application.yml (toggle — valores dual/nosql só funcionam a partir da Tab 6-B)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor">persistence:
-  provider: dual   # dual | nosql | relational (rollback)</pre></div>
-<div class="warning-banner"><strong>⚠️ Regras de ouro:</strong> (1) documento guarda <code>idLegado</code>; (2) backfill idempotente; (3) monitore 7 dias; (4) rollback = 1 chave.</div>
+  provider: relational   # relational (Tab 6) | dual | nosql (Tab 6-B)</pre></div>
+<div class="warning-banner"><strong>⚠️ Teste o ponto de troca:</strong> suba com <code>PERSISTENCE_PROVIDER=dual mvn -pl produtos-presentation spring-boot:run</code> → a API <strong>não sobe</strong> e mostra "ainda não implementado ... Tab 6-B". Isso é <em>fail fast</em>: melhor falhar na inicialização do que na primeira request.</div>
 </div>
 
 <!-- ══════════ SEÇÃO 7: DOCKER ══════════ -->
 <div class="lab-container">
 <div class="lab-header"><h3>🐳 Docker: build, run e teste (IntelliJ)</h3></div>
 <div class="deep-concept-box" style="margin-bottom:14px"><p><strong>Dockerfile multi-stage:</strong> separa build (Maven/JDK) de runtime (JRE), gerando imagem pequena. <a class="ext" href="https://docs.docker.com/build/building/multi-stage/" target="_blank">Multi-stage docs</a>.</p></div>
-<div class="code-editor-wrap"><span class="code-filepath">Dockerfile (Java multi-stage)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor" data-zip-path="java/Dockerfile">FROM maven:3.9-eclipse-temurin-21 AS build
+<div class="code-editor-wrap"><span class="code-filepath">Dockerfile (Java multi-stage — na raiz do projeto)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="Dockerfile"># ══════════════════════════════════════════════════════════
+# ESTÁGIO 1: BUILD — Maven + JDK 21 (compila e empacota)
+# ══════════════════════════════════════════════════════════
+FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
-COPY . .
-RUN mvn -q -DskipTests package
 
+# Copia primeiro SÓ os POMs e baixa as dependências: enquanto os POMs não
+# mudarem, o Docker reaproveita esta camada (build muito mais rápido)
+COPY pom.xml .
+COPY produtos-core-domain/pom.xml produtos-core-domain/
+COPY produtos-core-application/pom.xml produtos-core-application/
+COPY produtos-infrastructure/pom.xml produtos-infrastructure/
+COPY produtos-presentation/pom.xml produtos-presentation/
+RUN mvn -q -B dependency:go-offline || true
+
+# Agora o código-fonte e o empacotamento (testes rodam no CI, não aqui)
+COPY . .
+RUN mvn -q -B -DskipTests package
+
+# ══════════════════════════════════════════════════════════
+# ESTÁGIO 2: RUNTIME — só o JRE 21 (imagem bem menor)
+# ══════════════════════════════════════════════════════════
 FROM eclipse-temurin:21-jre
 WORKDIR /app
-COPY --from=build /app/produtos-presentation/target/*.jar app.jar
+# O spring-boot-maven-plugin gera o JAR executável do módulo de apresentação
+COPY --from=build /app/produtos-presentation/target/produtos-presentation-*.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java","-jar","app.jar"]</pre></div>
+<div class="code-editor-wrap"><span class="code-filepath">.dockerignore</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path=".dockerignore"># O Dockerfile faz "COPY . ." — não envie artefatos locais nem configs de IDE
+**/target/
+.idea/
+*.iml
+.git/</pre></div>
+
 <div class="term-help"><strong>🖥️ IntelliJ:</strong> <kbd>Alt+F12</kbd>. Plugin Docker: <em>View → Tool Windows → Services</em> → Docker para ver containers, logs e inspect visualmente.</div>
 <div class="code-editor-wrap"><span class="code-filepath">terminal do IntelliJ - build, run, test</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor"># Build da imagem
@@ -1070,15 +1491,16 @@ docker run -d --name loja-java -p 8080:8080 \
   -e SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/loja_db \
   -e SPRING_DATASOURCE_USERNAME=devuser \
   -e SPRING_DATASOURCE_PASSWORD=devpass \
+  -e PERSISTENCE_PROVIDER=relational \
   loja-api-java:latest
-# Testa
-curl -i http://localhost:8080/hello
-curl -i http://localhost:8080/api/produtos
+# Testa: GET público → 200; POST sem token → 401
+curl -i "http://localhost:8080/api/produtos?page=0&amp;size=10"
+curl -i -X POST http://localhost:8080/api/produtos -H "Content-Type: application/json" -d '{"nome":"Mouse","preco":99.90,"estoque":5}'
 # Logs em tempo real
 docker logs -f loja-java
 # Status
 docker ps</pre></div>
-<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> porta 8080 já em uso; rede <code>loja_dev_network</code> não existe (suba o compose da Tab 5 primeiro); esquecer <code>-DskipTests</code> no build de imagem.</div>
+<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> porta 8080 já em uso; rede <code>loja_dev_network</code> não existe (suba o compose da Tab 5 primeiro); <code>Dockerfile</code> fora da raiz do projeto (ele precisa enxergar o <code>pom.xml</code> pai e os 4 módulos); <code>target/</code> local copiado para a imagem (por isso o <code>.dockerignore</code>).</div>
 </div>
 
 <!-- ══════════ SEÇÃO 8: CI/CD ══════════ -->
@@ -1141,7 +1563,7 @@ test:java:                              # job "test:java"
 <div class="mermaid-box er-small" data-code='flowchart LR
     U["👤 Usuário"] -->|HTTPS+JWT| API["🖥️ Loja API Java :8080"]
     API -->|3306| MY["🐬 MySQL"]
-    API -->|27017| MO["🍃 Mongo"]'>
+    API -.->|27017 · Tab 6-B| MO["🍃 Mongo"]'>
 <div class="mermaid"></div>
 </div>
 <h4 class="diag-title">📐 D-09 <span class="dt-type">C4 · Nível 3 (Componente)</span> — Dentro da Loja API Java</h4>
@@ -1150,8 +1572,9 @@ test:java:                              # job "test:java"
       C["ProdutoController"] --> S["ProdutoServiceImpl"]
       S --> R["ProdutoRepository (porta)"]
       R -.-> A1["Adapter JPA"]
-      R -.-> A2["Adapter Mongo"]
-      R -.-> A3["DualWrite"]
+      R -.-> A2["Adapter Mongo (Tab 6-B)"]
+      R -.-> A3["DualWrite (Tab 6-B)"]
+      PC["PersistenceConfig 🔀"] --> R
       EXH["GlobalExceptionHandler"]
     end'>
 <div class="mermaid"></div>
@@ -1174,17 +1597,35 @@ test:java:                              # job "test:java"
 </div>
 <h4 class="diag-title">📐 D-11 <span class="dt-type">UML · Classes</span> — Modelo de domínio + portas (Java)</h4>
 <div class="mermaid-box er-small" data-code='classDiagram
-    class Produto { +Long id +String nome +BigDecimal preco +Integer estoque }
-    class ProdutoService { <<interface>> +criarProduto() +listarProdutos() +obterPorId() +excluirProduto() }
-    class ProdutoRepository { <<interface>> +salvar() +buscarPorId() +listarTodos() +existePorId() +deletarPorId() }
+    class Produto {
+      +Long id
+      +String nome
+      +BigDecimal preco
+      +Integer estoque
+    }
+    class ProdutoService {
+      <<interface>>
+      +criarProduto()
+      +listarProdutos(page, size)
+      +obterPorId()
+      +atualizarProduto()
+      +excluirProduto()
+    }
+    class ProdutoRepository {
+      <<interface>>
+      +salvar()
+      +buscarPorId()
+      +listarPagina(page, size)
+      +listarTodos()
+      +existePorId()
+      +deletarPorId()
+    }
     class ProdutoServiceImpl
-    class AdapterJpa
-    class AdapterMongo
-    class DualWrite
+    class ProdutoRepositoryAdapter
+    class PersistenceConfig
     ProdutoService <|.. ProdutoServiceImpl
-    ProdutoRepository <|.. AdapterJpa
-    ProdutoRepository <|.. AdapterMongo
-    ProdutoRepository <|.. DualWrite
+    ProdutoRepository <|.. ProdutoRepositoryAdapter
+    PersistenceConfig ..> ProdutoRepositoryAdapter : cria
     ProdutoServiceImpl --> ProdutoRepository
     ProdutoRepository --> Produto'>
 <div class="mermaid"></div>
@@ -1227,20 +1668,20 @@ test:java:                              # job "test:java"
 <p><b>Alternativas consideradas:</b> JDBC puro (rejeitada: boilerplate); jOOQ (rejeitada: curva).</p>
 <p><b>Consequências:</b> (+) produtividade alta; (−) abstração pode gerar queries ineficientes (monitorar).</p>
 <p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend Java, DBA.</p></div>
-<div class="adr"><h5>ADR-004 · Migração Strangler Fig com toggle <span class="stack-tag">☕ Java</span><span class="status">Aceita</span></h5>
+<div class="adr"><h5>ADR-004 · Migração Strangler Fig com toggle <span class="stack-tag">☕ Java</span><span class="status">Aceita · executada na Tab 6-B</span></h5>
 <p><b>Contexto:</b> catálogo com atributos variáveis cresce; relacional limita schema.</p>
 <p><b>Decisão:</b> migrar em 4 fases controladas por <code>persistence.provider</code> no <code>application.yml</code>.</p>
 <p><b>Alternativas consideradas:</b> big-bang (rejeitada: risco); manter só relacional (rejeitada: limite).</p>
 <p><b>Consequências:</b> (+) rollback trivial (1 chave), sem downtime; (−) complexidade temporária de 2 adapters.</p>
 <p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend Java, QA, SRE.</p></div>
-<div class="adr"><h5>ADR-006 · Persistência poliglota MySQL+Mongo <span class="stack-tag">☕ Java</span><span class="status">Aceita</span></h5>
-<p><b>Contexto:</b> dados relacionais transacionais + catálogo flexível.</p>
-<p><b>Decisão:</b> MySQL p/ transações, Mongo p/ catálogo, ambos no dev via compose.</p>
-<p><b>Alternativas consideradas:</b> só relacional (rejeitada); só NoSQL (rejeitada: transações).</p>
-<p><b>Consequências:</b> (+) flexibilidade; (−) disciplina de consistência entre bases.</p>
-<p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend Java, SRE, Dados.</p></div>
+<div class="adr"><h5>ADR-J3 · Ponto único de escolha do adapter <span class="stack-tag">☕ Java</span><span class="status">Aceita</span></h5>
+<p><b>Contexto:</b> adapters com <code>@ConditionalOnProperty</code> espalhados e um job que dependia de dois adapters ao mesmo tempo impediam a aplicação de subir.</p>
+<p><b>Decisão:</b> um <code>@Bean</code> em <code>PersistenceConfig</code> lê <code>persistence.provider</code> e devolve exatamente um <code>ProdutoRepository</code>; adapters são classes simples, sem condição.</p>
+<p><b>Alternativas consideradas:</b> condições por adapter (rejeitada: combinações frágeis); profiles do Spring (rejeitada: menos explícito para a aula).</p>
+<p><b>Consequências:</b> (+) uma decisão num lugar só, valor inválido falha na subida; (−) o switch cresce a cada novo adapter.</p>
+<p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend Java.</p></div>
 
-<div class="info-banner"><strong>✅ Checklist completo Java (Tab 6):</strong> Clean Architecture ✓ · SoC ✓ · DIP ✓ · Repository ✓ · Service interfaces ✓ · Anemic Domain ✓ · Interfaces-as-contracts ✓ · JPA/Hibernate ✓ · MySQL ✓ · REST API ✓ · DTOs ✓ · DI (Spring) ✓ · Validation (Bean Validation + domínio) ✓ · Centralized exception (GlobalExceptionHandler RFC 7807) ✓ · Technology isolation ✓ · Replaceable persistence (JPA/Mongo/DualWrite) ✓ · SOLID mapeado ✓ · TDD 9 testes ✓ · Migração ✓ · Docker ✓ · CI/CD ✓ · Diagramas ✓ · ADRs ✓.</div>
+<div class="info-banner"><strong>✅ Checklist completo Java (Tab 6):</strong> Clean Architecture ✓ · SoC ✓ · DIP ✓ · Repository ✓ · Service interfaces ✓ · Anemic Domain ✓ · Interfaces-as-contracts ✓ · JPA/Hibernate ✓ · MySQL ✓ · REST API ✓ · DTOs ✓ · DI (Spring) ✓ · Validation (Bean Validation + domínio) ✓ · Centralized exception (GlobalExceptionHandler RFC 7807) ✓ · Technology isolation ✓ · Persistência substituível (porta + <code>PersistenceConfig</code>; Mongo/Dual-Write na Tab 6-B) ✓ · Erros HTTP corretos (400/401/404) ✓ · Paginação no banco ✓ · SOLID mapeado ✓ · TDD 11 testes ✓ · Preparação para migração ✓ · Docker ✓ · CI/CD ✓ · Diagramas ✓ · ADRs ✓.</div>
 </div>
 </div>
 </section>
