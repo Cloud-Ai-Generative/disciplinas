@@ -2333,6 +2333,128 @@ Entregue APENAS o bloco de código HTML (aberto com cerca tripla + "html" e fech
       // Já carrega o player do vídeo automaticamente para facilitar a vida do avaliador
       carregarVideoDrive();
     }
+// ========================================================================
+    // RASTREADOR SILENCIOSO DE ACESSOS, CLIQUES E FUNIL DE PASSOS (OPÇÃO 1)
+    // ========================================================================
+    const SESSAO_ID = "Visita_" + new Date().toISOString().slice(0, 10).replace(/-/g, "") + "_" + Math.random().toString(36).substring(2, 7).toUpperCase();
+    const EventosJaEnviados = new Set();
+
+    function registrarEventoPlanilha(etapa, acao, detalhes = "", unicoPorSessao = false) {
+      const chaveUnica = etapa + "|" + acao;
+      if (unicoPorSessao && EventosJaEnviados.has(chaveUnica)) return;
+      if (unicoPorSessao) EventosJaEnviados.add(chaveUnica);
+
+      const largura = window.innerWidth || 0;
+      const tipoTela = largura <= 768 ? "Celular / Mobile (" + largura + "px)" : "Computador / Desktop (" + largura + "px)";
+
+      const payloadLog = {
+        tipoRegistro: "EVENTO_NAVEGACAO",
+        sessaoId: SESSAO_ID,
+        etapa: etapa,
+        acao: acao,
+        detalhes: detalhes,
+        dispositivo: tipoTela,
+        origem: document.referrer || "Acesso Direto / Link (WhatsApp ou E-mail)"
+      };
+
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payloadLog)
+      }).catch(() => {});
+    }
+
+    // 1. Registra a abertura inicial do site
+    window.addEventListener("DOMContentLoaded", () => {
+      registrarEventoPlanilha("0. Chegada ao Portal", "Abriu o site", "Página carregada pelo visitante", true);
+
+      // Rastreia botões de atalho do topo e abertura do vídeo guia
+      const boxVideo = document.getElementById("videoContainerBox");
+      if (boxVideo) {
+        boxVideo.addEventListener("click", () => {
+          registrarEventoPlanilha("0. Topo / Guia", "Clicou no Vídeo Tira-Dúvidas", "Abriu o player do Google Drive", true);
+        });
+      }
+
+      // 2. Rastreia início e conclusão do Passo 1 (Identificação)
+      const campoNome = document.getElementById("nome");
+      if (campoNome) {
+        campoNome.addEventListener("change", () => {
+          const area = document.getElementById("area")?.value || "";
+          registrarEventoPlanilha("Passo 1 (Identificação)", "Iniciou preenchimento do Passo 1", "Preencheu nome/dados iniciais " + (area ? "(" + area + ")" : ""), true);
+        });
+      }
+
+      const chkConsentimento = document.getElementById("consentimento");
+      if (chkConsentimento) {
+        chkConsentimento.addEventListener("change", (e) => {
+          if (e.target.checked) {
+            const nivel = document.getElementById("nivelEnsino")?.value || "";
+            const esc = document.getElementById("escolaridade")?.value || "";
+            registrarEventoPlanilha("Passo 1 (Identificação)", "Marcou Termo de Consentimento", "Atuação: " + nivel + " | Escolaridade: " + esc, true);
+          }
+        });
+      }
+
+      // 3. Rastreia Passo 2 (Montagem e Cópia do Prompt-Matriz v2.17)
+      const btnCopiarPrompt = document.querySelector("button[onclick='copiarPromptComConteudo()']");
+      if (btnCopiarPrompt) {
+        btnCopiarPrompt.addEventListener("click", () => {
+          const disc = document.getElementById("auxDisciplina")?.value.trim() || "Não informada";
+          registrarEventoPlanilha("Passo 2 (Prompt-Matriz)", "Clicou em Copiar Prompt v2.17 + Aula", "Disciplina informada: " + disc);
+        });
+      }
+
+      // 4. Rastreia Passo 3 (Simulador e Escolha da IA Generativa)
+      const selectIA = document.getElementById("iaUtilizada");
+      if (selectIA) {
+        selectIA.addEventListener("change", (e) => {
+          if (e.target.value) {
+            registrarEventoPlanilha("Passo 3 (Escolha da IA)", "Selecionou ou abriu IA Generativa", "IA escolhida: " + e.target.value);
+          }
+        });
+      }
+
+      document.querySelectorAll(".ia-list a.btn-ia").forEach((linkIA) => {
+        linkIA.addEventListener("click", () => {
+          registrarEventoPlanilha("Passo 3 (Escolha da IA)", "Clicou no botão externo para abrir IA", linkIA.textContent.trim());
+        });
+      });
+
+      // 5. Rastreia Passo 4 (Colagem do Código HTML, Download e Teste em Nova Aba)
+      const txtCodigo = document.getElementById("codigoGerado");
+      if (txtCodigo) {
+        txtCodigo.addEventListener("paste", () => {
+          registrarEventoPlanilha("Passo 4 (Teste do HTML)", "Colou código HTML gerado pela IA", "Visitante trouxe o código da IA para o portal", true);
+        });
+      }
+
+      const btnBaixar = document.querySelector("button[onclick='baixarHtmlGerado()']");
+      if (btnBaixar) {
+        btnBaixar.addEventListener("click", () => {
+          const disc = document.getElementById("auxDisciplina")?.value.trim() || "Sem título";
+          registrarEventoPlanilha("Passo 4 (Teste do HTML)", "Baixou o arquivo .HTML pronto", "Disciplina: " + disc);
+        });
+      }
+
+      const btnTestarAba = document.querySelector("button[onclick='visualizarAulaNovaAba()']");
+      if (btnTestarAba) {
+        btnTestarAba.addEventListener("click", () => {
+          const disc = document.getElementById("auxDisciplina")?.value.trim() || "Sem título";
+          registrarEventoPlanilha("Passo 4 (Teste do HTML)", "Abriu e testou a aula em Nova Aba", "Disciplina: " + disc);
+        });
+      }
+
+      // 6. Rastreia Passo 5 (Envio Final do Questionário)
+      const formVal = document.getElementById("formValidacao");
+      if (formVal) {
+        formVal.addEventListener("submit", () => {
+          const disc = document.getElementById("auxDisciplina")?.value.trim() || "";
+          registrarEventoPlanilha("Passo 5 (Conclusão)", "Enviou Avaliação Completa", "Questionário concluído (" + disc + ")");
+        });
+      }
+    });  
   </script>
 </body>
 </html>
