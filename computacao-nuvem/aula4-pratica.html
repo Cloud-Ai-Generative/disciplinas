@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Computação em Nuvem — Aula 04 · Tipos de Nuvem e Funcionalidades</title>
+<style>
+:root{
+  --accent:#0e7490; --on-accent:#ffffff; --bg:#eef3f6; --panel:#ffffff; --text:#1a2530; --muted:#42525f;
+  --soft:#e0f2f7; --border:#0e7490; --ok-bg:#dcfce7; --ok-tx:#14532d; --err-bg:#fee2e2; --err-tx:#7f1d1d;
+  --warn-bg:#fef3c7; --warn-tx:#4a3200; --info-bg:#e8eef9; --violet-bg:#f1e8fb; --shadow:rgba(14,116,144,.25);
+}
+body.escuro{
+  --accent:#5cc8e6; --on-accent:#06222c; --bg:#0d171e; --panel:#15232d; --text:#e8f0f5; --muted:#b2c2ce;
+  --soft:#12394a; --border:#5cc8e6; --ok-bg:#12351f; --ok-tx:#c9f3d6; --err-bg:#431616; --err-tx:#fcd0d0;
+  --warn-bg:#3d3210; --warn-tx:#fbe9b0; --info-bg:#1b2a45; --violet-bg:#2a1f3d; --shadow:rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+html{font-size:18px}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.6}
+body.aula{font-size:22px}
+a{color:var(--accent)}
+.modo-btn{position:fixed;top:.5rem;right:.5rem;z-index:50;background:var(--accent);color:var(--on-accent);border:3px solid var(--text);border-radius:.6rem;padding:.35rem .7rem;font-size:.8rem;font-weight:700;cursor:pointer;box-shadow:0 3px 0 var(--shadow)}
+.topo{background:var(--accent);color:var(--on-accent);padding:1rem 1rem .8rem;padding-right:9rem}
+.topo h1{margin:0;font-size:1.35rem;line-height:1.25}
+.topo p{margin:.2rem 0 .5rem;font-size:.9rem}
+.topo .barra-topo{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;font-size:.85rem;font-weight:700}
+.topo button{background:var(--panel);color:var(--text);border:2px solid var(--text);border-radius:.5rem;padding:.2rem .6rem;cursor:pointer;font-size:.8rem}
+.topo button:disabled{opacity:.5;cursor:not-allowed}
+.tabs{position:sticky;top:0;z-index:40;display:flex;overflow-x:auto;gap:.25rem;padding:.5rem 9rem 0 .5rem;background:var(--bg);border-bottom:3px solid var(--border);white-space:nowrap}
+.tab{flex:0 0 auto;background:var(--soft);color:var(--text);border:3px solid var(--border);border-bottom:none;border-radius:.7rem .7rem 0 0;padding:.45rem .9rem;font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit}
+.tab[aria-selected="true"]{background:var(--panel);color:var(--accent);margin-bottom:-3px;padding-bottom:calc(.45rem + 3px);font-weight:800}
+.tab:focus-visible,.alt:focus-visible,button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(--text);outline-offset:2px}
+main{max-width:60rem;margin:0 auto;padding:0 .6rem 2rem}
+.painel{display:none;background:var(--panel);border:3px solid var(--border);border-top:none;border-radius:0 0 1rem 1rem;padding:1.1rem;box-shadow:0 6px 0 var(--shadow)}
+.painel.ativo{display:block}
+.painel h2{margin:.2rem 0 .8rem;color:var(--accent);font-size:1.45rem}
+.painel h3{margin:1.4rem 0 .5rem;font-size:1.15rem;border-bottom:3px solid var(--soft);padding-bottom:.2rem}
+.painel h4{margin:.2rem 0 .4rem}
+.missao{background:var(--soft);border:3px solid var(--border);border-radius:.9rem;padding:.8rem 1rem;box-shadow:0 4px 0 var(--shadow)}
+.missao h3{border:none;margin:0 0 .3rem}
+.missao p{margin:.2rem 0}
+.duas{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:.8rem;margin-top:.8rem}
+.cartao{border:3px solid var(--border);border-radius:.9rem;padding:.7rem 1rem;box-shadow:0 4px 0 var(--shadow);background:var(--panel)}
+.cartao h4{margin:0 0 .3rem;color:var(--accent)}
+.cartao ul{margin:.2rem 0;padding-left:1.2rem}
+.instrucoes{background:var(--warn-bg);color:var(--warn-tx);border:3px solid #d99a00;border-radius:.8rem;padding:.7rem 1rem;margin:.5rem 0}
+.instrucoes ol{margin:.3rem 0;padding-left:1.3rem}
+.legenda,.termos,.observar{border-radius:.7rem;padding:.55rem .9rem;margin:.5rem 0;font-size:.92rem}
+.legenda{background:var(--info-bg);border:2px solid var(--border)}
+.termos{background:var(--violet-bg);border:2px solid var(--border)}
+.observar{background:var(--ok-bg);color:var(--ok-tx);border:2px dashed var(--ok-tx)}
+details{border:2px solid var(--border);border-radius:.7rem;padding:.4rem .8rem;margin:.6rem 0;background:var(--info-bg)}
+details.d-dic{background:var(--soft)} details.d-con{background:var(--violet-bg)} details.d-bus{background:var(--info-bg)} details.roteiro{background:var(--warn-bg);color:var(--warn-tx)}
+summary{cursor:pointer;font-weight:700}
+.demo-area{border:3px solid var(--border);border-radius:.9rem;padding:.8rem;margin:.6rem 0;background:var(--panel);box-shadow:0 4px 0 var(--shadow)}
+button.btn{background:var(--accent);color:var(--on-accent);border:3px solid var(--text);border-radius:.6rem;padding:.35rem .8rem;font-size:.9rem;font-weight:700;cursor:pointer;font-family:inherit;margin:.2rem .2rem .2rem 0}
+button.btn.sec{background:var(--panel);color:var(--text)}
+button.btn.on{background:var(--text);color:var(--panel)}
+button.btn:disabled{opacity:.45;cursor:not-allowed}
+.pergunta{border:3px solid var(--border);border-radius:.9rem;padding:.7rem 1rem;margin:.7rem 0;box-shadow:0 4px 0 var(--shadow)}
+.pergunta .enun{margin:.1rem 0 .5rem}
+.alts{display:flex;flex-direction:column;gap:.45rem}
+.alt{display:flex;gap:.4rem;text-align:left;background:var(--panel);color:var(--text);border:3px solid var(--border);border-radius:.7rem;padding:.45rem .7rem;font-size:.95rem;font-family:inherit;cursor:pointer}
+.alt:hover:not(:disabled){background:var(--soft)}
+.alt.certa{background:var(--ok-bg);color:var(--ok-tx);border-color:var(--ok-tx);font-weight:700}
+.alt.errada{background:var(--err-bg);color:var(--err-tx);border-color:var(--err-tx);opacity:1}
+.alt:disabled{cursor:not-allowed}
+.fb{margin-top:.5rem;border-radius:.7rem;padding:.5rem .8rem;font-size:.92rem}
+.fb:empty{display:none}
+.fb-ok{background:var(--ok-bg);color:var(--ok-tx);border:2px solid var(--ok-tx)}
+.fb-err{background:var(--err-bg);color:var(--err-tx);border:2px solid var(--err-tx)}
+.msg{margin:.6rem 0;padding:.6rem .9rem;border-radius:.7rem;background:var(--info-bg);border:2px solid var(--border);font-size:.95rem}
+.msg.bom{background:var(--ok-bg);color:var(--ok-tx)} .msg.ruim{background:var(--err-bg);color:var(--err-tx)}
+.linha{display:grid;grid-template-columns:11rem 1fr 9rem;gap:.5rem;align-items:center;margin:.35rem 0;font-size:.85rem}
+.trilho{background:var(--soft);border:2px solid var(--border);height:1.2rem;border-radius:.6rem;overflow:hidden}
+.barra{height:100%;background:var(--accent);width:0;transition:width .3s}
+.barra.alerta{background:#b91c1c}
+.slider-linha{display:grid;grid-template-columns:12rem 1fr 6rem;gap:.5rem;align-items:center;margin:.3rem 0;font-size:.85rem}
+input[type=range]{width:100%}
+.timeline{position:relative;height:3rem;background:var(--soft);border:2px solid var(--border);border-radius:.6rem;margin:.8rem 0}
+.tick{position:absolute;top:.2rem;width:3px;height:1.2rem;background:var(--accent)}
+.fogo{position:absolute;top:0;font-size:1.5rem;transform:translateX(-50%)}
+.horas{display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)}
+.item-resp{border:2px solid var(--border);border-radius:.7rem;padding:.5rem .8rem;margin:.5rem 0}
+.item-resp.feito{background:var(--ok-bg)}
+.mito button{margin-right:.5rem}
+.selo-badge{display:inline-block;background:var(--ok-bg);color:var(--ok-tx);border:2px solid var(--ok-tx);border-radius:1rem;padding:0 .6rem;font-size:.8rem;margin-left:.5rem}
+.cola dt{font-weight:700;color:var(--accent);margin-top:.5rem}
+.cola dd{margin:0 0 .2rem 1rem}
+textarea{width:100%;min-height:7rem;font-family:inherit;font-size:.95rem;border:3px solid var(--border);border-radius:.7rem;padding:.5rem;background:var(--panel);color:var(--text)}
+#toast{position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);background:var(--text);color:var(--panel);padding:.5rem 1rem;border-radius:.7rem;font-size:.9rem;z-index:60;opacity:0;pointer-events:none;transition:opacity .3s;max-width:90vw}
+#toast.on{opacity:1}
+footer{max-width:60rem;margin:0 auto;padding:1rem .8rem 3rem;font-size:.8rem;color:var(--muted)}
+footer .bloco{border-top:2px solid var(--border);padding-top:.6rem;margin-top:.8rem}
+footer h5{margin:.1rem 0 .3rem;font-size:.85rem;color:var(--text)}
+footer ul{list-style:none;padding:0;margin:.2rem 0}
+footer p{margin:.25rem 0}
+@media (max-width:640px){
+  .topo{padding-right:1rem;padding-top:2.6rem}
+  .tabs{padding-right:.5rem}
+  .linha,.slider-linha{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<button id="btnModo" class="modo-btn" type="button" aria-pressed="false">🎤 Modo Aula</button>
+<header class="topo">
+  <h1>☁️ Computação em Nuvem — Aula 04: Tipos de Nuvem e Funcionalidades</h1>
+  <p>Unidade 2 · págs. 12 a 25</p>
+  <div class="barra-topo">
+    <span id="xpInfo">⭐ 0 XP · 🏅 0/5 selos</span>
+    <button id="btnEscuro" type="button">🌙 Escuro</button>
+  </div>
+</header>
+<nav class="tabs" id="tabs" role="tablist" aria-label="Abas da aula"></nav>
+<main id="paineis"></main>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<footer>
+  <div class="bloco">
+    <h5>📋 FICHA TÉCNICA DA AULA</h5>
+    <p>Computação em Nuvem — Aula 04, Unidade 2, págs. 12–25 · Gerado em 27/10/2026 · 5 abas + Revisão · 15 perguntas · 5 demos · cor #0e7490</p>
+  </div>
+  <div class="bloco">
+    <h5>🪄 SOBRE O HTMLearning · v2.17 (23/10/2026)</h5>
+    <p>Transformar o sumário de qualquer disciplina em uma classe interativa em HTML único e offline, com previsão antes do clique, tentativa e erro guiado e exemplos reais.</p>
+    <ul>
+      <li>• O que é: metodologia e arquitetura de prompts que converte sumários em aulas interativas em minutos, com IAs gratuitas.</li>
+      <li>• O que entrega: 5 a 7 abas + Revisão, simulações com previsão, quiz com retry sem revelar gabarito, linguagem plana, Modos Apresentação/Leitura.</li>
+      <li>• Por que é inclusivo: um único .html leve, 100% offline, roda em PC e celular e viaja em pen drive para escolas desconectadas ou áreas rurais.</li>
+    </ul>
+    <p>Idealizador do projeto: Professor Wellington Dimas da Cruz</p>
+    <p>Apoiadora do projeto: Prof.ª Dr.ª Mariella Berger Andrade (IFES / CEFOR)</p>
+    <p><strong>Contatos e links do projeto:</strong></p>
+    <ul>
+      <li>E-mail do idealizador: <a href="mailto:cloud.ai-generative@outlook.com">cloud.ai-generative@outlook.com</a></li>
+      <li>Repositório GitHub do idealizador: <a href="https://github.com/cloud-ai-Generative" target="_blank" rel="noopener">https://github.com/cloud-ai-Generative</a></li>
+      <li>Currículo Lattes do idealizador: <a href="https://lattes.cnpq.br/6801791839011321" target="_blank" rel="noopener">https://lattes.cnpq.br/6801791839011321</a></li>
+      <li>Currículo Lattes da apoiadora: <a href="https://lattes.cnpq.br/3929645439848570" target="_blank" rel="noopener">https://lattes.cnpq.br/3929645439848570</a></li>
+      <li>Site oficial do projeto: <a href="https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html" target="_blank" rel="noopener">https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html</a></li>
+    </ul>
+  </div>
+</footer>
+
+<script>
+"use strict";
+var COR = "#0e7490";
+
+var AULA_DADOS = {
+abas: [
+/* ===================== ABA 1 ===================== */
+{
+ rotulo: "1 · Por quê?",
+ selo: "Explorador de Motivos",
+ titulo: "Por que existem vários tipos de nuvem?",
+ narrativa: "Sua missão: descobrir por que uma única nuvem não serve para todo mundo. Pense em transporte: há o ônibus (compartilhado e barato), o carro próprio (só seu, com mais controle) e a mistura dos dois. Com a nuvem é parecido. Uma loja virtual precisa de muita capacidade só na Black Friday (dia de grandes promoções do varejo); um hospital precisa proteger exames; uma startup (empresa nova de tecnologia, ainda testando a ideia) quer gastar pouco no começo. Além disso, a tecnologia evoluiu e surgiram leis como a LGPD (Lei Geral de Proteção de Dados: lei brasileira que diz como empresas devem cuidar de dados pessoais). No fim, toda empresa quer usar bem cada máquina e pagar menos: é a maximização de recursos e a redução de custos.",
+ mundoReal: [
+  "A Netflix (serviço de filmes e séries pela internet) tem picos enormes de audiência nos lançamentos e usa a nuvem da AWS (Amazon Web Services: a nuvem da Amazon) para crescer e encolher conforme a procura.",
+  "O site da Receita Federal (órgão que recebe a declaração do Imposto de Renda) recebe milhões de acessos perto do prazo final e bem menos no resto do ano: demanda que sobe de repente e depois cai."
+ ],
+ ferramentas: [
+  "AWS (Amazon Web Services): nuvem pública da Amazon, a maior do mercado.",
+  "Microsoft Azure: nuvem pública da Microsoft, muito usada por empresas que já usam Windows e Office."
+ ],
+ dicionario: [
+  {t:"Servidor", d:"Computador potente que fica ligado atendendo pedidos de outros computadores, como abrir um site."},
+  {t:"Data center", d:"Galpão com milhares de servidores, energia reserva e refrigeração, onde a nuvem de fato mora."},
+  {t:"Provedor", d:"Empresa que mantém a nuvem e a aluga para clientes, como Amazon, Microsoft e Google."},
+  {t:"Elasticidade", d:"Capacidade de a nuvem aumentar e diminuir os recursos conforme a demanda, como uma sanfona."},
+  {t:"LGPD", d:"Lei Geral de Proteção de Dados: lei brasileira sobre o tratamento de dados pessoais."},
+  {t:"Startup", d:"Empresa nova de tecnologia, que ainda está testando se a ideia dá certo."}
+ ],
+ conceitos: [
+  {titulo:"Necessidades diversificadas de negócios",
+   texto:"Cada empresa tem um perfil: algumas têm demanda que sobe e desce de repente, outras lidam com dados muito sigilosos, outras têm pouco dinheiro no começo. Um modelo único de nuvem não atende todos esses perfis, e por isso surgiram opções diferentes.",
+   analogia:"Cada cliente de uma loja de roupas tem um tamanho: uma numeração única para todos não serviria.",
+   exemploReal:"A Netflix (serviço de filmes e séries) precisa de muita capacidade nos lançamentos; um banco precisa de controle rigoroso sobre quem acessa os dados. São necessidades diferentes."},
+  {titulo:"Evolução tecnológica e regulatória",
+   texto:"Com internet mais rápida e data centers (galpões com milhares de servidores) mais eficientes, alugar capacidade passou a valer a pena. Ao mesmo tempo, leis como a LGPD (Lei Geral de Proteção de Dados) e normas de órgãos como o Banco Central (que regula e fiscaliza os bancos) passaram a exigir cuidado com onde os dados ficam. As empresas precisaram de opções que respeitassem essas regras.",
+   analogia:"É como o trânsito: quanto mais carros circulam, mais regras e mais tipos de via aparecem.",
+   exemploReal:"Um banco brasileiro precisa seguir as regras do Banco Central ao contratar nuvem; por isso muitos mantêm parte dos sistemas em data centers próprios."},
+  {titulo:"Maximização de recursos e redução de custos",
+   texto:"Um servidor próprio é comprado de uma vez (investimento adiantado) e dimensionado para o pior dia do ano; no resto do tempo fica parado. Na nuvem, a empresa paga conforme o uso e a capacidade cresce e diminui com a demanda (elasticidade). Mesmo assim, nem sempre a nuvem é mais barata: se a demanda é alta e constante, ter o próprio equipamento pode compensar.",
+   analogia:"É a diferença entre comprar um carro para usar duas vezes por ano e chamar um carro por aplicativo só quando precisar.",
+   exemploReal:"O site da Receita Federal (órgão que recebe a declaração do Imposto de Renda) tem movimento enorme perto do prazo e pouco no resto do ano."}
+ ],
+ roteiroDemo: {
+  passo0: "Antes de mexer, preveja: se o movimento do site multiplicar por dez, a conta do servidor próprio vai subir ou ficar igual? E a conta da nuvem?",
+  passos: [
+   {acao:"Clique no botão 'Madrugada' (demanda 5).", ve:"O servidor próprio quase não trabalha, mas custa o mesmo; a nuvem custa bem menos.", significa:"Capacidade parada é dinheiro desperdiçado."},
+   {acao:"Clique em 'Dia comum' e depois arraste o controle até perto de 40.", ve:"O servidor próprio vai enchendo; o custo da nuvem sobe junto com o uso.", significa:"Na nuvem, a conta acompanha a demanda."},
+   {acao:"Clique em 'Black Friday' (demanda 90).", ve:"O servidor próprio estoura; a nuvem atende, mas a conta sobe.", significa:"A elasticidade atende o pico, mas nuvem nem sempre é mais barata."}
+  ]
+ },
+ demo: {tipo:"custos", exploratoria:true,
+  observar:"Compare as duas barras de custo e a barra de uso do servidor próprio enquanto muda a demanda. Os valores em reais são fictícios, só para estudo. Experimente demandas baixas e altas.",
+  config:{}},
+ termosQuiz:"Servidor ocioso = computador ligado e pago, mas sem trabalho · LGPD = Lei Geral de Proteção de Dados, lei brasileira sobre dados pessoais · Regulatória = que vem de leis e regras de órgãos do governo · Maximizar recursos = aproveitar ao máximo o que já se paga · Black Friday = dia de grandes promoções do varejo.",
+ quiz: [
+  {p:"Uma loja virtual vende pouco o ano todo, mas muito na Black Friday. Que problema traz um servidor próprio, comprado para aguentar esse pico, no resto do ano?",
+   alts:[
+    {t:"Ele fica quase sempre ocioso, e a empresa paga por capacidade parada.", ok:true, fb:"Um servidor comprado para o pior dia fica parado nos outros e continua custando o mesmo. É o desperdício que a nuvem elástica ajuda a evitar."},
+    {t:"Ele para de funcionar quando o movimento é pequeno.", ok:false, fb:"Servidor não pifa por pouco movimento. O problema é pagar por uma capacidade que ninguém está usando."},
+    {t:"Ele fica mais barato quanto menos é usado.", ok:false, fb:"O custo de um servidor comprado é fixo: usar menos não reduz a conta."}]},
+  {p:"Qual destas situações é uma pressão de regras (regulatória) que levou empresas a buscar tipos diferentes de nuvem?",
+   alts:[
+    {t:"A LGPD exigir cuidado com o lugar onde ficam os dados pessoais.", ok:true, fb:"A LGPD é uma lei: obriga empresas a cuidar dos dados pessoais, o que influencia a escolha de onde e como guardá-los na nuvem."},
+    {t:"A internet ter ficado mais rápida.", ok:false, fb:"Internet mais rápida é evolução tecnológica, não regra. Ajudou a nuvem a existir, mas não é uma exigência legal."},
+    {t:"A empresa querer trocar o logotipo.", ok:false, fb:"Trocar logotipo é decisão de marca e não tem relação com regras sobre dados ou com o tipo de nuvem."}]},
+  {p:"O que significa maximizar recursos na nuvem?",
+   alts:[
+    {t:"Aproveitar bem cada máquina, evitando que fique parada enquanto é paga.", ok:true, fb:"Maximizar é usar bem o que se paga: a nuvem permite ajustar a capacidade à demanda e reduzir o desperdício."},
+    {t:"Comprar o maior número possível de servidores.", ok:false, fb:"É o oposto: mais máquinas do que o necessário significa mais capacidade parada e mais custo."},
+    {t:"Desligar todos os sistemas à noite.", ok:false, fb:"Muitos sites e aplicativos precisam ficar no ar 24 horas. A ideia é ajustar a capacidade, não desligar tudo."}]}
+ ],
+ aprofundar: [
+  {tipo:"google", q:"computação em nuvem por que existem tipos de nuvem"},
+  {tipo:"scholar", q:"computação em nuvem modelos de implantação"},
+  {tipo:"youtube", q:"computação em nuvem tipos de nuvem"}
+ ],
+ mitoOuVerdade: {afirmacao:"Toda empresa que usa nuvem guarda seus dados nos mesmos computadores compartilhados com outras empresas.", verdade:false, explicacao:"Existem tipos diferentes: na nuvem pública a estrutura é dividida entre vários clientes, mas na privada ela é de uso exclusivo de uma organização. É justamente por isso que há vários tipos."}
+},
+/* ===================== ABA 2 ===================== */
+{
+ rotulo: "2 · Os 3 tipos",
+ selo: "Detetive de Nuvens",
+ titulo: "Nuvem pública, privada e híbrida",
+ narrativa: "Sua missão: reconhecer os três tipos de nuvem e saber quando usar cada um. A nuvem pública mora nos data centers (galpões com milhares de servidores) de um provedor (empresa que aluga a nuvem), é dividida entre muitos clientes e cobrada por uso. A nuvem privada é uma estrutura de uso exclusivo de uma única organização, com mais controle e, em geral, mais investimento adiantado. A nuvem híbrida liga as duas, para que cada carga de trabalho (do inglês workload: cada programa ou serviço que roda na nuvem) fique onde faz mais sentido.",
+ mundoReal: [
+  "O Nubank (banco digital brasileiro) roda seus serviços na nuvem pública da AWS (Amazon Web Services: a nuvem da Amazon).",
+  "Grandes bancos tradicionais, como o Banco do Brasil (banco público federal) e o Itaú (maior banco privado do país), combinam data centers próprios com serviços de nuvem pública: o modelo híbrido."
+ ],
+ ferramentas: [
+  "Google Cloud: nuvem pública do Google.",
+  "OpenStack: programa livre usado para montar nuvens privadas dentro de empresas e órgãos públicos."
+ ],
+ dicionario: [
+  {t:"Nuvem pública", d:"Estrutura do provedor compartilhada entre muitos clientes, cobrada conforme o uso."},
+  {t:"Nuvem privada", d:"Estrutura de uso exclusivo de uma organização, no prédio dela ou hospedada por terceiro."},
+  {t:"Nuvem híbrida", d:"Combinação de nuvem pública e privada, conectadas e trabalhando juntas."},
+  {t:"On-premises", d:"Do inglês 'nas instalações': infraestrutura que fica dentro da própria empresa."},
+  {t:"Conformidade", d:"Do inglês compliance: seguir leis e normas que valem para o setor da empresa."},
+  {t:"Carga de trabalho", d:"Cada programa ou serviço que roda na nuvem, como o site ou o banco de clientes."}
+ ],
+ conceitos: [
+  {titulo:"Nuvem pública",
+   texto:"O provedor (empresa que aluga a nuvem) cuida de tudo que é físico e o cliente aluga só o que precisa, pagando pelo uso. Vários clientes dividem a mesma estrutura, mas cada um fica isolado dos outros. Cresce com facilidade, porém o cliente tem menos controle sobre os detalhes.",
+   analogia:"É como o ônibus: vários passageiros dividem o veículo e cada um paga pela sua viagem.",
+   exemploReal:"Uma startup (empresa nova de tecnologia) lança um aplicativo na AWS em poucas horas, sem comprar nenhum servidor."},
+  {titulo:"Nuvem privada",
+   texto:"É uma estrutura de uso exclusivo de uma organização. Pode ficar no prédio dela (on-premises, que quer dizer nas instalações) ou ser hospedada por um terceiro. Dá mais controle e ajuda a cumprir regras, mas exige investimento adiantado e equipe própria.",
+   analogia:"É como o carro próprio ou um condomínio fechado: só quem mora ali usa, mas você paga e cuida da manutenção.",
+   exemploReal:"O Serpro (empresa pública de tecnologia do governo federal brasileiro) opera data centers para guardar sistemas do governo."},
+  {titulo:"Nuvem híbrida",
+   texto:"Junta pública e privada, ligadas por conexões seguras. A empresa deixa os dados mais sensíveis na estrutura privada e usa a pública para os picos de movimento. É mais flexível, porém mais trabalhosa de administrar, porque são duas estruturas para cuidar.",
+   analogia:"É morar em casa própria e alugar um salão de festas quando chega muita gente.",
+   exemploReal:"Uma rede de lojas mantém o cadastro de clientes em casa e coloca o site de vendas na nuvem pública para aguentar a Black Friday (dia de grandes promoções)."}
+ ],
+ roteiroDemo: {
+  passo0: "Antes de clicar, preveja: para uma empresa nova que não sabe quantos clientes terá e tem pouco dinheiro, qual tipo de nuvem parece mais sensato?",
+  passos: [
+   {acao:"Leia o cenário 1 e clique no tipo de nuvem que você acha adequado.", ve:"Se acertar, o quadro verde explica por quê. Se errar, o quadro vermelho explica por que aquela escolha falhou.", significa:"Cada tipo tem vantagens e limites; a escolha depende do contexto."},
+   {acao:"Se errou, clique em outra opção (a opção errada fica desativada).", ve:"Você pode tentar de novo até acertar.", significa:"Errar faz parte de aprender: o feedback é a pista."},
+   {acao:"Quando acertar, clique em 'Próximo cenário'.", ve:"Aparece uma situação diferente.", significa:"O mesmo tipo de nuvem não serve para todos os casos."}
+  ]
+ },
+ demo: {tipo:"cenario",
+  config:{cenarios:[
+   {texto:"Uma startup (empresa nova de tecnologia) vai lançar um aplicativo de entrega de comida. Ela não sabe se terá 100 ou 100 mil usuários no primeiro mês e tem pouco dinheiro. Qual tipo de nuvem faz mais sentido?",
+    opcoes:[
+     {t:"☁️ Nuvem pública", ok:true, fb:"Pagando só pelo que usa e crescendo conforme a demanda, a startup testa a ideia sem comprar servidor. Exemplo real: o Nubank (banco digital brasileiro) usa a nuvem pública da AWS."},
+     {t:"🏢 Nuvem privada", ok:false, fb:"Montar uma estrutura exclusiva exige comprar equipamentos e contratar equipe antes de saber se o aplicativo vai dar certo: investimento adiantado alto demais para quem está testando."},
+     {t:"🔀 Nuvem híbrida", ok:false, fb:"A híbrida faz sentido quando parte dos sistemas precisa ficar sob controle próprio. Aqui não há dados que exijam isso, então ela só traria complexidade extra."}]},
+   {texto:"Um órgão público guarda registros sigilosos de cidadãos, e a norma interna exige que tudo fique em data centers sob controle do próprio órgão. Qual tipo de nuvem atende?",
+    opcoes:[
+     {t:"☁️ Nuvem pública", ok:false, fb:"Na pública a estrutura é compartilhada e fica nos data centers do provedor. Se a regra exige tudo sob controle do órgão, ela não atende."},
+     {t:"🏢 Nuvem privada", ok:true, fb:"A estrutura de uso exclusivo permite controlar onde ficam os dados e quem acessa. Exemplo real: o Serpro (empresa pública de tecnologia do governo federal) opera data centers para sistemas do governo."},
+     {t:"🔀 Nuvem híbrida", ok:false, fb:"A híbrida colocaria parte dos dados fora do controle do órgão. Como aqui tudo é sigiloso, não há parte que possa ir para o provedor."}]},
+   {texto:"Uma rede de lojas guarda o cadastro de clientes em sistemas internos e quer manter esses dados sob seu controle, mas o site de vendas precisa aguentar os picos da Black Friday. Qual tipo de nuvem combina melhor?",
+    opcoes:[
+     {t:"☁️ Nuvem pública", ok:false, fb:"Mandaria também o cadastro para o provedor, ignorando o desejo da empresa de manter esses dados sob controle próprio."},
+     {t:"🏢 Nuvem privada", ok:false, fb:"Só a estrutura própria exigiria comprar máquinas para o pico da Black Friday, que ficariam paradas no resto do ano."},
+     {t:"🔀 Nuvem híbrida", ok:true, fb:"O cadastro fica na estrutura própria e a parte que oscila, o site, usa a nuvem pública para crescer no pico. Exemplo real: varejistas como a Magazine Luiza (rede brasileira de lojas físicas e virtuais) lidam com picos assim."}]}
+  ]}},
+ termosQuiz:"Exclusiva = que só uma organização usa · Carga de trabalho = cada programa ou serviço que roda na nuvem · Investimento adiantado = dinheiro gasto antes de usar, como comprar servidores · Dados sensíveis = informações que exigem proteção especial, como saúde e finanças.",
+ quiz: [
+  {p:"Qual tipo de nuvem é de uso exclusivo de uma única organização?",
+   alts:[
+    {t:"A nuvem privada.", ok:true, fb:"Privada quer dizer que a estrutura é só da organização, esteja no prédio dela ou hospedada por terceiro."},
+    {t:"A nuvem pública.", ok:false, fb:"A pública divide a estrutura entre muitos clientes, cada um isolado dos outros."},
+    {t:"A nuvem híbrida.", ok:false, fb:"A híbrida mistura pública e privada. Exclusiva é só a parte privada dela."}]},
+  {p:"Qual é o principal motivo para adotar uma nuvem híbrida?",
+   alts:[
+    {t:"Deixar cada carga de trabalho onde faz mais sentido: dados sensíveis perto de casa e picos de movimento na pública.", ok:true, fb:"A graça da híbrida é combinar controle (parte privada) com elasticidade (parte pública)."},
+    {t:"Ela é sempre a opção mais barata.", ok:false, fb:"Nem sempre: manter duas estruturas conectadas dá trabalho extra e pode custar mais."},
+    {t:"Ela dispensa a conexão com a internet.", ok:false, fb:"A híbrida depende de conexões entre as partes; sem rede, ela não funciona."}]},
+  {p:"Qual tipo costuma pedir maior investimento adiantado?",
+   alts:[
+    {t:"A nuvem privada, porque a organização precisa montar e manter a estrutura.", ok:true, fb:"Comprar servidores, preparar o local e manter equipe própria custa antes mesmo do primeiro uso."},
+    {t:"A nuvem pública.", ok:false, fb:"Na pública não se compra servidor: paga-se conforme o uso, sem grande gasto inicial."},
+    {t:"Nenhuma, todas custam igual.", ok:false, fb:"Os modelos de cobrança são bem diferentes: pagar por uso na pública, investir antes na privada."}]}
+ ],
+ aprofundar: [
+  {tipo:"google", q:"nuvem pública privada e híbrida diferenças"},
+  {tipo:"scholar", q:"nuvem pública privada híbrida comparação"},
+  {tipo:"youtube", q:"nuvem pública privada e híbrida"}
+ ],
+ mitoOuVerdade: {afirmacao:"Nuvem privada só existe dentro do prédio da empresa.", verdade:false, explicacao:"A nuvem privada pode ficar no prédio da empresa ou ser hospedada por um terceiro. O que a define é o uso exclusivo da estrutura, não o endereço."}
+},
+/* ===================== ABA 3 ===================== */
+{
+ rotulo: "3 · Tijolos",
+ selo: "Engenheiro de Recursos",
+ titulo: "Armazenamento, processamento, memória e rede",
+ narrativa: "Sua missão: conhecer os tijolos que toda nuvem aluga. O armazenamento é o armário onde os dados ficam guardados. O processamento é o cérebro que faz as contas: a CPU (do inglês Central Processing Unit; em português, Unidade Central de Processamento: o chip que executa as instruções). A memória RAM (do inglês Random Access Memory; em português, Memória de Acesso Aleatório) é a bancada de trabalho temporária: o que está nela some quando o computador desliga. A rede são as estradas que levam os dados de um ponto a outro. Na nuvem você ajusta cada tijolo separadamente e paga por ele.",
+ mundoReal: [
+  "O Amazon S3 (Simple Storage Service: serviço da AWS que guarda arquivos, como fotos e vídeos) é onde muitos sites e aplicativos mantêm seus arquivos.",
+  "Quando alguém envia um vídeo ao YouTube (plataforma de vídeos do Google), ele é guardado, processado e distribuído por servidores do Google: armazenamento, processamento e rede trabalhando juntos."
+ ],
+ ferramentas: [
+  "Amazon S3 (Simple Storage Service): serviço de armazenamento de arquivos da AWS.",
+  "Amazon EC2 (Elastic Compute Cloud): computadores virtuais alugáveis da AWS, com a quantidade de processador e memória que o cliente escolher."
+ ],
+ dicionario: [
+  {t:"vCPU", d:"Processador virtual: uma fatia do processador do servidor que você aluga."},
+  {t:"SSD", d:"Do inglês Solid State Drive; em português, unidade de estado sólido: disco rápido, sem partes móveis."},
+  {t:"Latência", d:"Tempo que um pedido leva para ir e voltar pela rede; quanto menor, melhor."},
+  {t:"Largura de banda", d:"Quantidade de dados que a rede leva por segundo; é a largura da estrada."},
+  {t:"Gargalo", d:"O recurso mais apertado, que limita o desempenho de todo o conjunto."},
+  {t:"Máquina virtual", d:"Computador simulado dentro de um servidor físico, que pode ser criado ou apagado em minutos."}
+ ],
+ conceitos: [
+  {titulo:"Armazenamento de dados",
+   texto:"É onde ficam arquivos, fotos, bancos de dados e cópias. O provedor (empresa que mantém a nuvem) oferece diferentes tipos: discos rápidos como o SSD (unidade de estado sólido, sem partes móveis) para o que é usado o tempo todo e opções mais baratas e lentas para arquivos antigos. Você paga pela quantidade guardada.",
+   analogia:"É como ter um armário na mesa (rápido, mas pequeno e caro) e um depósito no porão (lento, mas grande e barato).",
+   exemploReal:"O Amazon S3 (serviço de armazenamento de arquivos da AWS) guarda fotos e vídeos de muitos sites e aplicativos."},
+  {titulo:"Processamento e memória RAM",
+   texto:"A vCPU (processador virtual: fatia do processador do servidor) faz as contas e a RAM (Memória de Acesso Aleatório) guarda o que está sendo usado agora. Se a RAM enche, o programa fica lento ou trava mesmo com a CPU livre. Na nuvem, escolhe-se o tamanho da máquina virtual (computador simulado) e dá para mudar depois.",
+   analogia:"A CPU é o cozinheiro e a RAM é a bancada: com bancada pequena, até o melhor cozinheiro fica parado.",
+   exemploReal:"No Amazon EC2 (computadores virtuais alugáveis da AWS) o cliente escolhe quantas vCPUs e quanta RAM quer, e paga conforme o tamanho escolhido."},
+  {titulo:"Rede",
+   texto:"A rede liga o usuário ao servidor e os servidores entre si. Duas medidas importam: a largura de banda (quantos dados passam por segundo, em Mbps, megabits por segundo) e a latência (quanto tempo um pedido leva para ir e voltar). Servidores longe do usuário têm latência maior.",
+   analogia:"A largura de banda é o número de pistas da estrada; a latência é o tempo da viagem de ida e volta.",
+   exemploReal:"A Netflix (serviço de filmes e séries) coloca cópias dos filmes em servidores perto dos usuários para reduzir a latência e evitar travadas."}
+ ],
+ roteiroDemo: {
+  passo0: "Antes de dar play, preveja: com a configuração inicial, qual dos quatro recursos (processador, memória, rede ou armazenamento) vai lotar primeiro quando os acessos subirem?",
+  passos: [
+   {acao:"Clique em '▶ Simular pico' sem mexer em nada.", ve:"Os acessos sobem de 8 em 8 e uma das barras chega a 100%.", significa:"O recurso mais apertado, o gargalo, limita todo o conjunto."},
+   {acao:"Aumente o recurso que lotou e clique em '🔄 Reiniciar demo'; depois simule de novo.", ve:"A simulação aguenta mais um pouco, até outro recurso lotar.", significa:"Resolver um gargalo revela o próximo; é assim que se dimensiona uma nuvem."},
+   {acao:"Procure uma configuração que aguente os 80 acessos e olhe o custo estimado por mês.", ve:"Mais recursos custam mais; sobrar demais é dinheiro parado.", significa:"Dimensionar é equilibrar desempenho e custo."}
+  ]
+ },
+ demo: {tipo:"recursos", exploratoria:true,
+  legenda:"🔑 Legenda: vCPU = fatia de processador alugada · GB = gigabytes: unidade de tamanho de memória e de disco · Mbps = megabits por segundo: velocidade da rede · Usuários simultâneos = pessoas usando o sistema ao mesmo tempo · Os preços são fictícios, só para estudo.",
+  observar:"Veja qual barra chega a 100% primeiro e o que acontece quando você aumenta só aquele recurso. Nenhuma resposta é entregue pronta: descubra testando.",
+  config:{}},
+ termosQuiz:"RAM = Memória de Acesso Aleatório: a bancada de trabalho temporária do computador · Latência = tempo de ida e volta de um pedido pela rede · Largura de banda = quantidade de dados que a rede leva por segundo · Gargalo = o recurso mais apertado, que limita o conjunto · CPU = o processador, que faz as contas.",
+ quiz: [
+  {p:"O que acontece com um programa quando a RAM (a bancada de trabalho temporária) fica cheia?",
+   alts:[
+    {t:"Ele fica lento ou trava, mesmo com o processador livre.", ok:true, fb:"Sem espaço na bancada, o programa não consegue trabalhar direito, ainda que o processador esteja disponível."},
+    {t:"Os arquivos guardados no disco são apagados.", ok:false, fb:"RAM e disco são coisas diferentes: encher a RAM não apaga o que está guardado no armazenamento."},
+    {t:"A velocidade da internet aumenta.", ok:false, fb:"A RAM não tem relação com a velocidade da rede; ela só guarda temporariamente o que está em uso."}]},
+  {p:"Qual imagem representa melhor a latência da rede?",
+   alts:[
+    {t:"O tempo que um carro leva para ir e voltar por uma estrada.", ok:true, fb:"Latência é o tempo de ida e volta de um pedido pela rede, como o tempo de viagem do carro."},
+    {t:"O número de pistas da estrada.", ok:false, fb:"Número de pistas lembra a largura de banda, que é quanto dado passa ao mesmo tempo, e não o tempo da viagem."},
+    {t:"O preço do pedágio.", ok:false, fb:"Preço lembra custo, que não é medida de tempo nem de velocidade da rede."}]},
+  {p:"O que é um gargalo no desempenho de um sistema?",
+   alts:[
+    {t:"O recurso mais apertado, que limita o desempenho de todo o conjunto.", ok:true, fb:"Como o gargalo de uma garrafa, o ponto mais estreito decide quanto passa, mesmo que o resto seja largo."},
+    {t:"A parte mais cara da fatura.", ok:false, fb:"Gargalo fala de limite de desempenho, e não de preço. Um recurso barato pode ser o gargalo."},
+    {t:"Um erro de digitação em um programa.", ok:false, fb:"Erro de digitação é um defeito de programação; gargalo é uma limitação de recurso, como memória cheia."}]}
+ ],
+ aprofundar: [
+  {tipo:"google", q:"computação em nuvem armazenamento processamento memória e rede"},
+  {tipo:"scholar", q:"computação em nuvem recursos computacionais armazenamento rede"},
+  {tipo:"youtube", q:"computação em nuvem armazenamento processamento e rede"}
+ ],
+ mitoOuVerdade: {afirmacao:"Comprar mais processador sempre resolve a lentidão de um site.", verdade:false, explicacao:"Se o gargalo é a memória, a rede ou o disco, mais processador não ajuda. O primeiro passo é descobrir qual recurso está lotado."}
+},
+/* ===================== ABA 4 ===================== */
+{
+ rotulo: "4 · Dados e segurança",
+ selo: "Guardião de Dados",
+ titulo: "Banco de dados como serviço, segurança e monitoramento",
+ narrativa: "Sua missão: entender como a nuvem cuida de dados, de proteção e de desempenho. Um banco de dados é o programa que guarda informações organizadas, como o cadastro de clientes. No DBaaS (do inglês Database as a Service; em português, Banco de Dados como Serviço) o provedor instala, atualiza e faz cópias do banco, e você só cuida de usar os dados. A segurança funciona em camadas: criptografia (embaralhar os dados para que só quem tem a chave entenda), controle de acesso (quem pode ver o quê) e firewall (muro virtual que filtra o que entra e sai). Já o monitoramento do desempenho mostra em gráficos e alertas como os recursos estão sendo usados.",
+ mundoReal: [
+  "O Amazon RDS (Relational Database Service: serviço de banco de dados da AWS) é um exemplo de DBaaS: a Amazon cuida de atualizações e cópias, e o cliente cuida dos dados e de quem pode acessá-los.",
+  "Em 2019, o Capital One (grande banco dos Estados Unidos) teve dados de milhões de clientes expostos depois de uma configuração errada de proteção na própria conta de nuvem: falha de configuração do cliente, não do prédio do provedor."
+ ],
+ ferramentas: [
+  "Amazon RDS (Relational Database Service): banco de dados gerenciado da AWS.",
+  "Google Cloud SQL: banco de dados gerenciado do Google.",
+  "Amazon CloudWatch: serviço da AWS que mostra gráficos e dispara alertas sobre o uso dos recursos."
+ ],
+ dicionario: [
+  {t:"DBaaS", d:"Banco de Dados como Serviço: o provedor administra o banco e você só usa."},
+  {t:"Criptografia", d:"Técnica que embaralha os dados; sem a chave certa, ninguém consegue ler."},
+  {t:"Firewall", d:"Do inglês 'parede corta-fogo': muro virtual que filtra o que pode entrar e sair de uma rede."},
+  {t:"Métrica", d:"Medida acompanhada ao longo do tempo, como o uso do processador ou o tempo de resposta."},
+  {t:"Alerta", d:"Aviso automático quando uma métrica passa de um limite definido."},
+  {t:"Serviço gerenciado", d:"Serviço em que o provedor faz as tarefas de manutenção por você."}
+ ],
+ conceitos: [
+  {titulo:"Banco de dados como serviço (DBaaS)",
+   texto:"Em vez de instalar e manter um banco de dados no seu servidor, você aluga um pronto. O provedor (empresa que mantém a nuvem) cuida da instalação, das atualizações de segurança, das cópias e do hardware. Você cuida dos dados, de quem acessa e das consultas, as perguntas que seu aplicativo faz ao banco.",
+   analogia:"É como alugar um apartamento mobiliado com zelador: você usa e mora, e a manutenção do prédio é de outro.",
+   exemploReal:"O Amazon RDS (serviço de banco de dados da AWS) aplica atualizações e faz cópias automáticas do banco para o cliente."},
+  {titulo:"Segurança e responsabilidade compartilhada",
+   texto:"A segurança na nuvem é dividida: o provedor protege a parte física e a infraestrutura; o cliente protege o que coloca nela, como senhas, quem tem acesso e a configuração dos serviços. A criptografia e o firewall são ferramentas dessa proteção.",
+   analogia:"A construtora cuida da portaria e da estrutura do prédio, mas trancar a porta do apartamento é com o morador.",
+   exemploReal:"No caso do Capital One (grande banco dos Estados Unidos), em 2019, uma configuração errada feita pelo cliente expôs dados de milhões de pessoas."},
+  {titulo:"Monitoramento do desempenho",
+   texto:"São painéis que mostram métricas (medidas como uso do processador e tempo de resposta) e alertas que avisam a equipe quando algo passa do limite. Assim, o problema é visto antes de o usuário reclamar.",
+   analogia:"É o painel do carro: mostra velocidade, combustível e acende uma luz quando algo vai mal.",
+   exemploReal:"O Amazon CloudWatch (serviço da AWS de gráficos e alertas) pode avisar a equipe quando o uso do processador passa de 80%."}
+ ],
+ roteiroDemo: {
+  passo0: "Antes de clicar, preveja: das seis tarefas de um banco de dados como serviço, quantas ficam com o provedor e quantas ficam com você, o cliente?",
+  passos: [
+   {acao:"Leia a primeira tarefa e clique em 'Provedor' ou 'Cliente'.", ve:"Quadro verde se acertar, vermelho se errar, sempre com explicação.", significa:"A responsabilidade é compartilhada: cada lado cuida de uma parte."},
+   {acao:"Se errar, clique no outro botão (o escolhido fica desativado).", ve:"Você pode tentar de novo.", significa:"A explicação do erro é a pista para o acerto."},
+   {acao:"Resolva as seis tarefas.", ve:"O contador mostra quantas já foram resolvidas.", significa:"Quem acerta quem faz o quê evita falhas de segurança por achar que 'o provedor cuida de tudo'."}
+  ]
+ },
+ demo: {tipo:"responsabilidade",
+  config:{itens:[
+   {t:"Trocar o disco que queimou no servidor onde o banco de dados roda.", dono:"provedor",
+    ok:"Hardware (equipamento físico) fica no data center do provedor, e é ele quem troca as peças.",
+    err:"O cliente nem tem acesso ao prédio nem às peças físicas do data center; isso não é tarefa dele."},
+   {t:"Instalar as atualizações de segurança do programa do banco de dados.", dono:"provedor",
+    ok:"É a grande vantagem do DBaaS: o provedor aplica as correções do banco para o cliente.",
+    err:"Em um serviço gerenciado, o cliente não precisa instalar essas atualizações; é isso que ele paga para o provedor fazer."},
+   {t:"Decidir quem pode ler a tabela com os dados dos clientes.", dono:"cliente",
+    ok:"Só o dono dos dados sabe quem deve ter acesso a eles; essa decisão é do cliente.",
+    err:"O provedor não conhece a regra de negócio da empresa; quem decide quem acessa os dados é o cliente."},
+   {t:"Escrever e otimizar as consultas (perguntas ao banco) usadas pelo aplicativo.", dono:"cliente",
+    ok:"As consultas fazem parte do aplicativo do cliente, e ele precisa escrevê-las bem.",
+    err:"O provedor não escreve o aplicativo do cliente; consultas ruins são problema do aplicativo."},
+   {t:"Manter energia e refrigeração do prédio onde o banco funciona.", dono:"provedor",
+    ok:"Energia e refrigeração do data center são infraestrutura do provedor.",
+    err:"O cliente não administra o prédio do data center; ele só aluga o serviço."},
+   {t:"Criar senha forte e ativar verificação em duas etapas nas contas de administrador.", dono:"cliente",
+    ok:"Credenciais de acesso são do cliente; senha fraca é uma das principais causas de invasão.",
+    err:"O provedor oferece a ferramenta, mas quem escolhe a senha e ativa a proteção é o cliente."}
+  ]}},
+ termosQuiz:"DBaaS = Banco de Dados como Serviço: o provedor administra o banco para você · Criptografia = embaralhar os dados com uma chave · Métrica = medida acompanhada, como o uso do processador · Alerta = aviso automático quando uma métrica passa do limite · Provedor = empresa que mantém a nuvem.",
+ quiz: [
+  {p:"Qual é a principal vantagem de usar um banco de dados como serviço (DBaaS)?",
+   alts:[
+    {t:"O provedor cuida de instalação, atualizações e cópias, e você foca nos dados.", ok:true, fb:"No DBaaS as tarefas de manutenção ficam com o provedor, o que libera a equipe para cuidar dos dados e do aplicativo."},
+    {t:"Você ganha acesso ao prédio do data center.", ok:false, fb:"O acesso físico continua exclusivo do provedor; o cliente usa o serviço pela internet."},
+    {t:"O banco de dados deixa de precisar de senha.", ok:false, fb:"Controle de acesso continua sendo necessário e é responsabilidade do cliente."}]},
+  {p:"Para que serve a criptografia (embaralhar os dados com uma chave)?",
+   alts:[
+    {t:"Para que quem interceptar os dados não consiga entendê-los sem a chave.", ok:true, fb:"Mesmo que alguém consiga acessar os dados, sem a chave eles parecem texto sem sentido."},
+    {t:"Para acelerar o banco de dados.", ok:false, fb:"Criptografia protege, mas não acelera nada; em geral ela até exige um pouco mais de trabalho do computador."},
+    {t:"Para apagar dados antigos.", ok:false, fb:"Apagar dados é outra operação; criptografar só os embaralha, sem removê-los."}]},
+  {p:"O que faz um alerta de monitoramento?",
+   alts:[
+    {t:"Avisa a equipe quando uma métrica, como o uso do processador, passa de um limite.", ok:true, fb:"O alerta é um aviso automático: a equipe fica sabendo do problema antes de os usuários reclamarem."},
+    {t:"Conserta sozinho qualquer defeito.", ok:false, fb:"O alerta apenas avisa; consertar é tarefa da equipe ou de outras automações, não do alerta em si."},
+    {t:"Bloqueia todos os usuários do sistema.", ok:false, fb:"Bloquear usuários seria uma medida drástica de segurança, não a função de um alerta de desempenho."}]}
+ ],
+ aprofundar: [
+  {tipo:"google", q:"banco de dados como serviço segurança e monitoramento em nuvem"},
+  {tipo:"scholar", q:"banco de dados como serviço computação em nuvem segurança"},
+  {tipo:"youtube", q:"banco de dados como serviço nuvem"}
+ ],
+ mitoOuVerdade: {afirmacao:"Se eu uso a nuvem pública, a segurança é 100% responsabilidade do provedor.", verdade:false, explicacao:"A responsabilidade é compartilhada: o provedor protege a infraestrutura, mas senhas, acessos e configurações são do cliente."}
+},
+/* ===================== ABA 5 ===================== */
+{
+ rotulo: "5 · Nuvem privada sob medida",
+ selo: "Arquiteto de Continuidade",
+ titulo: "Funcionalidades personalizadas em nuvens privadas",
+ narrativa: "Sua missão: ver o que a organização ganha por ter o controle da própria nuvem. Cinco personalizações se destacam: segurança sob medida, otimização do armazenamento, desempenho ajustado a cada aplicação, backup (do inglês, cópia de segurança) com recuperação de desastres (DR, do inglês Disaster Recovery: plano para voltar a funcionar depois de um problema grave, como um incêndio) e monitoramento com relatórios avançados. Como a estrutura é exclusiva, é possível mexer em detalhes que um provedor público não deixa personalizar.",
+ mundoReal: [
+  "Bancos brasileiros seguem regras do Banco Central (órgão que regula e fiscaliza os bancos) sobre segurança e continuidade do serviço; ter controle da estrutura ajuda a mostrar que cada regra está sendo cumprida.",
+  "Em 2021, um incêndio no data center da OVHcloud (provedora francesa de nuvem), em Estrasburgo, destruiu servidores; clientes sem cópia em outro local perderam dados."
+ ],
+ ferramentas: [
+  "OpenStack: programa livre para montar e administrar nuvens privadas.",
+  "VMware vSphere: plataforma de virtualização (criação de computadores virtuais) muito usada por empresas para montar nuvens privadas.",
+  "Zabbix: programa livre que monitora servidores e redes e envia alertas."
+ ],
+ dicionario: [
+  {t:"Backup", d:"Do inglês, cópia de segurança: cópia dos dados guardada para o caso de perda."},
+  {t:"Recuperação de desastres", d:"DR, do inglês Disaster Recovery: plano para voltar a funcionar depois de um problema grave."},
+  {t:"RPO", d:"Do inglês Recovery Point Objective; em português, objetivo de ponto de recuperação: quanto de dados, medido em tempo, você aceita perder."},
+  {t:"RTO", d:"Do inglês Recovery Time Objective; em português, objetivo de tempo de recuperação: quanto tempo você aceita ficar fora do ar."},
+  {t:"Deduplicação", d:"Técnica que apaga cópias repetidas de um mesmo dado para economizar espaço."},
+  {t:"Relatório", d:"Documento gerado pelo sistema que resume o uso, os acessos e os problemas do período."}
+ ],
+ conceitos: [
+  {titulo:"Segurança personalizada e otimização do armazenamento",
+   texto:"Na nuvem privada, a organização define as regras de acesso, onde cada dado fica e como é protegido, ajustando tudo às leis e às normas do seu setor. No armazenamento, ela pode organizar o que é usado todo dia em discos rápidos e o que é raro em discos baratos, além de usar a deduplicação (apagar cópias repetidas) para economizar espaço.",
+   analogia:"É como ter um cofre feito sob medida e um arquivo bem organizado: o que você usa todo dia fica à mão, o resto vai para o fundo.",
+   exemploReal:"Um hospital guarda exames (dados de saúde, considerados sensíveis pela LGPD, a Lei Geral de Proteção de Dados) com regras de acesso por função: só o médico responsável vê o exame do paciente."},
+  {titulo:"Desempenho personalizado das aplicações",
+   texto:"Como a estrutura é exclusiva, a organização pode dar prioridade a certos sistemas, reservar recursos para eles e ajustar o equipamento ao tipo de trabalho. O sistema mais importante não disputa recursos com os menos importantes.",
+   analogia:"É como a fila de um hospital: emergências passam na frente de consultas de rotina.",
+   exemploReal:"Um banco reserva mais capacidade para o sistema de pagamentos, que não pode atrasar, do que para o sistema de relatórios internos."},
+  {titulo:"Backup, recuperação de desastres e monitoramento avançado",
+   texto:"O backup (cópia de segurança) deve ficar em outro lugar, para que um desastre no local não destrua o original e a cópia juntos. Dois números orientam o plano: o RPO (quanto de dados você aceita perder) e o RTO (quanto tempo você aceita ficar parado). O monitoramento avançado gera relatórios sobre uso, acessos e falhas, que ajudam a prever problemas e a prestar contas.",
+   analogia:"É como guardar uma cópia da chave de casa na casa de um parente, e não pendurada na porta.",
+   exemploReal:"No incêndio da OVHcloud (provedora francesa de nuvem), em 2021, clientes que tinham cópias em outro local voltaram a funcionar; quem guardava tudo no mesmo prédio perdeu dados."}
+ ],
+ roteiroDemo: {
+  passo0: "Antes de simular, preveja: se o backup fica no mesmo prédio do servidor e o prédio pega fogo, o que acontece com a cópia?",
+  passos: [
+   {acao:"Escolha a frequência do backup e o local da cópia 'Mesmo data center'.", ve:"Na linha do tempo aparecem os pontos onde os backups são feitos.", significa:"Cada risquinho é um momento em que os dados foram copiados."},
+   {acao:"Ajuste o horário do incêndio e clique em '💥 Simular incêndio'.", ve:"Aparece quanto dado foi perdido.", significa:"A perda depende do local e da frequência das cópias."},
+   {acao:"Troque o local para 'Outra cidade' e simule de novo, depois mude a frequência.", ve:"A perda muda de forma clara.", significa:"Frequência define o RPO; local define se a cópia sobrevive ao desastre."}
+  ]
+ },
+ demo: {tipo:"backup", exploratoria:true,
+  legenda:"🔑 Legenda: min = minutos · h = horas · RPO = quanto de dados, medido em tempo, você aceita perder · Backup = cópia de segurança dos dados · Pedidos = vendas de uma loja virtual fictícia que vende 120 pedidos por hora.",
+  observar:"Compare a perda de dados quando o backup está no mesmo prédio e quando está em outra cidade, e depois mude a frequência das cópias. Teste as duas localizações.",
+  config:{}},
+ termosQuiz:"Backup = cópia de segurança dos dados · RPO = quanto de dados, medido em tempo, você aceita perder · RTO = quanto tempo você aceita ficar fora do ar · Desastre = problema grave, como incêndio ou inundação, que destrói equipamentos · Dados sensíveis = informações que exigem proteção especial.",
+ quiz: [
+  {p:"Por que uma nuvem privada permite personalizar mais a segurança?",
+   alts:[
+    {t:"Porque a organização controla a estrutura e pode definir regras sob medida.", ok:true, fb:"Como a estrutura é exclusiva, a organização escolhe regras de acesso, locais de guarda e proteções de acordo com o seu setor."},
+    {t:"Porque a nuvem privada dispensa o uso de senhas.", ok:false, fb:"Senhas e controle de acesso continuam necessários; a diferença é que a organização decide como configurá-los."},
+    {t:"Porque os provedores públicos proíbem qualquer tipo de segurança.", ok:false, fb:"Provedores públicos oferecem segurança, mas com menos liberdade de personalização do que uma estrutura exclusiva."}]},
+  {p:"Por que o backup deve ficar em outro lugar, longe do servidor original?",
+   alts:[
+    {t:"Para que um desastre no local, como um incêndio, não destrua o original e a cópia juntos.", ok:true, fb:"Cópia no mesmo prédio morre junto com o original. Em outra cidade, ela sobrevive ao desastre."},
+    {t:"Para deixar o servidor mais rápido.", ok:false, fb:"O local do backup não muda a velocidade do servidor; ele só afeta a segurança da cópia."},
+    {t:"Porque guardar cópia no mesmo prédio é proibido por lei.", ok:false, fb:"Não é proibido; é apenas arriscado, porque um desastre pode destruir tudo de uma vez."}]},
+  {p:"O RPO (quanto de dados, medido em tempo, você aceita perder) fica menor quando:",
+   alts:[
+    {t:"Os backups são feitos com mais frequência.", ok:true, fb:"Quanto mais perto do desastre foi o último backup, menos dados se perdem."},
+    {t:"Os backups são feitos uma vez por mês.", ok:false, fb:"Com cópias raras, o último backup fica muito distante do desastre e a perda aumenta, e o RPO piora."},
+    {t:"O backup é desligado para economizar.", ok:false, fb:"Sem backup não há ponto de recuperação nenhum, e todos os dados podem ser perdidos."}]}
+ ],
+ aprofundar: [
+  {tipo:"google", q:"backup e recuperação de desastres em nuvem privada"},
+  {tipo:"scholar", q:"recuperação de desastres computação em nuvem"},
+  {tipo:"youtube", q:"backup e recuperação de desastres computação em nuvem"}
+ ],
+ mitoOuVerdade: {afirmacao:"Ter backup significa que a empresa volta a funcionar instantaneamente depois de um desastre.", verdade:false, explicacao:"Restaurar os dados e reativar os sistemas leva tempo. Esse tempo é o RTO, e ele precisa ser planejado junto com o backup."}
+}
+],
+revisao: {
+ mapa: [
+  "1. Por que há vários tipos de nuvem: necessidades, regras e custos.",
+  "2. Os três tipos: pública, privada e híbrida.",
+  "3. Os tijolos da nuvem: armazenamento, processador, memória e rede.",
+  "4. Serviços com mais cuidado: banco de dados como serviço, segurança e monitoramento.",
+  "5. Nuvem privada sob medida: segurança, armazenamento, desempenho, cópias e relatórios."
+ ],
+ cola: [
+  {termo:"Nuvem pública", linha:"Estrutura do provedor (empresa que aluga a nuvem) dividida entre muitos clientes e cobrada conforme o uso."},
+  {termo:"Nuvem privada", linha:"Estrutura de uso exclusivo de uma organização, com mais controle e mais investimento adiantado."},
+  {termo:"Nuvem híbrida", linha:"Mistura de pública e privada: dados sensíveis em casa, picos de movimento na pública."},
+  {termo:"Elasticidade", linha:"Capacidade de aumentar e diminuir os recursos conforme a demanda, como uma sanfona."},
+  {termo:"LGPD", linha:"Lei Geral de Proteção de Dados: lei brasileira sobre o cuidado com dados pessoais."},
+  {termo:"Data center", linha:"Galpão com milhares de servidores, energia reserva e refrigeração."},
+  {termo:"CPU e RAM", linha:"CPU é o processador, que faz as contas; RAM é a memória temporária, a bancada de trabalho."},
+  {termo:"Mbps e latência", linha:"Mbps (megabits por segundo) mede a velocidade da rede; latência é o tempo de ida e volta de um pedido."},
+  {termo:"Gargalo", linha:"O recurso mais apertado, que limita o desempenho de todo o conjunto."},
+  {termo:"DBaaS", linha:"Banco de Dados como Serviço: o provedor administra o banco e você só usa os dados."},
+  {termo:"Criptografia e firewall", linha:"Criptografia embaralha os dados com uma chave; firewall é o muro virtual que filtra o que entra e sai."},
+  {termo:"Responsabilidade compartilhada", linha:"O provedor protege a infraestrutura; o cliente protege senhas, acessos e configurações."},
+  {termo:"Backup, RPO e RTO", linha:"Backup é a cópia de segurança; RPO é quanto de dados você aceita perder, em tempo; RTO é quanto tempo você aceita ficar fora do ar."},
+  {termo:"Recuperação de desastres", linha:"Plano para voltar a funcionar depois de um problema grave, como um incêndio no data center."}
+ ],
+ desafio: "Chefão: uma rede de farmácias (lojas em várias cidades) quer criar um aplicativo de entregas que aguente os picos das promoções de fim de ano e, ao mesmo tempo, guardar receitas e dados de saúde dos clientes com controle total, de acordo com a LGPD (na cola rápida). Monte uma proposta com quatro partes: (1) o tipo de nuvem escolhido (pública, privada ou híbrida) e por quê; (2) quais recursos (armazenamento, processador, memória ou rede) precisam crescer nos picos, lembrando do gargalo (na cola rápida); (3) como proteger os dados, usando criptografia e a responsabilidade compartilhada (na cola rápida); (4) o plano de backup em outro lugar, com a frequência escolhida e o RPO (na cola rápida) que a farmácia aceita."
+}
+};
+
+/* ===================== MOTOR ===================== */
+var estado = {xp:0, selos:{}, quizOk:[], demoOk:[], chefao:false};
+var timers = {};
+var ids = [];
+var abasEls = [];
+var paineisEls = [];
+var atual = -1;
+
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function el(tag, cls, html){ var e=document.createElement(tag); if(cls){ e.className=cls; } if(html!==undefined){ e.innerHTML=html; } return e; }
+function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function fmt(n){ return Number(n).toLocaleString("pt-BR"); }
+function minutosTxt(m){ m=Math.round(m); var h=Math.floor(m/60); var mm=m%60; if(h===0){ return mm+" min"; } if(mm===0){ return h+" h"; } return h+" h "+mm+" min"; }
+function horaTxt(m){ var h=Math.floor(m/60); var mm=m%60; return (h<10?"0":"")+h+":"+(mm<10?"0":"")+mm; }
+
+function busca(tipo,q){
+  var termo=q.split(" ").map(encodeURIComponent).join("+");
+  if(tipo==="google"){ return "https://www.google.com/search?hl=pt-BR&q="+termo; }
+  if(tipo==="scholar"){ return "https://scholar.google.com/scholar?hl=pt-BR&q="+termo; }
+  return "https://www.youtube.com/results?search_query="+termo+"+aula";
+}
+var ROTULOS_BUSCA={
+  google:"🔎 Busca no Google (português)",
+  scholar:"🎓 Pesquisa científica (Google Scholar, português)",
+  youtube:"🎬 Vídeos-aula no YouTube (busca em português)"
+};
+
+var toastTimer=null;
+function toast(msg){
+  var t=document.getElementById("toast"); t.textContent=msg; t.classList.add("on");
+  if(toastTimer){ clearTimeout(toastTimer); }
+  toastTimer=setTimeout(function(){ t.classList.remove("on"); },2600);
+}
+function atualizarTopo(){
+  var n=0; for(var k in estado.selos){ if(estado.selos[k]){ n++; } }
+  document.getElementById("xpInfo").textContent="⭐ "+estado.xp+" XP · 🏅 "+n+"/"+AULA_DADOS.abas.length+" selos";
+  for(var i=0;i<AULA_DADOS.abas.length;i++){
+    var b=document.getElementById("selo-tab-"+i);
+    if(b){ b.textContent = estado.selos[i] ? " ✔" : ""; }
+  }
+}
+function addXp(n){ estado.xp+=n; atualizarTopo(); }
+function checarSelo(i){
+  if(estado.quizOk[i]>=3 && estado.demoOk[i] && !estado.selos[i]){
+    estado.selos[i]=true; addXp(20);
+    toast("🏅 Selo conquistado: "+AULA_DADOS.abas[i].selo+" (+20 XP)");
+  }
+}
+function marcarDemo(i){
+  if(!estado.demoOk[i]){ estado.demoOk[i]=true; addXp(10); toast("🧪 Demo concluída! +10 XP"); checarSelo(i); }
+}
+
+/* ---------- Quiz ---------- */
+function renderQuiz(a,i,cont){
+  a.quiz.forEach(function(q,qi){
+    var bloco=el("div","pergunta");
+    bloco._erros=0;
+    bloco.appendChild(el("p","enun","<strong>"+(qi+1)+".</strong> "+esc(q.p)));
+    var lista=el("div","alts");
+    shuffle(q.alts.slice()).forEach(function(alt){
+      var b=el("button","alt",'<span class="mk" aria-hidden="true"></span><span class="tx"></span>');
+      b.type="button";
+      b.querySelector(".tx").textContent=alt.t;
+      b.setAttribute("data-fb",alt.fb);
+      b.setAttribute("data-ok",alt.ok?"1":"0");
+      b.addEventListener("click",function(){ responder(b,bloco,lista,i); });
+      lista.appendChild(b);
+    });
+    bloco.appendChild(lista);
+    var fb=el("div","fb"); fb.setAttribute("aria-live","polite");
+    bloco.appendChild(fb);
+    cont.appendChild(bloco);
+  });
+}
+function responder(b,bloco,lista,i){
+  if(b.disabled){ return; }
+  var ok=b.getAttribute("data-ok")==="1";
+  var fb=bloco.querySelector(".fb");
+  var txt=b.getAttribute("data-fb");
+  if(ok){
+    b.classList.add("certa");
+    b.querySelector(".mk").textContent="✓ ";
+    var todos=lista.querySelectorAll(".alt");
+    for(var k=0;k<todos.length;k++){ todos[k].disabled=true; }
+    fb.className="fb fb-ok";
+    fb.innerHTML='✅ <strong>Por que esta está certa:</strong> <span></span>';
+    fb.querySelector("span").textContent=txt;
+    var ganho=bloco._erros===0?10:5;
+    addXp(ganho);
+    toast("✅ Resposta certa! +"+ganho+" XP");
+    estado.quizOk[i]=(estado.quizOk[i]||0)+1;
+    checarSelo(i);
+  } else {
+    b.classList.add("errada");
+    b.querySelector(".mk").textContent="✗ ";
+    b.disabled=true;
+    bloco._erros++;
+    fb.className="fb fb-err";
+    fb.innerHTML='❌ <strong>Por que esta está errada:</strong> <span></span>';
+    fb.querySelector("span").textContent=txt;
+  }
+}
+
+/* ---------- Mito ou verdade ---------- */
+function renderMito(m,cont){
+  var box=el("div","cartao mito");
+  box.appendChild(el("h4",null,"🤔 Mito ou verdade?"));
+  box.appendChild(el("p",null,esc(m.afirmacao)));
+  var bV=el("button","btn sec","✅ Verdade"); bV.type="button";
+  var bM=el("button","btn sec","🚫 Mito"); bM.type="button";
+  var fb=el("div","fb"); fb.setAttribute("aria-live","polite");
+  function clique(escolhaVerdade,btn){
+    if(btn.disabled){ return; }
+    var certo=(escolhaVerdade===m.verdade);
+    if(certo){
+      bV.disabled=true; bM.disabled=true; btn.classList.add("on");
+      fb.className="fb fb-ok"; fb.innerHTML='✅ <strong>Por que esta está certa:</strong> <span></span>';
+    } else {
+      btn.disabled=true;
+      fb.className="fb fb-err"; fb.innerHTML='❌ <strong>Por que esta está errada:</strong> <span></span>';
+    }
+    fb.querySelector("span").textContent=m.explicacao;
+  }
+  bV.addEventListener("click",function(){ clique(true,bV); });
+  bM.addEventListener("click",function(){ clique(false,bM); });
+  box.appendChild(bV); box.appendChild(bM); box.appendChild(fb);
+  cont.appendChild(box);
+}
+
+/* ---------- Demos ---------- */
+var DEMOS={};
+
+DEMOS.custos=function(root,i){
+  var CAP=40, FIXO=9000, MAXC=16500;
+  var visto={baixo:false,alto:false};
+  var pre=el("div","presets");
+  var presets=[["🌙 Madrugada",5],["☀️ Dia comum",20],["🛍️ Black Friday",90]];
+  var lab=el("label",null,'Nível de demanda: <output>20</output> (de 0 a 100) ');
+  var out=lab.querySelector("output");
+  var rg=el("input"); rg.type="range"; rg.min=0; rg.max=100; rg.value=20; rg.setAttribute("aria-label","Nível de demanda");
+  var vis=el("div","custos-vis",
+    '<div class="linha"><span>🏢 Servidor próprio (custo fixo)</span><div class="trilho"><div class="barra b-own"></div></div><span class="v-own"></span></div>'+
+    '<div class="linha"><span>☁️ Nuvem (paga pelo uso)</span><div class="trilho"><div class="barra b-cloud"></div></div><span class="v-cloud"></span></div>'+
+    '<div class="linha"><span>📊 Uso do servidor próprio</span><div class="trilho"><div class="barra b-uso"></div></div><span class="v-uso"></span></div>');
+  var msg=el("div","msg"); msg.setAttribute("aria-live","polite");
+  function atualizar(){
+    var v=Number(rg.value); out.textContent=v;
+    var cloud=1500+v*150;
+    vis.querySelector(".b-own").style.width=(FIXO/MAXC*100)+"%";
+    vis.querySelector(".b-cloud").style.width=(cloud/MAXC*100)+"%";
+    vis.querySelector(".v-own").textContent="R$ "+fmt(FIXO)+" / mês";
+    vis.querySelector(".v-cloud").textContent="R$ "+fmt(cloud)+" / mês";
+    var uso=Math.min(100,Math.round(v/CAP*100));
+    var bu=vis.querySelector(".b-uso"); bu.style.width=uso+"%";
+    if(v>CAP){ bu.classList.add("alerta"); } else { bu.classList.remove("alerta"); }
+    vis.querySelector(".v-uso").textContent=(v>CAP?"ESTOUROU (100%+)":uso+"%");
+    var txt, cls="msg";
+    if(v>CAP){
+      txt="🔥 O servidor próprio estourou: a demanda passou do que ele aguenta, e o site fica lento ou fora do ar. Na nuvem, a elasticidade (capacidade que cresce sozinha) atende todo mundo, e a conta sobe para R$ "+fmt(cloud)+". Exemplo real: lojas online que não se prepararam para a Black Friday (dia de grandes promoções) ficam fora do ar justamente quando mais vendem.";
+      cls="msg ruim";
+    } else if(v<=10){
+      txt="🌙 Quase ninguém usando: o servidor próprio está "+(100-uso)+"% parado, mas você paga os mesmos R$ "+fmt(FIXO)+". Na nuvem, a conta é só R$ "+fmt(cloud)+". Exemplo real: o site de uma padaria às 3h da manhã.";
+      cls="msg bom";
+    } else {
+      txt="☀️ Movimento normal: o servidor próprio aguenta, mas fica "+(100-uso)+"% ocioso e custa R$ "+fmt(FIXO)+"; a nuvem custa R$ "+fmt(cloud)+(cloud<FIXO?" e você economiza.":" e já fica mais cara que o servidor próprio.")+" Exemplo real: o dia a dia de uma loja virtual de bairro.";
+    }
+    msg.className=cls; msg.textContent=txt;
+    if(v<=20){ visto.baixo=true; }
+    if(v>=70){ visto.alto=true; }
+    if(visto.baixo && visto.alto){ marcarDemo(i); }
+  }
+  presets.forEach(function(p){
+    var b=el("button","btn sec",p[0]); b.type="button";
+    b.addEventListener("click",function(){ rg.value=p[1]; atualizar(); });
+    pre.appendChild(b);
+  });
+  rg.addEventListener("input",atualizar);
+  root.appendChild(pre); root.appendChild(lab); root.appendChild(rg); root.appendChild(vis); root.appendChild(msg);
+  atualizar();
+  visto.baixo=false; visto.alto=false;
+};
+
+DEMOS.cenario=function(root,i,cfg){
+  var cen=cfg.cenarios; var idx=0;
+  function render(){
+    root.innerHTML="";
+    var c=cen[idx];
+    root.appendChild(el("h4",null,"Cenário "+(idx+1)+" de "+cen.length));
+    root.appendChild(el("p",null,esc(c.texto)));
+    var lista=el("div","alts");
+    var fb=el("div","fb"); fb.setAttribute("aria-live","polite");
+    var prox=el("button","btn","➡️ Próximo cenário"); prox.type="button"; prox.style.display="none";
+    prox.addEventListener("click",function(){ idx++; render(); });
+    c.opcoes.forEach(function(o){
+      var b=el("button","alt",'<span class="mk" aria-hidden="true"></span><span class="tx"></span>');
+      b.type="button"; b.querySelector(".tx").textContent=o.t;
+      b.addEventListener("click",function(){
+        if(b.disabled){ return; }
+        if(o.ok){
+          b.classList.add("certa"); b.querySelector(".mk").textContent="✓ ";
+          var todos=lista.querySelectorAll(".alt"); for(var k=0;k<todos.length;k++){ todos[k].disabled=true; }
+          fb.className="fb fb-ok"; fb.innerHTML='✅ <strong>Por que esta está certa:</strong> <span></span>'; fb.querySelector("span").textContent=o.fb;
+          if(idx<cen.length-1){ prox.style.display="inline-block"; }
+          else { fb.appendChild(el("p",null,"🎉 Você resolveu os três cenários!")); marcarDemo(i); }
+        } else {
+          b.classList.add("errada"); b.querySelector(".mk").textContent="✗ "; b.disabled=true;
+          fb.className="fb fb-err"; fb.innerHTML='❌ <strong>Por que esta está errada:</strong> <span></span>'; fb.querySelector("span").textContent=o.fb;
+        }
+      });
+      lista.appendChild(b);
+    });
+    root.appendChild(lista); root.appendChild(fb); root.appendChild(prox);
+  }
+  render();
+};
+
+DEMOS.recursos=function(root,i){
+  var defs=[
+    {id:"cpu",nome:"⚙️ Processador",min:1,max:16,step:1,val:4,un:" vCPU"},
+    {id:"ram",nome:"🧠 Memória RAM",min:1,max:32,step:1,val:8,un:" GB"},
+    {id:"net",nome:"🌐 Rede",min:50,max:1000,step:50,val:200,un:" Mbps"},
+    {id:"disco",nome:"💾 Armazenamento",min:50,max:1000,step:50,val:200,un:" GB"}
+  ];
+  var cap={cpu:function(v){return v*10;}, ram:function(v){return v*4;}, net:function(v){return v/5;}, disco:function(v){return v/2;}};
+  var ctl={}, outs={}, bars={}, pcts={};
+  var rodando=false;
+  var msg=el("div","msg","Ajuste os recursos e clique em ▶ Simular pico.");
+  msg.setAttribute("aria-live","polite");
+  var custoEl=el("p",null,"");
+  var usersEl=el("p",null,"<strong>Usuários simultâneos:</strong> 0");
+  function custo(){
+    var c=ctl.cpu.value*35+ctl.ram.value*12+ctl.net.value*0.15+ctl.disco.value*0.1;
+    return Math.round(c);
+  }
+  function atualizarCusto(){ custoEl.innerHTML="💰 <strong>Custo estimado:</strong> R$ "+fmt(custo())+" por mês (valores fictícios)"; }
+  defs.forEach(function(d){
+    var lin=el("div","slider-linha","<span>"+d.nome+"</span>");
+    var rg=el("input"); rg.type="range"; rg.min=d.min; rg.max=d.max; rg.step=d.step; rg.value=d.val; rg.setAttribute("aria-label",d.nome);
+    var o=el("output",null,d.val+d.un);
+    rg.addEventListener("input",function(){ o.textContent=rg.value+d.un; atualizarCusto(); });
+    ctl[d.id]=rg; outs[d.id]=o;
+    lin.appendChild(rg); lin.appendChild(o); root.appendChild(lin);
+  });
+  var painel=el("div","custos-vis");
+  defs.forEach(function(d){
+    var lin=el("div","linha","<span>"+d.nome+"</span>");
+    var tr=el("div","trilho"); var br=el("div","barra"); tr.appendChild(br);
+    var pc=el("span",null,"0%");
+    bars[d.id]=br; pcts[d.id]=pc;
+    lin.appendChild(tr); lin.appendChild(pc); painel.appendChild(lin);
+  });
+  var bt=el("button","btn","▶ Simular pico"); bt.type="button";
+  function travar(t){ for(var k in ctl){ ctl[k].disabled=t; } bt.disabled=t; }
+  function mostrar(users){
+    var lotados=[];
+    defs.forEach(function(d){
+      var c=cap[d.id](Number(ctl[d.id].value));
+      var p=Math.min(100,Math.round(users/c*100));
+      bars[d.id].style.width=p+"%"; pcts[d.id].textContent=p+"%";
+      if(p>=100){ bars[d.id].classList.add("alerta"); lotados.push(d.nome); } else { bars[d.id].classList.remove("alerta"); }
+    });
+    usersEl.innerHTML="<strong>Usuários simultâneos:</strong> "+users;
+    return lotados;
+  }
+  bt.addEventListener("click",function(){
+    if(rodando){ return; }
+    rodando=true; travar(true);
+    msg.className="msg"; msg.textContent="⏳ Os acessos estão subindo...";
+    var tick=0;
+    timers[i]=setInterval(function(){
+      tick++;
+      var users=tick*8;
+      var lot=mostrar(users);
+      if(lot.length>0){
+        clearInterval(timers[i]); timers[i]=null; rodando=false;
+        for(var k in ctl){ ctl[k].disabled=false; } bt.disabled=false;
+        msg.className="msg ruim";
+        msg.textContent="💥 Com "+users+" usuários simultâneos, lotou: "+lot.join(", ")+". Em um site real isso vira lentidão ou erro para quem está tentando comprar. Exemplo real: lojas online lentas na Black Friday por falta de capacidade. Ajuste os recursos e tente de novo.";
+      } else if(tick>=10){
+        clearInterval(timers[i]); timers[i]=null; rodando=false;
+        for(var k2 in ctl){ ctl[k2].disabled=false; } bt.disabled=false;
+        msg.className="msg bom";
+        msg.textContent="✅ Aguentou os 80 usuários simultâneos com custo estimado de R$ "+fmt(custo())+" por mês. Exemplo real: é esse equilíbrio entre desempenho e custo que as equipes de uma loja virtual buscam antes da Black Friday.";
+        marcarDemo(i);
+      }
+    },450);
+  });
+  root.appendChild(painel); root.appendChild(usersEl); root.appendChild(custoEl); root.appendChild(bt); root.appendChild(msg);
+  atualizarCusto();
+};
+
+DEMOS.responsabilidade=function(root,i,cfg){
+  var itens=cfg.itens; var feitos=0;
+  var cont=el("p",null,"<strong>Resolvidas:</strong> 0 de "+itens.length);
+  root.appendChild(cont);
+  itens.forEach(function(it){
+    var row=el("div","item-resp");
+    row.appendChild(el("p",null,esc(it.t)));
+    var bP=el("button","btn sec","☁️ Provedor"); bP.type="button";
+    var bC=el("button","btn sec","🧑‍💻 Cliente"); bC.type="button";
+    var fb=el("div","fb"); fb.setAttribute("aria-live","polite");
+    function clique(dono,btn){
+      if(btn.disabled){ return; }
+      if(dono===it.dono){
+        bP.disabled=true; bC.disabled=true; btn.classList.add("on");
+        fb.className="fb fb-ok"; fb.innerHTML='✅ <strong>Por que esta está certa:</strong> <span></span>'; fb.querySelector("span").textContent=it.ok;
+        row.classList.add("feito");
+        feitos++; cont.innerHTML="<strong>Resolvidas:</strong> "+feitos+" de "+itens.length;
+        if(feitos===itens.length){ marcarDemo(i); }
+      } else {
+        btn.disabled=true;
+        fb.className="fb fb-err"; fb.innerHTML='❌ <strong>Por que esta está errada:</strong> <span></span>'; fb.querySelector("span").textContent=it.err;
+      }
+    }
+    bP.addEventListener("click",function(){ clique("provedor",bP); });
+    bC.addEventListener("click",function(){ clique("cliente",bC); });
+    row.appendChild(bP); row.appendChild(bC); row.appendChild(fb);
+    root.appendChild(row);
+  });
+};
+
+DEMOS.backup=function(root,i){
+  var freqs=[{m:1440,t:"1 vez por dia"},{m:360,t:"A cada 6 h"},{m:60,t:"A cada 1 h"},{m:15,t:"A cada 15 min"}];
+  var locais=[{k:"mesmo",t:"🏢 Mesmo data center"},{k:"outro",t:"🌎 Outra cidade"}];
+  var sel={f:0,l:0};
+  var testados={mesmo:false,outro:false};
+  function grupo(titulo,opcoes,chave,rotulo){
+    var g=el("div",null,"<strong>"+titulo+"</strong> ");
+    var bs=[];
+    opcoes.forEach(function(o,idx){
+      var b=el("button","btn sec",o.t); b.type="button";
+      b.addEventListener("click",function(){ sel[chave]=idx; marca(); desenhar(null); });
+      bs.push(b); g.appendChild(b);
+    });
+    g._bs=bs; return g;
+  }
+  var gF=grupo("Frequência do backup:",freqs,"f");
+  var gL=grupo("Onde fica a cópia:",locais,"l");
+  function marca(){
+    gF._bs.forEach(function(b,idx){ if(idx===sel.f){ b.classList.add("on"); } else { b.classList.remove("on"); } });
+    gL._bs.forEach(function(b,idx){ if(idx===sel.l){ b.classList.add("on"); } else { b.classList.remove("on"); } });
+  }
+  var lab=el("label",null,"Hora do incêndio: <output>15:30</output> ");
+  var rg=el("input"); rg.type="range"; rg.min=1; rg.max=1439; rg.step=1; rg.value=930; rg.setAttribute("aria-label","Hora do incêndio");
+  var out=lab.querySelector("output");
+  var tl=el("div","timeline");
+  var horas=el("div","horas","<span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span>");
+  var msg=el("div","msg","Escolha a frequência e o local do backup, ajuste a hora e clique em simular."); msg.setAttribute("aria-live","polite");
+  var bt=el("button","btn","💥 Simular incêndio no data center"); bt.type="button";
+  function desenhar(fogoMin){
+    tl.innerHTML="";
+    var f=freqs[sel.f].m;
+    for(var t=0;t<=1440;t+=f){
+      var tk=el("div","tick"); tk.style.left=(t/1440*100)+"%"; tl.appendChild(tk);
+    }
+    var m=(fogoMin===null)?Number(rg.value):fogoMin;
+    var fg=el("div","fogo","🔥"); fg.style.left=(m/1440*100)+"%"; fg.style.top="1.2rem"; tl.appendChild(fg);
+    out.textContent=horaTxt(Number(rg.value));
+  }
+  rg.addEventListener("input",function(){ desenhar(null); });
+  bt.addEventListener("click",function(){
+    var m=Number(rg.value); var f=freqs[sel.f].m; var local=locais[sel.l].k;
+    var ultimo=Math.floor(m/f)*f; var perda=m-ultimo;
+    desenhar(m);
+    if(local==="mesmo"){
+      msg.className="msg ruim";
+      msg.textContent="🔥 O servidor e o backup estavam no mesmo prédio e queimaram juntos: perda total dos dados, não importa a frequência das cópias. Exemplo real: no incêndio da OVHcloud (provedora francesa de nuvem), em 2021, clientes sem cópia em outro local perderam dados.";
+    } else {
+      var pedidos=Math.round(120*perda/60);
+      msg.className="msg bom";
+      msg.textContent="🌎 A cópia estava em outra cidade e sobreviveu. Último backup às "+horaTxt(ultimo)+": você perdeu "+minutosTxt(perda)+" de dados, o que seriam cerca de "+pedidos+" pedidos de uma loja virtual que vende 120 pedidos por hora. Exemplo real: lojas online e bancos escolhem a frequência do backup pelo quanto de dado podem perder.";
+    }
+    testados[local]=true;
+    if(testados.mesmo && testados.outro){ marcarDemo(i); }
+  });
+  root.appendChild(gF); root.appendChild(gL); root.appendChild(lab); root.appendChild(rg);
+  root.appendChild(tl); root.appendChild(horas); root.appendChild(bt); root.appendChild(msg);
+  marca(); desenhar(null);
+};
+
+function limparDemo(i){ if(timers[i]){ clearInterval(timers[i]); timers[i]=null; } }
+function montarDemo(i){
+  limparDemo(i);
+  var root=document.getElementById("demo-"+i);
+  root.innerHTML="";
+  var d=AULA_DADOS.abas[i].demo;
+  DEMOS[d.tipo](root,i,d.config);
+}
+
+/* ---------- Renderização ---------- */
+function listaHtml(arr){ var h="<ul>"; arr.forEach(function(x){ h+="<li>"+esc(x)+"</li>"; }); return h+"</ul>"; }
+
+function renderAba(a,i){
+  var sec=el("section","painel");
+  sec.id="painel-"+ids[i]; sec.setAttribute("role","tabpanel"); sec.setAttribute("aria-labelledby","tab-"+ids[i]); sec.tabIndex=0;
+  sec.appendChild(el("h2",null,esc(a.titulo)));
+  sec.appendChild(el("div","missao","<h3>🎯 Missão</h3><p>"+esc(a.narrativa)+"</p>"));
+  var duas=el("div","duas");
+  duas.appendChild(el("div","cartao","<h4>🌍 No mundo real</h4>"+listaHtml(a.mundoReal)));
+  duas.appendChild(el("div","cartao","<h4>🧰 Serviços e ferramentas</h4>"+listaHtml(a.ferramentas)));
+  sec.appendChild(duas);
+
+  sec.appendChild(el("h3",null,"🧪 Demo interativa"));
+  var passos="<ol>"; a.roteiroDemo.passos.forEach(function(p){ passos+="<li>"+esc(p.acao)+"</li>"; }); passos+="</ol>";
+  sec.appendChild(el("div","instrucoes","<h4>📋 INSTRUÇÕES PASSO A PASSO</h4><p>"+esc(a.roteiroDemo.passo0)+"</p>"+passos));
+  if(a.demo.legenda){ sec.appendChild(el("div","legenda",esc(a.demo.legenda))); }
+  if(a.demo.exploratoria && a.demo.observar){ sec.appendChild(el("div","observar","👀 <strong>O que observar:</strong> "+esc(a.demo.observar))); }
+  var rot=el("details","roteiro");
+  var rh="<summary>🎤 Roteiro do apresentador</summary><p>"+esc(a.roteiroDemo.passo0)+"</p><ol>";
+  a.roteiroDemo.passos.forEach(function(p){ rh+="<li><strong>"+esc(p.acao)+"</strong><br>Você vê: "+esc(p.ve)+"<br>Significa: "+esc(p.significa)+"</li>"; });
+  rot.innerHTML=rh+"</ol>"; sec.appendChild(rot);
+  var area=el("div","demo-area"); area.id="demo-"+i; sec.appendChild(area);
+  var rb=el("button","btn sec","🔄 Reiniciar demo"); rb.type="button";
+  rb.addEventListener("click",function(){ montarDemo(i); });
+  sec.appendChild(rb);
+
+  sec.appendChild(el("h3",null,"❓ Quiz"));
+  sec.appendChild(el("div","termos","🔑 <strong>Termos deste quiz:</strong> "+esc(a.termosQuiz)));
+  var qz=el("div"); renderQuiz(a,i,qz); sec.appendChild(qz);
+
+  renderMito(a.mitoOuVerdade,sec);
+
+  sec.appendChild(el("h3",null,"📚 Para aprofundar em casa"));
+  var d1=el("details","d-dic"); var dh="<summary>📖 Mini-dicionário</summary><ul>";
+  a.dicionario.forEach(function(x){ dh+="<li><strong>"+esc(x.t)+":</strong> "+esc(x.d)+"</li>"; });
+  d1.innerHTML=dh+"</ul>"; sec.appendChild(d1);
+  var d2=el("details","d-con"); var ch="<summary>🧠 Conceitos em profundidade</summary>";
+  a.conceitos.forEach(function(c){
+    ch+="<h4>"+esc(c.titulo)+"</h4><p>"+esc(c.texto)+"</p><p>💡 <strong>Analogia:</strong> "+esc(c.analogia)+"</p><p>🌍 <strong>Exemplo real:</strong> "+esc(c.exemploReal)+"</p>";
+  });
+  d2.innerHTML=ch; sec.appendChild(d2);
+  var d3=el("details","d-bus"); var bh="<summary>🔗 Aprofunde com buscas</summary><ul>";
+  a.aprofundar.forEach(function(b){
+    bh+='<li><a href="'+esc(busca(b.tipo,b.q))+'" target="_blank" rel="noopener">'+ROTULOS_BUSCA[b.tipo]+'</a></li>';
+  });
+  d3.innerHTML=bh+"</ul>"; sec.appendChild(d3);
+  return sec;
+}
+
+function renderRevisao(r){
+  var sec=el("section","painel");
+  sec.id="painel-revisao"; sec.setAttribute("role","tabpanel"); sec.setAttribute("aria-labelledby","tab-revisao"); sec.tabIndex=0;
+  sec.appendChild(el("h2",null,"📝 Revisão da aula"));
+  sec.appendChild(el("h3",null,"🗺️ Mapa da aula"));
+  var ol=el("ol");
+  r.mapa.forEach(function(m,k){
+    var li=el("li"); var b=el("button","btn sec",esc(m.replace(/^\d+\.\s*/,""))); b.type="button";
+    b.addEventListener("click",function(){ irPara(k); });
+    li.appendChild(b); ol.appendChild(li);
+  });
+  sec.appendChild(ol);
+  sec.appendChild(el("h3",null,"📌 Cola rápida"));
+  var dl=el("dl","cola"); var dh="";
+  r.cola.forEach(function(c){ dh+="<dt>"+esc(c.termo)+"</dt><dd>"+esc(c.linha)+"</dd>"; });
+  dl.innerHTML=dh; sec.appendChild(dl);
+  sec.appendChild(el("h3",null,"👹 Chefão"));
+  sec.appendChild(el("div","missao","<p>"+esc(r.desafio)+"</p>"));
+  var ta=el("textarea"); ta.setAttribute("aria-label","Sua proposta para o Chefão"); ta.placeholder="Escreva aqui a sua proposta (pelo menos 4 frases)...";
+  sec.appendChild(ta);
+  var checks=el("div",null,"");
+  var itens=["Justifiquei minha escolha com um exemplo real.","Usei termos da cola rápida.","Revisei o texto antes de concluir."];
+  var cbs=[];
+  itens.forEach(function(t){
+    var lb=el("label",null,""); lb.style.display="block";
+    var cb=el("input"); cb.type="checkbox"; cbs.push(cb);
+    lb.appendChild(cb); lb.appendChild(document.createTextNode(" "+t)); checks.appendChild(lb);
+  });
+  sec.appendChild(checks);
+  var fim=el("button","btn","🏆 Concluir Chefão"); fim.type="button"; fim.disabled=true;
+  var msg=el("div","msg"); msg.style.display="none";
+  function verificar(){
+    var tudo=ta.value.trim().length>=60;
+    cbs.forEach(function(c){ if(!c.checked){ tudo=false; } });
+    fim.disabled=!tudo || estado.chefao;
+  }
+  ta.addEventListener("input",verificar);
+  cbs.forEach(function(c){ c.addEventListener("change",verificar); });
+  fim.addEventListener("click",function(){
+    if(estado.chefao){ return; }
+    estado.chefao=true; fim.disabled=true; addXp(30);
+    msg.style.display="block"; msg.className="msg bom";
+    msg.textContent="🏆 Chefão concluído! +30 XP. Compare sua proposta com a cola rápida e com as abas para conferir os conceitos.";
+    toast("🏆 Chefão concluído! +30 XP");
+  });
+  sec.appendChild(fim); sec.appendChild(msg);
+  return sec;
+}
+
+function renderAbas(){
+  var nav=document.getElementById("tabs");
+  var main=document.getElementById("paineis");
+  AULA_DADOS.abas.forEach(function(a,i){
+    ids.push("aba-"+(i+1));
+  });
+  ids.push("revisao");
+  AULA_DADOS.abas.forEach(function(a,i){
+    var b=el("button","tab",esc(a.rotulo)+'<span id="selo-tab-'+i+'"></span>');
+    b.type="button"; b.id="tab-"+ids[i]; b.setAttribute("role","tab"); b.setAttribute("aria-selected","false");
+    b.setAttribute("aria-controls","painel-"+ids[i]); b.tabIndex=-1;
+    b.addEventListener("click",function(){ irPara(i); });
+    nav.appendChild(b); abasEls.push(b);
+    var p=renderAba(a,i); main.appendChild(p); paineisEls.push(p);
+    estado.quizOk[i]=0; estado.demoOk[i]=false;
+    montarDemo(i);
+  });
+  var rb=el("button","tab","📝 Revisão");
+  var ri=ids.length-1;
+  rb.type="button"; rb.id="tab-revisao"; rb.setAttribute("role","tab"); rb.setAttribute("aria-selected","false");
+  rb.setAttribute("aria-controls","painel-revisao"); rb.tabIndex=-1;
+  rb.addEventListener("click",function(){ irPara(ri); });
+  nav.appendChild(rb); abasEls.push(rb);
+  var pr=renderRevisao(AULA_DADOS.revisao); main.appendChild(pr); paineisEls.push(pr);
+}
+
+/* ---------- Navegação (hash, compatível com file://) ---------- */
+function ativar(idx){
+  if(idx<0 || idx>=paineisEls.length){ idx=0; }
+  for(var k=0;k<paineisEls.length;k++){
+    var on=(k===idx);
+    abasEls[k].setAttribute("aria-selected",on?"true":"false");
+    abasEls[k].tabIndex=on?0:-1;
+    if(on){ paineisEls[k].classList.add("ativo"); } else { paineisEls[k].classList.remove("ativo"); }
+  }
+  atual=idx;
+  try{ abasEls[idx].scrollIntoView({block:"nearest",inline:"center"}); }catch(e){}
+}
+function parseHash(){
+  var h=location.hash.replace("#","");
+  var k=ids.indexOf(h);
+  return k<0?0:k;
+}
+function irPara(idx){
+  ativar(idx);
+  var h=ids[idx];
+  if(location.hash!=="#"+h){ location.hash=h; }
+  window.scrollTo(0,0);
+}
+
+/* ---------- Modos ---------- */
+var escuroAntes=false;
+function setModoAula(on){
+  var body=document.body; var btn=document.getElementById("btnModo"); var esc2=document.getElementById("btnEscuro");
+  var rots=document.querySelectorAll("details.roteiro");
+  if(on){
+    escuroAntes=body.classList.contains("escuro");
+    body.classList.remove("escuro"); body.classList.add("aula");
+    esc2.disabled=true; btn.textContent="📖 Modo Leitura"; btn.setAttribute("aria-pressed","true");
+    for(var k=0;k<rots.length;k++){ rots[k].open=true; }
+  } else {
+    body.classList.remove("aula");
+    if(escuroAntes){ body.classList.add("escuro"); }
+    esc2.disabled=false; btn.textContent="🎤 Modo Aula"; btn.setAttribute("aria-pressed","false");
+    for(var j=0;j<rots.length;j++){ rots[j].open=false; }
+  }
+}
+
+function init(){
+  renderAbas();
+  atualizarTopo();
+  document.getElementById("btnModo").addEventListener("click",function(){ setModoAula(!document.body.classList.contains("aula")); });
+  document.getElementById("btnEscuro").addEventListener("click",function(){
+    if(document.body.classList.contains("aula")){ return; }
+    document.body.classList.toggle("escuro");
+  });
+  document.getElementById("tabs").addEventListener("keydown",function(ev){
+    var n=abasEls.length; var novo=-1;
+    if(ev.key==="ArrowRight"){ novo=(atual+1)%n; }
+    else if(ev.key==="ArrowLeft"){ novo=(atual-1+n)%n; }
+    else if(ev.key==="Home"){ novo=0; }
+    else if(ev.key==="End"){ novo=n-1; }
+    if(novo>=0){ ev.preventDefault(); irPara(novo); abasEls[novo].focus(); }
+  });
+  document.addEventListener("keydown",function(ev){
+    if(!document.body.classList.contains("aula")){ return; }
+    var tg=ev.target; var tag=tg&&tg.tagName?tg.tagName:"";
+    if(tag==="INPUT"||tag==="TEXTAREA"||tag==="SELECT"||(tg&&tg.getAttribute&&tg.getAttribute("role")==="tab")){ return; }
+    var n=abasEls.length;
+    if(ev.key==="ArrowRight"){ ev.preventDefault(); irPara((atual+1)%n); }
+    else if(ev.key==="ArrowLeft"){ ev.preventDefault(); irPara((atual-1+n)%n); }
+  });
+  window.addEventListener("hashchange",function(){ ativar(parseHash()); });
+  ativar(parseHash());
+}
+init();
+</script>
+</body>
+</html>
