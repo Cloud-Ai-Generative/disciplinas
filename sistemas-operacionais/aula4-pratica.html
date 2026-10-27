@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sistemas Operacionais — Aula 4 · Processos, Threads e Escalonamento</title>
+<style>
+:root{
+  --accent:#6d28d9; --on-accent:#ffffff; --bg:#f3f0fa; --panel:#ffffff; --text:#1a2530; --muted:#42525f;
+  --soft:#ede9fe; --border:#6d28d9; --ok-bg:#dcfce7; --ok-tx:#14532d; --err-bg:#fee2e2; --err-tx:#7f1d1d;
+  --warn-bg:#fef3c7; --warn-tx:#4a3200; --info-bg:#e8eef9; --violet-bg:#f1e8fb; --shadow:rgba(109,40,217,.25);
+}
+body.escuro{
+  --accent:#c4b5fd; --on-accent:#1e1038; --bg:#120e1d; --panel:#1c1730; --text:#e8f0f5; --muted:#b2c2ce;
+  --soft:#2d2250; --border:#c4b5fd; --ok-bg:#12351f; --ok-tx:#c9f3d6; --err-bg:#431616; --err-tx:#fcd0d0;
+  --warn-bg:#3d3210; --warn-tx:#fbe9b0; --info-bg:#1b2a45; --violet-bg:#2a1f3d; --shadow:rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+html{font-size:18px}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.6}
+body.aula{font-size:22px}
+a{color:var(--accent)}
+.modo-btn{position:fixed;top:.5rem;right:.5rem;z-index:50;background:var(--accent);color:var(--on-accent);border:3px solid var(--text);border-radius:.6rem;padding:.35rem .7rem;font-size:.8rem;font-weight:700;cursor:pointer;box-shadow:0 3px 0 var(--shadow)}
+.topo{background:var(--accent);color:var(--on-accent);padding:1rem 1rem .8rem;padding-right:9rem}
+.topo h1{margin:0;font-size:1.35rem;line-height:1.25}
+.topo p{margin:.2rem 0 .5rem;font-size:.9rem}
+.topo .barra-topo{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;font-size:.85rem;font-weight:700}
+.topo button{background:var(--panel);color:var(--text);border:2px solid var(--text);border-radius:.5rem;padding:.2rem .6rem;cursor:pointer;font-size:.8rem}
+.topo button:disabled{opacity:.5;cursor:not-allowed}
+.tabs{position:sticky;top:0;z-index:40;display:flex;overflow-x:auto;gap:.25rem;padding:.5rem 9rem 0 .5rem;background:var(--bg);border-bottom:3px solid var(--border);white-space:nowrap}
+.tab{flex:0 0 auto;background:var(--soft);color:var(--text);border:3px solid var(--border);border-bottom:none;border-radius:.7rem .7rem 0 0;padding:.45rem .9rem;font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit}
+.tab[aria-selected="true"]{background:var(--panel);color:var(--accent);margin-bottom:-3px;padding-bottom:calc(.45rem + 3px);font-weight:800}
+.tab:focus-visible,.alt:focus-visible,button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(--text);outline-offset:2px}
+main{max-width:60rem;margin:0 auto;padding:0 .6rem 2rem}
+.painel{display:none;background:var(--panel);border:3px solid var(--border);border-top:none;border-radius:0 0 1rem 1rem;padding:1.1rem;box-shadow:0 6px 0 var(--shadow)}
+.painel.ativo{display:block}
+.painel h2{margin:.2rem 0 .8rem;color:var(--accent);font-size:1.45rem}
+.painel h3{margin:1.4rem 0 .5rem;font-size:1.15rem;border-bottom:3px solid var(--soft);padding-bottom:.2rem}
+.painel h4{margin:.2rem 0 .4rem}
+.missao{background:var(--soft);border:3px solid var(--border);border-radius:.9rem;padding:.8rem 1rem;box-shadow:0 4px 0 var(--shadow)}
+.missao h3{border:none;margin:0 0 .3rem}
+.missao p{margin:.2rem 0}
+.duas{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:.8rem;margin-top:.8rem}
+.cartao{border:3px solid var(--border);border-radius:.9rem;padding:.7rem 1rem;box-shadow:0 4px 0 var(--shadow);background:var(--panel)}
+.cartao h4{margin:0 0 .3rem;color:var(--accent)}
+.cartao ul{margin:.2rem 0;padding-left:1.2rem}
+.instrucoes{background:var(--warn-bg);color:var(--warn-tx);border:3px solid #d99a00;border-radius:.8rem;padding:.7rem 1rem;margin:.5rem 0}
+.instrucoes ol{margin:.3rem 0;padding-left:1.3rem}
+.legenda,.termos,.observar{border-radius:.7rem;padding:.55rem .9rem;margin:.5rem 0;font-size:.92rem}
+.legenda{background:var(--info-bg);border:2px solid var(--border)}
+.termos{background:var(--violet-bg);border:2px solid var(--border)}
+.observar{background:var(--ok-bg);color:var(--ok-tx);border:2px dashed var(--ok-tx)}
+details{border:2px solid var(--border);border-radius:.7rem;padding:.4rem .8rem;margin:.6rem 0;background:var(--info-bg)}
+details.d-dic{background:var(--soft)} details.d-con{background:var(--violet-bg)} details.d-bus{background:var(--info-bg)} details.roteiro{background:var(--warn-bg);color:var(--warn-tx)}
+summary{cursor:pointer;font-weight:700}
+.demo-area{border:3px solid var(--border);border-radius:.9rem;padding:.8rem;margin:.6rem 0;background:var(--panel);box-shadow:0 4px 0 var(--shadow)}
+button.btn{background:var(--accent);color:var(--on-accent);border:3px solid var(--text);border-radius:.6rem;padding:.35rem .8rem;font-size:.9rem;font-weight:700;cursor:pointer;font-family:inherit;margin:.2rem .2rem .2rem 0}
+button.btn.sec{background:var(--panel);color:var(--text)}
+button.btn.on{background:var(--text);color:var(--panel)}
+button.btn:disabled{opacity:.45;cursor:not-allowed}
+.pergunta{border:3px solid var(--border);border-radius:.9rem;padding:.7rem 1rem;margin:.7rem 0;box-shadow:0 4px 0 var(--shadow)}
+.pergunta .enun{margin:.1rem 0 .5rem}
+.alts{display:flex;flex-direction:column;gap:.45rem}
+.alt{display:flex;gap:.4rem;text-align:left;background:var(--panel);color:var(--text);border:3px solid var(--border);border-radius:.7rem;padding:.45rem .7rem;font-size:.95rem;font-family:inherit;cursor:pointer}
+.alt:hover:not(:disabled){background:var(--soft)}
+.alt.certa{background:var(--ok-bg);color:var(--ok-tx);border-color:var(--ok-tx);font-weight:700}
+.alt.errada{background:var(--err-bg);color:var(--err-tx);border-color:var(--err-tx);opacity:1}
+.alt:disabled{cursor:not-allowed}
+.fb{margin-top:.5rem;border-radius:.7rem;padding:.5rem .8rem;font-size:.92rem}
+.fb:empty{display:none}
+.fb-ok{background:var(--ok-bg);color:var(--ok-tx);border:2px solid var(--ok-tx)}
+.fb-err{background:var(--err-bg);color:var(--err-tx);border:2px solid var(--err-tx)}
+.msg{margin:.6rem 0;padding:.6rem .9rem;border-radius:.7rem;background:var(--info-bg);border:2px solid var(--border);font-size:.95rem}
+.msg.bom{background:var(--ok-bg);color:var(--ok-tx)} .msg.ruim{background:var(--err-bg);color:var(--err-tx)}
+.linha{display:grid;grid-template-columns:11rem 1fr 9rem;gap:.5rem;align-items:center;margin:.35rem 0;font-size:.85rem}
+.trilho{background:var(--soft);border:2px solid var(--border);height:1.2rem;border-radius:.6rem;overflow:hidden}
+.barra{height:100%;background:var(--accent);width:0;transition:width .3s}
+.barra.alerta{background:#b91c1c}
+.slider-linha{display:grid;grid-template-columns:12rem 1fr 6rem;gap:.5rem;align-items:center;margin:.3rem 0;font-size:.85rem}
+input[type=range]{width:100%}
+.timeline{position:relative;height:3rem;background:var(--soft);border:2px solid var(--border);border-radius:.6rem;margin:.8rem 0}
+.tick{position:absolute;top:.2rem;width:3px;height:1.2rem;background:var(--accent)}
+.fogo{position:absolute;top:0;font-size:1.5rem;transform:translateX(-50%)}
+.horas{display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)}
+.item-resp{border:2px solid var(--border);border-radius:.7rem;padding:.5rem .8rem;margin:.5rem 0}
+.item-resp.feito{background:var(--ok-bg)}
+.mito button{margin-right:.5rem}
+.selo-badge{display:inline-block;background:var(--ok-bg);color:var(--ok-tx);border:2px solid var(--ok-tx);border-radius:1rem;padding:0 .6rem;font-size:.8rem;margin-left:.5rem}
+.cola dt{font-weight:700;color:var(--accent);margin-top:.5rem}
+.cola dd{margin:0 0 .2rem 1rem}
+textarea{width:100%;min-height:7rem;font-family:inherit;font-size:.95rem;border:3px solid var(--border);border-radius:.7rem;padding:.5rem;background:var(--panel);color:var(--text)}
+#toast{position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);background:var(--text);color:var(--panel);padding:.5rem 1rem;border-radius:.7rem;font-size:.9rem;z-index:60;opacity:0;pointer-events:none;transition:opacity .3s;max-width:90vw}
+#toast.on{opacity:1}
+footer{max-width:60rem;margin:0 auto;padding:1rem .8rem 3rem;font-size:.8rem;color:var(--muted)}
+footer .bloco{border-top:2px solid var(--border);padding-top:.6rem;margin-top:.8rem}
+footer h5{margin:.1rem 0 .3rem;font-size:.85rem;color:var(--text)}
+footer ul{list-style:none;padding:0;margin:.2rem 0}
+footer p{margin:.25rem 0}
+.estados{display:flex;flex-wrap:wrap;gap:.5rem;margin:.4rem 0}
+.est{padding:.4rem .8rem;border:3px solid var(--border);border-radius:.7rem;font-size:.9rem}
+.est.on{background:var(--accent);color:var(--on-accent);font-weight:800}
+.gantt{display:flex;flex-wrap:wrap;gap:2px;min-height:2.4rem;margin:.4rem 0}
+.bl{width:2.1rem;height:2.2rem;display:flex;align-items:center;justify-content:center;font-size:.75rem;border:2px solid var(--text);color:#1a1a1a;font-weight:700}
+.tab-proc{border-collapse:collapse;margin:.3rem 0;font-size:.9rem}
+.tab-proc th,.tab-proc td{border:2px solid var(--border);padding:.2rem .7rem;text-align:center}
+@media (max-width:640px){
+  .topo{padding-right:1rem;padding-top:2.6rem}
+  .tabs{padding-right:.5rem}
+  .linha,.slider-linha{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<button id="btnModo" class="modo-btn" type="button" aria-pressed="false">🎤 Modo Aula</button>
+<header class="topo">
+  <h1>⚙️ Sistemas Operacionais — Aula 4: Processos, Threads e Escalonamento</h1>
+  <p>Unidade 2 · págs. 10 a 23</p>
+  <div class="barra-topo">
+    <span id="xpInfo">⭐ 0 XP · 🏅 0/5 selos</span>
+    <button id="btnEscuro" type="button">🌙 Escuro</button>
+  </div>
+</header>
+<nav class="tabs" id="tabs" role="tablist" aria-label="Abas da aula"></nav>
+<main id="paineis"></main>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<footer>
+  <div class="bloco">
+    <h5>📋 FICHA TÉCNICA DA AULA</h5>
+    <p>Sistemas Operacionais — Aula 4, Unidade 2, págs. 10–23 · Gerado em 27/10/2026 · 5 abas + Revisão · 15 perguntas · 5 demos · cor #6d28d9</p>
+  </div>
+  <div class="bloco">
+    <h5>🪄 SOBRE O HTMLearning · v2.17 (23/10/2026)</h5>
+    <p>Transformar o sumário de qualquer disciplina em uma classe interativa em HTML único e offline, com previsão antes do clique, tentativa e erro guiado e exemplos reais.</p>
+    <ul>
+      <li>• O que é: metodologia e arquitetura de prompts que converte sumários em aulas interativas em minutos, com IAs gratuitas.</li>
+      <li>• O que entrega: 5 a 7 abas + Revisão, simulações com previsão, quiz com retry sem revelar gabarito, linguagem plana, Modos Apresentação/Leitura.</li>
+      <li>• Por que é inclusivo: um único .html leve, 100% offline, roda em PC e celular e viaja em pen drive para escolas desconectadas ou áreas rurais.</li>
+    </ul>
+    <p>Idealizador do projeto: Professor Wellington Dimas da Cruz</p>
+    <p>Apoiadora do projeto: Prof.ª Dr.ª Mariella Berger Andrade (IFES / CEFOR)</p>
+    <p><strong>Contatos e links do projeto:</strong></p>
+    <ul>
+      <li>E-mail do idealizador: <a href="mailto:cloud.ai-generative@outlook.com">cloud.ai-generative@outlook.com</a></li>
+      <li>Repositório GitHub do idealizador: <a href="https://github.com/cloud-ai-Generative" target="_blank" rel="noopener">https://github.com/cloud-ai-Generative</a></li>
+      <li>Currículo Lattes do idealizador: <a href="https://lattes.cnpq.br/6801791839011321" target="_blank" rel="noopener">https://lattes.cnpq.br/6801791839011321</a></li>
+      <li>Currículo Lattes da apoiadora: <a href="https://lattes.cnpq.br/3929645439848570" target="_blank" rel="noopener">https://lattes.cnpq.br/3929645439848570</a></li>
+      <li>Site oficial do projeto: <a href="https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html" target="_blank" rel="noopener">https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html</a></li>
+    </ul>
+  </div>
+</footer>
+
+<script>
+"use strict";
+var COR = "#6d28d9";
+
+var AULA_DADOS = {
+abas: [
+/* ===================== ABA 1 ===================== */
+{
+ rotulo: "1 · Processos",
+ selo: "Domador de Processos",
+ titulo: "Processos: programas em execução",
+ narrativa: "Sua missão: entender o que é um processo e por que o sistema operacional precisa controlá-lo. Um programa é uma receita guardada no papel; o processo é a cozinheira cozinhando de verdade, com a panela no fogo e o relógio correndo. O sistema operacional (SO: o programa-chefe que administra o computador, como o Windows da Microsoft, o Linux, livre e muito usado em servidores, e o Android, do Google, para celulares) guarda uma ficha de cada processo, o PCB (do inglês Process Control Block; em português, Bloco de Controle de Processo: ficha com número, estado e dados do processo). Ao longo da vida, o processo muda de estado: pronto (espera a vez), executando (usa a CPU, do inglês Central Processing Unit; em português, Unidade Central de Processamento: o chip que faz as contas) ou bloqueado (espera algo lento, como o disco).",
+ mundoReal: [
+  "O Google Chrome (navegador de internet do Google) abre processos separados para abas e extensões; por isso uma aba travada costuma não derrubar as outras.",
+  "O Gerenciador de Tarefas do Windows (programa da Microsoft que lista tudo o que está rodando) mostra cada processo com seu PID (do inglês Process Identifier; em português, identificador de processo: o número de cada processo) e o uso de CPU e memória."
+ ],
+ ferramentas: [
+  "Gerenciador de Tarefas do Windows: lista os processos, o uso de CPU e permite encerrar um processo travado.",
+  "top: programa de linha de comando do Linux que funciona como um painel em tempo real dos processos que mais usam a CPU."
+ ],
+ dicionario: [
+  {t:"Programa", d:"Receita guardada: arquivo com as instruções, parado no disco."},
+  {t:"Processo", d:"Programa em execução, com memória, estado e ficha própria."},
+  {t:"PCB", d:"Bloco de Controle de Processo: a ficha onde o SO guarda número, estado e dados do processo."},
+  {t:"PID", d:"Identificador de processo: o número único de cada processo em andamento."},
+  {t:"Estado do processo", d:"Situação atual: pronto, executando ou bloqueado, entre outras."},
+  {t:"Troca de contexto", d:"Guardar a ficha do processo que sai da CPU e carregar a do próximo, como marcar a página do livro antes de trocar de leitura."},
+  {t:"E/S", d:"Entrada e saída: ler ou gravar em disco, rede, teclado ou tela."}
+ ],
+ conceitos: [
+  {titulo:"Programa versus processo",
+   texto:"Um programa é um arquivo parado no disco. Quando você o abre, o SO cria um processo: reserva memória, cria a ficha (PCB) e coloca o processo na fila para usar a CPU. O mesmo programa pode gerar vários processos ao mesmo tempo.",
+   analogia:"A receita é o programa; cada cozinheira que a prepara em uma cozinha diferente é um processo.",
+   exemploReal:"Abrir o Chrome (navegador do Google) duas vezes cria dois processos do mesmo programa, cada um com sua memória e seu PID."},
+  {titulo:"Estados do processo",
+   texto:"Um processo novo é admitido e fica pronto. O escalonador (parte do SO que escolhe quem usa a CPU) o coloca em execução. Se ele pede algo lento, como ler o disco (E/S, entrada e saída), fica bloqueado e libera a CPU. Quando o disco responde, volta a pronto. Se a fatia de tempo acaba, também volta a pronto. Ao terminar, vai para terminado.",
+   analogia:"É como uma fila de banco: esperar na fila (pronto), ser atendido no guichê (executando) e ir buscar um documento no carro enquanto outro cliente é atendido (bloqueado).",
+   exemploReal:"O Word (editor de textos da Microsoft) pede ao disco para abrir um arquivo grande: enquanto espera, fica bloqueado e a CPU atende outros programas."},
+  {titulo:"Criação, término e troca de contexto",
+   texto:"Um processo pode criar outros, formando uma árvore de processos. No Linux, a chamada fork (do inglês 'bifurcar': cria um processo filho, cópia do pai) faz isso. Cada vez que a CPU passa de um processo a outro, o SO faz uma troca de contexto: salva a ficha de um e carrega a do outro. Essa troca custa um pouco de tempo.",
+   analogia:"Pai e filho são como uma matriz e uma filial: o filho começa como cópia, mas depois segue seu próprio caminho.",
+   exemploReal:"No terminal do Linux (janela onde se digitam comandos), o terminal é o processo pai e cada comando digitado roda em um processo filho."}
+ ],
+ roteiroDemo: {
+  passo0: "Antes de clicar, preveja: um processo recém-criado vai direto para a CPU ou antes precisa esperar na fila de prontos?",
+  passos: [
+   {acao:"Clique em 'Admitir na fila' e depois em 'Escalonador escolhe este processo'.", ve:"O quadro do estado atual muda de 'Novo' para 'Pronto' e depois para 'Executando'.", significa:"Todo processo passa pela fila de prontos antes de usar a CPU."},
+   {acao:"Com o processo executando, clique em 'Pede leitura do disco' e depois em 'Disco respondeu'.", ve:"Ele vai para 'Bloqueado' e volta para 'Pronto'.", significa:"Esperar o disco não ocupa a CPU, que fica livre para outros."},
+   {acao:"Tente clicar num evento que não faz sentido para o estado atual, depois conclua com 'Termina o trabalho'.", ve:"O sistema avisa que nada acontece, e o processo chega a 'Terminado'.", significa:"Cada evento só vale em certos estados."}
+  ]
+ },
+ demo: {tipo:"ciclo", exploratoria:true,
+  legenda:"🔑 Legenda: PCB = a ficha do processo · PID = número do processo · CPU = o chip que faz as contas · E/S = entrada e saída (ler ou gravar em disco, rede, teclado) · Fatia de CPU = um pedaço do tempo em que o processo usou a CPU.",
+  observar:"Veja qual estado o processo ocupa a cada clique, quais botões fazem efeito em cada estado e quantas fatias de CPU ele já usou. Descubra sozinho o caminho completo da vida de um processo.",
+  config:{}},
+ termosQuiz:"PCB = a ficha do processo, onde o SO guarda número, estado e dados · CPU = o chip que faz as contas do computador · Bloqueado = esperando algo lento, como o disco, sem usar a CPU · Estado = a situação atual do processo · Programa = o arquivo com as instruções, parado no disco.",
+ quiz: [
+  {p:"Qual é a diferença entre um programa e um processo?",
+   alts:[
+    {t:"Programa é a receita guardada; processo é essa receita sendo executada, com estado e recursos.", ok:true, fb:"O programa fica parado no disco. Quando é executado, o SO cria um processo, com memória, ficha (PCB) e estado próprios."},
+    {t:"São sinônimos: os dois são o mesmo arquivo no disco.", ok:false, fb:"Não são: o programa é só o arquivo, e o processo é a execução dele. O mesmo programa pode gerar vários processos, como duas janelas do Chrome (navegador do Google)."},
+    {t:"Processo é o arquivo no disco e programa só existe na memória.", ok:false, fb:"É o contrário: o arquivo parado no disco é o programa, e o processo é a execução viva, na memória."}]},
+  {p:"Um processo pediu para ler um arquivo do disco, que é lento. Em que estado ele fica enquanto espera?",
+   alts:[
+    {t:"Bloqueado, esperando o disco, enquanto a CPU atende outro processo.", ok:true, fb:"Ficar bloqueado libera a CPU: o SO a entrega a outro processo pronto, em vez de deixá-la parada esperando o disco."},
+    {t:"Executando, parado dentro da CPU.", ok:false, fb:"Deixar o processo parado na CPU desperdiçaria o chip. Por isso o SO o tira de lá e o marca como bloqueado."},
+    {t:"Terminado, porque pediu algo ao disco.", ok:false, fb:"Pedir o disco não encerra o processo: ele continua de onde parou quando o disco responder."}]},
+  {p:"Para que serve o PCB (a ficha do processo)?",
+   alts:[
+    {t:"Guardar estado, número e dados do processo para o SO retomá-lo de onde parou.", ok:true, fb:"Sem a ficha, ao trocar de processo o SO perderia onde cada um estava. O PCB é o que permite a troca de contexto."},
+    {t:"Acelerar a leitura do disco.", ok:false, fb:"A ficha não acelera o disco; ela guarda informações de controle sobre o processo."},
+    {t:"Conter o código-fonte do programa.", ok:false, fb:"O código do programa fica no arquivo e na memória do processo; a ficha guarda controle, como estado e número (PID)."}]}
+ ],
+ aprofundar: [
+  {tipo:"google", q:"processos sistemas operacionais estados do processo"},
+  {tipo:"scholar", q:"sistemas operacionais gerenciamento de processos"},
+  {tipo:"youtube", q:"sistemas operacionais processos estados"}
+ ],
+ mitoOuVerdade: {afirmacao:"Quando um processo está bloqueado, ele continua ocupando a CPU.", verdade:false, explicacao:"Bloqueado quer dizer que o processo espera algo lento fora da CPU, como o disco. Enquanto isso, o SO entrega a CPU a outro processo pronto."}
+},
+/* ===================== ABA 2 ===================== */
+{
+ rotulo: "2 · Threads",
+ selo: "Costureiro de Threads",
+ titulo: "Threads: várias linhas de execução no mesmo processo",
+ narrativa: "Sua missão: entender por que existem threads (do inglês 'fios': linhas de execução dentro de um mesmo processo) e no que elas diferem dos processos. Imagine uma cozinha, que é o processo, com vários cozinheiros, que são as threads: todos usam a mesma despensa e os mesmos fogões, mas cada um tem seu caderno de anotações e sabe em que passo da receita está. Isso permite fazer várias coisas ao mesmo tempo no mesmo programa, como digitar e corrigir a ortografia em um editor de textos. É o modelo de threads: o processo guarda os recursos, e as threads são as linhas que executam.",
+ mundoReal: [
+  "Um editor de textos como o Word (editor da Microsoft) costuma usar uma thread para receber o que você digita e outras para corrigir a ortografia e salvar automaticamente.",
+  "O Apache (servidor web livre, programa que entrega páginas de internet) pode atender vários visitantes ao mesmo tempo usando uma thread para cada pedido."
+ ],
+ ferramentas: [
+  "Java (linguagem de programação): oferece a classe Thread para criar threads dentro de um programa.",
+  "pthreads (biblioteca padrão para criar threads em Linux e sistemas parecidos): permite que programas em linguagem C criem e controlem threads."
+ ],
+ dicionario: [
+  {t:"Thread", d:"Linha de execução dentro de um processo; vários fios dividem a mesma memória."},
+  {t:"Pilha", d:"Área onde cada thread anota as variáveis locais e o caminho de volta das funções."},
+  {t:"Contador de programa", d:"Marcador de qual instrução a thread executa em seguida."},
+  {t:"Registradores", d:"Gavetinhas minúsculas dentro da CPU com os valores em uso agora."},
+  {t:"Concorrência", d:"Várias tarefas progredindo de forma alternada, mesmo com uma só CPU."},
+  {t:"Paralelismo", d:"Várias tarefas realmente ao mesmo tempo, em CPUs ou núcleos diferentes."}
+ ],
+ conceitos: [
+  {titulo:"O que a thread compartilha e o que é próprio dela",
+   texto:"Todas as threads de um processo dividem o código do programa, as variáveis globais (dados guardados na memória do processo) e os arquivos abertos. Cada thread tem a sua própria pilha, o seu contador de programa e os seus registradores, porque cada uma está em um ponto diferente da execução.",
+   analogia:"Cozinheiros dividem despensa e fogões (recursos), mas cada um tem seu caderno de anotações (pilha) e seu dedo marcando o passo da receita (contador).",
+   exemploReal:"Em um editor de textos como o Word (editor da Microsoft), a thread de digitação e a de ortografia enxergam o mesmo documento, mas cada uma tem o seu ponto de execução."},
+  {titulo:"Por que usar threads",
+   texto:"Criar uma thread é mais barato do que criar um processo, e a troca entre threads do mesmo processo também é mais rápida, porque a memória é a mesma. Com várias threads, o programa aproveita vários núcleos da CPU e continua respondendo enquanto faz tarefas demoradas.",
+   analogia:"Contratar mais um cozinheiro para a mesma cozinha é mais rápido do que abrir um restaurante novo.",
+   exemploReal:"O Apache (servidor web livre) atende muitos visitantes ao mesmo tempo com threads, sem abrir um processo novo para cada um."},
+  {titulo:"Riscos das threads",
+   texto:"Como as threads dividem a memória, um erro em uma thread pode derrubar o processo inteiro, e duas threads mexendo no mesmo dado podem se atrapalhar. Processos, ao contrário, são isolados entre si.",
+   analogia:"Se um cozinheiro derruba a despensa, todos os outros sofrem; já restaurantes separados não se afetam.",
+   exemploReal:"O Chrome (navegador do Google) isola abas em processos justamente porque threads de um mesmo processo não são isoladas umas das outras."}
+ ],
+ roteiroDemo: {
+  passo0: "Antes de clicar, preveja: dos seis itens de um processo com várias threads, quantos são divididos por todas as threads e quantos são próprios de cada uma?",
+  passos: [
+   {acao:"Leia o primeiro item e clique em 'Compartilhado' ou 'Próprio da thread'.", ve:"Quadro verde se acertar e vermelho se errar, sempre com explicação.", significa:"A divisão entre o que é do processo e o que é da thread explica o poder e o risco das threads."},
+   {acao:"Se errar, clique no outro botão (o escolhido fica desativado).", ve:"Você pode tentar de novo.", significa:"A explicação do erro é a pista para o acerto."},
+   {acao:"Resolva os seis itens.", ve:"O contador mostra quantos já foram resolvidos.", significa:"Saber o que é compartilhado ajuda a prever onde threads podem se atrapalhar."}
+  ]
+ },
+ demo: {tipo:"classificar",
+  config:{
+   botoes:[{k:"compartilhado",t:"🤝 Compartilhado por todas as threads"},{k:"proprio",t:"🧵 Próprio de cada thread"}],
+   itens:[
+    {t:"O código do programa (as instruções que serão executadas).", dono:"compartilhado",
+     ok:"Todas as threads executam o mesmo programa, que fica uma só vez na memória do processo. Exemplo real: as threads de um editor de textos como o Word executam o mesmo código.",
+     err:"Cada thread não carrega uma cópia própria do programa; o código fica uma só vez na memória do processo."},
+    {t:"As variáveis globais (dados guardados na memória do processo).", dono:"compartilhado",
+     ok:"Os dados globais ficam na memória do processo, que é a mesma para todas as threads. Exemplo real: duas threads de um servidor web enxergam o mesmo contador de visitas.",
+     err:"Variáveis globais não pertencem a uma thread só; ficam na memória do processo, visível a todas."},
+    {t:"Os arquivos abertos.", dono:"compartilhado",
+     ok:"Os arquivos abertos pertencem ao processo, então todas as threads podem usá-los. Exemplo real: uma thread do editor grava o documento aberto por outra.",
+     err:"Arquivo aberto é recurso do processo, e não de uma thread isolada."},
+    {t:"A pilha (onde ficam variáveis locais e o caminho de volta das funções).", dono:"proprio",
+     ok:"Cada thread chama funções diferentes, então precisa da própria pilha. Exemplo real: a thread de digitação e a de ortografia estão em funções diferentes ao mesmo tempo.",
+     err:"Se a pilha fosse dividida, as threads misturariam as variáveis locais umas das outras; por isso cada uma tem a sua."},
+    {t:"O contador de programa (marcador de qual instrução vem a seguir).", dono:"proprio",
+     ok:"Cada thread está em um ponto diferente do programa. Exemplo real: uma thread salva o arquivo enquanto a outra ainda recebe o que você digita.",
+     err:"Um contador único faria todas as threads executarem a mesma instrução ao mesmo tempo, o que anularia a ideia de várias linhas de execução."},
+    {t:"Os registradores (gavetinhas da CPU com os valores em uso agora).", dono:"proprio",
+     ok:"Os valores em uso mudam de thread para thread, então cada uma precisa guardar os seus ao ser trocada. Exemplo real: ao alternar entre digitar e corrigir ortografia, a CPU salva e recarrega os registradores de cada thread.",
+     err:"Registradores guardam o que cada thread está calculando agora; se fossem divididos, uma thread estragaria as contas da outra."}
+   ]}},
+ termosQuiz:"Thread = linha de execução dentro de um processo · Pilha = onde cada thread anota variáveis locais e o caminho de volta das funções · Compartilhado = usado por todas as threads do processo · Isolado = separado, sem enxergar o que é do outro · Processo = programa em execução.",
+ quiz: [
+  {p:"Qual destes itens é próprio de cada thread, e não compartilhado?",
+   alts:[
+    {t:"A pilha, com as anotações do caminho percorrido.", ok:true, fb:"Cada thread está em um ponto diferente do programa, então precisa da sua pilha para não misturar variáveis locais."},
+    {t:"O código do programa.", ok:false, fb:"O código é compartilhado: todas as threads executam o mesmo programa, guardado uma só vez na memória."},
+    {t:"Os arquivos abertos.", ok:false, fb:"Arquivos abertos pertencem ao processo, e todas as threads podem usá-los."}]},
+  {p:"Qual é uma vantagem das threads em relação a criar vários processos?",
+   alts:[
+    {t:"São mais leves e compartilham memória com facilidade.", ok:true, fb:"Criar e trocar threads é mais barato porque a memória já é a mesma. Por isso servidores como o Apache (servidor web livre) as usam."},
+    {t:"São totalmente isoladas, e um erro em uma não afeta as outras.", ok:false, fb:"O isolamento é vantagem dos processos. Em threads, um erro pode derrubar o processo inteiro."},
+    {t:"Não usam CPU.", ok:false, fb:"Threads usam CPU como qualquer outra execução; a diferença está em serem mais leves."}]},
+  {p:"Em um editor de textos, qual tarefa combina bem com uma thread separada?",
+   alts:[
+    {t:"Corrigir a ortografia enquanto você digita.", ok:true, fb:"Assim a digitação não trava enquanto a correção trabalha, e as duas enxergam o mesmo documento."},
+    {t:"Nenhuma: um programa só pode fazer uma coisa por vez.", ok:false, fb:"Threads existem justamente para um programa fazer várias coisas ao mesmo tempo."},
+    {t:"Trocar a senha do usuário do computador.", ok:false, fb:"Isso não tem relação com dividir o trabalho do programa em linhas de execução."}]}
+ ],
+ aprofundar: [
+  {tipo:"google", q:"threads e processos diferenças sistemas operacionais"},
+  {tipo:"scholar", q:"threads sistemas operacionais programação concorrente"},
+  {tipo:"youtube", q:"threads e processos sistemas operacionais"}
+ ],
+ mitoOuVerdade: {afirmacao:"Threads de um mesmo processo são isoladas umas das outras, como processos.", verdade:false, explicacao:"Threads dividem a memória do processo e por isso não são isoladas. O isolamento é uma característica dos processos."}
+},
+/* ===================== ABA 3 ===================== */
+{
+ rotulo: "3 · Comunicação",
+ selo: "Mensageiro de Processos",
+ titulo: "Comunicação entre processos",
+ narrativa: "Sua missão: ver como processos, que são isolados, conseguem conversar. A comunicação entre processos (IPC, do inglês Inter-Process Communication) tem duas famílias: a memória compartilhada (um quadro-branco que todos leem e escrevem) e a troca de mensagens (cartas enviadas e recebidas, como pipes e sockets). Compartilhar é rápido, mas exige cuidado: se dois processos mexem no mesmo dado ao mesmo tempo, surge a condição de corrida (resultado que depende de quem chegou primeiro). A solução é a exclusão mútua: uma trava, o mutex (do inglês mutual exclusion; em português, exclusão mútua), para que só um processo por vez entre na região crítica (trecho do programa que mexe no dado compartilhado).",
+ mundoReal: [
+  "No terminal do Linux, o comando ls | grep txt usa um pipe (cano: canal que liga a saída de um programa à entrada de outro): o ls (lista os arquivos de uma pasta) entrega o resultado direto ao grep (filtra as linhas que contêm um texto).",
+  "Na venda do último ingresso de um show, dois clientes que clicam em 'comprar' ao mesmo tempo podem os dois ter sucesso se o site não controlar o acesso: é uma condição de corrida."
+ ],
+ ferramentas: [
+  "Pipe (cano): canal de um só sentido entre dois programas, muito usado no terminal do Linux.",
+  "Socket (tomada de rede): ponto de conexão pelo qual programas conversam, na mesma máquina ou pela internet; o navegador usa sockets para falar com os sites.",
+  "Mutex (trava de exclusão mútua): garante que só um processo por vez entre na região crítica."
+ ],
+ dicionario: [
+  {t:"IPC", d:"Comunicação entre processos: conjunto de formas de dois processos trocarem informação."},
+  {t:"Pipe", d:"Cano: canal que liga a saída de um programa à entrada de outro."},
+  {t:"Socket", d:"Tomada de rede: ponto de conexão para conversar com outro programa, perto ou longe."},
+  {t:"Condição de corrida", d:"Erro em que o resultado depende de quem chegou primeiro ao dado compartilhado."},
+  {t:"Região crítica", d:"Trecho do programa que mexe em dado compartilhado e deve ser executado por um de cada vez."},
+  {t:"Mutex", d:"Trava de exclusão mútua: só quem a segura pode entrar na região crítica."}
+ ],
+ conceitos: [
+  {titulo:"Memória compartilhada",
+   texto:"O sistema operacional separa a memória de cada processo. Na memória compartilhada, o SO libera uma área comum que dois ou mais processos leem e escrevem. É a forma mais rápida de comunicar, porque os dados não são copiados, mas exige cuidado com quem escreve e quando.",
+   analogia:"É um quadro-branco numa sala: todos escrevem e leem rápido, mas se dois escrevem no mesmo lugar ao mesmo tempo, vira bagunça.",
+   exemploReal:"O PostgreSQL (programa livre de banco de dados) usa memória compartilhada para que seus processos enxerguem os mesmos dados em cache."},
+  {titulo:"Troca de mensagens",
+   texto:"Aqui os processos enviam e recebem mensagens por um canal que o SO administra, como pipes, filas de mensagens e sockets. É mais lento do que compartilhar memória, mas mais seguro, porque cada processo continua com seus dados e o SO organiza a entrega.",
+   analogia:"É trocar cartas: demora mais que o quadro-branco, mas ninguém escreve no papel do outro.",
+   exemploReal:"O navegador conversa com o servidor de um site por sockets, e no Linux o ls | grep txt liga dois programas por um pipe."},
+  {titulo:"Condição de corrida e exclusão mútua",
+   texto:"Quando dois processos leem, calculam e gravam o mesmo dado sem coordenação, uma gravação pode apagar a outra. A exclusão mútua resolve isso: antes de entrar na região crítica, o processo pega a trava (mutex); quem chega depois espera. Se o dado só é lido, não há corrida; o problema surge quando pelo menos um escreve.",
+   analogia:"É a chave do banheiro de um café: só entra quem está com a chave; os outros esperam a vez.",
+   exemploReal:"O Therac-25 (máquina de radioterapia dos anos 1980) teve overdoses de radiação em parte por falhas de software, entre elas uma condição de corrida, e o caso virou exemplo clássico no ensino de engenharia de software."}
+ ],
+ roteiroDemo: {
+  passo0: "Antes de clicar, preveja: duas threads depositam 50 e 30 num saldo de 100. Com os passos intercalados, o saldo final será sempre 180?",
+  passos: [
+   {acao:"Deixe a trava desligada. Dê um passo na thread A, um na B, depois mais um em cada, alternando até terminar.", ve:"Os dois depósitos leem o saldo antigo e a segunda gravação apaga a primeira.", significa:"Sem controle, intercalar passos pode perder depósitos: é a condição de corrida."},
+   {acao:"Clique em 'Nova rodada', ligue a trava e tente intercalar de novo.", ve:"Quando uma thread segura a trava, a outra é barrada até a primeira terminar.", significa:"A exclusão mútua faz uma thread esperar pela outra."},
+   {acao:"Termine as duas rodadas, uma com trava e outra sem.", ve:"O resultado de cada rodada aparece no quadro abaixo.", significa:"A trava custa um pouco de espera, mas protege o resultado."}
+  ]
+ },
+ demo: {tipo:"corrida", exploratoria:true,
+  legenda:"🔑 Legenda: cada thread faz 3 passos: passo 1 = ler o saldo e anotar num caderno próprio; passo 2 = somar o depósito no caderno; passo 3 = gravar o resultado do caderno no saldo · Thread A deposita 50 · Thread B deposita 30 · Trava = o mutex: só quem a segura mexe no saldo · Saldo inicial = 100, resultado correto = 180.",
+  observar:"Veja o saldo, o caderno de cada thread e quem segura a trava depois de cada passo. Você escolhe a ordem dos passos: tente várias ordens, com e sem trava, e descubra quando o resultado dá errado.",
+  config:{}},
+ termosQuiz:"Memória compartilhada = área de memória que vários processos leem e escrevem · Troca de mensagens = enviar e receber informações por um canal, sem dividir memória · Condição de corrida = erro em que o resultado depende de quem chegou primeiro · Mutex = trava que só um processo por vez pode segurar · Região crítica = trecho que mexe no dado compartilhado.",
+ quiz: [
+  {p:"Qual par descreve as duas grandes formas de comunicação entre processos?",
+   alts:[
+    {t:"Memória compartilhada e troca de mensagens.", ok:true, fb:"Ou os processos dividem uma área de memória (quadro-branco) ou trocam mensagens por um canal (cartas), como pipes e sockets."},
+    {t:"Disco rígido e teclado.", ok:false, fb:"Disco e teclado são dispositivos de entrada e saída, e não formas de dois processos conversarem."},
+    {t:"Pronto e bloqueado.", ok:false, fb:"Pronto e bloqueado são estados de um processo, e não formas de comunicação."}]},
+  {p:"Duas threads leem o saldo 100, somam 50 e 30 e gravam. O correto seria 180, mas pode sair 130 ou 150. Como se chama esse problema?",
+   alts:[
+    {t:"Condição de corrida.", ok:true, fb:"O resultado depende da ordem em que as threads chegam ao dado compartilhado, e uma gravação apaga a outra."},
+    {t:"Bloqueio de disco.", ok:false, fb:"Bloqueio de disco é um processo esperando o disco, e não um erro de dados compartilhados."},
+    {t:"Troca de mensagens.", ok:false, fb:"Troca de mensagens é uma forma de comunicação, e aqui as threads usam o mesmo dado diretamente."}]},
+  {p:"Para que serve a trava (mutex)?",
+   alts:[
+    {t:"Garantir que só um processo por vez mexa no dado compartilhado.", ok:true, fb:"Quem segura a trava entra na região crítica; os outros esperam, e assim uma gravação não apaga a outra."},
+    {t:"Fazer o programa rodar mais rápido.", ok:false, fb:"A trava protege os dados e pode até gerar pequenas esperas; o objetivo é a correção, e não a velocidade."},
+    {t:"Impedir qualquer comunicação entre processos.", ok:false, fb:"A trava organiza o acesso ao dado compartilhado, e não impede que os processos se comuniquem."}]}
+ ],
+ aprofundar: [
+  {tipo:"google", q:"comunicação entre processos condição de corrida exclusão mútua"},
+  {tipo:"scholar", q:"comunicação entre processos sistemas operacionais sincronização"},
+  {tipo:"youtube", q:"comunicação entre processos sistemas operacionais"}
+ ],
+ mitoOuVerdade: {afirmacao:"Se dois processos apenas leem o mesmo dado, sempre há condição de corrida.", verdade:false, explicacao:"Só ler não causa corrida. O problema aparece quando pelo menos um dos processos escreve no dado compartilhado."}
+},
+/* ===================== ABA 4 ===================== */
+{
+ rotulo: "4 · Escalonar",
+ selo: "Maestro da CPU",
+ titulo: "Escalonamento: quem usa a CPU agora?",
+ narrativa: "Sua missão: entender por que o sistema precisa de um escalonador (a parte do SO que decide qual processo pronto usa a CPU e por quanto tempo). Há mais processos prontos do que CPUs, como vários clientes para poucos caixas. O escalonador decide a ordem buscando usar bem a CPU (não deixá-la parada), terminar muitos processos por hora (vazão, do inglês throughput), responder rápido ao usuário e ser justo. O escalonamento pode ser não preemptivo (o processo fica na CPU até terminar ou bloquear) ou preemptivo (o SO pode tirá-lo no meio, ao fim de uma fatia de tempo chamada quantum, do latim 'quantidade').",
+ mundoReal: [
+  "O Linux usou por muito tempo o CFS (Completely Fair Scheduler; em português, escalonador completamente justo), que reparte o tempo de CPU de forma proporcional entre os processos.",
+  "O Windows (SO da Microsoft) usa prioridades com preempção: programas em primeiro plano tendem a receber fatias melhores, para a tela continuar fluida."
+ ],
+ ferramentas: [
+  "Escalonador do Linux: parte do núcleo do sistema que decide qual processo usa cada CPU.",
+  "nice (comando do Linux que ajusta a prioridade de um programa): um valor maior deixa o programa mais 'educado', cedendo a vez aos outros."
+ ],
+ dicionario: [
+  {t:"Escalonador", d:"Parte do SO que escolhe qual processo pronto usa a CPU e por quanto tempo."},
+  {t:"Preemptivo", d:"Escalonamento em que o SO pode tirar o processo da CPU antes de ele terminar."},
+  {t:"Não preemptivo", d:"Escalonamento em que o processo fica na CPU até terminar ou bloquear."},
+  {t:"Quantum", d:"Fatia de tempo que cada processo pode usar antes de ser interrompido."},
+  {t:"Vazão", d:"Quantos processos o sistema termina por unidade de tempo (do inglês throughput)."},
+  {t:"Tempo de espera", d:"Quanto o processo ficou pronto, na fila, sem usar a CPU."}
+ ],
+ conceitos: [
+  {titulo:"Por que escalonar",
+   texto:"Em um computador com uma ou poucas CPUs, dezenas de processos estão prontos ao mesmo tempo. O escalonador escolhe quem roda, e essa escolha afeta a velocidade percebida pelo usuário e o aproveitamento do equipamento.",
+   analogia:"É um guarda de trânsito num cruzamento: sem ele, todos tentam passar ao mesmo tempo.",
+   exemploReal:"Num celular Android (SO do Google), a música continua tocando enquanto você abre o mapa porque o escalonador reparte a CPU entre os dois."},
+  {titulo:"Preemptivo versus não preemptivo",
+   texto:"No não preemptivo, o processo escolhido só sai da CPU quando termina ou bloqueia. No preemptivo, o SO pode interrompê-lo, por exemplo ao fim do quantum ou quando chega um processo mais importante. O preemptivo é melhor para sistemas interativos, mas faz mais trocas de contexto, que custam tempo.",
+   analogia:"No não preemptivo, o cliente do caixa só sai quando termina; no preemptivo, o atendente pode pausar para atender uma emergência.",
+   exemploReal:"Windows e Linux são preemptivos, por isso um programa travado em loop raramente congela o computador inteiro."},
+  {titulo:"Critérios e sistemas diferentes",
+   texto:"Os objetivos mudam conforme o sistema: em lotes (trabalhos sem usuário esperando) importa a vazão; em sistemas interativos, o tempo de resposta; em tempo real, cumprir prazos. Nenhuma técnica é a melhor em tudo, e por isso existem várias.",
+   analogia:"Uma ambulância, um ônibus e um caminhão de entregas precisam de regras de trânsito diferentes.",
+   exemploReal:"O sistema de airbag (bolsa de ar de proteção do carro) é de tempo real: precisa reagir em milésimos de segundo, sem atrasos."}
+ ],
+ roteiroDemo: {
+  passo0: "Antes de clicar, preveja: para um celular em que você ouve música e usa o mapa ao mesmo tempo, o escalonamento deve deixar um programa rodar até o fim ou alternar entre os dois?",
+  passos: [
+   {acao:"Leia o cenário 1 e clique na estratégia que lhe parece adequada.", ve:"Se acertar, o quadro verde explica por quê; se errar, o vermelho explica por que a escolha falha.", significa:"A estratégia certa depende do tipo de sistema."},
+   {acao:"Se errou, tente outra opção (a errada fica desativada).", ve:"Você pode tentar de novo até acertar.", significa:"Cada explicação de erro dá uma pista sobre o objetivo do sistema."},
+   {acao:"Quando acertar, clique em 'Próximo cenário'.", ve:"Aparece uma situação com outro objetivo.", significa:"Interativo, em lote e tempo real pedem escalonamentos diferentes."}
+  ]
+ },
+ demo: {tipo:"cenario",
+  config:{cenarios:[
+   {texto:"No celular, você ouve música e abre o mapa. Os dois precisam parecer fluidos ao mesmo tempo. Qual estratégia de escalonamento combina melhor?",
+    opcoes:[
+     {t:"🔄 Preemptiva, com fatias curtas, alternando entre os dois", ok:true, fb:"Alternando em fatias curtas, a música não engasga e o mapa responde. Exemplo real: o Android (SO do Google para celulares) faz isso com dezenas de processos ao mesmo tempo."},
+     {t:"➡️ Não preemptiva: o primeiro a começar roda até terminar", ok:false, fb:"A música nunca termina, então o mapa ficaria travado esperando a vez. Para programas interativos isso não serve."},
+     {t:"🥇 Só o programa mais antigo usa a CPU", ok:false, fb:"O mapa nunca receberia CPU, e o usuário veria a tela congelada."}]},
+   {texto:"Um banco processa à noite um lote de 10 mil boletos. Ninguém espera na frente da tela, e o objetivo é terminar o máximo no menor tempo total, sem perder tempo com trocas desnecessárias. Qual estratégia combina melhor?",
+    opcoes:[
+     {t:"➡️ Não preemptiva: cada trabalho roda até o fim", ok:true, fb:"Sem interrupções, quase não há trocas de contexto, e a vazão (trabalhos terminados por hora) fica alta. Exemplo real: o processamento noturno de folhas de pagamento em grandes empresas roda em lotes."},
+     {t:"🔄 Preemptiva, com fatias de 1 milissegundo", ok:false, fb:"Com fatias tão pequenas, o sistema gastaria muito tempo trocando de contexto, e isso reduziria a vazão."},
+     {t:"🎲 Sortear quem roda a cada instante", ok:false, fb:"O sorteio gera trocas desnecessárias e não garante bom aproveitamento nem previsibilidade."}]},
+   {texto:"No sistema de freios ABS (que evita o travamento das rodas) de um carro, a tarefa que lê o sensor precisa rodar dentro de prazos rígidos, mesmo com outras tarefas em andamento. Qual estratégia combina melhor?",
+    opcoes:[
+     {t:"⚡ Prioridade alta com preempção: a tarefa crítica pode tirar as outras da CPU", ok:true, fb:"Assim a leitura do sensor sempre cumpre o prazo. Exemplo real: o Mars Pathfinder (sonda da NASA que pousou em Marte) usava prioridades rígidas para suas tarefas de tempo real."},
+     {t:"📋 Ordem de chegada, sem tirar ninguém da CPU", ok:false, fb:"A tarefa do sensor poderia ficar esperando atrás de uma tarefa longa e perder o prazo, o que num freio é perigoso."},
+     {t:"🎲 Sorteio de quem roda", ok:false, fb:"O sorteio não garante prazo: a tarefa crítica poderia ficar sem CPU por tempo demais."}]}
+  ]}},
+ termosQuiz:"Escalonador = a parte do SO que escolhe quem usa a CPU · Preemptivo = o SO pode tirar o processo da CPU antes de ele terminar · Quantum = a fatia de tempo que cada processo pode usar · CPU = o chip que faz as contas · PID = o número do processo.",
+ quiz: [
+  {p:"O que faz o escalonador?",
+   alts:[
+    {t:"Decide qual processo pronto usa a CPU e por quanto tempo.", ok:true, fb:"Como há mais processos prontos do que CPUs, o escalonador escolhe a ordem e a duração de cada uso."},
+    {t:"Apaga processos antigos do disco.", ok:false, fb:"Apagar arquivos não é função do escalonador, que só escolhe quem usa a CPU."},
+    {t:"Conecta o computador à internet.", ok:false, fb:"Conexão de rede é tarefa dos componentes de rede do SO, e não do escalonador."}]},
+  {p:"O que diferencia o escalonamento preemptivo do não preemptivo?",
+   alts:[
+    {t:"No preemptivo, o SO pode tirar o processo da CPU antes de ele terminar.", ok:true, fb:"É essa possibilidade de interromper que o define, e é por isso que sistemas interativos o usam."},
+    {t:"No preemptivo, cada processo tem uma CPU só para si.", ok:false, fb:"Ter uma CPU para cada processo não é preempção; ela trata de tirar o processo da CPU no meio do trabalho."},
+    {t:"O não preemptivo nunca usa a CPU.", ok:false, fb:"O não preemptivo usa a CPU normalmente; só não interrompe o processo até que ele termine ou bloqueie."}]},
+  {p:"O que é o quantum?",
+   alts:[
+    {t:"A fatia de tempo que cada processo pode usar antes de ser interrompido.", ok:true, fb:"Quando o quantum acaba, o SO tira o processo da CPU e escolhe o próximo da fila."},
+    {t:"O número de identificação do processo.", ok:false, fb:"O número de identificação é o PID, e não o quantum."},
+    {t:"A quantidade de memória do processo.", ok:false, fb:"O quantum mede tempo de CPU, e não memória."}]}
+ ],
+ aprofundar: [
+  {tipo:"google", q:"escalonamento de processos preemptivo e não preemptivo"},
+  {tipo:"scholar", q:"escalonamento de processos sistemas operacionais"},
+  {tipo:"youtube", q:"escalonamento de processos sistemas operacionais"}
+ ],
+ mitoOuVerdade: {afirmacao:"Quanto menor o quantum, melhor é sempre o desempenho do sistema.", verdade:false, explicacao:"Um quantum muito pequeno faz o sistema gastar muito tempo em trocas de contexto. É preciso equilibrar a resposta rápida com o custo das trocas."}
+},
+/* ===================== ABA 5 ===================== */
+{
+ rotulo: "5 · Técnicas",
+ selo: "Comparador de Algoritmos",
+ titulo: "Técnicas de escalonamento: FCFS, SJF, prioridade e rodízio",
+ narrativa: "Sua missão: comparar as técnicas clássicas de escalonamento. O FCFS (do inglês First Come, First Served; em português, primeiro a chegar, primeiro a ser atendido) é a fila de padaria. O SJF (do inglês Shortest Job First; em português, trabalho mais curto primeiro) é o caixa rápido do supermercado: quem tem poucas compras passa na frente. A prioridade é a fila preferencial: o mais importante vai primeiro. O Round Robin (do inglês 'rodízio') dá a cada um uma fatia de CPU, o quantum, e manda de volta ao fim da fila, como rodízio de pizza. Cada técnica muda o tempo de espera médio, que é quanto, em média, os processos ficam esperando na fila.",
+ mundoReal: [
+  "Em 1997, o Mars Pathfinder (sonda da NASA que pousou em Marte) reiniciava sozinho por inversão de prioridade: uma tarefa menos importante segurava um recurso de que uma tarefa mais importante precisava.",
+  "Windows e Linux combinam prioridades com rodízio de fatias de tempo, para que os programas em primeiro plano continuem fluidos."
+ ],
+ ferramentas: [
+  "nice (comando do Linux que ajusta a prioridade de um programa): permite dar mais ou menos preferência a um processo.",
+  "Gerenciador de Tarefas do Windows (programa da Microsoft que lista os processos): permite mudar a prioridade de um processo em execução."
+ ],
+ dicionario: [
+  {t:"FCFS", d:"Primeiro a chegar, primeiro a ser atendido: fila simples, sem interrupções."},
+  {t:"SJF", d:"Trabalho mais curto primeiro: escolhe quem precisa de menos tempo de CPU."},
+  {t:"Prioridade", d:"Cada processo recebe um grau de importância, e o mais importante vai primeiro."},
+  {t:"Round Robin", d:"Rodízio: cada processo usa um quantum de CPU e volta ao fim da fila."},
+  {t:"Tempo de espera médio", d:"Média de quanto cada processo ficou na fila sem usar a CPU."},
+  {t:"Inanição", d:"Situação em que um processo de baixa prioridade nunca recebe a CPU (do inglês starvation)."}
+ ],
+ conceitos: [
+  {titulo:"FCFS e SJF",
+   texto:"No FCFS, os processos rodam na ordem de chegada: é simples e justo na ordem, mas um processo longo na frente faz todos esperarem (efeito comboio). No SJF, roda primeiro quem precisa de menos tempo, o que costuma reduzir bastante o tempo de espera médio, mas o SO precisa estimar a duração de cada processo, e processos longos podem esperar muito.",
+   analogia:"No FCFS, um cliente com carrinho cheio atrasa todos atrás dele; no SJF, o caixa rápido adianta quem tem poucas compras.",
+   exemploReal:"Supermercados como o Carrefour (rede francesa de hipermercados) usam caixas rápidos justamente para reduzir a espera média dos clientes."},
+  {titulo:"Prioridade e inanição",
+   texto:"Na técnica por prioridade, cada processo tem um número de importância, e o mais importante usa a CPU primeiro. O risco é a inanição: processos de baixa prioridade podem nunca rodar. Uma solução é o envelhecimento, que aumenta a prioridade de quem espera há muito tempo. Outro problema é a inversão de prioridade, em que uma tarefa importante espera uma menos importante.",
+   analogia:"É a fila preferencial do banco: ótima para quem tem direito, mas, se chegarem preferenciais o tempo todo, a fila comum nunca anda.",
+   exemploReal:"No Mars Pathfinder (sonda da NASA), a inversão de prioridade fez o computador reiniciar até que os engenheiros corrigiram o problema remotamente."},
+  {titulo:"Round Robin e a escolha do quantum",
+   texto:"No rodízio, cada processo usa a CPU por um quantum e volta ao fim da fila. Todos avançam, e a resposta ao usuário é boa. Se o quantum for grande demais, vira FCFS; se for pequeno demais, o sistema gasta muito tempo em trocas de contexto.",
+   analogia:"É o rodízio de pizza: cada um recebe uma fatia por vez; se as fatias forem minúsculas, o garçom passa o tempo todo só trocando de mesa.",
+   exemploReal:"Sistemas como o Linux e o Windows usam variações do rodízio combinadas com prioridades."}
+ ],
+ roteiroDemo: {
+  passo0: "Antes de dar play, preveja: com os mesmos quatro processos, qual técnica deixará os processos esperando menos, em média?",
+  passos: [
+   {acao:"Escolha FCFS e clique em '▶ Executar'.", ve:"O gráfico de blocos (linha do tempo) mostra a ordem de execução, e o painel mostra o tempo de espera médio.", significa:"Esse é o ponto de comparação."},
+   {acao:"Rode SJF, depois Prioridade, depois Round Robin com quantums diferentes.", ve:"Cada técnica monta uma linha do tempo diferente e uma espera média diferente.", significa:"A ordem escolhida muda a espera dos processos."},
+   {acao:"Compare a lista 'Já testado' e rode de novo o que quiser.", ve:"As esperas médias aparecem lado a lado.", significa:"Cada técnica favorece um objetivo; não há uma melhor em tudo."}
+  ]
+ },
+ demo: {tipo:"gantt", exploratoria:true,
+  legenda:"🔑 Legenda: P1, P2, P3 e P4 = processos de exemplo · Duração = quantas unidades de tempo de CPU o processo precisa · Prioridade = importância (menor número = mais importante) · Quantum = fatia de tempo do rodízio · Espera = tempo em que o processo ficou pronto sem usar a CPU · Todos chegam no tempo 0.",
+  observar:"Observe a ordem dos blocos na linha do tempo e a espera de cada processo. Compare a espera média entre as técnicas e veja o que muda ao trocar o quantum no rodízio.",
+  config:{}},
+ termosQuiz:"FCFS = primeiro a chegar, primeiro a ser atendido · Round Robin = rodízio: cada processo usa uma fatia de CPU e volta ao fim da fila · Efeito comboio = um processo longo na frente faz todos os outros esperarem · Inanição = um processo nunca recebe a CPU · Prioridade = grau de importância do processo.",
+ quiz: [
+  {p:"Na técnica 'primeiro a chegar, primeiro a ser atendido' (FCFS), qual problema aparece quando um processo muito longo chega primeiro?",
+   alts:[
+    {t:"Todos os outros esperam atrás dele (efeito comboio).", ok:true, fb:"Como ninguém passa na frente, o processo longo faz a espera média subir, como um cliente de carrinho cheio na fila da padaria."},
+    {t:"O processo longo é cancelado automaticamente.", ok:false, fb:"O FCFS não cancela ninguém: o processo longo roda até o fim, e os demais esperam."},
+    {t:"A CPU fica parada.", ok:false, fb:"A CPU continua ocupada com o processo longo; o problema é a espera dos outros, e não ociosidade."}]},
+  {p:"Qual técnica lembra o rodízio de pizza, em que cada um usa a CPU por uma fatia de tempo e volta ao fim da fila?",
+   alts:[
+    {t:"Round Robin.", ok:true, fb:"Round Robin significa rodízio: cada processo usa um quantum e volta ao fim da fila."},
+    {t:"SJF.", ok:false, fb:"O SJF escolhe o trabalho mais curto primeiro, e não alterna fatias de tempo."},
+    {t:"FCFS.", ok:false, fb:"O FCFS segue a ordem de chegada, e cada processo roda até terminar, sem rodízio."}]},
+  {p:"Qual risco existe no escalonamento por prioridade?",
+   alts:[
+    {t:"Um processo de baixa prioridade pode nunca receber a CPU (inanição).", ok:true, fb:"Se chegarem processos importantes o tempo todo, os de baixa prioridade ficam esperando. Uma solução é aumentar a prioridade de quem espera há muito tempo (envelhecimento)."},
+    {t:"Todos os processos terminam ao mesmo tempo.", ok:false, fb:"Com prioridades, os processos terminam em ordens diferentes, de acordo com a importância."},
+    {t:"O quantum fica infinito.", ok:false, fb:"O quantum é um conceito do rodízio e não depende da prioridade."}]}
+ ],
+ aprofundar: [
+  {tipo:"google", q:"algoritmos de escalonamento FCFS SJF round robin prioridade"},
+  {tipo:"scholar", q:"algoritmos de escalonamento de processos comparação"},
+  {tipo:"youtube", q:"algoritmos de escalonamento round robin sjf fcfs"}
+ ],
+ mitoOuVerdade: {afirmacao:"O SJF (trabalho mais curto primeiro) é sempre fácil de aplicar na prática.", verdade:false, explicacao:"O SO não sabe de antemão quanto tempo cada processo vai usar, então precisa estimar a duração, e estimativas podem errar."}
+}
+],
+revisao: {
+ mapa: [
+  "1. Processos: o que são, seus estados e a ficha de cada um (termos na cola rápida).",
+  "2. Threads: várias linhas de execução no mesmo processo, o que dividem e o que têm de próprio.",
+  "3. Comunicação entre processos: memória compartilhada, mensagens e o cuidado com a condição de corrida.",
+  "4. Escalonamento: quem usa a CPU agora, preemptivo ou não, e o papel do quantum.",
+  "5. Técnicas de escalonamento: fila de chegada, mais curto primeiro, prioridade e rodízio."
+ ],
+ cola: [
+  {termo:"SO", linha:"Sistema operacional: o programa-chefe que administra o computador, como Windows, Linux e Android."},
+  {termo:"Processo e programa", linha:"Programa é a receita guardada no disco; processo é a receita sendo executada, com ficha e memória próprias."},
+  {termo:"PCB e PID", linha:"PCB é a ficha do processo; PID é o número que o identifica."},
+  {termo:"Estados do processo", linha:"Pronto (espera a vez), executando (usa a CPU) e bloqueado (espera algo lento, como o disco)."},
+  {termo:"CPU", linha:"O chip que faz as contas do computador."},
+  {termo:"E/S", linha:"Entrada e saída: ler ou gravar em disco, rede, teclado ou tela."},
+  {termo:"Troca de contexto", linha:"Guardar a ficha do processo que sai da CPU e carregar a do próximo; custa um pouco de tempo."},
+  {termo:"Thread", linha:"Linha de execução dentro de um processo; as threads dividem a memória do processo."},
+  {termo:"Pilha, contador e registradores", linha:"Pilha guarda variáveis locais; contador marca a próxima instrução; registradores são gavetinhas da CPU. Cada thread tem os seus."},
+  {termo:"Concorrência e paralelismo", linha:"Concorrência é alternar tarefas; paralelismo é executá-las ao mesmo tempo em CPUs diferentes."},
+  {termo:"IPC", linha:"Comunicação entre processos: memória compartilhada (quadro-branco) ou troca de mensagens (cartas)."},
+  {termo:"Pipe e socket", linha:"Pipe é um cano que liga a saída de um programa à entrada de outro; socket é uma tomada de rede para conversar com outro programa."},
+  {termo:"Condição de corrida", linha:"Erro em que o resultado depende de quem chegou primeiro ao dado compartilhado."},
+  {termo:"Região crítica e mutex", linha:"Região crítica é o trecho que mexe no dado compartilhado; mutex é a trava para só um entrar por vez."},
+  {termo:"Escalonador", linha:"Parte do SO que escolhe qual processo pronto usa a CPU e por quanto tempo."},
+  {termo:"Preemptivo", linha:"Escalonamento em que o SO pode tirar o processo da CPU antes de ele terminar."},
+  {termo:"Quantum", linha:"Fatia de tempo que cada processo pode usar antes de ser interrompido."},
+  {termo:"Tempo de espera", linha:"Quanto o processo ficou na fila, pronto, sem usar a CPU."},
+  {termo:"FCFS e SJF", linha:"FCFS atende na ordem de chegada; SJF atende primeiro quem precisa de menos tempo de CPU."},
+  {termo:"Prioridade e inanição", linha:"Prioridade põe o mais importante na frente; inanição é quando um processo de baixa prioridade nunca roda."},
+  {termo:"Round Robin", linha:"Rodízio: cada processo usa um quantum de CPU e volta ao fim da fila."}
+ ],
+ desafio: "Chefão: um aplicativo de música no celular, como o Spotify (serviço sueco de música pela internet), toca a faixa atual, baixa a próxima e responde aos toques na tela, tudo ao mesmo tempo. Monte uma proposta com três partes: (1) quais tarefas viram threads dentro do mesmo processo e o que elas dividem ou têm de próprio (pilha, contador e registradores, na cola rápida); (2) como o aplicativo e outro processo, como o serviço de notificações do celular, trocam informações (IPC, pipe e socket, na cola rápida) e como evitar a condição de corrida com um mutex (na cola rápida); (3) qual técnica de escalonamento deixa tudo fluido, citando quantum e tempo de espera (na cola rápida) e dizendo se deve ser preemptiva."
+}
+};
+
+/* ===================== MOTOR ===================== */
+var estado = {xp:0, selos:{}, quizOk:[], demoOk:[], chefao:false};
+var timers = {};
+var ids = [];
+var abasEls = [];
+var paineisEls = [];
+var atual = -1;
+
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function el(tag, cls, html){ var e=document.createElement(tag); if(cls){ e.className=cls; } if(html!==undefined){ e.innerHTML=html; } return e; }
+function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function fmt(n){ return Number(n).toLocaleString("pt-BR"); }
+function minutosTxt(m){ m=Math.round(m); var h=Math.floor(m/60); var mm=m%60; if(h===0){ return mm+" min"; } if(mm===0){ return h+" h"; } return h+" h "+mm+" min"; }
+function horaTxt(m){ var h=Math.floor(m/60); var mm=m%60; return (h<10?"0":"")+h+":"+(mm<10?"0":"")+mm; }
+
+function busca(tipo,q){
+  var termo=q.split(" ").map(encodeURIComponent).join("+");
+  if(tipo==="google"){ return "https://www.google.com/search?hl=pt-BR&q="+termo; }
+  if(tipo==="scholar"){ return "https://scholar.google.com/scholar?hl=pt-BR&q="+termo; }
+  return "https://www.youtube.com/results?search_query="+termo+"+aula";
+}
+var ROTULOS_BUSCA={
+  google:"🔎 Busca no Google (português)",
+  scholar:"🎓 Pesquisa científica (Google Scholar, português)",
+  youtube:"🎬 Vídeos-aula no YouTube (busca em português)"
+};
+
+var toastTimer=null;
+function toast(msg){
+  var t=document.getElementById("toast"); t.textContent=msg; t.classList.add("on");
+  if(toastTimer){ clearTimeout(toastTimer); }
+  toastTimer=setTimeout(function(){ t.classList.remove("on"); },2600);
+}
+function atualizarTopo(){
+  var n=0; for(var k in estado.selos){ if(estado.selos[k]){ n++; } }
+  document.getElementById("xpInfo").textContent="⭐ "+estado.xp+" XP · 🏅 "+n+"/"+AULA_DADOS.abas.length+" selos";
+  for(var i=0;i<AULA_DADOS.abas.length;i++){
+    var b=document.getElementById("selo-tab-"+i);
+    if(b){ b.textContent = estado.selos[i] ? " ✔" : ""; }
+  }
+}
+function addXp(n){ estado.xp+=n; atualizarTopo(); }
+function checarSelo(i){
+  if(estado.quizOk[i]>=3 && estado.demoOk[i] && !estado.selos[i]){
+    estado.selos[i]=true; addXp(20);
+    toast("🏅 Selo conquistado: "+AULA_DADOS.abas[i].selo+" (+20 XP)");
+  }
+}
+function marcarDemo(i){
+  if(!estado.demoOk[i]){ estado.demoOk[i]=true; addXp(10); toast("🧪 Demo concluída! +10 XP"); checarSelo(i); }
+}
+
+/* ---------- Quiz ---------- */
+function renderQuiz(a,i,cont){
+  a.quiz.forEach(function(q,qi){
+    var bloco=el("div","pergunta");
+    bloco._erros=0;
+    bloco.appendChild(el("p","enun","<strong>"+(qi+1)+".</strong> "+esc(q.p)));
+    var lista=el("div","alts");
+    shuffle(q.alts.slice()).forEach(function(alt){
+      var b=el("button","alt",'<span class="mk" aria-hidden="true"></span><span class="tx"></span>');
+      b.type="button";
+      b.querySelector(".tx").textContent=alt.t;
+      b.setAttribute("data-fb",alt.fb);
+      b.setAttribute("data-ok",alt.ok?"1":"0");
+      b.addEventListener("click",function(){ responder(b,bloco,lista,i); });
+      lista.appendChild(b);
+    });
+    bloco.appendChild(lista);
+    var fb=el("div","fb"); fb.setAttribute("aria-live","polite");
+    bloco.appendChild(fb);
+    cont.appendChild(bloco);
+  });
+}
+function responder(b,bloco,lista,i){
+  if(b.disabled){ return; }
+  var ok=b.getAttribute("data-ok")==="1";
+  var fb=bloco.querySelector(".fb");
+  var txt=b.getAttribute("data-fb");
+  if(ok){
+    b.classList.add("certa");
+    b.querySelector(".mk").textContent="✓ ";
+    var todos=lista.querySelectorAll(".alt");
+    for(var k=0;k<todos.length;k++){ todos[k].disabled=true; }
+    fb.className="fb fb-ok";
+    fb.innerHTML='✅ <strong>Por que esta está certa:</strong> <span></span>';
+    fb.querySelector("span").textContent=txt;
+    var ganho=bloco._erros===0?10:5;
+    addXp(ganho);
+    toast("✅ Resposta certa! +"+ganho+" XP");
+    estado.quizOk[i]=(estado.quizOk[i]||0)+1;
+    checarSelo(i);
+  } else {
+    b.classList.add("errada");
+    b.querySelector(".mk").textContent="✗ ";
+    b.disabled=true;
+    bloco._erros++;
+    fb.className="fb fb-err";
+    fb.innerHTML='❌ <strong>Por que esta está errada:</strong> <span></span>';
+    fb.querySelector("span").textContent=txt;
+  }
+}
+
+/* ---------- Mito ou verdade ---------- */
+function renderMito(m,cont){
+  var box=el("div","cartao mito");
+  box.appendChild(el("h4",null,"🤔 Mito ou verdade?"));
+  box.appendChild(el("p",null,esc(m.afirmacao)));
+  var bV=el("button","btn sec","✅ Verdade"); bV.type="button";
+  var bM=el("button","btn sec","🚫 Mito"); bM.type="button";
+  var fb=el("div","fb"); fb.setAttribute("aria-live","polite");
+  function clique(escolhaVerdade,btn){
+    if(btn.disabled){ return; }
+    var certo=(escolhaVerdade===m.verdade);
+    if(certo){
+      bV.disabled=true; bM.disabled=true; btn.classList.add("on");
+      fb.className="fb fb-ok"; fb.innerHTML='✅ <strong>Por que esta está certa:</strong> <span></span>';
+    } else {
+      btn.disabled=true;
+      fb.className="fb fb-err"; fb.innerHTML='❌ <strong>Por que esta está errada:</strong> <span></span>';
+    }
+    fb.querySelector("span").textContent=m.explicacao;
+  }
+  bV.addEventListener("click",function(){ clique(true,bV); });
+  bM.addEventListener("click",function(){ clique(false,bM); });
+  box.appendChild(bV); box.appendChild(bM); box.appendChild(fb);
+  cont.appendChild(box);
+}
+
+/* ---------- Demos ---------- */
+var DEMOS={};
+
+/* ---- Simulação livre 1: ciclo de vida do processo ---- */
+DEMOS.ciclo=function(root,i){
+  var icones={Novo:"🆕",Pronto:"⏳",Executando:"▶️",Bloqueado:"💤",Terminado:"🏁"};
+  var nomes=["Novo","Pronto","Executando","Bloqueado","Terminado"];
+  var atual="Novo", fatias=0;
+  var vis={Pronto:false,Executando:false,Bloqueado:false};
+  var trans=[
+    {t:"Admitir na fila",de:"Novo",para:"Pronto",ok:"O sistema aceitou o processo e criou a sua ficha (PCB). Exemplo real: você clicou duas vezes no ícone do Chrome (navegador do Google) e o sistema registrou o novo processo."},
+    {t:"Escalonador escolhe este processo",de:"Pronto",para:"Executando",ok:"O processo ganhou a CPU. Exemplo real: o Chrome começa a desenhar a janela na tela."},
+    {t:"Fatia de tempo acabou",de:"Executando",para:"Pronto",ok:"O sistema tirou o processo da CPU e o devolveu à fila. Exemplo real: o Chrome é interrompido para a música do celular não engasgar."},
+    {t:"Pede leitura do disco",de:"Executando",para:"Bloqueado",ok:"O processo espera o disco, que é lento, e libera a CPU. Exemplo real: o Word (editor da Microsoft) pede para abrir um arquivo grande e fica esperando."},
+    {t:"Disco respondeu",de:"Bloqueado",para:"Pronto",ok:"O dado chegou e o processo volta à fila de prontos. Exemplo real: o arquivo do Word terminou de ser lido e o programa quer continuar."},
+    {t:"Termina o trabalho",de:"Executando",para:"Terminado",ok:"O processo acabou e o SO libera a memória e apaga a ficha. Exemplo real: você fecha o Chrome e o processo some do Gerenciador de Tarefas."}
+  ];
+  var linhaEst=el("div","estados");
+  var caixas={};
+  nomes.forEach(function(n){
+    var c=el("div","est",icones[n]+" "+n); caixas[n]=c; linhaEst.appendChild(c);
+  });
+  var pcb=el("p",null,"");
+  var msg=el("div","msg","Escolha um evento para ver o que acontece com o processo."); msg.setAttribute("aria-live","polite");
+  var bts=[];
+  var botoes=el("div");
+  function desenhar(){
+    nomes.forEach(function(n){ if(n===atual){ caixas[n].classList.add("on"); } else { caixas[n].classList.remove("on"); } });
+    pcb.innerHTML="<strong>Ficha (PCB):</strong> PID 4242 · Estado: "+atual+" · Fatias de CPU usadas: "+fatias;
+  }
+  function evento(tr){
+    if(atual==="Terminado"){ return; }
+    if(atual!==tr.de){
+      msg.className="msg ruim";
+      msg.textContent="Nada acontece: o processo está em '"+atual+"', e esse evento só vale para quem está em '"+tr.de+"'. Exemplo real: no Gerenciador de Tarefas do Windows (lista de processos), cada processo mostra apenas o estado em que está agora.";
+      return;
+    }
+    if(tr.de==="Executando"){ fatias++; }
+    atual=tr.para;
+    if(vis.hasOwnProperty(atual)){ vis[atual]=true; }
+    msg.className="msg bom"; msg.textContent=tr.ok;
+    desenhar();
+    if(atual==="Terminado"){
+      bts.forEach(function(b){ b.disabled=true; });
+      if(vis.Pronto && vis.Executando && vis.Bloqueado){
+        msg.textContent+=" 🎉 O processo viveu o ciclo completo: pronto, executando e bloqueado.";
+        marcarDemo(i);
+      } else {
+        msg.textContent+=" O processo terminou sem passar por todos os estados. Clique em 🔄 Reiniciar demo e explore o caminho completo.";
+      }
+    }
+  }
+  trans.forEach(function(tr){
+    var b=el("button","btn sec",esc(tr.t)); b.type="button";
+    b.addEventListener("click",function(){ evento(tr); });
+    bts.push(b); botoes.appendChild(b);
+  });
+  root.appendChild(linhaEst); root.appendChild(pcb); root.appendChild(botoes); root.appendChild(msg);
+  desenhar();
+};
+
+/* ---- Arquétipo: classificação em duas categorias ---- */
+DEMOS.classificar=function(root,i,cfg){
+  var itens=cfg.itens; var feitos=0;
+  var cont=el("p",null,"<strong>Resolvidos:</strong> 0 de "+itens.length);
+  root.appendChild(cont);
+  itens.forEach(function(it){
+    var row=el("div","item-resp");
+    row.appendChild(el("p",null,esc(it.t)));
+    var fb=el("div","fb"); fb.setAttribute("aria-live","polite");
+    var bs=[];
+    cfg.botoes.forEach(function(bt){
+      var b=el("button","btn sec",esc(bt.t)); b.type="button";
+      b.addEventListener("click",function(){
+        if(b.disabled){ return; }
+        if(bt.k===it.dono){
+          bs.forEach(function(x){ x.disabled=true; }); b.classList.add("on");
+          fb.className="fb fb-ok"; fb.innerHTML='✅ <strong>Por que esta está certa:</strong> <span></span>'; fb.querySelector("span").textContent=it.ok;
+          row.classList.add("feito");
+          feitos++; cont.innerHTML="<strong>Resolvidos:</strong> "+feitos+" de "+itens.length;
+          if(feitos===itens.length){ marcarDemo(i); }
+        } else {
+          b.disabled=true;
+          fb.className="fb fb-err"; fb.innerHTML='❌ <strong>Por que esta está errada:</strong> <span></span>'; fb.querySelector("span").textContent=it.err;
+        }
+      });
+      bs.push(b); row.appendChild(b);
+    });
+    row.appendChild(fb); root.appendChild(row);
+  });
+};
+
+/* ---- Simulação livre 2: condição de corrida ---- */
+DEMOS.corrida=function(root,i){
+  var vals={A:50,B:30};
+  var trava=false;
+  var feito={on:false,off:false};
+  var st;
+  var painel=el("p",null,"");
+  var msg=el("div","msg","Escolha se haverá trava e dê passos nas threads, na ordem que quiser."); msg.setAttribute("aria-live","polite");
+  var res=el("div","msg"); res.style.display="none";
+  var modo=el("div",null,"<strong>Modo:</strong> ");
+  var bOff=el("button","btn sec","🔓 Sem trava"); bOff.type="button";
+  var bOn=el("button","btn sec","🔒 Com trava (mutex)"); bOn.type="button";
+  modo.appendChild(bOff); modo.appendChild(bOn);
+  var bA=el("button","btn","▶ Passo da thread A (deposita 50)"); bA.type="button";
+  var bB=el("button","btn","▶ Passo da thread B (deposita 30)"); bB.type="button";
+  var bN=el("button","btn sec","🔁 Nova rodada"); bN.type="button";
+  function marca(){
+    if(trava){ bOn.classList.add("on"); bOff.classList.remove("on"); } else { bOff.classList.add("on"); bOn.classList.remove("on"); }
+  }
+  function desenhar(){
+    function r(x){ return x===null?"—":x; }
+    painel.innerHTML="<strong>Saldo na memória:</strong> "+st.saldo+" · <strong>A:</strong> passo "+st.A.p+" de 3 (caderno: "+r(st.A.r)+") · <strong>B:</strong> passo "+st.B.p+" de 3 (caderno: "+r(st.B.r)+") · <strong>Trava:</strong> "+(st.dono?("com a thread "+st.dono):"livre");
+  }
+  function nova(){
+    st={saldo:100,A:{p:0,r:null},B:{p:0,r:null},dono:null,iniciou:false,fim:false};
+    bOff.disabled=false; bOn.disabled=false; bA.disabled=false; bB.disabled=false;
+    msg.className="msg"; msg.textContent="Nova rodada: saldo 100. Dê passos nas threads A e B, na ordem que quiser.";
+    res.style.display="none";
+    marca(); desenhar();
+  }
+  function passo(q){
+    if(st.fim){ return; }
+    var t=st[q]; var outro=(q==="A")?"B":"A";
+    if(t.p>=3){ msg.className="msg"; msg.textContent="A thread "+q+" já terminou os 3 passos. Dê passos na outra thread. Exemplo real: um caixa eletrônico que já concluiu o depósito não repete a operação."; return; }
+    if(trava && t.p===0 && st.dono && st.dono!==q){
+      msg.className="msg ruim";
+      msg.textContent="⛔ A thread "+q+" tentou entrar, mas a trava está com a thread "+st.dono+": "+q+" precisa esperar. Exemplo real: só entra no banheiro do café quem pega a chave.";
+      return;
+    }
+    st.iniciou=true; bOff.disabled=true; bOn.disabled=true;
+    if(t.p===0){
+      if(trava){ st.dono=q; }
+      t.r=st.saldo;
+      msg.textContent="A thread "+q+" leu o saldo ("+st.saldo+") e anotou no caderno dela."+(trava?" Pegou a trava.":"");
+    } else if(t.p===1){
+      t.r=t.r+vals[q];
+      msg.textContent="A thread "+q+" somou "+vals[q]+" no caderno: agora ele marca "+t.r+".";
+    } else {
+      st.saldo=t.r;
+      if(trava && st.dono===q){ st.dono=null; }
+      msg.textContent="A thread "+q+" gravou "+t.r+" no saldo."+(trava?" Soltou a trava.":"");
+    }
+    msg.className="msg";
+    t.p++;
+    desenhar();
+    if(st.A.p===3 && st.B.p===3){
+      st.fim=true; bA.disabled=true; bB.disabled=true;
+      res.style.display="block";
+      if(st.saldo===180){
+        res.className="msg bom";
+        res.textContent="✅ Saldo final 180: os dois depósitos foram somados. Exemplo real: duas compras entrando na mesma conta de uma loja virtual, uma depois da outra.";
+      } else {
+        var perdido=(st.saldo===130)?50:30;
+        res.className="msg ruim";
+        res.textContent="💥 Condição de corrida: o saldo final é "+st.saldo+", em vez de 180. O depósito de "+perdido+" se perdeu, porque as duas threads leram o saldo antigo e a última gravação apagou a outra. Exemplo real: dois clientes comprando o último ingresso de um show ao mesmo tempo.";
+      }
+      feito[trava?"on":"off"]=true;
+      if(feito.on && feito.off){ marcarDemo(i); }
+    }
+  }
+  bOff.addEventListener("click",function(){ if(!st.iniciou){ trava=false; marca(); } });
+  bOn.addEventListener("click",function(){ if(!st.iniciou){ trava=true; marca(); } });
+  bA.addEventListener("click",function(){ passo("A"); });
+  bB.addEventListener("click",function(){ passo("B"); });
+  bN.addEventListener("click",nova);
+  root.appendChild(modo); root.appendChild(painel); root.appendChild(bA); root.appendChild(bB); root.appendChild(bN); root.appendChild(msg); root.appendChild(res);
+  nova();
+};
+
+/* ---- Arquétipo: cenário ---- */
+DEMOS.cenario=function(root,i,cfg){
+  var cen=cfg.cenarios; var idx=0;
+  function render(){
+    root.innerHTML="";
+    var c=cen[idx];
+    root.appendChild(el("h4",null,"Cenário "+(idx+1)+" de "+cen.length));
+    root.appendChild(el("p",null,esc(c.texto)));
+    var lista=el("div","alts");
+    var fb=el("div","fb"); fb.setAttribute("aria-live","polite");
+    var prox=el("button","btn","➡️ Próximo cenário"); prox.type="button"; prox.style.display="none";
+    prox.addEventListener("click",function(){ idx++; render(); });
+    c.opcoes.forEach(function(o){
+      var b=el("button","alt",'<span class="mk" aria-hidden="true"></span><span class="tx"></span>');
+      b.type="button"; b.querySelector(".tx").textContent=o.t;
+      b.addEventListener("click",function(){
+        if(b.disabled){ return; }
+        if(o.ok){
+          b.classList.add("certa"); b.querySelector(".mk").textContent="✓ ";
+          var todos=lista.querySelectorAll(".alt"); for(var k=0;k<todos.length;k++){ todos[k].disabled=true; }
+          fb.className="fb fb-ok"; fb.innerHTML='✅ <strong>Por que esta está certa:</strong> <span></span>'; fb.querySelector("span").textContent=o.fb;
+          if(idx<cen.length-1){ prox.style.display="inline-block"; }
+          else { fb.appendChild(el("p",null,"🎉 Você resolveu os três cenários!")); marcarDemo(i); }
+        } else {
+          b.classList.add("errada"); b.querySelector(".mk").textContent="✗ "; b.disabled=true;
+          fb.className="fb fb-err"; fb.innerHTML='❌ <strong>Por que esta está errada:</strong> <span></span>'; fb.querySelector("span").textContent=o.fb;
+        }
+      });
+      lista.appendChild(b);
+    });
+    root.appendChild(lista); root.appendChild(fb); root.appendChild(prox);
+  }
+  render();
+};
+
+/* ---- Simulação livre 3: linha do tempo (Gantt) de escalonamento ---- */
+DEMOS.gantt=function(root,i){
+  var procs=[{id:"P1",b:6,pr:3},{id:"P2",b:3,pr:1},{id:"P3",b:1,pr:4},{id:"P4",b:4,pr:2}];
+  var cores=["#a78bfa","#67e8f9","#fcd34d","#86efac"];
+  var algos=[
+    {k:"fcfs",t:"FCFS (ordem de chegada)",nome:"FCFS",ex:"Exemplo real: fila de padaria, em que quem chega primeiro é atendido primeiro, mesmo com a compra enorme."},
+    {k:"sjf",t:"SJF (mais curto primeiro)",nome:"SJF",ex:"Exemplo real: caixa rápido de supermercado, em que quem tem poucos itens passa na frente."},
+    {k:"prio",t:"Prioridade",nome:"Prioridade",ex:"Exemplo real: fila preferencial de banco, em que quem tem prioridade é atendido antes."},
+    {k:"rr",t:"Round Robin (rodízio)",nome:"Round Robin",ex:"Exemplo real: rodízio de pizza, em que cada um recebe uma fatia por vez e volta ao fim da fila."}
+  ];
+  var sel={a:0,q:2}; var rodando=false;
+  var testados={}; var lista=[];
+  var tab='<table class="tab-proc"><thead><tr><th>Processo</th><th>Duração</th><th>Prioridade</th></tr></thead><tbody>';
+  procs.forEach(function(p){ tab+="<tr><td>"+p.id+"</td><td>"+p.b+"</td><td>"+p.pr+"</td></tr>"; });
+  tab+="</tbody></table>";
+  root.appendChild(el("div",null,tab));
+  var gA=el("div",null,"<strong>Técnica:</strong> ");
+  var bsA=[];
+  algos.forEach(function(a,idx){
+    var b=el("button","btn sec",esc(a.t)); b.type="button";
+    b.addEventListener("click",function(){ if(rodando){ return; } sel.a=idx; marca(); });
+    bsA.push(b); gA.appendChild(b);
+  });
+  var gQ=el("div",null,"<strong>Quantum (só no rodízio):</strong> ");
+  var bsQ=[];
+  [1,2,3,4].forEach(function(q){
+    var b=el("button","btn sec",String(q)); b.type="button";
+    b.addEventListener("click",function(){ if(rodando){ return; } sel.q=q; marca(); });
+    bsQ.push(b); gQ.appendChild(b);
+  });
+  var bgo=el("button","btn","▶ Executar"); bgo.type="button";
+  var gantt=el("div","gantt"); gantt.setAttribute("aria-label","Linha do tempo da CPU");
+  var msg=el("div","msg","Escolha a técnica e clique em ▶ Executar."); msg.setAttribute("aria-live","polite");
+  var comp=el("p",null,"<strong>Já testado:</strong> nada ainda.");
+  function marca(){
+    bsA.forEach(function(b,idx){ if(idx===sel.a){ b.classList.add("on"); } else { b.classList.remove("on"); } });
+    bsQ.forEach(function(b,idx){ if(idx+1===sel.q){ b.classList.add("on"); } else { b.classList.remove("on"); } });
+  }
+  function agenda(k,q){
+    var seq=[]; var ordem;
+    if(k==="fcfs"){ ordem=procs.slice(); }
+    else if(k==="sjf"){ ordem=procs.slice().sort(function(a,b){ return a.b-b.b; }); }
+    else if(k==="prio"){ ordem=procs.slice().sort(function(a,b){ return a.pr-b.pr; }); }
+    if(ordem){
+      ordem.forEach(function(p){ for(var n=0;n<p.b;n++){ seq.push(p.id); } });
+      return seq;
+    }
+    var rem={}; var fila=[];
+    procs.forEach(function(p){ rem[p.id]=p.b; fila.push(p.id); });
+    while(fila.length>0){
+      var id=fila.shift();
+      var run=Math.min(q,rem[id]);
+      for(var n2=0;n2<run;n2++){ seq.push(id); }
+      rem[id]-=run;
+      if(rem[id]>0){ fila.push(id); }
+    }
+    return seq;
+  }
+  function fmt2(x){ return x.toFixed(2).replace(".",","); }
+  function finalizar(seq,a){
+    var fim={}; var idxp={};
+    procs.forEach(function(p,n){ idxp[p.id]=n; });
+    seq.forEach(function(id,t){ fim[id]=t+1; });
+    var soma=0; var det=[];
+    procs.forEach(function(p){ var e=fim[p.id]-p.b; soma+=e; det.push(p.id+": "+e); });
+    var media=soma/procs.length;
+    var rot=a.nome+(a.k==="rr"?" (quantum "+sel.q+")":"");
+    testados[a.k]=true;
+    lista=lista.filter(function(x){ return x.rot!==rot; });
+    lista.push({rot:rot,media:media});
+    comp.innerHTML="<strong>Já testado (espera média):</strong> "+lista.map(function(x){ return x.rot+" = "+fmt2(x.media); }).join(" · ");
+    msg.className="msg bom";
+    msg.textContent="✅ "+rot+": espera média de "+fmt2(media)+" unidades de tempo. Esperas por processo — "+det.join(" · ")+". "+a.ex;
+    rodando=false; bgo.disabled=false;
+    if(Object.keys(testados).length>=3){ marcarDemo(i); }
+  }
+  bgo.addEventListener("click",function(){
+    if(rodando){ return; }
+    rodando=true; bgo.disabled=true;
+    var a=algos[sel.a]; var seq=agenda(a.k,sel.q);
+    gantt.innerHTML="";
+    msg.className="msg"; msg.textContent="⏳ Executando "+a.nome+"...";
+    var n=0;
+    timers[i]=setInterval(function(){
+      if(n<seq.length){
+        var id=seq[n];
+        var bl=el("div","bl",id); bl.title="Tempo "+n+": "+id;
+        var k=0; procs.forEach(function(p,idx){ if(p.id===id){ k=idx; } });
+        bl.style.background=cores[k];
+        gantt.appendChild(bl);
+        n++;
+      }
+      if(n>=seq.length){
+        clearInterval(timers[i]); timers[i]=null;
+        finalizar(seq,a);
+      }
+    },250);
+  });
+  root.appendChild(gA); root.appendChild(gQ); root.appendChild(bgo);
+  root.appendChild(el("p",null,"<strong>Linha do tempo da CPU (cada bloco = 1 unidade de tempo):</strong>"));
+  root.appendChild(gantt); root.appendChild(msg); root.appendChild(comp);
+  marca();
+};
+
+function limparDemo(i){ if(timers[i]){ clearInterval(timers[i]); timers[i]=null; } }
+function montarDemo(i){
+  limparDemo(i);
+  var root=document.getElementById("demo-"+i);
+  root.innerHTML="";
+  var d=AULA_DADOS.abas[i].demo;
+  DEMOS[d.tipo](root,i,d.config);
+}
+
+/* ---------- Renderização ---------- */
+function listaHtml(arr){ var h="<ul>"; arr.forEach(function(x){ h+="<li>"+esc(x)+"</li>"; }); return h+"</ul>"; }
+
+function renderAba(a,i){
+  var sec=el("section","painel");
+  sec.id="painel-"+ids[i]; sec.setAttribute("role","tabpanel"); sec.setAttribute("aria-labelledby","tab-"+ids[i]); sec.tabIndex=0;
+  sec.appendChild(el("h2",null,esc(a.titulo)));
+  sec.appendChild(el("div","missao","<h3>🎯 Missão</h3><p>"+esc(a.narrativa)+"</p>"));
+  var duas=el("div","duas");
+  duas.appendChild(el("div","cartao","<h4>🌍 No mundo real</h4>"+listaHtml(a.mundoReal)));
+  duas.appendChild(el("div","cartao","<h4>🧰 Serviços e ferramentas</h4>"+listaHtml(a.ferramentas)));
+  sec.appendChild(duas);
+
+  sec.appendChild(el("h3",null,"🧪 Demo interativa"));
+  var passos="<ol>"; a.roteiroDemo.passos.forEach(function(p){ passos+="<li>"+esc(p.acao)+"</li>"; }); passos+="</ol>";
+  sec.appendChild(el("div","instrucoes","<h4>📋 INSTRUÇÕES PASSO A PASSO</h4><p>"+esc(a.roteiroDemo.passo0)+"</p>"+passos));
+  if(a.demo.legenda){ sec.appendChild(el("div","legenda",esc(a.demo.legenda))); }
+  if(a.demo.exploratoria && a.demo.observar){ sec.appendChild(el("div","observar","👀 <strong>O que observar:</strong> "+esc(a.demo.observar))); }
+  var rot=el("details","roteiro");
+  var rh="<summary>🎤 Roteiro do apresentador</summary><p>"+esc(a.roteiroDemo.passo0)+"</p><ol>";
+  a.roteiroDemo.passos.forEach(function(p){ rh+="<li><strong>"+esc(p.acao)+"</strong><br>Você vê: "+esc(p.ve)+"<br>Significa: "+esc(p.significa)+"</li>"; });
+  rot.innerHTML=rh+"</ol>"; sec.appendChild(rot);
+  var area=el("div","demo-area"); area.id="demo-"+i; sec.appendChild(area);
+  var rb=el("button","btn sec","🔄 Reiniciar demo"); rb.type="button";
+  rb.addEventListener("click",function(){ montarDemo(i); });
+  sec.appendChild(rb);
+
+  sec.appendChild(el("h3",null,"❓ Quiz"));
+  sec.appendChild(el("div","termos","🔑 <strong>Termos deste quiz:</strong> "+esc(a.termosQuiz)));
+  var qz=el("div"); renderQuiz(a,i,qz); sec.appendChild(qz);
+
+  renderMito(a.mitoOuVerdade,sec);
+
+  sec.appendChild(el("h3",null,"📚 Para aprofundar em casa"));
+  var d1=el("details","d-dic"); var dh="<summary>📖 Mini-dicionário</summary><ul>";
+  a.dicionario.forEach(function(x){ dh+="<li><strong>"+esc(x.t)+":</strong> "+esc(x.d)+"</li>"; });
+  d1.innerHTML=dh+"</ul>"; sec.appendChild(d1);
+  var d2=el("details","d-con"); var ch="<summary>🧠 Conceitos em profundidade</summary>";
+  a.conceitos.forEach(function(c){
+    ch+="<h4>"+esc(c.titulo)+"</h4><p>"+esc(c.texto)+"</p><p>💡 <strong>Analogia:</strong> "+esc(c.analogia)+"</p><p>🌍 <strong>Exemplo real:</strong> "+esc(c.exemploReal)+"</p>";
+  });
+  d2.innerHTML=ch; sec.appendChild(d2);
+  var d3=el("details","d-bus"); var bh="<summary>🔗 Aprofunde com buscas</summary><ul>";
+  a.aprofundar.forEach(function(b){
+    bh+='<li><a href="'+esc(busca(b.tipo,b.q))+'" target="_blank" rel="noopener">'+ROTULOS_BUSCA[b.tipo]+'</a></li>';
+  });
+  d3.innerHTML=bh+"</ul>"; sec.appendChild(d3);
+  return sec;
+}
+
+function renderRevisao(r){
+  var sec=el("section","painel");
+  sec.id="painel-revisao"; sec.setAttribute("role","tabpanel"); sec.setAttribute("aria-labelledby","tab-revisao"); sec.tabIndex=0;
+  sec.appendChild(el("h2",null,"📝 Revisão da aula"));
+  sec.appendChild(el("h3",null,"🗺️ Mapa da aula"));
+  var ol=el("ol");
+  r.mapa.forEach(function(m,k){
+    var li=el("li"); var b=el("button","btn sec",esc(m.replace(/^\d+\.\s*/,""))); b.type="button";
+    b.addEventListener("click",function(){ irPara(k); });
+    li.appendChild(b); ol.appendChild(li);
+  });
+  sec.appendChild(ol);
+  sec.appendChild(el("h3",null,"📌 Cola rápida"));
+  var dl=el("dl","cola"); var dh="";
+  r.cola.forEach(function(c){ dh+="<dt>"+esc(c.termo)+"</dt><dd>"+esc(c.linha)+"</dd>"; });
+  dl.innerHTML=dh; sec.appendChild(dl);
+  sec.appendChild(el("h3",null,"👹 Chefão"));
+  sec.appendChild(el("div","missao","<p>"+esc(r.desafio)+"</p>"));
+  var ta=el("textarea"); ta.setAttribute("aria-label","Sua proposta para o Chefão"); ta.placeholder="Escreva aqui a sua proposta (pelo menos 4 frases)...";
+  sec.appendChild(ta);
+  var checks=el("div",null,"");
+  var itens=["Justifiquei minha escolha com um exemplo real.","Usei termos da cola rápida.","Revisei o texto antes de concluir."];
+  var cbs=[];
+  itens.forEach(function(t){
+    var lb=el("label",null,""); lb.style.display="block";
+    var cb=el("input"); cb.type="checkbox"; cbs.push(cb);
+    lb.appendChild(cb); lb.appendChild(document.createTextNode(" "+t)); checks.appendChild(lb);
+  });
+  sec.appendChild(checks);
+  var fim=el("button","btn","🏆 Concluir Chefão"); fim.type="button"; fim.disabled=true;
+  var msg=el("div","msg"); msg.style.display="none";
+  function verificar(){
+    var tudo=ta.value.trim().length>=60;
+    cbs.forEach(function(c){ if(!c.checked){ tudo=false; } });
+    fim.disabled=!tudo || estado.chefao;
+  }
+  ta.addEventListener("input",verificar);
+  cbs.forEach(function(c){ c.addEventListener("change",verificar); });
+  fim.addEventListener("click",function(){
+    if(estado.chefao){ return; }
+    estado.chefao=true; fim.disabled=true; addXp(30);
+    msg.style.display="block"; msg.className="msg bom";
+    msg.textContent="🏆 Chefão concluído! +30 XP. Compare sua proposta com a cola rápida e com as abas para conferir os conceitos.";
+    toast("🏆 Chefão concluído! +30 XP");
+  });
+  sec.appendChild(fim); sec.appendChild(msg);
+  return sec;
+}
+
+function renderAbas(){
+  var nav=document.getElementById("tabs");
+  var main=document.getElementById("paineis");
+  AULA_DADOS.abas.forEach(function(a,i){
+    ids.push("aba-"+(i+1));
+  });
+  ids.push("revisao");
+  AULA_DADOS.abas.forEach(function(a,i){
+    var b=el("button","tab",esc(a.rotulo)+'<span id="selo-tab-'+i+'"></span>');
+    b.type="button"; b.id="tab-"+ids[i]; b.setAttribute("role","tab"); b.setAttribute("aria-selected","false");
+    b.setAttribute("aria-controls","painel-"+ids[i]); b.tabIndex=-1;
+    b.addEventListener("click",function(){ irPara(i); });
+    nav.appendChild(b); abasEls.push(b);
+    var p=renderAba(a,i); main.appendChild(p); paineisEls.push(p);
+    estado.quizOk[i]=0; estado.demoOk[i]=false;
+    montarDemo(i);
+  });
+  var rb=el("button","tab","📝 Revisão");
+  var ri=ids.length-1;
+  rb.type="button"; rb.id="tab-revisao"; rb.setAttribute("role","tab"); rb.setAttribute("aria-selected","false");
+  rb.setAttribute("aria-controls","painel-revisao"); rb.tabIndex=-1;
+  rb.addEventListener("click",function(){ irPara(ri); });
+  nav.appendChild(rb); abasEls.push(rb);
+  var pr=renderRevisao(AULA_DADOS.revisao); main.appendChild(pr); paineisEls.push(pr);
+}
+
+/* ---------- Navegação (hash, compatível com file://) ---------- */
+function ativar(idx){
+  if(idx<0 || idx>=paineisEls.length){ idx=0; }
+  for(var k=0;k<paineisEls.length;k++){
+    var on=(k===idx);
+    abasEls[k].setAttribute("aria-selected",on?"true":"false");
+    abasEls[k].tabIndex=on?0:-1;
+    if(on){ paineisEls[k].classList.add("ativo"); } else { paineisEls[k].classList.remove("ativo"); }
+  }
+  atual=idx;
+  try{ abasEls[idx].scrollIntoView({block:"nearest",inline:"center"}); }catch(e){}
+}
+function parseHash(){
+  var h=location.hash.replace("#","");
+  var k=ids.indexOf(h);
+  return k<0?0:k;
+}
+function irPara(idx){
+  ativar(idx);
+  var h=ids[idx];
+  if(location.hash!=="#"+h){ location.hash=h; }
+  window.scrollTo(0,0);
+}
+
+/* ---------- Modos ---------- */
+var escuroAntes=false;
+function setModoAula(on){
+  var body=document.body; var btn=document.getElementById("btnModo"); var esc2=document.getElementById("btnEscuro");
+  var rots=document.querySelectorAll("details.roteiro");
+  if(on){
+    escuroAntes=body.classList.contains("escuro");
+    body.classList.remove("escuro"); body.classList.add("aula");
+    esc2.disabled=true; btn.textContent="📖 Modo Leitura"; btn.setAttribute("aria-pressed","true");
+    for(var k=0;k<rots.length;k++){ rots[k].open=true; }
+  } else {
+    body.classList.remove("aula");
+    if(escuroAntes){ body.classList.add("escuro"); }
+    esc2.disabled=false; btn.textContent="🎤 Modo Aula"; btn.setAttribute("aria-pressed","false");
+    for(var j=0;j<rots.length;j++){ rots[j].open=false; }
+  }
+}
+
+function init(){
+  renderAbas();
+  atualizarTopo();
+  document.getElementById("btnModo").addEventListener("click",function(){ setModoAula(!document.body.classList.contains("aula")); });
+  document.getElementById("btnEscuro").addEventListener("click",function(){
+    if(document.body.classList.contains("aula")){ return; }
+    document.body.classList.toggle("escuro");
+  });
+  document.getElementById("tabs").addEventListener("keydown",function(ev){
+    var n=abasEls.length; var novo=-1;
+    if(ev.key==="ArrowRight"){ novo=(atual+1)%n; }
+    else if(ev.key==="ArrowLeft"){ novo=(atual-1+n)%n; }
+    else if(ev.key==="Home"){ novo=0; }
+    else if(ev.key==="End"){ novo=n-1; }
+    if(novo>=0){ ev.preventDefault(); irPara(novo); abasEls[novo].focus(); }
+  });
+  document.addEventListener("keydown",function(ev){
+    if(!document.body.classList.contains("aula")){ return; }
+    var tg=ev.target; var tag=tg&&tg.tagName?tg.tagName:"";
+    if(tag==="INPUT"||tag==="TEXTAREA"||tag==="SELECT"||(tg&&tg.getAttribute&&tg.getAttribute("role")==="tab")){ return; }
+    var n=abasEls.length;
+    if(ev.key==="ArrowRight"){ ev.preventDefault(); irPara((atual+1)%n); }
+    else if(ev.key==="ArrowLeft"){ ev.preventDefault(); irPara((atual-1+n)%n); }
+  });
+  window.addEventListener("hashchange",function(){ ativar(parseHash()); });
+  ativar(parseHash());
+}
+init();
+</script>
+</body>
+</html>
