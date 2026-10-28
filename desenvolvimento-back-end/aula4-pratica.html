@@ -1,0 +1,1949 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Desenvolvimento Back-End — Aula 4</title>
+<!-- HTMLearning v2.17 — Campos não informados: professor da disciplina (nome, e-mail, lattes, orcid, site, instituição). Nenhum conteúdo pedagógico foi inventado. -->
+<style>
+:root {
+  --cor-destaque: #FF6B35;
+  --cor-destaque-claro: #FFE5D9;
+  --cor-destaque-escuro: #C44D1A;
+  --fundo: #FFFFFF;
+  --fundo-cartao: #F8F9FA;
+  --fundo-codigo: #F1F3F5;
+  --texto: #212529;
+  --texto-suave: #6C757D;
+  --borda: #DEE2E6;
+  --sucesso: #2B9348;
+  --erro: #D00000;
+  --aviso: #FFB703;
+}
+[data-theme="dark"] {
+  --fundo: #1A1D20;
+  --fundo-cartao: #2B3035;
+  --fundo-codigo: #343A40;
+  --texto: #F8F9FA;
+  --texto-suave: #ADB5BD;
+  --borda: #495057;
+  --cor-destaque-claro: #3D2817;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 18px;
+  line-height: 1.6;
+  background: var(--fundo);
+  color: var(--texto);
+  transition: background 0.3s, color 0.3s;
+}
+body.modo-apresentacao { font-size: 22px; }
+header {
+  background: linear-gradient(135deg, var(--cor-destaque), var(--cor-destaque-escuro));
+  color: white;
+  padding: 2rem 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+header .meta { opacity: 0.95; font-size: 0.95rem; }
+.controles-topo {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000;
+  display: flex;
+  gap: 0.5rem;
+}
+.controles-topo button {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--cor-destaque);
+  color: var(--cor-destaque);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+.controles-topo button:hover { background: var(--cor-destaque); color: white; }
+.xp-bar {
+  position: sticky;
+  top: 0;
+  background: var(--cor-destaque-claro);
+  padding: 0.75rem 1.5rem;
+  border-bottom: 2px solid var(--cor-destaque);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  z-index: 99;
+}
+.tabs-container {
+  position: sticky;
+  top: 52px;
+  background: var(--fundo);
+  border-bottom: 2px solid var(--borda);
+  z-index: 98;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+.tabs { display: flex; padding: 0 1rem; gap: 0.25rem; }
+.tab {
+  padding: 1rem 1.5rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--texto-suave);
+  font-size: 1rem;
+  font-weight: 600;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.tab:hover { color: var(--cor-destaque); }
+.tab[aria-selected="true"] {
+  color: var(--cor-destaque);
+  border-bottom-color: var(--cor-destaque);
+  background: var(--fundo);
+}
+.painel { display: none; padding: 2rem 1.5rem; max-width: 1100px; margin: 0 auto; }
+.painel.active { display: block; animation: fade 0.3s; }
+@keyframes fade { from {opacity:0} to {opacity:1} }
+h2 {
+  color: var(--cor-destaque-escuro);
+  border-left: 5px solid var(--cor-destaque);
+  padding-left: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.6rem;
+}
+h3 { color: var(--cor-destaque-escuro); margin: 1.5rem 0 1rem; font-size: 1.3rem; }
+.cartao {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.missao {
+  background: linear-gradient(135deg, var(--cor-destaque-claro), var(--fundo-cartao));
+  border-left: 5px solid var(--cor-destaque);
+}
+.missao::before {
+  content: "🎯 MISSÃO";
+  display: block;
+  font-weight: bold;
+  color: var(--cor-destaque-escuro);
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.mundo-real { background: #E7F5FF; border-left: 5px solid #1971C2; }
+[data-theme="dark"] .mundo-real { background: #1A3A52; }
+.mundo-real::before {
+  content: "🌎 NO MUNDO REAL";
+  display: block;
+  font-weight: bold;
+  color: #1971C2;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.ferramentas { background: #D3F9D8; border-left: 5px solid #2B9348; }
+[data-theme="dark"] .ferramentas { background: #1B4332; }
+.ferramentas::before {
+  content: "🛠️ FERRAMENTAS";
+  display: block;
+  font-weight: bold;
+  color: #2B9348;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.demo-box {
+  background: var(--fundo-codigo);
+  border: 3px solid var(--cor-destaque);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+.instrucoes {
+  background: #FFF9DB;
+  border: 2px solid var(--aviso);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .instrucoes { background: #3D3518; }
+.instrucoes::before {
+  content: "📋 INSTRUÇÕES PASSO A PASSO";
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.roteiro {
+  background: #F3D9FA;
+  border-left: 4px solid #9C36B5;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+[data-theme="dark"] .roteiro { background: #3D1F47; }
+.roteiro::before { content: "🎤 Roteiro do apresentador: "; font-weight: bold; font-style: normal; }
+.prever {
+  background: #E3FAFC;
+  border: 2px dashed #0C8599;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+[data-theme="dark"] .prever { background: #0F3742; }
+.prever::before {
+  content: "🔮 PREVISÃO";
+  display: block;
+  font-weight: bold;
+  color: #0C8599;
+  margin-bottom: 0.5rem;
+}
+.legenda {
+  background: #FFF3BF;
+  border-left: 4px solid #F59F00;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+  border-radius: 6px;
+}
+[data-theme="dark"] .legenda { background: #3D3518; }
+.legenda::before { content: "🔑 Legenda: "; font-weight: bold; }
+.quiz-box {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+.termos-quiz {
+  background: #FFF3BF;
+  border: 2px solid #F59F00;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+[data-theme="dark"] .termos-quiz { background: #3D3518; }
+.termos-quiz::before {
+  content: "🔑 Termos deste quiz";
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.pergunta {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--fundo);
+  border-radius: 8px;
+  border: 2px solid var(--borda);
+}
+.pergunta p { font-weight: 600; margin-bottom: 0.75rem; }
+.alt {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+  background: white;
+  border: 2px solid var(--borda);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--texto);
+  transition: all 0.2s;
+}
+[data-theme="dark"] .alt { background: var(--fundo-cartao); }
+.alt:hover:not(:disabled) { border-color: var(--cor-destaque); background: var(--cor-destaque-claro); }
+.alt.certa { background: #D3F9D8 !important; border-color: var(--sucesso) !important; color: var(--sucesso); font-weight: bold; }
+.alt.errada { background: #FFE3E3 !important; border-color: var(--erro) !important; color: var(--erro); }
+[data-theme="dark"] .alt.certa { background: #1B4332 !important; color: #51CF66 !important; }
+[data-theme="dark"] .alt.errada { background: #3D1F24 !important; color: #FF6B6B !important; }
+.alt:disabled { cursor: not-allowed; opacity: 0.7; }
+.fb { margin-top: 0.5rem; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.95rem; display: none; }
+.fb.show { display: block; }
+.fb.fb-certa { background: #D3F9D8; border-left: 4px solid var(--sucesso); color: #087F23; }
+.fb.fb-errada { background: #FFE3E3; border-left: 4px solid var(--erro); color: #C92A2A; }
+[data-theme="dark"] .fb.fb-certa { background: #1B4332; color: #69DB7C; }
+[data-theme="dark"] .fb.fb-errada { background: #3D1F24; color: #FFA8A8; }
+details {
+  background: var(--fundo-codigo);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+  border: 1px solid var(--borda);
+}
+details[open] { background: var(--cor-destaque-claro); }
+summary { cursor: pointer; font-weight: bold; color: var(--cor-destaque-escuro); padding: 0.25rem 0; }
+.demo-area {
+  background: white;
+  border: 2px dashed var(--cor-destaque);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+  min-height: 150px;
+}
+[data-theme="dark"] .demo-area { background: var(--fundo-cartao); }
+.btn {
+  background: var(--cor-destaque);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.95rem;
+  margin: 0.25rem;
+}
+.btn:hover { background: var(--cor-destaque-escuro); }
+.btn-secundario { background: var(--texto-suave); color: white; }
+.resultado-demo {
+  background: #D3F9D8;
+  border-left: 4px solid var(--sucesso);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .resultado-demo { background: #1B4332; color: #69DB7C; }
+.resultado-erro {
+  background: #FFE3E3;
+  border-left: 4px solid var(--erro);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .resultado-erro { background: #3D1F24; color: #FFA8A8; }
+footer {
+  background: var(--fundo-cartao);
+  border-top: 3px solid var(--cor-destaque);
+  padding: 2rem 1.5rem;
+  margin-top: 3rem;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+footer h4 { color: var(--cor-destaque-escuro); margin-bottom: 0.75rem; font-size: 1rem; }
+footer .bloco { padding: 1rem 0; line-height: 1.7; }
+footer .bloco + .bloco { border-top: 2px solid var(--borda); margin-top: 1rem; padding-top: 1.5rem; }
+footer a { color: var(--cor-destaque-escuro); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+footer ul { list-style: none; padding-left: 0; }
+footer ul li { margin: 0.4rem 0; }
+.revisao-mapa {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+.no-mapa {
+  background: var(--cor-destaque-claro);
+  border: 2px solid var(--cor-destaque);
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+}
+.no-mapa h4 { color: var(--cor-destaque-escuro); margin-bottom: 0.5rem; }
+.cola-rapida {
+  background: #FFF9DB;
+  border: 2px solid var(--aviso);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin: 1rem 0;
+}
+[data-theme="dark"] .cola-rapida { background: #3D3518; }
+.cola-rapida dt { font-weight: bold; color: var(--cor-destaque-escuro); margin-top: 0.75rem; }
+.cola-rapida dd { margin-left: 1rem; margin-bottom: 0.5rem; color: var(--texto); }
+.chefao {
+  background: linear-gradient(135deg, var(--cor-destaque-claro), white);
+  border: 3px solid var(--cor-destaque);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+[data-theme="dark"] .chefao { background: linear-gradient(135deg, var(--cor-destaque-claro), var(--fundo-cartao)); }
+.chefao::before {
+  content: "👑 CHEFÃO — DESAFIO FINAL";
+  display: block;
+  font-weight: bold;
+  color: var(--cor-destaque-escuro);
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+}
+.mitoverdade {
+  background: #F3D9FA;
+  border-left: 5px solid #9C36B5;
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 8px;
+}
+[data-theme="dark"] .mitoverdade { background: #3D1F47; }
+code {
+  background: var(--fundo-codigo);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-family: "Courier New", monospace;
+  font-size: 0.95em;
+  color: var(--cor-destaque-escuro);
+}
+pre {
+  background: var(--fundo-codigo);
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  border-left: 4px solid var(--cor-destaque);
+  margin: 1rem 0;
+  font-family: "Courier New", monospace;
+  font-size: 0.9rem;
+}
+@media (max-width: 600px) {
+  header h1 { font-size: 1.5rem; }
+  .tab { padding: 0.75rem 1rem; font-size: 0.9rem; }
+  .painel { padding: 1rem; }
+  .controles-topo { position: static; padding: 0.5rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="controles-topo">
+  <button id="btn-modo" type="button">🎤 Apresentação</button>
+  <button id="btn-tema" type="button">🌙 Escuro</button>
+</div>
+
+<header>
+  <h1>Desenvolvimento Back-End</h1>
+  <div class="meta">Aula 4 · Unidade 2 · Págs. 9 a 29 · Linguagens, Sintaxe e Estruturas de Controle</div>
+</header>
+
+<div class="xp-bar">
+  <div>⭐ XP: <span id="xp">0</span> · Selos: <span id="selos">0</span>/5</div>
+  <div id="progresso">Aba 1 de 6</div>
+</div>
+
+<div class="tabs-container">
+  <div class="tabs" role="tablist" aria-label="Abas da aula">
+    <button class="tab" role="tab" id="tab-1" aria-selected="true" aria-controls="painel-1" data-aba="1" type="button">1 · Linguagens</button>
+    <button class="tab" role="tab" id="tab-2" aria-selected="false" aria-controls="painel-2" data-aba="2" type="button">2 · Escolha certa</button>
+    <button class="tab" role="tab" id="tab-3" aria-selected="false" aria-controls="painel-3" data-aba="3" type="button">3 · Sintaxe</button>
+    <button class="tab" role="tab" id="tab-4" aria-selected="false" aria-controls="painel-4" data-aba="4" type="button">4 · Decisões</button>
+    <button class="tab" role="tab" id="tab-5" aria-selected="false" aria-controls="painel-5" data-aba="5" type="button">5 · Repetições</button>
+    <button class="tab" role="tab" id="tab-6" aria-selected="false" aria-controls="painel-6" data-aba="6" type="button">⭐ Revisão</button>
+  </div>
+</div>
+
+<!-- ============ ABA 1 ============ -->
+<div class="painel" id="painel-1" role="tabpanel" aria-labelledby="tab-1">
+  <h2>Aba 1 · Linguagens de programação: o que são e como funcionam</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é entender o que é uma linguagem de programação no back-end e saber por que existem tantas opções diferentes. Imagine que você precisa construir uma casa: você pode usar tijolos, madeira, aço ou concreto. Cada material tem suas vantagens. No back-end, a linguagem é o material com o qual você constrói o servidor, as regras do negócio e a conexão com o banco de dados.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 O que é uma linguagem de programação para back-end?</h3>
+    <p>Uma linguagem de programação back-end é o conjunto de palavras e regras que usamos para escrever o código que roda no servidor — aquele motor escondido que faz o site funcionar. Quando você entra no site do iFood (aplicativo brasileiro de entrega de comida) e pede uma pizza, o que você vê na tela é o front-end, mas quem calcula o preço, consulta o estoque, grava o pedido e avisa o entregador é o back-end, escrito em uma linguagem específica.</p>
+    <p>Essa linguagem conversa com o sistema operacional (como Linux ou Windows Server), acessa bancos de dados (como MySQL ou PostgreSQL) e responde às requisições (pedidos) que chegam do navegador ou do aplicativo do celular.</p>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Onde isso aparece no dia a dia?</h3>
+    <ul style="margin-left:1.5rem">
+      <li>Quando você paga uma conta no aplicativo do Nubank (banco digital brasileiro), o back-end em <strong>Java</strong> valida seu saldo, registra a transação e envia o comprovante.</li>
+      <li>Quando o Spotify (serviço de streaming de música) recomenda uma playlist para você, um back-end em <strong>Python</strong> processa milhões de dados sobre o que você costuma ouvir.</li>
+      <li>Quando o Mercado Livre (marketplace latino-americano) mostra os produtos em promoção, o back-end em <strong>Node.js</strong> (versão do JavaScript que roda no servidor) monta a página sob medida para você.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ As linguagens mais usadas no back-end</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>JavaScript (Node.js)</strong> — o mesmo JavaScript da web, agora rodando no servidor. Usado pelo Netflix (serviço de streaming) e pelo LinkedIn (rede profissional).</li>
+      <li><strong>Python</strong> — linguagem simples e poderosa. Usada pelo Instagram (rede de fotos) e pelo Dropbox (serviço de arquivos na nuvem).</li>
+      <li><strong>Java</strong> — linguagem robusta, muito usada em bancos e grandes empresas. Usada pelo Banco do Brasil e em sistemas do SUS (Sistema Único de Saúde).</li>
+      <li><strong>PHP</strong> — linguagem antiga, mas ainda muito presente na web. Usada pelo WordPress (sistema que roda cerca de 40% dos sites do mundo).</li>
+      <li><strong>C# (leia-se c-sharp)</strong> — da Microsoft, usada em sistemas corporativos que rodam na plataforma .NET (conjunto de ferramentas da Microsoft).</li>
+      <li><strong>Go (ou Golang)</strong> — linguagem criada pelo Google, muito rápida. Usada pelo Uber (aplicativo de transporte) para lidar com milhões de pedidos simultâneos.</li>
+      <li><strong>Ruby</strong> — linguagem elegante. Usada pelo GitHub (site onde programadores guardam código) nos primeiros anos.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo interativa: explorador de linguagens back-end</h3>
+
+    <div class="prever">
+      <strong>Antes de clicar, preveja:</strong> qual linguagem você acha que roda em MAIOR número de sites no mundo hoje: PHP, Python ou Node.js?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 1:</strong> clique em uma das linguagens abaixo.<br>
+      <strong>Passo 2:</strong> leia a ficha que aparece e veja um caso real de uso.<br>
+      <strong>Passo 3:</strong> compare as fichas e descubra qual linguagem é usada onde.
+    </div>
+
+    <div class="roteiro">
+      comece perguntando à turma quem já usou Instagram. Clique em Python e mostre que é a linguagem por trás. Depois clique em PHP para mostrar o contraste: linguagem mais antiga, mas ainda dominante na web. Finalize com Go para mostrar o futuro de alta performance.
+    </div>
+
+    <div class="demo-area" id="demo1-area">
+      <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem">
+        <button class="btn" type="button" data-lang="node">Node.js</button>
+        <button class="btn" type="button" data-lang="python">Python</button>
+        <button class="btn" type="button" data-lang="java">Java</button>
+        <button class="btn" type="button" data-lang="php">PHP</button>
+        <button class="btn" type="button" data-lang="csharp">C#</button>
+        <button class="btn" type="button" data-lang="go">Go</button>
+        <button class="btn" type="button" data-lang="ruby">Ruby</button>
+      </div>
+      <div id="demo1-ficha" style="padding:1rem; background:var(--fundo-codigo); border-radius:8px; min-height:100px">
+        👆 Clique em uma linguagem acima para ver a ficha completa.
+      </div>
+      <button class="btn btn-secundario" type="button" id="demo1-reset" style="margin-top:1rem">🔄 Reiniciar demo</button>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> cada linguagem tem pontos fortes diferentes. Node.js brilha em aplicações com muitas conexões simultâneas (como chat). Python é ótimo para inteligência artificial. Java domina grandes empresas. Go é o preferido quando velocidade é crítica.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 1</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      back-end = parte do sistema que roda no servidor, invisível para o usuário ·
+      servidor = computador potente que fica ligado 24h atendendo pedidos ·
+      Node.js = forma de rodar JavaScript fora do navegador, no servidor ·
+      PHP = linguagem nascida em 1994, muito usada em sites dinâmicos ·
+      Go = linguagem criada pelo Google em 2009, focada em velocidade e simplicidade.
+    </div>
+
+    <div class="pergunta" data-pergunta="1-1">
+      <p>1. O que faz o código do back-end, aquela parte que você NÃO vê na tela do site?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Esta opção está errada porque descreve o trabalho do CSS (folha de estilos, em português), que cuida das cores e fontes. O back-end cuida da lógica, não da aparência.">Deixar as cores e as fontes bonitas na página</button>
+        <button class="alt" type="button" data-fb="Correto! O back-end é o motor escondido: calcula preços, valida logins e salva dados no banco, tudo invisível para o usuário final. É como a cozinha do restaurante: você só vê o prato pronto.">Processar regras do negócio, salvar dados e responder aos pedidos do navegador</button>
+        <button class="alt" type="button" data-fb="Errado! Quem mostra imagens e textos na tela é o front-end (a parte da frente), com HTML e CSS rodando no navegador. O back-end está nos bastidores.">Mostrar imagens e textos ao usuário</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="1-2">
+      <p>2. O Uber (aplicativo de transporte) escolheu Go (linguagem criada pelo Google) para partes críticas do sistema. Por quê?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! Go é famosa justamente por ser simples e enxuta, com poucos comandos. É o oposto de complicada.">Porque Go é a linguagem mais complicada, cheia de recursos</button>
+        <button class="alt" type="button" data-fb="Errado! Go NÃO roda apenas em Windows. Ela funciona em Linux, macOS e Windows. Os servidores do Uber usam Linux (sistema operacional livre).">Porque Go só funciona em computadores Windows</button>
+        <button class="alt" type="button" data-fb="Correto! Go foi criada pelo Google para atender milhões de conexões ao mesmo tempo com velocidade. No Uber, milhões de passageiros pedem carro ao mesmo tempo, e Go aguenta esse volume.">Porque Go é rápida e aguenta milhões de pedidos simultâneos</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="1-3">
+      <p>3. O WordPress (sistema usado em cerca de 40% dos sites do mundo) é escrito em PHP. O que isso significa na prática?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! O PHP nasceu para criar sites dinâmicos (páginas que mudam conforme o visitante). Por isso blogs, lojas e portais do mundo inteiro rodam em PHP através do WordPress ou de sistemas parecidos.">Que o PHP é uma linguagem antiga, mas ainda domina a web porque nasceu para criar sites dinâmicos</button>
+        <button class="alt" type="button" data-fb="Errado! PHP é uma linguagem de back-end: roda no servidor. Quem pinta telas é o CSS, no front-end.">Que o PHP é uma linguagem usada só para pintar telas de sites</button>
+        <button class="alt" type="button" data-fb="Errado! O PHP NÃO roda no celular do visitante: roda no servidor. O celular só recebe o resultado pronto. Quem roda em celulares são linguagens como Kotlin (Android) e Swift (iPhone).">Que o PHP roda diretamente no celular do visitante</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 1</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=linguagens+de+programação+back+end+mais+usadas" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=linguagens+de+programação+para+back+end" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=linguagens+back+end+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Back-end</strong>: parte do sistema que roda no servidor, invisível para o usuário.</li>
+      <li><strong>Servidor</strong>: computador potente que atende pedidos 24 horas por dia.</li>
+      <li><strong>Front-end</strong>: parte do sistema que o usuário vê e com a qual interage.</li>
+      <li><strong>Banco de dados</strong>: sistema que guarda informações de forma organizada, como uma planilha gigante.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Toda linguagem de programação serve para qualquer projeto.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> cada linguagem tem pontos fortes. Python é ótima para dados e inteligência artificial. Go é feita para velocidade extrema. PHP é campeã da web. Escolher errado custa caro em desempenho e manutenção.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 2 ============ -->
+<div class="painel" id="painel-2" role="tabpanel" aria-labelledby="tab-2">
+  <h2>Aba 2 · Escolhendo a linguagem certa para cada situação</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão agora é aprender a escolher a linguagem certa. Não existe a melhor linguagem do mundo: existe a linguagem certa para cada cenário. É como escolher um veículo: para ir à padaria você usa bicicleta; para uma mudança, usa caminhão. No back-end, a escolha errada custa tempo, dinheiro e noites sem dormir.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Critérios para escolher uma linguagem</h3>
+    <p>Quando uma empresa vai iniciar um projeto back-end, ela avalia vários fatores. O primeiro é o <strong>tamanho do time</strong>: se a equipe é pequena e iniciante, Python ou Ruby são escolhas amigáveis; se é grande e experiente, Java ou Go dão mais controle. O segundo é a <strong>velocidade de entrega</strong>: startups (empresas novas de tecnologia) querem lançar rápido, e Node.js com JavaScript permite reutilizar código entre front-end e back-end. O terceiro é o <strong>desempenho</strong>: sistemas financeiros ou jogos com muitos jogadores precisam responder em milissegundos, e Go entrega isso.</p>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Casos reais de escolha</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Netflix (serviço de streaming de vídeo)</strong> começou em Java e migrou partes para Node.js para lidar com milhões de usuários simultâneos.</li>
+      <li><strong>iFood (aplicativo brasileiro de entregas)</strong> usa Java no núcleo, por ser robusto, e Go nas partes menores e rápidas do sistema.</li>
+      <li><strong>Nubank (banco digital brasileiro)</strong> escolheu Clojure (linguagem moderna que roda sobre a máquina virtual do Java) para ter segurança e muitas conexões ao mesmo tempo.</li>
+      <li><strong>Instagram (rede social de fotos)</strong> usa Python com o framework Django (kit de ferramentas prontas) para entregar rápido.</li>
+      <li><strong>Twitter (rede social de mensagens curtas)</strong> começou em Ruby e migrou para Java e Scala (linguagem que roda sobre Java) porque Ruby não aguentava o volume.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Frameworks: os kits prontos das linguagens</h3>
+    <p>Uma linguagem sozinha é como um jogo de ferramentas soltas. Um framework (do inglês, estrutura; em português, arcabouço) é um kit pronto que já vem com peças montadas. Por exemplo:</p>
+    <ul style="margin-left:1.5rem">
+      <li>Python tem o <strong>Django</strong> (usado pelo Instagram) e o <strong>Flask</strong> (mais leve).</li>
+      <li>JavaScript (Node.js) tem o <strong>Express</strong> (minimalista) e o <strong>NestJS</strong> (robusto).</li>
+      <li>Java tem o <strong>Spring Boot</strong> (muito usado em bancos).</li>
+      <li>PHP tem o <strong>Laravel</strong> (moderno e produtivo).</li>
+      <li>Ruby tem o <strong>Ruby on Rails</strong> (famoso por ter criado o GitHub e o Airbnb).</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: consultor de linguagens back-end</h3>
+
+    <div class="prever">
+      <strong>Antes de jogar, preveja:</strong> se você fosse montar um aplicativo de entregas (tipo iFood) que precisa atender 100 mil pedidos ao mesmo tempo, qual linguagem escolheria: PHP, Python ou Go?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 1:</strong> clique em Novo cenário e leia o caso apresentado.<br>
+      <strong>Passo 2:</strong> escolha a linguagem que você acha mais adequada.<br>
+      <strong>Passo 3:</strong> receba o feedback com um exemplo real de empresa que fez essa escolha. Se errar, tente de novo com outro cenário.
+    </div>
+
+    <div class="roteiro">
+      projete o primeiro cenário na tela e pergunte à turma qual linguagem usariam. Deixe votarem antes de clicar. Mostre o feedback e destaque o caso real. Repita com dois ou três cenários diferentes.
+    </div>
+
+    <div class="demo-area" id="demo2-area">
+      <div id="demo2-cenario" style="background:var(--cor-destaque-claro); padding:1rem; border-radius:8px; margin-bottom:1rem; font-weight:600">
+        📋 O cenário aparecerá aqui. Clique em Novo cenário para começar.
+      </div>
+      <div id="demo2-opcoes" style="display:none">
+        <button class="btn" type="button" data-resp="php">PHP</button>
+        <button class="btn" type="button" data-resp="python">Python</button>
+        <button class="btn" type="button" data-resp="java">Java</button>
+        <button class="btn" type="button" data-resp="node">Node.js</button>
+        <button class="btn" type="button" data-resp="go">Go</button>
+        <button class="btn" type="button" data-resp="ruby">Ruby</button>
+      </div>
+      <div id="demo2-feedback" style="margin-top:1rem"></div>
+      <div style="margin-top:1rem">
+        <button class="btn" type="button" id="demo2-novo">🎲 Novo cenário</button>
+        <button class="btn btn-secundario" type="button" id="demo2-reset">🔄 Reiniciar demo</button>
+      </div>
+      <div id="demo2-placar" style="margin-top:1rem; font-weight:bold; color:var(--cor-destaque-escuro)"></div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 2</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      framework = kit pronto de ferramentas para uma linguagem (o Django é um framework de Python) ·
+      startup = empresa nova de tecnologia, geralmente pequena e focada em crescer rápido ·
+      microsserviço = parte pequena e independente de um sistema grande ·
+      concorrência = capacidade de atender muitos pedidos ao mesmo tempo.
+    </div>
+
+    <div class="pergunta" data-pergunta="2-1">
+      <p>1. Uma startup (empresa nova de tecnologia) com 4 pessoas quer lançar um aplicativo rápido, reusando no back-end o mesmo JavaScript que o time já usa no front-end. Qual linguagem escolheria?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! Java é robusto, mas tem curva de aprendizado longa e exige muito código para coisas simples. Para uma startup pequena com pressa, isso atrasa o lançamento.">Java, porque é a mais robusta</button>
+        <button class="alt" type="button" data-fb="Correto! Node.js roda JavaScript no servidor, permitindo que o mesmo programador do front-end faça o back-end. A startup ganha tempo e economiza contratações, exatamente como fazem startups modernas.">Node.js (JavaScript), porque reusa o conhecimento do front-end</button>
+        <button class="alt" type="button" data-fb="Errado! Go é excelente em velocidade, mas tem menos bibliotecas prontas e exige aprender sintaxe nova. Para um time pequeno com pressa, é investimento inicial demais.">Go, porque é a mais rápida</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="2-2">
+      <p>2. O Instagram usa Python com Django. O que é o Django nesse caso?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! Django NÃO é uma linguagem: é um framework (kit pronto) feito PARA Python. A linguagem é Python; o Django é a ferramenta que facilita o trabalho com ela.">Uma linguagem de programação mais moderna que Python</button>
+        <button class="alt" type="button" data-fb="Errado! Django NÃO é um banco de dados. Bancos de dados são sistemas como MySQL ou PostgreSQL, que guardam informações. O Django apenas conversa com eles.">Um banco de dados próprio do Instagram</button>
+        <button class="alt" type="button" data-fb="Correto! Django é um framework (kit de ferramentas prontas) para Python. Ele já vem com login, banco de dados e arquivos prontos, então o Instagram não precisou escrever tudo do zero.">Um framework (kit pronto) para Python que acelera o desenvolvimento</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="2-3">
+      <p>3. Por que o Twitter (rede social de mensagens curtas) migrou de Ruby para Java quando ficou gigante?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! Ruby on Rails é produtivo para criar rápido, mas quando o Twitter passou a ter centenas de milhões de tweets por dia, Ruby não aguentou a concorrência (muitos pedidos ao mesmo tempo). Java escala melhor.">Porque Ruby não aguentava o volume gigantesco de tweets simultâneos e Java escala melhor</button>
+        <button class="alt" type="button" data-fb="Errado! Ruby não foi proibida nem é insegura por natureza. O problema foi escala (volume de acessos), não qualidade da linguagem.">Porque Ruby foi proibida por questões de segurança</button>
+        <button class="alt" type="button" data-fb="Errado! Ruby NÃO deixou de existir: ainda é usada por muitas empresas, como Shopify (plataforma de lojas virtuais) e Airbnb (aluguel de temporada). O Twitter mudou porque cresceu demais.">Porque Ruby deixou de existir em 2010</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 2</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=como+escolher+linguagem+de+programação+back+end" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=escolha+de+linguagem+de+programação+para+web" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=frameworks+back+end+python+java+node+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Framework</strong>: kit pronto que facilita o desenvolvimento em uma linguagem específica.</li>
+      <li><strong>Startup</strong>: empresa nova de tecnologia focada em crescer rápido.</li>
+      <li><strong>Microsserviço</strong>: pedaço pequeno e independente de um sistema grande.</li>
+      <li><strong>Escalabilidade</strong>: capacidade do sistema de crescer sem travar.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Python é a melhor linguagem e serve para tudo.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> Python é excelente para ciência de dados e inteligência artificial, mas é lenta para tarefas que precisam de altíssimo desempenho. O Uber usa Go, e não Python, justamente nas partes críticas de velocidade.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 3 ============ -->
+<div class="painel" id="painel-3" role="tabpanel" aria-labelledby="tab-3">
+  <h2>Aba 3 · Sintaxe: a gramática das linguagens</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é entender que toda linguagem de programação tem uma gramática chamada <strong>sintaxe</strong>: o conjunto de regras que define como escrever para o computador entender. Assim como na língua portuguesa você precisa de sujeito, verbo e concordância, no código você precisa seguir a sintaxe da linguagem, senão o programa reclama com um erro de sintaxe e não roda.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 O que é sintaxe na programação?</h3>
+    <p>Sintaxe é o conjunto de regras formais que define como os comandos devem ser escritos. Cada linguagem tem a sua, como cada idioma humano. Por exemplo, para mostrar algo na tela:</p>
+    <ul style="margin-left:1.5rem">
+      <li>Em <strong>Python</strong>: <code>print("Olá")</code></li>
+      <li>Em <strong>Java</strong>: <code>System.out.println("Olá");</code></li>
+      <li>Em <strong>JavaScript</strong>: <code>console.log("Olá");</code></li>
+      <li>Em <strong>PHP</strong>: <code>echo "Olá";</code></li>
+      <li>Em <strong>Ruby</strong>: <code>puts "Olá"</code></li>
+    </ul>
+    <p>Todos fazem a mesma coisa — mostrar Olá — mas cada um escreve de um jeito. É como dizer boa tarde em português, buenas tardes em espanhol e good afternoon em inglês.</p>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Quando a sintaxe quebra, o que acontece?</h3>
+    <ul style="margin-left:1.5rem">
+      <li>No <strong>GitHub</strong> (site onde programadores guardam código), quando você escreve código com sintaxe errada, o site marca o erro em vermelho e não salva até você corrigir.</li>
+      <li>No <strong>WhatsApp</strong> (aplicativo de mensagens), uma falha de código descoberta em 2019 permitia invadir o celular apenas com uma ligação perdida. A empresa corrigiu em poucos dias.</li>
+      <li>Na <strong>NASA</strong> (agência espacial dos Estados Unidos), em 1962, a sonda Mariner 1 foi perdida por causa de UM caractere faltando na sintaxe do código: um prejuízo de milhões de dólares da época.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Elementos comuns da sintaxe</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Variáveis</strong>: caixinhas que guardam informação. Em Python: <code>nome = "Maria"</code>. Em Java: <code>String nome = "Maria";</code>.</li>
+      <li><strong>Comentários</strong>: anotações para humanos, ignoradas pelo computador. Em Python usa-se <code>#</code> (cerquilha); em JavaScript, <code>//</code> (duas barras).</li>
+      <li><strong>Ponto e vírgula (;)</strong>: algumas linguagens (Java, PHP, C#) exigem no fim de cada comando. Outras (Python, Ruby) não.</li>
+      <li><strong>Chaves {}</strong>: em Java, C#, JavaScript e PHP marcam blocos de código. Em Python, usa-se recuo (espaços no início da linha).</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: tradutor de sintaxe entre linguagens</h3>
+
+    <div class="prever">
+      <strong>Antes de clicar, preveja:</strong> como se escreve criar uma variável idade com valor 25 em Python? Seria <code>idade = 25</code>, <code>var idade = 25</code> ou <code>let idade = 25</code>?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 1:</strong> clique em um comando do dia a dia (mostrar algo na tela, criar variável, condição, repetição ou comentário).<br>
+      <strong>Passo 2:</strong> veja como cada linguagem escreve esse mesmo comando.<br>
+      <strong>Passo 3:</strong> compare os estilos e diga qual parece mais simples para você.
+    </div>
+
+    <div class="roteiro">
+      pergunte à turma quem sabe inglês e mostre que Python é quase inglês (print significa imprimir). Compare com Java, que é mais verboso. Isso gera discussão sobre linguagem simples versus linguagem poderosa.
+    </div>
+
+    <div class="demo-area" id="demo3-area">
+      <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem">
+        <button class="btn" type="button" data-tipo="mostrar">Mostrar na tela</button>
+        <button class="btn" type="button" data-tipo="variavel">Criar variável</button>
+        <button class="btn" type="button" data-tipo="condicao">Se... então (condição)</button>
+        <button class="btn" type="button" data-tipo="repeticao">Repetir 5 vezes</button>
+        <button class="btn" type="button" data-tipo="comentario">Comentário</button>
+      </div>
+      <div id="demo3-tabela" style="display:grid; gap:0.5rem"></div>
+      <button class="btn btn-secundario" type="button" id="demo3-reset" style="margin-top:1rem">🔄 Reiniciar demo</button>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 3</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      sintaxe = conjunto de regras para escrever código válido ·
+      variável = caixinha com nome que guarda um valor (número, texto etc.) ·
+      print = comando do Python que mostra algo na tela ·
+      ponto e vírgula (;) = caractere obrigatório no fim do comando em algumas linguagens.
+    </div>
+
+    <div class="pergunta" data-pergunta="3-1">
+      <p>1. Em Python, para mostrar a frase Olá mundo na tela, qual sintaxe está correta?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! mostrar não é um comando válido em Python. O comando certo é print (do inglês, imprimir). Se digitar mostrar, o Python reclama com erro de sintaxe.">mostrar("Olá mundo")</button>
+        <button class="alt" type="button" data-fb="Correto! Em Python usamos print com parênteses e a frase entre aspas. É quase inglês: print significa imprimir. Simples e direto.">print("Olá mundo")</button>
+        <button class="alt" type="button" data-fb="Errado! Essa sintaxe é do JavaScript (Node.js). Em Python não existe console: cada linguagem tem o seu jeito de escrever.">console.log("Olá mundo")</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="3-2">
+      <p>2. A sonda Mariner 1 (da NASA, em 1962) foi perdida por causa de um problema de sintaxe. O que era?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! Faltou um único caractere no código que guiava o foguete. Esse detalhe mudou a trajetória e a sonda teve que ser destruída. Virou o caso clássico de como um caractere errado custa caro.">Um único caractere faltando no código mudou a trajetória da sonda</button>
+        <button class="alt" type="button" data-fb="Errado! Não foi peça física queimada nem erro de lógica: foi especificamente um caractere faltando na escrita do código, ou seja, problema puro de sintaxe.">Um componente físico do foguete queimou</button>
+        <button class="alt" type="button" data-fb="Errado! A matemática da órbita estava certa. O que faltou foi um caractere no código-fonte (o texto do programa), não uma fórmula.">Uma fórmula matemática errada no cálculo da órbita</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="3-3">
+      <p>3. Qual das linguagens abaixo NÃO exige ponto e vírgula no fim de cada comando?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! Java EXIGE ponto e vírgula. Se você esquecer, o código não compila (não vira programa executável). É uma das regras mais chatas para quem começa em Java.">Java</button>
+        <button class="alt" type="button" data-fb="Errado! PHP também exige ponto e vírgula no fim de cada comando. É uma regra estrita que ajuda a evitar erros, mas pega iniciantes de surpresa.">PHP</button>
+        <button class="alt" type="button" data-fb="Correto! Python NÃO exige ponto e vírgula: basta pular a linha. Esse é um dos motivos de Python ser considerada mais limpa e amigável para iniciantes. Ruby também dispensa o ponto e vírgula.">Python</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 3</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=sintaxe+de+linguagem+de+programação" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=sintaxe+das+linguagens+de+programação" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=sintaxe+de+programação+para+iniciantes+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Sintaxe</strong>: regras de escrita de uma linguagem de programação.</li>
+      <li><strong>Variável</strong>: caixinha com nome que guarda um valor.</li>
+      <li><strong>Compilar</strong>: transformar o código em programa executável (Java e C# fazem isso).</li>
+      <li><strong>Interpretar</strong>: executar o código diretamente, linha por linha (Python e PHP fazem isso).</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Todas as linguagens usam os mesmos comandos, só muda o nome.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> cada linguagem tem sintaxe própria. Python usa print, Java usa System.out.println e PHP usa echo. São idiomas diferentes, não apenas apelidos diferentes.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 4 ============ -->
+<div class="painel" id="painel-4" role="tabpanel" aria-labelledby="tab-4">
+  <h2>Aba 4 · Estruturas de decisão: if, else e switch</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é dominar as <strong>estruturas de decisão</strong>: os comandos que fazem o programa tomar decisões. Sem elas, o programa faria sempre a mesma coisa, como um robô sem cérebro. Com elas, o programa reage: se o usuário for maior de idade, deixa entrar; senão, bloqueia.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 O comando if (se... então)</h3>
+    <p>O <code>if</code> é o comando mais fundamental da programação e significa se em inglês. Você escreve a condição entre parênteses e o bloco de ações entre chaves. Em português: SE a condição for verdadeira, faça o que está dentro das chaves.</p>
+    <p>Exemplo em JavaScript (Node.js):</p>
+    <pre>if (idade &gt;= 18) {
+    console.log("Pode entrar na festa");
+} else {
+    console.log("Só com responsável");
+}</pre>
+    <p>O <code>else</code> significa senão: é o caminho alternativo. SE for maior de idade, entra; SENÃO, só com responsável.</p>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Onde essas decisões aparecem?</h3>
+    <ul style="margin-left:1.5rem">
+      <li>No <strong>iFood</strong>: SE o endereço está dentro do raio de entrega, calcula a taxa; SENÃO, mostra não entregamos aqui.</li>
+      <li>No <strong>Nubank</strong>: SE a senha está correta, libera a conta; SENÃO, conta o erro e bloqueia após 3 tentativas.</li>
+      <li>Na <strong>Netflix</strong>: SE o usuário tem plano premium, libera 4 telas; SENÃO, libera só 1 tela.</li>
+      <li>No <strong>WhatsApp</strong>: SE o número está salvo nos contatos, mostra o nome; SENÃO, mostra só o número.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Outros comandos de decisão</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>else if</strong> (senão se): para várias opções em sequência. Exemplo: se é A, faz X; senão se é B, faz Y; senão faz Z.</li>
+      <li><strong>switch</strong> (do inglês, interruptor ou escolha): quando há muitas opções claras, como o status de um pedido (pendente, enviado, entregue, cancelado). Fica mais limpo que vários else if encadeados.</li>
+      <li><strong>operador ternário</strong>: um if com else em uma linha só. Em JavaScript: <code>idade &gt;= 18 ? "entra" : "bloqueado"</code>.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: simulador de decisões if e else</h3>
+
+    <div class="prever">
+      <strong>Antes de testar, preveja:</strong> com saldo de 50 reais e um tênis custando 80 reais, o que o código vai fazer: aprova a compra mesmo assim ou nega?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 1:</strong> digite o valor do seu saldo.<br>
+      <strong>Passo 2:</strong> digite o preço do produto.<br>
+      <strong>Passo 3:</strong> clique em Simular decisão e veja o programa decidir.<br>
+      <strong>Passo 4:</strong> marque o cupom de desconto e veja o resultado mudar.
+    </div>
+
+    <div class="roteiro">
+      peça a um aluno o saldo e o preço e projete na tela. Execute e mostre qual caminho rodou: o if verdadeiro ou o else. Depois ative o cupom para mostrar uma condição extra mudando o resultado.
+    </div>
+
+    <div class="legenda">
+      saldo = dinheiro disponível · preco = quanto custa o produto · if = se · else = senão · &gt;= = maior ou igual
+    </div>
+
+    <div class="demo-area" id="demo4-area">
+      <div style="display:grid; gap:0.5rem; max-width:420px">
+        <label>💰 Seu saldo (R$): <input type="number" id="demo4-saldo" value="100" style="width:100px"></label>
+        <label>🛒 Preço do produto (R$): <input type="number" id="demo4-preco" value="80" style="width:100px"></label>
+        <label>🎟️ <input type="checkbox" id="demo4-cupom"> Tenho cupom de 20% de desconto</label>
+        <div><button class="btn" type="button" id="demo4-go">▶ Simular decisão</button></div>
+      </div>
+      <pre id="demo4-codigo">// o código executado aparecerá aqui</pre>
+      <div id="demo4-resultado"></div>
+      <button class="btn btn-secundario" type="button" id="demo4-reset" style="margin-top:1rem">🔄 Reiniciar demo</button>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 4</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      if = comando se, que toma a decisão ·
+      else = comando senão, o caminho alternativo ·
+      else if = senão se, para mais de duas opções ·
+      switch = escolha entre várias opções claras ·
+      &gt;= = símbolo de maior ou igual.
+    </div>
+
+    <div class="pergunta" data-pergunta="4-1">
+      <p>1. No iFood, o pedido pode estar pendente, enviado, entregue ou cancelado. Qual estrutura é MAIS adequada para reagir a cada status?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! Dá para usar vários if e else if, mas o código fica longo e difícil de ler quando as opções são fixas e claras.">Vários if e else if encadeados</button>
+        <button class="alt" type="button" data-fb="Errado! Loop de repetição (for ou while) serve para repetir ações, não para escolher entre opções. Você não quer repetir o status: quer reagir a ele.">Um loop for para cada status</button>
+        <button class="alt" type="button" data-fb="Correto! O switch é perfeito para escolher entre várias opções claras e finitas. O status do pedido tem exatamente quatro valores possíveis, e o switch deixa o código limpo e fácil de ler.">Um switch com um caso para cada status</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="4-2">
+      <p>2. Qual código abaixo está escrito corretamente em JavaScript?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! Faltam os parênteses na condição e as chaves do bloco. Sem eles, o JavaScript reclama com erro de sintaxe e não roda.">if idade &gt;= 18  console.log("entra")</button>
+        <button class="alt" type="button" data-fb="Correto! Está tudo certo: if com a condição entre parênteses, chaves abrindo e fechando o bloco e ponto e vírgula no comando interno. O computador entende perfeitamente.">if (idade &gt;= 18) { console.log("entra"); }</button>
+        <button class="alt" type="button" data-fb="Errado! Em JavaScript a condição vai entre parênteses e o bloco entre chaves. A palavra then (então) não é usada assim no JavaScript: esse estilo é de outras linguagens.">if idade &gt;= 18 then "entra"</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="4-3">
+      <p>3. O Nubank bloqueia a conta após 3 senhas erradas seguidas. Qual lógica descreve isso?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! É uma sequência de decisões: se a senha está certa, libera; senão se já são 3 erros, bloqueia; senão, deixa tentar de novo. Cada caminho tem sua ação.">se a senha está certa, libera; senão se os erros chegaram a 3, bloqueia; senão, deixa tentar de novo</button>
+        <button class="alt" type="button" data-fb="Errado! Um loop sozinho apenas repete o pedido de senha: ele não decide quando bloquear. Para a decisão de bloquear, você precisa de if e else.">Apenas um loop pedindo a senha até acertar</button>
+        <button class="alt" type="button" data-fb="Errado! Não existe caso isolado sem switch: os casos vivem DENTRO de um switch. E senhas têm infinitas possibilidades, então switch não faz sentido aqui.">Um caso para senha correta libera e um caso para senha errada bloqueia</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 4</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=estruturas+condicionais+if+else+na+programação" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=estruturas+de+decisão+em+linguagens+de+programação" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=if+else+switch+aula+de+programação" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Estrutura de decisão</strong>: comando que faz o programa escolher entre caminhos.</li>
+      <li><strong>Condição</strong>: pergunta com resposta verdadeira ou falsa, como idade maior ou igual a 18.</li>
+      <li><strong>Bloco</strong>: conjunto de comandos agrupados entre chaves.</li>
+      <li><strong>Operador de comparação</strong>: símbolos como ==, &gt;, &lt; e &gt;= que comparam valores.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Você só pode ter um else para cada if.<br>
+      <strong>Veredito:</strong> 🎯 VERDADE.<br>
+      <strong>Explicação:</strong> o else é o caminho padrão quando nenhuma condição anterior bate, então só faz sentido um else por bloco de if. Mas você pode usar vários else if no meio para opções extras.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 5 ============ -->
+<div class="painel" id="painel-5" role="tabpanel" aria-labelledby="tab-5">
+  <h2>Aba 5 · Estruturas de repetição: for, while e foreach</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é dominar as <strong>estruturas de repetição</strong>: os comandos que fazem o programa repetir ações. Sem elas, você teria que escrever a mesma linha mil vezes para processar mil produtos. Com elas, você diz uma vez repita isso N vezes e o computador faz o trabalho pesado.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Por que repetimos coisas no código?</h3>
+    <p>Programas reais lidam com volumes enormes de dados. O Mercado Livre processa milhões de produtos por dia. O Spotify cataloga bilhões de músicas. Seria impossível escrever um comando para cada item: daí entram os loops (laços de repetição).</p>
+    <p>Os três principais loops são:</p>
+    <ul style="margin-left:1.5rem">
+      <li><strong>for</strong> (para): quando você SABE quantas vezes vai repetir. Exemplo: repita 10 vezes, ou conte de 1 até 100.</li>
+      <li><strong>while</strong> (enquanto): quando você NÃO sabe quantas vezes, mas tem uma condição. Exemplo: repita ENQUANTO houver produtos no estoque.</li>
+      <li><strong>foreach</strong> (para cada): quando você quer percorrer uma lista de coisas. Exemplo: para cada cliente da lista, envie um e-mail.</li>
+    </ul>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Loops no seu dia a dia</h3>
+    <ul style="margin-left:1.5rem">
+      <li>No <strong>Spotify</strong>: um loop percorre todas as músicas que você ouviu para montar a playlist Descobertas da Semana.</li>
+      <li>No <strong>Google</strong>: um loop cataloga bilhões de páginas da web todos os dias para a busca funcionar.</li>
+      <li>No <strong>iFood</strong>: um loop calcula a rota do entregador passando por todos os pedidos do caminho.</li>
+      <li>No <strong>Banco do Brasil</strong>: um loop processa milhões de transações do dia e monta o seu extrato.</li>
+      <li>No <strong>WhatsApp</strong>: um loop entrega a sua mensagem para cada pessoa do grupo, uma por uma.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Exemplos de sintaxe de loops</h3>
+    <p><strong>JavaScript:</strong></p>
+    <pre>// for clássico: de 1 a 5
+for (let i = 1; i &lt;= 5; i++) {
+    console.log("Número " + i);
+}
+
+// foreach: para cada item da lista
+const frutas = ["maçã", "banana", "laranja"];
+for (const fruta of frutas) {
+    console.log(fruta);
+}</pre>
+    <p><strong>Python:</strong></p>
+    <pre># for com intervalo
+for i in range(1, 6):
+    print("Número", i)
+
+# foreach
+frutas = ["maçã", "banana", "laranja"]
+for fruta in frutas:
+    print(fruta)</pre>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: visualizador de loops em ação</h3>
+
+    <div class="prever">
+      <strong>Antes de rodar, preveja:</strong> se você tem 3 clientes na lista e envia um e-mail para cada um, quantos e-mails serão enviados? E se adicionar mais 2 clientes depois, quantos serão?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 1:</strong> escolha o tipo de loop (for, while ou foreach).<br>
+      <strong>Passo 2:</strong> defina quantas vezes repetir, o estoque, ou adicione clientes à lista.<br>
+      <strong>Passo 3:</strong> clique em Executar loop e veja cada iteração (cada volta) acontecendo na tela.<br>
+      <strong>Passo 4:</strong> observe o contador e o registro acumulado de ações.
+    </div>
+
+    <div class="roteiro">
+      comece com 4 clientes no foreach e execute devagar, contando em voz alta. Depois pergunte: e se fossem 1 milhão de clientes, o código mudaria? Não: só a lista cresce. Essa é a magia do loop.
+    </div>
+
+    <div class="legenda">
+      i = contador (o número da volta atual) · iteração = uma volta completa do loop · range = intervalo de números
+    </div>
+
+    <div class="demo-area" id="demo5-area">
+      <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem">
+        <button class="btn" type="button" data-loop="for">for (sabe quantas vezes)</button>
+        <button class="btn" type="button" data-loop="while">while (enquanto houver estoque)</button>
+        <button class="btn" type="button" data-loop="foreach">foreach (percorre lista)</button>
+      </div>
+      <div id="demo5-painel" style="margin:1rem 0"></div>
+      <div id="demo5-visual" style="background:var(--fundo-codigo); padding:1rem; border-radius:8px; min-height:80px; margin:1rem 0; font-family:monospace"></div>
+      <div id="demo5-log" style="background:var(--cor-destaque-claro); padding:1rem; border-radius:8px; max-height:200px; overflow-y:auto; font-family:monospace; font-size:0.9rem"></div>
+      <div style="margin-top:1rem">
+        <button class="btn" type="button" id="demo5-go">▶ Executar loop</button>
+        <button class="btn btn-secundario" type="button" id="demo5-reset">🔄 Reiniciar demo</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 5</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      loop = laço de repetição ·
+      iteração = uma volta completa do loop ·
+      for = loop para quando se sabe quantas vezes repetir ·
+      while = loop que repete enquanto uma condição for verdadeira ·
+      foreach = loop que percorre cada item de uma lista ·
+      i++ = some 1 ao valor de i (incremento).
+    </div>
+
+    <div class="pergunta" data-pergunta="5-1">
+      <p>1. O Spotify precisa percorrer TODAS as músicas que um usuário ouviu para sugerir novidades. Qual loop é MAIS adequado?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! O for clássico é bom quando você sabe quantas vezes repetir, como 100 vezes. Mas com uma lista de músicas ouvidas você não quer contar os itens: quer passar por todos, um a um.">for clássico (com contador i)</button>
+        <button class="alt" type="button" data-fb="Errado! O while é útil quando não se sabe quando parar, como enquanto houver mensagem na fila. Para percorrer uma lista específica, o foreach é mais direto e limpo.">while (enquanto)</button>
+        <button class="alt" type="button" data-fb="Correto! O foreach (para cada) foi feito exatamente para isso: para cada música da lista, faça algo. O código fica legível e não precisa de contadores manuais.">foreach (percorre a lista de músicas ouvidas)</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="5-2">
+      <p>2. O que significa <code>i++</code> dentro de um loop for em JavaScript?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! i++ não multiplica nada. Os dois sinais de mais significam some 1. Para dobrar, você escreveria i = i * 2.">Multiplica i por 2</button>
+        <button class="alt" type="button" data-fb="Correto! i++ é a forma curta de i = i + 1: pegue o valor atual de i, some 1 e guarde de volta em i. É o incremento que faz o contador avançar a cada volta.">Adiciona 1 ao valor de i (incremento)</button>
+        <button class="alt" type="button" data-fb="Errado! i++ não zera nada: para zerar você escreveria i = 0. Os sinais de mais sempre somam um ao valor.">Zera o contador i</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="5-3">
+      <p>3. O WhatsApp entrega uma mensagem para um grupo de 20 pessoas. Quantas iterações (voltas) o loop faz?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! O loop executa 20 iterações, uma para cada pessoa do grupo. Em cada volta, o programa entrega a mensagem para um contato. Terminadas as 20, o loop para.">20 iterações, uma para cada pessoa do grupo</button>
+        <button class="alt" type="button" data-fb="Errado! Com 1 iteração só, apenas a primeira pessoa receberia a mensagem e as outras 19 ficariam sem nada: um bug grave de entrega.">1 iteração só, porque o envio é único</button>
+        <button class="alt" type="button" data-fb="Errado! Um loop infinito nunca pararia de enviar e travaria o servidor. Loops bem feitos têm um fim claro: aqui, acabar a lista de 20 pessoas.">Loop infinito, até o celular travar</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 5</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=estruturas+de+repetição+for+while+na+programação" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=laços+de+repetição+em+linguagens+de+programação" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=for+while+foreach+aula+de+programação" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Loop</strong>: laço de repetição que executa um bloco várias vezes.</li>
+      <li><strong>Iteração</strong>: uma volta completa do loop.</li>
+      <li><strong>Incremento</strong>: ação de somar 1 ao valor de uma variável.</li>
+      <li><strong>Loop infinito</strong>: loop que nunca para, um erro grave de programação.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Dá para fazer tudo com while, então for e foreach são dispensáveis.<br>
+      <strong>Veredito:</strong> 🎯 MITO (na prática).<br>
+      <strong>Explicação:</strong> tecnicamente o while consegue substituir os outros, mas o foreach deixa o código muito mais legível ao percorrer listas e o for é mais claro quando se sabe quantas vezes repetir. Código claro significa menos erros.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 6 - REVISÃO ============ -->
+<div class="painel" id="painel-6" role="tabpanel" aria-labelledby="tab-6">
+  <h2>⭐ Revisão — Mapa completo da aula</h2>
+
+  <h3>🗺️ Mapa da aula</h3>
+  <div class="revisao-mapa">
+    <div class="no-mapa">
+      <h4>Aba 1 · Linguagens</h4>
+      <p>O que é back-end e quais são as principais linguagens: Python, Java, Node.js, Go, PHP, C# e Ruby.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 2 · Escolha certa</h4>
+      <p>Critérios de escolha: tamanho do time, pressa de entrega e desempenho. Mais os kits prontos (frameworks).</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 3 · Sintaxe</h4>
+      <p>A gramática de cada linguagem: variáveis, comentários e comandos. Um caractere errado custa caro (caso Mariner 1).</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 4 · Decisões</h4>
+      <p>Os comandos se, senão e escolha (if, else e switch), como usam Nubank, iFood e Netflix.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 5 · Repetições</h4>
+      <p>Os laços for, while e foreach, como Spotify, Google e WhatsApp processam milhões de itens.</p>
+    </div>
+    <div class="no-mapa">
+      <h4> Estudo em casa</h4>
+      <p>Revise os mini-dicionários de cada aba e refaça os quizzes para garantir os 5 selos antes do Chefão.</p>
+    </div>
+  </div>
+
+  <div class="cola-rapida">
+    <h3>🧷 Cola rápida — glossário da aula</h3>
+    <dl>
+      <dt><strong>Back-end</strong></dt>
+      <dd>Parte do sistema que roda no servidor, invisível para o usuário: cuida das regras do negócio, do banco de dados e das respostas ao front-end.</dd>
+
+      <dt><strong>Front-end</strong></dt>
+      <dd>Parte que o usuário vê e toca: telas, botões e cores, rodando no navegador ou no aplicativo.</dd>
+
+      <dt><strong>Servidor</strong></dt>
+      <dd>Computador potente que fica ligado 24 horas por dia atendendo pedidos dos usuários.</dd>
+
+      <dt><strong>Framework</strong></dt>
+      <dd>Kit de ferramentas prontas de uma linguagem: Django para Python, Spring Boot para Java, Laravel para PHP. Acelera o desenvolvimento.</dd>
+
+      <dt><strong>Sintaxe</strong></dt>
+      <dd>Regras de escrita da linguagem, como a gramática do português. Errou a sintaxe, o código não roda.</dd>
+
+      <dt><strong>Variável</strong></dt>
+      <dd>Caixinha com nome que guarda um valor: número, texto ou lista. Exemplo: idade = 25.</dd>
+
+      <dt><strong>if e else</strong></dt>
+      <dd>Comandos se e senão: fazem o programa escolher entre dois caminhos.</dd>
+
+      <dt><strong>else if</strong></dt>
+      <dd>Senão se: permite testar mais opções em sequência, entre o if e o else.</dd>
+
+      <dt><strong>switch</strong></dt>
+      <dd>Comando de escolha entre várias opções claras, como o status de um pedido. Mais limpo que muitos senão se.</dd>
+
+      <dt><strong>for</strong></dt>
+      <dd>Laço para quando você sabe quantas vezes repetir, como 10 vezes ou de 1 a 100.</dd>
+
+      <dt><strong>while</strong></dt>
+      <dd>Laço que repete enquanto uma condição for verdadeira, como enquanto houver estoque.</dd>
+
+      <dt><strong>foreach</strong></dt>
+      <dd>Laço que percorre cada item de uma lista, ideal para processar clientes, produtos ou mensagens.</dd>
+
+      <dt><strong>i++</strong></dt>
+      <dd>Incremento: soma 1 ao valor de i. Forma curta de i = i + 1.</dd>
+
+      <dt><strong>Iteração</strong></dt>
+      <dd>Uma volta completa do laço. Um laço com 10 iterações roda 10 vezes.</dd>
+
+      <dt><strong>Concorrência</strong></dt>
+      <dd>Capacidade de atender muitos pedidos ao mesmo tempo, crítica para aplicativos como Uber e WhatsApp.</dd>
+    </dl>
+  </div>
+
+  <div class="chefao">
+    <h3>👑 CHEFÃO — Desafio final</h3>
+    <p><strong>Enunciado:</strong> Você foi contratado pela <strong>LogiBR</strong> (empresa fictícia de entregas, inspirada no modelo da Loggi, startup brasileira de entregas rápidas) para criar o sistema de cálculo de frete. O sistema precisa:</p>
+    <ol style="margin-left:1.5rem; margin-top:0.5rem">
+      <li>Receber o peso do pacote (em quilos) e a distância (em quilômetros).</li>
+      <li>Aplicar regras: se o peso passar de 30 quilos, cobrar taxa extra de 20 reais; se a distância passar de 100 quilômetros, cobrar 1 real por quilômetro excedente.</li>
+      <li>Processar uma lista de 5 pedidos de uma só vez e somar o valor total.</li>
+      <li>Escolher a linguagem adequada e justificar com um exemplo real (iFood, Loggi ou Uber).</li>
+    </ol>
+
+    <p style="margin-top:1rem"><strong>Pedidos da lista:</strong></p>
+    <ul style="margin-left:1.5rem">
+      <li>Pedido 1: 2 quilos, 50 quilômetros</li>
+      <li>Pedido 2: 35 quilos, 80 quilômetros (tem taxa extra de peso)</li>
+      <li>Pedido 3: 5 quilos, 150 quilômetros (tem taxa extra de distância)</li>
+      <li>Pedido 4: 10 quilos, 30 quilômetros</li>
+      <li>Pedido 5: 25 quilos, 200 quilômetros (tem taxa extra de distância)</li>
+    </ul>
+
+    <p style="margin-top:1rem"><strong>O que você precisa entregar (no caderno ou em papel):</strong></p>
+    <ol style="margin-left:1.5rem">
+      <li>Qual linguagem você escolheria (Python, Java, Node.js ou Go)? Justifique com 1 exemplo real de empresa que fez escolha parecida, usando os termos concorrência e framework (explicados na cola rápida).</li>
+      <li>Escreva o código em pseudocódigo (português estruturado) usando um laço para cada item da lista (foreach) para percorrer os pedidos, um se (if) para as taxas extras e uma variável para acumular o total.</li>
+      <li>Calcule manualmente o total dos 5 pedidos e compare com o resultado que o seu código produziria.</li>
+      <li>Aponte UMA estrutura de decisão e UMA estrutura de repetição no seu código e explique, em linguagem simples, o que cada uma faz.</li>
+    </ol>
+  </div>
+
+  <details>
+    <summary>📚 Dica para o Chefão</summary>
+    <p style="margin-top:0.75rem">Comece escolhendo a linguagem com a pergunta: vou precisar processar muitos pedidos ao mesmo tempo? Se sim, Go ou Node.js são boas escolhas. Se for um sistema interno pequeno, Python com Django é mais produtivo. No código, crie a variável total = 0 antes do laço e, dentro do laço, faça total = total + valor do pedido.</p>
+  </details>
+</div>
+
+<!-- ============ RODAPÉ ============ -->
+<footer>
+  <div class="bloco">
+    <h4>📋 FICHA TÉCNICA DA AULA</h4>
+    <p>Desenvolvimento Back-End — Aula 4, Unidade 2, págs. 9–29 · Gerado em 29/10/2026 · 5 abas de conteúdo + Revisão · 15 perguntas · 5 demos · cor #FF6B35</p>
+  </div>
+
+  <div class="bloco">
+    <h4>🪄 SOBRE O HTMLearning · v2.17 (23/10/2026)</h4>
+    <p style="margin-bottom:0.75rem">Transformar o sumário de qualquer disciplina em uma classe interativa em HTML único e offline, com previsão antes do clique, tentativa e erro guiado e exemplos reais.</p>
+
+    <ul style="margin-left:1.5rem; margin-bottom:0.75rem">
+      <li>O que é: metodologia e arquitetura de prompts que converte sumários em aulas interativas em minutos, com IAs gratuitas.</li>
+      <li>O que entrega: 5 a 7 abas + Revisão, simulações com previsão, quiz com retry sem revelar gabarito, linguagem plana, Modos Apresentação/Leitura.</li>
+      <li>Por que é inclusivo: um único .html leve, 100% offline, roda em PC e celular e viaja em pen drive para escolas desconectadas ou áreas rurais.</li>
+    </ul>
+
+    <p style="margin-bottom:0.5rem">Idealizador do projeto: Professor Wellington Dimas da Cruz</p>
+    <p style="margin-bottom:0.75rem">Apoiadora do projeto: Prof.ª Dr.ª Mariella Berger Andrade (IFES / CEFOR)</p>
+
+    <p style="margin-top:0.75rem">Contatos e links do projeto:</p>
+    <ul>
+      <li>E-mail do idealizador: <a href="mailto:cloud.ai-generative@outlook.com">cloud.ai-generative@outlook.com</a></li>
+      <li>Repositório GitHub do idealizador: <a href="https://github.com/cloud-ai-Generative" target="_blank" rel="noopener">github.com/cloud-ai-Generative</a></li>
+      <li>Currículo Lattes do idealizador: <a href="https://lattes.cnpq.br/6801791839011321" target="_blank" rel="noopener">lattes.cnpq.br/6801791839011321</a></li>
+      <li>Currículo Lattes da apoiadora: <a href="https://lattes.cnpq.br/3929645439848570" target="_blank" rel="noopener">lattes.cnpq.br/3929645439848570</a></li>
+      <li>Site oficial do projeto: <a href="https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html" target="_blank" rel="noopener">https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html</a></li>
+    </ul>
+  </div>
+</footer>
+
+<script>
+"use strict";
+
+/* ================= DADOS ================= */
+var linguagensData = {
+  node: {
+    nome: "Node.js (JavaScript no servidor)",
+    cor: "#339933",
+    criado: "2009, por Ryan Dahl (programador americano)",
+    forte: "Aplicações com muitas conexões simultâneas, como chat, jogos e streaming.",
+    fraco: "Não é ideal para cálculos muito pesados, como processamento de imagens.",
+    caso: "Netflix (serviço de streaming) usa Node.js para atender mais de 200 milhões de assinantes. O Mercado Livre também usa Node.js em várias partes."
+  },
+  python: {
+    nome: "Python",
+    cor: "#3776AB",
+    criado: "1991, por Guido van Rossum (programador holandês)",
+    forte: "Ciência de dados, inteligência artificial e APIs. Sintaxe simples e legível.",
+    fraco: "Mais lenta que Go ou Rust em processamento intensivo em tempo real.",
+    caso: "Instagram (rede social de fotos) usa Python com o framework Django. O Dropbox (serviço de arquivos na nuvem) também tem Python no back-end."
+  },
+  java: {
+    nome: "Java",
+    cor: "#ED8B00",
+    criado: "1995, por James Gosling (na empresa Sun Microsystems, hoje Oracle)",
+    forte: "Sistemas grandes e robustos de bancos e governo. Roda em qualquer máquina virtual JVM (plataforma Java).",
+    fraco: "Verboso: exige muito código para tarefas simples. Curva de aprendizado longa.",
+    caso: "Banco do Brasil, sistemas do SUS (Sistema Único de Saúde) e serviços da Receita Federal usam Java pela confiabilidade de décadas."
+  },
+  php: {
+    nome: "PHP",
+    cor: "#777BB4",
+    criado: "1994, por Rasmus Lerdorf (programador dinamarquês-canadense)",
+    forte: "Sites dinâmicos, blogs e lojas virtuais. Roda em cerca de 40% da web via WordPress.",
+    fraco: "Sintaxe considerada inconsistente por parte da comunidade. Menos moderno que outras linguagens.",
+    caso: "Wikipedia (enciclopédia colaborativa) e WordPress (sistema de blogs) rodam em PHP. O Facebook começou em PHP."
+  },
+  csharp: {
+    nome: "C# (leia-se c-sharp)",
+    cor: "#68217A",
+    criado: "2000, por Anders Hejlsberg (na Microsoft, criador do Turbo Pascal)",
+    forte: "Sistemas corporativos na plataforma .NET (conjunto de ferramentas da Microsoft) e jogos no motor Unity.",
+    fraco: "Historicamente ligado ao Windows. Hoje roda também em Linux com o .NET Core.",
+    caso: "Empresas que usam tecnologia Microsoft escolhem C#. O jogo Pokémon GO foi feito no motor Unity com C#."
+  },
+  go: {
+    nome: "Go (Golang)",
+    cor: "#00ADD8",
+    criado: "2009, por Rob Pike e Ken Thompson (no Google, coautores do sistema Unix)",
+    forte: "Alta performance e concorrência massiva. Compilação (tradução do código) muito rápida.",
+    fraco: "Menos bibliotecas prontas que Python ou Node.js. Comunidade menor.",
+    caso: "Uber (aplicativo de transporte) usa Go nos serviços críticos. Docker e Kubernetes (ferramentas de servidores em contêineres) são escritos em Go."
+  },
+  ruby: {
+    nome: "Ruby",
+    cor: "#CC342D",
+    criado: "1995, por Yukihiro Matsumoto, o Matz (programador japonês)",
+    forte: "Desenvolvimento rápido de aplicações web. Linguagem elegante e produtiva.",
+    fraco: "Desempenho inferior a Go e Java em alto volume. Comunidade encolheu nos últimos anos.",
+    caso: "GitHub (site de códigos), Airbnb (aluguel de temporada) e Shopify (plataforma de lojas) nasceram em Ruby on Rails."
+  }
+};
+
+var cenarios = [
+  {
+    descricao: "Uma startup (empresa nova de tecnologia) com 3 desenvolvedores quer lançar um aplicativo de entregas em 2 meses. O time já domina o JavaScript do front-end.",
+    certa: "node",
+    fbCerta: "Acertou! Node.js reusa o JavaScript no back-end e acelera a entrega. Startups modernas fazem exatamente isso para lançar rápido com time pequeno.",
+    fbOutros: "Não é a melhor escolha aqui. Outras linguagens funcionam, mas o Node.js aproveita o JavaScript que o time já domina e entrega em 2 meses."
+  },
+  {
+    descricao: "Um banco tradicional precisa de um sistema que rode sem falhas por 20 anos, processando milhões de transações por dia.",
+    certa: "java",
+    fbCerta: "Acertou! Java é o padrão da indústria bancária: Banco do Brasil, Itaú e Bradesco usam Java em sistemas críticos há décadas.",
+    fbOutros: "Não é a escolha clássica aqui. Bancos confiam em Java pela robustez comprovada em sistemas que precisam durar décadas."
+  },
+  {
+    descricao: "Um site de notícias com milhares de artigos, blog integrado e loja virtual. Precisa ficar pronto rápido e ter hospedagem barata.",
+    certa: "php",
+    fbCerta: "Acertou! PHP com WordPress resolve isso em dias, com hospedagem barata e comunidade enorme. Cerca de 40% da web usa essa combinação.",
+    fbOutros: "Funcionaria, mas não é o caminho clássico. PHP com WordPress é a escolha tradicional para sites de conteúdo, rápida e barata."
+  },
+  {
+    descricao: "Um aplicativo precisa processar milhões de pedidos simultâneos em tempo real, como o Uber em horário de pico.",
+    certa: "go",
+    fbCerta: "Acertou! Go é campeã em concorrência: Uber, Dropbox e Twitch (plataforma de transmissões ao vivo) usam Go para responder em milissegundos.",
+    fbOutros: "Não é a especialista nesse cenário. Go foi criada pelo Google exatamente para alto volume de pedidos simultâneos."
+  },
+  {
+    descricao: "Uma empresa de análise de dados quer um sistema de aprendizado de máquina para prever vendas dos próximos meses.",
+    certa: "python",
+    fbCerta: "Acertou! Python domina ciência de dados e aprendizado de máquina, com bibliotecas maduras usadas por Google, Meta e Netflix.",
+    fbOutros: "Não é a linguagem padrão dessa área. Python tem as bibliotecas de dados e inteligência artificial mais maduras do mercado."
+  },
+  {
+    descricao: "Um estúdio independente quer criar um jogo para celular que funcione igual no Android e no iPhone, com um único código.",
+    certa: "csharp",
+    fbCerta: "Acertou! C# é a linguagem principal do motor Unity, usado em Pokémon GO e Among Us. O mesmo código roda em Android e iPhone.",
+    fbOutros: "Não é o padrão desse mercado. C# com o motor Unity é a escolha clássica dos estúdios independentes de jogos móveis."
+  }
+];
+
+var sintaxeData = {
+  mostrar: {
+    titulo: "Mostrar a frase Olá mundo na tela",
+    codigos: [
+      { lang: "Python", codigo: 'print("Olá mundo")', nota: "Quase inglês: print significa imprimir." },
+      { lang: "JavaScript", codigo: 'console.log("Olá mundo");', nota: "console é o painel de mensagens; log significa registrar." },
+      { lang: "Java", codigo: 'System.out.println("Olá mundo");', nota: "Verboso: System.out.println significa imprimir na saída do sistema." },
+      { lang: "PHP", codigo: 'echo "Olá mundo";', nota: "echo significa ecoar, repetir em voz alta." },
+      { lang: "Ruby", codigo: 'puts "Olá mundo"', nota: "puts significa colocar texto na tela." },
+      { lang: "Go", codigo: 'fmt.Println("Olá mundo")', nota: "fmt vem de format, formatação de texto." }
+    ]
+  },
+  variavel: {
+    titulo: "Criar a variável idade com valor 25",
+    codigos: [
+      { lang: "Python", codigo: 'idade = 25', nota: "Sem declaração de tipo: o Python descobre sozinho." },
+      { lang: "JavaScript", codigo: 'let idade = 25;', nota: "let declara uma variável que pode mudar depois." },
+      { lang: "Java", codigo: 'int idade = 25;', nota: "int avisa que a caixinha guarda número inteiro." },
+      { lang: "PHP", codigo: '$idade = 25;', nota: "No PHP, o cifrão abre toda variável." },
+      { lang: "Ruby", codigo: 'idade = 25', nota: "Sem palavra de declaração e sem cifrão." },
+      { lang: "Go", codigo: 'idade := 25', nota: "Os dois pontos com igual declaram e atribuem de uma vez." }
+    ]
+  },
+  condicao: {
+    titulo: "Se a idade for 18 ou mais, mostrar maior de idade",
+    codigos: [
+      { lang: "Python", codigo: 'if idade >= 18:\n    print("maior")', nota: "Dois pontos no fim e recuo com espaços no bloco." },
+      { lang: "JavaScript", codigo: 'if (idade >= 18) {\n  console.log("maior");\n}', nota: "Condição entre parênteses e bloco entre chaves." },
+      { lang: "Java", codigo: 'if (idade >= 18) {\n  System.out.println("maior");\n}', nota: "Igual ao JavaScript, porém mais verboso." },
+      { lang: "PHP", codigo: 'if ($idade >= 18) {\n  echo "maior";\n}', nota: "O cifrão aparece em toda variável do PHP." },
+      { lang: "Ruby", codigo: 'if idade >= 18\n  puts "maior"\nend', nota: "Sem chaves: o bloco fecha com a palavra end." },
+      { lang: "Go", codigo: 'if idade >= 18 {\n  fmt.Println("maior")\n}', nota: "Parênteses na condição são opcionais." }
+    ]
+  },
+  repeticao: {
+    titulo: "Repetir 5 vezes mostrando o número da volta",
+    codigos: [
+      { lang: "Python", codigo: 'for i in range(5):\n    print(i)', nota: "range(5) gera a sequência 0, 1, 2, 3, 4." },
+      { lang: "JavaScript", codigo: 'for (let i = 0; i < 5; i++) {\n  console.log(i);\n}', nota: "Três partes: início, condição e incremento." },
+      { lang: "Java", codigo: 'for (int i = 0; i < 5; i++) {\n  System.out.println(i);\n}', nota: "Igual ao JavaScript, declarando o tipo int." },
+      { lang: "PHP", codigo: 'for ($i = 0; $i < 5; $i++) {\n  echo $i;\n}', nota: "Cifrão em todas as variáveis, dentro e fora." },
+      { lang: "Ruby", codigo: '5.times do |i|\n  puts i\nend', nota: "Estilo elegante: o número 5 ganha o método times." },
+      { lang: "Go", codigo: 'for i := 0; i < 5; i++ {\n  fmt.Println(i)\n}', nota: "Em Go só existe o laço for, que faz todos os papéis." }
+    ]
+  },
+  comentario: {
+    titulo: "Escrever um comentário que o computador ignora",
+    codigos: [
+      { lang: "Python", codigo: '# isto é um comentário', nota: "Cerquilha comenta até o fim da linha." },
+      { lang: "JavaScript", codigo: '// linha simples\n/* várias\n   linhas */', nota: "Duas barras para linha; barra-asterisco para bloco." },
+      { lang: "Java", codigo: '// linha simples\n/* bloco */', nota: "Mesmo estilo do JavaScript." },
+      { lang: "PHP", codigo: '// linha simples\n# também vale\n/* bloco */', nota: "O PHP aceita três estilos de comentário." },
+      { lang: "Ruby", codigo: '# isto é um comentário', nota: "Cerquilha, igual ao Python." },
+      { lang: "Go", codigo: '// linha simples\n/* bloco */', nota: "Apenas esses dois estilos." }
+    ]
+  }
+};
+
+/* ================= ESTADO ================= */
+var estado = {
+  abaAtual: 1,
+  xp: 0,
+  selos: {},
+  totalSelos: 0,
+  respostas: {},
+  modo: "leitura",
+  tema: "claro"
+};
+
+var demo2Estado = { atual: null, resolvidos: 0, acertos: 0 };
+var demo5Estado = { tipo: null, lista: ["Ana", "Bruno", "Carlos", "Diana"], rodando: false, timer: null };
+
+/* ================= NAVEGAÇÃO ================= */
+function ativarAba(num) {
+  estado.abaAtual = num;
+  var tabs = document.querySelectorAll(".tab");
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].setAttribute("aria-selected", tabs[i].getAttribute("data-aba") === String(num) ? "true" : "false");
+  }
+  var paineis = document.querySelectorAll(".painel");
+  for (var j = 0; j < paineis.length; j++) {
+    paineis[j].classList.remove("active");
+  }
+  var alvo = document.getElementById("painel-" + num);
+  if (alvo) alvo.classList.add("active");
+  document.getElementById("progresso").textContent = "Aba " + num + " de 6";
+}
+
+function irParaAba(num) {
+  ativarAba(num);
+  var novo = "#aba-" + num;
+  if (window.location.hash !== novo) {
+    window.location.hash = novo;
+  }
+  window.scrollTo(0, 0);
+}
+
+function lerHash() {
+  var h = window.location.hash.replace("#aba-", "");
+  var n = parseInt(h, 10);
+  if (n >= 1 && n <= 6) return n;
+  return 0;
+}
+
+window.addEventListener("hashchange", function () {
+  var n = lerHash();
+  if (n && n !== estado.abaAtual) ativarAba(n);
+});
+
+/* ================= MODOS ================= */
+function alternarModo() {
+  if (estado.modo === "leitura") {
+    document.body.classList.add("modo-apresentacao");
+    document.getElementById("btn-modo").textContent = "📖 Leitura";
+    estado.modo = "apresentacao";
+  } else {
+    document.body.classList.remove("modo-apresentacao");
+    document.getElementById("btn-modo").textContent = "🎤 Apresentação";
+    estado.modo = "leitura";
+  }
+}
+
+function alternarTema() {
+  if (estado.tema === "claro") {
+    document.body.setAttribute("data-theme", "dark");
+    document.getElementById("btn-tema").textContent = "☀️ Claro";
+    estado.tema = "escuro";
+  } else {
+    document.body.removeAttribute("data-theme");
+    document.getElementById("btn-tema").textContent = "🌙 Escuro";
+    estado.tema = "claro";
+  }
+}
+
+/* ================= QUIZ ================= */
+function fisherYates(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function inicializarQuiz() {
+  var perguntas = document.querySelectorAll(".pergunta");
+  for (var p = 0; p < perguntas.length; p++) {
+    (function (perg) {
+      var altsDiv = perg.querySelector(".alts");
+      var certaKey = altsDiv.getAttribute("data-certa");
+      var alts = [];
+      var filhos = altsDiv.querySelectorAll(".alt");
+      for (var k = 0; k < filhos.length; k++) alts.push(filhos[k]);
+      for (var idx = 0; idx < alts.length; idx++) {
+        var letra = String.fromCharCode(97 + idx);
+        alts[idx].setAttribute("data-ehcerta", letra === certaKey ? "true" : "false");
+      }
+      var emb = fisherYates(alts);
+      altsDiv.innerHTML = "";
+      for (var e = 0; e < emb.length; e++) {
+        altsDiv.appendChild(emb[e]);
+        emb[e].addEventListener("click", function () { responderQuiz(perg, this); });
+      }
+    })(perguntas[p]);
+  }
+}
+
+function responderQuiz(perg, alt) {
+  var id = perg.getAttribute("data-pergunta");
+  var reg = estado.respostas[id];
+  if (reg && reg.acertou) return;
+
+  var acerto = alt.getAttribute("data-ehcerta") === "true";
+  var fbCerta = perg.querySelector(".fb-certa");
+  var fbErrada = perg.querySelector(".fb-errada");
+
+  if (acerto) {
+    alt.classList.add("certa");
+    alt.textContent = "✓ " + alt.textContent;
+    var todas = perg.querySelectorAll(".alt");
+    for (var i = 0; i < todas.length; i++) todas[i].disabled = true;
+    fbCerta.textContent = "✅ Por que esta está certa: " + alt.getAttribute("data-fb");
+    fbCerta.classList.add("show");
+    fbErrada.classList.remove("show");
+    var pontos = (reg && !reg.acertou) ? 5 : 10;
+    estado.xp += pontos;
+    estado.respostas[id] = { acertou: true };
+    verificarSelo(id);
+    atualizarXP();
+  } else {
+    alt.classList.add("errada");
+    alt.textContent = "✗ " + alt.textContent;
+    alt.disabled = true;
+    fbErrada.textContent = "❌ Por que esta está errada: " + alt.getAttribute("data-fb");
+    fbErrada.classList.add("show");
+    if (!reg) estado.respostas[id] = { acertou: false };
+  }
+}
+
+function verificarSelo(id) {
+  var aba = id.split("-")[0];
+  var ids = [aba + "-1", aba + "-2", aba + "-3"];
+  for (var i = 0; i < ids.length; i++) {
+    var r = estado.respostas[ids[i]];
+    if (!r || !r.acertou) return;
+  }
+  if (!estado.selos[aba]) {
+    estado.selos[aba] = true;
+    estado.totalSelos += 1;
+    document.getElementById("selos").textContent = estado.totalSelos;
+  }
+}
+
+function atualizarXP() {
+  document.getElementById("xp").textContent = estado.xp;
+}
+
+/* ================= DEMO 1 ================= */
+function demo1Mostrar(lang) {
+  var d = linguagensData[lang];
+  if (!d) return;
+  var ficha = document.getElementById("demo1-ficha");
+  ficha.innerHTML =
+    '<div style="border-left:4px solid ' + d.cor + '; padding-left:1rem">' +
+    '<h4 style="color:' + d.cor + '; margin-bottom:0.5rem">' + d.nome + '</h4>' +
+    '<p><strong>Criada em:</strong> ' + d.criado + '</p>' +
+    '<p><strong>Ponto forte:</strong> ' + d.forte + '</p>' +
+    '<p><strong>Ponto fraco:</strong> ' + d.fraco + '</p>' +
+    '<p><strong>🌎 Caso real:</strong> ' + d.caso + '</p>' +
+    '</div>';
+}
+
+function demo1Reiniciar() {
+  document.getElementById("demo1-ficha").innerHTML = "👆 Clique em uma linguagem acima para ver a ficha completa.";
+}
+
+/* ================= DEMO 2 ================= */
+function demo2Novo() {
+  var i = Math.floor(Math.random() * cenarios.length);
+  demo2Estado.atual = cenarios[i];
+  document.getElementById("demo2-cenario").innerHTML = "📋 " + demo2Estado.atual.descricao;
+  document.getElementById("demo2-opcoes").style.display = "block";
+  document.getElementById("demo2-feedback").innerHTML = "";
+}
+
+function demo2Responder(lang) {
+  if (!demo2Estado.atual) return;
+  var certa = lang === demo2Estado.atual.certa;
+  var fb = document.getElementById("demo2-feedback");
+  demo2Estado.resolvidos += 1;
+  if (certa) {
+    demo2Estado.acertos += 1;
+    fb.innerHTML = '<div class="resultado-demo">✅ <strong>Escolha adequada!</strong> ' + demo2Estado.atual.fbCerta + '</div>';
+  } else {
+    fb.innerHTML = '<div class="resultado-erro">❌ <strong>Essa não é a melhor escolha.</strong> ' + demo2Estado.atual.fbOutros + ' Tente outro cenário ou revise os critérios da aba.</div>';
+  }
+  document.getElementById("demo2-opcoes").style.display = "none";
+  document.getElementById("demo2-placar").textContent = "Placar: " + demo2Estado.acertos + " acertos em " + demo2Estado.resolvidos + " cenários";
+}
+
+function demo2Reiniciar() {
+  demo2Estado.atual = null;
+  demo2Estado.resolvidos = 0;
+  demo2Estado.acertos = 0;
+  document.getElementById("demo2-cenario").innerHTML = "📋 O cenário aparecerá aqui. Clique em Novo cenário para começar.";
+  document.getElementById("demo2-opcoes").style.display = "none";
+  document.getElementById("demo2-feedback").innerHTML = "";
+  document.getElementById("demo2-placar").textContent = "";
+}
+
+/* ================= DEMO 3 ================= */
+function demo3Mostrar(tipo) {
+  var d = sintaxeData[tipo];
+  if (!d) return;
+  var tabela = document.getElementById("demo3-tabela");
+  var html = '<h4 style="margin-bottom:0.75rem; color:var(--cor-destaque-escuro)">' + d.titulo + '</h4>';
+  for (var i = 0; i < d.codigos.length; i++) {
+    var c = d.codigos[i];
+    var codigoHtml = c.codigo.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
+    html += '<div style="background:var(--fundo-codigo); padding:0.75rem; border-radius:6px; border-left:3px solid var(--cor-destaque)">' +
+      '<strong>' + c.lang + ':</strong> <code>' + codigoHtml + '</code>' +
+      '<div style="font-size:0.85rem; color:var(--texto-suave); margin-top:0.25rem">💡 ' + c.nota + '</div>' +
+      '</div>';
+  }
+  tabela.innerHTML = html;
+}
+
+function demo3Reiniciar() {
+  document.getElementById("demo3-tabela").innerHTML = "";
+}
+
+/* ================= DEMO 4 ================= */
+function demo4Simular() {
+  var saldo = parseFloat(document.getElementById("demo4-saldo").value) || 0;
+  var preco = parseFloat(document.getElementById("demo4-preco").value) || 0;
+  var cupom = document.getElementById("demo4-cupom").checked;
+
+  var linhas = [];
+  linhas.push("saldo = " + saldo.toFixed(2));
+  linhas.push("preco = " + preco.toFixed(2));
+
+  if (cupom) {
+    preco = preco * 0.8;
+    linhas.push("se tem cupom: preco = preco * 0.8  // agora " + preco.toFixed(2));
+  }
+
+  var resultado;
+  if (saldo >= preco) {
+    linhas.push("se (saldo >= preco): compra aprovada, troco de " + (saldo - preco).toFixed(2));
+    resultado = '<div class="resultado-demo">✅ <strong>Compra aprovada!</strong> Você pagou R$ ' + preco.toFixed(2) + ' e sobrou R$ ' + (saldo - preco).toFixed(2) + ' de troco. O caminho do SE (if) foi executado, como quando o iFood confirma um pedido dentro do seu saldo.</div>';
+  } else {
+    linhas.push("senao: saldo insuficiente, faltam " + (preco - saldo).toFixed(2));
+    resultado = '<div class="resultado-erro">❌ <strong>Saldo insuficiente!</strong> Você tem R$ ' + saldo.toFixed(2) + ' e precisa de R$ ' + preco.toFixed(2) + ': faltam R$ ' + (preco - saldo).toFixed(2) + '. O caminho do SENÃO (else) rodou, como quando o Nubank nega um pagamento acima do limite.</div>';
+  }
+
+  document.getElementById("demo4-codigo").textContent = linhas.join("\n");
+  document.getElementById("demo4-resultado").innerHTML = resultado;
+}
+
+function demo4Reiniciar() {
+  document.getElementById("demo4-saldo").value = "100";
+  document.getElementById("demo4-preco").value = "80";
+  document.getElementById("demo4-cupom").checked = false;
+  document.getElementById("demo4-codigo").textContent = "// o código executado aparecerá aqui";
+  document.getElementById("demo4-resultado").innerHTML = "";
+}
+
+/* ================= DEMO 5 ================= */
+function demo5PararTimer() {
+  if (demo5Estado.timer) {
+    clearInterval(demo5Estado.timer);
+    demo5Estado.timer = null;
+  }
+  demo5Estado.rodando = false;
+}
+
+function demo5Configurar(tipo) {
+  demo5PararTimer();
+  demo5Estado.tipo = tipo;
+  var painel = document.getElementById("demo5-painel");
+  document.getElementById("demo5-visual").innerHTML = "";
+  document.getElementById("demo5-log").innerHTML = "";
+
+  if (tipo === "for") {
+    painel.innerHTML = '<label>Quantas vezes repetir? <input type="number" id="demo5-for-n" value="5" min="1" max="20" style="width:70px"></label>' +
+      '<p style="font-size:0.9rem; color:var(--texto-suave); margin-top:0.5rem">Ideal quando você SABE o número de repetições.</p>';
+  } else if (tipo === "while") {
+    painel.innerHTML = '<label>Itens no estoque: <input type="number" id="demo5-while-n" value="8" min="1" max="20" style="width:70px"></label>' +
+      '<p style="font-size:0.9rem; color:var(--texto-suave); margin-top:0.5rem">Repete ENQUANTO houver estoque.</p>';
+  } else {
+    painel.innerHTML = '<p><strong>Lista de clientes:</strong></p>' +
+      '<div id="demo5-lista" style="background:var(--fundo-codigo); padding:0.75rem; border-radius:6px; margin:0.5rem 0; font-family:monospace">' + demo5Estado.lista.join(", ") + '</div>' +
+      '<input type="text" id="demo5-add" placeholder="Nome do novo cliente" style="padding:0.4rem; border-radius:4px; border:1px solid var(--borda); color:var(--texto); background:var(--fundo)">' +
+      '<button class="btn" type="button" id="demo5-addbtn">+ Adicionar</button>' +
+      '<p style="font-size:0.9rem; color:var(--texto-suave); margin-top:0.5rem">Percorre cada cliente da lista, um por vez.</p>';
+    document.getElementById("demo5-addbtn").addEventListener("click", function () {
+      var input = document.getElementById("demo5-add");
+      var v = input.value.trim();
+      if (v) {
+        demo5Estado.lista.push(v);
+        document.getElementById("demo5-lista").textContent = demo5Estado.lista.join(", ");
+        input.value = "";
+      }
+    });
+  }
+}
+
+function demo5Log(msg, fim) {
+  var log = document.getElementById("demo5-log");
+  var div = document.createElement("div");
+  div.innerHTML = msg;
+  if (fim) div.style.color = "var(--sucesso)";
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+function demo5Executar() {
+  if (!demo5Estado.tipo) {
+    demo5Log("Escolha primeiro um tipo de loop nos botões acima.", false);
+    return;
+  }
+  if (demo5Estado.rodando) return;
+  demo5PararTimer();
+  demo5Estado.rodando = true;
+
+  var visual = document.getElementById("demo5-visual");
+  document.getElementById("demo5-log").innerHTML = "";
+  visual.innerHTML = "";
+
+  var passos = [];
+  if (demo5Estado.tipo === "for") {
+    var n = parseInt((document.getElementById("demo5-for-n") || {}).value, 10) || 5;
+    if (n < 1) n = 1; if (n > 20) n = 20;
+    for (var i = 1; i <= n; i++) passos.push({ rotulo: "i=" + i, msg: "▶ Iteração " + i + ": processando o item " + i + " de " + n });
+    passos.fim = "✅ Laço for concluído com " + n + " iterações, como o Google catalogando páginas uma a uma.";
+  } else if (demo5Estado.tipo === "while") {
+    var est = parseInt((document.getElementById("demo5-while-n") || {}).value, 10) || 8;
+    if (est < 1) est = 1; if (est > 20) est = 20;
+    var resto = est; var it = 0;
+    while (resto > 0) {
+      it += 1; resto -= 1;
+      passos.push({ rotulo: "📦→", msg: "▶ Iteração " + it + ": vendi 1 item, estoque agora tem " + resto });
+    }
+    passos.fim = "✅ O estoque zerou após " + it + " iterações, como uma loja esgotando um lançamento.";
+  } else {
+    for (var c = 0; c < demo5Estado.lista.length; c++) {
+      passos.push({ rotulo: "📧 " + demo5Estado.lista[c], msg: "▶ Iteração " + (c + 1) + ": enviando e-mail para <strong>" + demo5Estado.lista[c] + "</strong>" });
+    }
+    passos.fim = "✅ E-mails enviados para " + demo5Estado.lista.length + " clientes, um por iteração, como uma campanha do Mercado Livre.";
+  }
+
+  var idx = 0;
+  demo5Estado.timer = setInterval(function () {
+    if (idx < passos.length) {
+      var p = passos[idx];
+      var span = document.createElement("span");
+      span.style.cssText = "display:inline-block; padding:0.5rem; margin:0.25rem; background:var(--cor-destaque); color:white; border-radius:4px";
+      span.textContent = p.rotulo;
+      visual.appendChild(span);
+      demo5Log(p.msg, false);
+      idx += 1;
+    } else {
+      demo5Log("<strong>" + passos.fim + "</strong>", true);
+      demo5PararTimer();
+    }
+  }, 400);
+}
+
+function demo5Reiniciar() {
+  demo5PararTimer();
+  demo5Estado.tipo = null;
+  demo5Estado.lista = ["Ana", "Bruno", "Carlos", "Diana"];
+  document.getElementById("demo5-painel").innerHTML = "";
+  document.getElementById("demo5-visual").innerHTML = "";
+  document.getElementById("demo5-log").innerHTML = "";
+}
+
+/* ================= LIGAÇÕES ================= */
+function ligarBotoes() {
+  var tabs = document.querySelectorAll(".tab");
+  for (var t = 0; t < tabs.length; t++) {
+    (function (tab) {
+      tab.addEventListener("click", function () {
+        irParaAba(parseInt(tab.getAttribute("data-aba"), 10));
+      });
+      tab.addEventListener("keydown", function (ev) {
+        var lista = Array.prototype.slice.call(document.querySelectorAll(".tab"));
+        var idx = lista.indexOf(tab);
+        if (ev.key === "ArrowRight" && idx < lista.length - 1) { lista[idx + 1].focus(); ev.preventDefault(); }
+        if (ev.key === "ArrowLeft" && idx > 0) { lista[idx - 1].focus(); ev.preventDefault(); }
+      });
+    })(tabs[t]);
+  }
+
+  document.getElementById("btn-modo").addEventListener("click", alternarModo);
+  document.getElementById("btn-tema").addEventListener("click", alternarTema);
+
+  var b1 = document.querySelectorAll("#demo1-area [data-lang]");
+  for (var i = 0; i < b1.length; i++) {
+    (function (b) { b.addEventListener("click", function () { demo1Mostrar(b.getAttribute("data-lang")); }); })(b1[i]);
+  }
+  document.getElementById("demo1-reset").addEventListener("click", demo1Reiniciar);
+
+  var b2 = document.querySelectorAll("#demo2-opcoes [data-resp]");
+  for (var k = 0; k < b2.length; k++) {
+    (function (b) { b.addEventListener("click", function () { demo2Responder(b.getAttribute("data-resp")); }); })(b2[k]);
+  }
+  document.getElementById("demo2-novo").addEventListener("click", demo2Novo);
+  document.getElementById("demo2-reset").addEventListener("click", demo2Reiniciar);
+
+  var b3 = document.querySelectorAll("#demo3-area [data-tipo]");
+  for (var m = 0; m < b3.length; m++) {
+    (function (b) { b.addEventListener("click", function () { demo3Mostrar(b.getAttribute("data-tipo")); }); })(b3[m]);
+  }
+  document.getElementById("demo3-reset").addEventListener("click", demo3Reiniciar);
+
+  document.getElementById("demo4-go").addEventListener("click", demo4Simular);
+  document.getElementById("demo4-reset").addEventListener("click", demo4Reiniciar);
+
+  var b5 = document.querySelectorAll("#demo5-area [data-loop]");
+  for (var q = 0; q < b5.length; q++) {
+    (function (b) { b.addEventListener("click", function () { demo5Configurar(b.getAttribute("data-loop")); }); })(b5[q]);
+  }
+  document.getElementById("demo5-go").addEventListener("click", demo5Executar);
+  document.getElementById("demo5-reset").addEventListener("click", demo5Reiniciar);
+
+  document.addEventListener("keydown", function (ev) {
+    if (estado.modo === "apresentacao") {
+      if (ev.key === "ArrowRight" && estado.abaAtual < 6) irParaAba(estado.abaAtual + 1);
+      if (ev.key === "ArrowLeft" && estado.abaAtual > 1) irParaAba(estado.abaAtual - 1);
+    }
+  });
+}
+
+/* ================= CARGA INICIAL ================= */
+document.addEventListener("DOMContentLoaded", function () {
+  ligarBotoes();
+  inicializarQuiz();
+  var n = lerHash();
+  ativarAba(n ? n : 1);
+  atualizarXP();
+});
+</script>
+
+</body>
+</html>
