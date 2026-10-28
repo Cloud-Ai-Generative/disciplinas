@@ -1,0 +1,1848 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DEVOPS — Aula 4</title>
+<!-- HTMLearning v2.17 — Campos não informados: professor da disciplina (nome, e-mail, lattes, orcid, site, instituição). Nenhum conteúdo pedagógico foi inventado. -->
+<style>
+:root {
+  --cor-destaque: #2A9D8F;
+  --cor-destaque-claro: #E0F2EF;
+  --cor-destaque-escuro: #1D6E62;
+  --fundo: #FFFFFF;
+  --fundo-cartao: #F8F9FA;
+  --fundo-codigo: #F1F3F5;
+  --texto: #212529;
+  --texto-suave: #6C757D;
+  --borda: #DEE2E6;
+  --sucesso: #2B9348;
+  --erro: #D00000;
+  --aviso: #FFB703;
+}
+[data-theme="dark"] {
+  --fundo: #1A1D20;
+  --fundo-cartao: #2B3035;
+  --fundo-codigo: #343A40;
+  --texto: #F8F9FA;
+  --texto-suave: #ADB5BD;
+  --borda: #495057;
+  --cor-destaque-claro: #123B36;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 18px;
+  line-height: 1.6;
+  background: var(--fundo);
+  color: var(--texto);
+  transition: background 0.3s, color 0.3s;
+}
+body.modo-apresentacao { font-size: 22px; }
+header {
+  background: linear-gradient(135deg, var(--cor-destaque), var(--cor-destaque-escuro));
+  color: white;
+  padding: 2rem 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+header .meta { opacity: 0.95; font-size: 0.95rem; }
+.controles-topo { position: fixed; top: 1rem; right: 1rem; z-index: 1000; display: flex; gap: 0.5rem; }
+.controles-topo button {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--cor-destaque);
+  color: var(--cor-destaque);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+.controles-topo button:hover { background: var(--cor-destaque); color: white; }
+.xp-bar {
+  position: sticky;
+  top: 0;
+  background: var(--cor-destaque-claro);
+  padding: 0.75rem 1.5rem;
+  border-bottom: 2px solid var(--cor-destaque);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  z-index: 99;
+}
+.tabs-container {
+  position: sticky;
+  top: 52px;
+  background: var(--fundo);
+  border-bottom: 2px solid var(--borda);
+  z-index: 98;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+.tabs { display: flex; padding: 0 1rem; gap: 0.25rem; }
+.tab {
+  padding: 1rem 1.5rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--texto-suave);
+  font-size: 1rem;
+  font-weight: 600;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.tab:hover { color: var(--cor-destaque); }
+.tab[aria-selected="true"] {
+  color: var(--cor-destaque);
+  border-bottom-color: var(--cor-destaque);
+  background: var(--fundo);
+}
+.painel { display: none; padding: 2rem 1.5rem; max-width: 1100px; margin: 0 auto; }
+.painel.active { display: block; animation: fade 0.3s; }
+@keyframes fade { from {opacity:0} to {opacity:1} }
+h2 {
+  color: var(--cor-destaque-escuro);
+  border-left: 5px solid var(--cor-destaque);
+  padding-left: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.6rem;
+}
+h3 { color: var(--cor-destaque-escuro); margin: 1.5rem 0 1rem; font-size: 1.3rem; }
+.cartao {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.missao {
+  background: linear-gradient(135deg, var(--cor-destaque-claro), var(--fundo-cartao));
+  border-left: 5px solid var(--cor-destaque);
+}
+.missao::before {
+  content: "🎯 MISSÃO";
+  display: block;
+  font-weight: bold;
+  color: var(--cor-destaque-escuro);
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.mundo-real { background: #E7F5FF; border-left: 5px solid #1971C2; }
+[data-theme="dark"] .mundo-real { background: #1A3A52; }
+.mundo-real::before {
+  content: "🌎 NO MUNDO REAL";
+  display: block;
+  font-weight: bold;
+  color: #1971C2;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.ferramentas { background: #D3F9D8; border-left: 5px solid #2B9348; }
+[data-theme="dark"] .ferramentas { background: #1B4332; }
+.ferramentas::before {
+  content: "🛠️ FERRAMENTAS";
+  display: block;
+  font-weight: bold;
+  color: #2B9348;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.demo-box {
+  background: var(--fundo-codigo);
+  border: 3px solid var(--cor-destaque);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+.instrucoes {
+  background: #FFF9DB;
+  border: 2px solid var(--aviso);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .instrucoes { background: #3D3518; }
+.instrucoes::before {
+  content: "📋 INSTRUÇÕES PASSO A PASSO";
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.roteiro {
+  background: #F3D9FA;
+  border-left: 4px solid #9C36B5;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+[data-theme="dark"] .roteiro { background: #3D1F47; }
+.roteiro::before { content: "🎤 Roteiro do apresentador: "; font-weight: bold; font-style: normal; }
+.prever {
+  background: #E3FAFC;
+  border: 2px dashed #0C8599;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+[data-theme="dark"] .prever { background: #0F3742; }
+.prever::before {
+  content: "🔮 PREVISÃO";
+  display: block;
+  font-weight: bold;
+  color: #0C8599;
+  margin-bottom: 0.5rem;
+}
+.legenda {
+  background: #FFF3BF;
+  border-left: 4px solid #F59F00;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+  border-radius: 6px;
+}
+[data-theme="dark"] .legenda { background: #3D3518; }
+.legenda::before { content: "🔑 Legenda: "; font-weight: bold; }
+.quiz-box {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+.termos-quiz {
+  background: #FFF3BF;
+  border: 2px solid #F59F00;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+[data-theme="dark"] .termos-quiz { background: #3D3518; }
+.termos-quiz::before {
+  content: "🔑 Termos deste quiz";
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.pergunta {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--fundo);
+  border-radius: 8px;
+  border: 2px solid var(--borda);
+}
+.pergunta p { font-weight: 600; margin-bottom: 0.75rem; }
+.alt {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+  background: white;
+  border: 2px solid var(--borda);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--texto);
+  transition: all 0.2s;
+}
+[data-theme="dark"] .alt { background: var(--fundo-cartao); }
+.alt:hover:not(:disabled) { border-color: var(--cor-destaque); background: var(--cor-destaque-claro); }
+.alt.certa { background: #D3F9D8 !important; border-color: var(--sucesso) !important; color: var(--sucesso); font-weight: bold; }
+.alt.errada { background: #FFE3E3 !important; border-color: var(--erro) !important; color: var(--erro); }
+[data-theme="dark"] .alt.certa { background: #1B4332 !important; color: #51CF66 !important; }
+[data-theme="dark"] .alt.errada { background: #3D1F24 !important; color: #FF6B6B !important; }
+.alt:disabled { cursor: not-allowed; opacity: 0.7; }
+.fb { margin-top: 0.5rem; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.95rem; display: none; }
+.fb.show { display: block; }
+.fb.fb-certa { background: #D3F9D8; border-left: 4px solid var(--sucesso); color: #087F23; }
+.fb.fb-errada { background: #FFE3E3; border-left: 4px solid var(--erro); color: #C92A2A; }
+[data-theme="dark"] .fb.fb-certa { background: #1B4332; color: #69DB7C; }
+[data-theme="dark"] .fb.fb-errada { background: #3D1F24; color: #FFA8A8; }
+details {
+  background: var(--fundo-codigo);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+  border: 1px solid var(--borda);
+}
+details[open] { background: var(--cor-destaque-claro); }
+summary { cursor: pointer; font-weight: bold; color: var(--cor-destaque-escuro); padding: 0.25rem 0; }
+.demo-area {
+  background: white;
+  border: 2px dashed var(--cor-destaque);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+  min-height: 150px;
+}
+[data-theme="dark"] .demo-area { background: var(--fundo-cartao); }
+.btn {
+  background: var(--cor-destaque);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.95rem;
+  margin: 0.25rem;
+}
+.btn:hover { background: var(--cor-destaque-escuro); }
+.btn-secundario { background: var(--texto-suave); color: white; }
+.resultado-demo {
+  background: #D3F9D8;
+  border-left: 4px solid var(--sucesso);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .resultado-demo { background: #1B4332; color: #69DB7C; }
+.resultado-erro {
+  background: #FFE3E3;
+  border-left: 4px solid var(--erro);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .resultado-erro { background: #3D1F24; color: #FFA8A8; }
+footer {
+  background: var(--fundo-cartao);
+  border-top: 3px solid var(--cor-destaque);
+  padding: 2rem 1.5rem;
+  margin-top: 3rem;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+footer h4 { color: var(--cor-destaque-escuro); margin-bottom: 0.75rem; font-size: 1rem; }
+footer .bloco { padding: 1rem 0; line-height: 1.7; }
+footer .bloco + .bloco { border-top: 2px solid var(--borda); margin-top: 1rem; padding-top: 1.5rem; }
+footer a { color: var(--cor-destaque-escuro); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+footer ul { list-style: none; padding-left: 0; }
+footer ul li { margin: 0.4rem 0; }
+.revisao-mapa {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+.no-mapa {
+  background: var(--cor-destaque-claro);
+  border: 2px solid var(--cor-destaque);
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+}
+.no-mapa h4 { color: var(--cor-destaque-escuro); margin-bottom: 0.5rem; }
+.cola-rapida {
+  background: #FFF9DB;
+  border: 2px solid var(--aviso);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin: 1rem 0;
+}
+[data-theme="dark"] .cola-rapida { background: #3D3518; }
+.cola-rapida dt { font-weight: bold; color: var(--cor-destaque-escuro); margin-top: 0.75rem; }
+.cola-rapida dd { margin-left: 1rem; margin-bottom: 0.5rem; color: var(--texto); }
+.chefao {
+  background: linear-gradient(135deg, var(--cor-destaque-claro), white);
+  border: 3px solid var(--cor-destaque);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+[data-theme="dark"] .chefao { background: linear-gradient(135deg, var(--cor-destaque-claro), var(--fundo-cartao)); }
+.chefao::before {
+  content: "👑 CHEFÃO — DESAFIO FINAL";
+  display: block;
+  font-weight: bold;
+  color: var(--cor-destaque-escuro);
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+}
+.mitoverdade {
+  background: #F3D9FA;
+  border-left: 5px solid #9C36B5;
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 8px;
+}
+[data-theme="dark"] .mitoverdade { background: #3D1F47; }
+code {
+  background: var(--fundo-codigo);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-family: "Courier New", monospace;
+  font-size: 0.95em;
+  color: var(--cor-destaque-escuro);
+}
+pre {
+  background: var(--fundo-codigo);
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  border-left: 4px solid var(--cor-destaque);
+  margin: 1rem 0;
+  font-family: "Courier New", monospace;
+  font-size: 0.9rem;
+}
+@media (max-width: 600px) {
+  header h1 { font-size: 1.5rem; }
+  .tab { padding: 0.75rem 1rem; font-size: 0.9rem; }
+  .painel { padding: 1rem; }
+  .controles-topo { position: static; padding: 0.5rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="controles-topo">
+  <button id="btn-modo" type="button">🎤 Apresentação</button>
+  <button id="btn-tema" type="button">🌙 Escuro</button>
+</div>
+
+<header>
+  <h1>DEVOPS</h1>
+  <div class="meta">Aula 4 · Unidade 2 · Págs. 9 a 28 · COCOMO e Análise de Pontos de Função (FPA)</div>
+</header>
+
+<div class="xp-bar">
+  <div>⭐ XP: <span id="xp">0</span> · Selos: <span id="selos">0</span>/5</div>
+  <div id="progresso">Aba 1 de 6</div>
+</div>
+
+<div class="tabs-container">
+  <div class="tabs" role="tablist" aria-label="Abas da aula">
+    <button class="tab" role="tab" id="tab-1" aria-selected="true" aria-controls="painel-1" data-aba="1" type="button">1 · Intro COCOMO</button>
+    <button class="tab" role="tab" id="tab-2" aria-selected="false" aria-controls="painel-2" data-aba="2" type="button">2 · Componentes</button>
+    <button class="tab" role="tab" id="tab-3" aria-selected="false" aria-controls="painel-3" data-aba="3" type="button">3 · Na prática</button>
+    <button class="tab" role="tab" id="tab-4" aria-selected="false" aria-controls="painel-4" data-aba="4" type="button">4 · Limitações</button>
+    <button class="tab" role="tab" id="tab-5" aria-selected="false" aria-controls="painel-5" data-aba="5" type="button">5 · FPA</button>
+    <button class="tab" role="tab" id="tab-6" aria-selected="false" aria-controls="painel-6" data-aba="6" type="button">⭐ Revisão</button>
+  </div>
+</div>
+
+<!-- ============ ABA 1 ============ -->
+<div class="painel active" id="painel-1" role="tabpanel" aria-labelledby="tab-1">
+  <h2>Aba 1 · Introdução ao modelo COCOMO: por que estimar custa caro?</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é entender por que estimar o esforço de um projeto de software é difícil e como o modelo COCOMO (do inglês COnstructive COst MOdel; em português, Modelo Construtivo de Custos) — um conjunto de fórmulas matemáticas que estima esforço, prazo e custo a partir do tamanho do código — nasceu para tornar esse chute mais técnico. Antes de qualquer fórmula, você vai sentir na pele o tamanho do problema: obras e sistemas famosos custaram várias vezes o valor estimado.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 O que é o COCOMO e de onde ele veio?</h3>
+    <p>Estimar um projeto de software é responder três perguntas antes de começar: quanto <strong>esforço</strong> (horas de trabalho de pessoas) ele vai consumir, quanto <strong>tempo</strong> (meses de calendário) vai levar e quanto <strong>dinheiro</strong> vai custar. O COCOMO (do inglês COnstructive COst MOdel; em português, Modelo Construtivo de Custos) é um modelo matemático criado por Barry Boehm (professor da Universidade do Sul da Califórnia, nos Estados Unidos) e publicado em 1981 no livro Software Engineering Economics (em português, Economia de Engenharia de Software).</p>
+    <p>A ideia central é simples de explicar: o esforço cresce junto com o <strong>tamanho</strong> do software, medido em KLOC (do inglês Kilo Lines Of Code; em português, milhares de linhas de código): 1 KLOC equivale a mil linhas de código-fonte (o texto do programa escrito pelo programador). Boehm analisou dezenas de projetos reais e ajustou uma fórmula que transforma KLOC em meses de trabalho de uma pessoa, unidade chamada de pessoa-mês (o trabalho de uma pessoa durante um mês inteiro).</p>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Quando a estimativa falha no mundo real</h3>
+    <ul style="margin-left:1.5rem">
+      <li>A <strong>Ópera de Sydney</strong> (casa de espetáculos na Austrália) foi orçada em cerca de 7 milhões de dólares e 4 anos de obra; ficou pronta em 1973 após cerca de 102 milhões de dólares e 14 anos.</li>
+      <li>O <strong>Eurotúnel</strong> (túnel ferroviário sob o Canal da Mancha, entre Inglaterra e França) estourou o orçamento em cerca de 80% sobre o estimado na assinatura do contrato.</li>
+      <li>O <strong>aeroporto de Denver</strong> (aeroporto internacional nos Estados Unidos) teve a abertura atrasada cerca de 16 meses em 1995 por causa do sistema automatizado de bagagens; cada dia de atraso custava cerca de 1,1 milhão de dólares à cidade.</li>
+      <li>O <strong>Serviço de Ambulâncias de Londres</strong> (serviço público de emergência do Reino Unido) teve um sistema de despacho de ambulâncias por computador que falhou nos primeiros dias de uso em 1992 e foi desligado, com impacto direto no atendimento à população.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Ferramentas e parentes do COCOMO</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>COCOMO II</strong> — a revisão dos anos 1990 do mesmo modelo, feita para a era de reuso de código e componentes prontos; é a versão usada em contratos modernos de defesa e aeroespacial.</li>
+      <li><strong>ISBSG</strong> (do inglês International Software Benchmarking Standards Group; em português, Grupo Internacional de Padrões de Benchmarking de Software) — um banco de dados mundial com milhares de projetos reais medidos, usado para comparar a produtividade da sua equipe com a do mercado.</li>
+      <li><strong>Planilhas e calculadoras COCOMO</strong> — existem versões públicas em planilha e em sites acadêmicos que aplicam as fórmulas automaticamente, úteis para conferir o cálculo à mão.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo interativa: museu das estimativas furadas</h3>
+
+    <div class="prever">
+      <strong>Antes de clicar, preveja:</strong> qual destes projetos você acha que passou MAIS do dobro do orçamento inicial: a Ópera de Sydney, o Eurotúnel ou o sistema de bagagens de Denver?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, diga em voz alta a sua previsão.<br>
+      <strong>Passo 1:</strong> clique em um projeto do museu.<br>
+      <strong>Passo 2:</strong> compare o cartão Estimado com o cartão Realizado.<br>
+      <strong>Passo 3:</strong> leia a lição que cada caso deixa para quem estima software.
+    </div>
+
+    <div class="roteiro">
+      comece perguntando à turma quanto tempo eles acham que leva para construir um aplicativo de entregas. Depois abra a Ópera de Sydney e mostre a diferença entre o estimado e o realizado. Feche com Denver: o atraso foi causado por SOFTWARE, não por concreto.
+    </div>
+
+    <div class="demo-area" id="demo1-area">
+      <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem">
+        <button class="btn" type="button" data-proj="sydney">Ópera de Sydney</button>
+        <button class="btn" type="button" data-proj="euro">Eurotúnel</button>
+        <button class="btn" type="button" data-proj="denver">Bagagens de Denver</button>
+        <button class="btn" type="button" data-proj="londres">Ambulâncias de Londres</button>
+      </div>
+      <div id="demo1-ficha" style="padding:1rem; background:var(--fundo-codigo); border-radius:8px; min-height:120px">
+        👆 Clique em um projeto acima para abrir o cartão Estimado versus Realizado.
+      </div>
+      <button class="btn btn-secundario" type="button" id="demo1-reset" style="margin-top:1rem">🔄 Reiniciar demo</button>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> em todos os cartões, o estouro não veio de um único erro grande, e sim de várias premissas otimistas somadas. É exatamente isso que um modelo de estimativa tenta atacar: trocar o otimismo por dados históricos.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 1</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      COCOMO = modelo matemático que estima esforço, prazo e custo de software a partir do tamanho do código ·
+      KLOC = milhares de linhas de código (1 KLOC = mil linhas) ·
+      pessoa-mês = o trabalho de uma pessoa durante um mês inteiro ·
+      esforço = quantidade total de trabalho humano do projeto.
+    </div>
+
+    <div class="pergunta" data-pergunta="1-1">
+      <p>1. O que o modelo COCOMO (Modelo Construtivo de Custos) estima a partir do tamanho do software em linhas de código?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! O COCOMO transforma tamanho em KLOC (milhares de linhas de código) em esforço (pessoa-mês), prazo (meses) e, com o custo da hora, em dinheiro. Essas são as três respostas que todo cliente pergunta antes de assinar.">Esforço, prazo e custo do projeto de software</button>
+        <button class="alt" type="button" data-fb="Errado! A linguagem de programação é uma escolha da equipe, não um resultado de fórmula. O COCOMO até sente o efeito da linguagem no tamanho do código, mas não escolhe linguagem por você.">A linguagem de programação que o cliente deve preferir</button>
+        <button class="alt" type="button" data-fb="Errado! O número de telas é contado por outra técnica, a Análise de Pontos de Função (FPA), que você verá na Aba 5. O COCOMO clássico parte de linhas de código, não de telas.">A quantidade de telas que o sistema terá</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="1-2">
+      <p>2. Quem criou o COCOMO e em que ano ele foi publicado?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! Allan Albrecht é o criador da Análise de Pontos de Função, em 1979, na IBM. Pessoa certa, técnica errada: esta aula apresenta os dois modelos e eles não se confundem.">Allan Albrecht, em 1979</button>
+        <button class="alt" type="button" data-fb="Correto! Barry Boehm (professor da Universidade do Sul da Califórnia) publicou o COCOMO em 1981, no livro Software Engineering Economics, após analisar dezenas de projetos reais.">Barry Boehm, em 1981</button>
+        <button class="alt" type="button" data-fb="Errado! O IFPUG (grupo internacional de usuários de pontos de função) é uma entidade que padroniza a contagem de pontos de função, e não a criadora do COCOMO.">O IFPUG, em 1995</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="1-3">
+      <p>3. Olhando o museu da demo: qual é a lição que a Ópera de Sydney (orçada em 7 milhões de dólares e finalizada em cerca de 102 milhões) deixa para projetos de software?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! Estimativas não são burocracia: sem elas não há como negociar prazo, equipe e preço. O problema é estimar sem método, não estimar.">Que estimar é burocracia e só atrasa o início do projeto</button>
+        <button class="alt" type="button" data-fb="Errado! O erro da Ópera de Sydney não foi mudar o desenho por capricho: foi começar sem uma base realista de custo e prazo. Mudanças bem gerenciadas fazem parte de qualquer projeto saudável.">Que todo projeto que muda de desenho no caminho está fadado a falhar</button>
+        <button class="alt" type="button" data-fb="Correto! Estourar orçamento raramente é um azar único: é a soma de várias premissas otimistas. Por isso existem modelos como o COCOMO, que usam dados de projetos reais em vez de otimismo.">Que premissas otimistas somadas produzem estouros gigantes, e por isso estimar com método e dados históricos importa</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 1</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=modelo+COCOMO+estimativa+de+custo+de+software" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=modelo+COCOMO+engenharia+de+software+estimativa" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=modelo+COCOMO+aula+estimativa+de+software" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>COCOMO</strong>: Modelo Construtivo de Custos; fórmulas que estimam esforço, prazo e custo a partir do tamanho do código.</li>
+      <li><strong>KLOC</strong>: milhares de linhas de código; 1 KLOC = mil linhas.</li>
+      <li><strong>Pessoa-mês</strong>: unidade de esforço; o trabalho de uma pessoa em um mês.</li>
+      <li><strong>Estimativa</strong>: previsão técnica de esforço, prazo e custo antes de o projeto começar.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Estimar projeto de software é perda de tempo, porque tudo muda no meio do caminho.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> mudanças acontecem, mas sem uma estimativa inicial não há base para negociar prazo, equipe e preço. A Ópera de Sydney e o aeroporto de Denver mostram que o improviso custa muito mais caro que o método.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 2 ============ -->
+<div class="painel" id="painel-2" role="tabpanel" aria-labelledby="tab-2">
+  <h2>Aba 2 · Entendendo os componentes do COCOMO</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é conhecer as peças do modelo: os três <strong>modos de projeto</strong> (orgânico, semidestacado e embutido), os três <strong>níveis de detalhe</strong> (básico, intermediário e detalhado) e os <strong>direcionadores de custo</strong> (fatores que ajustam a conta à realidade do time e do ambiente). Sem saber qual peça usar, a fórmula vira uma calculadora de chutes elegantes.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Os três modos de projeto</h3>
+    <p>O COCOMO (do inglês COnstructive COst MOdel; em português, Modelo Construtivo de Custos) reconhece que nem todo projeto é igual. Por isso ele separa três modos (famílias de projetos com dificuldade parecida):</p>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Orgânico</strong> — equipes pequenas e experientes, desenvolvendo algo que já conhecem, com poucas restrições. Exemplo típico: uma folha de pagamento para o escritório de contabilidade vizinho.</li>
+      <li><strong>Semidestacado</strong> — o meio-termo: equipe mista (experientes e novatos), requisitos que misturam o familiar e o novo. Exemplo típico: um sistema bancário de agência que integra módulos antigos e novos.</li>
+      <li><strong>Embutido</strong> — o mais difícil: o software roda preso a restrições fortes de hardware, segurança ou tempo real. Exemplo típico: o software de controle de um avião ou de um marcapasso.</li>
+    </ul>
+    <p>Cada modo tem seus próprios números na fórmula (os coeficientes), porque um sistema embutido exige mais esforço por linha de código do que um sistema orgânico.</p>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Modos no mundo real</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Orgânico:</strong> o primeiro site institucional de uma prefeitura, feito por uma equipe local que já fez dezenas de sites parecidos.</li>
+      <li><strong>Semidestacado:</strong> o sistema de matrículas de uma universidade pública brasileira, que mistura regras novas de cotas (reserva de vagas por lei) com módulos antigos de secretaria.</li>
+      <li><strong>Embutido:</strong> o software do freio ABS (sistema anti-travamento de rodas) de um carro, que precisa responder em milissegundos e passar por certificação (aprovação oficial de segurança).</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Os três níveis e os direcionadores de custo</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>COCOMO básico</strong> — uma conta rápida com o tamanho em KLOC (milhares de linhas de código); boa para o primeiro chute lá no início.</li>
+      <li><strong>COCOMO intermediário</strong> — soma ao básico os <strong>direcionadores de custo</strong>: 15 fatores multiplicativos que descrevem o projeto, como confiabilidade exigida, experiência da equipe, potência do hardware disponível e uso de ferramentas. Cada fator vira um número (por exemplo, 0,90 para equipe muito experiente ou 1,30 para prazo apertado) e todos se multiplicam ao resultado.</li>
+      <li><strong>COCOMO detalhado</strong> — o intermediário aplicado fase por fase do projeto (análise, desenho, codificação), porque o peso de cada fator muda conforme a fase.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: classificador de modos COCOMO</h3>
+
+    <div class="prever">
+      <strong>Antes de jogar, preveja:</strong> um software que controla o freio ABS de um carro (precisa responder em milissegundos e passar por certificação de segurança) seria orgânico, semidestacado ou embutido?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, anuncie a sua previsão para o modo do primeiro cenário.<br>
+      <strong>Passo 1:</strong> clique em Novo cenário e leia a descrição do projeto.<br>
+      <strong>Passo 2:</strong> escolha entre orgânico, semidestacado e embutido.<br>
+      <strong>Passo 3:</strong> leia o feedback: se errar, ele explica o que você deixou passar e libera novo tentativo com outro cenário.
+    </div>
+
+    <div class="roteiro">
+      leia o cenário em voz alta e peça votos. Antes de revelar, pergunte: qual restrição domina este projeto? Equipe pequena e domínio conhecido aponta para orgânico; restrição forte de hardware e segurança aponta para embutido.
+    </div>
+
+    <div class="demo-area" id="demo2-area">
+      <div id="demo2-cenario" style="background:var(--cor-destaque-claro); padding:1rem; border-radius:8px; margin-bottom:1rem; font-weight:600">
+        📋 O cenário aparecerá aqui. Clique em Novo cenário para começar.
+      </div>
+      <div id="demo2-opcoes" style="display:none">
+        <button class="btn" type="button" data-modo="organico">Orgânico</button>
+        <button class="btn" type="button" data-modo="semidestacado">Semidestacado</button>
+        <button class="btn" type="button" data-modo="embutido">Embutido</button>
+      </div>
+      <div id="demo2-feedback" style="margin-top:1rem"></div>
+      <div style="margin-top:1rem">
+        <button class="btn" type="button" id="demo2-novo">🎲 Novo cenário</button>
+        <button class="btn btn-secundario" type="button" id="demo2-reset">🔄 Reiniciar demo</button>
+      </div>
+      <div id="demo2-placar" style="margin-top:1rem; font-weight:bold; color:var(--cor-destaque-escuro)"></div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 2</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      modo orgânico = equipe pequena e experiente em projeto conhecido, com poucas restrições ·
+      modo semidestacado = caso intermediário, com equipe e requisitos mistos ·
+      modo embutido = software preso a restrições fortes de hardware, segurança ou tempo real ·
+      direcionadores de custo = os 15 fatores multiplicativos do COCOMO intermediário (experiência da equipe, confiabilidade exigida etc.) ·
+      KLOC = milhares de linhas de código.
+    </div>
+
+    <div class="pergunta" data-pergunta="2-1">
+      <p>1. Uma equipe de 4 pessoas que já fez cinco folhas de pagamento parecidas vai fazer a sexta, para um cliente conhecido. Qual modo do COCOMO (Modelo Construtivo de Custos) descreve esse projeto?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! Equipe pequena, experiente e domínio já conhecido é a definição de livro do modo orgânico: poucas restrições e muito conhecimento prévio, o que reduz o esforço por linha de código.">Orgânico</button>
+        <button class="alt" type="button" data-fb="Errado! O modo embutido é para software preso a restrições fortes de hardware, segurança ou tempo real, como o controle de um avião. Uma folha de pagamento não tem nenhuma dessas amarras.">Embutido</button>
+        <button class="alt" type="button" data-fb="Errado! O semidestacado aparece quando há mistura de equipe e de requisitos novos e antigos. Aqui tudo é familiar para o time, então o caso é mais simples do que o semidestacado.">Semidestacado</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="2-2">
+      <p>2. O software do freio ABS (sistema anti-travamento de rodas) de um carro precisa responder em milissegundos e passar por certificação oficial de segurança. Qual modo se aplica?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! Orgânico descreve projetos com poucas restrições e domínio conhecido. Um freio automotivo tem exatamente o oposto: restrições duras de tempo real e segurança certificada.">Orgânico</button>
+        <button class="alt" type="button" data-fb="Errado! O semidestacado é o meio-termo sem restrições extremas. Quando há tempo real e certificação de segurança, o COCOMO empurra o projeto para a família mais difícil.">Semidestacado</button>
+        <button class="alt" type="button" data-fb="Correto! Restrições fortes de hardware, tempo real e segurança certificada são a assinatura do modo embutido: é o software vivendo dentro de uma máquina com limites rígidos, como aviônicos e equipamentos médicos.">Embutido</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="2-3">
+      <p>3. O que o COCOMO intermediário acrescenta em relação ao básico?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! O número de telas e relatórios é contado pela Análise de Pontos de Função (FPA), não pelo COCOMO intermediário. São técnicas irmãs, mas com réguas diferentes.">A contagem de telas e relatórios do sistema</button>
+        <button class="alt" type="button" data-fb="Correto! O intermediário multiplica o resultado básico pelos direcionadores de custo: 15 fatores como experiência da equipe, confiabilidade exigida e potência do hardware. É o que faz a mesma quantidade de KLOC custar mais ou menos conforme o contexto.">Os direcionadores de custo, fatores multiplicativos que ajustam a conta ao contexto do projeto</button>
+        <button class="alt" type="button" data-fb="Errado! O básico já usa KLOC (milhares de linhas de código). O intermediário não troca a régua de tamanho: ele acrescenta os fatores de ajuste por cima dela.">Uma régua de tamanho diferente, em pontos de função</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 2</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=COCOMO+modos+orgânico+semidestacado+embutido" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=COCOMO+modos+de+projeto+direcionadores+de+custo" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=COCOMO+básico+intermediário+detalhado+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Modo de projeto</strong>: família de projetos com dificuldade parecida (orgânico, semidestacado, embutido).</li>
+      <li><strong>Coeficientes</strong>: os números fixos de cada modo dentro da fórmula.</li>
+      <li><strong>Direcionadores de custo</strong>: os 15 fatores multiplicativos do nível intermediário.</li>
+      <li><strong>Tempo real</strong>: exigência de responder dentro de um limite rígido de tempo, como em freios ABS.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> O modo embutido foi feito para sistemas web com muitas telas.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> embutido descreve software preso a restrições fortes de hardware, segurança ou tempo real, como aviônicos e equipamentos médicos. Sistemas web com muitas telas costumam cair no orgânico ou no semidestacado.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 3 ============ -->
+<div class="painel" id="painel-3" role="tabpanel" aria-labelledby="tab-3">
+  <h2>Aba 3 · Aplicando o COCOMO na prática</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é fazer a conta funcionar: dado o tamanho em KLOC (milhares de linhas de código) e o modo do projeto, calcular o esforço E em pessoas-mês (o trabalho de uma pessoa durante um mês), o prazo D em meses de calendário e o tamanho médio da equipe. Você vai fazer isso à mão uma vez e depois usar a calculadora da demo para brincar com cenários.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 As duas fórmulas do COCOMO básico</h3>
+    <p>No nível básico, o COCOMO (do inglês COnstructive COst MOdel; em português, Modelo Construtivo de Custos) usa duas contas. A primeira transforma tamanho em esforço: <strong>E = a × (KLOC elevado a b)</strong>, onde E é o esforço em pessoas-mês e a e b são coeficientes (números fixos) do modo escolhido. A segunda transforma esforço em prazo: <strong>D = c × (E elevado a d)</strong>, onde D é o prazo em meses e c e d também vêm do modo.</p>
+    <p>Os coeficientes do COCOMO básico são:</p>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Orgânico:</strong> a = 2,4 · b = 1,05 · c = 2,5 · d = 0,38</li>
+      <li><strong>Semidestacado:</strong> a = 3,0 · b = 1,12 · c = 2,5 · d = 0,35</li>
+      <li><strong>Embutido:</strong> a = 3,6 · b = 1,20 · c = 2,5 · d = 0,32</li>
+    </ul>
+    <p>Exemplo resolvido: um projeto <strong>orgânico</strong> de <strong>10 KLOC</strong> (dez mil linhas). Primeiro, 10 elevado a 1,05 dá cerca de 11,2; vezes 2,4 dá <strong>E ≈ 26,9 pessoas-mês</strong>. Depois, 26,9 elevado a 0,38 dá cerca de 3,5; vezes 2,5 dá <strong>D ≈ 8,7 meses</strong>. Dividindo E por D, a equipe média fica em cerca de <strong>3,1 pessoas</strong>. Repare que o prazo não cai pela metade se você dobrar a equipe: esforço e prazo são grandezas diferentes.</p>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Para calibrar o olho no tamanho dos números</h3>
+    <ul style="margin-left:1.5rem">
+      <li>O <strong>Linux 1.0</strong> (primeira versão completa do núcleo do sistema Linux, de 1994) tinha cerca de 176 KLOC, ou seja, 176 mil linhas: um projeto de porte semidestacado a embutido em esforço.</li>
+      <li>Um <strong>trabalho de conclusão de curso</strong> de sistemas tipicamente fica entre 2 e 10 KLOC: por isso ele é um ótimo primeiro exercício de COCOMO básico.</li>
+      <li>O <strong>aplicativo de banco</strong> que você usa no celular é mantido por times de dezenas de pessoas: quando a conta E dividido por D der um número desse tamanho, você saberá que a estimativa conversa com a realidade de mercado.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Passo a passo da aplicação</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Passo 1:</strong> estime o tamanho em KLOC por analogia (comparando com projetos parecidos já medidos).</li>
+      <li><strong>Passo 2:</strong> escolha o modo (orgânico, semidestacado ou embutido) olhando equipe e restrições.</li>
+      <li><strong>Passo 3:</strong> aplique E = a × KLOC elevado a b.</li>
+      <li><strong>Passo 4:</strong> aplique D = c × E elevado a d.</li>
+      <li><strong>Passo 5:</strong> calcule a equipe média como E dividido por D e multiplique E pelo custo da pessoa-mês para obter o custo total.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: calculadora COCOMO básico passo a passo</h3>
+
+    <div class="prever">
+      <strong>Antes de calcular, preveja:</strong> um projeto semidestacado de 100 KLOC (cem mil linhas) vai dar um esforço mais próximo de 50, de 170 ou de 500 pessoas-mês?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, registre a sua previsão de esforço.<br>
+      <strong>Passo 1:</strong> digite o tamanho do projeto em KLOC (milhares de linhas de código).<br>
+      <strong>Passo 2:</strong> escolha o modo do projeto.<br>
+      <strong>Passo 3:</strong> clique em Calcular e acompanhe cada linha da substituição na fórmula.<br>
+      <strong>Passo 4:</strong> compare E (esforço), D (prazo) e equipe média com a sua previsão.
+    </div>
+
+    <div class="roteiro">
+      peça um tamanho de projeto à turma (sugira o Linux 1.0, com 176 KLOC, para ancorar). Calcule no orgânico e depois troque para embutido com o mesmo KLOC: a diferença de esforço mostra por que os coeficientes existem.
+    </div>
+
+    <div class="legenda">
+      KLOC = milhares de linhas de código · E = esforço em pessoas-mês (trabalho de uma pessoa em um mês) · D = prazo em meses de calendário · a, b, c, d = coeficientes fixos do modo escolhido · equipe média = E dividido por D
+    </div>
+
+    <div class="demo-area" id="demo3-area">
+      <div style="display:grid; gap:0.5rem; max-width:460px">
+        <label>📏 Tamanho do projeto (KLOC): <input type="number" id="demo3-kloc" value="10" min="1" max="2000" style="width:100px"></label>
+        <div>
+          <button class="btn" type="button" data-modo3="organico">Orgânico</button>
+          <button class="btn" type="button" data-modo3="semidestacado">Semidestacado</button>
+          <button class="btn" type="button" data-modo3="embutido">Embutido</button>
+        </div>
+        <div><button class="btn" type="button" id="demo3-go">🧮 Calcular passo a passo</button></div>
+      </div>
+      <pre id="demo3-passos">// as linhas da substituição aparecerão aqui</pre>
+      <div id="demo3-resultado"></div>
+      <button class="btn btn-secundario" type="button" id="demo3-reset" style="margin-top:1rem">🔄 Reiniciar demo</button>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 3</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      E = esforço em pessoas-mês (trabalho de uma pessoa em um mês) ·
+      D = prazo em meses de calendário ·
+      KLOC = milhares de linhas de código ·
+      coeficientes a, b, c, d = números fixos de cada modo dentro das fórmulas ·
+      equipe média = E dividido por D, o número médio de pessoas trabalhando.
+    </div>
+
+    <div class="pergunta" data-pergunta="3-1">
+      <p>1. Na fórmula E = a × (KLOC elevado a b), o que o resultado E representa?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! Dinheiro é o último passo: você multiplica o esforço pelo custo da pessoa-mês da sua região. O E em si mede trabalho, não moeda.">O custo total do projeto em reais</button>
+        <button class="alt" type="button" data-fb="Correto! E é o esforço em pessoas-mês: quantos meses de trabalho de uma pessoa o projeto consome. Se E der 26,9, isso pode ser 1 pessoa por 27 meses ou 3 pessoas por 9 meses, por exemplo.">O esforço total do projeto em pessoas-mês</button>
+        <button class="alt" type="button" data-fb="Errado! O prazo em meses é o D, calculado pela segunda fórmula (D = c × E elevado a d). O E mede volume de trabalho, não tempo de calendário.">O prazo do projeto em meses de calendário</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="3-2">
+      <p>2. Um projeto orgânico de 10 KLOC usa a = 2,4 e b = 1,05. Como 10 elevado a 1,05 dá cerca de 11,2, qual é o esforço E aproximado?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! 2,4 é só o coeficiente a, sozinho. A fórmula manda multiplicar a pelo tamanho elevado a b: faltou a segunda parte da conta.">Cerca de 2,4 pessoas-mês</button>
+        <button class="alt" type="button" data-fb="Errado! Esse número viria de somar em vez de multiplicar, ou de esquecer o expoente b. A conta é 2,4 vezes 11,2, não 2,4 mais 10.">Cerca de 12,4 pessoas-mês</button>
+        <button class="alt" type="button" data-fb="Correto! E = 2,4 × 11,2 ≈ 26,9 pessoas-mês. É exatamente o exemplo resolvido da aba: o expoente b faz o esforço crescer um pouco mais rápido que o tamanho.">Cerca de 26,9 pessoas-mês</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="3-3">
+      <p>3. Dividir E por D (esforço pelo prazo) responde a qual pergunta prática?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! E dividido por D dá a equipe média: se o projeto consome 26,9 pessoas-mês em 8,7 meses, então em média umas 3 pessoas trabalham nele o tempo todo. É o número que o gestor usa para montar o time.">Quantas pessoas, em média, trabalham no projeto durante o prazo</button>
+        <button class="alt" type="button" data-fb="Errado! O custo por pessoa vem do mercado (salário, encargos), não da divisão entre E e D. A divisão fala de quantidade de gente, não de dinheiro.">Quanto custa cada pessoa do time por mês</button>
+        <button class="alt" type="button" data-fb="Errado! Linhas por mês é uma medida de produtividade que exigiria dividir KLOC por D. A divisão E por D mistura esforço e prazo, e o resultado é gente, não linhas.">Quantas linhas de código o time escreve por mês</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 3</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=exemplo+de+cálculo+COCOMO+passo+a+passo" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=aplicação+do+modelo+COCOMO+estimativa+de+esforço" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=exercício+resolvido+COCOMO+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>E (esforço)</strong>: total de trabalho humano, em pessoas-mês.</li>
+      <li><strong>D (prazo)</strong>: duração em meses de calendário.</li>
+      <li><strong>Equipe média</strong>: E dividido por D; quantas pessoas trabalham em média.</li>
+      <li><strong>Estimativa por analogia</strong>: estimar o tamanho comparando com projetos parecidos já medidos.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> O resultado do COCOMO básico é exato como um relógio suíço.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> o COCOMO básico é uma estimativa de ordem de grandeza para o início do projeto. A precisão melhora nos níveis intermediário e detalhado e com calibração local, mas nenhum modelo transforma incerteza em certeza.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 4 ============ -->
+<div class="painel" id="painel-4" role="tabpanel" aria-labelledby="tab-4">
+  <h2>Aba 4 · Desafios e limitações do COCOMO</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é aprender a desconfiar com método: entender de onde vem o erro do COCOMO (do inglês COnstructive COst MOdel; em português, Modelo Construtivo de Custos), por que um erro pequeno no tamanho vira um erro grande no esforço, e o que o modelo de 1981 não consegue ver no software de hoje (reuso, código aberto, ciclos ágeis).</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 De onde vem o erro?</h3>
+    <p>O primeiro desafio é a <strong>entrada</strong>: o COCOMO básico precisa do tamanho em KLOC (milhares de linhas de código) antes de o código existir, e essa estimativa inicial costuma errar feio. O segundo desafio é a <strong>matemática</strong>: como o expoente b da fórmula é maior que 1 (varia de 1,05 a 1,20), um erro percentual no tamanho volta <strong>amplificado</strong> no esforço. Um projeto estimado em 100 KLOC que acaba com 200 KLOC não dobra de esforço no modo embutido: ele cresce mais que o dobro, porque 2 elevado a 1,20 é cerca de 2,3.</p>
+    <p>O terceiro desafio é a <strong>idade do modelo</strong>: os dados que calibraram (ajustaram os números com projetos reais) o COCOMO de 1981 vêm de uma época sem reuso de componentes prontos, sem bibliotecas de código aberto e sem ciclos ágeis de entrega contínua. Um sistema moderno montado com peças prontas tem poucas linhas escritas à mão e muito valor entregue, e o COCOMO clássico enxerga só as linhas.</p>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Casos que ensinam a limitar a confiança</h3>
+    <ul style="margin-left:1.5rem">
+      <li>O <strong>relatório CHAOS</strong> (pesquisa periódica do Standish Group, consultoria americana) mostrou em 1994 que apenas cerca de 16% dos projetos de software terminavam no prazo e no orçamento originais: estimar é difícil mesmo com método.</li>
+      <li>O <strong>sistema de bagagens do aeroporto de Denver</strong> (Estados Unidos, 1995) foi estimado como um componente simples do aeroporto e virou o motivo de 16 meses de atraso: a complexidade de integração não estava na conta inicial.</li>
+      <li>O <strong>COCOMO II</strong> (revisão dos anos 1990) existe justamente porque o mundo mudou: ele passou a considerar reuso, geradores de código e plataformas modernas,承认 que o modelo de 1981 envelheceu.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Como os profissionais reduzem o risco</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Calibração local</strong>: ajustar os coeficientes a, b, c e d com o histórico de projetos da própria empresa, em vez de usar os números de livro cegamente.</li>
+      <li><strong>Faixas em vez de números únicos</strong>: apresentar otimista, provável e pessimista, como fazem as técnicas de análise de risco.</li>
+      <li><strong>Reestimativa por fase</strong>: recalcular a cada entrega, quando já se conhece parte real do código, em vez de confiar só no chute inicial.</li>
+      <li><strong>Usar uma segunda régua</strong>: cruzar o COCOMO com a Análise de Pontos de Função (FPA), que mede o sistema pelas funções que ele entrega, não pelas linhas.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: amplificador de erro do expoente</h3>
+
+    <div class="prever">
+      <strong>Antes de simular, preveja:</strong> se o tamanho real de um projeto embutido for 50% maior que o estimado, o erro no esforço será de 50%, menor que 50% ou maior que 50%?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, anote a sua previsão sobre o erro no esforço.<br>
+      <strong>Passo 1:</strong> digite o KLOC estimado e o KLOC real do projeto.<br>
+      <strong>Passo 2:</strong> escolha o modo e clique em Comparar.<br>
+      <strong>Passo 3:</strong> observe os dois erros percentuais lado a lado: o do tamanho e o do esforço.<br>
+      <strong>Passo 4:</strong> troque o modo e veja o expoente b mudar o tamanho da amplificação.
+    </div>
+
+    <div class="roteiro">
+      use 100 estimado contra 150 real no modo orgânico e depois no embutido. Pergunte à turma por que o mesmo erro de tamanho dói mais no embutido: a resposta está no expoente b maior.
+    </div>
+
+    <div class="legenda">
+      KLOC estimado = o tamanho chutado no início · KLOC real = o tamanho medido no final · b = expoente do modo (maior que 1, por isso amplifica) · erro no esforço = quanto o esforço calculado com o tamanho errado desvia do esforço com o tamanho real
+    </div>
+
+    <div class="demo-area" id="demo4-area">
+      <div style="display:grid; gap:0.5rem; max-width:460px">
+        <label>🎯 KLOC estimado no início: <input type="number" id="demo4-kest" value="100" min="1" max="2000" style="width:100px"></label>
+        <label>📐 KLOC real no final: <input type="number" id="demo4-kreal" value="150" min="1" max="2000" style="width:100px"></label>
+        <div>
+          <button class="btn" type="button" data-modo4="organico">Orgânico</button>
+          <button class="btn" type="button" data-modo4="semidestacado">Semidestacado</button>
+          <button class="btn" type="button" data-modo4="embutido">Embutido</button>
+        </div>
+        <div><button class="btn" type="button" id="demo4-go">📈 Comparar erros</button></div>
+      </div>
+      <div id="demo4-resultado" style="margin-top:1rem"></div>
+      <button class="btn btn-secundario" type="button" id="demo4-reset" style="margin-top:1rem">🔄 Reiniciar demo</button>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> esta demo não tem certo ou errado: ela mostra consequências. Repare que, em qualquer modo, a barra do erro no esforço fica maior que a barra do erro no tamanho. Quanto maior o expoente b, maior a diferença entre as duas barras.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 4</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      expoente b = o número que eleva o KLOC na fórmula do esforço; sendo maior que 1, amplifica erros ·
+      calibração = ajustar os coeficientes do modelo com o histórico de projetos da própria empresa ·
+      reuso = montar o sistema com componentes prontos em vez de escrever tudo à mão ·
+      KLOC = milhares de linhas de código.
+    </div>
+
+    <div class="pergunta" data-pergunta="4-1">
+      <p>1. Por que um erro de 20% na estimativa de KLOC (milhares de linhas de código) vira um erro MAIOR que 20% no esforço?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! Os coeficientes a e c são multiplicadores fixos: eles deslocam o resultado, mas não ampliam percentuais de erro. Quem amplifica é o expoente, não o multiplicador.">Porque os coeficientes a e c são grandes demais</button>
+        <button class="alt" type="button" data-fb="Correto! Como o expoente b é maior que 1 (de 1,05 a 1,20), a fórmula cresce mais rápido que o tamanho: um desvio percentual no KLOC volta multiplicado no esforço. É a matemática de potências trabalhando contra o otimista.">Porque o expoente b é maior que 1 e amplifica o desvio do tamanho</button>
+        <button class="alt" type="button" data-fb="Errado! O prazo D vem depois do esforço e usa outro expoente (d, menor que 1). A amplificação do erro de tamanho acontece já na fórmula do esforço, antes do prazo entrar.">Porque o prazo D contamina o cálculo do esforço</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="4-2">
+      <p>2. Qual realidade do software moderno o COCOMO de 1981 enxerga mal?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! Bancos de dados relacionais já existiam e eram considerados indiretamente nos fatores do modelo. Não é esse o ponto cego principal.">O uso de bancos de dados relacionais</button>
+        <button class="alt" type="button" data-fb="Errado! Times grandes sempre existiram e o modelo até tem fatores de pessoal para eles. O ponto cego é outro: como o código é produzido hoje.">Equipes com mais de cem pessoas</button>
+        <button class="alt" type="button" data-fb="Correto! Reuso de componentes prontos, bibliotecas de código aberto e entregas ágeis produzem muito valor com poucas linhas escritas à mão. Um modelo que mede linhas de código subestima ou superestima esses projetos.">Reuso de componentes, código aberto e ciclos ágeis de entrega</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="4-3">
+      <p>3. O que significa calibrar o COCOMO em uma empresa?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! Calibrar é refazer os coeficientes a, b, c e d com os projetos reais já entregues pela própria empresa, como um termômetro ajustado ao clima local. É a prática que mais reduz o erro sistemático.">Ajustar os coeficientes do modelo com o histórico de projetos reais da própria empresa</button>
+        <button class="alt" type="button" data-fb="Errado! Trocar de linguagem muda o tamanho em KLOC, mas calibração é outro ato: mexer nos coeficientes do modelo com dados históricos, não no tecnologia do time.">Trocar a linguagem de programação do time por uma mais produtiva</button>
+        <button class="alt" type="button" data-fb="Errado! Arredondar para cima é só otimismo disfarçado: calibração usa dados e estatística do histórico, não um polegar para cima nas contas.">Arredondar todos os resultados para cima por segurança</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 4</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=limitações+e+críticas+do+modelo+COCOMO" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=limitações+COCOMO+calibração+estimativa+de+software" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=COCOMO+limitações+e+calibração+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Amplificação de erro</strong>: quando um desvio pequeno na entrada vira um desvio maior na saída, por causa do expoente.</li>
+      <li><strong>Calibração</strong>: ajuste dos coeficientes com dados históricos locais.</li>
+      <li><strong>Reestimativa por fase</strong>: recalcular a estimativa a cada etapa concluída do projeto.</li>
+      <li><strong>Análise de risco</strong>: prática de trabalhar com faixas otimista, provável e pessimista.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Os erros do COCOMO vêm sempre da fórmula, nunca dos dados de entrada.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> a maior fonte de erro é a entrada: o KLOC estimado antes de existir código. A fórmula apenas propaga e amplifica esse erro inicial, por causa do expoente maior que 1.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 5 ============ -->
+<div class="painel" id="painel-5" role="tabpanel" aria-labelledby="tab-5">
+  <h2>Aba 5 · Análise de Pontos de Função (FPA): introdução e componentes</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é trocar de régua: em vez de contar linhas de código, como faz o COCOMO (do inglês COnstructive COst MOdel; em português, Modelo Construtivo de Custos), a FPA (do inglês Function Points Analysis; em português, Análise de Pontos de Função) mede o tamanho do sistema pelas <strong>funções que ele entrega ao usuário</strong>. Você vai conhecer os cinco tipos de função (EI, EO, EQ, ILF e EIF) e saber classificar cada um em situações reais.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 O que é e de onde vem a FPA</h3>
+    <p>A FPA (do inglês Function Points Analysis; em português, Análise de Pontos de Função) foi criada por Allan Albrecht (analista da IBM, empresa americana de tecnologia) em 1979, dentro da própria IBM, para responder a uma pergunta incômoda: como comparar a produtividade de equipes que escrevem em linguagens diferentes? Contar linhas favorecia quem usava linguagens verbosas; contar funções, não.</p>
+    <p>Hoje o método é padronizado pelo IFPUG (do inglês International Function Point Users Group; em português, Grupo Internacional de Usuários de Pontos de Função), a entidade que mantém o manual de contagem, e virou norma internacional ISO/IEC 20926 (documento oficial da Organização Internacional de Normalização que descreve o método). No Brasil, a FPA é muito usada em contratos públicos de software, porque permite pagar por função entregue, e não por linha escrita.</p>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Os cinco tipos de função no seu aplicativo de banco</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>EI, Entrada Externa</strong> (do inglês External Input): a tela de cadastro de um novo favorecido, com validações e cálculo de tarifa. Dados entrando e mudando o estado do sistema.</li>
+      <li><strong>EO, Saída Externa</strong> (do inglês External Output): o extrato mensal com saldo calculado e juros derivados. Dados saindo com matemática embutida.</li>
+      <li><strong>EQ, Consulta Externa</strong> (do inglês External Query): a consulta de saldo atual, que só recupera e mostra, sem calcular nada novo.</li>
+      <li><strong>ILF, Arquivo Lógico Interno</strong> (do inglês Internal Logical File): a tabela de contas e clientes que o próprio sistema mantém e atualiza.</li>
+      <li><strong>EIF, Arquivo de Interface Externo</strong> (do inglês External Interface File): a tabela de taxas do Banco Central (autoridade monetária do Brasil) que o seu banco apenas lê, sem manter.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Como a contagem vira número</h3>
+    <p>Cada função contada recebe um <strong>peso</strong> conforme a complexidade (baixa, média ou alta), que depende de quantos dados e quantos arquivos ela toca. Os pesos padrão do IFPUG são: EI vale 3, 4 ou 6; EO vale 4, 5 ou 7; EQ vale 3, 4 ou 6; ILF vale 7, 10 ou 15; EIF vale 5, 7 ou 10. Somando tudo, obtém-se a <strong>contagem não ajustada</strong> de pontos de função.</p>
+    <p>Depois entra o <strong>VAF</strong> (do inglês Value Adjustment Factor; em português, Fator de Ajuste de Valor): catorze características gerais do sistema (como desempenho exigido e facilidade de operação) recebem nota de 0 a 5, a soma vira o TDI (Total Degree of Influence, em português, Total de Graus de Influência) e a fórmula VAF = 0,65 + 0,01 × TDI produz um fator entre 0,65 e 1,35. A <strong>contagem ajustada</strong> é a não ajustada multiplicada pelo VAF.</p>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: classificador de funções FPA</h3>
+
+    <div class="prever">
+      <strong>Antes de jogar, preveja:</strong> a tela de consulta de saldo, que apenas recupera e mostra o valor sem calcular nada, seria EI, EO ou EQ?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, diga a sua previsão para o primeiro caso.<br>
+      <strong>Passo 1:</strong> clique em Novo caso e leia a descrição da função.<br>
+      <strong>Passo 2:</strong> classifique entre EI, EO, EQ, ILF e EIF.<br>
+      <strong>Passo 3:</strong> leia o feedback: erro explica o critério e libera nova tentativa; acerto trava e mostra o exemplo real.
+    </div>
+
+    <div class="roteiro">
+      projete o caso e pergunte: os dados entram, saem calculados, saem crus, ou estamos falando de um depósito de dados? Essa pergunta de quatro pontas resolve quase toda classificação FPA.
+    </div>
+
+    <div class="legenda">
+      EI = Entrada Externa (dados entrando com processamento) · EO = Saída Externa (dados saindo com cálculo ou derivação) · EQ = Consulta Externa (dados saindo sem cálculo) · ILF = Arquivo Lógico Interno (dados mantidos pelo próprio sistema) · EIF = Arquivo de Interface Externo (dados de fora que o sistema só lê)
+    </div>
+
+    <div class="demo-area" id="demo5-area">
+      <div id="demo5-caso" style="background:var(--cor-destaque-claro); padding:1rem; border-radius:8px; margin-bottom:1rem; font-weight:600">
+        📋 O caso aparecerá aqui. Clique em Novo caso para começar.
+      </div>
+      <div id="demo5-opcoes" style="display:none">
+        <button class="btn" type="button" data-tipo5="EI">EI</button>
+        <button class="btn" type="button" data-tipo5="EO">EO</button>
+        <button class="btn" type="button" data-tipo5="EQ">EQ</button>
+        <button class="btn" type="button" data-tipo5="ILF">ILF</button>
+        <button class="btn" type="button" data-tipo5="EIF">EIF</button>
+      </div>
+      <div id="demo5-feedback" style="margin-top:1rem"></div>
+      <div style="margin-top:1rem">
+        <button class="btn" type="button" id="demo5-novo">🎲 Novo caso</button>
+        <button class="btn btn-secundario" type="button" id="demo5-reset">🔄 Reiniciar demo</button>
+      </div>
+      <div id="demo5-placar" style="margin-top:1rem; font-weight:bold; color:var(--cor-destaque-escuro)"></div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 5</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      FPA = Análise de Pontos de Função, que mede o tamanho do sistema pelas funções entregues ·
+      EI = Entrada Externa, dados entrando com processamento ·
+      EO = Saída Externa, dados saindo com cálculo ou derivação ·
+      EQ = Consulta Externa, dados saindo sem cálculo ·
+      ILF = Arquivo Lógico Interno, dados mantidos pelo próprio sistema ·
+      EIF = Arquivo de Interface Externo, dados de fora que o sistema só lê ·
+      VAF = Fator de Ajuste de Valor, multiplicador final da contagem.
+    </div>
+
+    <div class="pergunta" data-pergunta="5-1">
+      <p>1. A tela onde o atendente cadastra um novo cliente, com validações de CPF (cadastro de pessoa física) e cálculo de tarifa, é qual tipo de função?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! Dados entrando no sistema, com validação e processamento que mudam o estado interno (cria um cliente novo), é a definição de Entrada Externa, a EI.">EI, Entrada Externa</button>
+        <button class="alt" type="button" data-fb="Errado! EO é saída: dados indo para fora com cálculo. Aqui os dados ENTRAM para criar um cliente, então o fluxo é de entrada, não de saída.">EO, Saída Externa</button>
+        <button class="alt" type="button" data-fb="Errado! ILF é o depósito de dados mantido pelo sistema (a tabela de clientes), não a tela que grava nela. A tela é a função; a tabela é o arquivo.">ILF, Arquivo Lógico Interno</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="5-2">
+      <p>2. O extrato mensal do banco, que soma movimentações e aplica juros para montar cada linha, é qual tipo de função?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! EQ é a consulta simples que só recupera e mostra, sem matemática. O extrato deriva valores (somas, juros), e derivação é a marca registrada da EO.">EQ, Consulta Externa</button>
+        <button class="alt" type="button" data-fb="Correto! Dados saindo do sistema com cálculo e derivação (somas de movimentações, juros aplicados) formam uma Saída Externa, a EO. É por isso que o extrato pesa mais que uma consulta de saldo.">EO, Saída Externa</button>
+        <button class="alt" type="button" data-fb="Errado! EIF é um arquivo de fora que o sistema apenas lê, como a tabela de taxas do Banco Central. O extrato não é um arquivo externo: é uma saída produzida pelo sistema.">EIF, Arquivo de Interface Externo</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="5-3">
+      <p>3. A tabela de taxas divulgada pelo Banco Central (autoridade monetária do Brasil), que o sistema do banco apenas lê e nunca altera, é qual tipo de função?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! ILF é o arquivo que o PRÓPRIO sistema mantém e atualiza. A tabela de taxas não é mantida pelo banco: ela vem de fora, então não pode ser interna.">ILF, Arquivo Lógico Interno</button>
+        <button class="alt" type="button" data-fb="Errado! EI é uma entrada que processa e muda o estado do sistema, como um cadastro. Ler uma tabela de referência não altera nada: é uso de arquivo externo, não entrada de processamento.">EI, Entrada Externa</button>
+        <button class="alt" type="button" data-fb="Correto! Um grupo de dados mantido por OUTRO sistema e apenas lido pelo seu é um Arquivo de Interface Externo, o EIF. A tabela de taxas do Banco Central é o exemplo de livro desse tipo.">EIF, Arquivo de Interface Externo</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 5</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=análise+de+pontos+de+função+FPA+tipos+de+função" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=análise+de+pontos+de+função+métrica+de+software" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=análise+de+pontos+de+função+aula+completa" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Ponto de função</strong>: unidade de medida do tamanho funcional do sistema, do ponto de vista do usuário.</li>
+      <li><strong>Complexidade</strong>: classificação baixa, média ou alta que define o peso de cada função.</li>
+      <li><strong>Contagem não ajustada</strong>: soma dos pesos antes do fator de ajuste.</li>
+      <li><strong>VAF</strong>: Fator de Ajuste de Valor, entre 0,65 e 1,35, calculado com catorze características gerais.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> A Análise de Pontos de Função conta linhas de código do sistema.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> a FPA conta funções percebidas pelo usuário (entradas, saídas, consultas e arquivos lógicos), justamente para não depender de linguagem nem de linhas. Por isso ela compara equipes que programam em linguagens diferentes.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 6 - REVISÃO ============ -->
+<div class="painel" id="painel-6" role="tabpanel" aria-labelledby="tab-6">
+  <h2>⭐ Revisão — Mapa completo da aula</h2>
+
+  <h3>🗺️ Mapa da aula</h3>
+  <div class="revisao-mapa">
+    <div class="no-mapa">
+      <h4>Aba 1 · Intro COCOMO</h4>
+      <p>Estimar é difícil: obras e sistemas famosos estouraram orçamento. O COCOMO nasce em 1981, com Boehm, para trocar otimismo por matemática.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 2 · Componentes</h4>
+      <p>Três modos (orgânico, semidestacado, embutido), três níveis (básico, intermediário, detalhado) e os 15 direcionadores de custo.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 3 · Na prática</h4>
+      <p>As duas contas do básico: esforço a partir do tamanho e prazo a partir do esforço; equipe média é esforço dividido pelo prazo.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 4 · Limitações</h4>
+      <p>O erro entra no tamanho estimado e o expoente maior que 1 amplifica; reuso e agile (ciclos curtos de entrega) ficam fora do modelo de 1981.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 5 · FPA</h4>
+      <p>A outra régua: cinco tipos de função (EI, EO, EQ, ILF, EIF), pesos por complexidade e o fator de ajuste final.</p>
+    </div>
+    <div class="no-mapa">
+      <h4> Estudo em casa</h4>
+      <p>Refaça os quizzes para garantir os 5 selos e resolva o Chefão com a cola rápida ao lado.</p>
+    </div>
+  </div>
+
+  <div class="cola-rapida">
+    <h3>🧷 Cola rápida — glossário da aula</h3>
+    <dl>
+      <dt><strong>COCOMO</strong></dt>
+      <dd>Modelo Construtivo de Custos: fórmulas que transformam tamanho do código em esforço, prazo e custo.</dd>
+
+      <dt><strong>KLOC</strong></dt>
+      <dd>Milhares de linhas de código: 1 KLOC equivale a mil linhas do programa.</dd>
+
+      <dt><strong>Pessoa-mês</strong></dt>
+      <dd>O trabalho de uma pessoa durante um mês inteiro; unidade de esforço das contas.</dd>
+
+      <dt><strong>E (esforço)</strong></dt>
+      <dd>Resultado da primeira conta do COCOMO: quantos pessoas-mês o projeto consome.</dd>
+
+      <dt><strong>D (prazo)</strong></dt>
+      <dd>Resultado da segunda conta: quantos meses de calendário o projeto dura.</dd>
+
+      <dt><strong>Coeficientes a, b, c, d</strong></dt>
+      <dd>Os quatro números fixos de cada modo dentro das duas fórmulas (valores na Aba 3).</dd>
+
+      <dt><strong>Modo orgânico</strong></dt>
+      <dd>Família de projetos simples: equipe pequena e experiente em domínio conhecido.</dd>
+
+      <dt><strong>Modo semidestacado</strong></dt>
+      <dd>Família intermediária: equipe e requisitos mistos, entre o conhecido e o novo.</dd>
+
+      <dt><strong>Modo embutido</strong></dt>
+      <dd>Família mais difícil: software preso a restrições fortes de hardware, segurança ou tempo real.</dd>
+
+      <dt><strong>Direcionadores de custo</strong></dt>
+      <dd>Os 15 fatores multiplicativos do nível intermediário, como experiência da equipe e confiabilidade exigida.</dd>
+
+      <dt><strong>Calibração</strong></dt>
+      <dd>Ajuste dos coeficientes com o histórico de projetos reais da própria empresa.</dd>
+
+      <dt><strong>FPA</strong></dt>
+      <dd>Análise de Pontos de Função: mede o tamanho do sistema pelas funções entregues ao usuário, não por linhas.</dd>
+
+      <dt><strong>EI (Entrada Externa)</strong></dt>
+      <dd>Função em que dados entram e mudam o estado do sistema, como um cadastro com validações.</dd>
+
+      <dt><strong>EO (Saída Externa)</strong></dt>
+      <dd>Função em que dados saem com cálculo ou derivação, como um extrato com juros.</dd>
+
+      <dt><strong>EQ (Consulta Externa)</strong></dt>
+      <dd>Função em que dados saem apenas recuperados, sem cálculo, como uma consulta de saldo.</dd>
+
+      <dt><strong>ILF (Arquivo Lógico Interno)</strong></dt>
+      <dd>Grupo de dados que o próprio sistema mantém e atualiza, como a tabela de clientes.</dd>
+
+      <dt><strong>EIF (Arquivo de Interface Externo)</strong></dt>
+      <dd>Grupo de dados mantido por outro sistema que o seu apenas lê, como a tabela de taxas do Banco Central.</dd>
+
+      <dt><strong>VAF (Fator de Ajuste de Valor)</strong></dt>
+      <dd>Multiplicador final entre 0,65 e 1,35, calculado com catorze características gerais do sistema.</dd>
+
+      <dt><strong>IFPUG</strong></dt>
+      <dd>Grupo internacional que padroniza o manual de contagem de pontos de função.</dd>
+    </dl>
+  </div>
+
+  <div class="chefao">
+    <h3>👑 CHEFÃO — Desafio final</h3>
+    <p><strong>Enunciado:</strong> A cooperativa de crédito <strong>CrediCampo</strong> (cooperativa fictícia de crédito rural, inspirada no modelo do Sicoob, sistema de cooperativas de crédito do Brasil) pediu duas estimativas independentes para o seu novo sistema de crédito rural, e você é a pessoa responsável por entregá-las e compará-las.</p>
+
+    <p style="margin-top:1rem"><strong>Parte 1 — a régua do código (COCOMO):</strong> o projeto foi dimensionado em 50 KLOC (cinquenta mil linhas de código, termo na cola rápida) e classificado como semidestacado, porque mistura equipe experiente e módulos novos. Usando o COCOMO básico (coeficientes na Aba 3: a = 3,0 · b = 1,12 · c = 2,5 · d = 0,35):</p>
+    <ol style="margin-left:1.5rem">
+      <li>Calcule o esforço E em pessoas-mês (trabalho de uma pessoa em um mês, termo na cola rápida), mostrando a substituição na fórmula.</li>
+      <li>Calcule o prazo D em meses e a equipe média (E dividido por D).</li>
+      <li>Se o KLOC real acabar 40% acima do estimado, explique com as palavras da Aba 4 por que o erro no esforço será MAIOR que 40%, citando o papel do expoente b (termo na cola rápida).</li>
+    </ol>
+
+    <p style="margin-top:1rem"><strong>Parte 2 — a régua das funções (FPA):</strong> o levantamento funcional encontrou: 6 cadastros com validação (EI, Entrada Externa), 4 relatórios com cálculo (EO, Saída Externa), 3 consultas simples (EQ, Consulta Externa), 5 tabelas mantidas pelo sistema (ILF, Arquivo Lógico Interno) e 2 tabelas de órgãos externos só lidas (EIF, Arquivo de Interface Externo). Considerando todas as funções de complexidade média, com os pesos padrão do IFPUG (grupo que padroniza a contagem, termo na cola rápida): EI = 4 · EO = 5 · EQ = 4 · ILF = 10 · EIF = 7:</p>
+    <ol style="margin-left:1.5rem">
+      <li>Calcule a contagem não ajustada de pontos de função (soma dos pesos vezes as quantidades).</li>
+      <li>Explique, em uma frase, o que o VAF (Fator de Ajuste de Valor, termo na cola rápida) faria com esse número e por que ele existe.</li>
+    </ol>
+
+    <p style="margin-top:1rem"><strong>Parte 3 — o veredito:</strong> em um parágrafo, diga qual das duas réguas (COCOMO ou FPA) você usaria para fechar o preço do contrato com a CrediCampo e qual usaria para planejar a equipe interna, justificando com uma vantagem e uma limitação de cada uma (limitações na cola rápida e na Aba 4).</p>
+  </div>
+
+  <details>
+    <summary>📚 Dica para o Chefão</summary>
+    <p style="margin-top:0.75rem">Na Parte 1, comece calculando 50 elevado a 1,12 com calma (use a tecla de potência da calculadora) e só então multiplique por 3,0. Na Parte 2, monte uma tabelinha com cinco linhas, uma por tipo de função: quantidade vezes peso, e some no final. O VAF não muda a sua soma: ele apenas a multiplica no fim, para refletir características gerais como desempenho e facilidade de operação.</p>
+  </details>
+</div>
+
+<!-- ============ RODAPÉ ============ -->
+<footer>
+  <div class="bloco">
+    <h4>📋 FICHA TÉCNICA DA AULA</h4>
+    <p>DEVOPS — Aula 4, Unidade 2, págs. 9–28 · Gerado em 29/10/2026 · 5 abas de conteúdo + Revisão · 15 perguntas · 5 demos · cor #2A9D8F</p>
+  </div>
+
+  <div class="bloco">
+    <h4>🪄 SOBRE O HTMLearning · v2.17 (23/10/2026)</h4>
+    <p style="margin-bottom:0.75rem">Transformar o sumário de qualquer disciplina em uma classe interativa em HTML único e offline, com previsão antes do clique, tentativa e erro guiado e exemplos reais.</p>
+
+    <ul style="margin-left:1.5rem; margin-bottom:0.75rem">
+      <li>O que é: metodologia e arquitetura de prompts que converte sumários em aulas interativas em minutos, com IAs gratuitas.</li>
+      <li>O que entrega: 5 a 7 abas + Revisão, simulações com previsão, quiz com retry sem revelar gabarito, linguagem plana, Modos Apresentação/Leitura.</li>
+      <li>Por que é inclusivo: um único .html leve, 100% offline, roda em PC e celular e viaja em pen drive para escolas desconectadas ou áreas rurais.</li>
+    </ul>
+
+    <p style="margin-bottom:0.5rem">Idealizador do projeto: Professor Wellington Dimas da Cruz</p>
+    <p style="margin-bottom:0.75rem">Apoiadora do projeto: Prof.ª Dr.ª Mariella Berger Andrade (IFES / CEFOR)</p>
+
+    <p style="margin-top:0.75rem">Contatos e links do projeto:</p>
+    <ul>
+      <li>E-mail do idealizador: <a href="mailto:cloud.ai-generative@outlook.com">cloud.ai-generative@outlook.com</a></li>
+      <li>Repositório GitHub do idealizador: <a href="https://github.com/cloud-ai-Generative" target="_blank" rel="noopener">github.com/cloud-ai-Generative</a></li>
+      <li>Currículo Lattes do idealizador: <a href="https://lattes.cnpq.br/6801791839011321" target="_blank" rel="noopener">lattes.cnpq.br/6801791839011321</a></li>
+      <li>Currículo Lattes da apoiadora: <a href="https://lattes.cnpq.br/3929645439848570" target="_blank" rel="noopener">lattes.cnpq.br/3929645439848570</a></li>
+      <li>Site oficial do projeto: <a href="https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html" target="_blank" rel="noopener">https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html</a></li>
+    </ul>
+  </div>
+</footer>
+
+<script>
+"use strict";
+
+/* ================= DADOS ================= */
+var projetosMuseu = {
+  sydney: {
+    nome: "Ópera de Sydney (casa de espetáculos na Austrália)",
+    estimado: "Cerca de 7 milhões de dólares e 4 anos de obra, no projeto aprovado em 1957.",
+    real: "Cerca de 102 milhões de dólares e 14 anos: inaugurada em 1973, com quase 15 vezes o orçamento.",
+    licao: "Premissas otimistas e mudanças de escopo sem reestimativa transformam um ícone arquitetônico em um ícone de estouro de custo."
+  },
+  euro: {
+    nome: "Eurotúnel (túnel ferroviário sob o Canal da Mancha)",
+    estimado: "Orçamento de referência na assinatura do contrato, nos anos 1980.",
+    real: "Custo final cerca de 80% acima do estimado, com anos de renegociação de dívidas.",
+    licao: "Em projetos longos, juros e atrasos compostos viram uma segunda obra invisível dentro da primeira."
+  },
+  denver: {
+    nome: "Sistema de bagagens do aeroporto de Denver (Estados Unidos)",
+    estimado: "Um componente a mais do aeroporto, com cronograma próprio curto.",
+    real: "Atrasou a abertura do aeroporto em cerca de 16 meses em 1995, custando cerca de 1,1 milhão de dólares por dia de espera.",
+    licao: "Subestimar a complexidade de integração de software pode parar uma obra inteira: o gargalo virou o código, não o concreto."
+  },
+  londres: {
+    nome: "Sistema de despacho do Serviço de Ambulâncias de Londres (Reino Unido)",
+    estimado: "Um sistema computadorizado para substituir o quadro de anotações manual.",
+    real: "Falhou nos primeiros dias de operação em 1992 e foi desligado, com impacto direto no atendimento de emergência.",
+    licao: "Quando a estimativa ignora requisitos críticos de carga e falha, o custo não é financeiro apenas: é humano."
+  }
+};
+
+var cenariosModo = [
+  {
+    descricao: "Uma equipe de 3 pessoas que já fez cinco sites institucionais parecidos vai fazer o sexto, para uma câmara municipal conhecida.",
+    certa: "organico",
+    fbCerta: "Isso mesmo! Equipe pequena, experiente e domínio já conhecido é o retrato do modo orgânico: poucas restrições e muito conhecimento prévio.",
+    fbOutros: "Não é esse o modo. Aqui não há restrições fortes de hardware nem mistura de requisitos: equipe pequena e domínio conhecido apontam para o modo mais simples."
+  },
+  {
+    descricao: "Um sistema de matrículas de universidade pública mistura regras novas de cotas com módulos antigos de secretaria, com equipe metade veterana e metade novata.",
+    certa: "semidestacado",
+    fbCerta: "Isso mesmo! Equipe mista e requisitos que misturam o familiar e o novo definem o modo semidestacado, o meio-termo do COCOMO.",
+    fbOutros: "Não é esse o modo. Repare na mistura: equipe metade veterana e metade novata, requisitos novos e antigos. Esse meio-termo tem nome: semidestacado."
+  },
+  {
+    descricao: "O software de controle de um marcapasso cardíaco precisa responder em tempo real e passar por certificação rigorosa de segurança.",
+    certa: "embutido",
+    fbCerta: "Isso mesmo! Tempo real e certificação rigorosa de segurança são a assinatura do modo embutido: o software vive preso a restrições duras.",
+    fbOutros: "Não é esse o modo. Quando há tempo real e certificação de segurança, as restrições dominam tudo: é o caso mais difícil da família, o embutido."
+  },
+  {
+    descricao: "Uma padaria de bairro quer um sistema de pedidos no balcão, feito por um desenvolvedor que já fez três sistemas iguais para outras padarias.",
+    certa: "organico",
+    fbCerta: "Isso mesmo! Repetição de domínio conhecido com equipe enxuta é o modo orgânico clássico: o esforço por linha de código é o menor dos três.",
+    fbOutros: "Não é esse o modo. Um desenvolvedor que já fez três sistemas iguais para o mesmo ramo é o cenário mais tranquilo possível: modo orgânico."
+  },
+  {
+    descricao: "O software de frenagem e estabilidade de um ônibus elétrico roda em hardware limitado e precisa reagir em milissegundos, com auditoria de órgão regulador.",
+    certa: "embutido",
+    fbCerta: "Isso mesmo! Hardware limitado, reação em milissegundos e auditoria externa formam o trio que empurra o projeto para o modo embutido.",
+    fbOutros: "Não é esse o modo. Hardware limitado mais prazo de resposta em milissegundos mais auditoria externa: todas as amarras apontam para o embutido."
+  },
+  {
+    descricao: "Um hospital público integra agendamento novo com prontuário legado de dez anos, usando equipe própria e consultores externos juntos.",
+    certa: "semidestacado",
+    fbCerta: "Isso mesmo! Integração de novo com legado e equipe mista (própria mais consultores) é o cenário típico do modo semidestacado.",
+    fbOutros: "Não é esse o modo. Novo convivendo com legado de dez anos e equipe mista de casa e consultores: esse é o intermediário semidestacado."
+  }
+];
+
+var modosCoef = {
+  organico: { a: 2.4, b: 1.05, c: 2.5, d: 0.38, rotulo: "Orgânico" },
+  semidestacado: { a: 3.0, b: 1.12, c: 2.5, d: 0.35, rotulo: "Semidestacado" },
+  embutido: { a: 3.6, b: 1.20, c: 2.5, d: 0.32, rotulo: "Embutido" }
+};
+
+var casosFPA = [
+  {
+    descricao: "Tela em que o caixa registra o pagamento de uma fatura, com validação de código de barras e atualização do saldo devedor.",
+    certa: "EI",
+    fbCerta: "Isso mesmo! Dados entrando com validação e mudança de estado interno (o saldo devedor muda) formam uma Entrada Externa.",
+    fbOutros: "Não é esse o tipo. Pergunte: os dados entram ou saem? Aqui eles ENTRAM e mudam o estado do sistema: é uma Entrada Externa."
+  },
+  {
+    descricao: "Relatório de inadimplência que cruza contratos, calcula percentuais por faixa de atraso e gera gráfico para a diretoria.",
+    certa: "EO",
+    fbCerta: "Isso mesmo! Dados saindo com cálculo e derivação (percentuais, cruzamentos, gráfico) formam uma Saída Externa.",
+    fbOutros: "Não é esse o tipo. Há cálculo e derivação na saída (percentuais e gráfico): quando a saída tem matemática embutida, é Saída Externa."
+  },
+  {
+    descricao: "Tela que mostra o endereço e o telefone de um cliente exatamente como estão gravados, sem nenhum cálculo.",
+    certa: "EQ",
+    fbCerta: "Isso mesmo! Recuperar e mostrar sem calcular nada é a definição exata de Consulta Externa.",
+    fbOutros: "Não é esse o tipo. Sem cálculo e sem derivação, apenas recuperar e mostrar: esse é o papel da Consulta Externa."
+  },
+  {
+    descricao: "Conjunto de dados de contratos de financiamento que o próprio sistema cria, altera e exclui ao longo dos anos.",
+    certa: "ILF",
+    fbCerta: "Isso mesmo! Um grupo de dados mantido e atualizado pelo próprio sistema é um Arquivo Lógico Interno.",
+    fbOutros: "Não é esse o tipo. Quem MANTÉM e atualiza esses dados é o próprio sistema: arquivo mantido internamente é Arquivo Lógico Interno."
+  },
+  {
+    descricao: "Tabela de índices de correção monetária publicada por um órgão do governo, que o sistema consulta mas nunca altera.",
+    certa: "EIF",
+    fbCerta: "Isso mesmo! Dados mantidos por outro organismo e apenas lidos pelo seu sistema formam um Arquivo de Interface Externo.",
+    fbOutros: "Não é esse o tipo. O sistema não mantém essa tabela: ele só lê dados de fora. Arquivo de fora só lido é Arquivo de Interface Externo."
+  },
+  {
+    descricao: "Formulário de abertura de conta que valida documentos, calcula a tarifa de abertura conforme o pacote escolhido e grava o novo cliente.",
+    certa: "EI",
+    fbCerta: "Isso mesmo! Entrada com validação e processamento que cria um registro novo: Entrada Externa com todas as letras.",
+    fbOutros: "Não é esse o tipo. O fluxo é de ENTRADA com validação e gravação de registro novo: Entrada Externa."
+  }
+];
+
+/* ================= ESTADO ================= */
+var estado = {
+  abaAtual: 1,
+  xp: 0,
+  selos: {},
+  totalSelos: 0,
+  respostas: {},
+  modo: "leitura",
+  tema: "claro"
+};
+
+var demo2Estado = { atual: null, resolvidos: 0, acertos: 0 };
+var demo3Estado = { modo: "organico" };
+var demo4Estado = { modo: "organico" };
+var demo5Estado = { atual: null, resolvidos: 0, acertos: 0 };
+
+/* ================= NAVEGAÇÃO ================= */
+function ativarAba(num) {
+  estado.abaAtual = num;
+  var tabs = document.querySelectorAll(".tab");
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].setAttribute("aria-selected", tabs[i].getAttribute("data-aba") === String(num) ? "true" : "false");
+  }
+  var paineis = document.querySelectorAll(".painel");
+  for (var j = 0; j < paineis.length; j++) {
+    paineis[j].classList.remove("active");
+  }
+  var alvo = document.getElementById("painel-" + num);
+  if (alvo) alvo.classList.add("active");
+  document.getElementById("progresso").textContent = "Aba " + num + " de 6";
+}
+
+function irParaAba(num) {
+  ativarAba(num);
+  var novo = "#aba-" + num;
+  if (window.location.hash !== novo) {
+    window.location.hash = novo;
+  }
+  window.scrollTo(0, 0);
+}
+
+function lerHash() {
+  var h = window.location.hash.replace("#aba-", "");
+  var n = parseInt(h, 10);
+  if (n >= 1 && n <= 6) return n;
+  return 0;
+}
+
+window.addEventListener("hashchange", function () {
+  var n = lerHash();
+  if (n && n !== estado.abaAtual) ativarAba(n);
+});
+
+/* ================= MODOS ================= */
+function alternarModo() {
+  if (estado.modo === "leitura") {
+    document.body.classList.add("modo-apresentacao");
+    document.getElementById("btn-modo").textContent = "📖 Leitura";
+    estado.modo = "apresentacao";
+  } else {
+    document.body.classList.remove("modo-apresentacao");
+    document.getElementById("btn-modo").textContent = "🎤 Apresentação";
+    estado.modo = "leitura";
+  }
+}
+
+function alternarTema() {
+  if (estado.tema === "claro") {
+    document.body.setAttribute("data-theme", "dark");
+    document.getElementById("btn-tema").textContent = "☀️ Claro";
+    estado.tema = "escuro";
+  } else {
+    document.body.removeAttribute("data-theme");
+    document.getElementById("btn-tema").textContent = "🌙 Escuro";
+    estado.tema = "claro";
+  }
+}
+
+/* ================= QUIZ ================= */
+function fisherYates(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function inicializarQuiz() {
+  var perguntas = document.querySelectorAll(".pergunta");
+  for (var p = 0; p < perguntas.length; p++) {
+    (function (perg) {
+      var altsDiv = perg.querySelector(".alts");
+      var certaKey = altsDiv.getAttribute("data-certa");
+      var alts = [];
+      var filhos = altsDiv.querySelectorAll(".alt");
+      for (var k = 0; k < filhos.length; k++) alts.push(filhos[k]);
+      for (var idx = 0; idx < alts.length; idx++) {
+        var letra = String.fromCharCode(97 + idx);
+        alts[idx].setAttribute("data-ehcerta", letra === certaKey ? "true" : "false");
+      }
+      var emb = fisherYates(alts);
+      altsDiv.innerHTML = "";
+      for (var e = 0; e < emb.length; e++) {
+        altsDiv.appendChild(emb[e]);
+        emb[e].addEventListener("click", function () { responderQuiz(perg, this); });
+      }
+    })(perguntas[p]);
+  }
+}
+
+function responderQuiz(perg, alt) {
+  var id = perg.getAttribute("data-pergunta");
+  var reg = estado.respostas[id];
+  if (reg && reg.acertou) return;
+
+  var acerto = alt.getAttribute("data-ehcerta") === "true";
+  var fbCerta = perg.querySelector(".fb-certa");
+  var fbErrada = perg.querySelector(".fb-errada");
+
+  if (acerto) {
+    alt.classList.add("certa");
+    alt.textContent = "✓ " + alt.textContent;
+    var todas = perg.querySelectorAll(".alt");
+    for (var i = 0; i < todas.length; i++) todas[i].disabled = true;
+    fbCerta.textContent = "✅ Por que esta está certa: " + alt.getAttribute("data-fb");
+    fbCerta.classList.add("show");
+    fbErrada.classList.remove("show");
+    var pontos = (reg && !reg.acertou) ? 5 : 10;
+    estado.xp += pontos;
+    estado.respostas[id] = { acertou: true };
+    verificarSelo(id);
+    atualizarXP();
+  } else {
+    alt.classList.add("errada");
+    alt.textContent = "✗ " + alt.textContent;
+    alt.disabled = true;
+    fbErrada.textContent = "❌ Por que esta está errada: " + alt.getAttribute("data-fb");
+    fbErrada.classList.add("show");
+    if (!reg) estado.respostas[id] = { acertou: false };
+  }
+}
+
+function verificarSelo(id) {
+  var aba = id.split("-")[0];
+  var ids = [aba + "-1", aba + "-2", aba + "-3"];
+  for (var i = 0; i < ids.length; i++) {
+    var r = estado.respostas[ids[i]];
+    if (!r || !r.acertou) return;
+  }
+  if (!estado.selos[aba]) {
+    estado.selos[aba] = true;
+    estado.totalSelos += 1;
+    document.getElementById("selos").textContent = estado.totalSelos;
+  }
+}
+
+function atualizarXP() {
+  document.getElementById("xp").textContent = estado.xp;
+}
+
+/* ================= DEMO 1 ================= */
+function demo1Mostrar(proj) {
+  var d = projetosMuseu[proj];
+  if (!d) return;
+  document.getElementById("demo1-ficha").innerHTML =
+    '<div style="border-left:4px solid var(--cor-destaque); padding-left:1rem">' +
+    '<h4 style="color:var(--cor-destaque-escuro); margin-bottom:0.5rem">' + d.nome + '</h4>' +
+    '<p><strong>🎯 Estimado:</strong> ' + d.estimado + '</p>' +
+    '<p><strong>💥 Realizado:</strong> ' + d.real + '</p>' +
+    '<p><strong>📚 Lição:</strong> ' + d.licao + '</p>' +
+    '</div>';
+}
+
+function demo1Reiniciar() {
+  document.getElementById("demo1-ficha").innerHTML = "👆 Clique em um projeto acima para abrir o cartão Estimado versus Realizado.";
+}
+
+/* ================= DEMO 2 ================= */
+function demo2Novo() {
+  var i = Math.floor(Math.random() * cenariosModo.length);
+  demo2Estado.atual = cenariosModo[i];
+  document.getElementById("demo2-cenario").innerHTML = "📋 " + demo2Estado.atual.descricao;
+  document.getElementById("demo2-opcoes").style.display = "block";
+  document.getElementById("demo2-feedback").innerHTML = "";
+}
+
+function demo2Responder(modo) {
+  if (!demo2Estado.atual) return;
+  var certa = modo === demo2Estado.atual.certa;
+  var fb = document.getElementById("demo2-feedback");
+  demo2Estado.resolvidos += 1;
+  if (certa) {
+    demo2Estado.acertos += 1;
+    fb.innerHTML = '<div class="resultado-demo">✅ <strong>Modo correto!</strong> ' + demo2Estado.atual.fbCerta + '</div>';
+  } else {
+    fb.innerHTML = '<div class="resultado-erro">❌ <strong>Modo incorreto.</strong> ' + demo2Estado.atual.fbOutros + '</div>';
+  }
+  document.getElementById("demo2-opcoes").style.display = "none";
+  document.getElementById("demo2-placar").textContent = "Placar: " + demo2Estado.acertos + " acertos em " + demo2Estado.resolvidos + " cenários";
+}
+
+function demo2Reiniciar() {
+  demo2Estado.atual = null;
+  demo2Estado.resolvidos = 0;
+  demo2Estado.acertos = 0;
+  document.getElementById("demo2-cenario").innerHTML = "📋 O cenário aparecerá aqui. Clique em Novo cenário para começar.";
+  document.getElementById("demo2-opcoes").style.display = "none";
+  document.getElementById("demo2-feedback").innerHTML = "";
+  document.getElementById("demo2-placar").textContent = "";
+}
+
+/* ================= DEMO 3 ================= */
+function arredondar(x) {
+  return Math.round(x * 10) / 10;
+}
+
+function demo3Calcular() {
+  var kloc = parseFloat(document.getElementById("demo3-kloc").value);
+  if (!kloc || kloc < 1) kloc = 1;
+  if (kloc > 2000) kloc = 2000;
+  var m = modosCoef[demo3Estado.modo];
+  var potB = Math.pow(kloc, m.b);
+  var E = m.a * potB;
+  var potD = Math.pow(E, m.d);
+  var D = m.c * potD;
+  var equipe = E / D;
+
+  var linhas = [];
+  linhas.push("Modo: " + m.rotulo + "  (a=" + m.a + ", b=" + m.b + ", c=" + m.c + ", d=" + m.d + ")");
+  linhas.push("Passo 1: E = a * (KLOC ^ b)");
+  linhas.push("Passo 2: KLOC ^ b = " + kloc + " ^ " + m.b + " = " + arredondar(potB * 10) / 10);
+  linhas.push("Passo 3: E = " + m.a + " * " + arredondar(potB) + " = " + arredondar(E) + " pessoas-mes");
+  linhas.push("Passo 4: D = c * (E ^ d)");
+  linhas.push("Passo 5: E ^ d = " + arredondar(E) + " ^ " + m.d + " = " + arredondar(potD));
+  linhas.push("Passo 6: D = " + m.c + " * " + arredondar(potD) + " = " + arredondar(D) + " meses");
+  linhas.push("Passo 7: equipe media = E / D = " + arredondar(E) + " / " + arredondar(D) + " = " + arredondar(equipe) + " pessoas");
+  document.getElementById("demo3-passos").textContent = linhas.join("\n");
+
+  var comparacao = "";
+  if (kloc >= 150 && kloc <= 200) {
+    comparacao = " Para comparar: o Linux 1.0 (nucleo do sistema Linux de 1994) tinha cerca de 176 KLOC.";
+  } else if (kloc <= 10) {
+    comparacao = " Para comparar: um trabalho de conclusao de curso tipicamente fica entre 2 e 10 KLOC.";
+  } else {
+    comparacao = " Para comparar: o Linux 1.0 (nucleo do sistema Linux de 1994) tinha cerca de 176 KLOC, e um trabalho de curso fica entre 2 e 10 KLOC.";
+  }
+
+  document.getElementById("demo3-resultado").innerHTML =
+    '<div class="resultado-demo">📦 Resultado: esforco de <strong>' + arredondar(E) + ' pessoas-mes</strong>, prazo de <strong>' +
+    arredondar(D) + ' meses</strong> e equipe media de <strong>' + arredondar(equipe) + ' pessoas</strong>.' +
+    comparacao + '</div>';
+}
+
+function demo3Reiniciar() {
+  document.getElementById("demo3-kloc").value = "10";
+  demo3Estado.modo = "organico";
+  document.getElementById("demo3-passos").textContent = "// as linhas da substituicao aparecerão aqui";
+  document.getElementById("demo3-resultado").innerHTML = "";
+}
+
+/* ================= DEMO 4 ================= */
+function demo4Comparar() {
+  var kest = parseFloat(document.getElementById("demo4-kest").value);
+  var kreal = parseFloat(document.getElementById("demo4-kreal").value);
+  if (!kest || kest < 1) kest = 1;
+  if (!kreal || kreal < 1) kreal = 1;
+  var m = modosCoef[demo4Estado.modo];
+
+  var erroK = ((kreal - kest) / kest) * 100;
+  var Eest = m.a * Math.pow(kest, m.b);
+  var Ereal = m.a * Math.pow(kreal, m.b);
+  var erroE = ((Ereal - Eest) / Eest) * 100;
+
+  var largK = Math.min(Math.abs(erroK), 100);
+  var largE = Math.min(Math.abs(erroE), 100);
+
+  var html =
+    '<div style="margin-bottom:0.75rem"><strong>Modo ' + m.rotulo + '</strong> (expoente b = ' + m.b + ')</div>' +
+    '<div style="margin-bottom:0.5rem">Erro no tamanho: ' + arredondar(erroK) + '%</div>' +
+    '<div style="background:var(--fundo-codigo); border-radius:4px; height:22px; margin-bottom:1rem">' +
+    '<div style="background:var(--aviso); height:22px; width:' + largK + '%; border-radius:4px"></div></div>' +
+    '<div style="margin-bottom:0.5rem">Erro no esforco: ' + arredondar(erroE) + '%</div>' +
+    '<div style="background:var(--fundo-codigo); border-radius:4px; height:22px; margin-bottom:1rem">' +
+    '<div style="background:var(--erro); height:22px; width:' + largE + '%; border-radius:4px"></div></div>' +
+    '<div class="resultado-erro">📈 O esforco estimado com o tamanho errado foi de ' + arredondar(Eest) +
+    ' pessoas-mes, enquanto o esforco com o tamanho real seria de ' + arredondar(Ereal) +
+    ' pessoas-mes. Como o expoente b e maior que 1, o erro no esforco (' + arredondar(erroE) +
+    '%) supera o erro no tamanho (' + arredondar(erroK) + '%). Foi essa amplificacao que transformou otimismo em prejuizo em casos como o sistema de bagagens do aeroporto de Denver (Estados Unidos, 1995).</div>';
+
+  document.getElementById("demo4-resultado").innerHTML = html;
+}
+
+function demo4Reiniciar() {
+  document.getElementById("demo4-kest").value = "100";
+  document.getElementById("demo4-kreal").value = "150";
+  demo4Estado.modo = "organico";
+  document.getElementById("demo4-resultado").innerHTML = "";
+}
+
+/* ================= DEMO 5 ================= */
+function demo5Novo() {
+  var i = Math.floor(Math.random() * casosFPA.length);
+  demo5Estado.atual = casosFPA[i];
+  document.getElementById("demo5-caso").innerHTML = "📋 " + demo5Estado.atual.descricao;
+  document.getElementById("demo5-opcoes").style.display = "block";
+  document.getElementById("demo5-feedback").innerHTML = "";
+}
+
+function demo5Responder(tipo) {
+  if (!demo5Estado.atual) return;
+  var certa = tipo === demo5Estado.atual.certa;
+  var fb = document.getElementById("demo5-feedback");
+  demo5Estado.resolvidos += 1;
+  if (certa) {
+    demo5Estado.acertos += 1;
+    fb.innerHTML = '<div class="resultado-demo">✅ <strong>Classificacao correta!</strong> ' + demo5Estado.atual.fbCerta + '</div>';
+  } else {
+    fb.innerHTML = '<div class="resultado-erro">❌ <strong>Classificacao incorreta.</strong> ' + demo5Estado.atual.fbOutros + '</div>';
+  }
+  document.getElementById("demo5-opcoes").style.display = "none";
+  document.getElementById("demo5-placar").textContent = "Placar: " + demo5Estado.acertos + " acertos em " + demo5Estado.resolvidos + " casos";
+}
+
+function demo5Reiniciar() {
+  demo5Estado.atual = null;
+  demo5Estado.resolvidos = 0;
+  demo5Estado.acertos = 0;
+  document.getElementById("demo5-caso").innerHTML = "📋 O caso aparecerá aqui. Clique em Novo caso para começar.";
+  document.getElementById("demo5-opcoes").style.display = "none";
+  document.getElementById("demo5-feedback").innerHTML = "";
+  document.getElementById("demo5-placar").textContent = "";
+}
+
+/* ================= LIGAÇÕES ================= */
+function ligarBotoes() {
+  var tabs = document.querySelectorAll(".tab");
+  for (var t = 0; t < tabs.length; t++) {
+    (function (tab) {
+      tab.addEventListener("click", function () {
+        irParaAba(parseInt(tab.getAttribute("data-aba"), 10));
+      });
+      tab.addEventListener("keydown", function (ev) {
+        var lista = Array.prototype.slice.call(document.querySelectorAll(".tab"));
+        var idx = lista.indexOf(tab);
+        if (ev.key === "ArrowRight" && idx < lista.length - 1) { lista[idx + 1].focus(); ev.preventDefault(); }
+        if (ev.key === "ArrowLeft" && idx > 0) { lista[idx - 1].focus(); ev.preventDefault(); }
+      });
+    })(tabs[t]);
+  }
+
+  document.getElementById("btn-modo").addEventListener("click", alternarModo);
+  document.getElementById("btn-tema").addEventListener("click", alternarTema);
+
+  var b1 = document.querySelectorAll("#demo1-area [data-proj]");
+  for (var i = 0; i < b1.length; i++) {
+    (function (b) { b.addEventListener("click", function () { demo1Mostrar(b.getAttribute("data-proj")); }); })(b1[i]);
+  }
+  document.getElementById("demo1-reset").addEventListener("click", demo1Reiniciar);
+
+  var b2 = document.querySelectorAll("#demo2-opcoes [data-modo]");
+  for (var k = 0; k < b2.length; k++) {
+    (function (b) { b.addEventListener("click", function () { demo2Responder(b.getAttribute("data-modo")); }); })(b2[k]);
+  }
+  document.getElementById("demo2-novo").addEventListener("click", demo2Novo);
+  document.getElementById("demo2-reset").addEventListener("click", demo2Reiniciar);
+
+  var b3 = document.querySelectorAll("#demo3-area [data-modo3]");
+  for (var m = 0; m < b3.length; m++) {
+    (function (b) { b.addEventListener("click", function () { demo3Estado.modo = b.getAttribute("data-modo3"); }); })(b3[m]);
+  }
+  document.getElementById("demo3-go").addEventListener("click", demo3Calcular);
+  document.getElementById("demo3-reset").addEventListener("click", demo3Reiniciar);
+
+  var b4 = document.querySelectorAll("#demo4-area [data-modo4]");
+  for (var q = 0; q < b4.length; q++) {
+    (function (b) { b.addEventListener("click", function () { demo4Estado.modo = b.getAttribute("data-modo4"); }); })(b4[q]);
+  }
+  document.getElementById("demo4-go").addEventListener("click", demo4Comparar);
+  document.getElementById("demo4-reset").addEventListener("click", demo4Reiniciar);
+
+  var b5 = document.querySelectorAll("#demo5-opcoes [data-tipo5]");
+  for (var r = 0; r < b5.length; r++) {
+    (function (b) { b.addEventListener("click", function () { demo5Responder(b.getAttribute("data-tipo5")); }); })(b5[r]);
+  }
+  document.getElementById("demo5-novo").addEventListener("click", demo5Novo);
+  document.getElementById("demo5-reset").addEventListener("click", demo5Reiniciar);
+
+  document.addEventListener("keydown", function (ev) {
+    if (estado.modo === "apresentacao") {
+      if (ev.key === "ArrowRight" && estado.abaAtual < 6) irParaAba(estado.abaAtual + 1);
+      if (ev.key === "ArrowLeft" && estado.abaAtual > 1) irParaAba(estado.abaAtual - 1);
+    }
+  });
+}
+
+/* ================= CARGA INICIAL ================= */
+document.addEventListener("DOMContentLoaded", function () {
+  ligarBotoes();
+  inicializarQuiz();
+  var n = lerHash();
+  ativarAba(n ? n : 1);
+  atualizarXP();
+});
+</script>
+
+</body>
+</html>
