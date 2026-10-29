@@ -1,0 +1,2258 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arquitetura e Organização de Computadores — Aula 4</title>
+<!-- HTMLearning v2.17 — Campos não informados: professor da disciplina (nome, e-mail, lattes, orcid, site, instituição). Nenhum conteúdo pedagógico foi inventado. -->
+<style>
+:root {
+  --cor-destaque: #6C63FF;
+  --cor-destaque-claro: #ECEBFF;
+  --cor-destaque-escuro: #4338CA;
+  --fundo: #FFFFFF;
+  --fundo-cartao: #F8F9FA;
+  --fundo-codigo: #F1F3F5;
+  --texto: #212529;
+  --texto-suave: #6C757D;
+  --borda: #DEE2E6;
+  --sucesso: #2B9348;
+  --erro: #D00000;
+  --aviso: #FFB703;
+}
+[data-theme="dark"] {
+  --fundo: #1A1D20;
+  --fundo-cartao: #2B3035;
+  --fundo-codigo: #343A40;
+  --texto: #F8F9FA;
+  --texto-suave: #ADB5BD;
+  --borda: #495057;
+  --cor-destaque-claro: #2D2855;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 18px;
+  line-height: 1.6;
+  background: var(--fundo);
+  color: var(--texto);
+  transition: background 0.3s, color 0.3s;
+}
+body.modo-apresentacao { font-size: 22px; }
+header {
+  background: linear-gradient(135deg, var(--cor-destaque), var(--cor-destaque-escuro));
+  color: white;
+  padding: 2rem 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+header .meta { opacity: 0.95; font-size: 0.95rem; }
+.controles-topo { position: fixed; top: 1rem; right: 1rem; z-index: 1000; display: flex; gap: 0.5rem; }
+.controles-topo button {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--cor-destaque);
+  color: var(--cor-destaque);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+.controles-topo button:hover { background: var(--cor-destaque); color: white; }
+.xp-bar {
+  position: sticky;
+  top: 0;
+  background: var(--cor-destaque-claro);
+  padding: 0.75rem 1.5rem;
+  border-bottom: 2px solid var(--cor-destaque);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  z-index: 99;
+}
+.tabs-container {
+  position: sticky;
+  top: 52px;
+  background: var(--fundo);
+  border-bottom: 2px solid var(--borda);
+  z-index: 98;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+.tabs { display: flex; padding: 0 1rem; gap: 0.25rem; }
+.tab {
+  padding: 1rem 1.5rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--texto-suave);
+  font-size: 1rem;
+  font-weight: 600;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+  position: relative;
+}
+.tab:hover { color: var(--cor-destaque); }
+.tab[aria-selected="true"] {
+  color: var(--cor-destaque);
+  border-bottom-color: var(--cor-destaque);
+  background: var(--fundo);
+}
+.badge-estudo {
+  display: inline-block;
+  background: var(--cor-destaque);
+  color: white;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  margin-left: 0.3rem;
+  vertical-align: middle;
+}
+.painel { display: none; padding: 2rem 1.5rem; max-width: 1100px; margin: 0 auto; }
+.painel.active { display: block; animation: fade 0.3s; }
+@keyframes fade { from {opacity:0} to {opacity:1} }
+h2 {
+  color: var(--cor-destaque-escuro);
+  border-left: 5px solid var(--cor-destaque);
+  padding-left: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.6rem;
+}
+h3 { color: var(--cor-destaque-escuro); margin: 1.5rem 0 1rem; font-size: 1.3rem; }
+.cartao {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.missao {
+  background: linear-gradient(135deg, var(--cor-destaque-claro), var(--fundo-cartao));
+  border-left: 5px solid var(--cor-destaque);
+}
+.missao::before {
+  content: "🎯 MISSÃO";
+  display: block;
+  font-weight: bold;
+  color: var(--cor-destaque-escuro);
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.mundo-real { background: #E7F5FF; border-left: 5px solid #1971C2; }
+[data-theme="dark"] .mundo-real { background: #1A3A52; }
+.mundo-real::before {
+  content: "🌎 NO MUNDO REAL";
+  display: block;
+  font-weight: bold;
+  color: #1971C2;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.ferramentas { background: #D3F9D8; border-left: 5px solid #2B9348; }
+[data-theme="dark"] .ferramentas { background: #1B4332; }
+.ferramentas::before {
+  content: "🛠️ FERRAMENTAS";
+  display: block;
+  font-weight: bold;
+  color: #2B9348;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.demo-box {
+  background: var(--fundo-codigo);
+  border: 3px solid var(--cor-destaque);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+.instrucoes {
+  background: #FFF9DB;
+  border: 2px solid var(--aviso);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .instrucoes { background: #3D3518; }
+.instrucoes::before {
+  content: "📋 INSTRUÇÕES PASSO A PASSO";
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.roteiro {
+  background: #F3D9FA;
+  border-left: 4px solid #9C36B5;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+[data-theme="dark"] .roteiro { background: #3D1F47; }
+.roteiro::before { content: "🎤 Roteiro do apresentador: "; font-weight: bold; font-style: normal; }
+.prever {
+  background: #E3FAFC;
+  border: 2px dashed #0C8599;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+[data-theme="dark"] .prever { background: #0F3742; }
+.prever::before {
+  content: "🔮 PREVISÃO";
+  display: block;
+  font-weight: bold;
+  color: #0C8599;
+  margin-bottom: 0.5rem;
+}
+.legenda {
+  background: #FFF3BF;
+  border-left: 4px solid #F59F00;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+  border-radius: 6px;
+}
+[data-theme="dark"] .legenda { background: #3D3518; }
+.legenda::before { content: "🔑 Legenda: "; font-weight: bold; }
+.quiz-box {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+.termos-quiz {
+  background: #FFF3BF;
+  border: 2px solid #F59F00;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+[data-theme="dark"] .termos-quiz { background: #3D3518; }
+.termos-quiz::before {
+  content: "🔑 Termos deste quiz";
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.pergunta {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--fundo);
+  border-radius: 8px;
+  border: 2px solid var(--borda);
+}
+.pergunta p { font-weight: 600; margin-bottom: 0.75rem; }
+.alt {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+  background: white;
+  border: 2px solid var(--borda);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--texto);
+  transition: all 0.2s;
+}
+[data-theme="dark"] .alt { background: var(--fundo-cartao); }
+.alt:hover:not(:disabled) { border-color: var(--cor-destaque); background: var(--cor-destaque-claro); }
+.alt.certa { background: #D3F9D8 !important; border-color: var(--sucesso) !important; color: var(--sucesso); font-weight: bold; }
+.alt.errada { background: #FFE3E3 !important; border-color: var(--erro) !important; color: var(--erro); }
+[data-theme="dark"] .alt.certa { background: #1B4332 !important; color: #51CF66 !important; }
+[data-theme="dark"] .alt.errada { background: #3D1F24 !important; color: #FF6B6B !important; }
+.alt:disabled { cursor: not-allowed; opacity: 0.7; }
+.fb { margin-top: 0.5rem; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.95rem; display: none; }
+.fb.show { display: block; }
+.fb.fb-certa { background: #D3F9D8; border-left: 4px solid var(--sucesso); color: #087F23; }
+.fb.fb-errada { background: #FFE3E3; border-left: 4px solid var(--erro); color: #C92A2A; }
+[data-theme="dark"] .fb.fb-certa { background: #1B4332; color: #69DB7C; }
+[data-theme="dark"] .fb.fb-errada { background: #3D1F24; color: #FFA8A8; }
+details {
+  background: var(--fundo-codigo);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+  border: 1px solid var(--borda);
+}
+details[open] { background: var(--cor-destaque-claro); }
+summary { cursor: pointer; font-weight: bold; color: var(--cor-destaque-escuro); padding: 0.25rem 0; }
+.demo-area {
+  background: white;
+  border: 2px dashed var(--cor-destaque);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+  min-height: 150px;
+}
+[data-theme="dark"] .demo-area { background: var(--fundo-cartao); }
+.btn {
+  background: var(--cor-destaque);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.95rem;
+  margin: 0.25rem;
+}
+.btn:hover { background: var(--cor-destaque-escuro); }
+.btn-secundario { background: var(--texto-suave); color: white; }
+.resultado-demo {
+  background: #D3F9D8;
+  border-left: 4px solid var(--sucesso);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .resultado-demo { background: #1B4332; color: #69DB7C; }
+.resultado-erro {
+  background: #FFE3E3;
+  border-left: 4px solid var(--erro);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .resultado-erro { background: #3D1F24; color: #FFA8A8; }
+footer {
+  background: var(--fundo-cartao);
+  border-top: 3px solid var(--cor-destaque);
+  padding: 2rem 1.5rem;
+  margin-top: 3rem;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+footer h4 { color: var(--cor-destaque-escuro); margin-bottom: 0.75rem; font-size: 1rem; }
+footer .bloco { padding: 1rem 0; line-height: 1.7; }
+footer .bloco + .bloco { border-top: 2px solid var(--borda); margin-top: 1rem; padding-top: 1.5rem; }
+footer a { color: var(--cor-destaque-escuro); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+footer ul { list-style: none; padding-left: 0; }
+footer ul li { margin: 0.4rem 0; }
+.revisao-mapa {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+.no-mapa {
+  background: var(--cor-destaque-claro);
+  border: 2px solid var(--cor-destaque);
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+}
+.no-mapa h4 { color: var(--cor-destaque-escuro); margin-bottom: 0.5rem; }
+.cola-rapida {
+  background: #FFF9DB;
+  border: 2px solid var(--aviso);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin: 1rem 0;
+}
+[data-theme="dark"] .cola-rapida { background: #3D3518; }
+.cola-rapida dt { font-weight: bold; color: var(--cor-destaque-escuro); margin-top: 0.75rem; }
+.cola-rapida dd { margin-left: 1rem; margin-bottom: 0.5rem; color: var(--texto); }
+.chefao {
+  background: linear-gradient(135deg, var(--cor-destaque-claro), white);
+  border: 3px solid var(--cor-destaque);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+[data-theme="dark"] .chefao { background: linear-gradient(135deg, var(--cor-destaque-claro), var(--fundo-cartao)); }
+.chefao::before {
+  content: "👑 CHEFÃO — DESAFIO FINAL";
+  display: block;
+  font-weight: bold;
+  color: var(--cor-destaque-escuro);
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+}
+.mitoverdade {
+  background: #F3D9FA;
+  border-left: 5px solid #9C36B5;
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 8px;
+}
+[data-theme="dark"] .mitoverdade { background: #3D1F47; }
+code {
+  background: var(--fundo-codigo);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-family: "Courier New", monospace;
+  font-size: 0.95em;
+  color: var(--cor-destaque-escuro);
+}
+pre {
+  background: var(--fundo-codigo);
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  border-left: 4px solid var(--cor-destaque);
+  margin: 1rem 0;
+  font-family: "Courier New", monospace;
+  font-size: 0.9rem;
+}
+.reg {
+  display: inline-block;
+  padding: 0.5rem 0.9rem;
+  margin: 0.25rem;
+  background: var(--cor-destaque);
+  color: white;
+  border-radius: 6px;
+  font-family: "Courier New", monospace;
+  font-weight: bold;
+}
+.piramide {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+.nivel {
+  padding: 0.8rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  color: white;
+  font-weight: 600;
+  transition: transform 0.2s;
+}
+.nivel:hover { transform: translateX(8px); }
+.nivel-1 { background: #E63946; }
+.nivel-2 { background: #F77F00; }
+.nivel-3 { background: #2A9D8F; }
+.nivel-4 { background: #1D6E62; }
+.nivel-5 { background: #264653; }
+.pipeline-stage {
+  display: inline-block;
+  padding: 0.5rem 0.9rem;
+  margin: 0.2rem;
+  background: var(--cor-destaque-claro);
+  border: 2px solid var(--cor-destaque);
+  border-radius: 6px;
+  font-weight: 600;
+  min-width: 50px;
+  text-align: center;
+  color: var(--texto);
+}
+.pipeline-stage.ativo { background: var(--cor-destaque); color: white; }
+.pipeline-stage.concluido { background: #D3F9D8; border-color: var(--sucesso); color: var(--sucesso); }
+@media (max-width: 600px) {
+  header h1 { font-size: 1.5rem; }
+  .tab { padding: 0.75rem 1rem; font-size: 0.9rem; }
+  .painel { padding: 1rem; }
+  .controles-topo { position: static; padding: 0.5rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="controles-topo">
+  <button id="btn-modo" type="button">🎤 Apresentação</button>
+  <button id="btn-tema" type="button">🌙 Escuro</button>
+</div>
+
+<header>
+  <h1>Arquitetura e Organização de Computadores</h1>
+  <div class="meta">Aula 4 · Unidade 2 · Págs. 9 a 35 · Processadores, Pipeline e Hierarquia de Memória</div>
+</header>
+
+<div class="xp-bar">
+  <div>⭐ XP: <span id="xp">0</span> · Selos: <span id="selos">0</span>/7</div>
+  <div id="progresso">Aba 1 de 7</div>
+</div>
+
+<div class="tabs-container">
+  <div class="tabs" role="tablist" aria-label="Abas da aula">
+    <button class="tab" role="tab" id="tab-1" aria-selected="true" aria-controls="painel-1" data-aba="1" type="button">1 · Processador</button>
+    <button class="tab" role="tab" id="tab-2" aria-selected="false" aria-controls="painel-2" data-aba="2" type="button">2 · Ciclo e Pipeline</button>
+    <button class="tab" role="tab" id="tab-3" aria-selected="false" aria-controls="painel-3" data-aba="3" type="button">3 · RISC vs CISC</button>
+    <button class="tab" role="tab" id="tab-4" aria-selected="false" aria-controls="painel-4" data-aba="4" type="button">4 · Hierarquia</button>
+    <button class="tab" role="tab" id="tab-5" aria-selected="false" aria-controls="painel-5" data-aba="5" type="button">5 · Tipos de memória</button>
+    <button class="tab" role="tab" id="tab-6" aria-selected="false" aria-controls="painel-6" data-aba="6" type="button">6 · Gerenciamento <span class="badge-estudo">📖 Estudo próprio</span></button>
+    <button class="tab" role="tab" id="tab-7" aria-selected="false" aria-controls="painel-7" data-aba="7" type="button">⭐ Revisão</button>
+  </div>
+</div>
+
+<!-- ============ ABA 1 ============ -->
+<div class="painel active" id="painel-1" role="tabpanel" aria-labelledby="tab-1">
+  <h2>Aba 1 · Arquitetura básica de um processador</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é abrir a caixa-preta do processador e conhecer as quatro peças que fazem todo programa rodar: a <strong>UC</strong> (do inglês <em>Unit Control</em>; em português, Unidade de Controle, o maestro que dita o ritmo), a <strong>ULA</strong> (do inglês <em>Arithmetic and Logic Unit</em>; em português, Unidade Lógica e Aritmética, a calculadora), os <strong>registradores</strong> (gavetas internas super-rápidas) e os <strong>barramentos</strong> (as ruas por onde os dados circulam). Você vai brincar com uma ULA de brinquedo antes de mergulhar no resto.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 O que é um processador e de que ele é feito?</h3>
+    <p>Um processador (também chamado de <strong>CPU</strong>, do inglês <em>Central Processing Unit</em>; em português, Unidade Central de Processamento) é o chip que executa as instruções dos programas. Dentro dele trabalham quatro componentes em conjunto:</p>
+    <ul style="margin-left:1.5rem">
+      <li><strong>UC (Unidade de Controle)</strong>: busca a próxima instrução na memória, decodifica o que ela manda fazer e orquestra os outros componentes. É o maestro da orquestra.</li>
+      <li><strong>ULA (Unidade Lógica e Aritmética)</strong>: realiza as contas (soma, subtração) e as decisões lógicas (E, OU, comparação). É a calculadora interna.</li>
+      <li><strong>Registradores</strong>: pequenas memórias internas de alta velocidade onde a ULA deposita os valores com os quais está trabalhando naquele instante. Em processadores de 64 bits (arquitetura que processa 64 bits por vez, como a usada por Intel Core e AMD Ryzen modernos) cada registrador guarda um número de 64 bits.</li>
+      <li><strong>Barramentos</strong>: conjuntos de fios que conectam a CPU à memória principal (RAM, do inglês <em>Random Access Memory</em>; em português, Memória de Acesso Aleatório) e aos dispositivos. O <strong>barramento de dados</strong> leva e traz números; o <strong>barramento de endereços</strong> aponta para qual posição da memória; o <strong>barramento de controle</strong> avisa se é leitura ou escrita.</li>
+    </ul>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Processadores que você conhece de nome</h3>
+    <ul style="margin-left:1.5rem">
+      <li>O <strong>Intel Core i7</strong> (linha de processadores da Intel, empresa americana fundada em 1968) equipa a maioria dos notebooks Windows de alto desempenho.</li>
+      <li>O <strong>AMD Ryzen</strong> (linha da AMD, <em>Advanced Micro Devices</em>, concorrente histórica da Intel) ganhou muita fatia de mercado nos últimos anos graças ao preço competitivo e à boa performance multi-núcleo.</li>
+      <li>O <strong>Apple M1</strong> (processador que a Apple desenha para Macs e iPads) é um SoC (<em>System on Chip</em>; em português, Sistema em um Chip), ou seja, processador, memória e GPU (Unidade de Processamento Gráfico) vivem no mesmo silício.</li>
+      <li>O <strong>Snapdragon</strong> (processador da Qualcomm, presente na maioria dos celulares Android) também é um SoC, com núcleos ARM (família de arquiteturas da empresa britânica Arm) otimizados para bateria.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Ferramentas para explorar por dentro</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>CPU-Z</strong> (programa gratuito da CPUID, empresa francesa) mostra qual é o seu processador, quantos núcleos tem, qual a frequência e qual o tamanho da memória cache.</li>
+      <li><strong>lscpu</strong> (comando nativo do Linux) exibe as mesmas informações direto no terminal.</li>
+      <li><strong>Intel VTune</strong> (ferramenta oficial da Intel para análise de desempenho) mostra, instrução por instrução, onde o processador está gastando tempo.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: ULA de brinquedo com registradores visuais</h3>
+
+    <div class="prever">
+      <strong>Antes de clicar, preveja:</strong> se a ULA somar o valor 5 do registrador R1 com o valor 7 do registrador R2 e guardar em R3, qual valor vai aparecer em R3? E se a operação for E lógico (bit a bit) entre 5 (em binário <code>0101</code>) e 3 (<code>0011</code>)?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 1:</strong> digite um valor em R1 e outro em R2.<br>
+      <strong>Passo 2:</strong> escolha uma operação (soma, subtração, E lógico, OU lógico).<br>
+      <strong>Passo 3:</strong> clique em Executar e veja o resultado em R3, junto com a representação binária.<br>
+      <strong>Passo 4:</strong> experimente diferentes pares e operações para sentir como a ULA trabalha.
+    </div>
+
+    <div class="roteiro">
+      comece com 5 em R1 e 7 em R2, some e mostre que R3 recebe 12. Depois troque para E lógico com 5 e 3 e mostre como o resultado é 1 (só o bit menos significativo coincide). Isso ilustra que a ULA não é só uma calculadora: ela também toma decisões lógicas.
+    </div>
+
+    <div class="legenda">
+      R1, R2 = registradores de entrada (gavetas internas da CPU) · R3 = registrador de destino · soma = R1 + R2 · subtração = R1 - R2 · E lógico = operador AND bit a bit (só fica 1 se os dois bits forem 1) · OU lógico = operador OR bit a bit (fica 1 se pelo menos um bit for 1)
+    </div>
+
+    <div class="demo-area" id="demo1-area">
+      <div style="display:grid; gap:0.5rem; max-width:500px">
+        <label>R1: <input type="number" id="demo1-r1" value="5" min="0" max="255" style="width:90px"></label>
+        <label>R2: <input type="number" id="demo1-r2" value="7" min="0" max="255" style="width:90px"></label>
+        <div>
+          <button class="btn" type="button" data-op1="soma">+ soma</button>
+          <button class="btn" type="button" data-op1="sub">- subtração</button>
+          <button class="btn" type="button" data-op1="and">E lógico (AND)</button>
+          <button class="btn" type="button" data-op1="or">OU lógico (OR)</button>
+        </div>
+        <div><button class="btn" type="button" id="demo1-go">▶ Executar ULA</button></div>
+      </div>
+      <div style="margin-top:1rem">
+        <span class="reg" id="demo1-reg1">R1 = 5 (00000101)</span>
+        <span class="reg" id="demo1-reg2">R2 = 7 (00000111)</span>
+        <span class="reg" id="demo1-reg3">R3 = ?</span>
+      </div>
+      <pre id="demo1-log">// clique em Executar ULA para ver o resultado</pre>
+      <button class="btn btn-secundario" type="button" id="demo1-reset" style="margin-top:1rem">🔄 Reiniciar demo</button>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 1</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      CPU = Unidade Central de Processamento, o chip que executa programas ·
+      UC = Unidade de Controle, o maestro que busca e decodifica instruções ·
+      ULA = Unidade Lógica e Aritmética, a calculadora interna ·
+      registrador = gaveta interna super-rápida da CPU ·
+      barramento = conjunto de fios que conecta a CPU à memória e aos dispositivos ·
+      SoC = System on Chip, sistema completo em um único chip.
+    </div>
+
+    <div class="pergunta" data-pergunta="1-1">
+      <p>1. Qual componente do processador é responsável por SOMAR dois valores guardados em registradores?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! A UC é o maestro, não a calculadora. Ela busca e decodifica a instrução de soma, mas quem executa a conta é outro componente.">A UC (Unidade de Controle)</button>
+        <button class="alt" type="button" data-fb="Correto! A ULA (Unidade Lógica e Aritmética) é a calculadora interna da CPU. Toda vez que um programa soma, subtrai, compara ou faz E lógico, é a ULA que coloca a mão na massa.">A ULA (Unidade Lógica e Aritmética)</button>
+        <button class="alt" type="button" data-fb="Errado! Os registradores guardam valores, mas não calculam nada. Eles são as gavetas; quem soma é a ULA, usando os valores que tira dessas gavetas.">Os registradores</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="1-2">
+      <p>2. O Apple M1 (processador que a Apple desenha para seus computadores) é um SoC. O que isso significa na prática?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! O SoC não é lento nem antigo: é justamente o oposto. Integrar tudo no mesmo chip economiza espaço, energia e reduz os atrasos de comunicação entre as peças.">Que ele é mais lento que um processador tradicional por ter muitas peças juntas</button>
+        <button class="alt" type="button" data-fb="Errado! Memória RAM continua existindo separada, mesmo em SoCs. O Apple M1 tem 8 GB ou 16 GB de RAM unificada, mas a RAM ainda é um chip à parte soldado na placa.">Que ele dispensa completamente a necessidade de memória RAM</button>
+        <button class="alt" type="button" data-fb="Correto! SoC significa System on Chip: processador, GPU (Unidade de Processamento Gráfico) e outros blocos vivem no mesmo chip. Isso economiza espaço, consome menos bateria e reduz o atraso de comunicação entre as peças.">Que processador, GPU e outros blocos vivem no mesmo chip, economizando espaço e energia</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="1-3">
+      <p>3. Quando a CPU precisa LER um número que está na memória RAM, qual barramento ela usa para APONTAR a posição exata daquele número?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! O barramento de endereços é o dedo que aponta: ele leva o número da posição (o endereço) da memória que a CPU quer acessar. Depois de apontar, ela usa o barramento de dados para trazer o valor.">O barramento de endereços</button>
+        <button class="alt" type="button" data-fb="Errado! O barramento de dados leva e traz os números em si, mas primeiro a CPU precisa dizer ONDE o número está, e isso é papel do barramento de endereços.">O barramento de dados</button>
+        <button class="alt" type="button" data-fb="Errado! O barramento de controle apenas avisa se a operação é de leitura ou escrita, e sinaliza o momento certo de agir. Apontar o endereço é trabalho do barramento de endereços.">O barramento de controle</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 1</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=arquitetura+básica+de+processador+UC+ULA+registradores" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=arquitetura+de+processadores+UC+ULA" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=estrutura+do+processador+UC+ULA+registradores+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>CPU</strong>: Unidade Central de Processamento; o chip que executa instruções.</li>
+      <li><strong>UC</strong>: Unidade de Controle; o maestro que busca e decodifica instruções.</li>
+      <li><strong>ULA</strong>: Unidade Lógica e Aritmética; a calculadora interna da CPU.</li>
+      <li><strong>Registrador</strong>: gaveta interna super-rápida dentro da CPU.</li>
+      <li><strong>Barramento</strong>: conjunto de fios que conecta a CPU à memória e aos dispositivos.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> A ULA só sabe somar; subtrair, multiplicar e comparar são feitos por outros chips.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> a ULA faz soma, subtração, comparações e operações lógicas (E, OU, NÃO). Multiplicação e divisão podem ser feitas por uma unidade auxiliar (a FPU, do inglês Floating Point Unit; em português, Unidade de Ponto Flutuante, especializada em números com vírgula), mas a ULA clássica cobre mais do que apenas soma.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 2 ============ -->
+<div class="painel" id="painel-2" role="tabpanel" aria-labelledby="tab-2">
+  <h2>Aba 2 · O ciclo de instrução e o pipeline de execução</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é entender como uma única instrução viaja dentro da CPU e por que dividir essa viagem em etapas (o chamado <strong>pipeline</strong>, do inglês, esteira) faz o processador entregar muito mais trabalho por segundo sem precisar acelerar o relógio interno. Você vai ver isso acontecendo em tempo real, com quatro instruções avançando lado a lado em uma esteira.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 O ciclo de instrução: os cinco passos de toda ordem</h3>
+    <p>Toda instrução de programa passa pelos mesmos cinco estágios clássicos, também chamados de ciclo de Von Neumann (em homenagem ao matemático John von Neumann, um dos pais da arquitetura moderna de computadores, que a descreveu em 1945):</p>
+    <ol style="margin-left:1.5rem">
+      <li><strong>IF</strong> (do inglês <em>Instruction Fetch</em>; em português, Busca da Instrução): a UC pega a próxima instrução na memória.</li>
+      <li><strong>ID</strong> (do inglês <em>Instruction Decode</em>; em português, Decodificação): a UC traduz o código binário em sinais elétricos que dizem o que fazer.</li>
+      <li><strong>EX</strong> (do inglês <em>Execute</em>; em português, Execução): a ULA realiza a operação pedida.</li>
+      <li><strong>MEM</strong> (do inglês <em>Memory Access</em>; em português, Acesso à Memória): se a instrução precisar ler ou escrever na RAM, é aqui que isso acontece.</li>
+      <li><strong>WB</strong> (do inglês <em>Write Back</em>; em português, Escrita de Volta): o resultado volta para um registrador.</li>
+    </ol>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Pipeline no seu notebook</h3>
+    <ul style="margin-left:1.5rem">
+      <li>Um <strong>Intel Core i7 moderno</strong> tem um pipeline de cerca de 14 estágios: as cinco fases clássicas foram divididas em etapas menores para caberem mais instruções simultâneas na esteira.</li>
+      <li>O histórico <strong>Pentium 4 NetBurst</strong> (processador da Intel lançado em 2000) foi longe demais: chegou a 31 estágios. Funcionava com frequências altíssimas (3,8 GHz), mas sofria muito quando uma instrução errava a previsão e toda a esteira tinha que ser jogada fora, um problema chamado <strong>misprediction penalty</strong> (penalidade por previsão errada, em português).</li>
+      <li>O <strong>Apple M1</strong> (processador da Apple) usa um pipeline mais curto, de cerca de 10 estágios, e compensa com uma frente muito larga (capaz de pegar muitas instruções por vez), um estilo chamado <em>wide and short</em> (largo e curto).</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Ferramentas para ver o pipeline em ação</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Godbolt Compiler Explorer</strong> (ferramenta gratuita online mantida por Matt Godbolt, engenheiro de software) mostra o código em C virando instruções de montagem (assembly) ao vivo, com cada instrução colorida por estágio.</li>
+      <li><strong>perf</strong> (comando do Linux) mede quantas instruções seu programa executa por ciclo, o famoso IPC (<em>Instructions Per Cycle</em>; em português, Instruções Por Ciclo). IPC alto significa pipeline bem aproveitado.</li>
+      <li><strong>Intel VTune</strong> (ferramenta oficial da Intel) mostra visualmente quantos ciclos cada estágio está gastando em um programa real.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: pipeline animado com quatro instruções</h3>
+
+    <div class="prever">
+      <strong>Antes de dar play, preveja:</strong> se cada estágio leva 1 ciclo de relógio e você executar 4 instruções uma depois da outra, quantos ciclos no total a CPU vai gastar? Seriam 4 × 5 = 20 ciclos, ou algo bem menor por causa da esteira?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 1:</strong> clique em Play para ver as quatro instruções entrando na esteira uma por ciclo.<br>
+      <strong>Passo 2:</strong> observe como, a partir do segundo ciclo, várias instruções convivem ao mesmo tempo em estágios diferentes.<br>
+      <strong>Passo 3:</strong> leia o contador de ciclos e de instruções concluídas.<br>
+      <strong>Passo 4:</strong> clique em Sem pipeline para comparar: você verá os 20 ciclos previstos na sua conta inicial.
+    </div>
+
+    <div class="roteiro">
+      peça à turma para calcular mentalmente quantos ciclos levariam 4 instruções sem pipeline (a resposta é 20). Rode o pipeline e mostre que em apenas 8 ciclos as 4 terminam. Esse é o ganho da esteira.
+    </div>
+
+    <div class="legenda">
+      IF = Busca · ID = Decodificação · EX = Execução · MEM = Memória · WB = Escrita de volta · ciclo = um tique do relógio interno da CPU · pipeline = esteira de execução
+    </div>
+
+    <div class="demo-area" id="demo2-area">
+      <div style="display:flex; flex-wrap:wrap; gap:0.3rem; margin-bottom:0.75rem">
+        <button class="btn" type="button" id="demo2-play">▶ Play (com pipeline)</button>
+        <button class="btn" type="button" id="demo2-serial">🐢 Sem pipeline</button>
+        <button class="btn btn-secundario" type="button" id="demo2-reset">🔄 Reiniciar</button>
+      </div>
+      <div id="demo2-grid" style="font-family:monospace; font-size:0.9rem"></div>
+      <div style="margin-top:1rem; font-weight:bold">
+        Ciclos usados: <span id="demo2-ciclos">0</span> · Instruções concluídas: <span id="demo2-feitas">0</span>/4
+      </div>
+      <div id="demo2-resultado" style="margin-top:0.75rem"></div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 2</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      IF = Busca da Instrução · ID = Decodificação · EX = Execução · MEM = Acesso à Memória · WB = Escrita de Volta ·
+      pipeline = esteira de execução que permite várias instruções em estágios diferentes ao mesmo tempo ·
+      IPC = Instruções Por Ciclo, medida de aproveitamento do pipeline ·
+      ciclo = um tique do relógio interno da CPU.
+    </div>
+
+    <div class="pergunta" data-pergunta="2-1">
+      <p>1. O pipeline (esteira de execução) da CPU serve principalmente para:</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! O pipeline não acelera o relógio: a frequência (GHz) é outra coisa. O pipeline aproveita melhor cada tique do relógio, permitindo que várias instruções convivam em estágios diferentes.">Aumentar a frequência do relógio interno (GHz)</button>
+        <button class="alt" type="button" data-fb="Correto! O pipeline permite que várias instruções ocupem estágios diferentes ao mesmo tempo, como numa linha de montagem de fábrica. Isso aumenta o IPC (Instruções Por Ciclo) sem precisar acelerar o relógio.">Permitir que várias instruções ocupem estágios diferentes ao mesmo tempo, aumentando o trabalho entregue por ciclo</button>
+        <button class="alt" type="button" data-fb="Errado! O pipeline não aumenta a capacidade da RAM nem substitui registradores. Ele organiza o fluxo de instruções dentro da CPU.">Aumentar o tamanho da memória RAM disponível para o programa</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="2-2">
+      <p>2. O histórico Pentium 4 NetBurst (processador da Intel de 2000) tinha um pipeline de 31 estágios. Qual era o efeito colateral disso quando uma instrução dependia de uma previsão errada?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! Com 31 estágios, um erro de previsão jogava fora o trabalho de até 31 instruções na esteira. A penalidade era gigante, e por isso o Pentium 4 perdia para concorrentes com pipelines mais curtos em muitos programas.">Uma penalidade enorme, pois até 31 instruções tinham que ser descartadas da esteira</button>
+        <button class="alt" type="button" data-fb="Errado! O problema não era o consumo de energia em si (embora fosse alto), mas sim o trabalho jogado fora a cada previsão errada. Com 31 estágios, uma decisão errada custava muito caro em ciclos.">Um consumo de energia muito baixo, porque a CPU trabalhava devagar</button>
+        <button class="alt" type="button" data-fb="Errado! O pipeline não encolhe nem vira cache. O problema específico do Pentium 4 era a penalidade gigantesca por previsão errada, não uma mudança estrutural no cache.">O cache se tornava menor automaticamente para caber mais instruções</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="2-3">
+      <p>3. No ciclo clássico de Von Neumann, o que acontece no estágio WB (Write Back)?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! A busca da instrução na memória é o estágio IF (Instruction Fetch), o primeiro da fila. O WB é o último.">A UC busca a próxima instrução na memória</button>
+        <button class="alt" type="button" data-fb="Errado! A execução da operação pela ULA é o estágio EX (Execute), o terceiro da fila. O WB vem depois da MEM.">A ULA realiza a operação pedida pela instrução</button>
+        <button class="alt" type="button" data-fb="Correto! WB (Write Back, Escrita de Volta) é o último estágio: o resultado calculado volta para um registrador, para que instruções seguintes possam usá-lo. É o desfecho do ciclo.">O resultado calculado volta para um registrador, pronto para ser usado pelas próximas instruções</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 2</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=pipeline+de+instruções+como+funciona+CPU" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=pipeline+de+instruções+arquitetura+de+computadores" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=pipeline+de+instruções+IF+ID+EX+MEM+WB+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Pipeline</strong>: esteira que divide o ciclo de instrução em estágios paralelos.</li>
+      <li><strong>IPC</strong>: Instruções Por Ciclo; quanto mais alto, melhor o pipeline está sendo aproveitado.</li>
+      <li><strong>Ciclo</strong>: um tique do relógio interno da CPU.</li>
+      <li><strong>Branch prediction</strong>: previsão de desvio; aposta sobre qual caminho o programa vai tomar.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Um pipeline com mais estágios é sempre melhor.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> estágios demais permitem frequências altíssimas, mas cobram uma penalidade brutal quando uma previsão erra. O Pentium 4 NetBurst de 31 estágios sofreu exatamente com isso. O ideal é equilibrar número de estágios, frequência e risco de penalidade.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 3 ============ -->
+<div class="painel" id="painel-3" role="tabpanel" aria-labelledby="tab-3">
+  <h2>Aba 3 · Arquiteturas de processadores: RISC vs. CISC</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é entender por que existem duas filosofias rivais para desenhar um processador: a <strong>CISC</strong> (do inglês <em>Complex Instruction Set Computer</em>; em português, Computador com Conjunto de Instruções Complexo, onde cada instrução faz muita coisa) e a <strong>RISC</strong> (do inglês <em>Reduced Instruction Set Computer</em>; em português, Computador com Conjunto de Instruções Reduzido, onde cada instrução é curta e simples). Você vai descobrir qual ganhou o mundo dos celulares, qual domina os notebooks e por que hoje a fronteira está mais embaçada do que parece.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 O dilema: poucos comandos poderosos ou muitos comandos simples?</h3>
+    <p>A <strong>CISC</strong> nasceu nos anos 1970, quando a memória era caríssima. A ideia era economizar memória fazendo cada instrução fazer muito: uma única instrução poderia ler dois valores da memória, somá-los e guardar o resultado, tudo de uma vez. O processador <strong>Intel 8086</strong> (lançado em 1978 e ancestral de todos os Intel Core modernos) e a família <strong>x86</strong> (arquitetura dominante em notebooks e servidores até hoje) são CISC clássicas.</p>
+    <p>A <strong>RISC</strong> surgiu nos anos 1980 como reação. Pesquisadores da Universidade da Califórnia em Berkeley (universidade pública americana) perceberam que os programas quase nunca usavam as instruções complexas do CISC: eles preferiam instruções simples combinadas. Então propuseram uma arquitetura com <strong>poucas instruções, todas do mesmo tamanho e executadas em um único ciclo</strong>. O resultado foi a família <strong>ARM</strong> (da empresa britânica Arm), que hoje roda em cerca de 99% dos celulares do mundo.</p>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Quem usa o quê no mundo real</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Intel Core i9</strong> e <strong>AMD Ryzen 9</strong>: processadores de notebook e desktop baseados na família x86, arquitetura CISC histórica. Por dentro, eles traduzem instruções CISC em micro-operações RISC para executar.</li>
+      <li><strong>Apple M1, M2 e M3</strong>: chips da Apple baseados em ARM, arquitetura RISC. O Apple M1 (lançado em 2020) foi o primeiro chip próprio da Apple nos Macs e surpreendeu o mercado ao bater de frente com Intel em desempenho consumindo muito menos energia.</li>
+      <li><strong>Snapdragon da Qualcomm e Exynos da Samsung</strong>: chips de celular baseados em ARM. Rodam em praticamente todos os Androids e iPhones do mercado.</li>
+      <li><strong>IBM POWER e Oracle SPARC</strong>: processadores RISC usados em servidores corporativos e supercomputadores, como o Fugaku (supercomputador japonês que foi o mais rápido do mundo em 2020).</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Critérios de escolha na prática</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Consumo de energia</strong>: RISC costuma ganhar, porque instruções simples acendem menos circuitos por ciclo.</li>
+      <li><strong>Compatibilidade</strong>: CISC ganha em legado, porque o parque de programas Windows antigos foi escrito para x86.</li>
+      <li><strong>Desempenho puro</strong>: hoje empata. Intel e AMD aplicam truques RISC por dentro; ARM aplica truques CISC por fora.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: consultor de arquiteturas RISC e CISC</h3>
+
+    <div class="prever">
+      <strong>Antes de jogar, preveja:</strong> para um celular que precisa durar um dia inteiro longe da tomada, a arquitetura mais adequada seria x86 (CISC clássica dos notebooks) ou ARM (RISC dos celulares modernos)?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 1:</strong> clique em Novo cenário e leia o caso apresentado.<br>
+      <strong>Passo 2:</strong> escolha entre x86 (CISC), ARM (RISC) ou qualquer uma.<br>
+      <strong>Passo 3:</strong> leia o feedback com um caso real de empresa que fez essa escolha.<br>
+      <strong>Passo 4:</strong> se errar, tente de novo com outro cenário.
+    </div>
+
+    <div class="roteiro">
+      projete o primeiro cenário e pergunte qual a prioridade do projeto: desempenho bruto ou bateria? Essa pergunta de duas pontas resolve quase toda escolha.
+    </div>
+
+    <div class="demo-area" id="demo3-area">
+      <div id="demo3-cenario" style="background:var(--cor-destaque-claro); padding:1rem; border-radius:8px; margin-bottom:1rem; font-weight:600">
+        📋 O cenário aparecerá aqui. Clique em Novo cenário para começar.
+      </div>
+      <div id="demo3-opcoes" style="display:none">
+        <button class="btn" type="button" data-resp3="x86">x86 (CISC)</button>
+        <button class="btn" type="button" data-resp3="arm">ARM (RISC)</button>
+        <button class="btn" type="button" data-resp3="qualquer">Qualquer uma serve</button>
+      </div>
+      <div id="demo3-feedback" style="margin-top:1rem"></div>
+      <div style="margin-top:1rem">
+        <button class="btn" type="button" id="demo3-novo">🎲 Novo cenário</button>
+        <button class="btn btn-secundario" type="button" id="demo3-reset">🔄 Reiniciar</button>
+      </div>
+      <div id="demo3-placar" style="margin-top:1rem; font-weight:bold; color:var(--cor-destaque-escuro)"></div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 3</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      CISC = arquitetura com conjunto complexo de instruções, cada uma faz muita coisa (ex: família x86) ·
+      RISC = arquitetura com conjunto reduzido de instruções, cada uma é simples e rápida (ex: ARM) ·
+      x86 = família CISC histórica da Intel, dominante em notebooks e servidores ·
+      ARM = família RISC da empresa britânica Arm, dominante em celulares ·
+      micro-operação = instrução interna simples em que uma instrução CISC é decomposta.
+    </div>
+
+    <div class="pergunta" data-pergunta="3-1">
+      <p>1. Qual arquitetura domina hoje no mercado mundial de CELULARES (smartphones)?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! A família x86 domina notebooks e servidores, mas é rara em celulares. Um chip x86 consome mais energia do que a bateria de um smartphone aguenta.">A família x86 (CISC)</button>
+        <button class="alt" type="button" data-fb="Correto! A família ARM (RISC) roda em cerca de 99% dos celulares do mundo, do iPhone aos Androids. O motivo principal é o baixo consumo de energia, essencial para aparelhos que precisam durar o dia todo longe da tomada.">A família ARM (RISC)</button>
+        <button class="alt" type="button" data-fb="Errado! A família PowerPC (RISC da IBM e Motorola) foi usada em Macs antigos, mas foi abandonada nos computadores pessoais em 2006 e não tem presença relevante em celulares hoje.">A família PowerPC (RISC)</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="3-2">
+      <p>2. O Intel Core i9 moderno é um processador x86 (CISC por fora), mas por dentro traduz as instruções em micro-operações simples (RISC por dentro). Por que essa dupla vida?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! A Intel mantém compatibilidade com os milhões de programas antigos escritos para x86 (CISC), mas executa por dentro em micro-operações simples (RISC) porque pipelines modernos se dão muito melhor com instruções uniformes e rápidas.">Para manter compatibilidade com programas antigos e ainda executar rápido por dentro, aproveitando as vantagens do RISC</button>
+        <button class="alt" type="button" data-fb="Errado! A Intel não está abandonando x86: ela mantém a arquitetura externa exatamente para não quebrar compatibilidade. A mudança acontece só por dentro, de forma transparente para o programa.">Porque a Intel está abandonando o x86 e migrando para ARM de forma transparente</button>
+        <button class="alt" type="button" data-fb="Errado! A tradução para micro-operações não aumenta o consumo: pelo contrário, permite pipelines mais eficientes e, portanto, menos energia por instrução entregue.">Para aumentar o consumo de energia e aquecer mais, o que melhora o desempenho</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="3-3">
+      <p>3. O Apple M1 (chip da Apple lançado em 2020) usa ARM (RISC) e surpreendeu o mercado ao bater de frente com Intel em notebooks. Por que isso foi importante?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! O Apple M1 não é mais lento que Intel: ele entrega desempenho comparável consumindo uma fração da energia, e por isso revolucionou a linha de notebooks da Apple.">Porque o M1 mostrou que RISC é sempre mais lenta que CISC</button>
+        <button class="alt" type="button" data-fb="Errado! A Apple NÃO abandonou ARM depois do M1: as gerações M2 e M3 continuam usando ARM com sucesso. O M1 foi o começo de uma família, não um experimento descartável.">Porque a Apple logo abandonou o M1 e voltou para Intel</button>
+        <button class="alt" type="button" data-fb="Correto! O M1 provou que a arquitetura RISC (ARM) pode entregar desempenho de notebook consumindo muito menos energia. Foi um marco que forçou Intel e AMD a repensarem eficiência em seus produtos.">Porque provou que RISC pode entregar desempenho de alto nível com muito menos energia, mudando o mercado de notebooks</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 3</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=diferença+entre+RISC+e+CISC+processadores" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=RISC+versus+CISC+arquitetura+de+computadores" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=RISC+e+CISC+diferenças+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>CISC</strong>: arquitetura com muitas instruções complexas, cada uma fazendo várias coisas.</li>
+      <li><strong>RISC</strong>: arquitetura com poucas instruções simples, todas do mesmo tamanho e executadas em um ciclo.</li>
+      <li><strong>x86</strong>: família CISC histórica da Intel e da AMD.</li>
+      <li><strong>ARM</strong>: família RISC licenciada pela empresa britânica Arm.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> RISC é sempre mais rápido que CISC.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> a fronteira hoje é embaçada. Processadores CISC modernos executam por dentro como RISC; processadores RISC modernos têm instruções bem poderosas. O que decide o desempenho é o projeto como um todo (pipeline, cache, frequência, núcleos), não apenas a filosofia original.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 4 ============ -->
+<div class="painel" id="painel-4" role="tabpanel" aria-labelledby="tab-4">
+  <h2>Aba 4 · Fundamentos da hierarquia de memória</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é entender por que o computador tem vários tipos de memória empilhados em uma pirâmide: as menores e mais rápidas perto da CPU, as maiores e mais lentas perto do disco. Se tudo fosse uma memória só, o mundo teria que escolher entre ser rápido e barato, e nenhuma das duas coisas aconteceria direito. A pirâmide resolve esse dilema.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 A pirâmide de memória: cinco níveis em cascata</h3>
+    <p>A hierarquia de memória organiza o armazenamento do computador em cinco níveis clássicos, do mais rápido e caro para o mais lento e barato:</p>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Registradores</strong> (nível 1): dentro da CPU, dezenas a centenas de bytes, acesso em 1 ciclo. Guarda os valores com os quais a ULA está trabalhando agora.</li>
+      <li><strong>Cache</strong> (nível 2): dentro da CPU, dividida em L1, L2 e L3 (do inglês Level 1, 2, 3; em português, Nível 1, 2 e 3). Um Intel Core i7 moderno tem cerca de 48 KB (quilobytes) em L1, 1,25 MB (megabytes) em L2 e 24 MB em L3 por chip.</li>
+      <li><strong>Memória principal</strong> (nível 3): a famosa RAM, tipicamente de 8 a 64 GB (gigabytes) em notebooks. Acesso em dezenas de nanosegundos.</li>
+      <li><strong>Armazenamento secundário</strong> (nível 4): SSD (do inglês <em>Solid State Drive</em>; em português, Unidade de Estado Sólido, disco sem partes móveis) ou HDD (do inglês <em>Hard Disk Drive</em>; em português, Disco Rígido, com discos girando). Capacidade de 500 GB a vários TB (terabytes).</li>
+      <li><strong>Armazenamento terciário</strong> (nível 5): fitas magnéticas em bibliotecas robotizadas, usadas para backup de longo prazo por empresas como o Google e a AWS (<em>Amazon Web Services</em>, serviço de nuvem da Amazon).</li>
+    </ul>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 A pirâmide em sistemas famosos</h3>
+    <ul style="margin-left:1.5rem">
+      <li>O <strong>Apple M1</strong> (processador da Apple) usa memória unificada: a RAM é compartilhada com a GPU (Unidade de Processamento Gráfico) no mesmo chip, eliminando cópias entre as duas e reduzindo atrasos.</li>
+      <li>O supercomputador <strong>Frontier</strong> (máquina americana do Laboratório Nacional de Oak Ridge, que em 2022 foi o primeiro a ultrapassar 1 exaflop, ou seja, um quintilhão de operações por segundo) tem 4 TB de memória principal por nó, SSDs NVMe rápidos e um sistema paralelo de fitas para backup.</li>
+      <li>O <strong>Google</strong> mantém bibliotecas de fitas LTO (do inglês <em>Linear Tape-Open</em>; em português, Fita Linear Aberta) em datacenters para guardar cópias frias dos dados que ninguém acessa há meses, como vídeos antigos do YouTube.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Ferramentas para medir sua pirâmide</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>CPU-Z</strong> (da CPUID, empresa francesa) mostra quanto de cache L1, L2 e L3 seu processador tem.</li>
+      <li><strong>dmidecode</strong> (comando do Linux) lista o tamanho, a velocidade e o tipo de cada pente de RAM instalado.</li>
+      <li><strong>CrystalDiskMark</strong> (ferramenta gratuita japonesa) mede a velocidade do seu SSD em megabytes por segundo, em leitura e escrita.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: explorador da pirâmide de memória</h3>
+
+    <div class="prever">
+      <strong>Antes de clicar, preveja:</strong> se uma CPU moderna precisa ler um número que está no registrador versus ler um número que está no SSD, a diferença de tempo é de cerca de 2 vezes, de 100 vezes ou de mais de 1 milhão de vezes?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 1:</strong> clique em um nível da pirâmide para abrir a ficha com tamanho típico, velocidade e uso.<br>
+      <strong>Passo 2:</strong> compare as velocidades dos níveis para sentir a escala.<br>
+      <strong>Passo 3:</strong> leia o exemplo real associado a cada nível.<br>
+      <strong>Passo 4:</strong> responda a previsão inicial: a diferença é gigantesca!
+    </div>
+
+    <div class="roteiro">
+      comece pelos registradores e pergunte à turma quanto tempo leva um acesso (1 ciclo). Depois suba até o SSD e mostre que a diferença é de milhões de vezes. Isso explica por que a cache existe: sem ela, a CPU ficaria ociosa a maior parte do tempo.
+    </div>
+
+    <div class="piramide" id="demo4-piramide">
+      <div class="nivel nivel-1" data-nivel="reg">🔺 Registradores (dentro da CPU)</div>
+      <div class="nivel nivel-2" data-nivel="cache">📦 Cache L1/L2/L3 (dentro da CPU)</div>
+      <div class="nivel nivel-3" data-nivel="ram">💾 Memória RAM (principal)</div>
+      <div class="nivel nivel-4" data-nivel="ssd">📀 SSD / HDD (armazenamento)</div>
+      <div class="nivel nivel-5" data-nivel="fita">🗃️ Fitas magnéticas (backup)</div>
+    </div>
+    <div id="demo4-ficha" style="padding:1rem; background:var(--fundo-codigo); border-radius:8px; min-height:100px; margin-top:1rem">
+      👆 Clique em um nível da pirâmide para ver a ficha completa.
+    </div>
+    <button class="btn btn-secundario" type="button" id="demo4-reset" style="margin-top:1rem">🔄 Reiniciar</button>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 4</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      hierarquia = organização em níveis, do mais rápido ao mais lento ·
+      registrador = memória interna super-rápida dentro da CPU ·
+      cache = memória rápida perto da CPU, dividida em L1, L2 e L3 ·
+      RAM = memória principal do computador ·
+      SSD = disco sem partes móveis, rápido ·
+      HDD = disco rígido com pratos girando, mais lento que o SSD ·
+      nanosegundo = bilionésimo de segundo.
+    </div>
+
+    <div class="pergunta" data-pergunta="4-1">
+      <p>1. Por que o computador tem vários níveis de memória em vez de uma memória só, grande e rápida?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! Memórias rápidas (como SRAM, do inglês Static RAM; em português, RAM Estática) custam muito caro por byte. Fazer toda a memória do computador em SRAM seria impagável: um notebook comum precisaria de uma fortuna em chips.">Porque seria tecnicamente impossível fabricar uma memória única com toda a capacidade necessária</button>
+        <button class="alt" type="button" data-fb="Correto! Memórias rápidas custam caro e cabem pouco; memórias baratas cabem muito mas são lentas. A pirâmide combina o melhor dos dois mundos: o que a CPU usa agora fica no nível rápido, e o que ela não usa há muito tempo desce para níveis baratos e grandes.">Porque a pirâmide combina velocidade alta no topo (pouco e caro) com capacidade grande na base (muito e barato), otimizando custo e desempenho juntos</button>
+        <button class="alt" type="button" data-fb="Errado! O motivo não é histórico nem nostalgia: é econômico e técnico. Memória rápida é cara, e a pirâmide é a solução de engenharia para esse problema de custo.">Porque a arquitetura foi herdada dos anos 1950 e ninguém se deu ao trabalho de mudar</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="4-2">
+      <p>2. A cache L1 (nível 1) de um Intel Core i7 moderno tem cerca de 48 KB (quilobytes). Por que ela é tão pequena, se é a memória mais rápida da pirâmide?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! A L1 é feita de SRAM (RAM Estática), que é muito rápida mas ocupa muito espaço físico no chip e custa caro. Aumentá-la significaria abrir mão de espaço para núcleos e outros blocos, então os engenheiros mantêm-na pequena e muito próxima da ULA.">Porque é feita de SRAM, tecnologia muito rápida mas cara e que ocupa muito espaço físico no chip</button>
+        <button class="alt" type="button" data-fb="Errado! A velocidade da L1 não vem de ser pequena, e sim da tecnologia (SRAM) e da posição (colada nos núcleos). O tamanho pequeno é consequência do custo, não causa da velocidade.">Porque ser pequena é o que a torna rápida: quanto menor a memória, maior a velocidade, sempre</button>
+        <button class="alt" type="button" data-fb="Errado! A Intel não limita o tamanho da L1 por decisão comercial: a escolha vem da engenharia do silício. SRAM maior consumiria mais energia e tiraria espaço de outros blocos importantes.">Porque a Intel decide limitar para cobrar mais caro por processadores com mais cache</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="4-3">
+      <p>3. O Google guarda vídeos antigos do YouTube em fitas magnéticas LTO. Qual é o papel desse nível da pirâmide?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! Fitas magnéticas não servem como RAM: elas são muito lentas para isso, levando segundos para posicionar a fita certa. A RAM é o lugar onde o sistema operacional vive em tempo real.">Substituir a memória RAM quando o computador está sem energia</button>
+        <button class="alt" type="button" data-fb="Errado! A cache vive dentro da CPU e é feita de SRAM, não de fita. Fitas magnéticas ficam no nível mais baixo da pirâmide, longe da CPU.">Servir como cache L3 quando a CPU está ociosa</button>
+        <button class="alt" type="button" data-fb="Correto! Fitas magnéticas são o nível mais barato e mais lento da pirâmide, ideal para guardar por anos dados que quase nunca são acessados, como vídeos antigos do YouTube ou backups fiscais. Quando alguém assiste a um vídeo antigo, o Google primeiro copia de volta para SSD e só então entrega ao usuário.">Armazenar de forma barata e durável dados raramente acessados, como vídeos antigos ou backups de longo prazo</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 4</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=hierarquia+de+memória+registradores+cache+RAM+disco" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=hierarquia+de+memória+arquitetura+de+computadores" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=pirâmide+de+memória+registradores+cache+RAM+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Hierarquia de memória</strong>: organização em níveis, do mais rápido/caro/pequeno ao mais lento/barato/grande.</li>
+      <li><strong>SRAM</strong>: RAM Estática, rápida e cara, usada em caches.</li>
+      <li><strong>DRAM</strong>: RAM Dinâmica, mais lenta e barata, usada na memória principal.</li>
+      <li><strong>Cache hit</strong>: quando o dado procurado está na cache.</li>
+      <li><strong>Cache miss</strong>: quando o dado não está na cache e precisa vir de um nível mais lento.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Aumentar a memória RAM do notebook faz a CPU ficar mais rápida.<br>
+      <strong>Veredito:</strong> 🎯 MEIA VERDADE.<br>
+      <strong>Explicação:</strong> a CPU em si não acelera: ela continua com a mesma frequência. Mas com mais RAM, o sistema operacional precisa usar menos o SSD como memória virtual (extensão da RAM no disco), e o computador parece muito mais rápido porque o SSD é centenas de vezes mais lento que a RAM.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 5 ============ -->
+<div class="painel" id="painel-5" role="tabpanel" aria-labelledby="tab-5">
+  <h2>Aba 5 · Tipos de memória e seu papel na hierarquia</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é conhecer de perto as tecnologias que povoam cada nível da pirâmide: a <strong>SRAM</strong> (do inglês <em>Static RAM</em>; em português, RAM Estática, que guarda dados sem precisar de recarga), a <strong>DRAM</strong> (do inglês <em>Dynamic RAM</em>; em português, RAM Dinâmica, que precisa de recarga milhares de vezes por segundo), a <strong>Flash</strong> (usada em SSDs e pen drives) e os discos magnéticos. Cada uma delas existe por uma razão específica de custo, velocidade e durabilidade.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 As tecnologias em detalhes simples</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>SRAM (RAM Estática)</strong>: cada bit é guardado por um pequeno circuito com seis transistores que mantém o valor enquanto houver energia. Muito rápida, cara e ocupa muito espaço no chip. Por isso vive apenas nas caches L1, L2 e L3.</li>
+      <li><strong>DRAM (RAM Dinâmica)</strong>: cada bit é guardado por um transistor e um capacitor (componente que armazena carga elétrica). Como o capacitor vaza carga, o valor precisa ser <strong>recarregado</strong> (refresh) milhares de vezes por segundo. Mais lenta que a SRAM, mas muito mais barata e densa: é a tecnologia dos pentes de memória do seu notebook.</li>
+      <li><strong>Memória Flash NAND</strong>: guarda bits em células de transistor de porta flutuante, que mantêm a carga mesmo sem energia. É a tecnologia dos SSDs e dos pen drives. Mais lenta que a RAM, mas não perde dados ao desligar.</li>
+      <li><strong>Disco magnético (HDD)</strong>: guarda bits em uma superfície metálica magnetizada, lida por uma cabeça móvel. Mais lento que o SSD, mas muito mais barato por gigabyte. Ainda domina datacenters para armazenamento frio.</li>
+      <li><strong>Memória ROM</strong> (do inglês <em>Read-Only Memory</em>; em português, Memória Somente Leitura): vem gravada de fábrica e guarda a BIOS (<em>Basic Input/Output System</em>; em português, Sistema Básico de Entrada e Saída, firmware que acorda o computador) ou UEFI (<em>Unified Extensible Firmware Interface</em>; em português, Interface Unificada de Firmware Extensível, sucessora moderna da BIOS).</li>
+    </ul>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Onde cada tecnologia aparece</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>SRAM</strong>: dentro do seu Intel Core i7, AMD Ryzen ou Apple M1, formando as caches L1, L2 e L3.</li>
+      <li><strong>DRAM</strong>: nos pentes de memória DDR4 e DDR5 (do inglês <em>Double Data Rate</em>; em português, Taxa Dupla de Dados, padrão de RAM moderno) do seu notebook e do seu desktop.</li>
+      <li><strong>Flash NAND</strong>: nos SSDs da Samsung (linha 990 Pro, empresa sul-coreana), nos pen drives da Kingston (empresa americana) e nos cartões microSD dos celulares.</li>
+      <li><strong>HDD</strong>: nos discos rígidos da Seagate (empresa americana, linha IronWolf) e da Western Digital (linha Red), muito usados em servidores NAS (do inglês <em>Network Attached Storage</em>; em português, Armazenamento Conectado à Rede) domésticos e empresariais.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Como identificar o que você tem</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>CPU-Z</strong> mostra o tipo e a velocidade da RAM (DDR4 ou DDR5, em MHz).</li>
+      <li><strong>CrystalDiskInfo</strong> (ferramenta gratuita japonesa) mostra o modelo, a capacidade e a saúde do seu SSD ou HDD.</li>
+      <li><strong>smartctl</strong> (comando do Linux, parte do smartmontools) lê os sensores S.M.A.R.T. (do inglês <em>Self-Monitoring, Analysis and Reporting Technology</em>; em português, Tecnologia de Automonitoramento, Análise e Relatórios) do disco, avisando antes que ele falhe.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: comparador de tecnologias de memória</h3>
+
+    <div class="prever">
+      <strong>Antes de comparar, preveja:</strong> qual das tecnologias abaixo tem o MENOR tempo de acesso: SRAM, DRAM, Flash NAND ou disco magnético? E qual é a mais barata por gigabyte?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 1:</strong> clique em uma tecnologia para ver os três números: velocidade, preço por gigabyte e durabilidade.<br>
+      <strong>Passo 2:</strong> compare as barras de velocidade: a diferença é de ordens de grandeza.<br>
+      <strong>Passo 3:</strong> repare que o mais rápido é também o mais caro e o menos denso.<br>
+      <strong>Passo 4:</strong> leia o exemplo real de produto que usa cada tecnologia.
+    </div>
+
+    <div class="roteiro">
+      comece com SRAM e mostre que custa cerca de 100 vezes mais por gigabyte que DRAM. Depois mostre Flash NAND e HDD: eles explicam por que SSD é mais rápido mas mais caro que HDD. A hierarquia nasce desses compromissos.
+    </div>
+
+    <div class="demo-area" id="demo5-area">
+      <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem">
+        <button class="btn" type="button" data-tec="sram">SRAM (cache)</button>
+        <button class="btn" type="button" data-tec="dram">DRAM (RAM)</button>
+        <button class="btn" type="button" data-tec="flash">Flash NAND (SSD)</button>
+        <button class="btn" type="button" data-tec="hdd">HDD (disco rígido)</button>
+        <button class="btn" type="button" data-tec="fita">Fita magnética</button>
+      </div>
+      <div id="demo5-ficha" style="padding:1rem; background:var(--fundo-codigo); border-radius:8px; min-height:120px">
+        👆 Clique em uma tecnologia para ver velocidade, preço por GB e exemplo real.
+      </div>
+      <button class="btn btn-secundario" type="button" id="demo5-reset" style="margin-top:1rem">🔄 Reiniciar</button>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 5</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      SRAM = RAM Estática, rápida e cara, usada em caches ·
+      DRAM = RAM Dinâmica, precisa de recarga constante, usada nos pentes de memória ·
+      Flash NAND = memória não volátil dos SSDs e pen drives ·
+      refresh = recarga periódica dos capacitores da DRAM ·
+      não volátil = mantém os dados mesmo sem energia.
+    </div>
+
+    <div class="pergunta" data-pergunta="5-1">
+      <p>1. Por que a DRAM (a RAM dos pentes) precisa de refresh (recarga periódica)?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! O refresh da DRAM não é uma decisão de marketing: é consequência física de como ela guarda bits. Os capacitores vazam carga, então o controlador precisa recarregá-los milhares de vezes por segundo.">Porque a Intel e a AMD decidiram assim para vender controladores de memória mais caros</button>
+        <button class="alt" type="button" data-fb="Correto! A DRAM guarda cada bit em um capacitor (componente que armazena carga elétrica), que vaza naturalmente. Para não perder o dado, o controlador de memória recarrega os capacitores milhares de vezes por segundo, operação chamada refresh.">Porque cada bit é guardado em um capacitor que vaza carga, exigindo recarga periódica para não perder o dado</button>
+        <button class="alt" type="button" data-fb="Errado! A SRAM (usada em caches) é que NÃO precisa de refresh, porque guarda cada bit em um circuito de seis transistores que se mantém sozinho. A DRAM é que precisa de recarga constante.">Porque é uma tecnologia antiga que a engenharia moderna ainda não conseguiu corrigir</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="5-2">
+      <p>2. O Samsung 990 Pro é um SSD (unidade de estado sólido) moderno. Qual tecnologia ele usa por dentro?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! SRAM é muito cara e perde dados ao desligar. Nenhum SSD é feito de SRAM, porque seria impagável e não guardaria os arquivos ao desligar o computador.">SRAM (RAM Estática)</button>
+        <button class="alt" type="button" data-fb="Errado! DRAM é volátil: perde os dados ao desligar. Um SSD precisa manter os arquivos por anos sem energia, então não pode ser de DRAM.">DRAM (RAM Dinâmica)</button>
+        <button class="alt" type="button" data-fb="Correto! SSDs usam memória Flash NAND, que guarda os bits em células de transistor de porta flutuante. Isso permite que os arquivos sobrevivam anos sem energia, e o acesso é centenas de vezes mais rápido que em HDDs.">Memória Flash NAND, que guarda bits em células de transistor de porta flutuante e não perde dados ao desligar</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="5-3">
+      <p>3. A BIOS (firmware que acorda o computador ao ligar) fica gravada em qual tipo de memória?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! A BIOS (ou UEFI, sua sucessora moderna) fica gravada em uma memória Flash não volátil soldada na placa-mãe. Por isso ela sobrevive quando você tira o computador da tomada: é essa memória que o processador lê nos primeiros milissegundos após você apertar o botão de ligar.">Em uma memória não volátil (Flash) soldada na placa-mãe, para sobreviver ao desligamento</button>
+        <button class="alt" type="button" data-fb="Errado! A RAM é volátil: tudo o que está nela apaga ao desligar. Se a BIOS vivesse na RAM, o computador não saberia como acordar no próximo ligamento.">Na RAM (memória principal), pois lá o acesso é mais rápido</button>
+        <button class="alt" type="button" data-fb="Errado! A BIOS não fica no SSD nem no HDD: ela precisa estar disponível antes mesmo de o sistema operacional acordar esses discos. Por isso vive em um chip soldado na placa-mãe, lido diretamente pelo processador.">No SSD, junto com o sistema operacional</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 5</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=tipos+de+memória+SRAM+DRAM+Flash+HDD+diferenças" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=tecnologias+de+memória+SRAM+DRAM+NAND" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=SRAM+DRAM+Flash+HDD+como+funcionam+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>SRAM</strong>: RAM Estática; rápida, cara, usada em caches.</li>
+      <li><strong>DRAM</strong>: RAM Dinâmica; precisa de refresh, usada em pentes de RAM.</li>
+      <li><strong>Flash NAND</strong>: memória não volátil dos SSDs e pen drives.</li>
+      <li><strong>HDD</strong>: disco rígido com pratos magnéticos girando.</li>
+      <li><strong>Refresh</strong>: recarga periódica dos capacitores da DRAM.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Um SSD é só um HD mais rápido.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> são tecnologias fundamentalmente diferentes. O HDD tem pratos girando e uma cabeça mecânica que se move; o SSD não tem partes móveis, usa memória Flash NAND e acessa qualquer célula em microssegundos. A diferença de desempenho é de 10 a 100 vezes em acesso aleatório.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 6 ============ -->
+<div class="painel" id="painel-6" role="tabpanel" aria-labelledby="tab-6">
+  <h2>Aba 6 · Gerenciamento de memória e estratégias de otimização <span class="badge-estudo">📖 Estudo próprio</span></h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é descobrir como o sistema operacional (o programa-mestre que gerencia o hardware) transforma a memória física em algo maior e mais fácil de usar: a <strong>memória virtual</strong> (do inglês <em>Virtual Memory</em>; em português, Memória Virtual, ilusão de que o programa tem mais memória do que realmente existe). Você vai ver isso em uma simulação que conta <strong>page hits</strong> (acertos de página, quando o dado já está na RAM) e <strong>page faults</strong> (faltas de página, quando o dado precisa ser trazido do disco).</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Os três pilares do gerenciamento de memória</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Memória virtual</strong>: o sistema operacional faz cada programa pensar que tem um bloco contínuo e gigante de memória, mesmo quando a RAM real está cheia de pedaços de vários programas. Ele mapeia endereços virtuais em endereços físicos usando uma tabela chamada <strong>TLB</strong> (do inglês <em>Translation Lookaside Buffer</em>; em português, Buffer de Consulta à Tradução), uma cache especial para endereços.</li>
+      <li><strong>Paginação</strong>: a memória virtual é dividida em pedaços do mesmo tamanho chamados <strong>páginas</strong> (tipicamente 4 KB, quilobytes). Quando a RAM enche, páginas pouco usadas descem para o SSD ou HDD em uma área chamada <strong>swap</strong> (do inglês, troca).</li>
+      <li><strong>Localidade</strong>: programas bem-comportados exibem duas propriedades que o hardware aproveita. <strong>Localidade temporal</strong>: se um dado foi acessado recentemente, é provável que seja acessado de novo em breve. <strong>Localidade espacial</strong>: se um endereço foi acessado, endereços vizinhos provavelmente serão acessados também.</li>
+    </ul>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Onde o gerenciamento aparece na sua máquina</h3>
+    <ul style="margin-left:1.5rem">
+      <li>O <strong>Windows 11</strong> mostra no Gerenciador de Tarefas quanto de memória virtual está sendo usada; quando o valor ultrapassa a RAM física, o sistema começa a fazer swap para o SSD e você percebe lentidão.</li>
+      <li>O <strong>Linux</strong> tem o comando <code>free -h</code> (do inglês, livre, mostra memória disponível) que exibe a memória RAM, a swap e o que está sendo usado por cada processo.</li>
+      <li>O <strong>macOS</strong> (sistema operacional da Apple) usa compressão de memória em vez de swap sempre que possível: páginas pouco usadas são compactadas na própria RAM, o que é mais rápido que ir ao SSD.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Políticas de substituição de páginas</h3>
+    <p>Quando a RAM enche e uma nova página precisa entrar, o sistema operacional escolhe qual página tirar. As políticas clássicas são:</p>
+    <ul style="margin-left:1.5rem">
+      <li><strong>FIFO</strong> (do inglês <em>First In, First Out</em>; em português, Primeiro a Entrar, Primeiro a Sair): tira a página que chegou primeiro, sem pensar em uso.</li>
+      <li><strong>LRU</strong> (do inglês <em>Least Recently Used</em>; em português, Menos Recentemente Usada): tira a página que está há mais tempo sem ser acessada. É a mais usada na prática.</li>
+      <li><strong>LFU</strong> (do inglês <em>Least Frequently Used</em>; em português, Menos Frequentemente Usada): tira a página que foi acessada menos vezes no total.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: simulador de localidade e page faults</h3>
+
+    <div class="prever">
+      <strong>Antes de rodar, preveja:</strong> se você percorrer um array (lista de valores na memória) do começo ao fim, linearmente, vai ter mais page hits (acertos) ou mais page faults (faltas)? E se percorrer o mesmo array saltando de 100 em 100 posições?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 1:</strong> escolha um padrão de acesso: linear (0, 1, 2, 3...) ou saltado (0, 100, 200...).<br>
+      <strong>Passo 2:</strong> clique em Rodar e veja a animação de endereços virando páginas.<br>
+      <strong>Passo 3:</strong> leia o contador de hits e faults.<br>
+      <strong>Passo 4:</strong> compare os dois padrões: a localidade espacial explica a diferença.
+    </div>
+
+    <div class="roteiro">
+      rode primeiro o padrão linear: quase todos os acessos serão hits, porque endereços vizinhos caem na mesma página. Depois rode o saltado: os faults explodem, porque cada acesso cai em uma página diferente. Isso mostra por que percorrer um array na ordem é muito mais rápido.
+    </div>
+
+    <div class="legenda">
+      página = bloco de 4 KB (quilobytes) em que a memória é dividida · hit = o dado já está na RAM · fault = o dado está no disco e precisa ser trazido · localidade espacial = endereços vizinhos tendem a ser acessados juntos · localidade temporal = dado acessado recentemente tende a ser acessado de novo
+    </div>
+
+    <div class="demo-area" id="demo6-area">
+      <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem">
+        <button class="btn" type="button" data-padro6="linear">🚶 Linear (0, 1, 2, 3...)</button>
+        <button class="btn" type="button" data-padro6="saltado">🦘 Saltado (0, 100, 200...)</button>
+        <button class="btn" type="button" data-padro6="aleatorio">🎲 Aleatório</button>
+      </div>
+      <div id="demo6-visual" style="background:var(--fundo-codigo); padding:1rem; border-radius:8px; font-family:monospace; min-height:80px; margin:1rem 0"></div>
+      <div style="font-weight:bold">
+        Acessos: <span id="demo6-total">0</span> · Hits: <span id="demo6-hits" style="color:var(--sucesso)">0</span> · Faults: <span id="demo6-faults" style="color:var(--erro)">0</span> · Taxa de acerto: <span id="demo6-taxa">0%</span>
+      </div>
+      <div style="margin-top:1rem">
+        <button class="btn" type="button" id="demo6-go">▶ Rodar simulação</button>
+        <button class="btn btn-secundario" type="button" id="demo6-reset">🔄 Reiniciar</button>
+      </div>
+      <div id="demo6-resultado" style="margin-top:1rem"></div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 6</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      memória virtual = ilusão de que cada programa tem mais memória do que a RAM física ·
+      página = bloco de tamanho fixo (tipicamente 4 KB) em que a memória é dividida ·
+      page fault = falta de página, quando o dado está no disco e precisa ser trazido para a RAM ·
+      swap = área no SSD ou HDD usada como extensão da RAM ·
+      TLB = cache de endereços, que acelera a tradução de endereços virtuais em físicos ·
+      localidade temporal = dado acessado recentemente tende a ser acessado de novo ·
+      localidade espacial = endereços vizinhos tendem a ser acessados juntos.
+    </div>
+
+    <div class="pergunta" data-pergunta="6-1">
+      <p>1. O que é um page fault (falta de página) no gerenciamento de memória?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! Um page fault não é erro de programa nem travamento: é uma operação normal do sistema operacional, sinalizando que um dado precisa ser trazido do disco. O programa nem percebe que isso aconteceu.">Um bug no programa que faz a CPU travar</button>
+        <button class="alt" type="button" data-fb="Correto! Um page fault acontece quando o programa pede um dado que não está na RAM, e o sistema operacional precisa buscar essa página no SSD ou HDD (na área de swap) antes de continuar. É uma operação esperada, não um erro.">Quando o programa pede um dado que não está na RAM e o sistema operacional precisa buscá-lo no disco</button>
+        <button class="alt" type="button" data-fb="Errado! Quando o dado está na cache (L1, L2 ou L3), o acesso é ainda mais rápido que um acerto de página em RAM. Falta só acontece quando o dado saiu da RAM inteira, não só da cache.">Quando o dado procurado não está nem mesmo na cache da CPU</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="6-2">
+      <p>2. Por que percorrer um array (lista de valores na memória) de forma LINEAR é muito mais rápido que percorrê-lo saltando?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! O modo linear não é mais rápido porque a CPU gosta mais dele: a CPU não tem preferência. A diferença vem do sistema de memória, que aproveita melhor a localidade espacial quando os acessos são próximos.">Porque a CPU prefere instruções lineares e executa mais rápido esse padrão</button>
+        <button class="alt" type="button" data-fb="Errado! A cache ajuda, mas não é o único motivo. Mesmo sem cache, o acesso linear tem muito menos page faults porque endereços vizinhos caem na mesma página. A localidade espacial é o conceito central.">Porque a cache só funciona com acessos lineares e não aceita saltos</button>
+        <button class="alt" type="button" data-fb="Correto! Por causa da localidade espacial: quando você acessa um endereço, o sistema traz para a RAM a página inteira (4 KB de endereços vizinhos). Se você percorre linearmente, quase todos os próximos acessos já estão na RAM. Saltando, cada acesso cai em uma página diferente e gera um page fault.">Por causa da localidade espacial: endereços vizinhos caem na mesma página, então o acesso linear aproveita o que já foi trazido para a RAM</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="6-3">
+      <p>3. A política LRU (Menos Recentemente Usada) é a mais usada na prática para escolher qual página tirar da RAM quando ela enche. Por quê?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! A LRU se aproveita da localidade temporal: se uma página não foi acessada há muito tempo, é menos provável que seja acessada em breve. Essa heurística (atalho prático) funciona bem para a maioria dos programas reais.">Porque se aproveita da localidade temporal: páginas não acessadas há muito tempo têm menor chance de serem usadas em breve</button>
+        <button class="alt" type="button" data-fb="Errado! FIFO é mais simples mas muito pior na prática: tira a página que chegou primeiro, mesmo que ela ainda esteja sendo usada ativamente. Em muitos programas, isso joga fora páginas importantes e gera muitos page faults.">Porque é a mais simples de implementar e por isso a mais barata</button>
+        <button class="alt" type="button" data-fb="Errado! A LFU (Menos Frequentemente Usada) tem um problema sério: uma página muito usada no passado mas não mais agora fica presa na RAM para sempre, mesmo que nunca mais seja acessada. A LRU evita isso ao olhar só o último acesso.">Porque LFU é muito mais lenta e por isso nunca é usada</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 6</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=memória+virtual+paginação+swap+TLB+como+funciona" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=gerenciamento+de+memória+virtual+políticas+LRU+FIFO" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=memória+virtual+paginação+swap+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Memória virtual</strong>: ilusão de memória maior, mapeando endereços virtuais em físicos.</li>
+      <li><strong>Página</strong>: bloco de tamanho fixo (tipicamente 4 KB) em que a memória é dividida.</li>
+      <li><strong>Swap</strong>: área no SSD ou HDD usada como extensão da RAM.</li>
+      <li><strong>TLB</strong>: cache de traduções de endereços virtuais para físicos.</li>
+      <li><strong>LRU</strong>: política de substituição que tira a página menos recentemente usada.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Memória virtual é uma mentira da CPU e deveria ser desligada para deixar o computador mais rápido.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> sem memória virtual, cada programa precisaria saber exatamente onde está na RAM e não poderia usar mais memória do que a física. Além disso, o isolamento entre programas desapareceria, e um programa travaria o outro. A memória virtual é um dos pilares da computação moderna, não uma gambiarra.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 7 - REVISÃO ============ -->
+<div class="painel" id="painel-7" role="tabpanel" aria-labelledby="tab-7">
+  <h2>⭐ Revisão — Mapa completo da aula</h2>
+
+  <h3>🗺️ Mapa da aula</h3>
+  <div class="revisao-mapa">
+    <div class="no-mapa">
+      <h4>Aba 1 · Processador</h4>
+      <p>As quatro peças da CPU: UC (maestro), ULA (calculadora), registradores (gavetas) e barramentos (ruas).</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 2 · Ciclo e Pipeline</h4>
+      <p>Os cinco estágios do ciclo de Von Neumann (IF, ID, EX, MEM, WB) e a esteira que permite várias instruções ao mesmo tempo.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 3 · RISC vs CISC</h4>
+      <p>Duas filosofias rivais: ARM (RISC dos celulares) contra x86 (CISC dos notebooks), com a fronteira hoje embaçada.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 4 · Hierarquia</h4>
+      <p>A pirâmide de cinco níveis: registradores, cache, RAM, SSD/HDD e fitas magnéticas.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 5 · Tipos de memória</h4>
+      <p>SRAM, DRAM, Flash NAND, HDD e ROM: cada tecnologia com sua razão de existir.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 6 · Gerenciamento</h4>
+      <p>Memória virtual, paginação, swap, TLB, localidade temporal e espacial, políticas LRU, FIFO e LFU.</p>
+    </div>
+    <div class="no-mapa">
+      <h4> Estudo em casa</h4>
+      <p>Refaça os quizzes das abas 1 a 5 e da aba 6 (estudo próprio) para garantir os 6 selos antes do Chefão.</p>
+    </div>
+  </div>
+
+  <div class="cola-rapida">
+    <h3>🧷 Cola rápida — glossário da aula</h3>
+    <dl>
+      <dt><strong>CPU</strong></dt>
+      <dd>Unidade Central de Processamento: o chip que executa instruções dos programas.</dd>
+
+      <dt><strong>UC</strong></dt>
+      <dd>Unidade de Controle: o maestro que busca e decodifica instruções e orquestra os outros componentes.</dd>
+
+      <dt><strong>ULA</strong></dt>
+      <dd>Unidade Lógica e Aritmética: a calculadora interna que soma, subtrai e faz operações lógicas.</dd>
+
+      <dt><strong>Registrador</strong></dt>
+      <dd>Gaveta interna super-rápida dentro da CPU, onde a ULA deposita valores que está usando agora.</dd>
+
+      <dt><strong>Barramento</strong></dt>
+      <dd>Conjunto de fios que conecta a CPU à memória e aos dispositivos: de dados, de endereços e de controle.</dd>
+
+      <dt><strong>Pipeline</strong></dt>
+      <dd>Esteira que divide o ciclo de instrução em estágios, permitindo que várias instruções convivam em fases diferentes.</dd>
+
+      <dt><strong>IF, ID, EX, MEM, WB</strong></dt>
+      <dd>Os cinco estágios clássicos: Busca, Decodificação, Execução, Acesso à Memória e Escrita de Volta.</dd>
+
+      <dt><strong>IPC</strong></dt>
+      <dd>Instruções Por Ciclo: quanto maior, melhor a esteira está sendo aproveitada.</dd>
+
+      <dt><strong>CISC</strong></dt>
+      <dd>Arquitetura com muitas instruções complexas, cada uma fazendo várias coisas (ex: família x86).</dd>
+
+      <dt><strong>RISC</strong></dt>
+      <dd>Arquitetura com poucas instruções simples, todas do mesmo tamanho e executadas em um ciclo (ex: família ARM).</dd>
+
+      <dt><strong>x86</strong></dt>
+      <dd>Família CISC histórica da Intel e da AMD, dominante em notebooks e servidores.</dd>
+
+      <dt><strong>ARM</strong></dt>
+      <dd>Família RISC licenciada pela empresa britânica Arm, dominante em celulares.</dd>
+
+      <dt><strong>SoC</strong></dt>
+      <dd>System on Chip: processador, GPU e outros blocos no mesmo chip, como o Apple M1.</dd>
+
+      <dt><strong>Cache L1/L2/L3</strong></dt>
+      <dd>Três níveis de memória rápida dentro da CPU, do menor e mais rápido (L1) ao maior e menos rápido (L3).</dd>
+
+      <dt><strong>SRAM</strong></dt>
+      <dd>RAM Estática: rápida e cara, usada em caches. Não precisa de recarga.</dd>
+
+      <dt><strong>DRAM</strong></dt>
+      <dd>RAM Dinâmica: usada nos pentes de memória, mais barata que SRAM. Precisa de refresh milhares de vezes por segundo.</dd>
+
+      <dt><strong>Flash NAND</strong></dt>
+      <dd>Memória não volátil usada em SSDs e pen drives; mantém dados sem energia.</dd>
+
+      <dt><strong>HDD</strong></dt>
+      <dd>Disco rígido com pratos magnéticos girando; mais barato por GB que SSD, mas muito mais lento.</dd>
+
+      <dt><strong>SSD</strong></dt>
+      <dd>Unidade de Estado Sólido, disco sem partes móveis, centenas de vezes mais rápido que HDD.</dd>
+
+      <dt><strong>Memória virtual</strong></dt>
+      <dd>Ilusão de que cada programa tem mais memória do que a RAM física; mapeia endereços virtuais em físicos.</dd>
+
+      <dt><strong>Página</strong></dt>
+      <dd>Bloco de tamanho fixo (tipicamente 4 KB) em que a memória é dividida para paginação.</dd>
+
+      <dt><strong>Page fault</strong></dt>
+      <dd>Falta de página: quando o dado pedido não está na RAM e precisa ser trazido do disco.</dd>
+
+      <dt><strong>Swap</strong></dt>
+      <dd>Área no SSD ou HDD usada como extensão da RAM quando a memória física enche.</dd>
+
+      <dt><strong>TLB</strong></dt>
+      <dd>Buffer de Consulta à Tradução: cache especial que acelera a conversão de endereços virtuais em físicos.</dd>
+
+      <dt><strong>Localidade temporal</strong></dt>
+      <dd>Dado acessado recentemente tende a ser acessado de novo em breve.</dd>
+
+      <dt><strong>Localidade espacial</strong></dt>
+      <dd>Endereços vizinhos tendem a ser acessados em sequência.</dd>
+
+      <dt><strong>LRU</strong></dt>
+      <dd>Política de substituição que tira a página Menos Recentemente Usada.</dd>
+
+      <dt><strong>FIFO</strong></dt>
+      <dd>Política que tira a página que entrou primeiro, sem olhar o uso.</dd>
+    </dl>
+  </div>
+
+  <div class="chefao">
+    <h3>👑 CHEFÃO — Desafio final</h3>
+    <p><strong>Enunciado:</strong> Você foi contratado pela <strong>CineStream</strong> (empresa fictícia de streaming de vídeo, inspirada no modelo da Netflix, serviço americano de streaming) para desenhar o hardware do servidor que vai codificar e entregar vídeos 4K (resolução de 3840 por 2160 pixels) para milhares de assinantes ao mesmo tempo. O servidor precisa de muito desempenho de CPU, muita memória rápida para guardar os vídeos em processamento e armazenamento gigante para o catálogo.</p>
+
+    <p style="margin-top:1rem"><strong>Parte 1 — CPU (escolha de arquitetura):</strong> a diretoria está em dúvida entre usar um processador <strong>AMD EPYC</strong> (linha de servidores da AMD, baseada na família x86, CISC por fora e RISC por dentro) ou um <strong>Ampere Altra</strong> (processador de servidores da empresa americana Ampere, baseada em ARM, RISC puro).</p>
+    <ol style="margin-left:1.5rem">
+      <li>Para um servidor que vai atender milhares de usuários simultâneos 24 horas por dia em um datacenter, qual arquitetura você recomendaria e por quê? Justifique citando um caso real da Aba 3 (termo na cola rápida).</li>
+      <li>Explique, em uma frase, por que o AMD EPYC é chamado de CISC por fora e RISC por dentro (termo na cola rápida).</li>
+    </ol>
+
+    <p style="margin-top:1rem"><strong>Parte 2 — Hierarquia de memória (dimensionamento):</strong> o servidor terá 256 GB (gigabytes) de RAM DDR5, um SSD NVMe (padrão rápido de SSD) de 8 TB (terabytes) para o catálogo quente e uma biblioteca de fitas LTO para backup.</p>
+    <ol style="margin-left:1.5rem">
+      <li>Desenhe a pirâmide de memória deste servidor com quatro níveis (termo na cola rápida), indicando em cada nível a tecnologia (DRAM, Flash NAND, fita), a capacidade e um exemplo de dado que vive naquele nível.</li>
+      <li>Explique por que o servidor precisa dos TRÊS níveis simultaneamente (RAM, SSD e fita), em vez de usar só SSD gigante, usando os conceitos de custo por GB (termo na cola rápida) e velocidade.</li>
+    </ol>
+
+    <p style="margin-top:1rem"><strong>Parte 3 — Gerenciamento de memória (page faults):</strong> o processo de codificação de vídeo percorre um buffer (área de memória temporária) gigante de 64 GB. Dois estagiários propuseram estratégias diferentes para percorrer esse buffer:</p>
+    <ul style="margin-left:1.5rem">
+      <li>Estratégia A: percorrer o buffer do começo ao fim, linearmente (0, 1, 2, 3...).</li>
+      <li>Estratégia B: percorrer saltando de 4 KB (tamanho de página) em 4 KB (0, 4096, 8192, 12288...).</li>
+    </ul>
+    <p style="margin-top:0.75rem"><strong>Qual estratégia gerará MENOS page faults (faltas de página, termo na cola rápida) e por quê?</strong> Responda em um parágrafo, usando os conceitos de localidade espacial e localidade temporal (termos na cola rápida).</p>
+
+    <p style="margin-top:1rem"><strong>Parte 4 — Pipeline (cálculo):</strong> a CPU escolhida tem um pipeline de 14 estágios. Se você executar 10 instruções consecutivas, cada uma gastando 1 ciclo por estágio, quantos ciclos no total serão necessários até a última instrução ser concluída? Mostre o cálculo.</p>
+  </div>
+
+  <details>
+    <summary>📚 Dica para o Chefão</summary>
+    <p style="margin-top:0.75rem">Na Parte 1, pense em eficiência energética: datacenters pagam muito caro por eletricidade, então o consumo por instrução importa. Na Parte 2, use a regra do custo por GB: RAM custa cerca de 100 vezes mais que SSD por GB, e SSD custa cerca de 10 vezes mais que fita. Na Parte 3, lembre-se de que endereços vizinhos caem na mesma página de 4 KB: o padrão A visita cada página uma vez só; o B salta exatamente de página em página. Na Parte 4, use a fórmula clássica: ciclos = (número de instruções) + (número de estágios - 1).</p>
+  </details>
+</div>
+
+<!-- ============ RODAPÉ ============ -->
+<footer>
+  <div class="bloco">
+    <h4>📋 FICHA TÉCNICA DA AULA</h4>
+    <p>Arquitetura e Organização de Computadores — Aula 4, Unidade 2, págs. 9–35 · Gerado em 30/10/2026 · 6 abas de conteúdo (sendo 1 com selo 📖 Estudo próprio) + Revisão · 18 perguntas · 6 demos · cor #6C63FF</p>
+  </div>
+
+  <div class="bloco">
+    <h4>🪄 SOBRE O HTMLearning · v2.17 (23/10/2026)</h4>
+    <p style="margin-bottom:0.75rem">Transformar o sumário de qualquer disciplina em uma classe interativa em HTML único e offline, com previsão antes do clique, tentativa e erro guiado e exemplos reais.</p>
+
+    <ul style="margin-left:1.5rem; margin-bottom:0.75rem">
+      <li>O que é: metodologia e arquitetura de prompts que converte sumários em aulas interativas em minutos, com IAs gratuitas.</li>
+      <li>O que entrega: 5 a 7 abas + Revisão, simulações com previsão, quiz com retry sem revelar gabarito, linguagem plana, Modos Apresentação/Leitura.</li>
+      <li>Por que é inclusivo: um único .html leve, 100% offline, roda em PC e celular e viaja em pen drive para escolas desconectadas ou áreas rurais.</li>
+    </ul>
+
+    <p style="margin-bottom:0.5rem">Idealizador do projeto: Professor Wellington Dimas da Cruz</p>
+    <p style="margin-bottom:0.75rem">Apoiadora do projeto: Prof.ª Dr.ª Mariella Berger Andrade (IFES / CEFOR)</p>
+
+    <p style="margin-top:0.75rem">Contatos e links do projeto:</p>
+    <ul>
+      <li>E-mail do idealizador: <a href="mailto:cloud.ai-generative@outlook.com">cloud.ai-generative@outlook.com</a></li>
+      <li>Repositório GitHub do idealizador: <a href="https://github.com/cloud-ai-Generative" target="_blank" rel="noopener">github.com/cloud-ai-Generative</a></li>
+      <li>Currículo Lattes do idealizador: <a href="https://lattes.cnpq.br/6801791839011321" target="_blank" rel="noopener">lattes.cnpq.br/6801791839011321</a></li>
+      <li>Currículo Lattes da apoiadora: <a href="https://lattes.cnpq.br/3929645439848570" target="_blank" rel="noopener">lattes.cnpq.br/3929645439848570</a></li>
+      <li>Site oficial do projeto: <a href="https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html" target="_blank" rel="noopener">https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html</a></li>
+    </ul>
+  </div>
+</footer>
+
+<script>
+"use strict";
+
+/* ================= DADOS ================= */
+var tecMemoria = {
+  sram: {
+    nome: "SRAM (RAM Estática)",
+    velocidade: "1 a 2 nanosegundos",
+    precoGB: "Cerca de US$ 100 por GB (muito cara)",
+    densidade: "Baixa: ocupa muito espaço físico no chip",
+    durabilidade: "Ilimitada enquanto houver energia; perde dados ao desligar",
+    exemplo: "Dentro do Intel Core i7, AMD Ryzen e Apple M1, formando as caches L1, L2 e L3."
+  },
+  dram: {
+    nome: "DRAM (RAM Dinâmica)",
+    velocidade: "Cerca de 50 nanosegundos",
+    precoGB: "Cerca de US$ 1 a US$ 3 por GB (barata)",
+    densidade: "Alta: muita capacidade em pouco espaço",
+    durabilidade: "Perde dados ao desligar; precisa de refresh milhares de vezes por segundo",
+    exemplo: "Pentes de memória DDR4 e DDR5 de notebooks, desktops e servidores."
+  },
+  flash: {
+    nome: "Flash NAND (usada em SSDs)",
+    velocidade: "Cerca de 50 a 100 microssegundos",
+    precoGB: "Cerca de US$ 0,08 por GB",
+    densidade: "Muito alta: vários TB em um único chip",
+    durabilidade: "Não volátil, mas cada célula aguenta cerca de 1.000 a 100.000 gravações",
+    exemplo: "SSD Samsung 990 Pro, pen drives Kingston, cartões microSD em celulares."
+  },
+  hdd: {
+    nome: "HDD (disco rígido magnético)",
+    velocidade: "Cerca de 5 a 10 milissegundos (acesso mecânico)",
+    precoGB: "Cerca de US$ 0,015 por GB (muito barato)",
+    densidade: "Altíssima: até 30 TB em um único disco",
+    durabilidade: "Não volátil, mas sensível a impactos por ter partes móveis",
+    exemplo: "Discos Seagate IronWolf e Western Digital Red em servidores NAS domésticos."
+  },
+  fita: {
+    nome: "Fita magnética LTO",
+    velocidade: "Cerca de 30 a 50 segundos para posicionar a fita certa",
+    precoGB: "Cerca de US$ 0,004 por GB (extremamente barato)",
+    densidade: "Altíssima: até 45 TB comprimidos por cartucho na geração LTO-9",
+    durabilidade: "30 anos ou mais em condições adequadas",
+    exemplo: "Bibliotecas robotizadas do Google, AWS e IBM para backup de longo prazo."
+  }
+};
+
+var cenariosArq = [
+  {
+    descricao: "Um celular que precisa durar um dia inteiro longe da tomada e rodar jogos 3D pesados.",
+    certa: "arm",
+    fbCerta: "Isso mesmo! A família ARM (RISC) domina celulares justamente pelo baixo consumo de energia: cerca de 99% dos smartphones usam ARM, incluindo iPhones e Androids com Snapdragon da Qualcomm.",
+    fbOutros: "Não é essa a escolha ideal. Para celular, o consumo de energia é o critério dominante, e ARM (RISC) ganha de longe por acender menos circuitos por ciclo."
+  },
+  {
+    descricao: "Um servidor de datacenter que vai processar milhões de requisições por segundo, com orçamento apertado de eletricidade.",
+    certa: "arm",
+    fbCerta: "Isso mesmo! Servidores baseados em ARM (como o Ampere Altra da Ampere Computing, empresa americana) estão ganhando datacenters justamente pela eficiência energética, como fez a AWS com seu chip Graviton próprio.",
+    fbOutros: "Não é a melhor escolha. Em datacenters, a conta de luz pesa tanto quanto o hardware, e ARM entrega mais trabalho por watt consumido."
+  },
+  {
+    descricao: "Um notebook gamer que precisa rodar os últimos jogos Windows sem perder compatibilidade com títulos antigos.",
+    certa: "x86",
+    fbCerta: "Isso mesmo! A família x86 (CISC da Intel e AMD) domina notebooks gamers porque o parque inteiro de jogos Windows foi escrito para ela. Um notebook ARM não rodaria a maioria desses títulos sem emulação lenta.",
+    fbOutros: "Não é essa a escolha ideal. Compatibilidade com jogos Windows antigos é o critério dominante, e x86 (CISC) ainda reina nesse terreno."
+  },
+  {
+    descricao: "Um supercomputador que precisa entregar desempenho máximo em cálculo científico (como previsão do tempo).",
+    certa: "qualquer",
+    fbCerta: "Isso mesmo! Em supercomputadores, as duas arquiteturas convivem. O Frontier (americano, de 2022) usa AMD x86, enquanto o Fugaku (japonês, de 2020) usa ARM. O que manda é o projeto do sistema inteiro, não só a família.",
+    fbOutros: "Cuidado! Em supercomputadores modernos, tanto x86 quanto ARM entregam desempenho de ponta. O Frontier (americano, 2022) é x86 e o Fugaku (japonês, 2020) é ARM. A escolha depende do projeto completo."
+  },
+  {
+    descricao: "Um roteador doméstico que fica ligado 24 horas por dia processando pouco tráfego.",
+    certa: "arm",
+    fbCerta: "Isso mesmo! Roteadores quase sempre usam ARM (RISC) porque precisam consumir pouquíssimo e esquentar pouco. É ARM que roda dentro do roteador da sua casa.",
+    fbOutros: "Não é essa a escolha. Para dispositivos embarcados como roteadores, ARM domina pela eficiência energética e pelo preço baixo."
+  },
+  {
+    descricao: "Uma estação de trabalho para edição de vídeo 8K que precisa rodar Adobe Premiere Pro nativo.",
+    certa: "x86",
+    fbCerta: "Isso mesmo! Ferramentas profissionais como Adobe Premiere Pro têm versão nativa para x86 muito madura. Embora o Apple M1 (ARM) rode bem via Rosetta 2 (tradutor da Apple), workstations Windows ainda preferem x86.",
+    fbOutros: "Não é a escolha mais direta. O ecossistema profissional de edição de vídeo ainda é fortemente baseado em x86 (CISC) no Windows, com versões nativas otimizadas há anos."
+  }
+];
+
+/* ================= ESTADO ================= */
+var estado = {
+  abaAtual: 1,
+  xp: 0,
+  selos: {},
+  totalSelos: 0,
+  respostas: {},
+  modo: "leitura",
+  tema: "claro"
+};
+
+var demo2Estado = { rodando: false, timer: null, serial: false, ciclo: 0 };
+var demo3Estado = { atual: null, resolvidos: 0, acertos: 0 };
+var demo6Estado = { padrao: null, timer: null };
+
+/* ================= NAVEGAÇÃO ================= */
+function ativarAba(num) {
+  estado.abaAtual = num;
+  var tabs = document.querySelectorAll(".tab");
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].setAttribute("aria-selected", tabs[i].getAttribute("data-aba") === String(num) ? "true" : "false");
+  }
+  var paineis = document.querySelectorAll(".painel");
+  for (var j = 0; j < paineis.length; j++) {
+    paineis[j].classList.remove("active");
+  }
+  var alvo = document.getElementById("painel-" + num);
+  if (alvo) alvo.classList.add("active");
+  document.getElementById("progresso").textContent = "Aba " + num + " de 7";
+}
+
+function irParaAba(num) {
+  ativarAba(num);
+  var novo = "#aba-" + num;
+  if (window.location.hash !== novo) {
+    window.location.hash = novo;
+  }
+  window.scrollTo(0, 0);
+}
+
+function lerHash() {
+  var h = window.location.hash.replace("#aba-", "");
+  var n = parseInt(h, 10);
+  if (n >= 1 && n <= 7) return n;
+  return 0;
+}
+
+window.addEventListener("hashchange", function () {
+  var n = lerHash();
+  if (n && n !== estado.abaAtual) ativarAba(n);
+});
+
+/* ================= MODOS ================= */
+function alternarModo() {
+  if (estado.modo === "leitura") {
+    document.body.classList.add("modo-apresentacao");
+    document.getElementById("btn-modo").textContent = "📖 Leitura";
+    estado.modo = "apresentacao";
+  } else {
+    document.body.classList.remove("modo-apresentacao");
+    document.getElementById("btn-modo").textContent = "🎤 Apresentação";
+    estado.modo = "leitura";
+  }
+}
+
+function alternarTema() {
+  if (estado.tema === "claro") {
+    document.body.setAttribute("data-theme", "dark");
+    document.getElementById("btn-tema").textContent = "☀️ Claro";
+    estado.tema = "escuro";
+  } else {
+    document.body.removeAttribute("data-theme");
+    document.getElementById("btn-tema").textContent = "🌙 Escuro";
+    estado.tema = "claro";
+  }
+}
+
+/* ================= QUIZ ================= */
+function fisherYates(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function inicializarQuiz() {
+  var perguntas = document.querySelectorAll(".pergunta");
+  for (var p = 0; p < perguntas.length; p++) {
+    (function (perg) {
+      var altsDiv = perg.querySelector(".alts");
+      var certaKey = altsDiv.getAttribute("data-certa");
+      var alts = [];
+      var filhos = altsDiv.querySelectorAll(".alt");
+      for (var k = 0; k < filhos.length; k++) alts.push(filhos[k]);
+      for (var idx = 0; idx < alts.length; idx++) {
+        var letra = String.fromCharCode(97 + idx);
+        alts[idx].setAttribute("data-ehcerta", letra === certaKey ? "true" : "false");
+      }
+      var emb = fisherYates(alts);
+      altsDiv.innerHTML = "";
+      for (var e = 0; e < emb.length; e++) {
+        altsDiv.appendChild(emb[e]);
+        emb[e].addEventListener("click", function () { responderQuiz(perg, this); });
+      }
+    })(perguntas[p]);
+  }
+}
+
+function responderQuiz(perg, alt) {
+  var id = perg.getAttribute("data-pergunta");
+  var reg = estado.respostas[id];
+  if (reg && reg.acertou) return;
+
+  var acerto = alt.getAttribute("data-ehcerta") === "true";
+  var fbCerta = perg.querySelector(".fb-certa");
+  var fbErrada = perg.querySelector(".fb-errada");
+
+  if (acerto) {
+    alt.classList.add("certa");
+    alt.textContent = "✓ " + alt.textContent;
+    var todas = perg.querySelectorAll(".alt");
+    for (var i = 0; i < todas.length; i++) todas[i].disabled = true;
+    fbCerta.textContent = "✅ Por que esta está certa: " + alt.getAttribute("data-fb");
+    fbCerta.classList.add("show");
+    fbErrada.classList.remove("show");
+    var pontos = (reg && !reg.acertou) ? 5 : 10;
+    estado.xp += pontos;
+    estado.respostas[id] = { acertou: true };
+    verificarSelo(id);
+    atualizarXP();
+  } else {
+    alt.classList.add("errada");
+    alt.textContent = "✗ " + alt.textContent;
+    alt.disabled = true;
+    fbErrada.textContent = "❌ Por que esta está errada: " + alt.getAttribute("data-fb");
+    fbErrada.classList.add("show");
+    if (!reg) estado.respostas[id] = { acertou: false };
+  }
+}
+
+function verificarSelo(id) {
+  var aba = id.split("-")[0];
+  var ids = [aba + "-1", aba + "-2", aba + "-3"];
+  for (var i = 0; i < ids.length; i++) {
+    var r = estado.respostas[ids[i]];
+    if (!r || !r.acertou) return;
+  }
+  if (!estado.selos[aba]) {
+    estado.selos[aba] = true;
+    estado.totalSelos += 1;
+    document.getElementById("selos").textContent = estado.totalSelos;
+  }
+}
+
+function atualizarXP() {
+  document.getElementById("xp").textContent = estado.xp;
+}
+
+/* ================= DEMO 1: ULA ================= */
+function paraBinario(n) {
+  if (n < 0) n = 256 + n;
+  var s = n.toString(2);
+  while (s.length < 8) s = "0" + s;
+  return s;
+}
+
+function demo1Executar(op) {
+  var r1 = parseInt(document.getElementById("demo1-r1").value, 10) || 0;
+  var r2 = parseInt(document.getElementById("demo1-r2").value, 10) || 0;
+  if (r1 < 0) r1 = 0; if (r1 > 255) r1 = 255;
+  if (r2 < 0) r2 = 0; if (r2 > 255) r2 = 255;
+  var r3 = 0;
+  var opNome = "";
+  if (op === "soma") { r3 = r1 + r2; opNome = "SOMA (+)"; }
+  else if (op === "sub") { r3 = r1 - r2; opNome = "SUBTRAÇÃO (-)"; }
+  else if (op === "and") { r3 = r1 & r2; opNome = "E LÓGICO (AND)"; }
+  else if (op === "or") { r3 = r1 | r2; opNome = "OU LÓGICO (OR)"; }
+  if (r3 < 0) r3 = 256 + r3;
+  if (r3 > 255) r3 = r3 & 255;
+
+  document.getElementById("demo1-reg1").textContent = "R1 = " + r1 + " (" + paraBinario(r1) + ")";
+  document.getElementById("demo1-reg2").textContent = "R2 = " + r2 + " (" + paraBinario(r2) + ")";
+  document.getElementById("demo1-reg3").textContent = "R3 = " + r3 + " (" + paraBinario(r3) + ")";
+
+  var log = "Operação: " + opNome + "\n";
+  log += "R1: " + r1 + " em binário = " + paraBinario(r1) + "\n";
+  log += "R2: " + r2 + " em binário = " + paraBinario(r2) + "\n";
+  log += "R3 (resultado): " + r3 + " em binário = " + paraBinario(r3);
+  document.getElementById("demo1-log").textContent = log;
+}
+
+function demo1Reiniciar() {
+  document.getElementById("demo1-r1").value = "5";
+  document.getElementById("demo1-r2").value = "7";
+  document.getElementById("demo1-reg1").textContent = "R1 = 5 (00000101)";
+  document.getElementById("demo1-reg2").textContent = "R2 = 7 (00000111)";
+  document.getElementById("demo1-reg3").textContent = "R3 = ?";
+  document.getElementById("demo1-log").textContent = "// clique em Executar ULA para ver o resultado";
+}
+
+/* ================= DEMO 2: PIPELINE ================= */
+var ESTAGIOS = ["IF", "ID", "EX", "MEM", "WB"];
+var INSTRS = ["I1", "I2", "I3", "I4"];
+
+function demo2Renderizar(matriz, cicloAtual) {
+  var html = '<div style="overflow-x:auto"><table style="border-collapse:collapse; font-size:0.85rem">';
+  html += '<tr><th style="padding:0.4rem 0.8rem; background:var(--fundo-codigo); text-align:left">Instrução</th>';
+  for (var t = 1; t <= 9; t++) {
+    var cor = t === cicloAtual ? "var(--cor-destaque)" : "var(--fundo-codigo)";
+    var txtcor = t === cicloAtual ? "white" : "var(--texto)";
+    html += '<th style="padding:0.4rem 0.8rem; background:' + cor + '; color:' + txtcor + '">t=' + t + '</th>';
+  }
+  html += '</tr>';
+  for (var i = 0; i < INSTRS.length; i++) {
+    html += '<tr><td style="padding:0.4rem 0.8rem; background:var(--fundo-codigo); font-weight:bold">' + INSTRS[i] + '</td>';
+    for (var t = 1; t <= 9; t++) {
+      var conteudo = matriz[i][t] || "";
+      var classe = conteudo ? "pipeline-stage ativo" : "pipeline-stage";
+      if (matriz[i][t + 1] === undefined && conteudo) {
+        // está no último estágio para essa instrução no ciclo atual
+      }
+      html += '<td style="padding:0.25rem; text-align:center"><span class="' + classe + '">' + conteudo + '</span></td>';
+    }
+    html += '</tr>';
+  }
+  html += '</table></div>';
+  document.getElementById("demo2-grid").innerHTML = html;
+}
+
+function demo2CalcularMatriz(serial) {
+  var matriz = [];
+  for (var i = 0; i < INSTRS.length; i++) {
+    matriz[i] = {};
+    var inicio = serial ? (i * ESTAGIOS.length + 1) : (i + 1);
+    for (var e = 0; e < ESTAGIOS.length; e++) {
+      matriz[i][inicio + e] = ESTAGIOS[e];
+    }
+  }
+  return matriz;
+}
+
+function demo2TotalCiclos(matriz) {
+  var max = 0;
+  for (var i = 0; i < INSTRS.length; i++) {
+    for (var t in matriz[i]) {
+      var tn = parseInt(t, 10);
+      if (tn > max) max = tn;
+    }
+  }
+  return max;
+}
+
+function demo2Rodar(serial) {
+  if (demo2Estado.rodando) return;
+  demo2Parar();
+  demo2Estado.rodando = true;
+  demo2Estado.serial = serial;
+  var matriz = demo2CalcularMatriz(serial);
+  var total = demo2TotalCiclos(matriz);
+  var ciclo = 1;
+  var feitasPorCiclo = function (c) {
+    var count = 0;
+    for (var i = 0; i < INSTRS.length; i++) {
+      if (matriz[i][c] === "WB" && !matriz[i][c + 1]) count++;
+    }
+    return count;
+  };
+
+  var tick = function () {
+    if (ciclo <= total) {
+      var parcial = {};
+      for (var i = 0; i < INSTRS.length; i++) {
+        parcial[i] = {};
+        for (var t = 1; t <= ciclo; t++) {
+          if (matriz[i][t]) parcial[i][t] = matriz[i][t];
+        }
+      }
+      var matrizVis = [];
+      for (var j = 0; j < INSTRS.length; j++) matrizVis[j] = parcial[j];
+      demo2Renderizar(matrizVis, ciclo);
+      var feitas = 0;
+      for (var k = 0; k < INSTRS.length; k++) {
+        var ultimo = 0;
+        for (var tc in matriz[k]) {
+          var tcn = parseInt(tc, 10);
+          if (tcn <= ciclo && tcn > ultimo) ultimo = tcn;
+        }
+        if (matriz[k][ultimo] === "WB" && ultimo === ciclo) feitas++;
+      }
+      var feitasTotais = 0;
+      for (var i2 = 0; i2 < INSTRS.length; i2++) {
+        var completou = true;
+        for (var e = 0; e < ESTAGIOS.length; e++) {
+          var esperado = serial ? (i2 * ESTAGIOS.length + 1 + e) : (i2 + 1 + e);
+          if (esperado > ciclo) { completou = false; break; }
+        }
+        if (completou) feitasTotais++;
+      }
+      document.getElementById("demo2-ciclos").textContent = ciclo;
+      document.getElementById("demo2-feitas").textContent = feitasTotais;
+      ciclo++;
+      demo2Estado.timer = setTimeout(tick, 650);
+    } else {
+      demo2Estado.rodando = false;
+      var extra = serial
+        ? "Sem pipeline, 4 instruções gastaram 20 ciclos. É o que aconteceria se cada instrução tivesse que esperar a anterior terminar."
+        : "Com pipeline, 4 instruções gastaram só 8 ciclos (em vez de 20). A esteira permitiu que várias instruções coexistissem em estágios diferentes ao mesmo tempo.";
+      document.getElementById("demo2-resultado").innerHTML = '<div class="resultado-demo">✅ ' + extra + '</div>';
+    }
+  };
+  tick();
+}
+
+function demo2Parar() {
+  if (demo2Estado.timer) {
+    clearTimeout(demo2Estado.timer);
+    demo2Estado.timer = null;
+  }
+  demo2Estado.rodando = false;
+}
+
+function demo2Reiniciar() {
+  demo2Parar();
+  document.getElementById("demo2-grid").innerHTML = "";
+  document.getElementById("demo2-ciclos").textContent = "0";
+  document.getElementById("demo2-feitas").textContent = "0";
+  document.getElementById("demo2-resultado").innerHTML = "";
+}
+
+/* ================= DEMO 3: RISC vs CISC ================= */
+function demo3Novo() {
+  var i = Math.floor(Math.random() * cenariosArq.length);
+  demo3Estado.atual = cenariosArq[i];
+  document.getElementById("demo3-cenario").innerHTML = "📋 " + demo3Estado.atual.descricao;
+  document.getElementById("demo3-opcoes").style.display = "block";
+  document.getElementById("demo3-feedback").innerHTML = "";
+}
+
+function demo3Responder(resp) {
+  if (!demo3Estado.atual) return;
+  var certa = resp === demo3Estado.atual.certa;
+  var fb = document.getElementById("demo3-feedback");
+  demo3Estado.resolvidos += 1;
+  if (certa) {
+    demo3Estado.acertos += 1;
+    fb.innerHTML = '<div class="resultado-demo">✅ <strong>Escolha adequada!</strong> ' + demo3Estado.atual.fbCerta + '</div>';
+  } else {
+    fb.innerHTML = '<div class="resultado-erro">❌ <strong>Essa não é a escolha ideal.</strong> ' + demo3Estado.atual.fbOutros + '</div>';
+  }
+  document.getElementById("demo3-opcoes").style.display = "none";
+  document.getElementById("demo3-placar").textContent = "Placar: " + demo3Estado.acertos + " acertos em " + demo3Estado.resolvidos + " cenários";
+}
+
+function demo3Reiniciar() {
+  demo3Estado.atual = null;
+  demo3Estado.resolvidos = 0;
+  demo3Estado.acertos = 0;
+  document.getElementById("demo3-cenario").innerHTML = "📋 O cenário aparecerá aqui. Clique em Novo cenário para começar.";
+  document.getElementById("demo3-opcoes").style.display = "none";
+  document.getElementById("demo3-feedback").innerHTML = "";
+  document.getElementById("demo3-placar").textContent = "";
+}
+
+/* ================= DEMO 4: PIRÂMIDE ================= */
+function demo4Mostrar(nivel) {
+  var info = {
+    reg: {
+      nome: "Registradores (nível 1)",
+      tamanho: "Dezenas a centenas de bytes (cerca de 1 KB em CPUs modernas)",
+      velocidade: "1 ciclo de clock (menos de 1 nanosegundo)",
+      uso: "Guardam os valores com os quais a ULA está trabalhando AGORA. São as gavetas internas da CPU.",
+      exemplo: "O Apple M1 tem 31 registradores de 64 bits visíveis ao programador; um Intel Core i7 tem 16 registradores de uso geral."
+    },
+    cache: {
+      nome: "Cache L1/L2/L3 (nível 2)",
+      tamanho: "L1: 32 a 64 KB · L2: 1 a 2 MB · L3: 8 a 64 MB",
+      velocidade: "L1: 2 a 4 ciclos · L2: 10 a 14 ciclos · L3: 40 a 80 ciclos",
+      uso: "Guarda os dados da RAM que a CPU mais tem usado recentemente. Aproxima a memória lenta da CPU rápida.",
+      exemplo: "Um Intel Core i7-13700K tem 48 KB de L1 por núcleo, 1,25 MB de L2 por núcleo e 30 MB de L3 compartilhados."
+    },
+    ram: {
+      nome: "Memória RAM (nível 3)",
+      tamanho: "8 GB a 128 GB em notebooks e desktops; vários TB em servidores",
+      velocidade: "Cerca de 50 a 100 nanosegundos",
+      uso: "Guarda os programas e dados que estão em uso agora. Perde tudo ao desligar.",
+      exemplo: "Um notebook gamer moderno tem 16 GB ou 32 GB de RAM DDR5 a 5600 MHz; um servidor pode ter 2 TB."
+    },
+    ssd: {
+      nome: "SSD / HDD (nível 4)",
+      tamanho: "SSD: 256 GB a 8 TB · HDD: 1 TB a 30 TB",
+      velocidade: "SSD: 50 a 100 microssegundos · HDD: 5 a 10 milissegundos",
+      uso: "Armazena o sistema operacional, programas e arquivos do usuário. Não perde dados ao desligar.",
+      exemplo: "O SSD Samsung 990 Pro de 2 TB entrega leitura de 7.450 MB/s; um HDD Seagate IronWolf de 8 TB custa cerca de um décimo do preço por GB."
+    },
+    fita: {
+      nome: "Fitas magnéticas LTO (nível 5)",
+      tamanho: "Até 45 TB comprimidos por cartucho na geração LTO-9",
+      velocidade: "Dezenas de segundos para posicionar a fita",
+      uso: "Backup de longo prazo e arquivamento frio (dados que quase nunca são acessados).",
+      exemplo: "O Google usa bibliotecas de fitas para guardar cópias frias de vídeos antigos do YouTube; a AWS Glacier Deep Archive usa fitas."
+    }
+  };
+  var d = info[nivel];
+  document.getElementById("demo4-ficha").innerHTML =
+    '<div style="border-left:4px solid var(--cor-destaque); padding-left:1rem">' +
+    '<h4 style="color:var(--cor-destaque-escuro); margin-bottom:0.5rem">' + d.nome + '</h4>' +
+    '<p><strong>📏 Tamanho típico:</strong> ' + d.tamanho + '</p>' +
+    '<p><strong>⚡ Velocidade:</strong> ' + d.velocidade + '</p>' +
+    '<p><strong>🎯 Uso:</strong> ' + d.uso + '</p>' +
+    '<p><strong>🌎 Exemplo real:</strong> ' + d.exemplo + '</p>' +
+    '</div>';
+}
+
+/* ================= DEMO 5: TECNOLOGIAS ================= */
+function demo5Mostrar(tecnologia) {
+  var d = tecMemoria[tecnologia];
+  if (!d) return;
+  document.getElementById("demo5-ficha").innerHTML =
+    '<div style="border-left:4px solid var(--cor-destaque); padding-left:1rem">' +
+    '<h4 style="color:var(--cor-destaque-escuro); margin-bottom:0.5rem">' + d.nome + '</h4>' +
+    '<p><strong>⚡ Tempo de acesso:</strong> ' + d.velocidade + '</p>' +
+    '<p><strong>💰 Preço por GB:</strong> ' + d.precoGB + '</p>' +
+    '<p><strong>📦 Densidade:</strong> ' + d.densidade + '</p>' +
+    '<p><strong>🛡️ Durabilidade:</strong> ' + d.durabilidade + '</p>' +
+    '<p><strong>🌎 Onde aparece:</strong> ' + d.exemplo + '</p>' +
+    '</div>';
+}
+
+/* ================= DEMO 6: LOCALIDADE ================= */
+function demo6Rodar(padrao) {
+  if (demo6Estado.timer) { clearInterval(demo6Estado.timer); demo6Estado.timer = null; }
+  demo6Estado.padrao = padrao;
+  var TAMANHO_PAGINA = 4096; // 4 KB
+  var N_ACESSOS = 40;
+  var acessos = [];
+  var totalPaginas = 100; // 400 KB de array
+
+  if (padrao === "linear") {
+    for (var i = 0; i < N_ACESSOS; i++) acessos.push(i * 100);
+  } else if (padrao === "saltado") {
+    for (var j = 0; j < N_ACESSOS; j++) acessos.push(j * TAMANHO_PAGINA);
+  } else {
+    for (var k = 0; k < N_ACESSOS; k++) acessos.push(Math.floor(Math.random() * totalPaginas * TAMANHO_PAGINA));
+  }
+
+  var paginasNaRAM = new Set();
+  var CAPACIDADE_RAM = 4; // só cabem 4 páginas na RAM da simulação
+  var hits = 0, faults = 0;
+  var fila = []; // FIFO simplificado
+  var indice = 0;
+
+  var tick = function () {
+    if (indice >= acessos.length) {
+      clearInterval(demo6Estado.timer);
+      demo6Estado.timer = null;
+      var taxa = ((hits / N_ACESSOS) * 100).toFixed(0);
+      var explicacao = "";
+      if (padrao === "linear") {
+        explicacao = "Linear: os endereços são vizinhos, então caem na mesma página. Após a primeira falta, os próximos acessos já estão na RAM. É o que chamamos de localidade espacial forte. Em um processador real, o mesmo princípio faz loops sobre arrays serem centenas de vezes mais rápidos.";
+      } else if (padrao === "saltado") {
+        explicacao = "Saltado: cada salto de 4 KB cai em uma página diferente. Como a RAM simulada só comporta 4 páginas, quase todo acesso gera um page fault. É o que chamamos de baixa localidade espacial: programas que fazem isso (como matrizes percorridas na ordem errada) são muito mais lentos.";
+      } else {
+        explicacao = "Aleatório: cada acesso cai em uma página imprevisível. Os hits acontecem por acaso quando a mesma página é acessada duas vezes. Em programas reais, padrões aleatórios puros são raros; quase todo código tem alguma localidade a explorar.";
+      }
+      document.getElementById("demo6-resultado").innerHTML = '<div class="resultado-demo">✅ ' + explicacao + '</div>';
+      return;
+    }
+
+    var endereco = acessos[indice];
+    var pagina = Math.floor(endereco / TAMANHO_PAGINA);
+    var html = "";
+    if (paginasNaRAM.has(pagina)) {
+      hits++;
+      html = '<span style="color:var(--sucesso); font-weight:bold">✅ HIT</span> · página ' + pagina + ' já estava na RAM';
+    } else {
+      faults++;
+      if (paginasNaRAM.size >= CAPACIDADE_RAM) {
+        var vitima = fila.shift();
+        paginasNaRAM.delete(vitima);
+      }
+      paginasNaRAM.add(pagina);
+      fila.push(pagina);
+      html = '<span style="color:var(--erro); font-weight:bold">❌ FAULT</span> · página ' + pagina + ' trazida do disco';
+    }
+    var vis = document.getElementById("demo6-visual");
+    var linha = document.createElement("div");
+    linha.style.cssText = "padding:0.2rem 0; border-bottom:1px dashed var(--borda)";
+    linha.innerHTML = 'Acesso ' + (indice + 1) + ': endereço ' + endereco + ' → ' + html;
+    vis.appendChild(linha);
+    document.getElementById("demo6-total").textContent = indice + 1;
+    document.getElementById("demo6-hits").textContent = hits;
+    document.getElementById("demo6-faults").textContent = faults;
+    document.getElementById("demo6-taxa").textContent = ((hits / (indice + 1)) * 100).toFixed(0) + "%";
+    indice++;
+  };
+  demo6Estado.timer = setInterval(tick, 280);
+}
+
+function demo6Reiniciar() {
+  if (demo6Estado.timer) { clearInterval(demo6Estado.timer); demo6Estado.timer = null; }
+  document.getElementById("demo6-visual").innerHTML = "";
+  document.getElementById("demo6-total").textContent = "0";
+  document.getElementById("demo6-hits").textContent = "0";
+  document.getElementById("demo6-faults").textContent = "0";
+  document.getElementById("demo6-taxa").textContent = "0%";
+  document.getElementById("demo6-resultado").innerHTML = "";
+}
+
+/* ================= LIGAÇÕES ================= */
+function ligarBotoes() {
+  var tabs = document.querySelectorAll(".tab");
+  for (var t = 0; t < tabs.length; t++) {
+    (function (tab) {
+      tab.addEventListener("click", function () {
+        irParaAba(parseInt(tab.getAttribute("data-aba"), 10));
+      });
+      tab.addEventListener("keydown", function (ev) {
+        var lista = Array.prototype.slice.call(document.querySelectorAll(".tab"));
+        var idx = lista.indexOf(tab);
+        if (ev.key === "ArrowRight" && idx < lista.length - 1) { lista[idx + 1].focus(); ev.preventDefault(); }
+        if (ev.key === "ArrowLeft" && idx > 0) { lista[idx - 1].focus(); ev.preventDefault(); }
+      });
+    })(tabs[t]);
+  }
+
+  document.getElementById("btn-modo").addEventListener("click", alternarModo);
+  document.getElementById("btn-tema").addEventListener("click", alternarTema);
+
+  var opcoes1 = document.querySelectorAll("#demo1-area [data-op1]");
+  for (var i = 0; i < opcoes1.length; i++) {
+    (function (b) { b.addEventListener("click", function () { demo1Executar(b.getAttribute("data-op1")); }); })(opcoes1[i]);
+  }
+  document.getElementById("demo1-go").addEventListener("click", function () {
+    var r1 = parseInt(document.getElementById("demo1-r1").value, 10) || 0;
+    var r2 = parseInt(document.getElementById("demo1-r2").value, 10) || 0;
+    demo1Executar("soma");
+  });
+  document.getElementById("demo1-reset").addEventListener("click", demo1Reiniciar);
+
+  document.getElementById("demo2-play").addEventListener("click", function () { demo2Rodar(false); });
+  document.getElementById("demo2-serial").addEventListener("click", function () { demo2Rodar(true); });
+  document.getElementById("demo2-reset").addEventListener("click", demo2Reiniciar);
+
+  document.getElementById("demo3-novo").addEventListener("click", demo3Novo);
+  document.getElementById("demo3-reset").addEventListener("click", demo3Reiniciar);
+  var opcoes3 = document.querySelectorAll("#demo3-opcoes [data-resp3]");
+  for (var k = 0; k < opcoes3.length; k++) {
+    (function (b) { b.addEventListener("click", function () { demo3Responder(b.getAttribute("data-resp3")); }); })(opcoes3[k]);
+  }
+
+  var niveis = document.querySelectorAll("#demo4-piramide [data-nivel]");
+  for (var m = 0; m < niveis.length; m++) {
+    (function (b) { b.addEventListener("click", function () { demo4Mostrar(b.getAttribute("data-nivel")); }); })(niveis[m]);
+  }
+  document.getElementById("demo4-reset").addEventListener("click", function () {
+    document.getElementById("demo4-ficha").innerHTML = "👆 Clique em um nível da pirâmide para ver a ficha completa.";
+  });
+
+  var tecs = document.querySelectorAll("#demo5-area [data-tec]");
+  for (var q = 0; q < tecs.length; q++) {
+    (function (b) { b.addEventListener("click", function () { demo5Mostrar(b.getAttribute("data-tec")); }); })(tecs[q]);
+  }
+  document.getElementById("demo5-reset").addEventListener("click", function () {
+    document.getElementById("demo5-ficha").innerHTML = "👆 Clique em uma tecnologia para ver velocidade, preço por GB e exemplo real.";
+  });
+
+  var padroes6 = document.querySelectorAll("#demo6-area [data-padro6]");
+  for (var r = 0; r < padroes6.length; r++) {
+    (function (b) { b.addEventListener("click", function () {
+      demo6Reiniciar();
+      demo6Rodar(b.getAttribute("data-padro6"));
+    }); })(padroes6[r]);
+  }
+  document.getElementById("demo6-go").addEventListener("click", function () {
+    demo6Reiniciar();
+    demo6Rodar("linear");
+  });
+  document.getElementById("demo6-reset").addEventListener("click", demo6Reiniciar);
+
+  document.addEventListener("keydown", function (ev) {
+    if (estado.modo === "apresentacao") {
+      if (ev.key === "ArrowRight" && estado.abaAtual < 7) irParaAba(estado.abaAtual + 1);
+      if (ev.key === "ArrowLeft" && estado.abaAtual > 1) irParaAba(estado.abaAtual - 1);
+    }
+  });
+}
+
+/* ================= CARGA INICIAL ================= */
+document.addEventListener("DOMContentLoaded", function () {
+  ligarBotoes();
+  inicializarQuiz();
+  var n = lerHash();
+  ativarAba(n ? n : 1);
+  atualizarXP();
+});
+</script>
+
+</body>
+</html>
