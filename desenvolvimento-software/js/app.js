@@ -33,8 +33,8 @@ function loadTab(t){
 function initTab(t){
   if(t==='tab2'){makeInitz('sim-lab');}
   if(t==='tab6'){makeInitz('sim-proj');}
-  if(t==='tab4'){const y=document.getElementById('contract-yaml');if(y)y.textContent=currentContract();meetReset();}
-  if(t==='tab8'){meet2Reset();}
+  if(t==='tab4'){const y=document.getElementById('contract-yaml');if(y)y.textContent=currentContract();meetReset();if(window.mpFill)mpFill('tab4');}
+  if(t==='tab8'){meet2Reset();if(window.mpFill)mpFill('tab8');}
 }
 function switchTab(t){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));
