@@ -1,117 +1,67 @@
 <section class="tab-panel" id="tab4">
+<style>/* celular: código inline e links longos quebram linha em vez de alargar a página */#tab4 :not(pre)>code,#tab4 a.ext,#tab4 li strong{overflow-wrap:anywhere}#tab4 .meet-grid>div{min-width:0}#tab4 .quiz-q{margin:12px 0;padding:10px 12px;border:1px solid var(--border,#334155);border-radius:8px}#tab4 .quiz-q .btn{margin:3px 4px 3px 0}#tab4 .quiz-q .btn.certo{background:#16a34a;color:#fff;border-color:#16a34a}#tab4 .quiz-q .btn.errado{background:#dc2626;color:#fff;border-color:#dc2626}#tab4 .jwt-p{font-family:monospace;word-break:break-all}#tab4 .jwt-h{color:#f87171}#tab4 .jwt-y{color:#c084fc}#tab4 .jwt-s{color:#38bdf8}</style>
 <div class="card">
-<h2 class="card-title">📜 Engenharia de Contratos API-First: OpenAPI + Prism + JWT</h2>
-<p class="section-intro">O contrato nasce primeiro — e o Prism precisa do <code>openapi.yaml</code> existente para subir. Aqui o contrato é <strong>negociado na Sala de Contrato</strong> e o YAML vira a fonte única. Inclui <strong>curl explicado</strong> e testes em terminal, IntelliJ, VS Code e Postman.</p>
+<h2 class="card-title">📜 API-First: combinar o contrato antes de programar (OpenAPI + Prism + JWT)</h2>
+<p class="section-intro">Antes de escrever uma linha de Java ou C#, o time <strong>combina por escrito</strong> como a API vai funcionar: quais endereços existem, o que cada um recebe e o que devolve. Esse acordo é o <strong>contrato</strong> (um arquivo <code>openapi.yaml</code>). Com ele pronto, um programa chamado <strong>Prism</strong> finge ser a API em segundos — e o frontend já pode trabalhar enquanto o backend é construído.</p>
+<div class="info-banner"><strong>🗺️ O caminho desta aba:</strong> ① entender a ideia → ② <strong>negociar o contrato</strong> na Sala (interativo) → ③ ler o contrato linha a linha → ④ <strong>ligar o mock</strong> no Docker Desktop → ⑤ <strong>testar</strong> com o VS Code → ⑥ entender o login com JWT → ⑦ as decisões registradas (ADRs). <strong>Tempo total: ~1h30.</strong></div>
+<div class="info-banner"><strong>🧭 Como ler esta aba:</strong> os passos com 🖱️ são feitos com o <strong>mouse</strong>. Os blocos <strong>⌨️ Prefere o terminal?</strong> mostram o mesmo passo por comandos — são opcionais. <strong>Pré-requisitos:</strong> Docker Desktop instalado (<a href="javascript:switchTab('tab5')" style="color:var(--primary);text-decoration:underline">Tab 5</a>) e VS Code (<a href="javascript:switchTab('tab3')" style="color:var(--primary);text-decoration:underline">Tab 3</a>).</div>
 
+<!-- ══════════════════════════ ① IDEIA ══════════════════════════ -->
 <div class="deep-concept-box">
-<h3>📐 A Revolução do API-First</h3>
-<ol>
-<li><strong>Ideação (a reunião):</strong> Negócio + Backend + Frontend + QA desenham o contrato juntos.</li>
-<li><strong>Mock:</strong> Prism gera servidor simulado em segundos a partir do YAML.</li>
-<li><strong>Paralelo:</strong> Backend implementa, Frontend consome o mock, QA testa.</li>
-<li><strong>Validação:</strong> implementação testada contra o contrato.</li>
-</ol>
+<h3>① 📐 O que é API-First (e por que começar pelo contrato)</h3>
 <div class="analogy-highlight">
 <span class="icon">🏢</span>
-<div><strong>Analogia da Planta Arquitetônica:</strong> marcenaria, elétrica e hidráulica construídas SIMULTANEAMENTE com base na planta aprovada.</div>
+<div><strong>Analogia da planta da casa:</strong> ninguém começa uma obra assentando tijolo. Primeiro se aprova a <strong>planta</strong>. Com ela em mãos, o eletricista, o encanador e o marceneiro trabalham <strong>ao mesmo tempo</strong>, cada um na sua parte, e tudo se encaixa no final. Na API, a planta é o <code>openapi.yaml</code>: o backend constrói a API, o frontend constrói as telas e o QA prepara os testes — todos olhando para o mesmo papel.</div>
 </div>
-</div>
-
-<div class="deep-concept-box">
-<h3>🌐 O que é curl (e por que usamos tanto)?</h3>
-<p><strong>curl</strong> (client URL) é um <strong>cliente HTTP de linha de comando</strong>: você envia requisições (GET/POST/PUT/DELETE) e vê a resposta crua (status, headers, body). É a forma mais direta de testar uma API sem IDE.</p>
-<div class="table-wrap" style="margin:12px 0">
-<table>
-<thead><tr><th>Flag</th><th>O que faz</th><th>Exemplo</th></tr></thead>
-<tbody>
-<tr><td><code>-i</code></td><td>Mostra headers + body</td><td><code>curl -i url</code></td></tr>
-<tr><td><code>-X</code></td><td>Define o método</td><td><code>curl -X POST url</code></td></tr>
-<tr><td><code>-H</code></td><td>Adiciona header</td><td><code>-H "Authorization: Bearer $TOKEN"</code></td></tr>
-<tr><td><code>-d</code></td><td>Body da requisição</td><td><code>-d '{"nome":"x"}'</code></td></tr>
-<tr><td><code>-s</code></td><td>Silencioso (sem barra de progresso)</td><td><code>curl -s url</code></td></tr>
-<tr><td><code>-o</code></td><td>Salva a resposta em arquivo</td><td><code>curl -o out.json url</code></td></tr>
-</tbody>
-</table>
-</div>
-<p><strong>Aprofundar:</strong> <a class="ext" href="https://curl.se/docs/" target="_blank">curl.se/docs</a>.</p>
-</div>
-<div class="deep-concept-box">
-<h3>🔑 JWT a fundo: o que é, por que e como funciona</h3>
-<p><strong>JWT (JSON Web Token, RFC 7519)</strong> é um token <strong>auto-contido e assinado</strong>: ele carrega as <em>claims</em> (quem é você) dentro dele mesmo. Por isso o servidor <strong>não guarda sessão</strong> — só verifica a assinatura. É isso que dá escala horizontal (stateless).</p>
-<h4>Anatomia: <code>header.payload.signature</code></h4>
-<ul>
-<li><strong>header:</strong> algoritmo (HS256) e tipo (JWT), em base64url.</li>
-<li><strong>payload:</strong> as claims — <code>sub</code> (usuário), <code>role</code>, <code>exp</code> (expiração), <code>iat</code> (emissão) — em base64url. <em>Atenção: base64 ≠ criptografia: qualquer um consegue <strong>ler</strong>; por isso nunca coloque dado sensível no payload.</em></li>
-<li><strong>signature:</strong> <code>HMAC-SHA256(header.payload, secret)</code>. Qualquer alteração de 1 caractere invalida o token.</li>
-</ul>
-<h4>Por que o login é público e o resto não?</h4>
-<p>O <code>POST /api/auth/login</code> é o <strong>único</strong> endpoint que <em>não pode</em> exigir token — é ele que o emite. Por isso o contrato traz <code>security: []</code> nele. Todos os demais exigem <code>Authorization: Bearer &lt;token&gt;</code>.</p>
-<h4>Fluxo em 4 passos</h4>
 <ol>
-<li>Cliente envia credenciais ao login.</li>
-<li>Servidor valida e <strong>emite</strong> o JWT assinado com o secret.</li>
-<li>Cliente guarda o token e o envia em <strong>cada</strong> request seguinte.</li>
-<li>Servidor <strong>verifica assinatura + expiração</strong> e autoriza (ou 401).</li>
+<li><strong>Reunião:</strong> negócio, backend, frontend e QA desenham o contrato juntos (é o que você vai fazer na Sala, logo abaixo).</li>
+<li><strong>Contrato:</strong> o resultado vira o arquivo <code>openapi.yaml</code> — a <strong>fonte única</strong> da verdade.</li>
+<li><strong>Mock:</strong> o Prism lê o arquivo e vira uma API de mentirinha na porta <code>4010</code>.</li>
+<li><strong>Em paralelo:</strong> o frontend usa o mock; o backend implementa a API de verdade (Tabs 6 e 7).</li>
+<li><strong>Conferência:</strong> no fim, a API real é testada contra o mesmo contrato.</li>
 </ol>
-<p><strong>Aprofundar:</strong> <a class="ext" href="https://datatracker.ietf.org/doc/html/rfc7519" target="_blank">RFC 7519 (JWT)</a> · <a class="ext" href="https://jwt.io/" target="_blank">jwt.io (debugger interativo)</a> · <a class="ext" href="https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html" target="_blank">OWASP JWT Cheat Sheet</a>.</p>
-<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> token expirado (<code>exp</code>); secret errado/trocado; esquecer o prefixo <code>Bearer </code>; achar que base64 criptografa (não criptografa!). <strong>Onde guardar o secret:</strong> variável de ambiente / secret manager — <strong>nunca</strong> commitado.</div>
+<h4>📖 Quatro palavras que você vai ver o tempo todo</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>Palavra</th><th>O que é, em uma frase</th></tr></thead>
+<tbody>
+<tr><td><strong>Contrato (OpenAPI)</strong></td><td>Um arquivo de texto (<code>.yaml</code>) que descreve cada endereço da API, o que ele recebe e o que devolve.</td></tr>
+<tr><td><strong>Mock</strong></td><td>Uma API "de mentirinha" que responde com os exemplos do contrato. Não tem banco de dados.</td></tr>
+<tr><td><strong>Prism</strong></td><td>O programa que transforma o contrato em mock. Roda dentro do Docker.</td></tr>
+<tr><td><strong>Token (JWT)</strong></td><td>Um "crachá" que você recebe ao fazer login e mostra em cada pedido que exige estar logado.</td></tr>
+</tbody></table></div>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=o+que+%C3%A9+api+first+contrato" target="_blank">O que é API-First</a> · <a class="ext" href="https://www.youtube.com/results?search_query=o+que+%C3%A9+openapi+swagger+para+iniciantes" target="_blank">OpenAPI/Swagger para iniciantes</a> · <a class="ext" href="https://www.youtube.com/results?search_query=o+que+%C3%A9+mock+de+api" target="_blank">O que é um mock de API</a></div>
 </div>
-<h4 class="diag-title">📐 D-22 <span class="dt-type">UML · Sequência</span> — JWT: login → emissão → verificação</h4>
-<div class="mermaid-box er-small" data-code='sequenceDiagram
-participant C as Cliente
-participant A as AuthController
-participant S as JwtService / Filtro
-C->>A: POST /api/auth/login (credenciais)
-A->>S: gerarToken(user, role)
-S-->>A: JWT (header.payload.signature)
-A-->>C: 200 { tokenAcesso, tipo, expiraEm }
-C->>S: GET /api/produtos (Authorization: Bearer JWT)
-S->>S: verifica assinatura + exp
-S-->>C: 200 [produtos]'>
-<div class="mermaid"></div>
-</div>
-<h4 class="diag-title">📐 D-01 <span class="dt-type">Fluxo</span> — Ciclo API-First (ideação→contrato→mock→paralelo→validação)</h4>
+<h4 class="diag-title">📐 D-01 <span class="dt-type">Fluxo</span> — Ciclo API-First</h4>
 <div class="mermaid-box" data-code='flowchart LR
-    A["👥 1. Ideação"] --> B["📝 2. Swagger Editor"]
-    B --> C["📜 3. openapi.yaml"]
-    C --> D["🐳 4. Prism :4010"]
-    C --> E["☕ 5a. Java"]
-    C --> F["🔷 5b. .NET"]
-    C --> G["🌐 5c. Frontend"]
+    A["👥 1. Reunião"] --> C["📜 2. openapi.yaml"]
+    C --> D["🐳 3. Prism :4010"]
+    C --> E["☕ 4a. Java"]
+    C --> F["🔷 4b. .NET"]
+    C --> G["🌐 4c. Frontend"]
     D --> G
-    E --> H["✅ 6. Validação"]
+    E --> H["✅ 5. Conferência"]
     F --> H'>
 <div class="mermaid"></div>
 </div>
-<h4 class="diag-title">📐 D-02 <span class="dt-type">C4 · Nível 1 (Contexto)</span> — Loja no ecossistema (atores + sistemas)</h4>
+<h4 class="diag-title">📐 D-02 <span class="dt-type">C4 · Nível 1 (Contexto)</span> — Quem usa o contrato</h4>
 <div class="mermaid-box" data-code='flowchart LR
-    DEV["👩 Dev Backend"] --> SW[" Swagger Editor"]
-    FE["🧕🏾 Frontend"] --> PR["🐳 Prism :4010"]
+    DEV["👩 Dev Backend"] --> CT["📜 openapi.yaml"]
+    CT --> PR["🐳 Prism :4010"]
+    FE["🧕🏾 Frontend"] --> PR
     QA["👨🏿 QA"] --> PR
-    SW --> CT["📜 openapi.yaml"]
-    CT --> PR
-    DEV --> BE["☕/ Backend :8080"]
-    BE --> CT'>
-<div class="mermaid"></div>
-</div>
-<h4 class="diag-title">📐 D-03 <span class="dt-type">UML · Sequência</span> — Request autenticada (login→token→GET)</h4>
-<div class="mermaid-box" data-code='sequenceDiagram
-    participant C as Cliente
-    participant P as Prism/Backend
-    C->>P: POST /api/auth/login (credenciais)
-    P-->>C: 200 { tokenAcesso }
-    C->>C: guarda token
-    C->>P: GET /api/produtos (Bearer token)
-    P-->>C: 200 [produtos]'>
+    DEV --> BE["☕ Backend :8080"]
+    CT -.confere.-> BE'>
 <div class="mermaid"></div>
 </div>
 
+<!-- ══════════════════════════ ② SALA ══════════════════════════ -->
 <div class="lab-container">
 <div class="lab-header">
-<h3>🎭 Sala de Contrato — Workshop interativo (time nomeado, 5 atos)</h3>
-<div class="lab-actions"><span class="text-sm text-muted">transcript + polls · roster clicável · rastreabilidade</span></div>
+<h3>② 🎭 Sala de Contrato — negocie o contrato com o time (5 atos)</h3>
+<div class="lab-actions"><span class="text-sm text-muted">conversa + votações · elenco clicável · rastreabilidade</span></div>
 </div>
-<div class="info-banner"><strong>💡 Como usar:</strong> avance (<strong>⏭</strong>) ou <strong>▶ Auto</strong>. Nos <strong>⚖️ polls</strong> o auto pausa e VOCÊ escolhe; as personas reagem e a escolha entra no Canvas, no YAML e na <code>ata.md</code>. Clique num chip do elenco para filtrar falas.</div>
+<div class="info-banner"><strong>💡 Como usar:</strong> clique em <strong>⏭ Próxima fala</strong> (ou <strong>▶ Auto</strong>). Nas <strong>⚖️ votações</strong> a reunião para e <strong>você</strong> escolhe; o time reage e a escolha entra no quadro da direita, no YAML e na <code>ata.md</code>. Passe o mouse num item do quadro para ver qual fala o criou; clique num nome do elenco para ver só as falas daquela pessoa.</div>
+<div class="info-banner"><strong>🧭 Em dúvida nas votações?</strong> As opções marcadas como <strong>recomendado</strong> são as que o resto do guia usa (paginação <em>offset</em>, preço <em>number</em>, erro <em>RFC 7807</em>). Os testes da parte ⑤ funcionam com qualquer escolha — só o preço como <em>string</em> pede aspas (<code>"2499.90"</code>).</div>
 <div class="roster" id="roster"></div>
 <div class="phase-bar" id="phase-bar">
 <span class="phase on" data-a="1">① Requisitos</span>
@@ -123,8 +73,8 @@ S-->>C: 200 [produtos]'>
 <div class="meet-controls">
 <button class="btn btn-primary" onclick="meetNext()">⏭ Próxima fala</button>
 <button class="btn" id="meet-auto" onclick="meetToggleAuto()">▶ Auto</button>
-<button class="btn" onclick="meetReset()">↺ Replay</button>
-<span class="text-sm text-muted" id="meet-status" style="align-self:center">Ato 1 · fala 0/17</span>
+<button class="btn" onclick="meetReset()">↺ Recomeçar</button>
+<span class="text-sm text-muted" id="meet-status" style="align-self:center">Ato 1 · fala 0/18</span>
 </div>
 <div class="meet-grid">
 <div><div class="meet-room" id="meet-room"></div></div>
@@ -144,264 +94,690 @@ S-->>C: 200 [produtos]'>
 <button class="btn" onclick="downloadAta()">📄 Baixar ata.md</button>
 <button class="btn btn-zip" onclick="handoffPrism()">🐳 Levar ao Prism</button>
 </div>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> ao fim do Ato 5 aparece a mensagem <em>"Contrato fechado!"</em> e os botões acima. O contrato da parte ③ é atualizado com as suas escolhas. Pulou a Sala? Sem problema: a parte ③ já traz um contrato padrão (com as opções recomendadas).</div>
 </div>
 
+<!-- ══════════════════════════ ③ CONTRATO ══════════════════════════ -->
 <div class="lab-container">
 <div class="lab-header">
-<h3>📜 Contrato final: <code>contracts/openapi.yaml</code> (fonte única)</h3>
+<h3>③ 📜 Ler o contrato: <code>contracts/openapi.yaml</code></h3>
 <div class="lab-actions">
 <button class="btn btn-zip" onclick="openDlModal('tab4')">📦 Baixar ZIP desta aba</button>
-<a href="https://editor.swagger.io/" target="_blank" class="btn" style="border-color:#10a37f;color:#10a37f">🛠️ Validar no Swagger Editor ↗</a>
-<a href="https://spec.openapis.org/oas/v3.1.0/" target="_blank" class="btn" style="border-color:var(--accent);color:var(--accent)">📖 Especificação OpenAPI 3.1 ↗</a>
+<a href="https://editor.swagger.io/" target="_blank" class="btn" style="border-color:#10a37f;color:#10a37f">🛠️ Abrir no Swagger Editor ↗</a>
 </div>
 </div>
-<p class="text-sm text-muted mb-2">Preenchido pelo resultado da Sala de Contrato (ou pelo padrão). É ele que o Prism monta e que os ZIPs levam.</p>
+<p>Este é o contrato que sai da Sala (ou o padrão, se você não jogou). Não precisa decorar: leia com calma usando o quadro logo abaixo. Repare em três coisas:</p>
+<ul>
+<li><strong>Leitura é pública:</strong> os dois <code>get</code> têm <code>security: []</code> — qualquer um pode listar e ver produtos.</li>
+<li><strong>Escrita exige login:</strong> <code>post</code>, <code>put</code> e <code>delete</code> têm <code>bearerAuth</code> e preveem a resposta <code>'401'</code>.</li>
+<li><strong>O cliente não manda <code>id</code>:</strong> o <code>ProdutoRequest</code> (o que se envia) só tem <code>nome</code>, <code>preco</code> e <code>estoque</code>; o <code>id</code> é criado pelo servidor e aparece no <code>ProdutoResponse</code> (o que volta).</li>
+</ul>
 <div class="code-editor-wrap">
 <span class="code-filepath">contracts/openapi.yaml</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" id="contract-yaml"></pre>
 </div>
-<details>
-<summary>🔎 Abrir quadro: o que significa CADA tag do contrato (linha a linha)</summary>
-<div class="table-wrap" style="margin-top:10px">
-<table>
-<thead><tr><th>Linha / Tag</th><th>Significado</th></tr></thead>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">🔎 O que significa CADA palavra do contrato (quadro linha a linha)</div>
+<div class="faq-a">
+<div class="table-wrap"><table>
+<thead><tr><th>Linha / palavra</th><th>Significado</th></tr></thead>
 <tbody>
-<tr><td><code>openapi: 3.1.0</code></td><td>Versão da <strong>especificação OpenAPI</strong> usada (3.1 = alinhada ao JSON Schema).</td></tr>
-<tr><td><code>info:</code></td><td>Metadados da API: <code>title</code>, <code>version</code>, <code>description</code>.</td></tr>
-<tr><td><code>servers:</code></td><td>URLs base: mock (4010), real (8080), produção.</td></tr>
-<tr><td><code>security:</code></td><td>Segurança <strong>global</strong>: exigimos <code>bearerAuth</code> (JWT) por padrão.</td></tr>
-<tr><td><code>paths:</code></td><td>Mapa de <strong>rotas</strong>. Cada chave é um caminho.</td></tr>
-<tr><td><code>get / post / put / delete:</code></td><td>Métodos HTTP suportados por aquela rota.</td></tr>
-<tr><td><code>summary:</code></td><td>Descrição curta do endpoint (Swagger UI).</td></tr>
-<tr><td><code>tags:</code></td><td>Agrupa endpoints em seções (Auth, Produtos).</td></tr>
-<tr><td><code>security: []</code> (num endpoint)</td><td>Sobrescreve o global: este endpoint <strong>não</strong> exige JWT (login).</td></tr>
-<tr><td><code>parameters:</code></td><td>Parâmetros de <code>query</code> ou <code>path</code> (<code>{id}</code>, <code>page</code>).</td></tr>
-<tr><td><code>requestBody:</code></td><td>Corpo da requisição (JSON) e seu schema.</td></tr>
-<tr><td><code>responses:</code></td><td>Códigos de resposta (200/201/400/401/404) e o schema de cada um.</td></tr>
-<tr><td><code>application/problem+json</code></td><td>MIME do <strong>RFC 7807 Problem Details</strong> — padrão internacional p/ erros.</td></tr>
-<tr><td><code>components:</code></td><td>Peças <strong>reutilizáveis</strong>: schemas e security schemes.</td></tr>
-<tr><td><code>securitySchemes:</code></td><td>Define <code>bearerAuth</code> (http, bearer, JWT).</td></tr>
-<tr><td><code>schemas:</code></td><td>Modelos: <code>LoginRequest</code>, <code>ProdutoRequest</code>, <code>ProdutoResponse</code>, <code>ProblemDetails</code>.</td></tr>
-<tr><td><code>$ref:</code></td><td>Referência a um schema em <code>components</code> (evita repetição).</td></tr>
-<tr><td><code>example:</code></td><td>Amostra de valor p/ documentação, Swagger UI e testes automáticos do QA.</td></tr>
-<tr><td><code>required:</code></td><td>Campos obrigatórios do schema.</td></tr>
-<tr><td><code>type / format / minimum / minLength</code></td><td>Validações: tipo, formato, valor mín., tamanho mín.</td></tr>
-</tbody>
-</table>
-</div>
-</details>
-<h4 style="color:var(--accent);margin-top:18px">📑 ADRs desta aba (padrão AWS: Contexto·Decisão·Alternativas·Consequências·Status·Stakeholders)</h4>
-<div class="adr"><h5>ADR-001 · Contrato OpenAPI como fonte única<span class="status">Aceita</span></h5>
-<p><b>Contexto:</b> frontend/mobile bloqueados aguardando backend.</p>
-<p><b>Decisão:</b> contrato OpenAPI 3.1 primeiro + mock Prism; negociado na Sala de Contrato.</p>
-<p><b>Alternativas consideradas:</b> code-first (rejeitada); GraphQL (fora de escopo).</p>
-<p><b>Consequências:</b> (+) desenvolvimento paralelo; (−) cerimônia inicial de desenho.</p>
-<p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend, Frontend, QA, Produto.</p></div>
-<div class="adr"><h5>ADR-005 · JWT stateless<span class="status">Aceita</span></h5>
-<p><b>Contexto:</b> autenticação sem sessão em servidor.</p>
-<p><b>Decisão:</b> Bearer JWT HMAC-SHA256; erros em RFC 7807.</p>
-<p><b>Alternativas consideradas:</b> sessão em servidor/cookie (rejeitada); OAuth2 completo (adiado).</p>
-<p><b>Consequências:</b> (+) stateless, escala horizontal; (−) revogação exige blacklist/refresh.</p>
-<p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend, SRE, Segurança.</p></div>
-<div class="adr"><h5>ADR-007 · Mock Prism em validação estrita (<code>-m false</code>)<span class="status">Aceita</span></h5>
-<p><b>Contexto:</b> mock dinâmico mascarava erros de contrato.</p>
-<p><b>Decisão:</b> Prism com <code>-m false</code> valida o body contra o schema e retorna 400 quando não bate.</p>
-<p><b>Alternativas consideradas:</b> mock dinâmico default (rejeitada); mock manual (rejeitada).</p>
-<p><b>Consequências:</b> (+) QA pega erros de contrato cedo; (−) mock menos "mágico".</p>
-<p><b>Status:</b> Aceita · <b>Stakeholders:</b> QA, Backend, Frontend.</p></div>
-<div class="adr"><h5>ADR-008 · Erros no padrão RFC 7807 (<code>application/problem+json</code>)<span class="status">Aceita</span></h5>
-<p><b>Contexto:</b> erros ad-hoc dificultavam tratamento no cliente.</p>
-<p><b>Decisão:</b> todos os erros usam Problem Details (type/title/status/detail).</p>
-<p><b>Alternativas consideradas:</b> envelope custom <code>{erro}</code> (rejeitada); HTML error pages (rejeitada).</p>
-<p><b>Consequências:</b> (+) clientes parseiam erros de forma uniforme; (−) exige disciplina de emitir Problem Details.</p>
-<p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend, Frontend, QA.</p></div>
+<tr><td><code>openapi: 3.1.0</code></td><td>Versão da <strong>especificação OpenAPI</strong> usada no arquivo.</td></tr>
+<tr><td><code>info:</code></td><td>Nome, versão e descrição da API.</td></tr>
+<tr><td><code>servers:</code></td><td>Onde a API roda: mock (<code>4010</code>) e backend real (<code>8080</code>).</td></tr>
+<tr><td><code>security:</code> (no topo)</td><td>A regra <strong>geral</strong>: exige o token <code>bearerAuth</code>.</td></tr>
+<tr><td><code>security: []</code> (numa rota)</td><td>Exceção: esta rota <strong>não</strong> exige token (login e leituras).</td></tr>
+<tr><td><code>paths:</code></td><td>A lista de <strong>endereços</strong> (rotas). Cada chave é um caminho, como <code>/api/produtos</code>.</td></tr>
+<tr><td><code>get / post / put / delete:</code></td><td>Os <strong>verbos HTTP</strong>: ler, criar, atualizar, excluir.</td></tr>
+<tr><td><code>summary:</code> · <code>tags:</code></td><td>Descrição curta e agrupamento (aparecem no Swagger UI).</td></tr>
+<tr><td><code>parameters:</code></td><td>Valores na URL: no caminho (<code>{id}</code>) ou depois do <code>?</code> (<code>page</code>, <code>size</code>).</td></tr>
+<tr><td><code>requestBody:</code></td><td>O JSON que o cliente <strong>envia</strong>.</td></tr>
+<tr><td><code>responses:</code></td><td>O que pode voltar: <code>200</code> ok, <code>201</code> criado, <code>204</code> excluído, <code>400</code> dados inválidos, <code>401</code> sem login, <code>404</code> não existe.</td></tr>
+<tr><td><code>application/problem+json</code></td><td>Formato padrão de erro (<strong>RFC 7807</strong>): <code>type</code>, <code>title</code>, <code>status</code>, <code>detail</code>.</td></tr>
+<tr><td><code>components:</code></td><td>Peças <strong>reutilizáveis</strong>: <code>schemas</code>, <code>responses</code> e <code>securitySchemes</code>.</td></tr>
+<tr><td><code>$ref:</code></td><td>"Use a peça tal": aponta para algo em <code>components</code>, para não repetir.</td></tr>
+<tr><td><code>required:</code></td><td>Campos obrigatórios.</td></tr>
+<tr><td><code>type / format</code></td><td>Tipo do campo: <code>integer</code> + <code>int64</code> (número inteiro grande), <code>number</code>, <code>string</code>.</td></tr>
+<tr><td><code>minimum / minLength / maxLength</code></td><td>Regras: valor mínimo, tamanho mínimo e máximo. O Prism <strong>recusa com 400</strong> o que não obedecer.</td></tr>
+<tr><td><code>additionalProperties: false</code></td><td>Campo que não está no contrato (como um <code>id</code> no POST) é recusado.</td></tr>
+<tr><td><code>example:</code></td><td>Valor de exemplo. É <strong>exatamente</strong> o que o mock devolve.</td></tr>
+</tbody></table></div>
+</div></div>
+<div class="info-banner"><strong>💰 Por que o preço é <code>number</code> e não <code>double</code>?</strong> Em JSON todo número é "number". O que importa é onde ele <strong>fica guardado</strong>: no banco, <code>DECIMAL(10,2)</code> (Tab 5), e no código, <code>BigDecimal</code> (Java) ou <code>decimal</code> (C#) — nunca <code>float</code>/<code>double</code>, que arredondam centavos. Se o time quiser zero risco também no caminho, a Sala oferece a opção <em>string decimal</em>.</div>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=como+ler+arquivo+openapi+yaml" target="_blank">Como ler um arquivo OpenAPI</a> · <a class="ext" href="https://www.youtube.com/results?search_query=yaml+para+iniciantes+sintaxe" target="_blank">YAML para iniciantes</a> · <a class="ext" href="https://www.youtube.com/results?search_query=c%C3%B3digos+de+status+http+200+201+400+401+404" target="_blank">Códigos de status HTTP</a></div>
 </div>
 
-<div class="lab-container">
-<div class="lab-header"><h3>🐳 Prism via compose dedicado</h3></div>
-<div class="info-banner"><strong>✅ Separação:</strong> Prism tem compose próprio, independente dos bancos (Tab 5). <code>-m false</code> desabilita o <strong>mock dinâmico</strong>: o Prism <strong>valida estritamente</strong> o contrato, retornando 400 quando o body não bate com o schema.</div>
-<div class="term-help"><strong>🖥️ Abrir terminal:</strong> <span class="ide-tag java">IntelliJ</span> <kbd>Alt+F12</kbd> · <span class="ide-tag cs">VS Code</span> <kbd>Ctrl+`</kbd>. Na pasta do <code>docker-compose.prism.yml</code>.</div>
+<!-- ══════════════════════════ ④ PRISM ══════════════════════════ -->
+<div class="lab-container" id="lab-prism">
+<div class="lab-header"><h3>④ 🐳 Ligar o mock (Prism) no Docker Desktop</h3></div>
+<div class="info-banner"><strong>🧭 O que vai acontecer:</strong> você cria uma pasta com 2 arquivos (o contrato e um <code>docker-compose.prism.yml</code>), pede ao Docker para subir o Prism e abre <code>http://localhost:4010/api/produtos</code> no navegador. <strong>Tempo: ~15 min</strong> (a 1ª vez baixa a imagem do Prism, ~100 MB).</div>
+<div class="step-box">
+<h4><span class="step-num-big">1</span> 🖱️ Criar a pasta do projeto</h4>
+<ol class="step-number-list">
+<li>Abra o <strong>Explorador de Arquivos</strong> (<kbd>Win</kbd>+<kbd>E</kbd>) → <strong>Documentos</strong> → entre (ou crie) a pasta <strong>Projetos</strong>.</li>
+<li>Botão direito num espaço vazio → <strong>Novo → Pasta</strong> → nome <code>loja-contrato</code>. Dentro dela, crie outra pasta: <code>contracts</code>.</li>
+</ol>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> <code>Documentos\Projetos\loja-contrato\contracts\</code> existe (vazia por enquanto).</div>
+</div>
+<div class="step-box">
+<h4><span class="step-num-big">2</span> 🖱️ Salvar o contrato na pasta <code>contracts</code></h4>
+<ol class="step-number-list">
+<li>Volte à Sala (parte ②) e clique em <strong>⬇️ Baixar openapi.yaml</strong> — ou role até a parte ③ e use o <strong>📦 Baixar ZIP desta aba</strong>, que já traz tudo nas pastas certas.</li>
+<li>Mova o <code>openapi.yaml</code> da pasta <strong>Downloads</strong> para <code>loja-contrato\contracts\</code>.</li>
+</ol>
+<div class="warning-banner"><strong>⚠️ Cuidado com o nome:</strong> o Windows às vezes salva como <code>openapi (1).yaml</code> ou <code>openapi.yaml.txt</code>. O nome tem que ser exatamente <code>openapi.yaml</code>. Para ver a extensão: no Explorador, menu <strong>Exibir → Mostrar → Extensões de nomes de arquivos</strong>.</div>
+</div>
+<div class="step-box">
+<h4><span class="step-num-big">3</span> 🖱️ Abrir a pasta no VS Code e criar o compose</h4>
+<ol class="step-number-list">
+<li>Abra o VS Code → <strong>File → Open Folder…</strong> (Arquivo → Abrir Pasta) → escolha <code>loja-contrato</code> → <strong>Selecionar pasta</strong>. Se perguntar, clique em <strong>Yes, I trust the authors</strong>.</li>
+<li>No painel da esquerda (<em>Explorer</em>), passe o mouse sobre <strong>LOJA-CONTRATO</strong> e clique no ícone <strong>📄+ New File</strong>. Nome: <code>docker-compose.prism.yml</code> (na <strong>raiz</strong>, fora de <code>contracts</code>).</li>
+<li>Cole o conteúdo abaixo e salve com <kbd>Ctrl</kbd>+<kbd>S</kbd>. Cada linha está comentada.</li>
+</ol>
 <div class="code-editor-wrap">
 <span class="code-filepath">docker-compose.prism.yml</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor" data-zip-path="docker-compose.prism.yml"># Compose dedicado ao Mock Server (Stoplight Prism)
+<pre class="code-editor" data-zip-path="docker-compose.prism.yml"># ─────────────────────────────────────────────────────────────
+#  Mock Server da API (Stoplight Prism) — compose só dele,
+#  separado dos bancos da Tab 5. Fica na RAIZ da pasta loja-contrato,
+#  ao lado da pasta contracts/.
+# ─────────────────────────────────────────────────────────────
 services:
   prism-mock:
-    image: stoplight/prism:5            # imagem oficial do Prism
-    container_name: dev_prism_mock      # nome fixo p/ logs/exec
-    restart: unless-stopped             # reinicia sozinho se cair
-    command: mock -h 0.0.0.0 -m false -d /tmp/openapi.yaml   # -m false = valida estritamente
+    image: stoplight/prism:5          # imagem oficial do Prism (versão 5)
+    container_name: dev_prism_mock    # nome fixo: é assim que aparece no Docker Desktop
+    restart: unless-stopped           # se cair, o Docker sobe de novo
+    # mock         → finge ser a API, lendo o contrato
+    # -h 0.0.0.0   → aceita conexões de fora do container (do seu PC)
+    # --errors     → qualquer violação do contrato vira resposta de erro
+    # Sem -d: as respostas usam os "example:" do contrato (sempre os mesmos
+    # valores — bom para testar). Com -d o Prism inventaria dados aleatórios.
+    command: mock -h 0.0.0.0 --errors /tmp/openapi.yaml
     volumes:
-      - ./contracts/openapi.yaml:/tmp/openapi.yaml:ro  # monta o contrato (somente leitura)
+      - ./contracts/openapi.yaml:/tmp/openapi.yaml:ro   # o contrato entra no container (só leitura)
     ports:
-      - "4010:4010"                     # expõe a porta do mock no host</pre>
+      - "4010:4010"                   # http://localhost:4010 no seu PC → porta 4010 do Prism</pre>
 </div>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> no Explorer do VS Code aparecem <code>contracts/openapi.yaml</code> e <code>docker-compose.prism.yml</code>, um ao lado do outro.</div>
+</div>
+<div class="step-box">
+<h4><span class="step-num-big">4</span> 🖱️ Subir o Prism</h4>
+<ol class="step-number-list">
+<li>Confira que o <strong>Docker Desktop</strong> está aberto e mostra <em>Engine running</em> 🟢 no canto inferior esquerdo.</li>
+<li>No VS Code, clique com o <strong>botão direito</strong> em <code>docker-compose.prism.yml</code> → <strong>Compose Up</strong>. <em>(Essa opção vem da extensão <strong>Container Tools</strong> da Microsoft, antiga extensão "Docker". Não aparece? Clique no ícone de extensões <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd>, busque <strong>Container Tools</strong> e clique em <strong>Install</strong> — ou use o terminal, logo abaixo.)</em></li>
+<li>Abra o <strong>Docker Desktop → Containers</strong>. Deve aparecer <code>dev_prism_mock</code> com a bolinha <strong>verde</strong> e a porta <code>4010:4010</code>. Clique no nome dele → aba <strong>Logs</strong>.</li>
+</ol>
+<div class="success-banner"><strong>✅ Resultado esperado nos Logs:</strong> várias linhas <code>[CLI] … GET http://0.0.0.0:4010/api/produtos</code> (uma por rota do contrato) e, no fim, <code>Prism is listening on http://0.0.0.0:4010</code>.</div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">⌨️ Prefere o terminal? Subir, ver e derrubar o Prism por comando</div>
+<div class="faq-a">
+<p>No VS Code: <strong>Terminal → New Terminal</strong> (<kbd>Ctrl</kbd>+<kbd>`</kbd>). O terminal já abre na pasta <code>loja-contrato</code>.</p>
 <div class="code-editor-wrap">
-<span class="code-filepath">terminal da IDE - comandos comentados</span>
+<span class="code-filepath">terminal — comandos do Prism (Windows, macOS e Linux)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor"># Sobe o mock em background (-d = detached; o terminal fica livre)
+<pre class="code-editor"># Sobe o mock em segundo plano (-d = o terminal fica livre)
 docker compose -f docker-compose.prism.yml up -d
-# Lista os containers deste compose (coluna STATUS deve mostrar "Up")
+# Lista os containers deste compose — a coluna STATUS deve dizer "Up"
 docker compose -f docker-compose.prism.yml ps
-# Acompanha os logs em tempo real (Ctrl+C para sair do follow)
+# Mostra os logs em tempo real (Ctrl+C para parar de acompanhar)
 docker compose -f docker-compose.prism.yml logs -f prism-mock
-# Editou o openapi.yaml? O Prism lê o contrato no boot → reinicie p/ reler:
+# Mudou o openapi.yaml? O Prism só lê o contrato quando liga → reinicie:
 docker compose -f docker-compose.prism.yml restart
-# Derruba apenas o mock (não afeta outros composes)
+# Desliga só o mock (os bancos da Tab 5 continuam como estão)
 docker compose -f docker-compose.prism.yml down</pre>
 </div>
+</div></div>
+</div>
+<div class="step-box">
+<h4><span class="step-num-big">5</span> 🖱️ Primeiro teste: no navegador</h4>
+<ol class="step-number-list">
+<li>Abra o navegador e acesse <a class="ext" href="http://localhost:4010/api/produtos" target="_blank">http://localhost:4010/api/produtos</a>.</li>
+</ol>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> <code>[{"id":101,"nome":"Teclado Mecânico RGB","preco":249.9,"estoque":50}]</code>. São os <code>example:</code> do contrato — o Prism devolve sempre os mesmos valores. Se você escolheu <em>cursor</em> na Sala, a lista vem dentro de <code>{"itens":[…],"proximoCursor":"…"}</code>.</div>
+</div>
+<div class="info-banner"><strong>🔧 O que significa a linha <code>command</code>?</strong> <code>mock</code> = finja ser a API · <code>-h 0.0.0.0</code> = aceite conexões vindas do seu PC · <code>--errors</code> = trate qualquer violação do contrato como erro. O Prism <strong>confere cada pedido</strong> contra o contrato: rota protegida sem token → <code>401</code>; JSON fora das regras (preço negativo, nome curto) → <code>400</code>. Deixamos <strong>de fora</strong> o <code>-d</code> (<em>dynamic</em>), que inventaria dados aleatórios a cada resposta — com dados fixos, todo mundo vê o mesmo resultado.</div>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=docker+compose+para+iniciantes" target="_blank">Docker Compose para iniciantes</a> · <a class="ext" href="https://www.youtube.com/results?search_query=prism+stoplight+mock+openapi" target="_blank">Prism: mock a partir do OpenAPI</a> · <a class="ext" href="https://www.youtube.com/results?search_query=docker+desktop+windows+como+usar" target="_blank">Como usar o Docker Desktop</a></div>
 </div>
 
+<!-- ══════════════════════════ ⑤ TESTAR ══════════════════════════ -->
 <div class="lab-container">
 <div class="lab-header">
-<h3>🧪 Testar o Mock (curl + IntelliJ + VS Code + Postman)</h3>
+<h3>⑤ 🧪 Testar o mock com o VS Code (REST Client)</h3>
 <div class="lab-actions">
-<button class="btn btn-primary" onclick="simulatePrismMockRequest('valid')">🚀 Simular JWT Válido</button>
-<button class="btn" onclick="simulatePrismMockRequest('invalid')">⚠️ Simular Sem Token (401)</button>
+<button class="btn" onclick="simulatePrismMockRequest('public')">👀 Simular GET público (200)</button>
+<button class="btn" onclick="simulatePrismMockRequest('invalid')">⚠️ Simular POST sem token (401)</button>
+<button class="btn btn-primary" onclick="simulatePrismMockRequest('valid')">🚀 Simular POST com token (201)</button>
+<button class="btn" onclick="simulatePrismMockRequest('body')">❌ Simular dados inválidos (400)</button>
 </div>
+</div>
+<div id="prism-sim-result" class="terminal-window" style="display:none">
+<div class="terminal-bar"><span class="terminal-dot dot-red"></span><span class="terminal-dot dot-yellow"></span><span class="terminal-dot dot-green"></span><span class="terminal-title">Stoplight Prism :4010 (simulação)</span></div>
+<div class="terminal-body" id="prism-sim-text"></div>
+</div>
+<div class="warning-banner"><strong>⚠️ O mock é de mentirinha — saiba o que ele NÃO faz:</strong> (1) <strong>aceita qualquer token</strong>: ele só confere se o header <code>Authorization: Bearer …</code> existe, não se o token é verdadeiro; (2) <strong>não guarda nada</strong>: depois do POST, o GET continua devolvendo o mesmo exemplo; (3) nunca devolve <code>404</code> sozinho, porque não tem banco — por isso o teste 9 pede o 404 com o header <code>Prefer: code=404</code>. Login de verdade e dados de verdade só no backend real (Tabs 6 e 7).</div>
+<div class="step-box">
+<h4><span class="step-num-big">1</span> 🖱️ Instalar a extensão REST Client</h4>
+<ol class="step-number-list">
+<li>No VS Code, clique no ícone de <strong>Extensions</strong> (quatro quadradinhos, ou <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd>).</li>
+<li>Busque <strong>REST Client</strong> (autor: <em>Huachao Mao</em>) → <strong>Install</strong>.</li>
+</ol>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> o botão vira <em>Uninstall</em>/<em>Disable</em> — a extensão está ativa. Ela já foi usada nas Tabs 3 e 3-P.</div>
 </div>
 <div class="step-box">
-<h4 style="color:var(--warning)"><span class="step-num-big">A</span> Teste NEGATIVO (proposital) — sem token</h4>
-<p class="text-sm text-muted mb-2"><strong>Este teste DEVE falhar:</strong> ele prova que a autenticação está sendo exigida. Resultado esperado: <strong>401 Unauthorized</strong> com <code>application/problem+json</code>.</p>
-<div class="term-help"><strong>🖥️ Terminal:</strong> <span class="ide-tag java">IntelliJ</span> <kbd>Alt+F12</kbd> · <span class="ide-tag cs">VS Code</span> <kbd>Ctrl+`</kbd>.</div>
-<div class="code-editor-wrap">
-<span class="code-filepath">terminal da IDE - teste negativo</span>
-<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor"># GET sem token — esperado: 401 Unauthorized
-# O contrato exige bearerAuth global (security: bearerAuth)
-curl -i http://localhost:4010/api/produtos
-# Resultado esperado:
-# HTTP/1.1 401 Unauthorized
-# Content-Type: application/problem+json
-# { "type":"...", "title":"Unauthorized", "status":401 }</pre>
-</div>
-</div>
-<div class="step-box">
-<h4 style="color:var(--success)"><span class="step-num-big">B</span> Teste AUTENTICADO — login + CRUD completo</h4>
-<p class="text-sm text-muted mb-2"><strong>Como fazer funcionar:</strong> login primeiro → extrai token → usa em todas as requests seguintes.</p>
-<div class="term-help"><strong>🖥️ Terminal:</strong> <span class="ide-tag java">IntelliJ</span> <kbd>Alt+F12</kbd> · <span class="ide-tag cs">VS Code</span> <kbd>Ctrl+`</kbd>.</div>
-<div class="code-editor-wrap">
-<span class="code-filepath">terminal da IDE - teste autenticado completo</span>
-<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor"># ── PASSO 1: Login (extrai token) ──
-TOKEN=$(curl -s -X POST http://localhost:4010/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"dev@loja.com.br","senha":"SenhaForte#2026"}' \
-  | jq -r '.tokenAcesso')
-echo "Token: $TOKEN"
-# ── PASSO 2: GET (listar) ── esperado 200
-curl -i http://localhost:4010/api/produtos -H "Authorization: Bearer $TOKEN"
-# ── PASSO 3: POST (criar) ── esperado 201
-curl -i -X POST http://localhost:4010/api/produtos \
-  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d '{"nome":"Monitor Ultrawide 34","preco":2499.90,"estoque":8}'
-# ── PASSO 4: PUT (atualizar) ── esperado 200
-curl -i -X PUT http://localhost:4010/api/produtos/101 \
-  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d '{"nome":"Monitor Ultrawide 34 4K","preco":2999.90,"estoque":12}'
-# ── PASSO 5: DELETE (excluir) ── esperado 204
-curl -i -X DELETE http://localhost:4010/api/produtos/101 \
-  -H "Authorization: Bearer $TOKEN"</pre>
-</div>
-<div class="success-banner"><strong>✅ Resultado esperado:</strong> POST → 201 · PUT → 200 · DELETE → 204, todos com <code>Authorization: Bearer $TOKEN</code>.</div>
-</div>
-<div class="step-box">
-<h4 style="color:var(--java-orange)"><span class="step-num-big">C</span> <span class="ide-tag java">IntelliJ</span> (.http) — teste visual</h4>
-<ol class="step-number-list" style="margin-top:12px">
-<li>Botão direito em <code>contracts</code> → <em>New → File</em> → <code>testes-mock.http</code>.</li>
-<li>Cole o conteúdo abaixo; clique no <strong>▶ verde</strong> ao lado de cada requisição.</li>
-<li>A linha <code>&gt; {% client.global.set(...) %}</code> guarda o token; o GET seguinte já funciona.</li>
+<h4><span class="step-num-big">2</span> 🖱️ Criar o arquivo de testes</h4>
+<ol class="step-number-list">
+<li>No Explorer, botão direito na pasta <code>contracts</code> → <strong>New File…</strong> → <code>testes-mock.http</code>.</li>
+<li>Cole o conteúdo abaixo e salve (<kbd>Ctrl</kbd>+<kbd>S</kbd>).</li>
 </ol>
 <div class="code-editor-wrap">
 <span class="code-filepath">contracts/testes-mock.http</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor" data-zip-path="contracts/testes-mock.http">@host = http://localhost:4010
-### 1) Login — salva o token em variável global
+<pre class="code-editor" data-zip-path="contracts/testes-mock.http"># ─────────────────────────────────────────────────────────────
+#  Testes do mock no VS Code com a extensão REST Client.
+#  Clique em "Send Request" (aparece em cima de cada linha GET/POST...).
+#  A resposta abre numa aba ao lado.  Mock no ar: http://localhost:4010
+#  Escolheu "string" para o preço na Sala? Troque 2499.90 por "2499.90".
+# ─────────────────────────────────────────────────────────────
+@host = http://localhost:4010
+
+### 1) Listar produtos SEM token → esperado 200 (leitura é pública)
+GET {{host}}/api/produtos?page=0&amp;size=20
+
+### 2) Criar SEM token → esperado 401 (teste negativo de propósito: escrever exige login)
+POST {{host}}/api/produtos
+Content-Type: application/json
+
+{ "nome": "Monitor Ultrawide 34", "preco": 2499.90, "estoque": 8 }
+
+### 3) Login → esperado 200 com tokenAcesso
+# @name login
 POST {{host}}/api/auth/login
 Content-Type: application/json
+
 { "email": "dev@loja.com.br", "senha": "SenhaForte#2026" }
-> {% client.global.set("token", response.body.tokenAcesso); %}
-### 2) Listar produtos (GET com token)
-GET {{host}}/api/produtos
-Authorization: Bearer {{token}}
-### 3) Criar produto (POST com token)
+
+### A partir daqui o token vem sozinho da resposta do login (rode o 3 antes!)
+@token = {{login.response.body.$.tokenAcesso}}
+
+### 4) Criar COM token → esperado 201 Created
 POST {{host}}/api/produtos
 Authorization: Bearer {{token}}
 Content-Type: application/json
-{ "nome": "Cadeira Gamer Pro", "preco": 1299.00, "estoque": 5 }
-### 4) Atualizar produto (PUT com token)
+
+{ "nome": "Monitor Ultrawide 34", "preco": 2499.90, "estoque": 8 }
+
+### 5) Criar com dados inválidos → esperado 400 (nome curto e preço negativo)
+POST {{host}}/api/produtos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "nome": "X", "preco": -5, "estoque": 8 }
+
+### 6) Buscar por id → esperado 200
+GET {{host}}/api/produtos/101
+
+### 7) Atualizar → esperado 200
 PUT {{host}}/api/produtos/101
 Authorization: Bearer {{token}}
 Content-Type: application/json
-{ "nome": "Cadeira Gamer Pro Max", "preco": 1499.00, "estoque": 10 }
-### 5) Excluir produto (DELETE com token)
+
+{ "nome": "Monitor Ultrawide 34 4K", "preco": 2999.90, "estoque": 12 }
+
+### 8) Excluir → esperado 204 No Content (resposta sem corpo)
 DELETE {{host}}/api/produtos/101
-Authorization: Bearer {{token}}</pre>
+Authorization: Bearer {{token}}
+
+### 9) Forçar o 404 → o mock não tem banco; o header Prefer pede ao Prism o código 404
+GET {{host}}/api/produtos/999
+Prefer: code=404</pre>
 </div>
-<div class="info-banner"><strong>💡 Painel de resposta visual:</strong> ao clicar no ▶ verde, o IntelliJ abre um painel inferior mostrando a resposta HTTP completa (status, headers, body JSON).</div>
-</div>
-<div class="step-box">
-<h4 style="color:var(--vscode-blue)"><span class="step-num-big">D</span> <span class="ide-tag cs">VS Code</span> (Thunder Client)</h4>
-<ol class="step-number-list" style="margin-top:12px">
-<li>Barra lateral → <strong>⚡ Thunder Client</strong>.</li>
-<li><strong>New Collection</strong> → <code>Loja API Mock</code>; em <strong>Env/Variables</strong> crie <code>baseUrl</code> = <code>http://localhost:4010</code>.</li>
-<li><strong>New Request</strong> → <strong>POST</strong> <code>{{baseUrl}}/api/auth/login</code>; aba <strong>Body → JSON</strong> com credenciais → <strong>Send</strong>.</li>
-<li>Copie o <code>tokenAcesso</code> para a variável <code>token</code> da collection.</li>
-<li>Nova request <strong>GET</strong> <code>{{baseUrl}}/api/produtos</code>; aba <strong>Auth → Bearer</strong> = <code>{{token}}</code> → <strong>Send</strong>.</li>
-</ol>
 </div>
 <div class="step-box">
-<h4 style="color:var(--warning)"><span class="step-num-big">E</span> Postman — collection importável</h4>
-<ol class="step-number-list" style="margin-top:12px">
-<li><strong>Baixe o Postman:</strong> <a class="ext" href="https://www.postman.com/downloads/" target="_blank">postman.com/downloads</a>.</li>
-<li><strong>Import</strong> → cole o JSON abaixo → <strong>Import</strong>.</li>
-<li>A collection já tem variáveis <code>baseUrl</code> e <code>token</code>.</li>
-<li>Rode <strong>Login</strong> primeiro → copie o token → cole na variável <code>token</code>.</li>
+<h4><span class="step-num-big">3</span> 🖱️ Rodar os 9 testes, na ordem</h4>
+<ol class="step-number-list">
+<li>Acima de cada linha <code>GET</code>/<code>POST</code>/<code>PUT</code>/<code>DELETE</code> aparece um link cinza <strong>Send Request</strong>. Clique nele, de cima para baixo.</li>
+<li>A resposta abre numa aba à direita: a 1ª linha mostra o status (ex.: <code>HTTP/1.1 201 Created</code>), depois os headers e o corpo JSON.</li>
+<li>O teste 3 (login) é o que <strong>pega o token</strong>: a linha <code>@token = {{login.response.body.$.tokenAcesso}}</code> copia o <code>tokenAcesso</code> da resposta sozinha. Rode o 3 antes do 4.</li>
 </ol>
-<details>
-<summary>📋 Abrir JSON da collection Postman</summary>
-<div class="code-editor-wrap" style="margin-top:10px">
+<div class="table-wrap"><table>
+<thead><tr><th>#</th><th>Pedido</th><th>Resultado esperado</th><th>Por quê</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>GET lista, sem token</td><td><code>200 OK</code> + lista</td><td>Leitura é pública.</td></tr>
+<tr><td>2</td><td>POST sem token</td><td><code>401 Unauthorized</code></td><td><strong>Falha de propósito:</strong> prova que escrever exige login.</td></tr>
+<tr><td>3</td><td>Login</td><td><code>200 OK</code> + <code>tokenAcesso</code></td><td>O mock aceita qualquer e-mail/senha válidos no formato.</td></tr>
+<tr><td>4</td><td>POST com token</td><td><code>201 Created</code></td><td>Header presente + JSON dentro das regras.</td></tr>
+<tr><td>5</td><td>POST com dados ruins</td><td><code>400 Bad Request</code></td><td><code>nome</code> com 1 letra e <code>preco</code> negativo quebram o contrato.</td></tr>
+<tr><td>6</td><td>GET por id</td><td><code>200 OK</code></td><td>Leitura pública.</td></tr>
+<tr><td>7</td><td>PUT com token</td><td><code>200 OK</code></td><td>Atualização autenticada.</td></tr>
+<tr><td>8</td><td>DELETE com token</td><td><code>204 No Content</code></td><td>Excluído; a resposta não tem corpo.</td></tr>
+<tr><td>9</td><td>GET id 999 + <code>Prefer: code=404</code></td><td><code>404 Not Found</code></td><td>Pedimos ao Prism a resposta 404 do contrato.</td></tr>
+</tbody></table></div>
+</div>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=rest+client+vs+code+testar+api" target="_blank">REST Client no VS Code</a> · <a class="ext" href="https://www.youtube.com/results?search_query=m%C3%A9todos+http+get+post+put+delete+explicado" target="_blank">GET, POST, PUT e DELETE explicados</a> · <a class="ext" href="https://www.youtube.com/results?search_query=postman+para+iniciantes+testar+api" target="_blank">Postman para iniciantes</a></div>
+
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">⌨️ Prefere o terminal? Os mesmos testes com curl (Git Bash/macOS/Linux e PowerShell)</div>
+<div class="faq-a">
+<p><strong>curl</strong> é um programa de linha de comando que faz pedidos HTTP e mostra a resposta crua. Vem instalado no Windows 10/11, no macOS e no Linux.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Opção</th><th>O que faz</th></tr></thead>
+<tbody>
+<tr><td><code>-i</code></td><td>Mostra os headers da resposta junto com o corpo.</td></tr>
+<tr><td><code>-X POST</code></td><td>Escolhe o verbo (o padrão é GET).</td></tr>
+<tr><td><code>-H "…"</code></td><td>Adiciona um header, como <code>Authorization: Bearer …</code>.</td></tr>
+<tr><td><code>-d '…'</code> · <code>--data-binary @arq.json</code></td><td>Manda um corpo (texto ou arquivo).</td></tr>
+<tr><td><code>-s -o /dev/null -w "%{http_code}"</code></td><td>Silencioso, descarta o corpo e imprime só o status.</td></tr>
+</tbody></table></div>
+<p><strong>Git Bash (Windows), macOS ou Linux</strong> — salve em <code>scripts/testar-mock.sh</code> e rode <code>bash scripts/testar-mock.sh</code> na pasta <code>loja-contrato</code>. Não precisa instalar o <code>jq</code>.</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">scripts/testar-mock.sh</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="scripts/testar-mock.sh">#!/usr/bin/env bash
+# Testes do mock por terminal — Git Bash (Windows), macOS ou Linux.
+# Rode na pasta loja-contrato:   bash scripts/testar-mock.sh
+# Não precisa de jq: o token é recortado com sed.
+H=http://localhost:4010
+
+echo "== 1) GET sem token (esperado 200)"
+curl -s -o /dev/null -w "%{http_code}\n" "$H/api/produtos?page=0&amp;size=20"
+
+echo "== 2) POST sem token (esperado 401)"
+curl -s -o /dev/null -w "%{http_code}\n" -X POST "$H/api/produtos" \
+  -H "Content-Type: application/json" \
+  -d '{"nome":"Monitor Ultrawide 34","preco":2499.90,"estoque":8}'
+
+echo "== 3) Login (esperado: um token)"
+TOKEN=$(curl -s -X POST "$H/api/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"dev@loja.com.br","senha":"SenhaForte#2026"}' \
+  | sed -E 's/.*"tokenAcesso" *: *"([^"]+)".*/\1/')
+echo "token: ${TOKEN:0:25}..."
+
+echo "== 4) POST com token (esperado 201)"
+curl -s -o /dev/null -w "%{http_code}\n" -X POST "$H/api/produtos" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"nome":"Monitor Ultrawide 34","preco":2499.90,"estoque":8}'
+
+echo "== 5) POST inválido (esperado 400)"
+curl -s -o /dev/null -w "%{http_code}\n" -X POST "$H/api/produtos" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"nome":"X","preco":-5,"estoque":8}'
+
+echo "== 6) PUT (esperado 200)"
+curl -s -o /dev/null -w "%{http_code}\n" -X PUT "$H/api/produtos/101" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"nome":"Monitor Ultrawide 34 4K","preco":2999.90,"estoque":12}'
+
+echo "== 7) DELETE (esperado 204)"
+curl -s -o /dev/null -w "%{http_code}\n" -X DELETE "$H/api/produtos/101" \
+  -H "Authorization: Bearer $TOKEN"
+
+echo "== 8) 404 forçado (esperado 404)"
+curl -s -o /dev/null -w "%{http_code}\n" "$H/api/produtos/999" -H "Prefer: code=404"</pre>
+</div>
+<p><strong>PowerShell do Windows</strong> — salve em <code>scripts/testar-mock.ps1</code> e rode <code>powershell -ExecutionPolicy Bypass -File scripts\testar-mock.ps1</code>. Usamos <code>curl.exe</code> (no PowerShell 5.1, <code>curl</code> sozinho é outro comando) e o login com <code>Invoke-RestMethod</code>.</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">scripts/testar-mock.ps1</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="scripts/testar-mock.ps1"># Testes do mock no PowerShell do Windows (funciona no 5.1 e no 7).
+# Rode na pasta loja-contrato:   powershell -ExecutionPolicy Bypass -File scripts\testar-mock.ps1
+# Usamos curl.exe (o "curl" puro do PowerShell 5.1 é outro comando!) e mandamos
+# os corpos JSON por arquivo, para fugir das regras de aspas do PowerShell.
+$H = "http://localhost:4010"
+'{"nome":"Monitor Ultrawide 34","preco":2499.90,"estoque":8}'      | Set-Content -Encoding ascii novo.json
+'{"nome":"X","preco":-5,"estoque":8}'                               | Set-Content -Encoding ascii invalido.json
+'{"nome":"Monitor Ultrawide 34 4K","preco":2999.90,"estoque":12}'  | Set-Content -Encoding ascii editado.json
+
+function Status($rotulo, $args2) {
+  $code = &amp; curl.exe -s -o NUL -w "%{http_code}" @args2
+  Write-Host "$rotulo -&gt; $code"
+}
+
+Status "1) GET sem token      (esperado 200)" @("$H/api/produtos?page=0&amp;size=20")
+Status "2) POST sem token     (esperado 401)" @("-X","POST","$H/api/produtos","-H","Content-Type: application/json","--data-binary","@novo.json")
+
+# 3) Login: Invoke-RestMethod já devolve o JSON como objeto
+$login = Invoke-RestMethod -Method Post -Uri "$H/api/auth/login" -ContentType "application/json" `
+         -Body '{"email":"dev@loja.com.br","senha":"SenhaForte#2026"}'
+$TOKEN = $login.tokenAcesso
+Write-Host "3) Login -&gt; token: $($TOKEN.Substring(0,25))..."
+$auth = "Authorization: Bearer $TOKEN"
+
+Status "4) POST com token     (esperado 201)" @("-X","POST","$H/api/produtos","-H",$auth,"-H","Content-Type: application/json","--data-binary","@novo.json")
+Status "5) POST inválido      (esperado 400)" @("-X","POST","$H/api/produtos","-H",$auth,"-H","Content-Type: application/json","--data-binary","@invalido.json")
+Status "6) PUT                (esperado 200)" @("-X","PUT","$H/api/produtos/101","-H",$auth,"-H","Content-Type: application/json","--data-binary","@editado.json")
+Status "7) DELETE             (esperado 204)" @("-X","DELETE","$H/api/produtos/101","-H",$auth)
+Status "8) 404 forçado        (esperado 404)" @("$H/api/produtos/999","-H","Prefer: code=404")
+
+Remove-Item novo.json, invalido.json, editado.json</pre>
+</div>
+<div class="success-banner"><strong>✅ Resultado esperado (nos dois):</strong> <code>200</code>, <code>401</code>, um token, <code>201</code>, <code>400</code>, <code>200</code>, <code>204</code>, <code>404</code> — um por linha, nessa ordem.</div>
+<p><strong>Aprofundar:</strong> <a class="ext" href="https://curl.se/docs/manpage.html" target="_blank">manual do curl</a> · <a class="ext" href="https://www.youtube.com/results?search_query=curl+para+iniciantes+testar+api" target="_blank">🎬 curl para iniciantes (YouTube)</a></p>
+</div></div>
+
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">☕ Usa IntelliJ? Os testes no HTTP Client dele</div>
+<div class="faq-a">
+<div class="warning-banner"><strong>ℹ️ Pode exigir assinatura:</strong> o HTTP Client era um recurso do antigo IntelliJ <em>Ultimate</em>. Se o ▶ verde não aparecer no arquivo <code>.http</code>, use o REST Client do VS Code (acima) ou o Postman (abaixo) — os testes são os mesmos.</div>
+<ol class="step-number-list">
+<li><strong>File → Open…</strong> → pasta <code>loja-contrato</code>. Botão direito em <code>contracts</code> → <strong>New → File</strong> → <code>testes-mock.intellij.http</code>.</li>
+<li>Cole o conteúdo e clique no <strong>▶ verde</strong> ao lado de cada <code>###</code>. A resposta abre num painel embaixo.</li>
+<li>A linha <code>&gt; {% client.global.set("token", …) %}</code> guarda o token depois do login.</li>
+</ol>
+<div class="code-editor-wrap">
+<span class="code-filepath">contracts/testes-mock.intellij.http</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="contracts/testes-mock.intellij.http"># Versão para o HTTP Client do IntelliJ (clique no ▶ verde ao lado de cada ###).
+# Diferença para o REST Client: o token é guardado pelo script &gt; {% ... %}
+@host = http://localhost:4010
+
+### 1) Listar SEM token → 200
+GET {{host}}/api/produtos
+
+### 2) Criar SEM token → 401 (teste negativo)
+POST {{host}}/api/produtos
+Content-Type: application/json
+
+{ "nome": "Monitor Ultrawide 34", "preco": 2499.90, "estoque": 8 }
+
+### 3) Login → 200 (guarda o token)
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "dev@loja.com.br", "senha": "SenhaForte#2026" }
+
+&gt; {% client.global.set("token", response.body.tokenAcesso); %}
+
+### 4) Criar COM token → 201
+POST {{host}}/api/produtos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "nome": "Monitor Ultrawide 34", "preco": 2499.90, "estoque": 8 }
+
+### 5) Dados inválidos → 400
+POST {{host}}/api/produtos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "nome": "X", "preco": -5, "estoque": 8 }
+
+### 6) Atualizar → 200
+PUT {{host}}/api/produtos/101
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "nome": "Monitor Ultrawide 34 4K", "preco": 2999.90, "estoque": 12 }
+
+### 7) Excluir → 204
+DELETE {{host}}/api/produtos/101
+Authorization: Bearer {{token}}
+
+### 8) Forçar 404
+GET {{host}}/api/produtos/999
+Prefer: code=404</pre>
+</div>
+</div></div>
+
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">📮 Prefere o Postman? Collection pronta para importar</div>
+<div class="faq-a">
+<ol class="step-number-list">
+<li>Baixe e instale: <a class="ext" href="https://www.postman.com/downloads/" target="_blank">postman.com/downloads</a>.</li>
+<li>Botão <strong>Import</strong> (canto superior esquerdo) → cole o JSON abaixo (ou arraste o arquivo do ZIP) → <strong>Import</strong>.</li>
+<li>Abra a collection <strong>Loja API Mock (Tab 4)</strong> e clique em <strong>Send</strong> em cada pedido, na ordem. O <strong>3 Login</strong> guarda o token sozinho (aba <em>Scripts</em>), e os pedidos seguintes já o usam.</li>
+</ol>
+<div class="code-editor-wrap">
 <span class="code-filepath">loja-api.postman_collection.json</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="loja-api.postman_collection.json">{
-  "info": { "name": "Loja API Mock", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json" },
+  "info": {
+    "name": "Loja API Mock (Tab 4)",
+    "description": "Rode na ordem. O Login guarda o token sozinho na variável {{token}}.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
   "variable": [
     { "key": "baseUrl", "value": "http://localhost:4010" },
     { "key": "token", "value": "" }
   ],
   "item": [
-    { "name": "Login", "request": { "method": "POST",
+    { "name": "1 Listar (público) → 200", "request": { "method": "GET",
+        "url": { "raw": "{{baseUrl}}/api/produtos" } } },
+    { "name": "2 Criar sem token → 401", "request": { "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"nome\":\"Monitor Ultrawide 34\",\"preco\":2499.90,\"estoque\":8}" },
+        "url": { "raw": "{{baseUrl}}/api/produtos" } } },
+    { "name": "3 Login → 200 (guarda token)",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript",
+        "exec": ["pm.collectionVariables.set('token', pm.response.json().tokenAcesso);"] } }],
+      "request": { "method": "POST",
         "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": { "mode": "raw", "raw": "{\"email\":\"dev@loja.com.br\",\"senha\":\"SenhaForte#2026\"}" },
         "url": { "raw": "{{baseUrl}}/api/auth/login" } } },
-    { "name": "Listar", "request": { "method": "GET",
-        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
-        "url": { "raw": "{{baseUrl}}/api/produtos" } } },
-    { "name": "Criar", "request": { "method": "POST",
+    { "name": "4 Criar com token → 201", "request": { "method": "POST",
         "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
         "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": { "mode": "raw", "raw": "{\"nome\":\"Monitor\",\"preco\":2499.90,\"estoque\":8}" },
+        "body": { "mode": "raw", "raw": "{\"nome\":\"Monitor Ultrawide 34\",\"preco\":2499.90,\"estoque\":8}" },
         "url": { "raw": "{{baseUrl}}/api/produtos" } } },
-    { "name": "Atualizar", "request": { "method": "PUT",
+    { "name": "5 Criar inválido → 400", "request": { "method": "POST",
         "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
         "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": { "mode": "raw", "raw": "{\"nome\":\"Monitor 4K\",\"preco\":2999.90,\"estoque\":12}" },
+        "body": { "mode": "raw", "raw": "{\"nome\":\"X\",\"preco\":-5,\"estoque\":8}" },
+        "url": { "raw": "{{baseUrl}}/api/produtos" } } },
+    { "name": "6 Atualizar → 200", "request": { "method": "PUT",
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"nome\":\"Monitor Ultrawide 34 4K\",\"preco\":2999.90,\"estoque\":12}" },
         "url": { "raw": "{{baseUrl}}/api/produtos/101" } } },
-    { "name": "Excluir", "request": { "method": "DELETE",
+    { "name": "7 Excluir → 204", "request": { "method": "DELETE",
         "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
-        "url": { "raw": "{{baseUrl}}/api/produtos/101" } } }
+        "url": { "raw": "{{baseUrl}}/api/produtos/101" } } },
+    { "name": "8 Forçar 404", "request": { "method": "GET",
+        "header": [{ "key": "Prefer", "value": "code=404" }],
+        "url": { "raw": "{{baseUrl}}/api/produtos/999" } } }
   ]
 }</pre>
 </div>
-</details>
+</div></div>
 </div>
-<div id="prism-sim-result" class="terminal-window" style="display:none">
-<div class="terminal-bar"><span class="terminal-dot dot-red"></span><span class="terminal-dot dot-yellow"></span><span class="terminal-dot dot-green"></span><span class="terminal-title">Stoplight Prism :4010</span></div>
-<div class="terminal-body" id="prism-sim-text"></div>
+
+
+<div class="lab-container">
+<div class="lab-header"><h3>🔨 Quebre o contrato: 8 desafios</h3></div>
+<p>Agora o contrário: cada pedido abaixo está <strong>errado de propósito</strong>. O objetivo é <strong>prever</strong> o status antes de rodar — é assim que os códigos HTTP entram na cabeça.</p>
+<ol class="step-number-list">
+<li>🖱️ Na pasta <code>contracts</code>, crie o arquivo <code>desafios.http</code> e cole o conteúdo abaixo (ele também vem no ZIP).</li>
+<li>Para cada desafio, <strong>anote seu palpite</strong> (200? 400? 401? 404?…) e só então clique em <strong>Send Request</strong>.</li>
+<li>Compare com a resposta escondida no cartão do desafio (clique para abrir).</li>
+</ol>
+<div class="code-editor-wrap">
+<span class="code-filepath">contracts/desafios.http</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="contracts/desafios.http"># ─────────────────────────────────────────────────────────────
+#  "Quebre o contrato" — 8 desafios. Cada pedido está ERRADO de propósito.
+#  Antes de clicar em "Send Request", tente adivinhar o status que volta.
+#  As respostas estão na aba (parte ⑤, "Quebre o contrato").
+#  Rode antes o teste 3 (login) do testes-mock.http, ou use o token fixo abaixo:
+#  o mock aceita qualquer texto como token.
+# ─────────────────────────────────────────────────────────────
+@host = http://localhost:4010
+@token = qualquer-coisa-serve-no-mock
+
+### D1) Preço negativo
+POST {{host}}/api/produtos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "nome": "Mouse Gamer", "preco": -5, "estoque": 10 }
+
+### D2) Nome com 1 letra
+POST {{host}}/api/produtos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "nome": "M", "preco": 99.90, "estoque": 10 }
+
+### D3) Estoque "quebrado" (2.5 unidades)
+POST {{host}}/api/produtos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "nome": "Mouse Gamer", "preco": 99.90, "estoque": 2.5 }
+
+### D4) O cliente tenta mandar o id
+POST {{host}}/api/produtos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "id": 7, "nome": "Mouse Gamer", "preco": 99.90, "estoque": 10 }
+
+### D5) Esqueceu a palavra Bearer
+POST {{host}}/api/produtos
+Authorization: {{token}}
+Content-Type: application/json
+
+{ "nome": "Mouse Gamer", "preco": 99.90, "estoque": 10 }
+
+### D6) Rota no singular
+GET {{host}}/api/produto
+
+### D7) Verbo que o contrato não tem
+PATCH {{host}}/api/produtos/101
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "estoque": 3 }
+
+### D8) Id que não é número
+GET {{host}}/api/produtos/abc</pre>
 </div>
-<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> Prism 404 (path errado); token expirado; body fora do schema (400 c/ <code>-m false</code>); porta errada do Prism (4010).</div>
-<div class="success-banner"><strong>✅ Checklist:</strong> Prism <code>Up</code> · teste negativo 401 · login retorna token · CRUD autenticado 201/200/204.</div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">🧩 <strong>D1</strong> · Preço negativo — <code>"preco": -5</code> → qual status volta?</div>
+<div class="faq-a"><p><strong>Resposta: <code>400 Bad Request</code></strong>. O contrato diz <code>minimum: 0.01</code>. O Prism confere o corpo contra o schema e recusa. Na API real, essa mesma regra protege o banco de um produto "de graça".</p></div></div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">🧩 <strong>D2</strong> · Nome com 1 letra — <code>"nome": "M"</code> → qual status volta?</div>
+<div class="faq-a"><p><strong>Resposta: <code>400 Bad Request</code></strong>. <code>minLength: 2</code>. Regras de tamanho no contrato evitam que cada time (front, back, QA) invente a sua.</p></div></div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">🧩 <strong>D3</strong> · Estoque 2.5 — <code>"estoque": 2.5</code> → qual status volta?</div>
+<div class="faq-a"><p><strong>Resposta: <code>400 Bad Request</code></strong>. <code>type: integer</code>: número com vírgula não é inteiro. O tipo também é uma regra.</p></div></div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">🧩 <strong>D4</strong> · O cliente manda o id — <code>"id": 7</code> no POST → qual status volta?</div>
+<div class="faq-a"><p><strong>Resposta: <code>400 Bad Request</code></strong>. <code>additionalProperties: false</code> no <code>ProdutoRequest</code>: campo que não está no contrato é recusado. Quem cria o id é o servidor.</p></div></div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">🧩 <strong>D5</strong> · Sem a palavra Bearer — <code>Authorization: qualquer-coisa</code> → qual status volta?</div>
+<div class="faq-a"><p><strong>Resposta: <code>401 Unauthorized</code></strong>. O esquema é <code>bearer</code>: o header precisa começar com <code>Bearer </code> (com espaço). Sem isso, para o Prism é como se não houvesse token.</p></div></div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">🧩 <strong>D6</strong> · Rota no singular — <code>GET /api/produto</code> → qual status volta?</div>
+<div class="faq-a"><p><strong>Resposta: <code>404 Not Found</code></strong>. Essa rota não existe no contrato (é <code>/api/produtos</code>, no plural). O Prism responde 404 com <code>NO_PATH_MATCHED_ERROR</code>.</p></div></div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">🧩 <strong>D7</strong> · Verbo que não existe — <code>PATCH /api/produtos/101</code> → qual status volta?</div>
+<div class="faq-a"><p><strong>Resposta: <code>405 Method Not Allowed</code></strong>. A rota existe, mas o contrato só tem <code>get</code>, <code>put</code> e <code>delete</code> nela. 405 = "o endereço está certo, o verbo não".</p></div></div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">🧩 <strong>D8</strong> · Id que não é número — <code>GET /api/produtos/abc</code> → qual status volta?</div>
+<div class="faq-a"><p><strong>Resposta: <code>422 Unprocessable Entity</code></strong>. O <code>id</code> é <code>integer</code>. Por que 422 e não 400? Essa rota não prevê resposta <code>400</code> no contrato, então o Prism usa o erro padrão dele (422). <strong>Lição:</strong> o contrato também decide <em>quais</em> erros existem — um bom contrato prevê o 400 aqui.</p></div></div>
+<div class="table-wrap" style="margin-top:12px"><table>
+<thead><tr><th>Status</th><th>Em português</th><th>Quando aparece</th></tr></thead>
+<tbody>
+<tr><td><code>400</code></td><td>Pedido inválido</td><td>Corpo ou parâmetro fora das regras do contrato</td></tr>
+<tr><td><code>401</code></td><td>Não autenticado</td><td>Faltou o token (ou o <code>Bearer </code>)</td></tr>
+<tr><td><code>404</code></td><td>Não encontrado</td><td>O endereço (ou o item) não existe</td></tr>
+<tr><td><code>405</code></td><td>Método não permitido</td><td>O endereço existe, mas não com esse verbo</td></tr>
+<tr><td><code>422</code></td><td>Não processável</td><td>Inválido, e o contrato não previu um 400 para o caso (no Prism)</td></tr>
+</tbody></table></div>
+<div class="success-banner"><strong>✅ Meta:</strong> acertar pelo menos 6 de 8 palpites. Errou algum? Releia a linha do contrato citada na resposta — é ela que decide.</div>
 </div>
+
+<!-- ══════════════════════════ ⑥ JWT ══════════════════════════ -->
+<div class="deep-concept-box">
+<h3>⑥ 🔑 Como funciona o login com JWT</h3>
+<div class="analogy-highlight">
+<span class="icon">🎫</span>
+<div><strong>Analogia da pulseira do show:</strong> na entrada você mostra o ingresso uma vez (o <strong>login</strong>) e ganha uma pulseira (o <strong>token</strong>). Daí em diante, cada segurança só olha a pulseira — ninguém precisa consultar a lista de convidados de novo. A pulseira tem validade (<code>exp</code>) e é difícil de falsificar (a <strong>assinatura</strong>).</div>
+</div>
+<p><strong>JWT</strong> (JSON Web Token, <a class="ext" href="https://datatracker.ietf.org/doc/html/rfc7519" target="_blank">RFC 7519</a>) é um texto em três partes separadas por ponto: <code>header.payload.signature</code>.</p>
+<ul>
+<li><strong>header:</strong> qual algoritmo assinou (ex.: <code>HS256</code>).</li>
+<li><strong>payload:</strong> os dados do usuário — <code>sub</code> (quem é), <code>exp</code> (quando vence), <code>iat</code> (quando foi emitido). <em>Atenção: isso é só base64, qualquer um consegue <strong>ler</strong>. Nunca coloque senha ou dado sensível ali.</em></li>
+<li><strong>signature:</strong> um "lacre" calculado com uma chave secreta do servidor. Mudou 1 letra do token, o lacre não confere → <code>401</code>.</li>
+</ul>
+<p><strong>Neste guia o contrato só pergunta "está logado?"</strong> — não existem perfis (admin, cliente…). Logado pode escrever; não logado só lê. Perfis e permissões ficam para depois.</p>
+<h4>O caminho em 4 passos</h4>
+<ol>
+<li>O cliente manda e-mail e senha para <code>POST /api/auth/login</code> — a única rota de escrita sem token (é ela que entrega o token).</li>
+<li>O servidor confere e <strong>devolve</strong> o JWT assinado.</li>
+<li>O cliente guarda o token e o envia em cada pedido de escrita: <code>Authorization: Bearer &lt;token&gt;</code>.</li>
+<li>O servidor confere <strong>assinatura e validade</strong>: tudo certo → segue; senão → <code>401</code>.</li>
+</ol>
+<h4>🔬 Na prática: abra um token e quebre o lacre</h4>
+<div class="lab-container" style="margin:10px 0">
+<ol class="step-number-list">
+<li>Clique em <strong>🎫 Gerar token de aula</strong> (ou cole no campo um <code>tokenAcesso</code> qualquer — inclusive o que o mock devolveu).</li>
+<li>Veja as 3 partes coloridas e o que está escrito no payload. Repare: <strong>qualquer um lê</strong>, sem senha nenhuma.</li>
+<li>Agora clique em <strong>✏️ Virar admin</strong>: o payload é alterado, mas a assinatura continua a antiga → <strong>❌ assinatura não confere</strong>. É exatamente o que o servidor faz para recusar um token falsificado (→ 401).</li>
+</ol>
+<textarea id="jwt-in" rows="3" style="width:100%;font-family:monospace;font-size:.85em;padding:8px;border-radius:8px;background:var(--bg-code,#0b1020);color:var(--text,#e2e8f0);border:1px solid var(--border,#334155)" placeholder="cole um token aqui (três partes separadas por ponto)" oninput="jwtDecode()"></textarea>
+<div class="meet-controls" style="margin-top:8px">
+<button class="btn btn-primary" onclick="jwtGerar()">🎫 Gerar token de aula</button>
+<button class="btn" onclick="jwtAdulterar()">✏️ Virar admin (adulterar)</button>
+<button class="btn" onclick="jwtGerar()">↺ Recomeçar</button>
+</div>
+<div id="jwt-out" class="text-sm" style="margin-top:10px">—</div>
+<p class="text-sm text-muted">O token de aula é assinado aqui mesmo, no seu navegador, com a chave secreta de mentira <code>segredo-da-aula-tab4</code>. Nada sai do seu computador.</p>
+</div>
+<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> esquecer a palavra <code>Bearer </code> (com espaço) antes do token; token vencido (<code>exp</code>); chave secreta diferente entre quem emite e quem confere; achar que base64 esconde os dados (não esconde!). A chave secreta fica em variável de ambiente — <strong>nunca</strong> no Git.</div>
+<p><strong>Aprofundar:</strong> <a class="ext" href="https://jwt.io/" target="_blank">jwt.io (cole um token e veja as 3 partes)</a> · <a class="ext" href="https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html" target="_blank">OWASP: boas práticas com JWT</a></p>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=o+que+%C3%A9+jwt+json+web+token+explicado" target="_blank">O que é JWT, explicado</a> · <a class="ext" href="https://www.youtube.com/results?search_query=autentica%C3%A7%C3%A3o+vs+autoriza%C3%A7%C3%A3o+api" target="_blank">Autenticação vs. autorização</a> · <a class="ext" href="https://www.youtube.com/results?search_query=bearer+token+api+rest" target="_blank">Bearer token em APIs REST</a></div>
+</div>
+<h4 class="diag-title">📐 D-03 <span class="dt-type">UML · Sequência</span> — Leitura pública, escrita com token</h4>
+<div class="mermaid-box er-small" data-code='sequenceDiagram
+    participant C as Cliente
+    participant A as API (Prism ou real)
+    C->>A: GET /api/produtos (sem token)
+    A-->>C: 200 [produtos]
+    C->>A: POST /api/auth/login (e-mail, senha)
+    A-->>C: 200 { tokenAcesso }
+    C->>A: POST /api/produtos (Bearer token)
+    A->>A: confere assinatura e validade
+    A-->>C: 201 produto criado'>
+<div class="mermaid"></div>
+</div>
+
+<!-- ══════════════════════════ ⑦ ADRs ══════════════════════════ -->
+<h4 style="color:var(--accent);margin-top:18px">⑦ 📑 Decisões registradas (ADRs)</h4>
+<p class="text-sm text-muted">ADR = <em>Architecture Decision Record</em>: um registro curto de cada decisão importante — o problema, o que foi decidido, as alternativas e o preço da escolha. Assim, quem chega depois entende o "porquê". <a class="ext" href="https://www.youtube.com/results?search_query=adr+architecture+decision+record" target="_blank">🎬 O que é ADR (YouTube)</a></p>
+<div class="adr"><h5>ADR-001 · Contrato OpenAPI como fonte única<span class="status">Aceita</span></h5>
+<p><b>Contexto:</b> frontend e mobile ficavam parados esperando o backend.</p>
+<p><b>Decisão:</b> o contrato OpenAPI 3.1 vem primeiro, negociado na Sala de Contrato, e vira mock no Prism.</p>
+<p><b>Alternativas consideradas:</b> escrever o código primeiro e gerar o contrato depois (rejeitada); GraphQL (fora do escopo).</p>
+<p><b>Consequências:</b> (+) times trabalham em paralelo; (−) exige uma reunião de desenho no início.</p>
+<p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend, Frontend, QA, Produto.</p></div>
+<div class="adr"><h5>ADR-005 · JWT stateless, só autenticação<span class="status">Aceita</span></h5>
+<p><b>Contexto:</b> a API precisa saber se quem escreve está logado, sem guardar sessão no servidor.</p>
+<p><b>Decisão:</b> token Bearer JWT assinado (HMAC-SHA256). Leitura pública; criar, atualizar e excluir exigem login. Sem perfis/roles nesta etapa.</p>
+<p><b>Alternativas consideradas:</b> sessão no servidor com cookie (rejeitada); perfis de acesso desde já (adiado); OAuth2 completo (adiado).</p>
+<p><b>Consequências:</b> (+) qualquer servidor confere o token, escala fácil; (−) revogar um token antes de vencer exige lista de bloqueio ou refresh token.</p>
+<p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend, SRE, Segurança.</p></div>
+<div class="adr"><h5>ADR-007 · Mock Prism com exemplos fixos e validação de pedidos<span class="status">Aceita</span></h5>
+<p><b>Contexto:</b> com dados aleatórios (<code>-d</code>), cada pessoa via respostas diferentes e erros de contrato passavam despercebidos.</p>
+<p><b>Decisão:</b> Prism <strong>sem <code>-d</code></strong> (devolve os <code>example:</code> do contrato) e com <code>--errors</code>. Pedidos fora do contrato voltam como erro: <code>401</code> sem token, <code>400</code> para JSON inválido.</p>
+<p><b>Alternativas consideradas:</b> mock com dados aleatórios (rejeitada); mock escrito à mão (rejeitada: sai do contrato).</p>
+<p><b>Consequências:</b> (+) resultados previsíveis para o QA e para a aula; (−) o mock não valida o token de verdade nem guarda dados.</p>
+<p><b>Status:</b> Aceita · <b>Stakeholders:</b> QA, Backend, Frontend.</p></div>
+<div class="adr"><h5>ADR-008 · Erros no padrão RFC 7807 (<code>application/problem+json</code>)<span class="status">Aceita</span></h5>
+<p><b>Contexto:</b> cada erro vinha num formato diferente, e o cliente não sabia ler.</p>
+<p><b>Decisão:</b> todo erro usa Problem Details (<code>type</code>, <code>title</code>, <code>status</code>, <code>detail</code>), definido uma vez em <code>components/responses</code>.</p>
+<p><b>Alternativas consideradas:</b> formato próprio <code>{erro}</code> (rejeitada, mas a Sala deixa experimentar); páginas de erro em HTML (rejeitada).</p>
+<p><b>Consequências:</b> (+) o cliente trata todos os erros do mesmo jeito; (−) o backend precisa disciplina para sempre responder nesse formato.</p>
+<p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend, Frontend, QA.</p></div>
+
+<div class="deep-concept-box" id="tab4-quiz">
+<h3>🎯 Teste rápido: 6 perguntas</h3>
+<p class="text-sm text-muted">Clique na resposta. Verde = certo; vermelho = tente entender a explicação antes de seguir.</p>
+<div class="quiz-q" data-ok="1"><p><strong>1.</strong> Um POST em <code>/api/produtos</code> <strong>sem</strong> o header Authorization devolve:</p><button class="btn" onclick="quizResp(this,0)">200</button> <button class="btn" onclick="quizResp(this,1)">401</button> <button class="btn" onclick="quizResp(this,2)">404</button> <button class="btn" onclick="quizResp(this,3)">500</button> <div class="quiz-exp text-sm" style="display:none;margin-top:6px">Escrever exige login (<code>bearerAuth</code>). Sem token → 401.</div></div>
+<div class="quiz-q" data-ok="1"><p><strong>2.</strong> Por que o <code>ProdutoRequest</code> não tem o campo <code>id</code>?</p><button class="btn" onclick="quizResp(this,0)">Esqueceram de colocar</button> <button class="btn" onclick="quizResp(this,1)">O id é criado pelo servidor</button> <button class="btn" onclick="quizResp(this,2)">O id é opcional</button> <button class="btn" onclick="quizResp(this,3)">JSON não aceita números</button> <div class="quiz-exp text-sm" style="display:none;margin-top:6px">Quem cria o id é o servidor; o cliente só envia nome, preço e estoque.</div></div>
+<div class="quiz-q" data-ok="1"><p><strong>3.</strong> O Prism, sem a opção <code>-d</code>, responde com:</p><button class="btn" onclick="quizResp(this,0)">Dados aleatórios</button> <button class="btn" onclick="quizResp(this,1)">Os <code>example:</code> do contrato</button> <button class="btn" onclick="quizResp(this,2)">Os dados do MySQL</button> <button class="btn" onclick="quizResp(this,3)">Sempre um erro</button> <div class="quiz-exp text-sm" style="display:none;margin-top:6px">Sem <code>-d</code> ele usa os exemplos — o mesmo resultado para todo mundo.</div></div>
+<div class="quiz-q" data-ok="1"><p><strong>4.</strong> Depois de um POST que deu 201 no mock, um GET mostra o produto novo?</p><button class="btn" onclick="quizResp(this,0)">Sim, ele grava</button> <button class="btn" onclick="quizResp(this,1)">Não: o mock não guarda nada</button> <button class="btn" onclick="quizResp(this,2)">Só se reiniciar o Prism</button> <button class="btn" onclick="quizResp(this,3)">Só com token</button> <div class="quiz-exp text-sm" style="display:none;margin-top:6px">O mock não tem banco: devolve sempre o exemplo. Guardar é trabalho do backend real.</div></div>
+<div class="quiz-q" data-ok="2"><p><strong>5.</strong> Qual parte do JWT impede que alguém altere o token?</p><button class="btn" onclick="quizResp(this,0)">header</button> <button class="btn" onclick="quizResp(this,1)">payload</button> <button class="btn" onclick="quizResp(this,2)">signature</button> <button class="btn" onclick="quizResp(this,3)">o Bearer</button> <div class="quiz-exp text-sm" style="display:none;margin-top:6px">A assinatura é calculada com a chave secreta; mudou o payload, ela não confere.</div></div>
+<div class="quiz-q" data-ok="1"><p><strong>6.</strong> <code>PATCH /api/produtos/101</code>, num contrato que só tem get/put/delete nessa rota, devolve:</p><button class="btn" onclick="quizResp(this,0)">404</button> <button class="btn" onclick="quizResp(this,1)">405</button> <button class="btn" onclick="quizResp(this,2)">400</button> <button class="btn" onclick="quizResp(this,3)">204</button> <div class="quiz-exp text-sm" style="display:none;margin-top:6px">O endereço existe, o verbo não → 405 Method Not Allowed.</div></div>
+<div id="quiz-placar" class="success-banner" style="display:none"></div>
+</div>
+<div class="warning-banner mt-3"><strong>⚠️ Problemas comuns e o que fazer:</strong>
+<ul>
+<li><strong>Container sobe e cai</strong> (bolinha vermelha) → Logs do Docker Desktop. Quase sempre é o contrato: nome errado (<code>openapi.yaml.txt</code>) ou arquivo fora da pasta <code>contracts</code>.</li>
+<li><strong><code>port is already allocated</code></strong> → outro programa usa a 4010. Troque para <code>"4011:4010"</code> no compose e use <code>http://localhost:4011</code>.</li>
+<li><strong>404 em qualquer rota</strong> → caminho digitado errado (é <code>/api/produtos</code>, no plural).</li>
+<li><strong>Editei o contrato e nada mudou</strong> → o Prism só lê o arquivo ao ligar: Docker Desktop → <strong>⟳ Restart</strong> no container.</li>
+<li><strong>422 em vez de 400</strong> → seu contrato não tem a resposta <code>'400'</code> naquela rota; o Prism usa o 422 dele. Gere de novo pela Sala.</li>
+<li><strong>PowerShell: erro com aspas no JSON</strong> → use o <code>testar-mock.ps1</code> (corpo por arquivo) ou o REST Client.</li>
+</ul></div>
+<div class="success-banner"><strong>✅ Checklist da aba:</strong> contrato salvo em <code>contracts/openapi.yaml</code> · <code>dev_prism_mock</code> verde no Docker Desktop · navegador mostra a lista em <code>localhost:4010/api/produtos</code> · REST Client: <code>200</code>, <code>401</code>, token, <code>201</code>, <code>400</code>, <code>200</code>, <code>200</code>, <code>204</code>, <code>404</code> · 6 de 8 desafios acertados · token aberto e lacre quebrado · quiz feito.</div>
 </div>
 </section>
