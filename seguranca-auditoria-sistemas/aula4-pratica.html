@@ -1,0 +1,2125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Segurança e Auditoria de Sistemas — Aula 4</title>
+<!-- HTMLearning v2.17 — Campos não informados: professor da disciplina (nome, e-mail, lattes, orcid, site, instituição). Nenhum conteúdo pedagógico foi inventado. -->
+<style>
+:root {
+  --cor-destaque: #059669;
+  --cor-destaque-claro: #D1FAE5;
+  --cor-destaque-escuro: #065F46;
+  --fundo: #FFFFFF;
+  --fundo-cartao: #F8F9FA;
+  --fundo-codigo: #F1F3F5;
+  --texto: #212529;
+  --texto-suave: #6C757D;
+  --borda: #DEE2E6;
+  --sucesso: #2B9348;
+  --erro: #D00000;
+  --aviso: #FFB703;
+}
+[data-theme="dark"] {
+  --fundo: #1A1D20;
+  --fundo-cartao: #2B3035;
+  --fundo-codigo: #343A40;
+  --texto: #F8F9FA;
+  --texto-suave: #ADB5BD;
+  --borda: #495057;
+  --cor-destaque-claro: #064E3B;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 18px;
+  line-height: 1.6;
+  background: var(--fundo);
+  color: var(--texto);
+  transition: background 0.3s, color 0.3s;
+}
+body.modo-apresentacao { font-size: 22px; }
+header {
+  background: linear-gradient(135deg, var(--cor-destaque), var(--cor-destaque-escuro));
+  color: white;
+  padding: 2rem 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+header .meta { opacity: 0.95; font-size: 0.95rem; }
+.controles-topo { position: fixed; top: 1rem; right: 1rem; z-index: 1000; display: flex; gap: 0.5rem; }
+.controles-topo button {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--cor-destaque);
+  color: var(--cor-destaque);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+.controles-topo button:hover { background: var(--cor-destaque); color: white; }
+.xp-bar {
+  position: sticky;
+  top: 0;
+  background: var(--cor-destaque-claro);
+  padding: 0.75rem 1.5rem;
+  border-bottom: 2px solid var(--cor-destaque);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  z-index: 99;
+}
+.tabs-container {
+  position: sticky;
+  top: 52px;
+  background: var(--fundo);
+  border-bottom: 2px solid var(--borda);
+  z-index: 98;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+.tabs { display: flex; padding: 0 1rem; gap: 0.25rem; }
+.tab {
+  padding: 1rem 1.5rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--texto-suave);
+  font-size: 1rem;
+  font-weight: 600;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.tab:hover { color: var(--cor-destaque); }
+.tab[aria-selected="true"] {
+  color: var(--cor-destaque);
+  border-bottom-color: var(--cor-destaque);
+  background: var(--fundo);
+}
+.painel { display: none; padding: 2rem 1.5rem; max-width: 1100px; margin: 0 auto; }
+.painel.active { display: block; animation: fade 0.3s; }
+@keyframes fade { from {opacity:0} to {opacity:1} }
+h2 {
+  color: var(--cor-destaque-escuro);
+  border-left: 5px solid var(--cor-destaque);
+  padding-left: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.6rem;
+}
+h3 { color: var(--cor-destaque-escuro); margin: 1.5rem 0 1rem; font-size: 1.3rem; }
+.cartao {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.missao {
+  background: linear-gradient(135deg, var(--cor-destaque-claro), var(--fundo-cartao));
+  border-left: 5px solid var(--cor-destaque);
+}
+.missao::before {
+  content: "🎯 MISSÃO";
+  display: block;
+  font-weight: bold;
+  color: var(--cor-destaque-escuro);
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.mundo-real { background: #E7F5FF; border-left: 5px solid #1971C2; }
+[data-theme="dark"] .mundo-real { background: #1A3A52; }
+.mundo-real::before {
+  content: "🌎 NO MUNDO REAL";
+  display: block;
+  font-weight: bold;
+  color: #1971C2;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.ferramentas { background: #D3F9D8; border-left: 5px solid #2B9348; }
+[data-theme="dark"] .ferramentas { background: #1B4332; }
+.ferramentas::before {
+  content: "🛠️ FERRAMENTAS";
+  display: block;
+  font-weight: bold;
+  color: #2B9348;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.demo-box {
+  background: var(--fundo-codigo);
+  border: 3px solid var(--cor-destaque);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+.instrucoes {
+  background: #FFF9DB;
+  border: 2px solid var(--aviso);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .instrucoes { background: #3D3518; }
+.instrucoes::before {
+  content: "📋 INSTRUÇÕES PASSO A PASSO";
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.roteiro {
+  background: #F3D9FA;
+  border-left: 4px solid #9C36B5;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+[data-theme="dark"] .roteiro { background: #3D1F47; }
+.roteiro::before { content: "🎤 Roteiro do apresentador: "; font-weight: bold; font-style: normal; }
+.prever {
+  background: #E3FAFC;
+  border: 2px dashed #0C8599;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+[data-theme="dark"] .prever { background: #0F3742; }
+.prever::before {
+  content: "🔮 PREVISÃO";
+  display: block;
+  font-weight: bold;
+  color: #0C8599;
+  margin-bottom: 0.5rem;
+}
+.legenda {
+  background: #FFF3BF;
+  border-left: 4px solid #F59F00;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+  border-radius: 6px;
+}
+[data-theme="dark"] .legenda { background: #3D3518; }
+.legenda::before { content: "🔑 Legenda: "; font-weight: bold; }
+.quiz-box {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+.termos-quiz {
+  background: #FFF3BF;
+  border: 2px solid #F59F00;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+[data-theme="dark"] .termos-quiz { background: #3D3518; }
+.termos-quiz::before {
+  content: "🔑 Termos deste quiz";
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.pergunta {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--fundo);
+  border-radius: 8px;
+  border: 2px solid var(--borda);
+}
+.pergunta p { font-weight: 600; margin-bottom: 0.75rem; }
+.alt {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+  background: white;
+  border: 2px solid var(--borda);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--texto);
+  transition: all 0.2s;
+}
+[data-theme="dark"] .alt { background: var(--fundo-cartao); }
+.alt:hover:not(:disabled) { border-color: var(--cor-destaque); background: var(--cor-destaque-claro); }
+.alt.certa { background: #D3F9D8 !important; border-color: var(--sucesso) !important; color: var(--sucesso); font-weight: bold; }
+.alt.errada { background: #FFE3E3 !important; border-color: var(--erro) !important; color: var(--erro); }
+[data-theme="dark"] .alt.certa { background: #1B4332 !important; color: #51CF66 !important; }
+[data-theme="dark"] .alt.errada { background: #3D1F24 !important; color: #FF6B6B !important; }
+.alt:disabled { cursor: not-allowed; opacity: 0.7; }
+.fb { margin-top: 0.5rem; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.95rem; display: none; }
+.fb.show { display: block; }
+.fb.fb-certa { background: #D3F9D8; border-left: 4px solid var(--sucesso); color: #087F23; }
+.fb.fb-errada { background: #FFE3E3; border-left: 4px solid var(--erro); color: #C92A2A; }
+[data-theme="dark"] .fb.fb-certa { background: #1B4332; color: #69DB7C; }
+[data-theme="dark"] .fb.fb-errada { background: #3D1F24; color: #FFA8A8; }
+details {
+  background: var(--fundo-codigo);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+  border: 1px solid var(--borda);
+}
+details[open] { background: var(--cor-destaque-claro); }
+summary { cursor: pointer; font-weight: bold; color: var(--cor-destaque-escuro); padding: 0.25rem 0; }
+.demo-area {
+  background: white;
+  border: 2px dashed var(--cor-destaque);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+  min-height: 150px;
+}
+[data-theme="dark"] .demo-area { background: var(--fundo-cartao); }
+.btn {
+  background: var(--cor-destaque);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.95rem;
+  margin: 0.25rem;
+}
+.btn:hover { background: var(--cor-destaque-escuro); }
+.btn-secundario { background: var(--texto-suave); color: white; }
+.resultado-demo {
+  background: #D3F9D8;
+  border-left: 4px solid var(--sucesso);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .resultado-demo { background: #1B4332; color: #69DB7C; }
+.resultado-erro {
+  background: #FFE3E3;
+  border-left: 4px solid var(--erro);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .resultado-erro { background: #3D1F24; color: #FFA8A8; }
+footer {
+  background: var(--fundo-cartao);
+  border-top: 3px solid var(--cor-destaque);
+  padding: 2rem 1.5rem;
+  margin-top: 3rem;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+footer h4 { color: var(--cor-destaque-escuro); margin-bottom: 0.75rem; font-size: 1rem; }
+footer .bloco { padding: 1rem 0; line-height: 1.7; }
+footer .bloco + .bloco { border-top: 2px solid var(--borda); margin-top: 1rem; padding-top: 1.5rem; }
+footer a { color: var(--cor-destaque-escuro); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+footer ul { list-style: none; padding-left: 0; }
+footer ul li { margin: 0.4rem 0; }
+.revisao-mapa {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+.no-mapa {
+  background: var(--cor-destaque-claro);
+  border: 2px solid var(--cor-destaque);
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+}
+.no-mapa h4 { color: var(--cor-destaque-escuro); margin-bottom: 0.5rem; }
+.cola-rapida {
+  background: #FFF9DB;
+  border: 2px solid var(--aviso);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin: 1rem 0;
+}
+[data-theme="dark"] .cola-rapida { background: #3D3518; }
+.cola-rapida dt { font-weight: bold; color: var(--cor-destaque-escuro); margin-top: 0.75rem; }
+.cola-rapida dd { margin-left: 1rem; margin-bottom: 0.5rem; color: var(--texto); }
+.chefao {
+  background: linear-gradient(135deg, var(--cor-destaque-claro), white);
+  border: 3px solid var(--cor-destaque);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+[data-theme="dark"] .chefao { background: linear-gradient(135deg, var(--cor-destaque-claro), var(--fundo-cartao)); }
+.chefao::before {
+  content: "👑 CHEFÃO — DESAFIO FINAL";
+  display: block;
+  font-weight: bold;
+  color: var(--cor-destaque-escuro);
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+}
+.mitoverdade {
+  background: #F3D9FA;
+  border-left: 5px solid #9C36B5;
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 8px;
+}
+[data-theme="dark"] .mitoverdade { background: #3D1F47; }
+code {
+  background: var(--fundo-codigo);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-family: "Courier New", monospace;
+  font-size: 0.95em;
+  color: var(--cor-destaque-escuro);
+}
+pre {
+  background: var(--fundo-codigo);
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  border-left: 4px solid var(--cor-destaque);
+  margin: 1rem 0;
+  font-family: "Courier New", monospace;
+  font-size: 0.9rem;
+}
+.linha-tempo {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 1rem;
+  margin: 1rem 0;
+  padding: 0.5rem;
+  border-bottom: 1px dashed var(--borda);
+}
+.ano {
+  font-weight: bold;
+  color: var(--cor-destaque-escuro);
+  font-size: 1.1rem;
+}
+.linha-tempo-titulo {
+  font-weight: 600;
+  color: var(--cor-destaque-escuro);
+}
+.cifra-letra {
+  display: inline-block;
+  width: 2.2rem;
+  height: 2.2rem;
+  line-height: 2.2rem;
+  text-align: center;
+  margin: 0.15rem;
+  background: var(--cor-destaque-claro);
+  border: 2px solid var(--cor-destaque);
+  border-radius: 6px;
+  font-weight: bold;
+  font-family: monospace;
+}
+.cifra-letra.destaque { background: var(--cor-destaque); color: white; }
+.principio-card {
+  display: inline-block;
+  padding: 0.8rem 1.2rem;
+  margin: 0.3rem;
+  border-radius: 8px;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+.principio-card.selecionado { border-color: var(--cor-destaque-escuro); transform: scale(1.05); }
+.pr-confidencialidade { background: #1971C2; }
+.pr-integridade { background: #2B9348; }
+.pr-autenticidade { background: #E85D04; }
+.pr-nao-repudio { background: #9C36B5; }
+.hash-output {
+  font-family: "Courier New", monospace;
+  background: var(--fundo-codigo);
+  padding: 0.5rem 0.8rem;
+  border-radius: 6px;
+  word-break: break-all;
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+}
+.chave-slot {
+  display: inline-block;
+  width: 2rem;
+  height: 2rem;
+  line-height: 2rem;
+  text-align: center;
+  margin: 0.1rem;
+  background: var(--cor-destaque-claro);
+  border: 2px solid var(--cor-destaque);
+  border-radius: 4px;
+  font-family: monospace;
+  font-weight: bold;
+}
+.dh-bola {
+  display: inline-block;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin: 0.3rem;
+  transition: all 0.3s;
+}
+@media (max-width: 600px) {
+  header h1 { font-size: 1.5rem; }
+  .tab { padding: 0.75rem 1rem; font-size: 0.9rem; }
+  .painel { padding: 1rem; }
+  .controles-topo { position: static; padding: 0.5rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="controles-topo">
+  <button id="btn-modo" type="button">🎤 Apresentação</button>
+  <button id="btn-tema" type="button">🌙 Escuro</button>
+</div>
+
+<header>
+  <h1>Segurança e Auditoria de Sistemas</h1>
+  <div class="meta">Aula 4 · Unidade 2 · Págs. 9 a 37 · Fundamentos e Tipos de Criptografia</div>
+</header>
+
+<div class="xp-bar">
+  <div>⭐ XP: <span id="xp">0</span> · Selos: <span id="selos">0</span>/5</div>
+  <div id="progresso">Aba 1 de 6</div>
+</div>
+
+<div class="tabs-container">
+  <div class="tabs" role="tablist" aria-label="Abas da aula">
+    <button class="tab" role="tab" id="tab-1" aria-selected="true" aria-controls="painel-1" data-aba="1" type="button">1 · História</button>
+    <button class="tab" role="tab" id="tab-2" aria-selected="false" aria-controls="painel-2" data-aba="2" type="button">2 · Princípios</button>
+    <button class="tab" role="tab" id="tab-3" aria-selected="false" aria-controls="painel-3" data-aba="3" type="button">3 · Tipos</button>
+    <button class="tab" role="tab" id="tab-4" aria-selected="false" aria-controls="painel-4" data-aba="4" type="button">4 · Simétrica</button>
+    <button class="tab" role="tab" id="tab-5" aria-selected="false" aria-controls="painel-5" data-aba="5" type="button">5 · Assimétrica</button>
+    <button class="tab" role="tab" id="tab-6" aria-selected="false" aria-controls="painel-6" data-aba="6" type="button">⭐ Revisão</button>
+  </div>
+</div>
+
+<!-- ============ ABA 1 ============ -->
+<div class="painel active" id="painel-1" role="tabpanel" aria-labelledby="tab-1">
+  <h2>Aba 1 · História e evolução da criptografia</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é entender que criptografia (do grego <em>kryptós</em>, escondido, e <em>gráphein</em>, escrever; em português, a arte da escrita secreta) não nasceu com os computadores: ela acompanha a humanidade há milênios, sempre que alguém precisou proteger uma informação de olhares curiosos. Você vai brincar com a <strong>Cifra de César</strong> (técnica usada pelo imperador romano Júlio César há mais de dois mil anos) antes de ver como essa mesma ideia evoluiu até o <strong>AES</strong> (do inglês <em>Advanced Encryption Standard</em>; em português, Padrão Avançado de Criptografia) que protege o WhatsApp hoje.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Uma linha do tempo da escrita secreta</h3>
+    <p>A criptografia é a prática de transformar uma mensagem legível (chamada de <strong>texto claro</strong>) em uma mensagem ilegível (chamada de <strong>texto cifrado</strong>), de modo que apenas quem tem a <strong>chave</strong> (o segredo combinado) consiga reverter o processo e ler a mensagem original.</p>
+
+    <div class="linha-tempo">
+      <div class="ano">~1900 a.C.</div>
+      <div><div class="linha-tempo-titulo">Egito Antigo</div>Os escribas egípcios usavam hieróglifos não padronizados em monumentos, uma das primeiras formas registradas de escrita embaralhada.</div>
+    </div>
+
+    <div class="linha-tempo">
+      <div class="ano">~500 a.C.</div>
+      <div><div class="linha-tempo-titulo">Cifra de César (Roma)</div>Júlio César deslocava cada letra do alfabeto em 3 posições para enviar ordens militares. Um "A" virava "D", um "B" virava "E" e assim por diante.</div>
+    </div>
+
+    <div class="linha-tempo">
+      <div class="ano">século XV</div>
+      <div><div class="linha-tempo-titulo">Cifra de Vigenère</div>Blaise de Vigenère (diplomata francês) criou uma cifra com várias tabelas de deslocamento, usando uma palavra-chave. Foi considerada indecifrável por três séculos.</div>
+    </div>
+
+    <div class="linha-tempo">
+      <div class="ano">1918</div>
+      <div><div class="linha-tempo-titulo">Máquina Enigma</div>Arthur Scherbius (engenheiro alemão) inventou a Enigma, uma máquina eletromecânica usada pelo exército alemão na Segunda Guerra Mundial.</div>
+    </div>
+
+    <div class="linha-tempo">
+      <div class="ano">1943</div>
+      <div><div class="linha-tempo-titulo">Quebra da Enigma</div>Alan Turing (matemático britânico) e sua equipe em Bletchley Park construíram a máquina <strong>Bombe</strong> (dispositivo eletromecânico britânico) para decifrar as mensagens alemãs, encurtando a guerra em cerca de dois anos segundo historiadores.</div>
+    </div>
+
+    <div class="linha-tempo">
+      <div class="ano">1977</div>
+      <div><div class="linha-tempo-titulo">DES</div>A IBM desenvolveu o <strong>DES</strong> (do inglês <em>Data Encryption Standard</em>; em português, Padrão de Criptografia de Dados), adotado pelo governo dos Estados Unidos. Usava chave de 56 bits.</div>
+    </div>
+
+    <div class="linha-tempo">
+      <div class="ano">1976</div>
+      <div><div class="linha-tempo-titulo">Diffie-Hellman</div>Whitfield Diffie e Martin Hellman (pesquisadores da Universidade de Stanford) publicaram a ideia da <strong>criptografia de chave pública</strong>, revolucionando a troca de chaves pela internet.</div>
+    </div>
+
+    <div class="linha-tempo">
+      <div class="ano">1977</div>
+      <div><div class="linha-tempo-titulo">RSA</div>Ron Rivest, Adi Shamir e Leonard Adleman (pesquisadores do MIT) criaram o algoritmo <strong>RSA</strong>, o primeiro sistema prático de chave pública e privada, base dos certificados digitais de hoje.</div>
+    </div>
+
+    <div class="linha-tempo">
+      <div class="ano">2001</div>
+      <div><div class="linha-tempo-titulo">AES</div>O NIST (do inglês <em>National Institute of Standards and Technology</em>; em português, Instituto Nacional de Padrões e Tecnologia dos Estados Unidos) escolheu o algoritmo <strong>Rijndael</strong> (dos belgas Joan Daemen e Vincent Rijmen) como novo padrão mundial, o AES, usado até hoje.</div>
+    </div>
+
+    <div class="linha-tempo">
+      <div class="ano">2016</div>
+      <div><div class="linha-tempo-titulo">WhatsApp E2EE</div>O WhatsApp (aplicativo de mensagens da Meta) ativou criptografia de ponta a ponta (<strong>E2EE</strong>, do inglês <em>End-to-End Encryption</em>) usando o <strong>Signal Protocol</strong> (protocolo criado por Moxie Marlinspike para o aplicativo Signal).</div>
+    </div>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Criptografia no seu dia a dia</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>HTTPS no navegador</strong>: o cadeado verde que aparece ao acessar o site do seu banco usa TLS (do inglês <em>Transport Layer Security</em>; em português, Segurança da Camada de Transporte), combinando RSA ou ECDSA para trocar a chave e AES para cifrar a conversa.</li>
+      <li><strong>Pix do Banco Central</strong>: as transações do Pix (sistema instantâneo de pagamentos brasileiro) são cifradas com algoritmos aprovados pelo ICP-Brasil (Infraestrutura de Chaves Públicas Brasileira).</li>
+      <li><strong>Signal e WhatsApp</strong>: as mensagens usam criptografia de ponta a ponta, em que só o remetente e o destinatário conseguem ler, nem mesmo a empresa dona do aplicativo tem a chave.</li>
+      <li><strong>Bitcoin</strong>: a rede Bitcoin usa o algoritmo de hash SHA-256 (do inglês <em>Secure Hash Algorithm 256 bits</em>) para proteger o livro-razão das transações.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Ferramentas para brincar com criptografia</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>CyberChef</strong> (ferramenta online gratuita mantida pelo GCHQ, serviço de inteligência britânico) permite aplicar dezenas de cifras e ver o resultado ao vivo.</li>
+      <li><strong>OpenSSL</strong> (biblioteca de código aberto usada em quase todos os servidores Linux) tem comandos para cifrar, decifrar e gerar chaves.</li>
+      <li><strong>Kleopatra</strong> (programa gráfico do projeto GnuPG) facilita o uso de certificados PGP (do inglês <em>Pretty Good Privacy</em>; em português, Privacidade Muito Boa) em emails e arquivos.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: Máquina de César interativa</h3>
+
+    <div class="prever">
+      <strong>Antes de cifrar, preveja:</strong> se você deslocar cada letra em 3 posições (como fazia Júlio César), a palavra "OLA" vira "ROD"? E se o deslocamento for 13 (o famoso <strong>ROT13</strong>, cifra usada em fóruns antigos da internet para esconder spoilers), o que acontece com "HELLO"?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 1:</strong> digite uma mensagem em letras maiúsculas, sem acentos.<br>
+      <strong>Passo 2:</strong> escolha o deslocamento (de 1 a 25).<br>
+      <strong>Passo 3:</strong> clique em Cifrar e veja cada letra sendo deslocada.<br>
+      <strong>Passo 4:</strong> clique em Decifrar com o mesmo deslocamento para recuperar a mensagem.
+    </div>
+
+    <div class="roteiro">
+      comece com "OLA" e deslocamento 3, mostre como cada letra se move no alfabeto. Depois teste deslocamento 13 com "HELLO": vira "URYYB" e cifrar de novo com 13 volta para "HELLO" — propriedade simétrica do ROT13.
+    </div>
+
+    <div class="legenda">
+      texto claro = mensagem original legível · texto cifrado = mensagem embaralhada · deslocamento = número de posições que cada letra avança no alfabeto · chave = o deslocamento combinado entre quem cifra e quem decifra
+    </div>
+
+    <div class="demo-area" id="demo1-area">
+      <div style="display:grid; gap:0.5rem; max-width:600px">
+        <label>✉️ Mensagem (só letras maiúsculas, sem acentos):
+          <input type="text" id="demo1-msg" value="OLA TURMA" style="width:100%; padding:0.5rem; border:1px solid var(--borda); border-radius:6px; font-family:monospace; background:var(--fundo); color:var(--texto)">
+        </label>
+        <label>🔢 Deslocamento (chave): <input type="number" id="demo1-desl" value="3" min="1" max="25" style="width:80px"></label>
+        <div>
+          <button class="btn" type="button" id="demo1-cifrar">🔒 Cifrar</button>
+          <button class="btn" type="button" id="demo1-decifrar">🔓 Decifrar</button>
+          <button class="btn btn-secundario" type="button" id="demo1-reset">🔄 Reiniciar</button>
+        </div>
+      </div>
+      <div style="margin-top:1rem">
+        <div style="font-weight:bold; margin-bottom:0.3rem">📝 Texto claro:</div>
+        <div id="demo1-claro" style="font-family:monospace; font-size:1.2rem; letter-spacing:0.2rem; padding:0.5rem; background:var(--fundo-codigo); border-radius:6px"></div>
+        <div style="font-weight:bold; margin-top:0.75rem; margin-bottom:0.3rem">🔒 Texto cifrado:</div>
+        <div id="demo1-cifrado" style="font-family:monospace; font-size:1.2rem; letter-spacing:0.2rem; padding:0.5rem; background:var(--cor-destaque-claro); border-radius:6px; min-height:2rem"></div>
+      </div>
+      <div id="demo1-feedback" style="margin-top:1rem"></div>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> a Cifra de César é fraca hoje (só existem 25 deslocamentos possíveis, um atacante testa todos em segundos), mas ela introduz os três ingredientes que toda criptografia moderna usa: uma mensagem, uma chave e um algoritmo. O que mudou foi a complexidade do algoritmo e o tamanho da chave.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 1</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      texto claro = mensagem original legível ·
+      texto cifrado = mensagem embaralhada, ilegível sem a chave ·
+      chave = segredo combinado entre quem cifra e quem decifra ·
+      Cifra de César = técnica que desloca cada letra em N posições no alfabeto ·
+      AES = padrão moderno de criptografia, adotado em 2001 pelo NIST.
+    </div>
+
+    <div class="pergunta" data-pergunta="1-1">
+      <p>1. Alan Turing e sua equipe em Bletchley Park, durante a Segunda Guerra Mundial, ficaram famosos por qual feito criptográfico?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! A Cifra de César é muito mais antiga, usada por Júlio César em Roma, mais de dois mil anos antes. Turing trabalhou com a Enigma alemã dos anos 1940.">Criar a Cifra de César usada pelos romanos</button>
+        <button class="alt" type="button" data-fb="Correto! A equipe de Turing construiu a máquina Bombe (dispositivo eletromecânico britânico) para quebrar as mensagens cifradas pela máquina Enigma alemã. Segundo historiadores, esse trabalho encurtou a guerra em cerca de dois anos.">Quebrar as mensagens cifradas pela máquina Enigma alemã, encurtando a guerra</button>
+        <button class="alt" type="button" data-fb="Errado! O AES (padrão moderno) foi escolhido só em 2001, muito depois da morte de Turing (1954). Ele trabalhou em criptografia de guerra, não em padrões da internet.">Desenhar o algoritmo AES que protege o HTTPS hoje</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="1-2">
+      <p>2. Em 2016, o WhatsApp (aplicativo da Meta) ativou a criptografia de ponta a ponta. O que isso significa na prática?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! Na criptografia de ponta a ponta (E2EE), a mensagem é cifrada no celular de quem envia e só decifrada no celular de quem recebe. Nem o WhatsApp, nem a Meta, nem um governo que interceptar o tráfego conseguem ler o conteúdo.">Que a mensagem é cifrada no celular de quem envia e só decifrada no celular de quem recebe; nem a Meta consegue ler</button>
+        <button class="alt" type="button" data-fb="Errado! Se o WhatsApp tivesse a chave, a criptografia não seria de ponta a ponta. Nesse modelo, a empresa não tem acesso ao conteúdo, apenas aos metadados (quem falou com quem e quando).">Que o WhatsApp guarda a chave e pode ler as mensagens quando um juiz pedir</button>
+        <button class="alt" type="button" data-fb="Errado! E2EE protege o conteúdo da mensagem, mas não o celular. Se alguém desbloquear o aparelho e abrir o WhatsApp, lerá as mensagens normalmente.">Que o celular fica blindado contra qualquer vírus ou invasão</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="1-3">
+      <p>3. Por que a Cifra de César, apesar de milenar, é considerada fraca para uso real hoje?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! A Cifra de César usa apenas 26 letras, não símbolos especiais. A limitação não é do alfabeto, mas da quantidade pequena de chaves possíveis.">Porque só funciona com símbolos especiais e emojis, não com letras</button>
+        <button class="alt" type="button" data-fb="Errado! A Cifra de César funciona em qualquer computador moderno — o problema não é o hardware, é a matemática. Com apenas 25 chaves possíveis, qualquer celular testa todas em milissegundos.">Porque computadores modernos não conseguem processar essa cifra antiga</button>
+        <button class="alt" type="button" data-fb="Correto! Existem apenas 25 deslocamentos possíveis (1 a 25). Um atacante testa todos e encontra o certo em menos de um segundo, sem precisar de nenhum supercomputador. O AES moderno usa chaves de 256 bits, o que dá mais combinações do que átomos no universo observável.">Porque existem apenas 25 deslocamentos possíveis, e um atacante testa todos em menos de um segundo</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 1</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=história+da+criptografia+César+Enigma+Turing" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=história+da+criptografia+Enigma+Bletchley+Park" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=história+da+criptografia+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Criptografia</strong>: arte de transformar uma mensagem legível em ilegível, usando uma chave.</li>
+      <li><strong>Texto claro</strong>: mensagem original antes de ser cifrada.</li>
+      <li><strong>Texto cifrado</strong>: mensagem embaralhada após a cifra.</li>
+      <li><strong>Chave</strong>: segredo combinado entre remetente e destinatário.</li>
+      <li><strong>Algoritmo</strong>: procedimento matemático que executa a cifra.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Criptografia é uma invenção dos computadores modernos.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> a criptografia tem mais de quatro mil anos de história, começando com os egípcios e passando por Júlio César, pelos árabes que inventaram a criptoanálise no século IX, pelas máquinas da Segunda Guerra e finalmente pelos algoritmos atuais.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 2 ============ -->
+<div class="painel" id="painel-2" role="tabpanel" aria-labelledby="tab-2">
+  <h2>Aba 2 · Princípios fundamentais da criptografia</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é conhecer os quatro pilares da segurança da informação que a criptografia ajuda a proteger: <strong>confidencialidade</strong> (só quem pode ler, lê), <strong>integridade</strong> (a mensagem não foi alterada no caminho), <strong>autenticidade</strong> (você sabe de quem veio) e <strong>não-repúdio</strong> (quem enviou não pode negar depois). Cada um desses princípios é garantido por uma técnica diferente, e confundir eles é causa de falhas graves em sistemas reais.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Os quatro pilares da segurança</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Confidencialidade</strong>: garantir que apenas pessoas autorizadas leiam a informação. A criptografia resolve isso: cifre a mensagem e só quem tem a chave decifra. Quando o Nubank (banco digital brasileiro) mostra seu saldo só depois da senha, é confidencialidade em ação.</li>
+      <li><strong>Integridade</strong>: garantir que a informação não foi alterada no caminho. Um <strong>hash</strong> (função matemática que resume um arquivo em uma sequência fixa de caracteres, também chamada de resumo criptográfico) ou uma <strong>MAC</strong> (do inglês <em>Message Authentication Code</em>; em português, Código de Autenticação de Mensagem) permitem detectar qualquer alteração.</li>
+      <li><strong>Autenticidade</strong>: garantir que você está falando com quem pensa estar falando. Os <strong>certificados digitais</strong> (documentos eletrônicos emitidos por uma <strong>AC</strong>, Autoridade Certificadora, como a Certisign ou a Serasa no Brasil) resolvem isso: eles atestam que aquela chave pública realmente pertence àquele servidor ou pessoa.</li>
+      <li><strong>Não-repúdio</strong>: garantir que quem enviou uma mensagem não possa negar depois que enviou. A <strong>assinatura digital</strong> (combinação da chave privada do remetente com um hash da mensagem) resolve: se a assinatura bate, só o dono da chave privada poderia tê-la produzido.</li>
+    </ul>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Falhas famosas em cada princípio</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Falha de confidencialidade</strong>: em 2013, Edward Snowden (ex-analista da NSA, agência de inteligência dos Estados Unidos) vazou documentos mostrando que a NSA interceptava comunicações de líderes mundiais, incluindo a então presidente Dilma Rousseff.</li>
+      <li><strong>Falha de integridade</strong>: em 2017, o vírus <strong>WannaCry</strong> (ransomware que criptografava arquivos e cobrava resgate em Bitcoin) explorou uma falha no Windows SMB (protocolo de compartilhamento de arquivos da Microsoft) que permitia modificar memória do sistema. Afetou o SUS (Sistema Único de Saúde) do Reino Unido e empresas no Brasil.</li>
+      <li><strong>Falha de autenticidade</strong>: em 2011, a <strong>DigiNotar</strong> (autoridade certificadora holandesa) foi invadida e hackers emitiram certificados falsos para domínios como google.com e skype.com, permitindo ataques de interceptação.</li>
+      <li><strong>Falha de não-repúdio</strong>: em contratos digitais sem assinatura válida, uma das partes pode alegar que nunca assinou. No Brasil, a MP 2.200-2/2001 (Medida Provisória que criou o ICP-Brasil) deu validade jurídica às assinaturas digitais com certificado ICP-Brasil.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Técnicas para cada princípio</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Confidencialidade</strong>: AES (simétrica) ou RSA (assimétrica) para cifrar.</li>
+      <li><strong>Integridade</strong>: funções de hash como SHA-256 ou SHA-3 (algoritmos publicados pelo NIST).</li>
+      <li><strong>Autenticidade</strong>: certificados digitais X.509 (padrão internacional de certificados).</li>
+      <li><strong>Não-repúdio</strong>: assinaturas digitais com RSA ou ECDSA (do inglês <em>Elliptic Curve Digital Signature Algorithm</em>; em português, Algoritmo de Assinatura Digital por Curva Elíptica).</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: classificador de princípios</h3>
+
+    <div class="prever">
+      <strong>Antes de classificar, preveja:</strong> se você baixa um arquivo do site da Receita Federal (órgão brasileiro que administra impostos) e confere o hash SHA-256 publicado no site oficial, qual princípio você está protegendo: confidencialidade, integridade, autenticidade ou não-repúdio?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 1:</strong> leia a situação descrita.<br>
+      <strong>Passo 2:</strong> clique no princípio que está sendo protegido.<br>
+      <strong>Passo 3:</strong> receba o feedback com explicação e um caso real.<br>
+      <strong>Passo 4:</strong> se errar, tente de novo com outro cenário.
+    </div>
+
+    <div class="roteiro">
+      projete o primeiro cenário e pergunte à turma: o que está em risco aqui — o segredo, a alteração, a origem ou a negação posterior? Essa pergunta resolve quase todos os casos.
+    </div>
+
+    <div class="demo-area" id="demo2-area">
+      <div id="demo2-cenario" style="background:var(--cor-destaque-claro); padding:1rem; border-radius:8px; margin-bottom:1rem; font-weight:600">
+        📋 O cenário aparecerá aqui. Clique em Novo cenário para começar.
+      </div>
+      <div id="demo2-opcoes" style="display:none; text-align:center">
+        <button class="btn principio-card pr-confidencialidade" type="button" data-princ="confidencialidade">🔒 Confidencialidade</button>
+        <button class="btn principio-card pr-integridade" type="button" data-princ="integridade">🛡️ Integridade</button>
+        <button class="btn principio-card pr-autenticidade" type="button" data-princ="autenticidade">🆔 Autenticidade</button>
+        <button class="btn principio-card pr-nao-repudio" type="button" data-princ="nao-repudio">✍️ Não-repúdio</button>
+      </div>
+      <div id="demo2-feedback" style="margin-top:1rem"></div>
+      <div style="margin-top:1rem">
+        <button class="btn" type="button" id="demo2-novo">🎲 Novo cenário</button>
+        <button class="btn btn-secundario" type="button" id="demo2-reset">🔄 Reiniciar</button>
+      </div>
+      <div id="demo2-placar" style="margin-top:1rem; font-weight:bold; color:var(--cor-destaque-escuro)"></div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 2</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      confidencialidade = só quem pode ler, lê ·
+      integridade = a mensagem não foi alterada ·
+      autenticidade = você sabe de quem a mensagem veio ·
+      não-repúdio = quem enviou não pode negar depois ·
+      hash = função que resume um arquivo em uma sequência fixa de caracteres (resumo criptográfico) ·
+      certificado digital = documento eletrônico emitido por uma AC (Autoridade Certificadora).
+    </div>
+
+    <div class="pergunta" data-pergunta="2-1">
+      <p>1. Você baixa o instalador do programa Imposto de Renda no site da Receita Federal e confere o hash SHA-256 publicado ao lado. Qual princípio você está verificando?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! Confidencialidade protege o sigilo do conteúdo. Aqui o arquivo é público, não é secreto. O hash não esconde nada.">Confidencialidade</button>
+        <button class="alt" type="button" data-fb="Correto! O hash funciona como uma impressão digital do arquivo: se alguém trocou o instalador por uma versão com vírus no caminho, o hash será diferente e você perceberá. Isso garante que o arquivo chegou íntegro.">Integridade</button>
+        <button class="alt" type="button" data-fb="Errado! Autenticidade exigiria uma assinatura digital da Receita, não apenas um hash. O hash sozinho garante só que o arquivo não foi alterado, mas não prova quem o publicou.">Autenticidade</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="2-2">
+      <p>2. Um cliente assina digitalmente um contrato de financiamento usando seu certificado ICP-Brasil. Depois, alega que nunca assinou. Qual princípio o impede de negar?</p>
+      <div class="alts" data-certa="d">
+        <button class="alt" type="button" data-fb="Errado! Confidencialidade trata de sigilo, não de assinatura. O contrato pode até ser público, o problema aqui é a negação da autoria.">Confidencialidade</button>
+        <button class="alt" type="button" data-fb="Errado! Integridade garante que o contrato não foi alterado depois de assinado, mas não impede o cliente de negar que foi ele quem assinou.">Integridade</button>
+        <button class="alt" type="button" data-fb="Errado! Autenticidade garante que você sabe com quem está falando, mas o conceito jurídico de 'não poder negar' tem nome próprio: não-repúdio.">Autenticidade</button>
+        <button class="alt" type="button" data-fb="Correto! Não-repúdio é exatamente isso: graças à assinatura digital feita com a chave privada que só o cliente tem, ele não pode negar a autoria. No Brasil, a MP 2.200-2/2001 dá validade jurídica a essas assinaturas.">Não-repúdio</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="2-3">
+      <p>3. Em 2011, a DigiNotar (autoridade certificadora holandesa) foi invadida e hackers emitiram certificados falsos para domínios como google.com. Qual princípio foi violado?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! As comunicações em si continuaram cifradas. O problema foi que os atacantes podiam se passar pelo Google, quebrando a certeza de com quem você estava falando.">Confidencialidade</button>
+        <button class="alt" type="button" data-fb="Errado! O conteúdo das páginas do Google não foi alterado. O problema foi que os atacantes podiam criar um site falso que o navegador aceitaria como legítimo.">Integridade</button>
+        <button class="alt" type="button" data-fb="Correto! Os certificados atestam que uma chave pública realmente pertence a um domínio. Com certificados falsos, um atacante podia se passar pelo Google e interceptar sua conexão. A DigiNotar foi revogada (deixou de ser aceita) pelos navegadores.">Autenticidade</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 2</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=princípios+da+segurança+da+informação+confidencialidade+integridade" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=princípios+segurança+informação+não+repúdio+autenticidade" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=quatro+princípios+da+segurança+da+informação+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Confidencialidade</strong>: só quem tem autorização lê.</li>
+      <li><strong>Integridade</strong>: a mensagem não foi alterada.</li>
+      <li><strong>Autenticidade</strong>: prova da origem da mensagem.</li>
+      <li><strong>Não-repúdio</strong>: impossibilidade de negar a autoria.</li>
+      <li><strong>Hash</strong>: resumo criptográfico de tamanho fixo.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> A criptografia sozinha resolve todos os quatro pilares da segurança.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> a criptografia resolve principalmente confidencialidade. Para integridade, usamos hash; para autenticidade, certificados; para não-repúdio, assinaturas digitais. Cada pilar exige sua técnica específica.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 3 ============ -->
+<div class="painel" id="painel-3" role="tabpanel" aria-labelledby="tab-3">
+  <h2>Aba 3 · Tipos de criptografia e suas aplicações</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é entender que existem três grandes famílias de ferramentas criptográficas, cada uma com um papel específico: <strong>funções de hash</strong> (resumem dados), <strong>criptografia simétrica</strong> (uma só chave) e <strong>criptografia assimétrica</strong> (duas chaves). Os sistemas reais quase sempre combinam as três, como o HTTPS do seu banco faz: usa assimétrica para trocar a chave e simétrica para cifrar a conversa, com hash para garantir integridade.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 As três famílias em uma frase</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Hash (função de resumo)</strong>: recebe qualquer tamanho de entrada e devolve um resumo fixo (ex: 256 bits no SHA-256). Não tem chave e é <strong>unidirecional</strong>: do resumo você não volta para o original. É como uma impressão digital do arquivo. Usado em: senhas salvas em bancos de dados, integridade de downloads, proof-of-work do Bitcoin.</li>
+      <li><strong>Criptografia simétrica</strong>: a mesma chave cifra e decifra. Rápida, perfeita para cifrar grandes volumes de dados (um vídeo, um disco inteiro). Desvantagem: como combinar a chave com alguém que você nunca viu? Usada em: AES (padrão atual), ChaCha20 (usado no Android e no Signal), Salsa20.</li>
+      <li><strong>Criptografia assimétrica</strong>: duas chaves diferentes, uma pública (que todo mundo conhece) e uma privada (que só você guarda). O que uma cifra, só a outra decifra. Lenta, usada para trocar chaves e assinar, não para cifrar o conteúdo inteiro. Usada em: RSA, ECDSA, Curva25519 (usada no Signal e no WhatsApp).</li>
+    </ul>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Como o HTTPS combina as três</h3>
+    <p>Quando você acessa o site do Itaú (banco brasileiro) pelo navegador, acontece uma coreografia em três atos:</p>
+    <ol style="margin-left:1.5rem">
+      <li><strong>Autenticação</strong>: o Itaú apresenta seu certificado X.509 (padrão internacional), assinado por uma AC como a DigiCert (empresa americana). O navegador verifica a cadeia de certificados.</li>
+      <li><strong>Troca de chave</strong>: o navegador e o servidor fazem uma troca de chaves usando algoritmos assimétricos (ECDHE, do inglês <em>Elliptic Curve Diffie-Hellman Ephemeral</em>; em português, Diffie-Hellman Efêmero por Curva Elíptica). Eles combinam uma chave de sessão simétrica sem que ninguém na rede consiga interceptar.</li>
+      <li><strong>Conversa cifrada</strong>: a partir daí, todos os dados trafegam cifrados com AES-256 (simétrica) e cada pacote leva um MAC (código de autenticação) que garante integridade.</li>
+    </ol>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Comparativo rápido</h3>
+    <table style="width:100%; border-collapse:collapse; margin-top:0.75rem">
+      <thead>
+        <tr style="background:var(--cor-destaque-claro)">
+          <th style="padding:0.5rem; text-align:left; border:1px solid var(--borda)">Característica</th>
+          <th style="padding:0.5rem; text-align:left; border:1px solid var(--borda)">Hash</th>
+          <th style="padding:0.5rem; text-align:left; border:1px solid var(--borda)">Simétrica</th>
+          <th style="padding:0.5rem; text-align:left; border:1px solid var(--borda)">Assimétrica</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Quantas chaves?</td>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Nenhuma</td>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Uma só, secreta</td>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Duas: pública e privada</td>
+        </tr>
+        <tr>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Velocidade</td>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Muito rápida</td>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Rápida</td>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Lenta (mil vezes mais)</td>
+        </tr>
+        <tr>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Serve para</td>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Resumir e verificar</td>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Cifrar dados grandes</td>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Trocar chaves e assinar</td>
+        </tr>
+        <tr>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Exemplos</td>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">SHA-256, SHA-3, BLAKE2</td>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">AES, ChaCha20</td>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">RSA, ECDSA, Curva25519</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: comparador de hash com SHA-256</h3>
+
+    <div class="prever">
+      <strong>Antes de testar, preveja:</strong> se você calcular o hash SHA-256 da palavra "segurança" e depois da palavra "seguranca" (sem o cedilha), os hashes serão parecidos (mudando só alguns caracteres) ou completamente diferentes?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 1:</strong> digite uma mensagem no primeiro campo.<br>
+      <strong>Passo 2:</strong> digite uma mensagem parecida (ou completamente diferente) no segundo.<br>
+      <strong>Passo 3:</strong> clique em Calcular hashes e compare os resultados.<br>
+      <strong>Passo 4:</strong> mude uma única letra e veja como o hash muda por completo — isso é o efeito avalanche.
+    </div>
+
+    <div class="roteiro">
+      digite "seguranca" nos dois campos para mostrar hashes idênticos (determinismo). Depois mude UMA letra em um deles e mostre que o hash inteiro muda, como uma impressão digital que não se parece com a do irmão gêmeo.
+    </div>
+
+    <div class="legenda">
+      hash = resumo criptográfico de tamanho fixo · determinismo = mesma entrada sempre gera mesmo hash · efeito avalanche = uma pequena mudança na entrada muda completamente o hash · colisão = duas entradas diferentes com o mesmo hash (raro em boas funções)
+    </div>
+
+    <div class="demo-area" id="demo3-area">
+      <div style="display:grid; gap:0.5rem; max-width:600px">
+        <label>📝 Mensagem A:
+          <input type="text" id="demo3-a" value="seguranca" style="width:100%; padding:0.5rem; border:1px solid var(--borda); border-radius:6px; font-family:monospace; background:var(--fundo); color:var(--texto)">
+        </label>
+        <label>📝 Mensagem B:
+          <input type="text" id="demo3-b" value="seguranca" style="width:100%; padding:0.5rem; border:1px solid var(--borda); border-radius:6px; font-family:monospace; background:var(--fundo); color:var(--texto)">
+        </label>
+        <div>
+          <button class="btn" type="button" id="demo3-go">🧮 Calcular hashes (SHA-256 simulado)</button>
+          <button class="btn btn-secundario" type="button" id="demo3-reset">🔄 Reiniciar</button>
+        </div>
+      </div>
+      <div style="margin-top:1rem">
+        <div style="font-weight:bold">🔏 Hash da mensagem A:</div>
+        <div class="hash-output" id="demo3-hashA">—</div>
+        <div style="font-weight:bold">🔏 Hash da mensagem B:</div>
+        <div class="hash-output" id="demo3-hashB">—</div>
+      </div>
+      <div id="demo3-comparacao" style="margin-top:1rem"></div>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> o hash é determinístico (mesma entrada, mesmo hash), irreversível (não dá para voltar do hash para a mensagem) e tem efeito avalanche (uma letra diferente muda o hash todo). Por isso senhas nunca são salvas em texto claro no banco de dados: salva-se apenas o hash, e a verificação compara hashes.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 3</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      hash = função que resume dados em um valor fixo, sem chave, unidirecional ·
+      simétrica = usa a mesma chave para cifrar e decifrar ·
+      assimétrica = usa duas chaves diferentes, uma pública e uma privada ·
+      chave de sessão = chave simétrica combinada no início de uma conexão ·
+      efeito avalanche = pequena mudança na entrada muda completamente o hash.
+    </div>
+
+    <div class="pergunta" data-pergunta="3-1">
+      <p>1. Você quer salvar senhas de usuários em um banco de dados. Qual técnica é a mais adequada?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! Salvar senha em texto claro é um erro grave: se o banco vazar, todas as senhas caem na mão do invasor. É o que os hackers mais buscam em vazamentos.">Guardar a senha em texto claro, pois é mais simples de verificar</button>
+        <button class="alt" type="button" data-fb="Errado! Cifrar a senha com AES ainda deixa uma chave no servidor que, se roubada, permite decifrar todas as senhas. Hash é mais seguro por ser unidirecional.">Cifrar a senha com AES e guardar o texto cifrado</button>
+        <button class="alt" type="button" data-fb="Correto! Aplica-se uma função de hash (como SHA-256 com um sal, valor aleatório único para cada usuário) e guarda-se apenas o resultado. Quando o usuário digita a senha, o sistema calcula o hash de novo e compara. Mesmo se o banco vazar, o invasor não recupera as senhas originais.">Aplicar uma função de hash (com sal) e guardar apenas o hash; a senha original nunca é armazenada</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="3-2">
+      <p>2. Por que o HTTPS usa criptografia assimétrica só no início e depois troca para simétrica?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! A assimétrica é lenta (mil vezes mais que a simétrica), então usá-la para cifrar o conteúdo inteiro deixaria o site inviável. Ela serve só para trocar a chave simétrica em segurança. Depois, o AES simétrico faz o trabalho pesado.">Porque a assimétrica é lenta demais para cifrar o conteúdo inteiro; ela só troca a chave simétrica, que então cifra tudo em alta velocidade</button>
+        <button class="alt" type="button" data-fb="Errado! O motivo não é preço: algoritmos como RSA e ECDSA são livres e estão em bibliotecas abertas. A troca acontece por desempenho, não por licença.">Porque a criptografia simétrica é paga e a assimétrica é gratuita</button>
+        <button class="alt" type="button" data-fb="Errado! A simétrica é na verdade MAIS segura em desempenho, não menos. A assimétrica é escolhida no início porque resolve o problema da troca de chaves, não porque cifra melhor o conteúdo.">Porque a simétrica é mais fraca e só serve como backup</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="3-3">
+      <p>3. Qual é a propriedade do hash chamada de efeito avalanche?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! Isso descreveria uma função de hash ruim. Uma boa função tem o oposto: qualquer mudança, por menor que seja, muda o hash inteiro.">Pequenas mudanças na entrada geram pequenas mudanças no hash</button>
+        <button class="alt" type="button" data-fb="Correto! Mudar UMA letra na entrada faz o hash inteiro mudar, como uma avalanche. Essa propriedade impede que um invasor deduza a mensagem original por aproximação. É o que faz o SHA-256 ser seguro.">Uma pequena mudança na entrada muda completamente o hash, como uma avalanche</button>
+        <button class="alt" type="button" data-fb="Errado! Hash é sempre unidirecional: não se volta do hash para a mensagem. Mas esse é outro conceito, não o efeito avalanche em si.">A capacidade de recuperar a mensagem original a partir do hash</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 3</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=tipos+de+criptografia+simétrica+assimétrica+hash" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=hash+simétrica+assimétrica+criptografia+comparação" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=tipos+de+criptografia+simétrica+assimétrica+hash+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Hash</strong>: função unidirecional, sem chave, de saída fixa.</li>
+      <li><strong>Simétrica</strong>: uma só chave, rápida, para cifrar grandes volumes.</li>
+      <li><strong>Assimétrica</strong>: duas chaves (pública e privada), lenta, para troca e assinatura.</li>
+      <li><strong>Efeito avalanche</strong>: mudança mínima na entrada muda totalmente o hash.</li>
+      <li><strong>Sal</strong>: valor aleatório somado à senha antes do hash, para evitar ataques de dicionário.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Criptografia simétrica é mais segura que assimétrica.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> são ferramentas diferentes para problemas diferentes. Simétrica cifra rápido; assimétrica resolve o problema da troca de chaves e permite assinaturas. Sistemas reais usam as duas juntas (chamamos isso de criptografia híbrida).
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 4 ============ -->
+<div class="painel" id="painel-4" role="tabpanel" aria-labelledby="tab-4">
+  <h2>Aba 4 · Algoritmos de criptografia simétrica</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é mergulhar no mundo da criptografia simétrica, onde uma mesma chave secreta cifra e decifra a mensagem. Você vai entender por que o <strong>AES</strong> (do inglês <em>Advanced Encryption Standard</em>; em português, Padrão Avançado de Criptografia) virou o padrão mundial em 2001, qual era o antecessor <strong>DES</strong> (do inglês <em>Data Encryption Standard</em>; em português, Padrão de Criptografia de Dados) e por que algoritmos modernos como o <strong>ChaCha20</strong> (do americano Daniel J. Bernstein) estão ganhando espaço em celulares.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Como a simétrica funciona na prática</h3>
+    <p>Imagine que Alice e Bob querem trocar mensagens secretas. Eles combinam uma chave secreta K (por exemplo, uma sequência de 256 bits, ou 32 bytes). A partir daí:</p>
+    <ul style="margin-left:1.5rem">
+      <li>Alice cifra sua mensagem M com a chave K usando o algoritmo: C = E(K, M) (C é o texto cifrado, E é a função de cifrar).</li>
+      <li>Bob recebe C e decifra com a mesma chave K: M = D(K, C) (D é a função de decifrar).</li>
+      <li>Um espião que capture C no caminho não consegue descobrir M sem conhecer K.</li>
+    </ul>
+    <p>O problema clássico é: <strong>como Alice e Bob combinam a chave K sem que o espião a intercepte?</strong> É aí que entra a criptografia assimétrica, que veremos na Aba 5.</p>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Algoritmos simétricos famosos</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>DES</strong> (1977): chave de 56 bits, considerado quebrado em 1998 quando a EFF (do inglês <em>Electronic Frontier Foundation</em>; em português, Fundação Fronteira Eletrônica, organização americana de direitos digitais) construiu uma máquina que testava todas as chaves em menos de três dias.</li>
+      <li><strong>3DES</strong> (Triple DES, três aplicações do DES seguidas): foi usado como paliativo quando o DES ficou fraco, mas é lento e está sendo abandonado.</li>
+      <li><strong>AES</strong> (2001): suporta chaves de 128, 192 e 256 bits. Adotado como padrão mundial pelo NIST. Usado em: HTTPS, Wi-Fi WPA2, BitLocker (da Microsoft), FileVault (da Apple), criptografia de disco no Android.</li>
+      <li><strong>ChaCha20</strong> (2008): criado por Daniel J. Bernstein (criptógrafo americano) como evolução do Salsa20. Muito rápido em celulares sem hardware AES dedicado. Usado no Android, no Signal, no WhatsApp e no TLS 1.3 do Google.</li>
+      <li><strong>Blowfish</strong> (1993) e seu sucessor <strong>Twofish</strong>: criados por Bruce Schneier (criptógrafo americano), foram finalistas do concurso AES mas perderam para o Rijndael.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Modos de operação: como cifrar arquivos grandes</h3>
+    <p>O AES cifra blocos de 16 bytes por vez. Para cifrar um arquivo de 1 GB (1.073.741.824 bytes), precisamos de um <strong>modo de operação</strong> que dite como encadear os blocos:</p>
+    <ul style="margin-left:1.5rem">
+      <li><strong>ECB</strong> (do inglês <em>Electronic Codebook</em>; em português, Livro de Códigos Eletrônico): cada bloco é cifrado sozinho. Fraco, porque blocos iguais produzem cifras iguais, revelando padrões. Um exemplo famoso é a imagem do pinguim Tux cifrada em ECB: ainda dá para ver o contorno.</li>
+      <li><strong>CBC</strong> (do inglês <em>Cipher Block Chaining</em>; em português, Encadeamento de Blocos Cifrados): cada bloco é misturado com o anterior antes de cifrar, escondendo padrões. Usa um IV (do inglês <em>Initialization Vector</em>; em português, Vetor de Inicialização) aleatório no primeiro bloco.</li>
+      <li><strong>GCM</strong> (do inglês <em>Galois/Counter Mode</em>; em português, Modo Contador de Galois): o modo moderno, recomendado pelo NIST. Além de cifrar, garante integridade em um só passo. Usado no TLS 1.3.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: cifrador XOR com chave (brinquedo didático)</h3>
+
+    <div class="prever">
+      <strong>Antes de cifrar, preveja:</strong> a operação XOR (do inglês <em>exclusive OR</em>; em português, OU exclusivo, operação que devolve 1 quando os bits são diferentes) tem uma propriedade mágica: se você aplicar duas vezes com a mesma chave, recupera o original. Se cifrar a letra "A" (código ASCII 65) com a chave "K" (código ASCII 75) e depois cifrar o resultado com "K" de novo, você vai obter... "A" de volta?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 1:</strong> digite uma mensagem curta.<br>
+      <strong>Passo 2:</strong> digite uma chave secreta de mesmo tamanho ou menor.<br>
+      <strong>Passo 3:</strong> clique em Cifrar e veja o texto cifrado em hexadecimal.<br>
+      <strong>Passo 4:</strong> clique em Decifrar com a mesma chave para recuperar o original.<br>
+      <strong>Passo 5:</strong> teste com chave errada e veja que o resultado é lixo.
+    </div>
+
+    <div class="roteiro">
+      mostre que a mesma chave cifra e decifra — essa é a essência da simétrica. Depois, mude uma letra da chave e mostre que o texto decifrado vira lixo: a chave errada não recupera nada, exatamente como num cofre com senha errada.
+    </div>
+
+    <div class="legenda">
+      XOR = operação que devolve 1 quando os bits são diferentes · chave = segredo compartilhado · ASCII = código numérico de cada caractere · hexadecimal = base 16, usada para representar bytes de forma compacta · texto cifrado = resultado da cifra
+    </div>
+
+    <div class="demo-area" id="demo4-area">
+      <div style="display:grid; gap:0.5rem; max-width:600px">
+        <label>✉️ Mensagem:
+          <input type="text" id="demo4-msg" value="OLA" style="width:100%; padding:0.5rem; border:1px solid var(--borda); border-radius:6px; font-family:monospace; background:var(--fundo); color:var(--texto)">
+        </label>
+        <label>🔑 Chave secreta:
+          <input type="text" id="demo4-chave" value="K" style="width:100%; padding:0.5rem; border:1px solid var(--borda); border-radius:6px; font-family:monospace; background:var(--fundo); color:var(--texto)">
+        </label>
+        <div>
+          <button class="btn" type="button" id="demo4-cifrar">🔒 Cifrar (XOR)</button>
+          <button class="btn" type="button" id="demo4-decifrar">🔓 Decifrar (XOR de novo)</button>
+          <button class="btn btn-secundario" type="button" id="demo4-reset">🔄 Reiniciar</button>
+        </div>
+      </div>
+      <div style="margin-top:1rem">
+        <div style="font-weight:bold">📝 Mensagem em ASCII:</div>
+        <div class="hash-output" id="demo4-ascii">—</div>
+        <div style="font-weight:bold">🔒 Texto cifrado (hexadecimal):</div>
+        <div class="hash-output" id="demo4-cifrado">—</div>
+        <div style="font-weight:bold">🔓 Decifrado:</div>
+        <div class="hash-output" id="demo4-decifrado">—</div>
+      </div>
+      <div id="demo4-feedback" style="margin-top:1rem"></div>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> o XOR com chave repetida é o bloco de construção de cifras reais como o AES em modo CTR (modo contador). O AES é muito mais sofisticado (usa substituições, permutações e várias rodadas), mas no coração dele também existe uma operação XOR. E a simetria é a mesma: a mesma chave cifra e decifra.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 4</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      AES = padrão mundial de criptografia simétrica, com chaves de 128, 192 ou 256 bits ·
+      DES = padrão antigo de 56 bits, considerado quebrado desde 1998 ·
+      ECB = modo de operação ingênuo, que revela padrões ·
+      GCM = modo moderno que cifra e garante integridade em um passo ·
+      ChaCha20 = algoritmo simétrico rápido, usado no Android e no WhatsApp ·
+      IV = Vetor de Inicialização, valor aleatório usado no início da cifra.
+    </div>
+
+    <div class="pergunta" data-pergunta="4-1">
+      <p>1. Em 1998, a EFF (Fundação Fronteira Eletrônica, organização americana) construiu uma máquina que quebrou o DES. Por quê?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! O DES usava chave de 56 bits, o que significa apenas 72 quatrilhões de combinações. Parece muito, mas uma máquina especializada testa todas em menos de três dias. Foi o empurrão que faltava para o mundo migrar para o AES.">Porque a chave de 56 bits era pequena demais para a tecnologia da época, permitindo testar todas as combinações em poucos dias</button>
+        <button class="alt" type="button" data-fb="Errado! O DES foi publicado abertamente, não havia segredo no algoritmo. A fraqueza era só o tamanho da chave.">Porque o algoritmo tinha uma porta dos fundos escondida pela NSA</button>
+        <button class="alt" type="button" data-fb="Errado! O DES só foi substituído pelo AES em 2001, três anos depois. O que quebrou o DES em 1998 foi o ataque de força bruta, não a chegada do AES.">Porque o AES já tinha sido lançado e o DES foi aposentado por obsolescência</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="4-2">
+      <p>2. O modo ECB do AES é considerado inseguro para cifrar imagens ou arquivos grandes. Por quê?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! O ECB não tem bug: ele apenas aplica o AES em cada bloco de forma independente. O problema é o desenho, não um defeito.">Porque tem um bug de implementação que vaza a chave a cada 1000 blocos</button>
+        <button class="alt" type="button" data-fb="Errado! O ECB cifra cada bloco com a mesma chave, mas não devolve texto claro. O problema é que blocos iguais geram cifras iguais, revelando padrões visuais ou de conteúdo.">Porque decifra os blocos automaticamente, deixando o texto claro exposto</button>
+        <button class="alt" type="button" data-fb="Correto! Como cada bloco é cifrado independentemente, duas partes iguais do arquivo produzem cifras iguais. Isso revela padrões: numa foto, ainda se vê o contorno; num banco de dados, um atacante descobre quais linhas têm o mesmo conteúdo. Por isso usamos modos como CBC ou GCM.">Porque blocos iguais do texto claro geram blocos iguais no texto cifrado, revelando padrões da mensagem original</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="4-3">
+      <p>3. Por que o Android e o WhatsApp preferem o ChaCha20 ao AES em alguns casos?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! Ambos têm nível de segurança equivalente quando bem implementados. O critério da escolha não é segurança, é desempenho em hardware específico.">Porque o ChaCha20 é mais seguro que o AES em qualquer hardware</button>
+        <button class="alt" type="button" data-fb="Correto! Celulares mais baratos não têm o circuito AES dedicado (chamado AES-NI). Nesses dispositivos, o ChaCha20 roda até três vezes mais rápido que o AES. Por isso o Android e o TLS do Google preferem ChaCha20 em celulares sem AES-NI.">Porque celulares mais baratos não têm o circuito AES dedicado, e o ChaCha20 roda bem em software, até três vezes mais rápido nesses aparelhos</button>
+        <button class="alt" type="button" data-fb="Errado! Ambos são algoritmos livres de royalties. A escolha é por desempenho, não por licença.">Porque o AES é pago e o ChaCha20 é gratuito</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 4</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=AES+Criptografia+padrão+NIST+como+funciona" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=AES+criptografia+simétrica+segurança+modos+operação" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=AES+criptografia+simétrica+aula+completa" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>AES</strong>: padrão mundial de criptografia simétrica, chaves de 128/192/256 bits.</li>
+      <li><strong>DES</strong>: padrão antigo de 56 bits, quebrado em 1998.</li>
+      <li><strong>Modo ECB</strong>: cada bloco cifrado sozinho; revela padrões.</li>
+      <li><strong>Modo CBC</strong>: blocos encadeados, esconde padrões.</li>
+      <li><strong>Modo GCM</strong>: cifrar e autenticar em um só passo, recomendado hoje.</li>
+      <li><strong>IV</strong>: Vetor de Inicialização, valor aleatório usado no início.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> AES de 256 bits é duas vezes mais seguro que AES de 128 bits.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> ambos são considerados seguros contra qualquer ataque conhecido hoje, inclusive por computadores quânticos em um horizonte próximo. A diferença prática é a margem de segurança futura; o AES-128 ainda é perfeitamente aceitável para a maioria das aplicações.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 5 ============ -->
+<div class="painel" id="painel-5" role="tabpanel" aria-labelledby="tab-5">
+  <h2>Aba 5 · Algoritmos de criptografia assimétrica</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é entender a ideia genial que revolucionou a internet em 1976: usar <strong>duas chaves diferentes</strong>, uma pública (que você pode espalhar para o mundo) e uma privada (que só você guarda). O que uma cifra, só a outra decifra. Isso resolve o problema da troca de chaves, permite assinaturas digitais e dá base aos certificados do HTTPS. Você vai simular o <strong>Diffie-Hellman com cores</strong>, a ideia por trás dessa revolução.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 A ideia das duas chaves</h3>
+    <p>Cada pessoa tem um par de chaves:</p>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Chave privada</strong>: você guarda em segredo, nunca compartilha. É a sua identidade digital.</li>
+      <li><strong>Chave pública</strong>: você distribui para quem quiser — coloca no site, manda por e-mail, publica em um diretório.</li>
+    </ul>
+    <p>As duas mágicas que esse par permite:</p>
+    <ol style="margin-left:1.5rem">
+      <li><strong>Confidencialidade</strong>: se Alice quer mandar uma mensagem secreta para Bob, ela cifra com a chave PÚBLICA de Bob. Só Bob, com sua chave PRIVADA, consegue decifrar. Nem Alice consegue decifrar depois de cifrada.</li>
+      <li><strong>Assinatura digital</strong>: se Alice quer provar que foi ela quem escreveu uma mensagem, ela assina com sua chave PRIVADA. Qualquer pessoa com a chave PÚBLICA dela consegue verificar que a assinatura é legítima.</li>
+    </ol>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Algoritmos assimétricos famosos</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>RSA</strong> (1977): criado por Ron Rivest, Adi Shamir e Leonard Adleman no MIT (Instituto de Tecnologia de Massachusetts, universidade americana). Baseado na dificuldade de fatorar números grandes em primos. Usado em certificados digitais, assinaturas e no PGP (Pretty Good Privacy). Chaves típicas hoje: 2048 ou 4096 bits.</li>
+      <li><strong>Diffie-Hellman</strong> (1976): não cifra nem assina, apenas troca chaves. Whitfield Diffie e Martin Hellman (Universidade de Stanford, nos Estados Unidos) inventaram o conceito.</li>
+      <li><strong>ECC</strong> (do inglês <em>Elliptic Curve Cryptography</em>; em português, Criptografia por Curva Elíptica): mesma segurança do RSA com chaves muito menores (256 bits contra 3072 bits). Usado em Bitcoin (secp256k1), no Signal (Curva25519) e em celulares com pouca bateria.</li>
+      <li><strong>ECDSA</strong> (do inglês <em>Elliptic Curve Digital Signature Algorithm</em>; em português, Algoritmo de Assinatura Digital por Curva Elíptica): versão ECC das assinaturas digitais. Usado no HTTPS moderno, em carteiras de Bitcoin e Ethereum.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Onde cada um aparece</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>RSA</strong>: certificados digitais do ICP-Brasil, assinaturas de e-mails PGP, chave SSH antiga.</li>
+      <li><strong>ECDH</strong> (do inglês <em>Elliptic Curve Diffie-Hellman</em>): troca de chaves no TLS 1.3 e no Signal Protocol.</li>
+      <li><strong>ECDSA</strong>: Bitcoin, Ethereum, HTTPS moderno, certificados atuais.</li>
+      <li><strong>Ed25519</strong> (variante da Curva25519 para assinaturas): OpenSSH moderno, Signal, Matrix.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: Diffie-Hellman com cores</h3>
+
+    <div class="prever">
+      <strong>Antes de simular, preveja:</strong> Alice e Bob querem combinar uma cor secreta sem que um espião descubra. Eles têm uma cor pública comum (amarela). Cada um escolhe uma cor secreta particular. Misturando a cor pública com a particular de cada um e trocando as misturas, eles conseguem chegar à MESMA cor final, mesmo sem nunca revelar a cor secreta particular?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 1:</strong> escolha a cor secreta de Alice e a cor secreta de Bob.<br>
+      <strong>Passo 2:</strong> clique em Executar e veja cada passo da mistura.<br>
+      <strong>Passo 3:</strong> repare que Alice e Bob chegam à MESMA cor final.<br>
+      <strong>Passo 4:</strong> o espião vê só as misturas intermediárias, nunca as cores secretas — e não consegue reconstruir a final.
+    </div>
+
+    <div class="roteiro">
+      mostre que Alice e Bob chegam à mesma cor final mesmo nunca tendo combinado nada diretamente. Depois, pergunte: por que o espião não consegue descobrir a cor final? Resposta: desfazer mistura de tintas é muito difícil na vida real; em matemática, essa dificuldade vem de problemas como o logaritmo discreto.
+    </div>
+
+    <div class="legenda">
+      cor pública = cor comum conhecida por todos (amarela) · cor secreta = cor particular de cada um, nunca revelada · mistura = combinação das cores · cor final = segredo compartilhado, só Alice e Bob conhecem · espião = vê só as misturas intermediárias, não as cores secretas
+    </div>
+
+    <div class="demo-area" id="demo5-area">
+      <div style="display:grid; gap:0.5rem; max-width:600px">
+        <label>🎨 Cor secreta de Alice:
+          <select id="demo5-corA" style="padding:0.5rem; border:1px solid var(--borda); border-radius:6px; background:var(--fundo); color:var(--texto)">
+            <option value="red">Vermelho</option>
+            <option value="blue">Azul</option>
+            <option value="purple" selected>Roxo</option>
+            <option value="orange">Laranja</option>
+          </select>
+        </label>
+        <label>🎨 Cor secreta de Bob:
+          <select id="demo5-corB" style="padding:0.5rem; border:1px solid var(--borda); border-radius:6px; background:var(--fundo); color:var(--texto)">
+            <option value="red">Vermelho</option>
+            <option value="blue" selected>Azul</option>
+            <option value="purple">Roxo</option>
+            <option value="green">Verde</option>
+          </select>
+        </label>
+        <div>
+          <button class="btn" type="button" id="demo5-go">🧪 Executar troca de chaves</button>
+          <button class="btn btn-secundario" type="button" id="demo5-reset">🔄 Reiniciar</button>
+        </div>
+      </div>
+      <div id="demo5-visual" style="margin-top:1.5rem"></div>
+      <div id="demo5-feedback" style="margin-top:1rem"></div>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> o Diffie-Hellman com cores é a metáfora perfeita do Diffie-Hellman real com matemática. Alice e Bob combinam um segredo sem nunca trocá-lo diretamente. O espião vê apenas pedaços inúteis. É esse o truque que o TLS (do HTTPS) usa toda vez que você abre o site do banco.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 5</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      chave pública = pode ser divulgada para todos ·
+      chave privada = deve ficar em segredo com o dono ·
+      RSA = algoritmo baseado na dificuldade de fatorar números grandes ·
+      ECC = Criptografia por Curva Elíptica, mesma segurança com chaves menores ·
+      Diffie-Hellman = protocolo para trocar chaves em canal inseguro ·
+      assinatura digital = prova de autoria feita com a chave privada.
+    </div>
+
+    <div class="pergunta" data-pergunta="5-1">
+      <p>1. Alice quer enviar uma mensagem SECRETA para Bob. Com qual chave ela deve cifrar a mensagem?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! A chave privada de Alice só serve para ASSINAR, não para cifrar mensagens para Bob. Se Alice cifrar com a privada dela, qualquer um com a pública dela consegue abrir — zero confidencialidade.">Com a chave privada de Alice</button>
+        <button class="alt" type="button" data-fb="Correto! Para enviar uma mensagem secreta, Alice cifra com a chave PÚBLICA de Bob. Só Bob, com sua chave PRIVADA, consegue decifrar. É como colocar a carta num cofre que só Bob tem a chave.">Com a chave pública de Bob</button>
+        <button class="alt" type="button" data-fb="Errado! Se Alice cifrar com a chave pública dela mesma, só ela poderia decifrar — não serve para mandar mensagem para Bob.">Com a chave pública de Alice</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="5-2">
+      <p>2. Por que o ECC (Criptografia por Curva Elíptica) está substituindo o RSA em muitos sistemas modernos?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! Uma chave ECC de 256 bits oferece a mesma segurança de uma chave RSA de 3072 bits. Isso economiza memória, bateria e tempo de processamento — crucial em celulares, IoT (Internet das Coisas, objetos conectados à internet) e servidores com milhões de conexões.">Porque oferece a mesma segurança com chaves muito menores (256 bits de ECC equivalem a 3072 bits de RSA), economizando bateria e processamento</button>
+        <button class="alt" type="button" data-fb="Errado! ECC e RSA são publicações acadêmicas abertas, sem royalties. A escolha é por eficiência, não por preço de licença.">Porque ECC é mais barato de licenciar que o RSA</button>
+        <button class="alt" type="button" data-fb="Errado! Ambos são igualmente seguros quando bem dimensionados. O ECC é preferido quando se quer chaves menores, não porque o RSA foi quebrado.">Porque o RSA foi quebrado e não pode mais ser usado</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="5-3">
+      <p>3. O Diffie-Hellman resolve qual problema clássico da criptografia?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! O Diffie-Hellman não cifra mensagens nem assina nada — ele só troca a chave. Quem cifra de verdade é o AES (simétrico) depois da troca.">Cifrar mensagens longas em alta velocidade</button>
+        <button class="alt" type="button" data-fb="Errado! Assinar documentos é feito com RSA ou ECDSA usando a chave privada. O Diffie-Hellman não tem esse papel.">Assinar digitalmente documentos com validade jurídica</button>
+        <button class="alt" type="button" data-fb="Correto! O Diffie-Hellman permite que duas pessoas combinem uma chave secreta mesmo falando em um canal público, onde um espião ouve tudo. É o truque usado no início do HTTPS, no Signal e no WhatsApp para estabelecer a chave que o AES vai usar depois.">Permitir que duas partes combinem uma chave secreta mesmo falando em um canal público, onde um espião ouve tudo</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 5</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=criptografia+assimétrica+chave+pública+privada+RSA+ECC" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=Diffie-Hellman+RSA+ECC+criptografia+assimétrica" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=Diffie-Hellman+cores+explicação+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Chave pública</strong>: pode ser divulgada; cifra ou verifica.</li>
+      <li><strong>Chave privada</strong>: fica em segredo; decifra ou assina.</li>
+      <li><strong>RSA</strong>: baseado em fatoração de números grandes.</li>
+      <li><strong>ECC</strong>: baseado em curvas elípticas, chaves menores.</li>
+      <li><strong>Diffie-Hellman</strong>: protocolo de troca de chaves.</li>
+      <li><strong>Assinatura digital</strong>: garantia de autoria feita com chave privada.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Criptografia assimétrica substitui completamente a simétrica, então não precisamos mais do AES.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> assimétrica é mil vezes mais lenta que simétrica. Sistemas reais usam as duas juntas: a assimétrica troca a chave no início e a simétrica cifra todo o conteúdo. Chamamos isso de criptografia híbrida, e é o que o HTTPS, o WhatsApp e o Signal fazem.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 6 - REVISÃO ============ -->
+<div class="painel" id="painel-6" role="tabpanel" aria-labelledby="tab-6">
+  <h2>⭐ Revisão — Mapa completo da aula</h2>
+
+  <h3>🗺️ Mapa da aula</h3>
+  <div class="revisao-mapa">
+    <div class="no-mapa">
+      <h4>Aba 1 · História</h4>
+      <p>Quatro mil anos de escrita secreta: dos egípcios a César, passando por Turing e a Enigma, até o AES de 2001.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 2 · Princípios</h4>
+      <p>Os quatro pilares: confidencialidade, integridade, autenticidade e não-repúdio, cada um com sua técnica.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 3 · Tipos</h4>
+      <p>Três famílias: hash (resumo), simétrica (uma chave) e assimétrica (duas chaves), usadas juntas em sistemas reais.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 4 · Simétrica</h4>
+      <p>Do DES quebrado ao AES atual, com modos ECB (ruim), CBC (bom) e GCM (melhor); o ChaCha20 em celulares.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 5 · Assimétrica</h4>
+      <p>RSA, ECC, Diffie-Hellman e a revolução da chave pública que viabilizou a internet segura.</p>
+    </div>
+    <div class="no-mapa">
+      <h4> Estudo em casa</h4>
+      <p>Refaça os quizzes e garanta os 5 selos antes do Chefão.</p>
+    </div>
+  </div>
+
+  <div class="cola-rapida">
+    <h3>🧷 Cola rápida — glossário da aula</h3>
+    <dl>
+      <dt><strong>Criptografia</strong></dt>
+      <dd>Arte de transformar mensagem legível em ilegível usando uma chave.</dd>
+
+      <dt><strong>Texto claro</strong></dt>
+      <dd>Mensagem original, antes de cifrar.</dd>
+
+      <dt><strong>Texto cifrado</strong></dt>
+      <dd>Mensagem embaralhada, só legível com a chave.</dd>
+
+      <dt><strong>Chave</strong></dt>
+      <dd>Segredo combinado entre remetente e destinatário.</dd>
+
+      <dt><strong>Hash</strong></dt>
+      <dd>Função que resume dados em um valor fixo, sem chave, unidirecional. Ex: SHA-256.</dd>
+
+      <dt><strong>Efeito avalanche</strong></dt>
+      <dd>Propriedade do hash: pequena mudança na entrada muda completamente o hash.</dd>
+
+      <dt><strong>Simétrica</strong></dt>
+      <dd>Uma só chave cifra e decifra. Rápida, usada para cifrar conteúdo. Ex: AES, ChaCha20.</dd>
+
+      <dt><strong>Assimétrica</strong></dt>
+      <dd>Duas chaves (pública e privada). Lenta, usada para trocar chaves e assinar. Ex: RSA, ECC.</dd>
+
+      <dt><strong>AES</strong></dt>
+      <dd>Padrão mundial de criptografia simétrica, chaves de 128, 192 ou 256 bits.</dd>
+
+      <dt><strong>DES</strong></dt>
+      <dd>Padrão antigo de 56 bits, quebrado em 1998 pela EFF.</dd>
+
+      <dt><strong>ChaCha20</strong></dt>
+      <dd>Algoritmo simétrico rápido, preferido em celulares sem AES-NI.</dd>
+
+      <dt><strong>Modo ECB</strong></dt>
+      <dd>Modo ingênuo do AES que revela padrões; evite.</dd>
+
+      <dt><strong>Modo GCM</strong></dt>
+      <dd>Modo moderno que cifra e autentica em um passo; recomendado.</dd>
+
+      <dt><strong>Chave pública</strong></dt>
+      <dd>Pode ser divulgada; cifra ou verifica assinaturas.</dd>
+
+      <dt><strong>Chave privada</strong></dt>
+      <dd>Fica em segredo; decifra ou assina.</dd>
+
+      <dt><strong>RSA</strong></dt>
+      <dd>Algoritmo assimétrico clássico, baseado em fatoração de números grandes.</dd>
+
+      <dt><strong>ECC</strong></dt>
+      <dd>Criptografia por Curva Elíptica, mesma segurança com chaves menores.</dd>
+
+      <dt><strong>Diffie-Hellman</strong></dt>
+      <dd>Protocolo para trocar chaves em canal público, base do HTTPS.</dd>
+
+      <dt><strong>Assinatura digital</strong></dt>
+      <dd>Prova de autoria feita com chave privada, verificada com a pública.</dd>
+
+      <dt><strong>Confidencialidade</strong></dt>
+      <dd>Só quem pode ler, lê. Técnica: cifrar com simétrica ou assimétrica.</dd>
+
+      <dt><strong>Integridade</strong></dt>
+      <dd>A mensagem não foi alterada. Técnica: hash ou MAC.</dd>
+
+      <dt><strong>Autenticidade</strong></dt>
+      <dd>Você sabe de quem veio. Técnica: certificado digital.</dd>
+
+      <dt><strong>Não-repúdio</strong></dt>
+      <dd>Quem enviou não pode negar. Técnica: assinatura digital.</dd>
+
+      <dt><strong>TLS</strong></dt>
+      <dd>Protocolo de segurança da internet, sucessor do SSL, usado no HTTPS.</dd>
+
+      <dt><strong>Certificado digital</strong></dt>
+      <dd>Documento eletrônico emitido por uma AC atestando que uma chave pública pertence a alguém.</dd>
+
+      <dt><strong>ICP-Brasil</strong></dt>
+      <dd>Infraestrutura de Chaves Públicas Brasileira, criada pela MP 2.200-2/2001.</dd>
+    </dl>
+  </div>
+
+  <div class="chefao">
+    <h3>👑 CHEFÃO — Desafio final</h3>
+    <p><strong>Enunciado:</strong> A <strong>ClínicaVida</strong> (clínica médica fictícia, inspirada no modelo da Prevent Senior, operadora de saúde brasileira) quer lançar um portal onde pacientes acessam seus exames por internet, com as seguintes exigências da LGPD (do português <em>Lei Geral de Proteção de Dados Pessoais</em>, Lei 13.709/2018 brasileira):</p>
+    <ol style="margin-left:1.5rem; margin-top:0.5rem">
+      <li>Os exames trafegam cifrados entre o servidor e o navegador do paciente.</li>
+      <li>O paciente tem certeza de que está falando com o servidor legítimo da ClínicaVida, não com um impostor.</li>
+      <li>O médico assina digitalmente o laudo, e o paciente pode comprovar judicialmente que aquele laudo foi emitido por aquele médico.</li>
+      <li>As senhas dos pacientes são armazenadas de forma segura no banco de dados.</li>
+    </ol>
+
+    <p style="margin-top:1rem"><strong>Parte 1 — desenho da solução:</strong> proponha, em um parágrafo, a combinação de técnicas (hash, simétrica, assimétrica, certificado, assinatura) que atende aos quatro requisitos, explicando o papel de cada uma.</p>
+
+    <p style="margin-top:1rem"><strong>Parte 2 — escolha de algoritmos concretos:</strong> cite um algoritmo específico para cada papel (ex: "para cifrar o conteúdo, uso ___ porque ___"). Use termos da cola rápida.</p>
+
+    <p style="margin-top:1rem"><strong>Parte 3 — análise de risco:</strong> escolha UMA das quatro exigências e descreva uma falha real (use um caso da Aba 2, como o da DigiNotar, ou invente um plausível) que quebraria aquele requisito. Indique qual princípio da segurança (confidencialidade, integridade, autenticidade ou não-repúdio) estaria comprometido.</p>
+
+    <p style="margin-top:1rem"><strong>Parte 4 — cálculo simples:</strong> se o servidor cifra um exame de 2 MB (megabytes) usando AES-256 em modo GCM, e a operação leva cerca de 2 milissegundos por MB, quanto tempo leva para cifrar o exame inteiro? E se fossem 10 exames desses ao mesmo tempo, com uma CPU de 4 núcleos que pode cifrar em paralelo?</p>
+  </div>
+
+  <details>
+    <summary>📚 Dica para o Chefão</summary>
+    <p style="margin-top:0.75rem">Na Parte 1, lembre-se do que o HTTPS faz: certificado (autenticidade), Diffie-Hellman (troca de chave), AES-GCM (confidencialidade + integridade). Na Parte 2, AES-256-GCM é uma escolha segura e moderna para cifrar o conteúdo; RSA-2048 ou ECDSA para assinatura; SHA-256 com sal para as senhas. Na Parte 4, o cálculo é direto: 2 MB × 2 ms/MB = 4 ms por exame; com 4 núcleos em paralelo, 10 exames levam aproximadamente 3 rodadas, cerca de 12 ms.</p>
+  </details>
+</div>
+
+<!-- ============ RODAPÉ ============ -->
+<footer>
+  <div class="bloco">
+    <h4>📋 FICHA TÉCNICA DA AULA</h4>
+    <p>Segurança e Auditoria de Sistemas — Aula 4, Unidade 2, págs. 9–37 · Gerado em 30/10/2026 · 5 abas de conteúdo + Revisão · 15 perguntas · 5 demos · cor #059669</p>
+  </div>
+
+  <div class="bloco">
+    <h4>🪄 SOBRE O HTMLearning · v2.17 (23/10/2026)</h4>
+    <p style="margin-bottom:0.75rem">Transformar o sumário de qualquer disciplina em uma classe interativa em HTML único e offline, com previsão antes do clique, tentativa e erro guiado e exemplos reais.</p>
+
+    <ul style="margin-left:1.5rem; margin-bottom:0.75rem">
+      <li>O que é: metodologia e arquitetura de prompts que converte sumários em aulas interativas em minutos, com IAs gratuitas.</li>
+      <li>O que entrega: 5 a 7 abas + Revisão, simulações com previsão, quiz com retry sem revelar gabarito, linguagem plana, Modos Apresentação/Leitura.</li>
+      <li>Por que é inclusivo: um único .html leve, 100% offline, roda em PC e celular e viaja em pen drive para escolas desconectadas ou áreas rurais.</li>
+    </ul>
+
+    <p style="margin-bottom:0.5rem">Idealizador do projeto: Professor Wellington Dimas da Cruz</p>
+    <p style="margin-bottom:0.75rem">Apoiadora do projeto: Prof.ª Dr.ª Mariella Berger Andrade (IFES / CEFOR)</p>
+
+    <p style="margin-top:0.75rem">Contatos e links do projeto:</p>
+    <ul>
+      <li>E-mail do idealizador: <a href="mailto:cloud.ai-generative@outlook.com">cloud.ai-generative@outlook.com</a></li>
+      <li>Repositório GitHub do idealizador: <a href="https://github.com/cloud-ai-Generative" target="_blank" rel="noopener">github.com/cloud-ai-Generative</a></li>
+      <li>Currículo Lattes do idealizador: <a href="https://lattes.cnpq.br/6801791839011321" target="_blank" rel="noopener">lattes.cnpq.br/6801791839011321</a></li>
+      <li>Currículo Lattes da apoiadora: <a href="https://lattes.cnpq.br/3929645439848570" target="_blank" rel="noopener">lattes.cnpq.br/3929645439848570</a></li>
+      <li>Site oficial do projeto: <a href="https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html" target="_blank" rel="noopener">https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html</a></li>
+    </ul>
+  </div>
+</footer>
+
+<script>
+"use strict";
+
+/* ================= ESTADO ================= */
+var estado = {
+  abaAtual: 1,
+  xp: 0,
+  selos: {},
+  totalSelos: 0,
+  respostas: {},
+  modo: "leitura",
+  tema: "claro"
+};
+
+var demo2Estado = { atual: null, resolvidos: 0, acertos: 0 };
+
+var cenariosPrincipios = [
+  {
+    descricao: "Você baixa o instalador do programa Imposto de Renda no site da Receita Federal e confere o hash SHA-256 publicado ao lado do link.",
+    certa: "integridade",
+    fbCerta: "Isso mesmo! O hash funciona como impressão digital do arquivo: se alguém trocou o instalador no caminho, o hash será diferente. É um cheque de integridade, não de confidencialidade nem de autoria.",
+    fbOutros: "Não é esse o princípio. Hash sozinho verifica só que o arquivo não foi alterado, sem esconder conteúdo (confidencialidade) nem provar origem (autenticidade)."
+  },
+  {
+    descricao: "Um cliente assina digitalmente um contrato de financiamento com seu certificado ICP-Brasil e, um mês depois, alega que nunca assinou.",
+    certa: "nao-repudio",
+    fbCerta: "Isso mesmo! A assinatura digital feita com a chave privada do cliente garante o não-repúdio: ele não pode negar a autoria. A MP 2.200-2/2001 dá validade jurídica a essas assinaturas no Brasil.",
+    fbOutros: "Não é esse o princípio. O conceito jurídico de 'não poder negar a autoria' tem nome próprio: não-repúdio. Autenticidade é próxima, mas não é o mesmo."
+  },
+  {
+    descricao: "Em 2011, a DigiNotar (autoridade certificadora holandesa) foi invadida e hackers emitiram certificados falsos para domínios como google.com.",
+    certa: "autenticidade",
+    fbCerta: "Isso mesmo! Com certificados falsos, um atacante pode se passar pelo Google, quebrando a certeza de com quem você está falando. É um ataque clássico contra a autenticidade.",
+    fbOutros: "Não é esse o princípio. Certificados servem para atestar a origem — quando são falsificados, o problema é de autenticidade."
+  },
+  {
+    descricao: "Em 2013, Edward Snowden revelou que a NSA (agência americana) interceptava comunicações de líderes mundiais, incluindo a então presidente Dilma Rousseff.",
+    certa: "confidencialidade",
+    fbCerta: "Isso mesmo! Interceptação de comunicações é um ataque clássico à confidencialidade. A solução é a criptografia de ponta a ponta, como a do Signal.",
+    fbOutros: "Não é esse o princípio. Interceptação quebra o sigilo, ou seja, a confidencialidade da comunicação."
+  },
+  {
+    descricao: "Você recebe um e-mail supostamente do seu banco, com um link para 'atualizar seus dados'. O certificado do site é válido, mas o domínio é 'bancodobrasill.com' (com dois L).",
+    certa: "autenticidade",
+    fbCerta: "Isso mesmo! Phishing (pescaria de credenciais) ataca a autenticidade: você acha que está falando com o banco, mas está falando com um impostor. Verificar o nome do domínio é a primeira defesa.",
+    fbOutros: "Não é esse o princípio. Phishing engana você sobre com quem está falando — é um ataque clássico contra a autenticidade."
+  },
+  {
+    descricao: "O vírus WannaCry em 2017 usou uma falha no protocolo SMB do Windows para modificar memória do sistema e instalar o ransomware.",
+    certa: "integridade",
+    fbCerta: "Isso mesmo! Modificar memória do sistema sem autorização é uma quebra de integridade. O ataque abriu caminho para o ransomware cifrar os arquivos da vítima.",
+    fbOutros: "Não é esse o princípio. Modificar memória sem autorização é uma quebra de integridade do sistema."
+  }
+];
+
+/* ================= NAVEGAÇÃO ================= */
+function ativarAba(num) {
+  estado.abaAtual = num;
+  var tabs = document.querySelectorAll(".tab");
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].setAttribute("aria-selected", tabs[i].getAttribute("data-aba") === String(num) ? "true" : "false");
+  }
+  var paineis = document.querySelectorAll(".painel");
+  for (var j = 0; j < paineis.length; j++) {
+    paineis[j].classList.remove("active");
+  }
+  var alvo = document.getElementById("painel-" + num);
+  if (alvo) alvo.classList.add("active");
+  document.getElementById("progresso").textContent = "Aba " + num + " de 6";
+}
+
+function irParaAba(num) {
+  ativarAba(num);
+  var novo = "#aba-" + num;
+  if (window.location.hash !== novo) {
+    window.location.hash = novo;
+  }
+  window.scrollTo(0, 0);
+}
+
+function lerHash() {
+  var h = window.location.hash.replace("#aba-", "");
+  var n = parseInt(h, 10);
+  if (n >= 1 && n <= 6) return n;
+  return 0;
+}
+
+window.addEventListener("hashchange", function () {
+  var n = lerHash();
+  if (n && n !== estado.abaAtual) ativarAba(n);
+});
+
+/* ================= MODOS ================= */
+function alternarModo() {
+  if (estado.modo === "leitura") {
+    document.body.classList.add("modo-apresentacao");
+    document.getElementById("btn-modo").textContent = "📖 Leitura";
+    estado.modo = "apresentacao";
+  } else {
+    document.body.classList.remove("modo-apresentacao");
+    document.getElementById("btn-modo").textContent = "🎤 Apresentação";
+    estado.modo = "leitura";
+  }
+}
+
+function alternarTema() {
+  if (estado.tema === "claro") {
+    document.body.setAttribute("data-theme", "dark");
+    document.getElementById("btn-tema").textContent = "☀️ Claro";
+    estado.tema = "escuro";
+  } else {
+    document.body.removeAttribute("data-theme");
+    document.getElementById("btn-tema").textContent = "🌙 Escuro";
+    estado.tema = "claro";
+  }
+}
+
+/* ================= QUIZ ================= */
+function fisherYates(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function inicializarQuiz() {
+  var perguntas = document.querySelectorAll(".pergunta");
+  for (var p = 0; p < perguntas.length; p++) {
+    (function (perg) {
+      var altsDiv = perg.querySelector(".alts");
+      var certaKey = altsDiv.getAttribute("data-certa");
+      var alts = [];
+      var filhos = altsDiv.querySelectorAll(".alt");
+      for (var k = 0; k < filhos.length; k++) alts.push(filhos[k]);
+      for (var idx = 0; idx < alts.length; idx++) {
+        var letra = String.fromCharCode(97 + idx);
+        alts[idx].setAttribute("data-ehcerta", letra === certaKey ? "true" : "false");
+      }
+      var emb = fisherYates(alts);
+      altsDiv.innerHTML = "";
+      for (var e = 0; e < emb.length; e++) {
+        altsDiv.appendChild(emb[e]);
+        emb[e].addEventListener("click", function () { responderQuiz(perg, this); });
+      }
+    })(perguntas[p]);
+  }
+}
+
+function responderQuiz(perg, alt) {
+  var id = perg.getAttribute("data-pergunta");
+  var reg = estado.respostas[id];
+  if (reg && reg.acertou) return;
+
+  var acerto = alt.getAttribute("data-ehcerta") === "true";
+  var fbCerta = perg.querySelector(".fb-certa");
+  var fbErrada = perg.querySelector(".fb-errada");
+
+  if (acerto) {
+    alt.classList.add("certa");
+    alt.textContent = "✓ " + alt.textContent;
+    var todas = perg.querySelectorAll(".alt");
+    for (var i = 0; i < todas.length; i++) todas[i].disabled = true;
+    fbCerta.textContent = "✅ Por que esta está certa: " + alt.getAttribute("data-fb");
+    fbCerta.classList.add("show");
+    fbErrada.classList.remove("show");
+    var pontos = (reg && !reg.acertou) ? 5 : 10;
+    estado.xp += pontos;
+    estado.respostas[id] = { acertou: true };
+    verificarSelo(id);
+    atualizarXP();
+  } else {
+    alt.classList.add("errada");
+    alt.textContent = "✗ " + alt.textContent;
+    alt.disabled = true;
+    fbErrada.textContent = "❌ Por que esta está errada: " + alt.getAttribute("data-fb");
+    fbErrada.classList.add("show");
+    if (!reg) estado.respostas[id] = { acertou: false };
+  }
+}
+
+function verificarSelo(id) {
+  var aba = id.split("-")[0];
+  var ids = [aba + "-1", aba + "-2", aba + "-3"];
+  for (var i = 0; i < ids.length; i++) {
+    var r = estado.respostas[ids[i]];
+    if (!r || !r.acertou) return;
+  }
+  if (!estado.selos[aba]) {
+    estado.selos[aba] = true;
+    estado.totalSelos += 1;
+    document.getElementById("selos").textContent = estado.totalSelos;
+  }
+}
+
+function atualizarXP() {
+  document.getElementById("xp").textContent = estado.xp;
+}
+
+/* ================= DEMO 1: CÉSAR ================= */
+function demo1Cifrar(msg, desloc, decifrar) {
+  var out = "";
+  var d = decifrar ? (26 - desloc) : desloc;
+  for (var i = 0; i < msg.length; i++) {
+    var c = msg.charCodeAt(i);
+    if (c >= 65 && c <= 90) {
+      out += String.fromCharCode(((c - 65 + d) % 26) + 65);
+    } else if (c === 32) {
+      out += " ";
+    } else {
+      out += msg[i];
+    }
+  }
+  return out;
+}
+
+function demo1Atualizar() {
+  var msg = document.getElementById("demo1-msg").value.toUpperCase();
+  var desl = parseInt(document.getElementById("demo1-desl").value, 10) || 3;
+  if (desl < 1) desl = 1; if (desl > 25) desl = 25;
+  document.getElementById("demo1-claro").textContent = msg || "—";
+}
+
+function demo1CifrarClick() {
+  var msg = document.getElementById("demo1-msg").value.toUpperCase();
+  var desl = parseInt(document.getElementById("demo1-desl").value, 10) || 3;
+  if (desl < 1) desl = 1; if (desl > 25) desl = 25;
+  var cifrado = demo1Cifrar(msg, desl, false);
+  document.getElementById("demo1-cifrado").textContent = cifrado;
+  document.getElementById("demo1-feedback").innerHTML = '<div class="resultado-demo">🔒 Mensagem cifrada com deslocamento ' + desl + '. Clique em Decifrar com o mesmo deslocamento para recuperar.</div>';
+}
+
+function demo1DecifrarClick() {
+  var cifrado = document.getElementById("demo1-cifrado").textContent;
+  var desl = parseInt(document.getElementById("demo1-desl").value, 10) || 3;
+  if (desl < 1) desl = 1; if (desl > 25) desl = 25;
+  if (!cifrado || cifrado === "—") {
+    document.getElementById("demo1-feedback").innerHTML = '<div class="resultado-erro">❌ Primeiro cifre uma mensagem.</div>';
+    return;
+  }
+  var decifrado = demo1Cifrar(cifrado, desl, true);
+  document.getElementById("demo1-feedback").innerHTML = '<div class="resultado-demo">🔓 Decifrado: <strong>' + decifrado + '</strong>. Coincide com o texto claro original? Se sim, a chave estava certa.</div>';
+}
+
+function demo1Reset() {
+  document.getElementById("demo1-msg").value = "OLA TURMA";
+  document.getElementById("demo1-desl").value = "3";
+  document.getElementById("demo1-claro").textContent = "OLA TURMA";
+  document.getElementById("demo1-cifrado").textContent = "—";
+  document.getElementById("demo1-feedback").innerHTML = "";
+}
+
+/* ================= DEMO 2: PRINCÍPIOS ================= */
+function demo2Novo() {
+  var i = Math.floor(Math.random() * cenariosPrincipios.length);
+  demo2Estado.atual = cenariosPrincipios[i];
+  document.getElementById("demo2-cenario").innerHTML = "📋 " + demo2Estado.atual.descricao;
+  document.getElementById("demo2-opcoes").style.display = "block";
+  document.getElementById("demo2-feedback").innerHTML = "";
+}
+
+function demo2Responder(princ) {
+  if (!demo2Estado.atual) return;
+  var certa = princ === demo2Estado.atual.certa;
+  var fb = document.getElementById("demo2-feedback");
+  demo2Estado.resolvidos += 1;
+  if (certa) {
+    demo2Estado.acertos += 1;
+    fb.innerHTML = '<div class="resultado-demo">✅ <strong>Princípio correto!</strong> ' + demo2Estado.atual.fbCerta + '</div>';
+  } else {
+    fb.innerHTML = '<div class="resultado-erro">❌ <strong>Não é esse o princípio.</strong> ' + demo2Estado.atual.fbOutros + '</div>';
+  }
+  document.getElementById("demo2-opcoes").style.display = "none";
+  document.getElementById("demo2-placar").textContent = "Placar: " + demo2Estado.acertos + " acertos em " + demo2Estado.resolvidos + " cenários";
+}
+
+function demo2Reset() {
+  demo2Estado.atual = null;
+  demo2Estado.resolvidos = 0;
+  demo2Estado.acertos = 0;
+  document.getElementById("demo2-cenario").innerHTML = "📋 O cenário aparecerá aqui. Clique em Novo cenário para começar.";
+  document.getElementById("demo2-opcoes").style.display = "none";
+  document.getElementById("demo2-feedback").innerHTML = "";
+  document.getElementById("demo2-placar").textContent = "";
+}
+
+/* ================= DEMO 3: HASH ================= */
+function hashSimples(str) {
+  // Simulação didática de SHA-256 - NÃO USAR EM PRODUÇÃO
+  var h1 = 0x6a09e667, h2 = 0xbb67ae85, h3 = 0x3c6ef372, h4 = 0xa54ff53a;
+  var h5 = 0x510e527f, h6 = 0x9b05688c, h7 = 0x1f83d9ab, h8 = 0x5be0cd19;
+  for (var i = 0; i < str.length; i++) {
+    var c = str.charCodeAt(i);
+    h1 = (h1 ^ (c * 31 + i)) >>> 0;
+    h2 = (h2 ^ (c * 37 + i * 3)) >>> 0;
+    h3 = (h3 ^ (c * 41 + i * 7)) >>> 0;
+    h4 = (h4 ^ (c * 43 + i * 11)) >>> 0;
+    h5 = (h5 ^ (c * 47 + i * 13)) >>> 0;
+    h6 = (h6 ^ (c * 53 + i * 17)) >>> 0;
+    h7 = (h7 ^ (c * 59 + i * 19)) >>> 0;
+    h8 = (h8 ^ (c * 61 + i * 23)) >>> 0;
+  }
+  return (
+    ("00000000" + h1.toString(16)).slice(-8) +
+    ("00000000" + h2.toString(16)).slice(-8) +
+    ("00000000" + h3.toString(16)).slice(-8) +
+    ("00000000" + h4.toString(16)).slice(-8) +
+    ("00000000" + h5.toString(16)).slice(-8) +
+    ("00000000" + h6.toString(16)).slice(-8) +
+    ("00000000" + h7.toString(16)).slice(-8) +
+    ("00000000" + h8.toString(16)).slice(-8)
+  );
+}
+
+function demo3Calcular() {
+  var a = document.getElementById("demo3-a").value;
+  var b = document.getElementById("demo3-b").value;
+  var hashA = hashSimples(a);
+  var hashB = hashSimples(b);
+  document.getElementById("demo3-hashA").textContent = hashA;
+  document.getElementById("demo3-hashB").textContent = hashB;
+  var comparacao;
+  if (a === b) {
+    comparacao = '<div class="resultado-demo">✅ <strong>Hashes idênticos.</strong> Isso é o determinismo: mesma entrada, mesmo hash. Em um sistema real, você pode confiar que um arquivo não foi alterado se o hash bater com o oficial.</div>';
+  } else if (hashA === hashB) {
+    comparacao = '<div class="resultado-erro">⚠️ <strong>Colisão detectada!</strong> Duas entradas diferentes com o mesmo hash. Em hashes didáticos pequenos isso pode acontecer; no SHA-256 real, é praticamente impossível (probabilidade de 1 em 2^256).</div>';
+  } else {
+    var diffs = 0;
+    for (var i = 0; i < hashA.length; i++) if (hashA[i] !== hashB[i]) diffs++;
+    var pct = ((diffs / hashA.length) * 100).toFixed(0);
+    comparacao = '<div class="resultado-demo">✅ <strong>Efeito avalanche em ação!</strong> Mensagens diferentes geraram hashes completamente distintos. Cerca de ' + pct + '% dos caracteres diferem. É isso que torna o hash seguro: uma letra a mais muda tudo.</div>';
+  }
+  document.getElementById("demo3-comparacao").innerHTML = comparacao;
+}
+
+function demo3Reset() {
+  document.getElementById("demo3-a").value = "seguranca";
+  document.getElementById("demo3-b").value = "seguranca";
+  document.getElementById("demo3-hashA").textContent = "—";
+  document.getElementById("demo3-hashB").textContent = "—";
+  document.getElementById("demo3-comparacao").innerHTML = "";
+}
+
+/* ================= DEMO 4: XOR ================= */
+function xorString(msg, chave) {
+  var out = "";
+  var hexOut = "";
+  for (var i = 0; i < msg.length; i++) {
+    var cMsg = msg.charCodeAt(i);
+    var cChave = chave.charCodeAt(i % chave.length);
+    var xored = cMsg ^ cChave;
+    out += String.fromCharCode(xored);
+    hexOut += ("00" + xored.toString(16)).slice(-2).toUpperCase() + " ";
+  }
+  return { texto: out, hex: hexOut.trim() };
+}
+
+var demo4Estado = { cifrado: "" };
+
+function demo4Cifrar() {
+  var msg = document.getElementById("demo4-msg").value;
+  var chave = document.getElementById("demo4-chave").value;
+  if (!chave) {
+    document.getElementById("demo4-feedback").innerHTML = '<div class="resultado-erro">❌ Digite uma chave.</div>';
+    return;
+  }
+  var asciiArr = [];
+  for (var i = 0; i < msg.length; i++) asciiArr.push(msg.charCodeAt(i));
+  document.getElementById("demo4-ascii").textContent = asciiArr.join(" ");
+  var resultado = xorString(msg, chave);
+  demo4Estado.cifrado = resultado.texto;
+  document.getElementById("demo4-cifrado").textContent = resultado.hex;
+  document.getElementById("demo4-decifrado").textContent = "—";
+  document.getElementById("demo4-feedback").innerHTML = '<div class="resultado-demo">🔒 Mensagem cifrada! Agora clique em Decifrar com a MESMA chave para recuperar.</div>';
+}
+
+function demo4Decifrar() {
+  if (!demo4Estado.cifrado) {
+    document.getElementById("demo4-feedback").innerHTML = '<div class="resultado-erro">❌ Primeiro cifre uma mensagem.</div>';
+    return;
+  }
+  var chave = document.getElementById("demo4-chave").value;
+  if (!chave) {
+    document.getElementById("demo4-feedback").innerHTML = '<div class="resultado-erro">❌ Digite uma chave.</div>';
+    return;
+  }
+  var resultado = xorString(demo4Estado.cifrado, chave);
+  document.getElementById("demo4-decifrado").textContent = resultado.texto;
+  var msgOrig = document.getElementById("demo4-msg").value;
+  if (resultado.texto === msgOrig) {
+    document.getElementById("demo4-feedback").innerHTML = '<div class="resultado-demo">✅ <strong>Mensagem recuperada!</strong> A mesma chave cifrou e decifrou — é a essência da criptografia simétrica.</div>';
+  } else {
+    document.getElementById("demo4-feedback").innerHTML = '<div class="resultado-erro">❌ <strong>Chave errada!</strong> O resultado é lixo. É o que acontece quando um invasor tenta decifrar sem a chave correta.</div>';
+  }
+}
+
+function demo4Reset() {
+  document.getElementById("demo4-msg").value = "OLA";
+  document.getElementById("demo4-chave").value = "K";
+  document.getElementById("demo4-ascii").textContent = "—";
+  document.getElementById("demo4-cifrado").textContent = "—";
+  document.getElementById("demo4-decifrado").textContent = "—";
+  document.getElementById("demo4-feedback").innerHTML = "";
+  demo4Estado.cifrado = "";
+}
+
+/* ================= DEMO 5: DIFFIE-HELLMAN ================= */
+function misturarCores(cor1, cor2) {
+  // Média RGB ponderada
+  return {
+    r: Math.round((cor1.r * 0.5 + cor2.r * 0.5)),
+    g: Math.round((cor1.g * 0.5 + cor2.g * 0.5)),
+    b: Math.round((cor1.b * 0.5 + cor2.b * 0.5))
+  };
+}
+
+function corParaRgb(nome) {
+  var mapa = {
+    yellow: {r:255, g:220, b:0},
+    red: {r:220, g:40, b:40},
+    blue: {r:40, g:80, b:220},
+    purple: {r:160, g:60, b:200},
+    orange: {r:240, g:140, b:20},
+    green: {r:40, g:180, b:80}
+  };
+  return mapa[nome] || mapa.blue;
+}
+
+function rgbParaCss(c) {
+  return "rgb(" + c.r + "," + c.g + "," + c.b + ")";
+}
+
+function demo5Executar() {
+  var corPub = corParaRgb("yellow");
+  var corA = corParaRgb(document.getElementById("demo5-corA").value);
+  var corB = corParaRgb(document.getElementById("demo5-corB").value);
+  
+  // Passo 1: Alice mistura pública com sua secreta
+  var mixA = misturarCores(corPub, corA);
+  // Passo 2: Bob mistura pública com sua secreta
+  var mixB = misturarCores(corPub, corB);
+  // Passo 3: Alice recebe mixB e mistura com sua secreta
+  var finalA = misturarCores(mixB, corA);
+  // Passo 4: Bob recebe mixA e mistura com sua secreta
+  var finalB = misturarCores(mixA, corB);
+  
+  var visual = document.getElementById("demo5-visual");
+  visual.innerHTML = 
+    '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:1rem">' +
+    '<div style="text-align:center"><div style="font-weight:bold; margin-bottom:0.3rem">🌐 Cor pública</div><div class="dh-bola" style="background:' + rgbParaCss(corPub) + '; width:80px; height:80px; margin:0 auto"></div><div style="font-size:0.85rem; color:var(--texto-suave)">Conhecida por todos</div></div>' +
+    '<div style="text-align:center"><div style="font-weight:bold; margin-bottom:0.3rem">🔴 Segredo de Alice</div><div class="dh-bola" style="background:' + rgbParaCss(corA) + '; width:80px; height:80px; margin:0 auto"></div><div style="font-size:0.85rem; color:var(--texto-suave)">Só Alice sabe</div></div>' +
+    '<div style="text-align:center"><div style="font-weight:bold; margin-bottom:0.3rem">🔵 Segredo de Bob</div><div class="dh-bola" style="background:' + rgbParaCss(corB) + '; width:80px; height:80px; margin:0 auto"></div><div style="font-size:0.85rem; color:var(--texto-suave)">Só Bob sabe</div></div>' +
+    '</div>' +
+    '<div style="margin-top:1.5rem; padding-top:1rem; border-top:2px dashed var(--borda)">' +
+    '<div style="font-weight:bold; margin-bottom:0.5rem">📤 Misturas trocadas no canal público (o espião vê):</div>' +
+    '<div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem">' +
+    '<div style="text-align:center"><div>Alice envia para Bob:</div><div class="dh-bola" style="background:' + rgbParaCss(mixA) + '; width:80px; height:80px; margin:0.3rem auto"></div></div>' +
+    '<div style="text-align:center"><div>Bob envia para Alice:</div><div class="dh-bola" style="background:' + rgbParaCss(mixB) + '; width:80px; height:80px; margin:0.3rem auto"></div></div>' +
+    '</div>' +
+    '</div>' +
+    '<div style="margin-top:1.5rem; padding-top:1rem; border-top:2px dashed var(--borda)">' +
+    '<div style="font-weight:bold; margin-bottom:0.5rem">🎯 Cor final (segredo compartilhado):</div>' +
+    '<div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem">' +
+    '<div style="text-align:center"><div>Alice calcula:</div><div class="dh-bola" style="background:' + rgbParaCss(finalA) + '; width:80px; height:80px; margin:0.3rem auto"></div></div>' +
+    '<div style="text-align:center"><div>Bob calcula:</div><div class="dh-bola" style="background:' + rgbParaCss(finalB) + '; width:80px; height:80px; margin:0.3rem auto"></div></div>' +
+    '</div>' +
+    '</div>';
+  
+  var iguais = Math.abs(finalA.r - finalB.r) < 10 && Math.abs(finalA.g - finalB.g) < 10 && Math.abs(finalA.b - finalB.b) < 10;
+  if (iguais) {
+    document.getElementById("demo5-feedback").innerHTML = '<div class="resultado-demo">✅ <strong>Mesma cor final!</strong> Alice e Bob chegaram ao mesmo segredo compartilhado sem nunca trocá-lo diretamente. O espião viu só as misturas intermediárias, que não permitem reconstruir a cor final sem conhecer uma das cores secretas. Esse é o princípio do Diffie-Hellman real, usado no HTTPS.</div>';
+  } else {
+    document.getElementById("demo5-feedback").innerHTML = '<div class="resultado-erro">⚠️ As cores finais ficaram levemente diferentes por arredondamentos, mas o princípio matemático é o mesmo: no Diffie-Hellman real com logaritmos discretos, o resultado é EXATAMENTE igual.</div>';
+  }
+}
+
+function demo5Reset() {
+  document.getElementById("demo5-corA").value = "purple";
+  document.getElementById("demo5-corB").value = "blue";
+  document.getElementById("demo5-visual").innerHTML = "";
+  document.getElementById("demo5-feedback").innerHTML = "";
+}
+
+/* ================= LIGAÇÕES ================= */
+function ligarBotoes() {
+  var tabs = document.querySelectorAll(".tab");
+  for (var t = 0; t < tabs.length; t++) {
+    (function (tab) {
+      tab.addEventListener("click", function () {
+        irParaAba(parseInt(tab.getAttribute("data-aba"), 10));
+      });
+      tab.addEventListener("keydown", function (ev) {
+        var lista = Array.prototype.slice.call(document.querySelectorAll(".tab"));
+        var idx = lista.indexOf(tab);
+        if (ev.key === "ArrowRight" && idx < lista.length - 1) { lista[idx + 1].focus(); ev.preventDefault(); }
+        if (ev.key === "ArrowLeft" && idx > 0) { lista[idx - 1].focus(); ev.preventDefault(); }
+      });
+    })(tabs[t]);
+  }
+
+  document.getElementById("btn-modo").addEventListener("click", alternarModo);
+  document.getElementById("btn-tema").addEventListener("click", alternarTema);
+
+  // Demo 1
+  document.getElementById("demo1-msg").addEventListener("input", demo1Atualizar);
+  document.getElementById("demo1-cifrar").addEventListener("click", demo1CifrarClick);
+  document.getElementById("demo1-decifrar").addEventListener("click", demo1DecifrarClick);
+  document.getElementById("demo1-reset").addEventListener("click", demo1Reset);
+  demo1Atualizar();
+
+  // Demo 2
+  document.getElementById("demo2-novo").addEventListener("click", demo2Novo);
+  document.getElementById("demo2-reset").addEventListener("click", demo2Reset);
+  var princs = document.querySelectorAll("#demo2-opcoes [data-princ]");
+  for (var p = 0; p < princs.length; p++) {
+    (function (b) { b.addEventListener("click", function () { demo2Responder(b.getAttribute("data-princ")); }); })(princs[p]);
+  }
+
+  // Demo 3
+  document.getElementById("demo3-go").addEventListener("click", demo3Calcular);
+  document.getElementById("demo3-reset").addEventListener("click", demo3Reset);
+
+  // Demo 4
+  document.getElementById("demo4-cifrar").addEventListener("click", demo4Cifrar);
+  document.getElementById("demo4-decifrar").addEventListener("click", demo4Decifrar);
+  document.getElementById("demo4-reset").addEventListener("click", demo4Reset);
+
+  // Demo 5
+  document.getElementById("demo5-go").addEventListener("click", demo5Executar);
+  document.getElementById("demo5-reset").addEventListener("click", demo5Reset);
+
+  // Teclado
+  document.addEventListener("keydown", function (ev) {
+    if (estado.modo === "apresentacao") {
+      if (ev.key === "ArrowRight" && estado.abaAtual < 6) irParaAba(estado.abaAtual + 1);
+      if (ev.key === "ArrowLeft" && estado.abaAtual > 1) irParaAba(estado.abaAtual - 1);
+    }
+  });
+}
+
+/* ================= CARGA INICIAL ================= */
+document.addEventListener("DOMContentLoaded", function () {
+  ligarBotoes();
+  inicializarQuiz();
+  var n = lerHash();
+  ativarAba(n ? n : 1);
+  atualizarXP();
+});
+</script>
+
+</body>
+</html>
