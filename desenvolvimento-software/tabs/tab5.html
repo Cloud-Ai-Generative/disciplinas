@@ -1,438 +1,806 @@
 <section class="tab-panel" id="tab5">
+<style>/* celular: código inline e links longos quebram linha em vez de alargar a página */#tab5 :not(pre)>code,#tab5 a.ext,#tab5 li strong{overflow-wrap:anywhere}#tab5 .split-col{min-width:0}@media(max-width:800px){#tab5 .split-view{grid-template-columns:1fr}}</style>
 <div class="card">
-<h2 class="card-title">🐬🍃 Orquestração de Bancos: MySQL 8.4 + MongoDB 7.0 + Playground</h2>
-<p class="section-intro">Sobe os bancos, conecta, e um <strong>playground CRUD completo</strong> (INSERT/SELECT/UPDATE/DELETE + agregações + JOIN) com diagramas de dados nomeados.</p>
+<h2 class="card-title">🐬🍃 Docker + Bancos de Dados: MySQL e MongoDB na sua máquina</h2>
+<p class="section-intro">Passo a passo, <strong>com o mouse</strong> e com o <strong>terminal</strong> sempre ao lado: instale o <strong>Docker</strong>, ligue um <strong>MySQL</strong> e um <strong>MongoDB</strong> com um comando só, abra os dois em programas visuais e faça o <strong>CRUD</strong> (criar, ler, atualizar, apagar) em etapas, vendo o resultado de cada uma. Os bancos daqui são os que as APIs das Tabs 6, 7 e 9 vão usar.</p>
+<div class="info-banner"><strong>🗺️ O caminho desta aba:</strong> ① O que é Docker → ② Instalar o Docker Desktop → ③ Ligar os bancos → ④ MySQL na prática → ⑤ MongoDB na prática → ⑥ De onde vieram os dados → ⑦ Os dois lado a lado → ⑧ Desligar, recomeçar e erros comuns. <strong>Tempo total: ~1h30.</strong></div>
+<div class="info-banner"><strong>🧭 Como ler esta aba:</strong> os passos com 🖱️ são feitos com o <strong>mouse</strong>. Os blocos <strong>⌨️ Prefere o terminal?</strong> mostram o mesmo passo por comandos — o jeito que você vai usar no dia a dia de trabalho. Faça pelo mouse primeiro e, depois, repita pelo terminal: as duas formas fazem exatamente a mesma coisa.</div>
 
+<!-- ══════════════════════════ ① O QUE É DOCKER ══════════════════════════ -->
 <div class="deep-concept-box">
-<h3>🐳 Imagem vs Container vs Volume vs Porta</h3>
-<ul>
-<li><strong>Imagem:</strong> o "molde" leitura-only (camadas de filesystem + metadados). Feita por <code>docker build</code> ou baixada de um registry.</li>
-<li><strong>Container:</strong> uma <strong>instância em execução</strong> da imagem (processo isolado). Pode haver vários containers da mesma imagem.</li>
-<li><strong>Volume:</strong> armazenamento <strong>persistente</strong> gerenciado pelo Docker (sobrevive ao remover o container). Usado p/ dados dos bancos.</li>
-<li><strong>Porta (<code>ports:</code>):</strong> mapeamento <code>host:container</code> (ex.: <code>3306:3306</code>) que expõe o serviço ao host. Sem <code>ports:</code>, só outros containers na mesma rede acessam.</li>
-</ul>
-<h4>1. Rede Bridge</h4>
-<p>DNS interno pelo nome: <code>mysql-db:3306</code>, <code>mongo-db:27017</code>; só <code>ports:</code> expõe ao host.</p>
-<h4>2. Volumes vs Bind Mounts</h4>
-<ul>
-<li><strong>Volumes:</strong> persistem (dados).</li>
-<li><strong>Bind Mounts:</strong> pasta do host mapeada (scripts/configs).</li>
-</ul>
-<h4>3. Healthcheck</h4>
-<p>Teste periódico (ex.: <code>mysqladmin ping</code>) marca o container como <em>healthy</em>.</p>
-<p><strong>Aprofundar:</strong> <a class="ext" href="https://docs.docker.com/get-started/" target="_blank">Docker Get Started</a> · <a class="ext" href="https://docs.docker.com/storage/volumes/" target="_blank">Volumes</a>.</p>
+<h3>① 🐳 O que é Docker (e por que usar)</h3>
+<p>Para ter um MySQL, você poderia instalar o MySQL no Windows, configurar, torcer para não dar conflito… e repetir tudo para o MongoDB. Com o <strong>Docker</strong>, cada banco vem numa <strong>"caixa" pronta</strong>, já configurada, que liga com um comando e some sem deixar rastro quando você não precisa mais. E roda <strong>igual</strong> no seu computador, no do colega e no servidor.</p>
+<div class="analogy-highlight"><span class="icon">🎂</span><div><strong>Analogia da confeitaria:</strong> a <strong>imagem</strong> é a <em>forma</em> do bolo (o molde, que nunca muda); o <strong>container</strong> é o <em>bolo</em> feito com a forma (dá para fazer vários iguais); o <strong>volume</strong> é o <em>pote na geladeira</em> onde você guarda o recheio (se jogar o bolo fora, o recheio continua lá); a <strong>porta</strong> é a <em>janela do balcão</em> por onde o cliente pega o pedido.</div></div>
+<div class="table-wrap" style="margin:12px 0">
+<table>
+<thead><tr><th>Palavra</th><th>O que é</th><th>Nesta aba</th></tr></thead>
+<tbody>
+<tr><td><strong>Imagem</strong></td><td>O "molde" pronto, baixado da internet (do <em>Docker Hub</em>)</td><td><code>mysql:8.4</code> e <code>mongo:7.0</code></td></tr>
+<tr><td><strong>Container</strong></td><td>Um programa rodando, feito a partir da imagem</td><td><code>dev_mysql_server</code> e <code>dev_mongo_server</code></td></tr>
+<tr><td><strong>Volume</strong></td><td>Onde os dados ficam guardados; sobrevive se o container for apagado</td><td><code>mysql_dev_data</code> e <code>mongo_dev_data</code></td></tr>
+<tr><td><strong>Porta</strong></td><td>A "janela" entre o seu computador e o container</td><td><code>3306</code> (MySQL) e <code>27017</code> (MongoDB)</td></tr>
+<tr><td><strong>Docker Compose</strong></td><td>Uma "receita" num arquivo (<code>docker-compose.yml</code>) que liga vários containers de uma vez</td><td>liga os dois bancos juntos</td></tr>
+</tbody>
+</table>
+</div>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=o+que+%C3%A9+docker+explica%C3%A7%C3%A3o+simples" target="_blank">O que é Docker</a> · <a class="ext" href="https://www.youtube.com/results?search_query=docker+compose+para+iniciantes" target="_blank">Docker Compose para iniciantes</a></div>
 </div>
 
-<div class="deep-concept-box">
-<h3>🗄️ SQL, DDL e DML (o básico p/ entender os scripts)</h3>
-<ul>
-<li><strong>SQL:</strong> linguagem de consulta/manipulação de bancos relacionais.</li>
-<li><strong>DDL (Data Definition Language):</strong> define <strong>estruturas</strong> — <code>CREATE TABLE</code>, <code>ALTER</code>, <code>DROP</code>, <code>CREATE INDEX</code>.</li>
-<li><strong>DML (Data Manipulation Language):</strong> manipula <strong>dados</strong> — <code>INSERT</code>, <code>SELECT</code>, <code>UPDATE</code>, <code>DELETE</code>.</li>
-</ul>
-<p>No compose, a pasta <code>/docker-entrypoint-initdb.d</code> roda scripts <code>.sql</code>/<code>.js</code> uma vez no primeiro boot com volume vazio, em ordem alfanumérica. <strong>DDL</strong> cria estruturas; <strong>DML</strong> insere seed.</p>
-</div>
-
+<!-- ══════════════════════════ ② INSTALAR ══════════════════════════ -->
 <div class="lab-container">
 <div class="lab-header">
-<h3>🐳 Subir a infraestrutura</h3>
+<h3>② 🧰 Instalar o Docker Desktop</h3>
+<div class="lab-actions"><a href="https://www.docker.com/products/docker-desktop/" target="_blank" class="btn btn-primary">⬇️ Site do Docker Desktop ↗</a></div>
+</div>
+<p class="text-sm text-muted">O <strong>Docker Desktop</strong> é o programa que roda os containers no Windows e no Mac, com uma janela para você ver tudo. É <strong>gratuito</strong> para uso pessoal, estudo e empresas pequenas. O passo a passo abaixo é para <strong>Windows 10/11</strong>; macOS e Linux estão no fim desta parte.</p>
+
+<div class="step-box">
+<h4><span class="step-num">1</span>🖱️ Baixar e instalar (Windows)</h4>
+<ol class="step-number-list">
+<li>Entre em <a class="ext" href="https://www.docker.com/products/docker-desktop/" target="_blank"><strong>docker.com/products/docker-desktop</strong></a> → clique em <strong>Download Docker Desktop</strong> → <strong>Download for Windows – AMD64</strong> (quase todo PC; só escolha <em>ARM64</em> se o seu notebook tiver processador Snapdragon). O arquivo se chama <code>Docker Desktop Installer.exe</code> (~500 MB).</li>
+<li>Dois cliques no arquivo → <strong>Sim</strong> na pergunta de permissão do Windows.</li>
+<li>Tela <strong>Configuration</strong>: deixe marcado ☑ <strong>Use WSL 2 instead of Hyper-V (recommended)</strong> ("use o WSL 2", recomendado) e ☑ <strong>Add shortcut to desktop</strong> → <strong>Ok</strong>.
+<div class="info-banner" style="margin:8px 0"><strong>❓ O que é WSL 2?</strong> Os bancos de dados das imagens Docker são programas de <strong>Linux</strong>. O <strong>WSL 2</strong> (<em>Windows Subsystem for Linux</em>) é um Linux de verdade, da própria Microsoft, que roda escondido dentro do Windows. O Docker Desktop usa ele — você não precisa mexer nele.</div></li>
+<li>Espere a instalação (2 a 5 minutos) → <strong>Close and restart</strong> ("fechar e reiniciar"). O computador <strong>reinicia</strong>: salve o que estiver aberto antes.</li>
+</ol>
+</div>
+
+<div class="step-box">
+<h4><span class="step-num">2</span>🖱️ Abrir o Docker Desktop pela primeira vez</h4>
+<ol class="step-number-list">
+<li>Depois de reiniciar, ele costuma abrir sozinho. Se não: <strong>tecla Windows</strong> → digite <strong>Docker Desktop</strong> → <kbd>Enter</kbd>.</li>
+<li><strong>Docker Subscription Service Agreement</strong> (termos de uso) → <strong>Accept</strong> ("aceitar").</li>
+<li>Pedido de login ou de criar conta: pode clicar em <strong>Skip</strong> / <strong>Continue without signing in</strong> ("continuar sem entrar"). Pesquisa sobre o seu trabalho: <strong>Skip</strong>.</li>
+<li>Abre a janela principal. Olhe o <strong>canto inferior esquerdo</strong>: quando aparecer <strong>Engine running</strong> ("motor ligado") com uma bolinha <strong>verde</strong> 🟢, o Docker está pronto.</li>
+</ol>
+<div class="table-wrap" style="margin:12px 0">
+<table>
+<thead><tr><th>Menu da esquerda</th><th>O que mostra</th></tr></thead>
+<tbody>
+<tr><td><strong>Containers</strong></td><td>Os containers que existem: ligados (🟢) ou parados (⚪). Botões ▶ ligar, ⏹ parar, 🗑 apagar — e, clicando no nome, os <strong>Logs</strong> (o que o programa está escrevendo) e o <strong>Exec</strong> (um terminal dentro do container)</td></tr>
+<tr><td><strong>Images</strong></td><td>Os "moldes" já baixados</td></tr>
+<tr><td><strong>Volumes</strong></td><td>Os "potes" com os dados guardados</td></tr>
+</tbody>
+</table>
+</div>
+<div class="warning-banner"><strong>⚠️ Erros comuns na instalação:</strong>
+<ul>
+<li><strong><em>"Virtualization support not detected"</em></strong> ("virtualização não detectada") → a virtualização está desligada na BIOS do computador. Reinicie, entre na BIOS (geralmente <kbd>F2</kbd>, <kbd>F10</kbd> ou <kbd>Del</kbd> ao ligar) e ative <strong>Intel VT-x</strong> ou <strong>AMD-V / SVM</strong>. Na dúvida, procure no YouTube "ativar virtualização BIOS" + a marca do seu PC.</li>
+<li><strong><em>"WSL needs updating"</em> / <em>"WSL 2 installation is incomplete"</em></strong> → abra o PowerShell (tecla Windows → <code>powershell</code>) e rode <code>wsl --update</code>. Depois, abra o Docker Desktop de novo.</li>
+<li><strong>Fica parado em <em>"Starting the Docker Engine…"</em></strong> → espere uns 2 minutos na primeira vez; se não sair, reinicie o computador.</li>
+</ul></div>
+</div>
+
+<div class="step-box">
+<h4><span class="step-num">3</span>Primeiro teste: o "Hello World" do Docker</h4>
+<p class="text-sm text-muted mb-2">O Docker é usado principalmente pelo terminal — por isso o primeiro teste é um comando. Abra o terminal da sua IDE (IntelliJ: <strong>View → Tool Windows → Terminal</strong>, <kbd>Alt+F12</kbd> · VS Code: <strong>Terminal → New Terminal</strong>, <kbd>Ctrl+`</kbd>) ou o PowerShell, e digite:</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">docker run hello-world</pre>
+</div>
+<p class="text-sm text-muted mb-2">Na primeira vez, ele <strong>baixa</strong> a imagem <code>hello-world</code> (aparece <em>"Unable to find image… Pulling from library/hello-world"</em> — é normal) e depois mostra:</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">resultado esperado (o começo)</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">Hello from Docker!
+This message shows that your installation appears to be working correctly.</pre>
+</div>
+<div class="success-banner"><strong>✅ Deu certo se aparecer <em>"Hello from Docker!"</em>.</strong> Abra o Docker Desktop → <strong>Containers</strong>: o container que acabou de rodar aparece lá, parado (ele só escreve a mensagem e termina). Pode apagá-lo no 🗑.</div>
+<div class="warning-banner"><strong>⚠️ <code>docker: command not found</code> / "não é reconhecido como comando"?</strong> O terminal estava aberto antes da instalação: feche-o (no VS Code e no IntelliJ, feche a IDE inteira) e abra de novo. <strong><em>"Cannot connect to the Docker daemon"</em></strong>? O Docker Desktop não está aberto: abra e espere o <strong>Engine running</strong> 🟢.</div>
+</div>
+
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">🍎 macOS e 🐧 Linux: como instalar o Docker</div>
+<div class="faq-a">
+<ol class="step-number-list">
+<li><strong>macOS:</strong> no mesmo site, <strong>Download for Mac – Apple Silicon</strong> (chips M1, M2, M3, M4) ou <strong>Intel</strong>. Abra o <code>.dmg</code>, <strong>arraste o Docker para Aplicativos</strong>, abra pelo Launchpad e siga os passos 2 e 3 acima.</li>
+<li><strong>Linux (Ubuntu):</strong> o mais simples é o <strong>Docker Engine</strong> (sem janela), pelo script oficial:</li>
+</ol>
+<div class="code-editor-wrap">
+<span class="code-filepath">Linux (Ubuntu) — terminal</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">curl -fsSL https://get.docker.com | sudo sh     # instala o Docker Engine + Compose
+sudo usermod -aG docker $USER                    # permite usar docker sem sudo
+newgrp docker                                    # aplica a permissão agora (ou saia e entre de novo)
+docker run hello-world                           # o teste</pre>
+</div>
+</div></div>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=instalar+docker+desktop+windows+wsl2" target="_blank">Instalar o Docker Desktop no Windows (WSL 2)</a></div>
+</div>
+
+<!-- ══════════════════════════ ③ LIGAR OS BANCOS ══════════════════════════ -->
+<div class="lab-container">
+<div class="lab-header">
+<h3>③ 🚀 Ligar os dois bancos com um comando</h3>
 <div class="lab-actions">
 <button class="btn btn-zip" onclick="openDlModal('tab5')">📦 Baixar ZIP</button>
 <button class="btn btn-primary" onclick="simulateMultiDbDockerUp()">▶ Simular <code>up -d</code></button>
 </div>
 </div>
-<div class="term-help"><strong>🖥️ Abrir terminal:</strong> <span class="ide-tag java">IntelliJ</span> <kbd>Alt+F12</kbd> · <span class="ide-tag cs">VS Code</span> <kbd>Ctrl+`</kbd>. Na pasta do <code>docker-compose.yml</code>.</div>
-<div class="grid-3">
-<div class="grid-card" style="border-left-color:var(--success)"><strong style="color:var(--success);font-family:var(--font-mono);display:block;margin-bottom:6px">up -d</strong><div class="text-sm text-muted">Cria volumes/redes, roda init, background.</div></div>
-<div class="grid-card" style="border-left-color:var(--primary)"><strong style="color:var(--primary);font-family:var(--font-mono);display:block;margin-bottom:6px">ps</strong><div class="text-sm text-muted">Status, portas, saúde.</div></div>
-<div class="grid-card" style="border-left-color:var(--warning)"><strong style="color:var(--warning);font-family:var(--font-mono);display:block;margin-bottom:6px">stop</strong><div class="text-sm text-muted">Para preservando volumes.</div></div>
-<div class="grid-card" style="border-left-color:var(--danger)"><strong style="color:var(--danger);font-family:var(--font-mono);display:block;margin-bottom:6px">down -v</strong><div class="text-sm text-muted">Derruba e APAGA volumes.</div></div>
-<div class="grid-card" style="border-left-color:var(--accent)"><strong style="color:var(--accent);font-family:var(--font-mono);display:block;margin-bottom:6px">logs -f</strong><div class="text-sm text-muted">Logs em tempo real.</div></div>
-<div class="grid-card" style="border-left-color:var(--primary)"><strong style="color:var(--primary);font-family:var(--font-mono);display:block;margin-bottom:6px">exec -it &lt;nome&gt; bash</strong><div class="text-sm text-muted">Shell no container.</div></div>
+
+<div class="step-box">
+<h4><span class="step-num">1</span>🖱️ Preparar a pasta</h4>
+<ol class="step-number-list">
+<li>Clique em <strong>📦 Baixar ZIP</strong> (acima) → <strong>Baixar ZIP agora</strong>.</li>
+<li>Na pasta <strong>Downloads</strong>: botão <strong>direito</strong> no ZIP → <strong>Extrair tudo…</strong> → troque o destino para <code>Documentos\Projetos\loja-infra</code> → <strong>Extrair</strong>.</li>
+<li>Abra a pasta <code>loja-infra</code>. Devem estar lá: o arquivo <code>docker-compose.yml</code> e as pastas <code>init-sql</code> e <code>init-mongo</code>.</li>
+</ol>
+<div class="tree-view"><span class="folder">📁 loja-infra/</span>
+├── <span class="file">📄 docker-compose.yml</span>        <span class="comment"># a "receita": quais containers ligar e como</span>
+├── <span class="folder">📁 init-sql/</span>
+│   └── <span class="file">📄 01-init.sql</span>            <span class="comment"># cria as tabelas e os dados de exemplo do MySQL</span>
+└── <span class="folder">📁 init-mongo/</span>
+    └── <span class="file">📄 01-init.js</span>             <span class="comment"># cria os documentos de exemplo do MongoDB</span></div>
 </div>
-<div id="docker-multi-out" class="terminal-window" style="display:none">
-<div class="terminal-bar"><span class="terminal-dot dot-red"></span><span class="terminal-dot dot-yellow"></span><span class="terminal-dot dot-green"></span><span class="terminal-title">docker compose up -d</span></div>
-<div class="terminal-body" id="docker-multi-text"></div>
+
+<div class="step-box">
+<h4><span class="step-num">2</span>Entender a receita (o <code>docker-compose.yml</code>)</h4>
+<p class="text-sm text-muted mb-2">Abra o arquivo no VS Code ou no IntelliJ para ler. Você não precisa mudar nada — os comentários (linhas com <code>#</code>) explicam cada parte. O resumo:</p>
+<div class="table-wrap" style="margin:12px 0">
+<table>
+<thead><tr><th>Trecho</th><th>Em português</th></tr></thead>
+<tbody>
+<tr><td><code>services:</code></td><td>"Os programas que eu quero ligar": <code>mysql-db</code> e <code>mongo-db</code></td></tr>
+<tr><td><code>image: mysql:8.4</code></td><td>"Use este molde" (baixado da internet na primeira vez)</td></tr>
+<tr><td><code>container_name:</code></td><td>"Dê este nome ao container" — é o nome que aparece no Docker Desktop</td></tr>
+<tr><td><code>environment:</code></td><td>Configurações: nome do banco, usuário e senha</td></tr>
+<tr><td><code>ports: "3306:3306"</code></td><td>"Abra a janela 3306 do meu computador para a 3306 do container"</td></tr>
+<tr><td><code>volumes:</code></td><td>"Guarde os dados neste pote" + "rode os scripts desta pasta na primeira vez"</td></tr>
+<tr><td><code>healthcheck:</code></td><td>"A cada 10s, confira se o banco já está pronto"</td></tr>
+</tbody>
+</table>
 </div>
-<h3 style="color:var(--primary);margin-top:24px;margin-bottom:14px">📄 docker-compose.yml (completo)</h3>
 <div class="code-editor-wrap">
-<span class="code-filepath">docker-compose.yml</span>
+<span class="code-filepath">docker-compose.yml (comentado linha a linha)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor" data-zip-path="docker-compose.yml"># COMPOSE DE INFRAESTRUTURA - SOMENTE BANCOS
-# =====================================================================
-# COMPOSE DE INFRAESTRUTURA - SOMENTE BANCOS
+<pre class="code-editor" data-zip-path="docker-compose.yml"># =====================================================================
+#  docker-compose.yml — a "receita" que sobe os 2 bancos do guia
 # ---------------------------------------------------------------------
-# Este arquivo sobe APENAS os serviços de banco de dados (MySQL e MongoDB)
-# para desenvolvimento local. Aplicações (APIs, workers, etc.) devem
-# rodar em outro compose ou diretamente na máquina host.
+#  Sobe APENAS os bancos de dados (MySQL e MongoDB) para estudar e para
+#  as APIs das próximas abas. As APIs rodam na sua máquina (IntelliJ /
+#  VS Code) e se conectam aqui pelas portas 3306 e 27017.
 #
-# Uso:
-#   docker compose up -d          -> sobe os bancos em background
-#   docker compose ps             -> verifica status
-#   docker compose logs -f mysql-db
-#   docker compose down           -> derruba (mantém volumes)
-#   docker compose down -v        -> derruba e APAGA os volumes (perde dados)
+#  Comandos (no terminal, na pasta deste arquivo):
+#    docker compose up -d        -&gt; liga os bancos (em segundo plano)
+#    docker compose ps           -&gt; mostra se estão ligados e saudáveis
+#    docker compose stop         -&gt; desliga (os dados ficam guardados)
+#    docker compose down -v      -&gt; desliga e APAGA os dados (recomeça do zero)
 # =====================================================================
 
 services:
 
   # -------------------------------------------------------------------
-  # MYSQL 8.4 - Banco relacional principal
+  # MYSQL 8.4 — banco RELACIONAL (tabelas)
   # -------------------------------------------------------------------
   mysql-db:
-    # Imagem oficial do MySQL. 8.4 = LTS (Long Term Support).
+    # A IMAGEM: o "molde" oficial do MySQL, baixado da internet (Docker Hub).
+    # 8.4 é a versão LTS (suporte de longo prazo).
     image: mysql:8.4
 
-    # Nome fixo do container (facilita 'docker exec -it dev_mysql_server ...').
-    # Útil em dev, mas evita usar em produção (nome global conflita).
+    # O nome do CONTAINER (o "bolo" feito com o molde). Nome fixo para
+    # os comandos ficarem iguais em todo computador. As Tabs 6, 7 e 9
+    # usam este nome — não mude.
     container_name: dev_mysql_server
 
-    # Reinicia automaticamente o container se cair, exceto se for parado manualmente.
+    # Se o container cair, o Docker liga de novo (exceto se VOCÊ o parar).
     restart: unless-stopped
 
-    # Variáveis lidas pela imagem na PRIMEIRA inicialização do volume.
-    # Atenção: se o volume já existir, alterar aqui NÃO muda senhas/DB.
+    # Configuração lida SÓ NA PRIMEIRA VEZ que o banco é criado.
+    # ⚠️ Mudar aqui depois não muda nada: use 'docker compose down -v'.
     environment:
-      MYSQL_ROOT_PASSWORD: root123          # senha do usuário root
-      MYSQL_DATABASE: loja_db               # DB criado automaticamente
-      MYSQL_USER: devuser                   # usuário comum criado
-      MYSQL_PASSWORD: devpass               # senha do usuário comum
-      TZ: America/Sao_Paulo                 # fuso horário do container
+      MYSQL_ROOT_PASSWORD: root123          # senha do administrador (root)
+      MYSQL_DATABASE: loja_db               # banco criado automaticamente
+      MYSQL_USER: devuser                   # usuário comum, para as APIs e o DBeaver
+      MYSQL_PASSWORD: devpass               # senha do devuser
+      TZ: America/Sao_Paulo                 # fuso horário
 
-    # Mapeia porta do host -> container. Formato "host:container".
-    # Exposto no host para permitir conexão via DBeaver/Workbench/etc.
+    # A PORTA: "janela" entre o seu computador e o container.
+    # Formato "porta-no-seu-PC:porta-no-container".
+    # Se o seu PC já tem um MySQL instalado usando a 3306, troque para "3307:3306".
     ports:
       - "3306:3306"
 
-    # Volumes: persistência de dados + scripts de inicialização.
     volumes:
-      # Volume nomeado: dados do MySQL persistem entre 'down/up'.
+      # O VOLUME: o "pote" onde os dados ficam guardados. Sobrevive mesmo
+      # se o container for apagado — só some com 'down -v'.
       - mysql_dev_data:/var/lib/mysql
-      # Pasta local com .sql/.sh executados UMA vez na criação do DB.
-      # Coloque aqui seus scripts em ./init-sql/*.sql
+      # Pasta do seu PC com os scripts .sql que criam as tabelas e os
+      # dados de exemplo. Rodam UMA vez, quando o banco é criado.
       - ./init-sql:/docker-entrypoint-initdb.d
 
-    # Anexa o container à rede customizada (permite DNS interno 'mysql-db').
     networks:
       - dev_network
 
-    # Healthcheck: permite que outras stacks esperem o MySQL estar pronto.
-    # 'mysqladmin ping' retorna OK quando o servidor aceita conexões.
+    # HEALTHCHECK: um teste automático, a cada 10s, que pergunta
+    # "o MySQL já está aceitando conexões?". Quando responde que sim,
+    # o container fica "healthy" (saudável) — a bolinha verde.
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot123"]
-      interval: 10s      # intervalo entre checagens
-      timeout: 5s        # tempo máximo de cada checagem
-      retries: 5         # tentativas antes de marcar como unhealthy
-      start_period: 30s  # (extra) carência inicial p/ o MySQL subir
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s   # carência: o MySQL leva ~20s para ligar na 1ª vez
 
   # -------------------------------------------------------------------
-  # MONGODB 7.0 - Banco NoSQL (documentos)
+  # MONGODB 7.0 — banco NÃO RELACIONAL (documentos)
   # -------------------------------------------------------------------
   mongo-db:
     image: mongo:7.0
     container_name: dev_mongo_server
     restart: unless-stopped
 
-    # Credenciais do usuário root do Mongo (admin).
-    # MONGO_INITDB_DATABASE cria o DB na primeira inicialização.
     environment:
-      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_USERNAME: root      # administrador do Mongo
       MONGO_INITDB_ROOT_PASSWORD: root123
-      MONGO_INITDB_DATABASE: loja_nosql
+      MONGO_INITDB_DATABASE: loja_nosql     # banco onde o script de carga roda
       TZ: America/Sao_Paulo
 
     ports:
-      - "27017:27017"    # exposto p/ Mongo Compass / mongosh no host
+      - "27017:27017"     # a porta padrão do MongoDB (usada pelo Compass)
 
     volumes:
-      # Persistência dos dados do Mongo.
-      - mongo_dev_data:/data/db
-      # Scripts .js/.sh rodados na criação inicial do DB.
-      - ./init-mongo:/docker-entrypoint-initdb.d
+      - mongo_dev_data:/data/db                   # o "pote" dos dados
+      - ./init-mongo:/docker-entrypoint-initdb.d  # scripts .js de carga inicial
 
     networks:
       - dev_network
 
-    # 'mongosh' é o shell oficial moderno (substitui 'mongo' legado).
-    # db.adminCommand('ping') retorna { ok: 1 } se o servidor responde.
+    # 'mongosh' é o terminal oficial do MongoDB. O comando 'ping'
+    # responde { ok: 1 } quando o banco está pronto.
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 20s
 
 # =====================================================================
-# VOLUMES NOMEADOS
-# ---------------------------------------------------------------------
-# Gerenciados pelo Docker. Persistem mesmo após 'docker compose down'.
-# Só são removidos com 'docker compose down -v' ou 'docker volume rm'.
+#  VOLUMES — os "potes" com nome. Guardados pelo Docker no seu PC.
+#  Só são apagados com 'docker compose down -v'.
 # =====================================================================
 volumes:
   mysql_dev_data:
-    driver: local
   mongo_dev_data:
-    driver: local
 
 # =====================================================================
-# REDE
-# ---------------------------------------------------------------------
-# Rede bridge isolada. Containers nela se enxergam pelo nome do serviço
-# (ex: 'mysql-db:3306' e 'mongo-db:27017' funcionam como hostname).
-# O 'name' fixa o nome real da rede (default seria algo como 'pasta_dev_network').
+#  REDE — uma rede privada só para estes containers. Dentro dela, um
+#  container acha o outro pelo NOME do serviço (mysql-db, mongo-db),
+#  como se fosse um endereço de site.
 # =====================================================================
 networks:
   dev_network:
     driver: bridge
     name: loja_dev_network</pre>
 </div>
-<div class="code-editor-wrap">
-<span class="code-filepath">terminal da IDE - subir e verificar</span>
-<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor"># Sobe MySQL + Mongo em background (-d = detached)
-docker compose up -d
-# Confere se ambos estão "Up" e healthy
-docker compose ps
-# Logs do MySQL (útil p/ ver o 01-init.sql no 1º boot)
-docker compose logs -f mysql-db</pre>
-</div>
-<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> porta 3306/27017 já em uso (outro banco local — pare-o ou mude a porta no compose); esquecer Docker Desktop aberto; editar init-sql sem recriar volume (use <code>down -v</code> + <code>up -d</code>).</div>
-<div class="success-banner"><strong>✅ Checklist:</strong> <code>docker compose ps</code> mostra ambos <em>healthy</em> · <code>SHOW TABLES</code> lista categorias/produtos · <code>db.produtos.find()</code> retorna seed.</div>
+<div class="info-banner"><strong>🔐 Usuários e senhas</strong> (são de estudo — nunca use senhas assim num sistema de verdade):
+<br>• <strong>MySQL:</strong> usuário <code>devuser</code> / senha <code>devpass</code> · banco <code>loja_db</code> · administrador <code>root</code> / <code>root123</code>
+<br>• <strong>MongoDB:</strong> usuário <code>root</code> / senha <code>root123</code> · banco <code>loja_nosql</code></div>
 </div>
 
+<div class="step-box">
+<h4><span class="step-num">3</span>Ligar</h4>
+<p class="text-sm text-muted mb-2">Para ligar, o jeito padrão é um comando — o Docker Desktop mostra o resultado. Abra um terminal <strong>na pasta <code>loja-infra</code></strong>:</p>
+<ol class="step-number-list">
+<li>Abra a pasta <code>loja-infra</code> no Explorador de Arquivos, clique na <strong>barra de endereço</strong> (onde aparece o caminho), digite <code>powershell</code> e aperte <kbd>Enter</kbd>: abre um terminal já nessa pasta. (Ou, na IDE: <strong>File → Open</strong> a pasta <code>loja-infra</code> e abra o terminal dela.)</li>
+<li>Digite e aperte <kbd>Enter</kbd>:</li>
+</ol>
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal, na pasta loja-infra</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">docker compose up -d</pre>
+</div>
+<p class="text-sm text-muted mb-2"><code>up</code> = "ligue o que está na receita"; <code>-d</code> = "em segundo plano" (devolve o terminal para você). Na primeira vez ele <strong>baixa</strong> as duas imagens (~1 GB, alguns minutos). No fim:</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">resultado esperado</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">✔ Network loja_dev_network    Created
+✔ Volume "loja-infra_mysql_dev_data"  Created
+✔ Volume "loja-infra_mongo_dev_data"  Created
+✔ Container dev_mysql_server  Started
+✔ Container dev_mongo_server  Started</pre>
+</div>
+<ol class="step-number-list" start="3">
+<li>🖱️ Abra o Docker Desktop → <strong>Containers</strong>. Aparece o grupo <strong>loja-infra</strong> com os dois containers. Espere ~30 segundos: os dois ficam com a bolinha <strong>verde</strong> 🟢.</li>
+<li>🖱️ Clique em <code>dev_mysql_server</code> → aba <strong>Logs</strong>. Perto do fim aparece <em>"ready for connections"</em> ("pronto para conexões"): o MySQL está no ar. Mais acima, dá para ver o <code>01-init.sql</code> sendo executado.</li>
+</ol>
+<div class="success-banner"><strong>✅ Pronto:</strong> você tem um MySQL e um MongoDB rodando no seu computador, já com tabelas e dados de exemplo. Eles continuam ligados até você desligar (parte ⑧) — mesmo se fechar o terminal.</div>
+</div>
+
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">⌨️ Prefere o terminal? Conferir sem o Docker Desktop</div>
+<div class="faq-a">
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal, na pasta loja-infra</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">docker compose ps                    # lista os containers: procure "Up (healthy)" nos dois
+docker compose logs mysql-db         # mostra o que o MySQL escreveu (o log)
+docker compose logs -f mongo-db      # -f = "fique mostrando ao vivo" → Ctrl+C para sair</pre>
+</div>
+<div class="table-wrap" style="margin:12px 0">
+<table>
+<thead><tr><th>Comando</th><th>O que faz</th></tr></thead>
+<tbody>
+<tr><td><code>docker compose up -d</code></td><td>Liga tudo (cria o que faltar)</td></tr>
+<tr><td><code>docker compose ps</code></td><td>Mostra o estado: ligado, saudável, portas</td></tr>
+<tr><td><code>docker compose logs -f</code></td><td>Mostra os logs ao vivo (<kbd>Ctrl+C</kbd> para sair)</td></tr>
+<tr><td><code>docker compose stop</code></td><td>Desliga, guardando os dados</td></tr>
+<tr><td><code>docker compose down -v</code></td><td>Desliga e <strong>apaga os dados</strong> (recomeça do zero)</td></tr>
+</tbody>
+</table>
+</div>
+<div id="docker-multi-out" class="terminal-window" style="display:none">
+<div class="terminal-bar"><span class="terminal-dot dot-red"></span><span class="terminal-dot dot-yellow"></span><span class="terminal-dot dot-green"></span><span class="terminal-title">docker compose up -d</span></div>
+<div class="terminal-body" id="docker-multi-text"></div>
+</div>
+</div></div>
+</div>
+
+<!-- ══════════════════════════ ④ MYSQL ══════════════════════════ -->
 <div class="lab-container">
-<div class="lab-header"><h3>🔌 Passo 1: Conectar e explorar (terminal da IDE)</h3></div>
-<div class="term-help"><strong>🖥️ Abrir terminal:</strong> <span class="ide-tag java">IntelliJ</span> <kbd>Alt+F12</kbd> · <span class="ide-tag cs">VS Code</span> <kbd>Ctrl+`</kbd>.</div>
-<div class="info-banner"><strong>🔎 Entendendo o <code>docker exec -it</code>:</strong> <code>exec</code> roda um comando DENTRO do container · <code>-i</code> interativo · <code>-t</code> TTY · nome do container · comando interno.</div>
+<div class="lab-header">
+<h3>④ 🐬 MySQL na prática (DBeaver)</h3>
+<div class="lab-actions"><a href="https://dbeaver.io/download/" target="_blank" class="btn btn-primary">⬇️ Site do DBeaver ↗</a></div>
+</div>
+<p class="text-sm text-muted">O <strong>DBeaver Community</strong> é um programa <strong>gratuito</strong> para ver e mexer em bancos relacionais: mostra as tabelas como planilhas e tem um editor para escrever SQL.</p>
+
+<div class="step-box">
+<h4><span class="step-num">1</span>🖱️ Instalar o DBeaver</h4>
+<ol class="step-number-list">
+<li>Entre em <a class="ext" href="https://dbeaver.io/download/" target="_blank"><strong>dbeaver.io/download</strong></a> → em <strong>Community Edition</strong>, clique em <strong>Windows (installer)</strong>.</li>
+<li>Abra o arquivo → escolha o idioma → <strong>Next</strong> → <strong>I Agree</strong> → <strong>For me</strong> (só para o seu usuário) → <strong>Next</strong> nas telas seguintes (pode deixar tudo como está) → <strong>Install</strong> → <strong>Finish</strong>.</li>
+<li>Abra o DBeaver. Se perguntar sobre <em>criar um banco de exemplo</em> (<em>sample database</em>), responda <strong>No</strong>.</li>
+</ol>
+</div>
+
+<div class="step-box">
+<h4><span class="step-num">2</span>🖱️ Conectar no MySQL do Docker</h4>
+<ol class="step-number-list">
+<li>Clique no ícone de <strong>tomada com +</strong> no canto superior esquerdo (<strong>New Database Connection</strong>, "nova conexão"). Atalho: <kbd>Ctrl+Shift+N</kbd>.</li>
+<li>Escolha <strong>MySQL</strong> (o golfinho) → <strong>Next</strong>.</li>
+<li>Preencha:
+<div class="table-wrap" style="margin:10px 0">
+<table>
+<thead><tr><th>Campo</th><th>Valor</th></tr></thead>
+<tbody>
+<tr><td><strong>Server Host</strong></td><td><code>localhost</code> ("este computador")</td></tr>
+<tr><td><strong>Port</strong></td><td><code>3306</code></td></tr>
+<tr><td><strong>Database</strong></td><td><code>loja_db</code></td></tr>
+<tr><td><strong>Username</strong></td><td><code>devuser</code></td></tr>
+<tr><td><strong>Password</strong></td><td><code>devpass</code> (marque <strong>Save password</strong>)</td></tr>
+</tbody>
+</table>
+</div></li>
+<li><strong>Importante:</strong> clique na aba <strong>Driver properties</strong> (no topo da mesma janela). Na lista, ache <strong>allowPublicKeyRetrieval</strong> e mude para <strong>true</strong>. (Sem isso, o MySQL 8 recusa a conexão — veja os erros comuns abaixo.)</li>
+<li>Clique em <strong>Test Connection…</strong> ("testar conexão"). Na primeira vez, ele pede para baixar o <strong>driver</strong> (o "tradutor" entre o DBeaver e o MySQL): <strong>Download</strong>. Deve aparecer <strong>Connected</strong> ✅ → <strong>OK</strong> → <strong>Finish</strong>.</li>
+<li>A conexão aparece na coluna da esquerda (<strong>Database Navigator</strong>). Abra as setinhas ▸: <strong>loja_db → Tables</strong> → lá estão <code>categorias</code> e <code>produtos</code>.</li>
+<li>Dê dois cliques em <code>produtos</code> → aba <strong>Data</strong> ("dados"): os 3 produtos de exemplo aparecem como uma <strong>planilha</strong>. A aba <strong>Properties</strong> mostra as colunas e os tipos.</li>
+</ol>
+<div class="warning-banner"><strong>⚠️ Erros comuns ao conectar:</strong>
+<ul>
+<li><strong><em>"Public Key Retrieval is not allowed"</em></strong> → faltou o <code>allowPublicKeyRetrieval = true</code> do item 4. Botão direito na conexão → <strong>Edit Connection</strong> → <strong>Driver properties</strong>.</li>
+<li><strong><em>"Communications link failure"</em> / <em>"Connection refused"</em></strong> → o container não está ligado: confira a bolinha verde no Docker Desktop.</li>
+<li><strong><em>"Access denied for user 'devuser'"</em></strong> → usuário ou senha digitados errado. Ou: você já tinha um <strong>MySQL instalado no Windows</strong> usando a porta 3306, e o DBeaver está falando com ele em vez do Docker — troque a porta no compose para <code>"3307:3306"</code>, rode <code>docker compose up -d</code> e use <code>3307</code> no DBeaver.</li>
+</ul></div>
+</div>
+
+<div class="step-box">
+<h4><span class="step-num">3</span>O CRUD em SQL, uma etapa de cada vez</h4>
+<p class="text-sm text-muted mb-2">Abra o <strong>editor de SQL</strong>: botão direito na conexão → <strong>SQL Editor → Open SQL script</strong> (atalho <kbd>Ctrl+]</kbd>). Abre um espaço em branco. Em cada etapa: <strong>apague o que estiver no editor, cole o comando, clique nele e aperte <kbd>Ctrl+Enter</kbd></strong> (executa o comando onde está o cursor). O resultado aparece embaixo, como planilha.</p>
+
+<h4 style="margin-top:18px">Etapa 1 — READ (ler): ver tudo</h4>
 <div class="code-editor-wrap">
-<span class="code-filepath">terminal da IDE - conexão comentada</span>
+<span class="code-filepath">SQL — etapa 1</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor">
-# ── MySQL: abre o cliente mysql DENTRO do container ──
-docker exec -it dev_mysql_server mysql -u root -proot123 loja_db    
--- ==========================================
--- 0) PREPARAÇÃO: ver o que já existe
--- ==========================================
-SHOW TABLES;                    -- deve listar: categorias, produtos
-DESCRIBE produtos;              -- confere colunas/tipos (bate com o schema)
-SELECT * FROM categorias;       -- ⚠️ PRECISA saber quais IDs existem!
-SELECT * FROM produtos;         -- estado atual dos dados (seed)
+<pre class="code-editor">SELECT * FROM produtos;</pre>
+</div>
+<p class="text-sm text-muted"><code>SELECT</code> = "mostre" · <code>*</code> = "todas as colunas" · <code>FROM produtos</code> = "da tabela produtos" · <code>;</code> = fim do comando. Resultado:</p>
+<div class="table-wrap" style="margin:8px 0">
+<table>
+<thead><tr><th>id</th><th>nome</th><th>preco</th><th>estoque</th><th>categoria_id</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Teclado Mecânico RGB</td><td>349.90</td><td>15</td><td>1</td></tr>
+<tr><td>2</td><td>Mouse Gamer 16000 DPI</td><td>189.50</td><td>20</td><td>1</td></tr>
+<tr><td>3</td><td>Headset 7.1 Surround</td><td>420.00</td><td>10</td><td>2</td></tr>
+</tbody>
+</table>
+</div>
 
--- ==========================================
--- 1) READ (Ler)
--- ==========================================
--- Todos os produtos:
-SELECT * FROM produtos;
-
--- Só alguns campos (mais enxuto):
-SELECT id, nome, preco, estoque, categoria_id FROM produtos;
-
--- Filtrando por faixa de preço:
-SELECT nome, preco FROM produtos WHERE preco BETWEEN 50 AND 500;
-
--- JOIN com categorias (mostra o nome da categoria em vez do ID):
-SELECT p.id, p.nome, p.preco, p.estoque, c.nome AS categoria
-  FROM produtos p
-  LEFT JOIN categorias c ON c.id = p.categoria_id
- ORDER BY p.id;
-
--- ==========================================
--- 2) CREATE (Inserir) — +2 itens novos
--- ==========================================
--- 🔎 Passo 1: descobrir um categoria_id VÁLIDO (a FK exige isso)
-SELECT id, nome FROM categorias;
-
--- 🔎 Passo 2: assumindo que existe categoria_id = 1 (ex.: "Periféricos")
---            e categoria_id = 2 (ex.: "Áudio"), insira 2 produtos:
-
-INSERT INTO produtos (nome, preco, estoque, categoria_id)
-VALUES ('Teclado Mecânico', 349.90, 15, 1);
-
-INSERT INTO produtos (nome, preco, estoque, categoria_id)
-VALUES ('Mouse Gamer', 199.50, 30, 1);
-
--- Alternativa: inserir os 2 de uma vez (mais eficiente):
--- INSERT INTO produtos (nome, preco, estoque, categoria_id) VALUES
---   ('Teclado Mecânico', 349.90, 15, 1),
---   ('Mouse Gamer',      199.50, 30, 1);
-
--- Conferir:
-SELECT id, nome, preco, estoque, categoria_id
+<h4 style="margin-top:18px">Etapa 2 — READ com filtro e ordem</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">SQL — etapa 2</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">SELECT nome, preco
   FROM produtos
- WHERE nome IN ('Teclado Mecânico', 'Mouse Gamer');
+ WHERE preco &gt; 200
+ ORDER BY preco DESC;</pre>
+</div>
+<p class="text-sm text-muted"><code>nome, preco</code> = só essas colunas · <code>WHERE preco &gt; 200</code> = "só os que custam mais de 200" · <code>ORDER BY preco DESC</code> = "do mais caro para o mais barato" (<code>DESC</code> = decrescente; <code>ASC</code> = crescente). Resultado: <strong>Headset (420.00)</strong> e <strong>Teclado (349.90)</strong>. O Mouse ficou de fora: custa menos de 200.</p>
 
--- 🧪 Teste de erro proposital (comentado) — descomente para ver as constraints agindo:
--- INSERT INTO produtos (nome, preco) VALUES ('Inválido', -10);       -- ❌ CHECK preco > 0
--- INSERT INTO produtos (nome, preco, categoria_id) VALUES ('X', 10, 999); -- ❌ FK inexistente
+<h4 style="margin-top:18px">Etapa 3 — juntar duas tabelas (JOIN)</h4>
+<p class="text-sm text-muted mb-2">A tabela <code>produtos</code> só guarda o <strong>número</strong> da categoria (<code>categoria_id</code>). O <strong>nome</strong> está na tabela <code>categorias</code>. O <code>JOIN</code> junta as duas, linha com linha, onde os números batem:</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">SQL — etapa 3</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">SELECT p.nome, p.preco, c.nome AS categoria
+  FROM produtos p
+  JOIN categorias c ON c.id = p.categoria_id;</pre>
+</div>
+<p class="text-sm text-muted"><code>produtos p</code> = "chame a tabela produtos de <strong>p</strong>" (um apelido, para escrever menos) · <code>JOIN categorias c</code> = "junte com categorias, apelidada <strong>c</strong>" · <code>ON c.id = p.categoria_id</code> = "onde o id da categoria for igual ao categoria_id do produto" · <code>AS categoria</code> = o nome da coluna no resultado. Resultado: cada produto <strong>com o nome</strong> da categoria — Teclado/Periféricos, Mouse/Periféricos, Headset/Áudio.</p>
 
--- ==========================================
--- 3) UPDATE (Atualizar)
--- ==========================================
--- Aumenta 10% o preço do Teclado Mecânico:
-UPDATE produtos
-   SET preco = preco * 1.10
- WHERE nome = 'Teclado Mecânico';
+<h4 style="margin-top:18px">Etapa 4 — CREATE (criar): um produto novo</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">SQL — etapa 4 (rode um comando de cada vez: clique no INSERT e Ctrl+Enter, depois no SELECT)</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">INSERT INTO produtos (nome, preco, estoque, categoria_id)
+VALUES ('Webcam Full HD', 259.90, 8, 1);
 
--- Repõe estoque do Mouse Gamer em +20 unidades:
-UPDATE produtos
-   SET estoque = estoque + 20
- WHERE nome = 'Mouse Gamer';
+SELECT * FROM produtos WHERE nome = 'Webcam Full HD';</pre>
+</div>
+<p class="text-sm text-muted"><code>INSERT INTO produtos (...)</code> = "coloque em produtos, nestas colunas" · <code>VALUES (...)</code> = "estes valores, na mesma ordem". Texto vai entre <strong>aspas simples</strong> <code>'...'</code>; número, sem aspas. O <code>id</code> não foi informado: o MySQL deu o <strong>4</strong> sozinho (é o <code>AUTO_INCREMENT</code>). Na aba <strong>Data</strong> de <code>produtos</code>, clique em 🔄 (Refresh) para ver a linha nova.</p>
 
--- Atualização múltipla (preço E estoque no mesmo comando):
-UPDATE produtos
-   SET preco = 219.90,
-       estoque = 50
- WHERE nome = 'Mouse Gamer';
+<h4 style="margin-top:18px">Etapa 5 — UPDATE (atualizar): mudar o preço</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">SQL — etapa 5</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">UPDATE produtos
+   SET preco = 239.90, estoque = estoque + 5
+ WHERE nome = 'Webcam Full HD';
 
--- Confere:
-SELECT id, nome, preco, estoque FROM produtos
- WHERE nome IN ('Teclado Mecânico', 'Mouse Gamer');
+SELECT nome, preco, estoque FROM produtos WHERE nome = 'Webcam Full HD';</pre>
+</div>
+<p class="text-sm text-muted"><code>UPDATE produtos</code> = "altere em produtos" · <code>SET preco = 239.90</code> = "o preço passa a ser 239.90" · <code>estoque = estoque + 5</code> = "o estoque passa a ser o que era, mais 5" · <code>WHERE ...</code> = "<strong>só</strong> na Webcam". Resultado: <strong>239.90</strong> e estoque <strong>13</strong>.</p>
+<div class="warning-banner"><strong>⚠️ A regra mais importante do SQL: nunca rode <code>UPDATE</code> ou <code>DELETE</code> sem <code>WHERE</code>.</strong> <code>UPDATE produtos SET preco = 1;</code> muda o preço de <strong>todos</strong> os produtos de uma vez. O DBeaver até pergunta se você tem certeza — mas, no terminal, ninguém pergunta.</div>
 
--- ==========================================
--- 4) DELETE (Remover) — apaga 1 item
--- ==========================================
-DELETE FROM produtos WHERE nome = 'Mouse Gamer';
+<h4 style="margin-top:18px">Etapa 6 — DELETE (apagar)</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">SQL — etapa 6</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">DELETE FROM produtos WHERE nome = 'Webcam Full HD';
 
--- Conferir que sumiu (deve retornar 0 linhas):
-SELECT * FROM produtos WHERE nome = 'Mouse Gamer';
+SELECT * FROM produtos WHERE nome = 'Webcam Full HD';</pre>
+</div>
+<p class="text-sm text-muted">"Apague de produtos a linha da Webcam." O <code>SELECT</code> depois volta <strong>vazio</strong> (0 linhas): ela sumiu. Se você inserir outro produto agora, ele ganha o id <strong>5</strong>, não o 4: o <code>AUTO_INCREMENT</code> nunca reaproveita números.</p>
 
--- ⚠️ CUIDADOS:
--- DELETE FROM produtos;                    -- apaga TODOS os registros
--- DELETE FROM produtos WHERE categoria_id = 1;  -- apaga por categoria
--- (O AUTO_INCREMENT NÃO reinicia sozinho; use TRUNCATE se quiser resetar.)
+<h4 style="margin-top:18px">Etapa 7 — o banco se defende: erros de propósito</h4>
+<p class="text-sm text-muted mb-2">As tabelas têm <strong>regras</strong> (veja o <code>01-init.sql</code> na parte ⑥). Tente quebrá-las — rode um de cada vez:</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">SQL — etapa 7 (os dois DEVEM dar erro)</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">-- Preço negativo: barrado pela regra CHECK (preco &gt; 0)
+INSERT INTO produtos (nome, preco, estoque, categoria_id) VALUES ('Produto X', -10, 1, 1);
 
--- ==========================================
--- 5) SAIR DO SHELL
--- ==========================================
-EXIT;
--- ou: \q
--- ou: Ctrl + D</pre>
+-- Categoria 999, que não existe: barrado pela chave estrangeira (FOREIGN KEY)
+INSERT INTO produtos (nome, preco, estoque, categoria_id) VALUES ('Produto Y', 10, 1, 999);</pre>
+</div>
+<p class="text-sm text-muted">Erros esperados: <em>"Check constraint 'chk_preco' is violated"</em> e <em>"Cannot add or update a child row: a foreign key constraint fails"</em>. <strong>É uma boa notícia:</strong> o banco recusou dado errado, mesmo que a API tenha um bug. É a última linha de defesa.</p>
+
+<h4 style="margin-top:18px">Etapa 8 — contas com os dados (agregação)</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">SQL — etapa 8</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">SELECT c.nome AS categoria,
+       COUNT(*)     AS quantidade,
+       AVG(p.preco) AS preco_medio,
+       SUM(p.estoque) AS estoque_total
+  FROM produtos p
+  JOIN categorias c ON c.id = p.categoria_id
+ GROUP BY c.nome;</pre>
+</div>
+<p class="text-sm text-muted"><code>GROUP BY c.nome</code> = "faça um grupo por categoria" · <code>COUNT(*)</code> = quantos produtos · <code>AVG</code> = média · <code>SUM</code> = soma. Resultado: <strong>Periféricos</strong> — 2 produtos, preço médio 269.70, estoque 35 · <strong>Áudio</strong> — 1 produto, 420.00, estoque 10. É assim que se fazem relatórios.</p>
+<div class="table-wrap" style="margin:12px 0">
+<table>
+<thead><tr><th>Você usou</th><th>Para que serve</th></tr></thead>
+<tbody>
+<tr><td><code>SELECT … FROM … WHERE … ORDER BY</code></td><td><strong>Ler</strong>: escolher colunas, filtrar linhas, ordenar</td></tr>
+<tr><td><code>JOIN … ON …</code></td><td>Juntar tabelas pelas chaves</td></tr>
+<tr><td><code>INSERT INTO … VALUES</code></td><td><strong>Criar</strong> linhas</td></tr>
+<tr><td><code>UPDATE … SET … WHERE</code></td><td><strong>Atualizar</strong> linhas (sempre com <code>WHERE</code>!)</td></tr>
+<tr><td><code>DELETE FROM … WHERE</code></td><td><strong>Apagar</strong> linhas (sempre com <code>WHERE</code>!)</td></tr>
+<tr><td><code>COUNT</code> · <code>AVG</code> · <code>SUM</code> + <code>GROUP BY</code></td><td>Fazer contas por grupo (relatórios)</td></tr>
+</tbody>
+</table>
 </div>
 </div>
 
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">⌨️ Prefere o terminal? O mesmo CRUD pelo cliente mysql</div>
+<div class="faq-a">
+<p><strong>1)</strong> No terminal, entre no MySQL que está <strong>dentro</strong> do container:</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">docker exec -it dev_mysql_server mysql -u devuser -pdevpass loja_db</pre>
+</div>
+<p class="text-sm"><code>docker exec</code> = "rode um comando dentro de um container" · <code>-it</code> = "no modo conversa" (você digita, ele responde) · <code>dev_mysql_server</code> = qual container · <code>mysql -u devuser -pdevpass loja_db</code> = o programa cliente do MySQL, com usuário, senha (colada no <code>-p</code>, sem espaço) e banco. O terminal muda para <code>mysql&gt;</code>: a partir daqui você digita <strong>SQL</strong>, não comandos do sistema.</p>
+<p><strong>2)</strong> Rode as etapas 1 a 8 acima, <strong>um comando por vez</strong> (cada um termina em <code>;</code> + <kbd>Enter</kbd>). Dois comandos úteis que só existem no terminal:</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">dentro do mysql></span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">SHOW TABLES;            -- lista as tabelas do banco
+DESCRIBE produtos;      -- mostra as colunas e os tipos da tabela
+EXIT;                   -- sai do mysql e volta ao terminal normal</pre>
+</div>
+<p class="text-sm">No <strong>Docker Desktop</strong> dá para chegar no mesmo lugar sem o <code>docker exec</code>: <strong>Containers</strong> → clique em <code>dev_mysql_server</code> → aba <strong>Exec</strong> → digite <code>mysql -u devuser -pdevpass loja_db</code>.</p>
+</div></div>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=sql+para+iniciantes+select+insert+update+delete" target="_blank">SQL para iniciantes: SELECT, INSERT, UPDATE, DELETE</a> · <a class="ext" href="https://www.youtube.com/results?search_query=join+sql+explica%C3%A7%C3%A3o" target="_blank">JOIN explicado</a> · <a class="ext" href="https://www.youtube.com/results?search_query=dbeaver+conectar+mysql" target="_blank">Conectar no MySQL pelo DBeaver</a></div>
+</div>
+
+<!-- ══════════════════════════ ⑤ MONGODB ══════════════════════════ -->
 <div class="lab-container">
-<div class="lab-header"><h3>📦 Passo 2: De onde vieram os dados? (DDL/DML)</h3></div>
-<div class="deep-concept-box" style="margin-bottom:14px">
-<h3>🚪 /docker-entrypoint-initdb.d</h3>
-<p>Arquivos <code>.sql</code>/<code>.js</code> montados aí rodam <strong>uma vez, no primeiro boot com volume vazio</strong>, em ordem alfanumérica. <strong>DDL</strong> cria estruturas; <strong>DML</strong> insere seed. Tabela <code>categorias</code> + FK habilita JOINs e um ER mais rico.</p>
+<div class="lab-header">
+<h3>⑤ 🍃 MongoDB na prática (MongoDB Compass)</h3>
+<div class="lab-actions"><a href="https://www.mongodb.com/try/download/compass" target="_blank" class="btn btn-primary">⬇️ Site do Compass ↗</a></div>
+</div>
+<p class="text-sm text-muted">O <strong>MongoDB Compass</strong> é o programa <strong>oficial e gratuito</strong> para ver e mexer no MongoDB. Lembre a diferença (Tab 1): no MongoDB não há tabelas com colunas fixas, e sim <strong>coleções</strong> de <strong>documentos</strong> — fichas em formato JSON.</p>
+
+<div class="step-box">
+<h4><span class="step-num">1</span>🖱️ Instalar e conectar</h4>
+<ol class="step-number-list">
+<li>Entre em <a class="ext" href="https://www.mongodb.com/try/download/compass" target="_blank"><strong>mongodb.com/try/download/compass</strong></a> → <strong>Platform: Windows 64-bit</strong>, <strong>Package: exe</strong> → <strong>Download</strong> → abra o arquivo (ele instala e abre sozinho).</li>
+<li>Na tela inicial, clique em <strong>Add new connection</strong> ("nova conexão") — ou <strong>+</strong> ao lado de <em>Connections</em>.</li>
+<li>No campo <strong>URI</strong>, apague o que estiver lá e cole:</li>
+</ol>
+<div class="code-editor-wrap">
+<span class="code-filepath">URI de conexão</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">mongodb://root:root123@localhost:27017/?authSource=admin</pre>
+</div>
+<p class="text-sm text-muted">Lendo o endereço: <code>mongodb://</code> = o tipo de banco · <code>root:root123</code> = usuário e senha · <code>@localhost:27017</code> = "neste computador, na porta 27017" · <code>?authSource=admin</code> = "a senha está cadastrada no banco <em>admin</em>" (é onde o usuário root mora).</p>
+<ol class="step-number-list" start="4">
+<li>Em <strong>Name</strong>, escreva <code>Docker local</code> → <strong>Save &amp; Connect</strong> ("salvar e conectar").</li>
+<li>Na coluna da esquerda, abra <strong>loja_nosql</strong> → clique em <strong>produtos</strong>. Os 3 documentos aparecem como <strong>fichas</strong>. No topo, os botões trocam a visualização: <strong>lista</strong>, <strong>JSON</strong> ou <strong>tabela</strong>.</li>
+</ol>
+<div class="info-banner"><strong>👀 Compare com o MySQL:</strong> o documento traz a categoria <strong>escrita dentro</strong> (<code>"categoria": "Periféricos"</code>) e uma <strong>lista</strong> de <code>tags</code>. No MySQL, a categoria fica noutra tabela (e precisa de JOIN) e uma lista pediria uma terceira tabela. O <code>_id</code> com letras e números (<code>ObjectId</code>) é o "id" que o MongoDB cria sozinho.</div>
+<div class="warning-banner"><strong>⚠️ <em>"Authentication failed"</em>?</strong> Faltou o <code>?authSource=admin</code> no fim do endereço, ou a senha foi digitada errado. <strong><em>"connect ECONNREFUSED"</em></strong>? O container <code>dev_mongo_server</code> não está ligado (Docker Desktop).</div>
+</div>
+
+<div class="step-box">
+<h4><span class="step-num">2</span>🖱️ O CRUD pelo Compass</h4>
+<ol class="step-number-list">
+<li><strong>READ com filtro:</strong> na barra <strong>Filter</strong> ("filtro"), no topo da lista, cole <code>{ preco: { $gt: 200 } }</code> → <strong>Find</strong>. Aparecem só o Teclado e o Headset. Lendo: "documentos em que <code>preco</code> é <strong>$gt</strong> (<em>greater than</em>, maior que) 200". Limpe o filtro (<strong>Reset</strong>) para ver todos de novo.</li>
+<li><strong>CREATE:</strong> botão verde <strong>ADD DATA → Insert document</strong> ("inserir documento") → apague o conteúdo da janela e cole o documento abaixo → <strong>Insert</strong>.</li>
+</ol>
+<div class="code-editor-wrap">
+<span class="code-filepath">documento para colar no Insert document do Compass</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">{
+  "nome": "Webcam Full HD",
+  "preco": { "$numberDecimal": "259.90" },
+  "estoque": 8,
+  "categoria": "Periféricos",
+  "tags": ["webcam", "video"]
+}</pre>
+</div>
+<p class="text-sm text-muted">O <code>{ "$numberDecimal": "259.90" }</code> é o jeito de escrever um <strong>Decimal128</strong> (número exato, para dinheiro) nesta janela. Não informamos <code>_id</code>: o MongoDB cria sozinho.</p>
+<ol class="step-number-list" start="3">
+<li><strong>UPDATE:</strong> passe o mouse sobre o documento da Webcam → ícone de <strong>lápis</strong> ✏️ (<em>Edit document</em>) → clique no valor de <code>estoque</code>, troque <code>8</code> por <code>13</code> → <strong>Update</strong>. Pelo mesmo lápis dá para <strong>acrescentar um campo</strong> (o <strong>+</strong> à esquerda de uma linha) — algo impossível no MySQL sem mudar a tabela inteira.</li>
+<li><strong>DELETE:</strong> ícone de <strong>lixeira</strong> 🗑 no documento da Webcam → <strong>Delete</strong> para confirmar.</li>
+</ol>
+</div>
+
+<div class="step-box">
+<h4><span class="step-num">3</span>O mesmo CRUD por comandos (dentro do Compass)</h4>
+<p class="text-sm text-muted mb-2">Embaixo da janela do Compass há uma faixa <strong>&gt;_MONGOSH</strong>: clique nela para abrir um <strong>terminal do MongoDB</strong>, já conectado. Rode um comando por vez (<kbd>Enter</kbd> executa):</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">mongosh — um comando por vez</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">use loja_nosql
+
+// READ: todos os documentos
+db.produtos.find()
+
+// READ com filtro (preço &gt; 200) e só os campos nome e preco (1 = mostrar)
+db.produtos.find({ preco: { $gt: 200 } }, { nome: 1, preco: 1 })
+
+// CREATE: um documento novo (NumberDecimal = número exato, para dinheiro)
+db.produtos.insertOne({ nome: "Monitor 27 144Hz", preco: NumberDecimal("1899.00"), estoque: 5, categoria: "Vídeo", tags: ["monitor"] })
+
+// UPDATE: $set troca o valor de um campo; $inc soma ao valor atual
+db.produtos.updateOne({ nome: "Monitor 27 144Hz" }, { $set: { preco: NumberDecimal("1799.00") }, $inc: { estoque: 3 } })
+
+// DELETE: apaga o primeiro documento que bater com o filtro
+db.produtos.deleteOne({ nome: "Monitor 27 144Hz" })
+
+// Quantos documentos existem?
+db.produtos.countDocuments()</pre>
+</div>
+<div class="table-wrap" style="margin:12px 0">
+<table>
+<thead><tr><th>CRUD</th><th>🐬 MySQL (SQL)</th><th>🍃 MongoDB (mongosh)</th></tr></thead>
+<tbody>
+<tr><td>Criar</td><td><code>INSERT INTO produtos … VALUES …</code></td><td><code>db.produtos.insertOne({ … })</code></td></tr>
+<tr><td>Ler</td><td><code>SELECT … FROM produtos WHERE preco &gt; 200</code></td><td><code>db.produtos.find({ preco: { $gt: 200 } })</code></td></tr>
+<tr><td>Atualizar</td><td><code>UPDATE produtos SET … WHERE …</code></td><td><code>db.produtos.updateOne({ filtro }, { $set: { … } })</code></td></tr>
+<tr><td>Apagar</td><td><code>DELETE FROM produtos WHERE …</code></td><td><code>db.produtos.deleteOne({ filtro })</code></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">⌨️ Prefere o terminal? O mongosh pelo docker exec</div>
+<div class="faq-a">
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">docker exec -it dev_mongo_server mongosh -u root -p root123 --authenticationDatabase admin loja_nosql</pre>
+</div>
+<p class="text-sm">Mesma ideia do MySQL: entra no <code>mongosh</code> que está <strong>dentro</strong> do container, com usuário, senha, o banco onde a senha mora (<code>admin</code>) e o banco para trabalhar (<code>loja_nosql</code>). O terminal muda para <code>loja_nosql&gt;</code>: rode os comandos do passo 3. Para sair: <code>exit</code>. (No Docker Desktop: <code>dev_mongo_server</code> → aba <strong>Exec</strong> → digite o mesmo comando a partir de <code>mongosh</code>.)</p>
+</div></div>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=mongodb+para+iniciantes" target="_blank">MongoDB para iniciantes</a> · <a class="ext" href="https://www.youtube.com/results?search_query=mongodb+compass+tutorial" target="_blank">MongoDB Compass</a></div>
+</div>
+
+<!-- ══════════════════════════ ⑥ DE ONDE VIERAM OS DADOS ══════════════════════════ -->
+<div class="lab-container">
+<div class="lab-header"><h3>⑥ 📦 De onde vieram as tabelas e os dados?</h3></div>
+<p>Você ligou os bancos e eles já tinham tabelas e produtos. Quem fez isso foram os scripts das pastas <code>init-sql</code> e <code>init-mongo</code>. O compose liga essas pastas a uma pasta especial dos containers, a <code>/docker-entrypoint-initdb.d</code>: tudo o que estiver lá roda <strong>sozinho, uma única vez</strong> — quando o banco é criado pela primeira vez (com o volume vazio), em ordem alfabética (<code>01-…</code>, <code>02-…</code>).</p>
+<div class="table-wrap" style="margin:12px 0">
+<table>
+<thead><tr><th>Tipo de comando</th><th>Para que serve</th><th>Exemplos</th></tr></thead>
+<tbody>
+<tr><td><strong>DDL</strong> — <em>Data Definition Language</em></td><td>Define a <strong>estrutura</strong>: cria e muda tabelas</td><td><code>CREATE TABLE</code>, <code>ALTER TABLE</code>, <code>DROP TABLE</code>, <code>CREATE INDEX</code></td></tr>
+<tr><td><strong>DML</strong> — <em>Data Manipulation Language</em></td><td>Mexe nos <strong>dados</strong> dentro das tabelas</td><td><code>INSERT</code>, <code>SELECT</code>, <code>UPDATE</code>, <code>DELETE</code> — o CRUD da parte ④</td></tr>
+</tbody>
+</table>
 </div>
 <div class="split-view">
 <div class="split-col">
-<h4 style="color:var(--primary);margin-bottom:8px">🐬 init-sql/01-init.sql (com categorias p/ JOIN)</h4>
+<h4 style="color:var(--primary);margin-bottom:8px">🐬 MySQL: tabelas + dados</h4>
 <div class="code-editor-wrap">
 <span class="code-filepath">init-sql/01-init.sql</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor" data-zip-path="init-sql/01-init.sql">USE loja_db;
--- DDL: tabela de categorias (lado "1")
+<pre class="code-editor" data-zip-path="init-sql/01-init.sql">-- =====================================================================
+--  01-init.sql — cria as tabelas e os dados de exemplo do MySQL.
+--  Roda sozinho UMA vez, quando o container é criado com o volume vazio.
+--  Para rodar de novo: docker compose down -v  e depois  docker compose up -d
+-- =====================================================================
+
+USE loja_db;   -- "trabalhe dentro do banco loja_db"
+
+-- ── Tabela CATEGORIAS ────────────────────────────────────────────────
+-- Cada categoria tem um número (id) e um nome.
 CREATE TABLE IF NOT EXISTS categorias (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  nome VARCHAR(60) NOT NULL UNIQUE
-);
--- DDL: tabela de produtos (lado "N"), com FK
-CREATE TABLE IF NOT EXISTS produtos (
-  id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  nome VARCHAR(100) NOT NULL,
-  preco DECIMAL(10,2) NOT NULL,
-  estoque INT NOT NULL DEFAULT 0,
-  categoria_id INT,
-  CONSTRAINT fk_cat FOREIGN KEY (categoria_id) REFERENCES categorias(id),
-  CONSTRAINT chk_preco CHECK (preco > 0),
-  CONSTRAINT chk_estoque CHECK (estoque >= 0)
+  id   INT AUTO_INCREMENT PRIMARY KEY,   -- o MySQL numera sozinho: 1, 2, 3...
+  nome VARCHAR(60) NOT NULL UNIQUE       -- texto de até 60 letras; obrigatório; sem repetir
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
--- DML: seed de categorias
-INSERT INTO categorias (nome) VALUES ('Perifericos'),('Audio');
--- DML: seed de produtos
-INSERT INTO produtos (nome,preco,estoque,categoria_id) VALUES
- ('Teclado Mecanico RGB',349.90,15,1),
- ('Mouse Gamer 16000 DPI',189.50,20,1),
- ('Headset 7.1 Surround',420.00,10,2);
-CREATE INDEX idx_nome ON produtos(nome);</pre>
+
+-- ── Tabela PRODUTOS ──────────────────────────────────────────────────
+-- Cada produto PERTENCE a uma categoria: a coluna categoria_id guarda
+-- o id da categoria. Isso é uma CHAVE ESTRANGEIRA (FOREIGN KEY).
+CREATE TABLE IF NOT EXISTS produtos (
+  id           BIGINT AUTO_INCREMENT PRIMARY KEY,  -- BIGINT: as APIs Java/C# esperam este tipo
+  nome         VARCHAR(100) NOT NULL,
+  preco        DECIMAL(10,2) NOT NULL,             -- dinheiro: casas decimais EXATAS (nunca FLOAT)
+  estoque      INT NOT NULL DEFAULT 0,
+  categoria_id INT,
+  -- A FK impede um produto de apontar para uma categoria que não existe:
+  CONSTRAINT fk_cat      FOREIGN KEY (categoria_id) REFERENCES categorias(id),
+  -- CHECK: regras que o banco confere em TODA gravação:
+  CONSTRAINT chk_preco   CHECK (preco &gt; 0),
+  CONSTRAINT chk_estoque CHECK (estoque &gt;= 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ÍNDICE: um "sumário" para achar produtos pelo nome sem ler a tabela toda.
+CREATE INDEX idx_nome ON produtos(nome);
+
+-- ── Dados de exemplo (seed) ──────────────────────────────────────────
+INSERT INTO categorias (nome) VALUES ('Periféricos'), ('Áudio');   -- viram id 1 e id 2
+
+INSERT INTO produtos (nome, preco, estoque, categoria_id) VALUES
+  ('Teclado Mecânico RGB',  349.90, 15, 1),
+  ('Mouse Gamer 16000 DPI', 189.50, 20, 1),
+  ('Headset 7.1 Surround',  420.00, 10, 2);</pre>
 </div>
 </div>
 <div class="split-col">
-<h4 style="color:var(--mongo-green);margin-bottom:8px">🍃 init-mongo/01-init.js</h4>
+<h4 style="color:var(--mongo-green);margin-bottom:8px">🍃 MongoDB: coleção + documentos</h4>
 <div class="code-editor-wrap">
 <span class="code-filepath">init-mongo/01-init.js</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor" data-zip-path="init-mongo/01-init.js">db = db.getSiblingDB('loja_nosql');
+<pre class="code-editor" data-zip-path="init-mongo/01-init.js">// =====================================================================
+//  01-init.js — cria a coleção e os documentos de exemplo do MongoDB.
+//  Roda sozinho UMA vez, quando o container é criado com o volume vazio.
+// =====================================================================
+
+// "Trabalhe dentro do banco loja_nosql" (é criado se não existir).
+db = db.getSiblingDB('loja_nosql');
+
+// Uma COLEÇÃO é o equivalente a uma tabela: um grupo de documentos.
 db.createCollection('produtos');
+
+// ÍNDICE pelo nome — mesma ideia do idx_nome do MySQL.
 db.produtos.createIndex({ nome: 1 });
-// Seed BSON (espelho do relacional p/ testes de migração)
+
+// Os MESMOS 3 produtos do MySQL, agora como DOCUMENTOS (fichas em JSON).
+// Repare nas diferenças:
+//  • a categoria vem DENTRO do documento (não há tabela separada nem JOIN);
+//  • 'tags' é uma LISTA — algo que, no MySQL, pediria outra tabela;
+//  • o preço usa NumberDecimal (Decimal128): número EXATO, sem erro de
+//    centavos. Um número comum (349.90) é guardado de forma aproximada.
+//    É a regra que as Tabs 6-B e 9-B seguem ao migrar para o MongoDB.
 db.produtos.insertMany([
-  { nome: "Teclado Mecanico RGB", preco: 349.90, estoque: 15,
-    tags: ["periferico"], origem: "seed-inicial", criadoEm: new Date() },
-  { nome: "Mouse Gamer 16000 DPI", preco: 189.50, estoque: 20,
-    tags: ["periferico"], origem: "seed-inicial", criadoEm: new Date() },
-  { nome: "Headset 7.1 Surround", preco: 420.00, estoque: 10,
-    tags: ["audio"], origem: "seed-inicial", criadoEm: new Date() }
+  { nome: "Teclado Mecânico RGB",  preco: NumberDecimal("349.90"), estoque: 15,
+    categoria: "Periféricos", tags: ["teclado", "rgb"],  criadoEm: new Date() },
+  { nome: "Mouse Gamer 16000 DPI", preco: NumberDecimal("189.50"), estoque: 20,
+    categoria: "Periféricos", tags: ["mouse", "gamer"], criadoEm: new Date() },
+  { nome: "Headset 7.1 Surround",  preco: NumberDecimal("420.00"), estoque: 10,
+    categoria: "Áudio",       tags: ["headset"],        criadoEm: new Date() }
 ]);
-print("✅ Seed loja_nosql.produtos");</pre>
+
+print("✅ loja_nosql.produtos: 3 documentos criados");</pre>
 </div>
 </div>
 </div>
-<div class="term-help"><strong>🖥️ Para REEXECUTAR os scripts:</strong> <code>docker compose down -v && docker compose up -d</code> (o <code>-v</code> apaga volumes, simulando primeiro boot).</div>
+<div class="warning-banner"><strong>⚠️ Mudei o script e nada aconteceu?</strong> Normal: ele só roda quando o banco é <strong>criado</strong>. Para rodar de novo, é preciso apagar o volume e recriar — veja a parte ⑧. (Por isso as APIs das próximas abas criam as próprias tabelas, em vez de depender deste script.)</div>
 </div>
 
-<div class="lab-container">
-<div class="lab-header"><h3>🧪 Playground de Dados (CRUD completo)</h3></div>
-<div class="split-view">
-<div class="split-col">
-<h4 style="color:var(--primary);margin-bottom:8px">🐬 MySQL: INSERT/SELECT/UPDATE/DELETE</h4>
-<div class="code-editor-wrap">
-<span class="code-filepath">shell MySQL (docker exec)</span>
-<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor"># CREATE: insere mais um produto
-INSERT INTO produtos (nome,preco,estoque,categoria_id)
-VALUES ('Monitor 27 144Hz',1899.00,5,1);
-# READ: filtros + ordenação + limite
-SELECT nome, preco FROM produtos WHERE preco > 200 ORDER BY preco DESC LIMIT 2;
-# READ com JOIN + agregação por categoria
-SELECT c.nome AS categoria, COUNT(*) AS qtd, AVG(p.preco) AS preco_medio
-FROM produtos p JOIN categorias c ON c.id = p.categoria_id
-GROUP BY c.nome;
-# UPDATE: reajuste com WHERE (sem WHERE atualiza TUDO!)
-UPDATE produtos SET preco = preco * 1.10 WHERE categoria_id = 1;
-# DELETE: remove com WHERE
-DELETE FROM produtos WHERE nome LIKE 'Monitor%';</pre>
-</div>
-</div>
-<div class="split-col">
-<h4 style="color:var(--mongo-green);margin-bottom:8px">🍃 Mongo: insert/find/update/delete</h4>
-<div class="code-editor-wrap">
-<span class="code-filepath">mongosh (docker exec)</span>
-<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor">use loja_nosql
-// CREATE
-db.produtos.insertOne({ nome:"Monitor 27 144Hz", preco:1899.00, estoque:5, tags:["video"] })
-// READ com filtro + projeção + sort
-db.produtos.find({ preco: { $gt: 200 } }, { nome:1, preco:1 }).sort({ preco:-1 })
-// UPDATE: $set muda campo, $inc incrementa
-db.produtos.updateOne({ nome:"Teclado Mecanico RGB" }, { $set:{ preco:379.90 }, $inc:{ estoque:3 } })
-// DELETE
-db.produtos.deleteOne({ nome:"Monitor 27 144Hz" })
-db.produtos.countDocuments()</pre>
-</div>
-</div>
-</div>
-<h4 class="diag-title">📐 D-04 <span class="dt-type">ER</span> — Modelo relacional MySQL (categorias⟷produtos)</h4>
+<!-- ══════════════════════════ ⑦ LADO A LADO ══════════════════════════ -->
+<div class="deep-concept-box">
+<h3>⑦ ⚖️ Os dois bancos lado a lado</h3>
+<h4 class="diag-title">📐 D-04 <span class="dt-type">ER</span> — O modelo do MySQL: uma categoria tem muitos produtos</h4>
 <div class="mermaid-box er-small" data-code='erDiagram
     CATEGORIAS ||--o{ PRODUTOS : possui
-    CATEGORIAS { int id PK string nome }
-    PRODUTOS { int id PK string nome decimal preco int estoque int categoria_id FK }'>
+    CATEGORIAS {
+        int id PK
+        varchar nome
+    }
+    PRODUTOS {
+        bigint id PK
+        varchar nome
+        decimal preco
+        int estoque
+        int categoria_id FK
+    }'>
 <div class="mermaid"></div>
 </div>
-<h4 class="diag-title">📐 D-05 <span class="dt-type">Fluxo</span> — Mapeamento relacional→documento (BSON)</h4>
+<p class="text-sm text-muted">Como ler: cada caixa é uma <strong>tabela</strong>, com as colunas e os tipos. <strong>PK</strong> (<em>primary key</em>) = a chave que identifica cada linha. <strong>FK</strong> (<em>foreign key</em>) = a coluna que aponta para outra tabela. A linha entre as caixas diz: <strong>uma</strong> categoria (<code>||</code>) possui <strong>zero ou muitos</strong> produtos (<code>o{</code>).</p>
+<h4 class="diag-title">📐 D-05 <span class="dt-type">Fluxo</span> — O mesmo produto nos dois mundos</h4>
 <div class="mermaid-box er-small" data-code='flowchart LR
-    subgraph REL["Relacional (linhas)"]
-      R1["produto: id=1 nome=Teclado preco=349.90 cat=1"]
+    subgraph REL["MySQL: 2 tabelas"]
+      R1["produtos: id 1, Teclado, 349.90, categoria_id 1"]
+      R2["categorias: id 1, Periféricos"]
+      R1 -->|"JOIN"| R2
     end
-    subgraph NOSQL["Documento (BSON)"]
-      N1["{ _id, nome, preco, estoque, tags:[...], atributos:{...} }"]
+    subgraph DOC["MongoDB: 1 documento"]
+      N1["Teclado, 349.90, categoria Periféricos, tags"]
     end
-    R1 -->|"migração (idLegado)"| N1'>
+    REL -->|"mesma informação"| DOC'>
 <div class="mermaid"></div>
 </div>
-<div class="success-banner"><strong>✅ Checklist:</strong> CRUD MySQL ok · CRUD Mongo ok · JOIN por categoria ok · ER e mapeamento BSON entendidos.</div>
+<div class="table-wrap" style="margin:12px 0">
+<table>
+<thead><tr><th>Critério</th><th>🐬 MySQL</th><th>🍃 MongoDB</th></tr></thead>
+<tbody>
+<tr><td>Guarda em</td><td>Tabelas (linhas e colunas)</td><td>Coleções (documentos JSON)</td></tr>
+<tr><td>Formato</td><td>Fixo: toda linha tem as mesmas colunas</td><td>Livre: cada documento pode ter campos diferentes</td></tr>
+<tr><td>Relacionar dados</td><td>Chave estrangeira + <code>JOIN</code></td><td>Dados juntos dentro do documento</td></tr>
+<tr><td>Regras no banco</td><td>Fortes: <code>CHECK</code>, FK, <code>NOT NULL</code></td><td>Poucas, por padrão: a aplicação cuida</td></tr>
+<tr><td>Melhor para</td><td>Pedidos, pagamentos, estoque</td><td>Catálogos, perfis, logs</td></tr>
+<tr><td>Próximas abas</td><td>Tabs 6, 7 e 9</td><td>Tabs 6-B e 9-B (migração para o MongoDB)</td></tr>
+</tbody>
+</table>
+</div>
+<div class="info-banner"><strong>ℹ️ Versões:</strong> <strong>MySQL 8.4</strong> é a versão LTS atual. <strong>MongoDB 7.0</strong> ainda recebe suporte; a mais nova é a 8.0 — mantemos a 7.0 porque é a que as Tabs 6-B e 9-B usam.</div>
+</div>
+
+<!-- ══════════════════════════ ⑧ DESLIGAR / ERROS ══════════════════════════ -->
+<div class="lab-container">
+<div class="lab-header"><h3>⑧ ⏹ Desligar, recomeçar do zero e erros comuns</h3></div>
+<div class="table-wrap" style="margin:12px 0">
+<table>
+<thead><tr><th>Quero…</th><th>🖱️ No Docker Desktop</th><th>⌨️ No terminal (pasta <code>loja-infra</code>)</th><th>Os dados…</th></tr></thead>
+<tbody>
+<tr><td><strong>Desligar</strong> (para economizar memória)</td><td><strong>Containers</strong> → ⏹ no grupo <code>loja-infra</code></td><td><code>docker compose stop</code></td><td>ficam guardados ✅</td></tr>
+<tr><td><strong>Ligar de novo</strong></td><td>▶ no grupo <code>loja-infra</code></td><td><code>docker compose up -d</code></td><td>voltam como estavam ✅</td></tr>
+<tr><td><strong>Recomeçar do zero</strong> (rodar os scripts de novo)</td><td>🗑 no grupo e, em <strong>Volumes</strong>, 🗑 nos dois volumes</td><td><code>docker compose down -v</code> e depois <code>docker compose up -d</code></td><td>são <strong>apagados</strong> ⚠️ e recriados pelos scripts</td></tr>
+</tbody>
+</table>
+</div>
+<div class="warning-banner"><strong>⚠️ Erros comuns:</strong>
+<ul>
+<li><strong><em>"port is already allocated"</em> / <em>"Bind for 0.0.0.0:3306 failed"</em></strong> ("porta já em uso") → outro programa usa a porta. Quase sempre é um <strong>MySQL instalado direto no Windows</strong> (ou o container de outra aba). Pare o outro, ou troque no compose: <code>"3307:3306"</code> e use 3307 no DBeaver. Para o Mongo: <code>"27018:27017"</code>.</li>
+<li><strong><em>"no configuration file provided: not found"</em></strong> → o terminal não está na pasta do <code>docker-compose.yml</code>. Entre nela (<code>cd</code>) ou abra o terminal pela barra de endereço da pasta.</li>
+<li><strong>Container fica <em>unhealthy</em> / reiniciando sem parar</strong> → veja o motivo na aba <strong>Logs</strong> do container. Se você trocou senhas no compose depois da primeira vez, recomece do zero (<code>down -v</code>).</li>
+<li><strong>Os bancos não ligam ao abrir o computador</strong> → o Docker Desktop precisa estar aberto. Em <strong>Settings → General</strong>, marque <strong>Start Docker Desktop when you sign in</strong> ("abrir ao entrar no Windows").</li>
+</ul></div>
+<div class="success-banner"><strong>✅ Checklist da aba:</strong> Docker Desktop com <em>Engine running</em> ✓ · <code>hello-world</code> ✓ · dois containers 🟢 ✓ · DBeaver conectado no MySQL ✓ · CRUD em SQL, JOIN e agregação ✓ · Compass conectado no MongoDB ✓ · CRUD no Compass e no mongosh ✓ · sei desligar e recomeçar do zero ✓.</div>
 </div>
 </div>
 </section>
