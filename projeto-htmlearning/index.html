@@ -880,6 +880,23 @@
       .hl-flutuante, .hl-overlay.aberto, .destaque-foco { animation: none; }
     }
     #passo5 { scroll-margin-top: 95px; }
+    .hl-pendencias {
+      display: none; margin-top: 22px; padding: 14px 16px;
+      background: var(--warn-soft); color: var(--text);
+      border: 1.5px solid var(--warn); border-radius: 12px;
+    }
+    .hl-pendencias.visivel { display: block; }
+    .hl-pendencias ul { margin: 8px 0 12px; padding-left: 20px; }
+    .hl-rascunho {
+      position: fixed; left: 50%; transform: translateX(-50%); top: 92px; z-index: 9500;
+      display: none; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center;
+      max-width: 640px; width: calc(100% - 32px);
+      background: var(--card); color: var(--text);
+      border: 2px solid var(--warn); border-radius: 14px; box-shadow: var(--shadow-md);
+      padding: 12px 16px;
+    }
+    .hl-rascunho.visivel { display: flex; }
+    .hl-rascunho button { margin-top: 0; }
   </style>
 </head>
 <body>
@@ -1647,6 +1664,8 @@
         <label for="arquivoInput">21. Anexe o arquivo .HTML gerado (Opcional se você já colou o código na caixa do Passo 4 acima):</label>
         <input type="file" id="arquivoInput" accept=".html,.htm" style="padding:12px; border:2px dashed var(--primary); border-radius:10px; width:100%;">
 
+        <div class="hl-pendencias" id="caixaPendencias" role="alert" aria-live="assertive"></div>
+
         <button type="submit" id="btnEnviar" class="btn-primary" style="width:100%; justify-content:center; padding:16px; font-size:1.1em; margin-top:26px;">
           🚀 Enviar Avaliação e Concluir Participação
         </button>
@@ -1688,6 +1707,13 @@
         <button type="button" class="hl-btn-sec" id="btnTestarPrimeiro">Vou testar a aula primeiro</button>
       </div>
     </div>
+  </div>
+
+  <!-- ===== v2.19: AVISO DE RASCUNHO RECUPERADO ===== -->
+  <div class="hl-rascunho" id="avisoRascunho" role="status">
+    <span>📝 <strong>Você começou uma avaliação e não enviou.</strong> Suas respostas foram recuperadas.</span>
+    <button type="button" class="btn-success" id="btnContinuarRascunho">Continuar e enviar</button>
+    <button type="button" class="hl-btn-sec" id="btnFecharRascunho" aria-label="Fechar aviso">✕</button>
   </div>
 
   <!-- ===== v2.18: BOTÃO FIXO "FALTA AVALIAR" ===== -->
@@ -2622,7 +2648,7 @@ Entregue APENAS o bloco de código HTML (aberto com cerca tripla + "html" e fech
     function atualizarBotaoFlutuante(passo5Visivel) {
       const b = document.getElementById("btnFaltaAvaliar");
       if (!b) return;
-      const mostrar = aulaFoiTestadaOuBaixada && !avaliacaoFoiEnviada && !passo5Visivel;
+      const mostrar = (aulaFoiTestadaOuBaixada || passo5Iniciado) && !avaliacaoFoiEnviada && !passo5Visivel;
       b.classList.toggle("visivel", mostrar);
     }
 
@@ -2645,6 +2671,10 @@ Entregue APENAS o bloco de código HTML (aberto com cerca tripla + "html" e fech
     // Chamado quando o envio do Passo 5 dá certo
     function avaliacaoConcluida() {
       avaliacaoFoiEnviada = true;
+      if (typeof timerRascunho !== "undefined") clearTimeout(timerRascunho);
+      try { window.localStorage.removeItem("htmlearning_rascunho_v1"); } catch (e) {}
+      const av = document.getElementById("avisoRascunho"); if (av) av.classList.remove("visivel");
+      const cx = document.getElementById("caixaPendencias"); if (cx) cx.classList.remove("visivel");
       atualizarBotaoFlutuante(true);
     }
 
@@ -2683,8 +2713,9 @@ Entregue APENAS o bloco de código HTML (aberto com cerca tripla + "html" e fech
         if (elementoFocoAntesDoAviso && elementoFocoAntesDoAviso.focus) elementoFocoAntesDoAviso.focus();
       });
       document.getElementById("btnFaltaAvaliar")?.addEventListener("click", () => {
-        registrarEventoPlanilha("Lembrete de Avaliação", "Clicou no botão fixo Falta avaliar", "Após " + minutosNaPagina());
-        irParaPasso5("botão fixo");
+        registrarEventoPlanilha("Lembrete de Avaliação", "Clicou no botão fixo", (passo5Iniciado ? "Falta enviar" : "Falta avaliar") + " | Após " + minutosNaPagina());
+        if (passo5Iniciado) irParaEnvioOuPendencia("botão fixo");
+        else irParaPasso5("botão fixo");
       });
 
       // Tecla Esc fecha os avisos (acessibilidade)
@@ -2712,7 +2743,7 @@ Entregue APENAS o bloco de código HTML (aberto com cerca tripla + "html" e fech
         const obs = new IntersectionObserver((entradas) => {
           entradas.forEach((ent) => {
             const nome = ent.target.dataset.nomeSecao;
-            if (ent.target.id === "passo5") atualizarBotaoFlutuante(ent.isIntersecting);
+            if (ent.target.id === "passo5" && !passo5Iniciado) atualizarBotaoFlutuante(ent.isIntersecting);
             if (ent.isIntersecting) {
               ultimaSecaoVista = nome;
               registrarEventoPlanilha(nome, "Visualizou a seção", "Após " + minutosNaPagina(), true);
@@ -2795,11 +2826,7 @@ Entregue APENAS o bloco de código HTML (aberto com cerca tripla + "html" e fech
           let detalhe = "Última seção vista: " + ultimaSecaoVista + " | Tempo: " + minutosNaPagina()
             + " | Avaliação enviada: " + (avaliacaoFoiEnviada ? "Sim" : "Não");
           if (passo5Iniciado && !avaliacaoFoiEnviada) {
-            const faltando = [];
-            if (!document.getElementById("tempoGasto")?.value) faltando.push("14 Tempo");
-            ["q6", "q7", "q8", "q9"].forEach((q, i) => {
-              if (!document.querySelector('input[name="' + q + '"]:checked')) faltando.push((15 + i) + " " + q.toUpperCase());
-            });
+            const faltando = camposPendentes().map((p) => p.rotulo);
             detalhe += " | Campos obrigatórios em branco: " + (faltando.join(", ") || "nenhum");
           }
           registrarEventoPlanilha("Saída / Troca de aba", "Saiu da página ou trocou de aba", detalhe);
@@ -2815,6 +2842,192 @@ Entregue APENAS o bloco de código HTML (aberto com cerca tripla + "html" e fech
         }
       });
     });
+
+    // ========================================================================
+    // v2.19: AVISO AO SAIR, RASCUNHO AUTOMÁTICO, BOTÃO "FALTA ENVIAR" E PENDÊNCIAS
+    // O rascunho fica só no navegador da própria pessoa e é apagado após o envio.
+    // ========================================================================
+    const CHAVE_RASCUNHO = "htmlearning_rascunho_v1";
+
+    function rotuloDoCampo(el) {
+      let txt = "";
+      if (el.type === "radio") {
+        const grupo = el.closest(".likert-group");
+        const lab = grupo && grupo.previousElementSibling;
+        txt = lab ? lab.textContent : el.name;
+      } else if (el.id === "consentimento") {
+        txt = "Termo de consentimento";
+      } else {
+        const lab = document.querySelector('label[for="' + el.id + '"]');
+        txt = lab ? lab.textContent : el.id;
+      }
+      txt = txt.replace(/\s+/g, " ").replace(/\*/g, "").trim();
+      const m = txt.match(/^(\d+)\.\s*([^:(?]+)/);
+      let nome = m ? m[2].trim() : txt;
+      if (nome.length > 48) nome = nome.slice(0, 48).replace(/\s+\S*$/, "") + "...";
+      return m ? m[1] + " (" + nome + ")" : nome;
+    }
+
+    // Lista os campos obrigatórios ainda em branco, na ordem da página (um por grupo de rádio)
+    function camposPendentes() {
+      const form = document.getElementById("formValidacao");
+      if (!form) return [];
+      const vistos = new Set(), lista = [];
+      form.querySelectorAll("input, select, textarea").forEach((el) => {
+        if (!el.willValidate || el.checkValidity()) return;
+        const chave = el.type === "radio" ? "r:" + el.name : "i:" + el.id;
+        if (vistos.has(chave)) return;
+        vistos.add(chave);
+        lista.push({ el: el, rotulo: rotuloDoCampo(el) });
+      });
+      return lista;
+    }
+
+    function focarCampo(el) {
+      const alvo = el.type === "radio" ? (el.closest(".likert-group") || el) : el;
+      alvo.scrollIntoView({ behavior: "smooth", block: "center" });
+      setTimeout(() => { try { el.focus({ preventScroll: true }); } catch (e) {} }, 600);
+      alvo.classList.remove("destaque-foco"); void alvo.offsetWidth; alvo.classList.add("destaque-foco");
+    }
+
+    function mostrarPendencias(pend) {
+      const cx = document.getElementById("caixaPendencias");
+      if (!cx) return;
+      if (!pend.length) { cx.classList.remove("visivel"); return; }
+      cx.innerHTML = '<strong>⚠️ Falta pouco!</strong> Para enviar, preencha ' +
+        (pend.length === 1 ? 'o item:' : 'os itens:') +
+        '<ul>' + pend.map((p) => '<li>' + p.rotulo + '</li>').join("") + '</ul>' +
+        '<button type="button" class="btn-primary" id="btnIrPendencia">Ir para o primeiro item</button>';
+      cx.classList.add("visivel");
+      document.getElementById("btnIrPendencia").addEventListener("click", () => focarCampo(pend[0].el));
+    }
+
+    function irParaEnvioOuPendencia(origem) {
+      const pend = camposPendentes();
+      if (pend.length) { mostrarPendencias(pend); focarCampo(pend[0].el); }
+      else {
+        const b = document.getElementById("btnEnviar");
+        b.scrollIntoView({ behavior: "smooth", block: "center" });
+        setTimeout(() => b.focus({ preventScroll: true }), 600);
+        b.classList.remove("destaque-foco"); void b.offsetWidth; b.classList.add("destaque-foco");
+      }
+      registrarEventoPlanilha("Lembrete de Avaliação", "Levado ao envio ou à pendência", "Origem: " + origem + " | Pendências: " + pend.length);
+    }
+
+    // ---- Rascunho automático ----
+    function coletarRascunho() {
+      const form = document.getElementById("formValidacao");
+      const dados = {};
+      form.querySelectorAll("input, select, textarea").forEach((el) => {
+        if (el.type === "file") return;
+        if (el.type === "radio") { if (el.checked) dados["r:" + el.name] = el.value; return; }
+        if (el.type === "checkbox") { dados["c:" + el.id] = el.checked; return; }
+        if (el.id) dados["v:" + el.id] = el.value;
+      });
+      return dados;
+    }
+    let timerRascunho = null;
+    function salvarRascunho() {
+      if (avaliacaoFoiEnviada) return;
+      clearTimeout(timerRascunho);
+      timerRascunho = setTimeout(() => {
+        if (avaliacaoFoiEnviada) return;
+        try {
+          const d = coletarRascunho();
+          d.__passo5 = passo5Iniciado; d.__aula = aulaFoiTestadaOuBaixada;
+          window.localStorage.setItem(CHAVE_RASCUNHO, JSON.stringify(d));
+        } catch (e) { /* armazenamento indisponível: segue sem rascunho */ }
+      }, 600);
+    }
+    function restaurarRascunho() {
+      let d = null;
+      try { d = JSON.parse(window.localStorage.getItem(CHAVE_RASCUNHO) || "null"); } catch (e) { d = null; }
+      if (!d) return false;
+      Object.keys(d).forEach((k) => {
+        const tipo = k.slice(0, 2), nome = k.slice(2);
+        if (tipo === "v:") { const el = document.getElementById(nome); if (el && el.type !== "file") el.value = d[k]; }
+        else if (tipo === "c:") { const el = document.getElementById(nome); if (el) el.checked = !!d[k]; }
+        else if (tipo === "r:") { const el = document.querySelector('input[name="' + nome + '"][value="' + d[k] + '"]'); if (el) el.checked = true; }
+      });
+      if (typeof verificarOutraIA === "function") verificarOutraIA();
+      if (d.__aula) aulaFoiTestadaOuBaixada = true;
+      if (d.__passo5) passo5Iniciado = true;
+      return !!d.__passo5;
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("formValidacao");
+
+      // Restaura rascunho; se havia avaliação começada, avisa e troca as boas-vindas pelo aviso de rascunho
+      if (restaurarRascunho()) {
+        fecharOverlay("avisoBoasVindas");
+        document.getElementById("avisoRascunho").classList.add("visivel");
+        atualizarTextoBotaoFixo();
+        atualizarBotaoFlutuante(false);
+        registrarEventoPlanilha("Rascunho", "Avaliação não enviada recuperada", "Visitante retornou com rascunho", true);
+      }
+      document.getElementById("btnContinuarRascunho")?.addEventListener("click", () => {
+        document.getElementById("avisoRascunho").classList.remove("visivel");
+        registrarEventoPlanilha("Rascunho", "Clicou em Continuar e enviar", "", true);
+        irParaEnvioOuPendencia("aviso de rascunho");
+      });
+      document.getElementById("btnFecharRascunho")?.addEventListener("click", () => {
+        document.getElementById("avisoRascunho").classList.remove("visivel");
+      });
+
+      form.addEventListener("input", salvarRascunho);
+      form.addEventListener("change", salvarRascunho);
+      document.getElementById("codigoGerado")?.addEventListener("input", salvarRascunho);
+
+      // Texto do botão fixo muda quando a avaliação já começou
+      document.getElementById("passo5")?.addEventListener("focusin", () => { atualizarTextoBotaoFixo(); salvarRascunho(); });
+
+      // Botão fixo some quando o botão Enviar está visível na tela
+      const btnEnviar = document.getElementById("btnEnviar");
+      if ("IntersectionObserver" in window && btnEnviar) {
+        new IntersectionObserver((ents) => {
+          ents.forEach((en) => { if (passo5Iniciado) atualizarBotaoFlutuante(en.isIntersecting); });
+        }, { threshold: 0.6 }).observe(btnEnviar);
+      }
+
+      // Clique em Enviar: se faltar algo, mostra a lista em vez do balão do navegador
+      btnEnviar?.addEventListener("click", (e) => {
+        const pend = camposPendentes();
+        if (pend.length) {
+          e.preventDefault();
+          mostrarPendencias(pend);
+          focarCampo(pend[0].el);
+          registrarEventoPlanilha("Passo 5 (Avaliação)", "Tentou enviar com campos faltando", pend.map((p) => p.rotulo).join(", "));
+        } else {
+          document.getElementById("caixaPendencias")?.classList.remove("visivel");
+          registrarEventoPlanilha("Passo 5 (Avaliação)", "Clicou em Enviar (formulário completo)", "Após " + minutosNaPagina());
+        }
+      });
+      // Ao corrigir um campo, atualiza a lista de pendências se ela estiver aberta
+      form.addEventListener("change", () => {
+        const cx = document.getElementById("caixaPendencias");
+        if (cx && cx.classList.contains("visivel")) mostrarPendencias(camposPendentes());
+      });
+
+      // Aviso padrão do navegador ao fechar ou sair com a avaliação começada e não enviada
+      window.addEventListener("beforeunload", (e) => {
+        if (passo5Iniciado && !avaliacaoFoiEnviada) {
+          registrarEventoPlanilha("Saída / Troca de aba", "Aviso de saída exibido", "Avaliação começada e não enviada");
+          e.preventDefault();
+          e.returnValue = "";
+          return "";
+        }
+      });
+    });
+
+    function atualizarTextoBotaoFixo() {
+      const b = document.getElementById("btnFaltaAvaliar");
+      if (!b) return;
+      if (passo5Iniciado) {
+        b.textContent = "📝 Falta enviar sua avaliação";
+        b.setAttribute("aria-label", "Falta enviar sua avaliação: ir para o botão Enviar");
+      }
+    }
   </script>
 </body>
 </html>
