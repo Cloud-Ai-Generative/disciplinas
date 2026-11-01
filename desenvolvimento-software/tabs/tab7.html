@@ -1,82 +1,59 @@
 <section class="tab-panel" id="tab7">
+<style>/* celular: código inline e links longos quebram linha */#tab7 :not(pre)>code,#tab7 a.ext,#tab7 li strong{overflow-wrap:anywhere}#tab7 .split-col{min-width:0}</style>
 <div class="card">
-<h2 class="card-title">🔷 API C# Completa — Clean Arch + SOLID + DDD + TDD + Migração + Docker + CI/CD</h2>
-<p class="section-intro">Aba <strong>100% auto-contida para C#/VS Code</strong>: conceitos detalhados (Clean Arch, SOLID, DDD com Value Objects e Domain Events, padrões, DI, EF Core) com links, todos os arquivos do projeto, TDD com paridade de testes, migração Strangler Fig, Docker, CI/CD e diagramas. <span class="ide-tag cs">IDE: VS Code</span></p>
-<div class="doc-banner"><strong>🧔 Rafael Souza · 🔷 Backend (C#):</strong> esta API é a <strong>implementação backend do contrato</strong> definido na Sala de Contrato (Tab 4). Mini-fluxo: <em>Sala de Contrato → <code>openapi.yaml</code> → implementação (esta aba) → validação (testes + Prism)</em>. <a href="javascript:switchTab('tab4')" style="color:var(--primary);text-decoration:underline">Ir p/ Sala/Contrato (Tab 4) →</a></div>
-<!-- ══════════ SEÇÃO 1: CONCEITOS C# ══════════ -->
-<div class="deep-concept-box">
-<h3>🏛️ Clean Architecture (Robert C. Martin, 2012) — visão C#</h3>
-<p><strong>Origem:</strong> consolidou <strong>Hexagonal</strong> (Cockburn, 2005) e <strong>Onion</strong> (Palermo, 2008). Ideia central: <em>negócio no centro; tecnologia na borda</em>. No .NET isso se materializa em projetos (<code>.csproj</code>) separados com referências unidirecionais.</p>
-<h4>As 4 camadas (de dentro para fora)</h4>
-<ol>
-<li><strong>Entities (Domain):</strong> regras de negócio puras — aqui <strong>ricas</strong> (DDD): <code>Produto</code> com setters privados, <code>Dinheiro</code> (Value Object) e Domain Events.</li>
-<li><strong>Use Cases (Application):</strong> orquestram as regras — <code>ProdutoService</code> (implementa <code>IProdutoService</code>).</li>
-<li><strong>Interface Adapters:</strong> controllers, gateways/repositórios (convertem mundo externo ↔ interno).</li>
-<li><strong>Frameworks & Drivers:</strong> EF Core, Mongo, ASP.NET Core, JWT.</li>
-</ol>
-<h4>🔑 A Regra de Dependência</h4>
-<p>Setas <strong>só apontam para dentro</strong>. <code>ProdutoService</code> depende da <em>interface</em> <code>IProdutoRepository</code>, nunca de <code>EfProdutoRepository</code>/<code>MongoProdutoRepository</code> diretamente.</p>
-<p><strong>Aprofundar:</strong> <a class="ext" href="https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html" target="_blank">Uncle Bob — The Clean Architecture</a> · <a class="ext" href="https://learn.microsoft.com/dotnet/architecture/" target="_blank">MS .NET Architecture</a>.</p>
-</div>
+<h2 class="card-title">🔷 API C# completa: Clean Architecture + SOLID + DDD + TDD + Docker</h2>
+<p class="section-intro">Aqui o contrato da <a href="javascript:switchTab('tab4')" style="color:var(--primary);text-decoration:underline">Tab 4</a> vira uma <strong>API de verdade em C#</strong>, organizada em camadas, com regras de negócio dentro do domínio, testes automáticos e Docker. Os dados ficam no <strong>MySQL da Tab 5</strong> (banco <code>loja_db</code>). <span class="ide-tag cs">IDE: VS Code</span></p>
+<div class="info-banner"><strong>🗺️ O caminho desta aba:</strong> ① entender a arquitetura → ② abrir a solução no VS Code → ③ ler o código, camada por camada → ④ <strong>rodar e testar</strong> com o mesmo roteiro do mock da Tab 4 → ⑤ testes automáticos (TDD) → ⑥ Docker → ⑦ CI/CD → ⑧ diagramas e decisões. <strong>Tempo total: ~2h.</strong></div>
+<div class="info-banner"><strong>🧭 Pré-requisitos:</strong> <a href="javascript:switchTab('tab3')" style="color:var(--primary);text-decoration:underline">Tab 3</a> (VS Code + .NET 10 + C# Dev Kit + REST Client) · <a href="javascript:switchTab('tab5')" style="color:var(--primary);text-decoration:underline">Tab 5</a> (MySQL ligado no Docker, com o <code>loja_db</code>) · <a href="javascript:switchTab('tab4')" style="color:var(--primary);text-decoration:underline">Tab 4</a> (o contrato que esta API cumpre). Os passos com 🖱️ são com o mouse; <strong>⌨️ Prefere o terminal?</strong> é opcional.</div>
 
+<!-- ══════════════════════════ ① ARQUITETURA ══════════════════════════ -->
 <div class="deep-concept-box">
-<h3>📐 SOLID — Os 5 princípios aplicados neste projeto C#</h3>
-<div class="table-wrap" style="margin:12px 0">
-<table>
-<thead><tr><th>Princípio</th><th>O que diz</th><th>Onde aparece no projeto C#</th></tr></thead>
+<h3>① 🏛️ Clean Architecture: o negócio no centro, a tecnologia na borda</h3>
+<div class="analogy-highlight"><span class="icon">🧅</span><div><strong>Analogia da cebola (ou do restaurante):</strong> no miolo ficam as <strong>receitas</strong> (as regras do negócio: "preço não pode ser negativo"). Em volta, a <strong>cozinha</strong> que segue as receitas (os casos de uso). Na casca, o <strong>salão e o fornecedor</strong> (HTTP, banco de dados). Trocar o fornecedor de tomate não muda a receita. Na API: trocar MySQL por MongoDB não muda nenhuma regra — e é exatamente isso que a <a href="javascript:switchTab('tab9b')" style="color:var(--primary);text-decoration:underline">Tab 9-B</a> faz.</div></div>
+<p>Criada por Robert C. Martin (2012), juntando ideias da arquitetura <strong>Hexagonal</strong> (Cockburn) e <strong>Onion</strong> (Palermo). No .NET, cada camada é um <strong>projeto</strong> (<code>.csproj</code>) separado, e um projeto só pode apontar para dentro:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Camada (projeto)</th><th>O que tem</th><th>Depende de</th></tr></thead>
 <tbody>
-<tr><td><strong>S</strong> — Single Responsibility</td><td>Uma classe, uma razão para mudar</td><td><code>ProdutosController</code> só HTTP; <code>ProdutoService</code> só orquestra; <code>EfProdutoRepository</code> só persiste.</td></tr>
-<tr><td><strong>O</strong> — Open/Closed</td><td>Aberta p/ extensão, fechada p/ modificação</td><td>Novo adapter (Mongo) sem alterar <code>ProdutoService</code> — basta implementar <code>IProdutoRepository</code>.</td></tr>
-<tr><td><strong>L</strong> — Liskov Substitution</td><td>Subtipos substituem o tipo base</td><td><code>EfProdutoRepository</code>, <code>MongoProdutoRepository</code> e <code>DualWrite</code> são intercambiáveis via interface.</td></tr>
-<tr><td><strong>I</strong> — Interface Segregation</td><td>Interfaces coesas</td><td><code>IProdutoRepository</code> só persistência; <code>IProdutoService</code> só casos de uso.</td></tr>
-<tr><td><strong>D</strong> — Dependency Inversion</td><td>Depender de abstrações</td><td><code>ProdutoService(IProdutoRepository repo)</code> — construtor recebe a interface; o container DI injeta a concreção.</td></tr>
-</tbody>
-</table>
-</div>
-<p><strong>Aprofundar:</strong> <a class="ext" href="https://en.wikipedia.org/wiki/SOLID" target="_blank">Wikipedia SOLID</a> · <a class="ext" href="https://learn.microsoft.com/dotnet/core/extensions/dependency-injection" target="_blank">MS DI in .NET</a>.</p>
-</div>
-
-<div class="deep-concept-box">
-<h3> DDD (Eric Evans, 2003) — os 4 building blocks usados</h3>
-<ul>
-<li><strong>Aggregate Root:</strong> <code>Produto</code> — raiz do agregado; setters <code>private</code>; invariantes garantidas no construtor/métodos. <a class="ext" href="https://martinfowler.com/bliki/DDD_Aggregate.html" target="_blank">Fowler bliki</a>.</li>
-<li><strong>Value Object:</strong> <code>Dinheiro</code> — sem identidade, imutável (<code>record</code>), comparado por valor. <a class="ext" href="https://martinfowler.com/bliki/ValueObject.html" target="_blank">Fowler bliki</a>.</li>
-<li><strong>Domain Events:</strong> <code>ProdutoCriadoEvent</code> — o agregado publica fatos; handlers reagem sem acoplar. <a class="ext" href="https://martinfowler.com/eaaDev/DomainEvent.html" target="_blank">Fowler eaaDev</a>.</li>
-<li><strong>Bounded Context:</strong> fronteira onde o modelo "Produtos" vale; evita modelo único gigante.</li>
-</ul>
+<tr><td>🧠 <strong>LojaApi.Domain</strong></td><td>A entidade <code>Produto</code>, o valor <code>Dinheiro</code>, as regras e a <em>interface</em> do repositório</td><td>nada</td></tr>
+<tr><td>⚙️ <strong>LojaApi.Application</strong></td><td>Os casos de uso (<code>ProdutoService</code>) e os DTOs</td><td>Domain</td></tr>
+<tr><td>🏭 <strong>LojaApi.Infrastructure</strong></td><td>O EF Core e o MySQL (<code>EfProdutoRepository</code>)</td><td>Domain, Application</td></tr>
+<tr><td>🎯 <strong>LojaApi.Api</strong></td><td>Controllers, JWT, tratamento de erros, <code>Program.cs</code></td><td>Application, Infrastructure</td></tr>
+<tr><td>🧪 <strong>LojaApi.Tests</strong></td><td>Os testes automáticos</td><td>Domain, Application</td></tr>
+</tbody></table></div>
+<p><strong>A regra de ouro:</strong> o <code>ProdutoService</code> conhece a <em>interface</em> <code>IProdutoRepository</code>, nunca a classe <code>EfProdutoRepository</code>. Quem liga uma à outra é o <code>Program.cs</code>, com injeção de dependência.</p>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=clean+architecture+explicado+para+iniciantes" target="_blank">Clean Architecture explicada</a> · <a class="ext" href="https://www.youtube.com/results?search_query=clean+architecture+.net+c%23+na+pr%C3%A1tica" target="_blank">Clean Architecture em .NET</a> · <a class="ext" href="https://www.youtube.com/results?search_query=inje%C3%A7%C3%A3o+de+depend%C3%AAncia+c%23+asp.net+core" target="_blank">Injeção de dependência no ASP.NET Core</a></div>
+<p><strong>Aprofundar:</strong> <a class="ext" href="https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html" target="_blank">Uncle Bob — The Clean Architecture</a> · <a class="ext" href="https://learn.microsoft.com/dotnet/architecture/" target="_blank">Guias de arquitetura .NET (Microsoft)</a></p>
 </div>
 
 <div class="deep-concept-box">
-<h3>🧩 Padrões e peças aplicadas (C#)</h3>
-<div class="table-wrap" style="margin:12px 0">
-<table>
-<thead><tr><th>Padrão / peça</th><th>O que é</th><th>Arquivo C#</th></tr></thead>
+<h3>📐 SOLID — os 5 princípios, onde aparecem aqui</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Princípio</th><th>Em uma frase</th><th>Onde está no código</th></tr></thead>
 <tbody>
-<tr><td><strong>Repository</strong></td><td><a class="ext" href="https://martinfowler.com/eaaCatalog/repository.html" target="_blank">Interface que abstrai persistência</a></td><td>Trocar banco sem tocar no domínio</td><td><code>IProdutoRepository.cs</code></td></tr>
-<tr><td><strong>Adapter</strong></td><td><a class="ext" href="https://alistair.cockburn.us/hexagonal-architecture/" target="_blank">Concretiza a porta p/ tecnologia</a></td><td>Ligar domínio a EF/Mongo</td><td><code>EfProdutoRepository.cs</code>, <code>MongoProdutoRepository.cs</code>, <code>DualWriteProdutoRepository.cs</code></td></tr>
-<tr><td><strong>Service Interface</strong></td><td><a class="ext" href="https://martinfowler.com/eaaCatalog/serviceLayer.html" target="_blank">Contrato do caso de uso</a></td><td>Testar c/ mock; trocar impl.</td><td><code>IProdutoService.cs</code> → <code>ProdutoService.cs</code></td></tr>
-<tr><td><strong>DTO</strong></td><td><a class="ext" href="https://martinfowler.com/eaaCatalog/dataTransferObject.html" target="_blank">Objeto p/ transporte</a></td><td>Não expor a entidade</td><td><code>CriarProdutoRequest.cs</code>, <code>ProdutoResponse.cs</code></td></tr>
-<tr><td><strong>Mapper</strong></td><td><a class="ext" href="https://en.wikipedia.org/wiki/Data_mapper_pattern" target="_blank">Converte entidade ↔ DTO</a></td><td>Isolar formato externo</td><td><code>ProdutoMapper.cs</code></td></tr>
-<tr><td><strong>Aggregate Root / VO / Events</strong></td><td><a class="ext" href="https://martinfowler.com/bliki/DDD_Aggregate.html" target="_blank">DDD: AR</a> · <a class="ext" href="https://martinfowler.com/bliki/ValueObject.html" target="_blank">VO</a> · <a class="ext" href="https://martinfowler.com/eaaDev/DomainEvent.html" target="_blank">Events</a></td><td>Invariantes + fatos de negócio</td><td><code>Produto.cs</code>, <code>Dinheiro.cs</code>, <code>ProdutoCriadoEvent.cs</code></td></tr>
-<tr><td><strong>Injeção de Dependência</strong></td><td><a class="ext" href="https://learn.microsoft.com/dotnet/core/extensions/dependency-injection" target="_blank">Container DI built-in</a></td><td>Testar c/ mock; trocar impl.</td><td><code>Program.cs</code> (AddScoped)</td></tr>
-<tr><td><strong>Centralized Exception</strong></td><td><a class="ext" href="https://learn.microsoft.com/aspnet/core/fundamentals/middleware/" target="_blank">Middleware de exceção</a></td><td>Erros uniformes (RFC 7807)</td><td><code>ExceptionMiddleware.cs</code></td></tr>
-<tr><td><strong>ORM (EF Core)</strong></td><td><a class="ext" href="https://learn.microsoft.com/ef/core/" target="_blank">Mapeia objeto ↔ tabela</a></td><td>Persistência relacional</td><td><code>AppDbContext.cs</code></td></tr>
-
-</tbody>
-</table>
+<tr><td><strong>S</strong> — Responsabilidade única</td><td>Uma classe, um motivo para mudar</td><td><code>ProdutosController</code> só fala HTTP; <code>ProdutoService</code> só orquestra; <code>EfProdutoRepository</code> só persiste.</td></tr>
+<tr><td><strong>O</strong> — Aberto/fechado</td><td>Estender sem modificar</td><td>Um repositório Mongo novo (Tab 9-B) entra sem mexer no <code>ProdutoService</code>.</td></tr>
+<tr><td><strong>L</strong> — Substituição de Liskov</td><td>Quem implementa a interface pode substituir outro</td><td>Nos testes, um repositório <strong>falso</strong> (Moq) toma o lugar do real.</td></tr>
+<tr><td><strong>I</strong> — Segregação de interfaces</td><td>Interfaces pequenas e focadas</td><td><code>IProdutoRepository</code> só persistência; <code>IProdutoService</code> só casos de uso.</td></tr>
+<tr><td><strong>D</strong> — Inversão de dependência</td><td>Dependa de abstrações</td><td><code>ProdutoService(IProdutoRepository repo)</code>: recebe a interface; o <code>Program.cs</code> decide a classe.</td></tr>
+</tbody></table></div>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=solid+explicado+c%23+exemplos" target="_blank">SOLID com exemplos em C#</a></div>
 </div>
-<h4>🧰 Framework, Container DI e EF Core (conceitos C#)</h4>
+
+<div class="deep-concept-box">
+<h3>🧩 DDD: as peças do domínio</h3>
 <ul>
-<li><strong>Framework (ASP.NET Core):</strong> inversão de controle — ele chama seu código (middleware pipeline). <a class="ext" href="https://learn.microsoft.com/aspnet/core/" target="_blank">ASP.NET Core docs</a>.</li>
-<li><strong>Container DI (built-in):</strong> <code>builder.Services.AddScoped/AddSingleton</code> registram; construtores recebem. <a class="ext" href="https://learn.microsoft.com/dotnet/core/extensions/dependency-injection" target="_blank">MS DI</a>.</li>
-<li><strong>EF Core:</strong> ORM da Microsoft; <code>DbContext</code> + <code>DbSet</code>; migrações code-first. <a class="ext" href="https://learn.microsoft.com/ef/core/" target="_blank">EF Core docs</a>.</li>
-<li><strong>FluentValidation:</strong> validação declarativa dos DTOs (alternativa a DataAnnotations). <a class="ext" href="https://docs.fluentvalidation.net/" target="_blank">fluentvalidation.net</a>.</li>
+<li><strong>Aggregate Root — <code>Produto</code>:</strong> a entidade "dona" das regras. Setters privados: ninguém muda o preço sem passar pela validação. Duas portas de entrada: <code>Produto.Criar(...)</code> (produto novo, ainda sem id) e <code>Produto.Reconstituir(...)</code> (um produto que já existe).</li>
+<li><strong>Value Object — <code>Dinheiro</code>:</strong> sem identidade, imutável (<code>record</code>) e comparado pelo valor: dois "R$ 10" são iguais.</li>
+<li><strong>Domain Event — <code>ProdutoCriadoEvent</code>:</strong> um fato do negócio ("um produto foi criado"). Ele só é registrado <strong>depois</strong> de salvar, quando o banco já deu o id — senão sairia com id 0.</li>
+<li><strong>Exceções de domínio:</strong> <code>DomainException</code> (regra quebrada → <code>400</code>) e <code>NaoEncontradoException</code> (não existe → <code>404</code>).</li>
 </ul>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=ddd+entidade+rica+value+object+c%23" target="_blank">Entidade rica e Value Object</a> · <a class="ext" href="https://www.youtube.com/results?search_query=domain+events+ddd+explicado" target="_blank">Domain Events</a></div>
+<p><strong>Aprofundar:</strong> <a class="ext" href="https://martinfowler.com/bliki/DDD_Aggregate.html" target="_blank">Aggregate (Fowler)</a> · <a class="ext" href="https://martinfowler.com/bliki/ValueObject.html" target="_blank">Value Object (Fowler)</a> · <a class="ext" href="https://martinfowler.com/eaaDev/DomainEvent.html" target="_blank">Domain Event (Fowler)</a></p>
 </div>
 
-<h4 class="diag-title">📐 D-07 <span class="dt-type">Arquitetura</span> — Clean Arch C# (camadas + dependências + testes)</h4>
+<h4 class="diag-title">📐 D-07 <span class="dt-type">Arquitetura</span> — As camadas e quem depende de quem</h4>
 <div class="mermaid-box" data-code='flowchart TD
-  subgraph P["🎯 Presentation (Api)"]
+  subgraph P["🎯 Api"]
     PC["ProdutosController"]
     AC["AuthController"]
     EXM["ExceptionMiddleware"]
@@ -85,136 +62,303 @@
     SVC["ProdutoService"]
     DTO["DTOs + Mapper"]
   end
-  subgraph D["🧠 Domain (DDD)"]
-    AR["Produto (Aggregate Root)"]
-    VO["Dinheiro (Value Object)"]
-    EV["ProdutoCriadoEvent"]
+  subgraph D["🧠 Domain"]
+    AR["Produto"]
+    VO["Dinheiro"]
     IR["IProdutoRepository"]
-    IS["IProdutoService"]
   end
   subgraph I["🏭 Infrastructure"]
     EF["EfProdutoRepository"]
-    MONGO["MongoProdutoRepository"]
-    DUAL["DualWriteProdutoRepository"]
     CTX["AppDbContext"]
   end
-  subgraph T["🧪 Tests"]
-    UT["ProdutoTests + ProdutoServiceTests"]
-  end
   P --> A --> D
-  EF -.->|implements| IR
-  MONGO -.->|implements| IR
-  DUAL -.->|implements| IR
-  SVC -.->|implements| IS
-  EF --> CTX
-  UT -.->|testa| A'>
+  EF -.->|implementa| IR
+  EF --> CTX'>
 <div class="mermaid"></div>
 </div>
 
-<!-- ══════════ SEÇÃO 2: SETUP ══════════ -->
+<!-- ══════════════════════════ ② ABRIR A SOLUÇÃO ══════════════════════════ -->
 <div class="lab-container">
 <div class="lab-header">
-<h3>🔷 Setup — solução + projetos + pacotes (VS Code)</h3>
-<div class="lab-actions"><button class="btn btn-zip" onclick="openDlModal('tab7')">📦 Baixar ZIP</button></div>
+<h3>② 🖱️ Abrir a solução no VS Code</h3>
+<div class="lab-actions"><button class="btn btn-zip" onclick="openDlModal('tab7')">📦 Baixar ZIP da solução</button></div>
 </div>
-<div class="term-help"><strong>🖥️ Terminal:</strong> <span class="ide-tag cs">VS Code</span> <kbd>Ctrl+`</kbd>. Rode na pasta onde quer criar a solução.</div>
+<p>O ZIP traz a solução <strong>completa e pronta para compilar</strong>: o <code>LojaApi.sln</code>, os 5 <code>.csproj</code> com as versões dos pacotes já fixadas e todo o código desta página.</p>
+<div class="step-box">
+<h4><span class="step-num-big">1</span> 🖱️ Baixar e abrir</h4>
+<ol class="step-number-list">
+<li>Clique em <strong>📦 Baixar ZIP da solução</strong> e descompacte em <code>Documentos\Projetos\LojaApi</code> (botão direito → <strong>Extrair tudo…</strong>).</li>
+<li>No VS Code: <strong>File → Open Folder…</strong> → escolha <code>LojaApi</code> → <strong>Yes, I trust the authors</strong>.</li>
+<li>Espere uns segundos: o C# Dev Kit lê a solução e baixa os pacotes. No Explorer aparece a seção <strong>SOLUTION EXPLORER</strong> com os 5 projetos.</li>
+<li>No Solution Explorer, botão direito em <strong>LojaApi</strong> (a solução) → <strong>Build</strong>.</li>
+</ol>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> no painel de baixo (aba <em>Output</em> ou <em>Terminal</em>) aparece <code>Build succeeded</code> e <code>0 Error(s)</code>.</div>
+</div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">⌨️ Prefere criar a solução do zero pelo terminal?</div>
+<div class="faq-a">
+<p>Os comandos abaixo criam a mesma estrutura do ZIP. Depois, copie os arquivos de código desta página por cima.</p>
 <div class="code-editor-wrap">
-<span class="code-filepath">terminal do VS Code - solução + projetos + referências + pacotes</span>
+<span class="code-filepath">terminal — criar a solução do zero (Windows, macOS e Linux)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor"># Cria a pasta da solução e entra nela
-mkdir LojaApi && cd LojaApi
-dotnet new sln -n LojaApi
-# Cria os 5 projetos (4 camadas + testes)
+<pre class="code-editor"># Pasta da solução
+mkdir LojaApi
+cd LojaApi
+dotnet new sln -n LojaApi --format sln      # o .NET 10 criaria .slnx; usamos o .sln clássico
+
+# Os 5 projetos (4 camadas + testes)
 dotnet new classlib -n LojaApi.Domain -f net10.0
 dotnet new classlib -n LojaApi.Application -f net10.0
 dotnet new classlib -n LojaApi.Infrastructure -f net10.0
-dotnet new webapi -n LojaApi.Api -f net10.0
-dotnet new xunit -n LojaApi.Tests -f net10.0
-# Adiciona todos à solução
+dotnet new webapi   -n LojaApi.Api -f net10.0 --use-controllers
+dotnet new xunit    -n LojaApi.Tests -f net10.0
 dotnet sln add LojaApi.Domain LojaApi.Application LojaApi.Infrastructure LojaApi.Api LojaApi.Tests
-# Referências (regra Clean Arch: dependências apontam para dentro)
+
+# Referências: sempre apontando PARA DENTRO
 dotnet add LojaApi.Application reference LojaApi.Domain
 dotnet add LojaApi.Infrastructure reference LojaApi.Domain LojaApi.Application
 dotnet add LojaApi.Api reference LojaApi.Application LojaApi.Infrastructure
-dotnet add LojaApi.Tests reference LojaApi.Application LojaApi.Domain
-# Pacotes NuGet
-dotnet add LojaApi.Infrastructure package Microsoft.EntityFrameworkCore
-dotnet add LojaApi.Infrastructure package Pomelo.EntityFrameworkCore.MySql
-dotnet add LojaApi.Infrastructure package MongoDB.Driver
-dotnet add LojaApi.Api package Microsoft.AspNetCore.Authentication.JwtBearer
-dotnet add LojaApi.Tests package Moq
-# Abre no VS Code
-code .</pre>
-</div>
-<div class="tree-view"><span class="folder">📁 LojaApi/</span>
-├── <span class="file">📄 LojaApi.sln</span>
-├── <span class="folder">📁 LojaApi.Domain/</span>            <span class="comment"># 🧠 DDD: AR, VO, Events, interfaces</span>
-│   ├── Entities/Produto.cs · ValueObjects/Dinheiro.cs
-│   ├── Events/IDomainEvent.cs · ProdutoCriadoEvent.cs
-│   ├── Exceptions/DomainException.cs
-│   └── Interfaces/IProdutoRepository.cs · IProdutoService.cs
-├── <span class="folder">📁 LojaApi.Application/</span>       <span class="comment"># ⚙️ Use Cases + DTOs + Mapper</span>
-│   ├── Services/ProdutoService.cs
-│   └── DTOs/CriarProdutoRequest.cs · ProdutoResponse.cs · ProdutoMapper.cs
-├── <span class="folder">📁 LojaApi.Infrastructure/</span>    <span class="comment"># 🏭 EF Core + Mongo + DualWrite</span>
-│   ├── Data/AppDbContext.cs
-│   ├── Repositories/EfProdutoRepository.cs · DualWriteProdutoRepository.cs
-│   ├── Mongo/MongoProdutoRepository.cs · ProdutoMongoDocument.cs   <span class="comment"># IMongoClient vem do MongoDB.Driver (registrado no Program.cs)</span>
-│   └── Migration/BackfillJob.cs
-├── <span class="folder">📁 LojaApi.Api/</span>               <span class="comment"># 🎯 Controllers + Middleware + JWT</span>
-│   ├── Program.cs · appsettings.json
-│   ├── Controllers/ProdutosController.cs · AuthController.cs
-│   └── Middleware/ExceptionMiddleware.cs
-└── <span class="folder">📁 LojaApi.Tests/</span>             <span class="comment"># 🧪 xUnit + Moq</span>
-    └── ProdutoTests.cs · ProdutoServiceTests.cs
-</div>
-<!-- ══════════ SEÇÃO 3: CÓDIGO COMPLETO C# ══════════ -->
-<div class="lab-container">
-<div class="lab-header"><h3>🔷 Código completo — todos os arquivos C#</h3></div>
+dotnet add LojaApi.Tests reference LojaApi.Domain LojaApi.Application
 
-<h4 style="color:var(--accent);margin:16px 0 8px">🧠 Camada Domain (DDD)</h4>
-<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Domain/ValueObjects/Dinheiro.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+# Pacotes com versão FIXA (sem versão o EF 10 entra e briga com o Pomelo 9)
+dotnet add LojaApi.Infrastructure package Microsoft.EntityFrameworkCore --version 9.0.0
+dotnet add LojaApi.Infrastructure package Pomelo.EntityFrameworkCore.MySql --version 9.0.0
+dotnet add LojaApi.Api package Microsoft.AspNetCore.Authentication.JwtBearer --version 10.0.0
+dotnet add LojaApi.Api package Swashbuckle.AspNetCore --version 9.0.6
+dotnet add LojaApi.Tests package Moq --version 4.20.72
+
+# O template do .NET 10 traz este pacote, que conflita com o Swashbuckle: remova
+dotnet remove LojaApi.Api package Microsoft.AspNetCore.OpenApi
+
+# Os templates criam arquivos de exemplo que não usamos
+rm LojaApi.Domain/Class1.cs LojaApi.Application/Class1.cs LojaApi.Infrastructure/Class1.cs LojaApi.Tests/UnitTest1.cs
+dotnet build</pre>
+</div>
+<p class="text-sm text-muted">No PowerShell, troque <code>rm</code> por <code>Remove-Item</code>. O template <code>webapi</code> também cria um <code>WeatherForecastController</code> e um <code>.http</code> de exemplo: pode apagar.</p>
+</div></div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.sln — a solução (vem no ZIP)</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.sln">Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LojaApi.Domain", "LojaApi.Domain\LojaApi.Domain.csproj", "{11111111-1111-1111-1111-111111111111}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LojaApi.Application", "LojaApi.Application\LojaApi.Application.csproj", "{22222222-2222-2222-2222-222222222222}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LojaApi.Infrastructure", "LojaApi.Infrastructure\LojaApi.Infrastructure.csproj", "{33333333-3333-3333-3333-333333333333}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LojaApi.Api", "LojaApi.Api\LojaApi.Api.csproj", "{44444444-4444-4444-4444-444444444444}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LojaApi.Tests", "LojaApi.Tests\LojaApi.Tests.csproj", "{55555555-5555-5555-5555-555555555555}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{11111111-1111-1111-1111-111111111111}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{11111111-1111-1111-1111-111111111111}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{11111111-1111-1111-1111-111111111111}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{11111111-1111-1111-1111-111111111111}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22222222-2222-2222-2222-222222222222}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22222222-2222-2222-2222-222222222222}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22222222-2222-2222-2222-222222222222}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22222222-2222-2222-2222-222222222222}.Release|Any CPU.Build.0 = Release|Any CPU
+		{33333333-3333-3333-3333-333333333333}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{33333333-3333-3333-3333-333333333333}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{33333333-3333-3333-3333-333333333333}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{33333333-3333-3333-3333-333333333333}.Release|Any CPU.Build.0 = Release|Any CPU
+		{44444444-4444-4444-4444-444444444444}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{44444444-4444-4444-4444-444444444444}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{44444444-4444-4444-4444-444444444444}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{44444444-4444-4444-4444-444444444444}.Release|Any CPU.Build.0 = Release|Any CPU
+		{55555555-5555-5555-5555-555555555555}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{55555555-5555-5555-5555-555555555555}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{55555555-5555-5555-5555-555555555555}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{55555555-5555-5555-5555-555555555555}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal</pre>
+</div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">📄 Os 5 arquivos .csproj (projetos, referências e pacotes)</div>
+<div class="faq-a">
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Domain/LojaApi.Domain.csproj</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Domain/LojaApi.Domain.csproj">&lt;!-- Domain: o coração. Não depende de NADA (nem de EF, nem de ASP.NET). --&gt;
+&lt;Project Sdk="Microsoft.NET.Sdk"&gt;
+  &lt;PropertyGroup&gt;
+    &lt;TargetFramework&gt;net10.0&lt;/TargetFramework&gt;
+    &lt;ImplicitUsings&gt;enable&lt;/ImplicitUsings&gt;
+    &lt;Nullable&gt;enable&lt;/Nullable&gt;
+  &lt;/PropertyGroup&gt;
+&lt;/Project&gt;</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Application/LojaApi.Application.csproj</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Application/LojaApi.Application.csproj">&lt;!-- Application: casos de uso. Só conhece o Domain. --&gt;
+&lt;Project Sdk="Microsoft.NET.Sdk"&gt;
+  &lt;PropertyGroup&gt;
+    &lt;TargetFramework&gt;net10.0&lt;/TargetFramework&gt;
+    &lt;ImplicitUsings&gt;enable&lt;/ImplicitUsings&gt;
+    &lt;Nullable&gt;enable&lt;/Nullable&gt;
+  &lt;/PropertyGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;ProjectReference Include="..\LojaApi.Domain\LojaApi.Domain.csproj" /&gt;
+  &lt;/ItemGroup&gt;
+&lt;/Project&gt;</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Infrastructure/LojaApi.Infrastructure.csproj</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Infrastructure/LojaApi.Infrastructure.csproj">&lt;!-- Infrastructure: a tecnologia (EF Core + MySQL). Versões FIXAS:
+     sem número, o NuGet baixaria o EF 10, que o Pomelo 9 ainda não suporta. --&gt;
+&lt;Project Sdk="Microsoft.NET.Sdk"&gt;
+  &lt;PropertyGroup&gt;
+    &lt;TargetFramework&gt;net10.0&lt;/TargetFramework&gt;
+    &lt;ImplicitUsings&gt;enable&lt;/ImplicitUsings&gt;
+    &lt;Nullable&gt;enable&lt;/Nullable&gt;
+  &lt;/PropertyGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" /&gt;
+    &lt;PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" /&gt;
+  &lt;/ItemGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;ProjectReference Include="..\LojaApi.Domain\LojaApi.Domain.csproj" /&gt;
+    &lt;ProjectReference Include="..\LojaApi.Application\LojaApi.Application.csproj" /&gt;
+  &lt;/ItemGroup&gt;
+&lt;/Project&gt;</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Api/LojaApi.Api.csproj</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Api/LojaApi.Api.csproj">&lt;!-- Api: a porta de entrada HTTP. Sdk.Web = projeto ASP.NET Core.
+     Swashbuckle 9.x: compatível com .NET 10 (a 6.x conflita com o pacote
+     Microsoft.AspNetCore.OpenApi que o template do .NET 10 coloca). --&gt;
+&lt;Project Sdk="Microsoft.NET.Sdk.Web"&gt;
+  &lt;PropertyGroup&gt;
+    &lt;TargetFramework&gt;net10.0&lt;/TargetFramework&gt;
+    &lt;ImplicitUsings&gt;enable&lt;/ImplicitUsings&gt;
+    &lt;Nullable&gt;enable&lt;/Nullable&gt;
+  &lt;/PropertyGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" /&gt;
+    &lt;PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" /&gt;
+  &lt;/ItemGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;ProjectReference Include="..\LojaApi.Application\LojaApi.Application.csproj" /&gt;
+    &lt;ProjectReference Include="..\LojaApi.Infrastructure\LojaApi.Infrastructure.csproj" /&gt;
+  &lt;/ItemGroup&gt;
+&lt;/Project&gt;</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Tests/LojaApi.Tests.csproj</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Tests/LojaApi.Tests.csproj">&lt;!-- Tests: xUnit + Moq. Testa Domain e Application sem banco. --&gt;
+&lt;Project Sdk="Microsoft.NET.Sdk"&gt;
+  &lt;PropertyGroup&gt;
+    &lt;TargetFramework&gt;net10.0&lt;/TargetFramework&gt;
+    &lt;ImplicitUsings&gt;enable&lt;/ImplicitUsings&gt;
+    &lt;Nullable&gt;enable&lt;/Nullable&gt;
+    &lt;IsPackable&gt;false&lt;/IsPackable&gt;
+  &lt;/PropertyGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" /&gt;
+    &lt;PackageReference Include="xunit" Version="2.9.2" /&gt;
+    &lt;PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" /&gt;
+    &lt;PackageReference Include="Moq" Version="4.20.72" /&gt;
+    &lt;PackageReference Include="coverlet.collector" Version="6.0.2" /&gt;
+  &lt;/ItemGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;ProjectReference Include="..\LojaApi.Domain\LojaApi.Domain.csproj" /&gt;
+    &lt;ProjectReference Include="..\LojaApi.Application\LojaApi.Application.csproj" /&gt;
+  &lt;/ItemGroup&gt;
+&lt;/Project&gt;</pre>
+</div>
+</div></div>
+<div class="tree-view"><span class="folder">📁 LojaApi/</span>
+├── <span class="file">📄 LojaApi.sln</span>   ·   Dockerfile   ·   .dockerignore   ·   .gitignore
+├── <span class="folder">📁 LojaApi.Domain/</span>          <span class="comment"># 🧠 regras: Produto, Dinheiro, eventos, exceções, IProdutoRepository</span>
+├── <span class="folder">📁 LojaApi.Application/</span>     <span class="comment"># ⚙️ casos de uso: IProdutoService, ProdutoService, DTOs</span>
+├── <span class="folder">📁 LojaApi.Infrastructure/</span>  <span class="comment"># 🏭 EF Core + MySQL: AppDbContext, EfProdutoRepository</span>
+├── <span class="folder">📁 LojaApi.Api/</span>             <span class="comment"># 🎯 controllers, middleware, Program.cs, appsettings, requests.http</span>
+└── <span class="folder">📁 LojaApi.Tests/</span>           <span class="comment"># 🧪 ProdutoTests, ProdutoServiceTests</span>
+</div>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=c%23+dev+kit+solution+explorer+vs+code" target="_blank">Solution Explorer do C# Dev Kit</a> · <a class="ext" href="https://www.youtube.com/results?search_query=solution+e+projetos+.net+sln+csproj+explicado" target="_blank">Solução e projetos no .NET</a></div>
+</div>
+
+<!-- ══════════════════════════ ③ CÓDIGO ══════════════════════════ -->
+<div class="lab-container">
+<div class="lab-header"><h3>③ 📖 O código, camada por camada</h3></div>
+<p>Leia de dentro para fora — a mesma ordem da cebola. Todo arquivo é comentado.</p>
+<h4 style="color:var(--accent);margin:16px 0 8px">🧠 Domain — as regras</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Domain/ValueObjects/Dinheiro.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="LojaApi.Domain/ValueObjects/Dinheiro.cs">namespace LojaApi.Domain.ValueObjects;
 
 /// &lt;summary&gt;
-/// Value Object "Dinheiro": sem identidade, imutável (record), comparado por valor.
+/// Value Object "Dinheiro": sem identidade, imutável (record) e comparado por VALOR.
+/// new Dinheiro(10m) == new Dinheiro(10m) → true (dois "R$ 10" são iguais).
 /// &lt;/summary&gt;
 public sealed record Dinheiro(decimal Valor, string Moeda = "BRL")
 {
-    /// &lt;summary&gt;Soma dois valores mantendo a moeda.&lt;/summary&gt;
+    /// &lt;summary&gt;
+    /// Construtor vazio e privado, só para o EF Core: o construtor do record pede "Moeda",
+    /// que não tem coluna no banco, então o EF não conseguiria usá-lo.
+    /// &lt;/summary&gt;
+    private Dinheiro() : this(0m) { }
+
+    /// &lt;summary&gt;Soma dois valores, mantendo a moeda (não altera nenhum dos dois: imutável).&lt;/summary&gt;
     public Dinheiro Add(Dinheiro outro) =&gt; new(Valor + outro.Valor, Moeda);
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Domain/Events/ProdutoCriadoEvent.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Domain/Events/ProdutoCriadoEvent.cs">namespace LojaApi.Domain.Events;
 
-    /// &lt;summary&gt;Validação de invariante: dinheiro não pode ser negativo.&lt;/summary&gt;
-    public bool EhValido() =&gt; Valor &gt;= 0;
-}</pre></div>
-
-<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Domain/Events/IDomainEvent.cs + ProdutoCriadoEvent.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor" data-zip-path="LojaApi.Domain/Events/IDomainEvent.cs">namespace LojaApi.Domain.Events;
-
-/// &lt;summary&gt;Marker de evento de domínio (fato publicado pelo agregado).&lt;/summary&gt;
+/// &lt;summary&gt;Marcador de evento de domínio: um FATO que aconteceu no negócio.&lt;/summary&gt;
 public interface IDomainEvent
 {
     DateTime OcorreuEm { get; }
 }
 
-/// &lt;summary&gt;Publicado quando um Produto é criado.&lt;/summary&gt;
-/// &lt;param name="ProdutoId"&gt;Id do produto criado.&lt;/param&gt;
-/// &lt;param name="Nome"&gt;Nome do produto.&lt;/param&gt;
-public record ProdutoCriadoEvent(int ProdutoId, string Nome) : IDomainEvent
+/// &lt;summary&gt;
+/// Publicado quando um Produto passa a existir.
+/// Só é criado DEPOIS de salvar, quando o banco já gerou o Id (senão sairia com Id 0).
+/// &lt;/summary&gt;
+public record ProdutoCriadoEvent(long ProdutoId, string Nome) : IDomainEvent
 {
     public DateTime OcorreuEm { get; } = DateTime.UtcNow;
-}</pre></div>
-
-<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Domain/Exceptions/DomainException.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Domain/Exceptions/DomainException.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="LojaApi.Domain/Exceptions/DomainException.cs">namespace LojaApi.Domain.Exceptions;
 
-/// &lt;summary&gt;Exceção de domínio (regra de negócio violada). Capturada pelo ExceptionMiddleware.&lt;/summary&gt;
+/// &lt;summary&gt;
+/// Regra de negócio violada (ex.: preço negativo). O ExceptionMiddleware
+/// transforma em HTTP 400 no formato RFC 7807 (application/problem+json).
+/// &lt;/summary&gt;
 public class DomainException : Exception
 {
     public DomainException(string message) : base(message) { }
-}</pre></div>
+}
 
-<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Domain/Entities/Produto.cs (Aggregate Root)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+/// &lt;summary&gt;
+/// O recurso pedido não existe (ex.: produto 999). Vira HTTP 404.
+/// Herda de DomainException: quem só quer "qualquer erro de domínio" continua pegando.
+/// &lt;/summary&gt;
+public class NaoEncontradoException : DomainException
+{
+    public NaoEncontradoException(string message) : base(message) { }
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Domain/Entities/Produto.cs (Aggregate Root)</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="LojaApi.Domain/Entities/Produto.cs">using LojaApi.Domain.Events;
 using LojaApi.Domain.Exceptions;
 using LojaApi.Domain.ValueObjects;
@@ -222,40 +366,60 @@ using LojaApi.Domain.ValueObjects;
 namespace LojaApi.Domain.Entities;
 
 /// &lt;summary&gt;
-/// Aggregate Root de Produto — entidade rica (DDD).
-/// Setters privados; invariantes garantidas no construtor/métodos.
+/// Aggregate Root "Produto" — entidade RICA (DDD): os dados e as regras moram juntos.
+/// Setters privados: ninguém de fora muda o estado sem passar pelas regras.
+/// Mapeia a tabela "produtos" do banco loja_db (Tab 5).
 /// &lt;/summary&gt;
 public class Produto
 {
     private readonly List&lt;IDomainEvent&gt; _events = new();
 
-    public int Id { get; private set; }
+    public long Id { get; private set; }                       // BIGINT no MySQL
     public string Nome { get; private set; } = string.Empty;
     public Dinheiro Preco { get; private set; } = new(0);
     public int Estoque { get; private set; }
-    public DateTime CriadoEm { get; private set; }
 
-    /// &lt;summary&gt;Eventes de domínio pendentes (publicados após persistência).&lt;/summary&gt;
+    /// &lt;summary&gt;Eventos de domínio pendentes (não vão para o banco).&lt;/summary&gt;
     public IReadOnlyCollection&lt;IDomainEvent&gt; DomainEvents =&gt; _events.AsReadOnly();
 
+    /// &lt;summary&gt;Construtor vazio e protegido: só o EF Core usa, ao ler do banco.&lt;/summary&gt;
     protected Produto() { }
 
-    public Produto(int id, string nome, Dinheiro preco, int estoque)
-    {
-        Aplicar(nome, preco, estoque);
-        Id = id;
-    }
-
-    /// &lt;summary&gt;Factory Method: criação controlada + publica evento.&lt;/summary&gt;
+    /// &lt;summary&gt;
+    /// Factory Method de CRIAÇÃO: valida as regras. O Id fica 0 até o banco gerar.
+    /// &lt;/summary&gt;
     public static Produto Criar(string nome, Dinheiro preco, int estoque)
     {
-        var p = new Produto(0, nome, preco, estoque);
-        p._events.Add(new ProdutoCriadoEvent(p.Id, nome));
+        var p = new Produto();
+        p.Aplicar(nome, preco, estoque);
         return p;
     }
 
+    /// &lt;summary&gt;
+    /// Factory de RECONSTITUIÇÃO: monta um produto que JÁ existe (com Id).
+    /// Usada pelos testes; não publica evento.
+    /// &lt;/summary&gt;
+    public static Produto Reconstituir(long id, string nome, Dinheiro preco, int estoque)
+    {
+        var p = new Produto { Id = id };
+        p.Aplicar(nome, preco, estoque);
+        return p;
+    }
+
+    /// &lt;summary&gt;
+    /// Chamado pelo ProdutoService DEPOIS de salvar: agora o Id é real,
+    /// então o evento sai com o número certo.
+    /// &lt;/summary&gt;
+    public void ConfirmarCriacao()
+    {
+        if (Id &lt;= 0) throw new DomainException("O produto precisa ser salvo antes de confirmar a criação");
+        _events.Add(new ProdutoCriadoEvent(Id, Nome));
+    }
+
+    /// &lt;summary&gt;Atualização (PUT): mesmas regras da criação.&lt;/summary&gt;
+    public void AplicarAtualizacao(string nome, Dinheiro preco, int estoque) =&gt; Aplicar(nome, preco, estoque);
+
     /// &lt;summary&gt;Remove estoque com guarda de suficiência.&lt;/summary&gt;
-    /// &lt;exception cref="DomainException"&gt;Se quantidade inválida ou estoque insuficiente.&lt;/exception&gt;
     public void RemoverEstoque(int quantidade)
     {
         if (quantidade &lt;= 0) throw new DomainException("Quantidade deve ser &gt; 0");
@@ -263,138 +427,164 @@ public class Produto
         Estoque -= quantidade;
     }
 
-    /// &lt;summary&gt;Eventes são limpos após dispatch.&lt;/summary&gt;
+    /// &lt;summary&gt;Limpa os eventos depois de publicados.&lt;/summary&gt;
     public void ClearEvents() =&gt; _events.Clear();
-    /// <summary>Aplica atualização validando invariantes (usado pelo PUT).</summary>
-    public void AplicarAtualizacao(string nome, Dinheiro preco, int estoque)
-    {
-        if (string.IsNullOrWhiteSpace(nome)) throw new DomainException("Nome é obrigatório");
-        if (nome.Trim().Length &lt; 2) throw new DomainException("Nome deve ter &gt;= 2 caracteres");
-        if (preco is null || preco.Valor &lt;= 0) throw new DomainException("Preço deve ser &gt; 0");
-        if (estoque &lt; 0) throw new DomainException("Estoque não pode ser negativo");
-        Nome = nome.Trim(); Preco = preco; Estoque = estoque;
-    }    
 
+    // As regras ficam num lugar só (as mesmas do contrato da Tab 4):
+    // nome 2–100 letras, preço &gt; 0, estoque &gt;= 0.
     private void Aplicar(string nome, Dinheiro preco, int estoque)
     {
-        if (string.IsNullOrWhiteSpace(nome)) throw new DomainException("Nome é obrigatório");
-        if (nome.Trim().Length &lt; 2) throw new DomainException("Nome deve ter &gt;= 2 caracteres");
-        if (preco is null || preco.Valor &lt;= 0) throw new DomainException("Preço deve ser &gt; 0");
-        if (estoque &lt; 0) throw new DomainException("Estoque não pode ser negativo");
-        Nome = nome.Trim(); Preco = preco; Estoque = estoque; CriadoEm = DateTime.UtcNow;
+        if (string.IsNullOrWhiteSpace(nome) || nome.Trim().Length &lt; 2)
+            throw new DomainException("O nome deve ter pelo menos 2 caracteres");
+        if (nome.Trim().Length &gt; 100)
+            throw new DomainException("O nome pode ter no máximo 100 caracteres");
+        if (preco is null || preco.Valor &lt;= 0)
+            throw new DomainException("O preço deve ser maior que zero");
+        if (estoque &lt; 0)
+            throw new DomainException("O estoque não pode ser negativo");
+        Nome = nome.Trim();
+        Preco = preco;
+        Estoque = estoque;
     }
-}</pre></div>
-
-<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Domain/Interfaces/IProdutoRepository.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Domain/Interfaces/IProdutoRepository.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="LojaApi.Domain/Interfaces/IProdutoRepository.cs">using LojaApi.Domain.Entities;
 
 namespace LojaApi.Domain.Interfaces;
 
-/// &lt;summary&gt;Porta de saída do domínio (DIP). A infraestrutura decide COMO.&lt;/summary&gt;
+/// &lt;summary&gt;
+/// PORTA de saída do domínio (Dependency Inversion): o domínio diz O QUE precisa;
+/// a infraestrutura (EfProdutoRepository) decide COMO.
+/// &lt;/summary&gt;
 public interface IProdutoRepository
 {
     Task&lt;Produto&gt; SalvarAsync(Produto produto);
-    Task&lt;Produto?&gt; BuscarPorIdAsync(int id);
-    Task&lt;List&lt;Produto&gt;&gt; ListarAsync();
-    Task&lt;bool&gt; ExistePorIdAsync(int id);
-    Task DeletarAsync(int id);
-}</pre></div>
+    Task&lt;Produto?&gt; BuscarPorIdAsync(long id);
+    /// &lt;summary&gt;Uma página: o banco faz o Skip/Take (não traz a tabela inteira).&lt;/summary&gt;
+    Task&lt;List&lt;Produto&gt;&gt; ListarAsync(int page, int size);
+    Task&lt;bool&gt; ExistePorIdAsync(long id);
+    Task DeletarAsync(long id);
+}</pre>
+</div>
+<h4 style="color:var(--accent);margin:16px 0 8px">⚙️ Application — os casos de uso</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Application/DTOs/ProdutoDtos.cs (Request, Response, Mapper)</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Application/DTOs/ProdutoDtos.cs">using LojaApi.Domain.Entities;
 
-<h4 style="color:var(--accent);margin:16px 0 8px">⚙️ Camada Application (Use Cases + DTOs + Mapper)</h4>
-<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Application/Services/IProdutoService.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+namespace LojaApi.Application.DTOs;
+
+/// &lt;summary&gt;
+/// O que o cliente ENVIA no POST/PUT — igual ao ProdutoRequest do contrato (Tab 4):
+/// sem id, porque quem cria o id é o banco.
+/// &lt;/summary&gt;
+public record ProdutoRequest(string Nome, decimal Preco, int Estoque);
+
+/// &lt;summary&gt;O que a API DEVOLVE — igual ao ProdutoResponse do contrato.&lt;/summary&gt;
+public record ProdutoResponse(long Id, string Nome, decimal Preco, int Estoque);
+
+/// &lt;summary&gt;Conversão Entidade → DTO. A entidade nunca sai da API "crua".&lt;/summary&gt;
+public static class ProdutoMapper
+{
+    public static ProdutoResponse ToResponse(Produto p) =&gt; new(p.Id, p.Nome, p.Preco.Valor, p.Estoque);
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Application/Services/IProdutoService.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="LojaApi.Application/Services/IProdutoService.cs">using LojaApi.Application.DTOs;
 
 namespace LojaApi.Application.Services;
 
-/// &lt;summary&gt;Contrato do caso de uso "Produtos" (Interface Segregation).&lt;/summary&gt;
+/// &lt;summary&gt;Contrato dos casos de uso de Produtos (Interface Segregation). Um método por rota.&lt;/summary&gt;
 public interface IProdutoService
 {
-    Task&lt;ProdutoResponse&gt; CriarAsync(CriarProdutoRequest request);
-    Task&lt;List&lt;ProdutoResponse&gt;&gt; ListarAsync();
-    Task&lt;List&lt;ProdutoResponse&gt;&gt; ListarAsync(int page, int size);    
-    Task&lt;ProdutoResponse&gt; ObterPorIdAsync(int id);
-    Task ExcluirAsync(int id);
-}</pre></div>
-
-<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Application/Services/ProdutoService.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+    Task&lt;List&lt;ProdutoResponse&gt;&gt; ListarAsync(int page, int size);   // GET    /api/produtos
+    Task&lt;ProdutoResponse&gt; ObterPorIdAsync(long id);                  // GET    /api/produtos/{id}
+    Task&lt;ProdutoResponse&gt; CriarAsync(ProdutoRequest request);        // POST   /api/produtos
+    Task&lt;ProdutoResponse&gt; AtualizarAsync(long id, ProdutoRequest r); // PUT    /api/produtos/{id}
+    Task ExcluirAsync(long id);                                      // DELETE /api/produtos/{id}
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Application/Services/ProdutoService.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="LojaApi.Application/Services/ProdutoService.cs">using LojaApi.Application.DTOs;
 using LojaApi.Domain.Entities;
 using LojaApi.Domain.Exceptions;
 using LojaApi.Domain.Interfaces;
+using LojaApi.Domain.ValueObjects;
 
 namespace LojaApi.Application.Services;
 
-/// &lt;summary&gt;Implementa os casos de uso. Recebe a INTERFACE IProdutoRepository (DIP).&lt;/summary&gt;
+/// &lt;summary&gt;
+/// Casos de uso. Recebe a INTERFACE IProdutoRepository no construtor (DIP):
+/// não sabe se é MySQL, Mongo ou um mock de teste.
+/// &lt;/summary&gt;
 public class ProdutoService : IProdutoService
 {
     private readonly IProdutoRepository _repo;
 
     public ProdutoService(IProdutoRepository repo) { _repo = repo; }
 
-    public async Task&lt;ProdutoResponse&gt; CriarAsync(CriarProdutoRequest req)
-    {
-        var produto = Produto.Criar(req.Nome, new Domain.ValueObjects.Dinheiro(req.Preco), req.Estoque);
-        var salvo = await _repo.SalvarAsync(produto);
-        return ProdutoMapper.ToResponse(salvo);
-    }
-
-    public async Task&lt;List&lt;ProdutoResponse&gt;&gt; ListarAsync()
-    {
-        var todos = await _repo.ListarAsync();
-        return todos.Select(ProdutoMapper.ToResponse).ToList();
-    }
     public async Task&lt;List&lt;ProdutoResponse&gt;&gt; ListarAsync(int page, int size)
     {
-        var todos = await _repo.ListarAsync();
-        return todos.Skip(page * size).Take(size).Select(ProdutoMapper.ToResponse).ToList();
+        // Mesmos limites do contrato: page &gt;= 0, size entre 1 e 100
+        if (page &lt; 0) throw new DomainException("page deve ser &gt;= 0");
+        if (size is &lt; 1 or &gt; 100) throw new DomainException("size deve estar entre 1 e 100");
+        var pagina = await _repo.ListarAsync(page, size);
+        return pagina.Select(ProdutoMapper.ToResponse).ToList();
     }
-    public async Task<ProdutoResponse> AtualizarAsync(int id, CriarProdutoRequest req)
+
+    public async Task&lt;ProdutoResponse&gt; ObterPorIdAsync(long id)
     {
         var p = await _repo.BuscarPorIdAsync(id)
-            ?? throw new DomainException($"Produto não encontrado: {id}");
-        p.AplicarAtualizacao(req.Nome, new Domain.ValueObjects.Dinheiro(req.Preco), req.Estoque);
-        var salvo = await _repo.SalvarAsync(p);
-        return ProdutoMapper.ToResponse(salvo);
-    }
-    public async Task&lt;ProdutoResponse&gt; ObterPorIdAsync(int id)
-    {
-        var p = await _repo.BuscarPorIdAsync(id)
-            ?? throw new DomainException($"Produto não encontrado: {id}");
+            ?? throw new NaoEncontradoException($"Produto {id} não existe");   // → 404
         return ProdutoMapper.ToResponse(p);
     }
 
-    public async Task ExcluirAsync(int id)
+    public async Task&lt;ProdutoResponse&gt; CriarAsync(ProdutoRequest req)
+    {
+        var produto = Produto.Criar(req.Nome, new Dinheiro(req.Preco), req.Estoque);  // regras → 400
+        var salvo = await _repo.SalvarAsync(produto);   // o banco gera o Id
+        salvo.ConfirmarCriacao();                        // agora o evento sai com o Id certo
+        return ProdutoMapper.ToResponse(salvo);
+    }
+
+    public async Task&lt;ProdutoResponse&gt; AtualizarAsync(long id, ProdutoRequest req)
+    {
+        var p = await _repo.BuscarPorIdAsync(id)
+            ?? throw new NaoEncontradoException($"Produto {id} não existe");   // → 404
+        p.AplicarAtualizacao(req.Nome, new Dinheiro(req.Preco), req.Estoque);  // regras → 400
+        var salvo = await _repo.SalvarAsync(p);
+        return ProdutoMapper.ToResponse(salvo);
+    }
+
+    public async Task ExcluirAsync(long id)
     {
         if (!await _repo.ExistePorIdAsync(id))
-            throw new DomainException($"Produto inexistente: {id}");
+            throw new NaoEncontradoException($"Produto {id} não existe");      // → 404
         await _repo.DeletarAsync(id);
     }
-}</pre></div>
-
-<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Application/DTOs (Request/Response/Mapper)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor" data-zip-path="LojaApi.Application/DTOs/CriarProdutoRequest.cs">namespace LojaApi.Application.DTOs;
-
-/// &lt;summary&gt;DTO de entrada (não expõe a entidade).&lt;/summary&gt;
-public record CriarProdutoRequest(string Nome, decimal Preco, int Estoque);
-
-/// &lt;summary&gt;DTO de saída — o que o cliente recebe.&lt;/summary&gt;
-public record ProdutoResponse(int Id, string Nome, decimal Preco, int Estoque);
-
-/// &lt;summary&gt;Conversões DTO ↔ Domínio.&lt;/summary&gt;
-public static class ProdutoMapper
-{
-    public static ProdutoResponse ToResponse(Domain.Entities.Produto p) =&gt;
-        new(p.Id, p.Nome, p.Preco.Valor, p.Estoque);
-}</pre></div>
-
-<h4 style="color:var(--accent);margin:16px 0 8px">🏭 Camada Infrastructure (EF Core + Mongo + DualWrite)</h4>
-<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Infrastructure/Data/AppDbContext.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+}</pre>
+</div>
+<h4 style="color:var(--accent);margin:16px 0 8px">🏭 Infrastructure — EF Core + MySQL</h4>
+<div class="info-banner"><strong>🐬 A tabela já existe:</strong> o EF Core aqui <strong>não cria</strong> tabela — usa a <code>produtos</code> que o <code>init-sql</code> da <a href="javascript:switchTab('tab5')" style="color:var(--primary);text-decoration:underline">Tab 5</a> criou no <code>loja_db</code> (<code>id BIGINT</code>, <code>nome</code>, <code>preco DECIMAL(10,2)</code>, <code>estoque</code>). Por isso o <code>Id</code> é <code>long</code> e o mapeamento diz o nome de cada coluna.</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Infrastructure/Data/AppDbContext.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="LojaApi.Infrastructure/Data/AppDbContext.cs">using LojaApi.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace LojaApi.Infrastructure.Data;
 
-/// &lt;summary&gt;DbContext EF Core — mapeia Produto p/ tabela "produtos".&lt;/summary&gt;
+/// &lt;summary&gt;
+/// DbContext do EF Core: diz como a classe Produto vira a tabela "produtos"
+/// que JÁ existe no loja_db (criada pelo init-sql da Tab 5). Por isso não usamos migrations aqui.
+/// &lt;/summary&gt;
 public class AppDbContext : DbContext
 {
     public AppDbContext(DbContextOptions&lt;AppDbContext&gt; options) : base(options) { }
@@ -407,27 +597,35 @@ public class AppDbContext : DbContext
         {
             e.ToTable("produtos");
             e.HasKey(p =&gt; p.Id);
-            e.Property(p =&gt; p.Nome).HasMaxLength(100).IsRequired();
-            e.Property(p =&gt; p.Estoque).IsRequired();
-            e.Ignore(p =&gt; p.DomainEvents);          // eventos não persistem
-            e.Ignore(p =&gt; p.Preco);                  // mapeado abaixo via OwnsOne
+            e.Property(p =&gt; p.Id).HasColumnName("id");
+            e.Property(p =&gt; p.Nome).HasColumnName("nome").HasMaxLength(100).IsRequired();
+            e.Property(p =&gt; p.Estoque).HasColumnName("estoque").IsRequired();
+            e.Ignore(p =&gt; p.DomainEvents);        // eventos não vão para o banco
+
+            // O Value Object Dinheiro vira a coluna "preco" da MESMA tabela (owned type).
+            // Atenção: NÃO use e.Ignore(p =&gt; p.Preco) junto — o Ignore apagaria a propriedade
+            // e o OwnsOne quebraria ao montar o modelo.
             e.OwnsOne(p =&gt; p.Preco, d =&gt;
             {
-                d.Property(x =&gt; x.Valor).HasColumnType("decimal(10,2)").HasColumnName("preco");
-                d.Ignore(x =&gt; x.Moeda);
+                d.Property(x =&gt; x.Valor).HasColumnName("preco").HasColumnType("decimal(10,2)");
+                d.Ignore(x =&gt; x.Moeda);           // a tabela não tem coluna de moeda (sempre BRL)
             });
+            e.Navigation(p =&gt; p.Preco).IsRequired();
         });
     }
-}</pre></div>
-
-<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Infrastructure/Repositories/EfProdutoRepository.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Infrastructure/Repositories/EfProdutoRepository.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="LojaApi.Infrastructure/Repositories/EfProdutoRepository.cs">using LojaApi.Domain.Entities;
 using LojaApi.Domain.Interfaces;
 using LojaApi.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;   // traz AsNoTracking, ToListAsync, AnyAsync...
 
 namespace LojaApi.Infrastructure.Repositories;
 
-/// &lt;summary&gt;Adapter EF Core — implementa a porta do domínio (relational).&lt;/summary&gt;
+/// &lt;summary&gt;ADAPTER: implementa a porta IProdutoRepository usando EF Core + MySQL.&lt;/summary&gt;
 public class EfProdutoRepository : IProdutoRepository
 {
     private readonly AppDbContext _ctx;
@@ -435,108 +633,35 @@ public class EfProdutoRepository : IProdutoRepository
 
     public async Task&lt;Produto&gt; SalvarAsync(Produto p)
     {
-        if (p.Id == 0) await _ctx.Produtos.AddAsync(p);
-        else _ctx.Produtos.Update(p);
+        if (p.Id == 0) await _ctx.Produtos.AddAsync(p);   // novo → INSERT
+        // já existe: foi lido por BuscarPorIdAsync (rastreado), o EF detecta a mudança → UPDATE
         await _ctx.SaveChangesAsync();
         return p;
     }
-    public async Task&lt;Produto?&gt; BuscarPorIdAsync(int id) =&gt; await _ctx.Produtos.FindAsync(id);
-    public async Task&lt;List&lt;Produto&gt;&gt; ListarAsync() =&gt; await _ctx.Produtos.AsNoTracking().ToListAsync();
-    public async Task&lt;bool&gt; ExistePorIdAsync(int id) =&gt; await _ctx.Produtos.AnyAsync(p =&gt; p.Id == id);
-    public async Task DeletarAsync(int id)
+
+    public Task&lt;Produto?&gt; BuscarPorIdAsync(long id) =&gt;
+        _ctx.Produtos.FirstOrDefaultAsync(p =&gt; p.Id == id);
+
+    // Paginação DE VERDADE: o Skip/Take vira "LIMIT ... OFFSET ..." no SQL.
+    public Task&lt;List&lt;Produto&gt;&gt; ListarAsync(int page, int size) =&gt;
+        _ctx.Produtos.AsNoTracking()
+            .OrderBy(p =&gt; p.Id)                // ordem estável entre páginas
+            .Skip(page * size).Take(size)
+            .ToListAsync();
+
+    public Task&lt;bool&gt; ExistePorIdAsync(long id) =&gt; _ctx.Produtos.AnyAsync(p =&gt; p.Id == id);
+
+    public async Task DeletarAsync(long id)
     {
-        var p = await _ctx.Produtos.FindAsync(id);
+        var p = await _ctx.Produtos.FirstOrDefaultAsync(x =&gt; x.Id == id);
         if (p is not null) { _ctx.Produtos.Remove(p); await _ctx.SaveChangesAsync(); }
     }
-}</pre></div>
-
-<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Infrastructure/Mongo/ProdutoMongoDocument.cs + MongoProdutoRepository.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor" data-zip-path="LojaApi.Infrastructure/Mongo/ProdutoMongoDocument.cs">using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
-
-namespace LojaApi.Infrastructure.Mongo;
-
-/// &lt;summary&gt;Documento MongoDB — representação BSON do Produto.&lt;/summary&gt;
-public class ProdutoMongoDocument
-{
-    [BsonId] public ObjectId MongoId { get; set; }
-    public int IdLegado { get; set; }        // referência ao id relacional (p/ backfill)
-    public string Nome { get; set; } = "";
-    public decimal Preco { get; set; }
-    public int Estoque { get; set; }
-}</pre></div>
-<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Infrastructure/Mongo/MongoProdutoRepository.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor" data-zip-path="LojaApi.Infrastructure/Mongo/MongoProdutoRepository.cs">using LojaApi.Domain.Entities;
-using LojaApi.Domain.Interfaces;
-using LojaApi.Domain.ValueObjects;
-using MongoDB.Driver;
-
-namespace LojaApi.Infrastructure.Mongo;
-
-/// &lt;summary&gt;Adapter Mongo — mesma porta, tecnologia diferente (Liskov/Open-Closed).&lt;/summary&gt;
-public class MongoProdutoRepository : IProdutoRepository
-{
-    private readonly IMongoCollection&lt;ProdutoMongoDocument&gt; _col;
-
-    public MongoProdutoRepository(IMongoClient client, string database)
-    {
-        _col = client.GetDatabase(database).GetCollection&lt;ProdutoMongoDocument&gt;("produtos");
-    }
-
-    public async Task&lt;Produto&gt; SalvarAsync(Produto p)
-    {
-        var doc = ToDoc(p);
-        await _col.InsertOneAsync(doc);
-        return p;
-    }
-    public async Task&lt;Produto?&gt; BuscarPorIdAsync(int id)
-    {
-        var doc = await _col.Find(d =&gt; d.IdLegado == id).FirstOrDefaultAsync();
-        return doc is null ? null : ToDomain(doc);
-    }
-    public async Task&lt;List&lt;Produto&gt;&gt; ListarAsync()
-    {
-        var docs = await _col.Find(_ =&gt; true).ToListAsync();
-        return docs.Select(ToDomain).ToList();
-    }
-    public async Task&lt;bool&gt; ExistePorIdAsync(int id) =&gt; await _col.CountDocumentsAsync(d =&gt; d.IdLegado == id) &gt; 0;
-    public async Task DeletarAsync(int id) =&gt; await _col.DeleteOneAsync(d =&gt; d.IdLegado == id);
-
-    private ProdutoMongoDocument ToDoc(Produto p) =&gt; new()
-    { IdLegado = p.Id, Nome = p.Nome, Preco = p.Preco.Valor, Estoque = p.Estoque };
-    private Produto ToDomain(ProdutoMongoDocument d) =&gt; new(d.IdLegado, d.Nome, new Dinheiro(d.Preco), d.Estoque);
-}</pre></div>
-
-<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Infrastructure/Repositories/DualWriteProdutoRepository.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor" data-zip-path="LojaApi.Infrastructure/Repositories/DualWriteProdutoRepository.cs">using LojaApi.Domain.Entities;
-using LojaApi.Domain.Interfaces;
-using LojaApi.Infrastructure.Mongo;
-
-namespace LojaApi.Infrastructure.Repositories;
-
-/// &lt;summary&gt;Dual-write: escreve nos dois bancos; lê do relacional (fase 1 da migração).&lt;/summary&gt;
-public class DualWriteProdutoRepository : IProdutoRepository
-{
-    private readonly EfProdutoRepository _ef;
-    private readonly MongoProdutoRepository _mongo;
-
-    public DualWriteProdutoRepository(EfProdutoRepository ef, MongoProdutoRepository mongo)
-    { _ef = ef; _mongo = mongo; }
-
-    public async Task&lt;Produto&gt; SalvarAsync(Produto p)
-    {
-        var saved = await _ef.SalvarAsync(p);
-        await _mongo.SalvarAsync(saved);      // write-through
-        return saved;
-    }
-    public Task&lt;Produto?&gt; BuscarPorIdAsync(int id) =&gt; _ef.BuscarPorIdAsync(id);
-    public Task&lt;List&lt;Produto&gt;&gt; ListarAsync() =&gt; _ef.ListarAsync();
-    public Task&lt;bool&gt; ExistePorIdAsync(int id) =&gt; _ef.ExistePorIdAsync(id);
-    public async Task DeletarAsync(int id) { await _ef.DeletarAsync(id); await _mongo.DeletarAsync(id); }
-}</pre></div>
-
-<h4 style="color:var(--accent);margin:16px 0 8px">🎯 Camada Api (Controllers + Middleware + JWT)</h4>
-<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Api/Controllers/ProdutosController.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+}</pre>
+</div>
+<h4 style="color:var(--accent);margin:16px 0 8px">🎯 Api — HTTP, JWT e erros</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Api/Controllers/ProdutosController.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="LojaApi.Api/Controllers/ProdutosController.cs">using LojaApi.Application.DTOs;
 using LojaApi.Application.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -544,7 +669,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace LojaApi.Api.Controllers;
 
-/// &lt;summary&gt;Controller REST — Single Responsibility: só recebe/responde HTTP.&lt;/summary&gt;
+/// &lt;summary&gt;
+/// Controller REST (Single Responsibility: só HTTP). Implementa as rotas do contrato da Tab 4.
+/// Segurança = só autenticação (decisão B): ler é público; escrever exige um token válido.
+/// &lt;/summary&gt;
 [ApiController]
 [Route("api/produtos")]
 public class ProdutosController : ControllerBase
@@ -552,44 +680,52 @@ public class ProdutosController : ControllerBase
     private readonly IProdutoService _service;
     public ProdutosController(IProdutoService service) { _service = service; }
 
-    [HttpGet]                       // leitura pública
+    [HttpGet]                                   // público
     public async Task&lt;ActionResult&lt;List&lt;ProdutoResponse&gt;&gt;&gt; Listar([FromQuery] int page = 0, [FromQuery] int size = 20)
         =&gt; Ok(await _service.ListarAsync(page, size));
 
-    [HttpGet("{id:int}")]
-    public async Task&lt;ActionResult&lt;ProdutoResponse&gt;&gt; Obter(int id)
+    [HttpGet("{id:long}")]                      // público
+    public async Task&lt;ActionResult&lt;ProdutoResponse&gt;&gt; Obter(long id)
         =&gt; Ok(await _service.ObterPorIdAsync(id));
 
     [HttpPost]
-    [Authorize(Roles = "ADMIN")]    // escrita autenticada
-    public async Task&lt;ActionResult&lt;ProdutoResponse&gt;&gt; Criar([FromBody] CriarProdutoRequest req)
+    [Authorize]                                 // qualquer usuário logado (sem roles)
+    public async Task&lt;ActionResult&lt;ProdutoResponse&gt;&gt; Criar([FromBody] ProdutoRequest req)
     {
         var criado = await _service.CriarAsync(req);
-        return CreatedAtAction(nameof(Obter), new { id = criado.Id }, criado);
+        return CreatedAtAction(nameof(Obter), new { id = criado.Id }, criado);   // 201 + header Location
     }
-    [HttpPut("{id:int}")]
-    [Authorize(Roles = "ADMIN")]    // escrita autenticada
-    public async Task<ActionResult<ProdutoResponse>> Atualizar(int id, [FromBody] CriarProdutoRequest req)
-        => Ok(await _service.AtualizarAsync(id, req));
-    [HttpDelete("{id:int}")]
-    [Authorize(Roles = "ADMIN")]
-    public async Task&lt;IActionResult&gt; Excluir(int id)
+
+    [HttpPut("{id:long}")]
+    [Authorize]
+    public async Task&lt;ActionResult&lt;ProdutoResponse&gt;&gt; Atualizar(long id, [FromBody] ProdutoRequest req)
+        =&gt; Ok(await _service.AtualizarAsync(id, req));
+
+    [HttpDelete("{id:long}")]
+    [Authorize]
+    public async Task&lt;IActionResult&gt; Excluir(long id)
     {
         await _service.ExcluirAsync(id);
-        return NoContent();
+        return NoContent();                                                       // 204
     }
-}</pre></div>
-
-<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Api/Controllers/AuthController.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Api/Controllers/AuthController.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="LojaApi.Api/Controllers/AuthController.cs">using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.IdentityModel.Tokens;
 
 namespace LojaApi.Api.Controllers;
 
-/// &lt;summary&gt;Endpoint público de login — emite JWT.&lt;/summary&gt;
+/// &lt;summary&gt;
+/// Login público que emite o JWT — no formato do contrato da Tab 4:
+/// recebe { email, senha } e devolve { tokenAcesso, tipo, expiraEm }.
+/// Didático: o usuário é fixo. A Tab 9 mostra login com tabela de usuários.
+/// &lt;/summary&gt;
 [ApiController]
 [Route("api/auth")]
 public class AuthController : ControllerBase
@@ -602,210 +738,433 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public IActionResult Login([FromBody] LoginRequest req)
     {
-        // TODO: validar contra base de usuários real
-        if (req.Email != "dev@loja.com.br" || req.Senha != "SenhaForte#2026")
-            return Unauthorized(new { type = "https://example.com/erros/auth", title = "Unauthorized", status = 401, detail = "Credenciais inválidas" });
+        if (string.IsNullOrWhiteSpace(req.Email) || string.IsNullOrWhiteSpace(req.Senha))
+            return Problem(type: "https://example.com/erros/validacao", title: "Requisição inválida",
+                           statusCode: 400, detail: "Os campos email e senha são obrigatórios.");
 
+        if (req.Email != "dev@loja.com.br" || req.Senha != "SenhaForte#2026")
+            return Problem(type: "https://example.com/erros/naoautenticado", title: "Não autenticado",
+                           statusCode: 401, detail: "E-mail ou senha incorretos.");
+
+        // A validade vem do appsettings.json (Jwt:ExpirationMinutes), não fixa no código
+        var minutos = _cfg.GetValue("Jwt:ExpirationMinutes", 60);
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_cfg["Jwt:Secret"]!));
         var token = new JwtSecurityToken(
-            claims: new[] { new Claim(ClaimTypes.Name, req.Email), new Claim(ClaimTypes.Role, "ADMIN") },
-            expires: DateTime.UtcNow.AddMinutes(60),
+            claims: new[] { new Claim(JwtRegisteredClaimNames.Sub, req.Email) },   // quem é — sem role
+            expires: DateTime.UtcNow.AddMinutes(minutos),
             signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256));
-        return Ok(new { tokenAcesso = new JwtSecurityTokenHandler().WriteToken(token), tipo = "Bearer", expiraEm = 3600 });
-    }
-}</pre></div>
 
-<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Api/Middleware/ExceptionMiddleware.cs (RFC 7807)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+        return Ok(new
+        {
+            tokenAcesso = new JwtSecurityTokenHandler().WriteToken(token),
+            tipo = "Bearer",
+            expiraEm = minutos * 60          // em segundos, como diz o contrato
+        });
+    }
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Api/Middleware/ExceptionMiddleware.cs (RFC 7807)</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="LojaApi.Api/Middleware/ExceptionMiddleware.cs">using LojaApi.Domain.Exceptions;
 using System.Text.Json;
 
 namespace LojaApi.Api.Middleware;
 
-/// &lt;summary&gt;Captura exceções e retorna RFC 7807 (application/problem+json).&lt;/summary&gt;
+/// &lt;summary&gt;
+/// Tratamento CENTRALIZADO de erros: toda exceção vira RFC 7807 (application/problem+json),
+/// com os mesmos "type" do contrato da Tab 4.
+///   NaoEncontradoException → 404 · DomainException → 400 · qualquer outra → 500
+/// &lt;/summary&gt;
 public class ExceptionMiddleware
 {
     private readonly RequestDelegate _next;
-    public ExceptionMiddleware(RequestDelegate next) { _next = next; }
+    private readonly ILogger&lt;ExceptionMiddleware&gt; _log;
+
+    public ExceptionMiddleware(RequestDelegate next, ILogger&lt;ExceptionMiddleware&gt; log)
+    { _next = next; _log = log; }
 
     public async Task Invoke(HttpContext ctx)
     {
         try { await _next(ctx); }
-        catch (DomainException ex)
+        catch (NaoEncontradoException ex) { await Escrever(ctx, 404, "naoencontrado", "Não encontrado", ex.Message); }
+        catch (DomainException ex)        { await Escrever(ctx, 400, "validacao", "Requisição inválida", ex.Message); }
+        catch (Exception ex)
         {
-            ctx.Response.StatusCode = 400;
-            ctx.Response.ContentType = "application/problem+json";
-            await ctx.Response.WriteAsync(JsonSerializer.Serialize(new
-            {
-                type = "https://example.com/erros/dominio",
-                title = "Regra de negócio violada",
-                status = 400,
-                detail = ex.Message
-            }));
+            _log.LogError(ex, "Erro inesperado");   // o detalhe vai para o log, nunca para o cliente
+            await Escrever(ctx, 500, "interno", "Erro interno", "Algo deu errado. Tente novamente.");
         }
     }
-}</pre></div>
-<div class="lab-container">
-<div class="lab-header"><h3>🔑 JWT na prática (C#): quem faz o quê</h3></div>
-<ol class="step-number-list">
-<li><strong>Emissão — <code>AuthController.Login()</code>:</strong> monta <code>ClaimTypes.Name/Role</code> + <code>expires</code> e assina com <code>SigningCredentials(HmacSha256)</code> usando <code>Jwt:Secret</code>.</li>
-<li><strong>Verificação — middleware <code>AddJwtBearer</code>:</strong> o próprio ASP.NET valida assinatura/expiração via <code>TokenValidationParameters</code> (<code>ValidateLifetime</code>, <code>ValidateIssuerSigningKey</code>, <code>ClockSkew</code>).</li>
-<li><strong>Fio condutor — <code>Program.cs</code>:</strong> <code>UseAuthentication()</code> antes de <code>UseAuthorization()</code>; controllers protegem com <code>[Authorize(Roles="ADMIN")]</code>.</li>
-<li><strong>Secret:</strong> <code>Jwt:Secret</code> no <code>appsettings.json</code> em dev; em produção use <strong>env var</strong> (<code>Jwt__Secret</code>) ou <code>dotnet user-secrets</code> — nunca commitado.</li>
-</ol>
-<div class="term-help"><strong>🖥️ Testar:</strong> <span class="ide-tag cs">VS Code</span> <kbd>Ctrl+`</kbd> → login p/ obter token → <code>curl -H "Authorization: Bearer $TOKEN" …</code> (roteiro completo na Tab 4).</div>
+
+    private static Task Escrever(HttpContext ctx, int status, string slug, string title, string detail)
+    {
+        ctx.Response.StatusCode = status;
+        ctx.Response.ContentType = "application/problem+json";
+        return ctx.Response.WriteAsync(JsonSerializer.Serialize(new
+        {
+            type = "https://example.com/erros/" + slug,
+            title,
+            status,
+            detail
+        }));
+    }
+}</pre>
 </div>
-<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Api/appsettings.json</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Api/appsettings.json</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="LojaApi.Api/appsettings.json">{
-  "Logging": { "LogLevel": { "Default": "Information" } },
+  "Logging": { "LogLevel": { "Default": "Information", "Microsoft.AspNetCore": "Warning" } },
   "AllowedHosts": "*",
   "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Port=3306;Database=loja_db;User=devuser;Password=devpass;",
-    "MongoConnection": "mongodb://root:root123@localhost:27017/?authSource=admin",
-    "MongoDatabase": "loja_nosql"
+    "DefaultConnection": "Server=localhost;Port=3306;Database=loja_db;User=devuser;Password=devpass;"
   },
-  "Persistence": { "Provider": "relational" },
   "Jwt": {
     "Secret": "MinhaChaveSecretaSuperSeguraLojaAPI2026DeveTerMin32Caracteres",
     "ExpirationMinutes": 60
   }
-}</pre></div>
-
-<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Api/Program.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor" data-zip-path="LojaApi.Api/Program.cs">using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Api/Properties/launchSettings.json (porta 5000 e abre o Swagger)</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Api/Properties/launchSettings.json">{
+  "profiles": {
+    "LojaApi.Api": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "applicationUrl": "http://localhost:5000",
+      "environmentVariables": { "ASPNETCORE_ENVIRONMENT": "Development" }
+    }
+  }
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Api/Program.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Api/Program.cs">using LojaApi.Api.Middleware;
 using LojaApi.Application.Services;
 using LojaApi.Domain.Interfaces;
 using LojaApi.Infrastructure.Data;
-using LojaApi.Infrastructure.Mongo;
 using LojaApi.Infrastructure.Repositories;
-using LojaApi.Api.Middleware;
-using MongoDB.Driver;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// ── 1) Controllers + Swagger (documentação em /swagger) ──
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// EF Core + MySQL
-var cs = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext&lt;AppDbContext&gt;(o =&gt; o.UseMySql(cs, ServerVersion.AutoDetect(cs)));
+// ── 2) EF Core + MySQL (o loja_db da Tab 5) ──
+// Versão fixa do servidor (a imagem é mysql:8.4): o AutoDetect abriria uma conexão só para perguntar a versão.
+var cs = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection ausente no appsettings.json");
+builder.Services.AddDbContext&lt;AppDbContext&gt;(o =&gt; o.UseMySql(cs, new MySqlServerVersion(new Version(8, 4, 0))));
 
-// Toggle de persistência (Strangler Fig): relational | dual | nosql
-var provider = builder.Configuration["Persistence:Provider"] ?? "relational";
-if (provider is "nosql" or "dual")
-{
-    builder.Services.AddSingleton&lt;IMongoClient&gt;(sp =&gt; new MongoClient(
-        builder.Configuration.GetConnectionString("MongoConnection")));
-    builder.Services.AddScoped(sp =&gt; new MongoProdutoRepository(
-        sp.GetRequiredService&lt;IMongoClient&gt;(),
-        builder.Configuration.GetConnectionString("MongoDatabase")!));
-}
-switch (provider)
-{
-    case "nosql":
-        builder.Services.AddScoped&lt;IProdutoRepository&gt;(sp =&gt; sp.GetRequiredService&lt;MongoProdutoRepository&gt;());
-        break;
-    case "dual":
-        builder.Services.AddScoped&lt;EfProdutoRepository&gt;();
-        builder.Services.AddScoped&lt;IProdutoRepository, DualWriteProdutoRepository&gt;();
-        break;
-    default:
-        builder.Services.AddScoped&lt;IProdutoRepository, EfProdutoRepository&gt;();
-        break;
-}
+// ── 3) Injeção de dependência: a porta (interface) → o adapter (classe concreta) ──
+builder.Services.AddScoped&lt;IProdutoRepository, EfProdutoRepository&gt;();
 builder.Services.AddScoped&lt;IProdutoService, ProdutoService&gt;();
 
-// JWT Bearer
+// ── 4) JWT Bearer: confere assinatura e validade de cada token ──
 var secret = builder.Configuration["Jwt:Secret"]!;
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(o =&gt; o.TokenValidationParameters = new TokenValidationParameters
+    .AddJwtBearer(o =&gt;
     {
-        ValidateIssuer = false, ValidateAudience = false,
-        ValidateLifetime = true, ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)),
-        ClockSkew = TimeSpan.FromMinutes(1)
+        o.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false, ValidateAudience = false,      // didático: sem emissor/audiência
+            ValidateLifetime = true, ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)),
+            ClockSkew = TimeSpan.FromMinutes(1)
+        };
+        // Sem token (ou inválido): o padrão é 401 com corpo VAZIO.
+        // O contrato pede problem+json, então escrevemos o corpo aqui.
+        o.Events = new JwtBearerEvents
+        {
+            OnChallenge = async ctx =&gt;
+            {
+                ctx.HandleResponse();
+                ctx.Response.StatusCode = 401;
+                ctx.Response.ContentType = "application/problem+json";
+                await ctx.Response.WriteAsync(JsonSerializer.Serialize(new
+                {
+                    type = "https://example.com/erros/naoautenticado",
+                    title = "Não autenticado",
+                    status = 401,
+                    detail = "Envie o header Authorization: Bearer &lt;token&gt;."
+                }));
+            }
+        };
     });
 builder.Services.AddAuthorization();
 
+// ── 5) Pipeline: a ORDEM importa ──
 var app = builder.Build();
-app.UseMiddleware&lt;ExceptionMiddleware&gt;();   // exceção centralizada (RFC 7807)
-app.UseSwagger(); app.UseSwaggerUI();
-app.UseHttpsRedirection();
-app.UseAuthentication();
-app.UseAuthorization();
+app.UseMiddleware&lt;ExceptionMiddleware&gt;();   // 1º: pega exceções de tudo que vem depois
+app.UseSwagger();
+app.UseSwaggerUI();
+// (sem UseHttpsRedirection: a API roda em http — porta 5000 no dotnet run e 8080 no Docker)
+app.UseAuthentication();                    // quem é você? (lê o token)
+app.UseAuthorization();                     // você pode? ([Authorize])
 app.MapControllers();
-app.Run();</pre></div>
+app.Run();</pre>
+</div>
+<h4>🔑 O JWT nesta API, em 3 peças</h4>
+<ol class="step-number-list">
+<li><strong>Emissão — <code>AuthController.Login()</code>:</strong> confere e-mail e senha, monta o token com o <code>sub</code> (quem é) e a validade do <code>appsettings.json</code>, e assina com a chave <code>Jwt:Secret</code>. <strong>Sem roles</strong>: o contrato só pergunta "está logado?".</li>
+<li><strong>Conferência — <code>AddJwtBearer</code> no <code>Program.cs</code>:</strong> o próprio ASP.NET confere assinatura e validade de cada pedido. Sem token, o evento <code>OnChallenge</code> responde <code>401</code> em <code>problem+json</code>, como o contrato pede.</li>
+<li><strong>Proteção — <code>[Authorize]</code>:</strong> só nas rotas de escrita (POST, PUT, DELETE). Os GETs ficam públicos.</li>
+</ol>
+<div class="warning-banner"><strong>⚠️ A chave secreta:</strong> no <code>appsettings.json</code> só para estudar. De verdade, use variável de ambiente (<code>Jwt__Secret</code>) ou <code>dotnet user-secrets</code> — nunca no Git.</div>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=entity+framework+core+mysql+pomelo" target="_blank">EF Core com MySQL (Pomelo)</a> · <a class="ext" href="https://www.youtube.com/results?search_query=jwt+asp.net+core+autentica%C3%A7%C3%A3o+passo+a+passo" target="_blank">JWT no ASP.NET Core</a> · <a class="ext" href="https://www.youtube.com/results?search_query=middleware+tratamento+de+erros+asp.net+core+problem+details" target="_blank">Middleware de erros e Problem Details</a></div>
 </div>
 
-<!-- ══════════ SEÇÃO 4: TDD (PARIDADE) ══════════ -->
+<!-- ══════════════════════════ ④ RODAR E TESTAR ══════════════════════════ -->
 <div class="lab-container">
-<div class="lab-header">	 <h3>🧪 TDD: 4 testes de domínio + 8 de serviço (xUnit + Moq)</h3></div>
-<h4 class="diag-title">📐 D-14 <span class="dt-type">Fluxo</span> — Ciclo TDD Red-Green-Refactor (C#)</h4>
+<div class="lab-header"><h3>④ ▶️ Rodar a API e testar com o roteiro da Tab 4</h3></div>
+<div class="step-box">
+<h4><span class="step-num-big">1</span> 🖱️ Ligar o MySQL da Tab 5</h4>
+<ol class="step-number-list">
+<li>Abra o <strong>Docker Desktop → Containers</strong> e confira se <code>dev_mysql_server</code> está com a bolinha <strong>verde</strong>. Se não estiver, clique no ▶ dele (ou suba o compose da Tab 5).</li>
+</ol>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> <code>dev_mysql_server</code> verde, porta <code>3306:3306</code>.</div>
+</div>
+<div class="step-box">
+<h4><span class="step-num-big">2</span> 🖱️ Rodar a API</h4>
+<ol class="step-number-list">
+<li>No Explorer, abra <code>LojaApi.Api/Program.cs</code>.</li>
+<li>Menu <strong>Run → Run Without Debugging</strong> (<kbd>Ctrl+F5</kbd>). Se perguntar o depurador, escolha <strong>C#</strong> e depois <strong>LojaApi.Api</strong>.</li>
+<li>O navegador abre sozinho em <a class="ext" href="http://localhost:5000/swagger" target="_blank">http://localhost:5000/swagger</a>.</li>
+</ol>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> a página do <strong>Swagger</strong> com as rotas <code>/api/auth/login</code> e <code>/api/produtos</code>. Abra <strong>GET /api/produtos → Try it out → Execute</strong>: aparecem os 3 produtos do <code>loja_db</code> (Teclado, Mouse e Headset).</div>
+</div>
+<div class="step-box">
+<h4><span class="step-num-big">3</span> 🖱️ Testar com o REST Client — o mesmo roteiro do mock</h4>
+<p>O arquivo <code>LojaApi.Api/requests.http</code> tem os mesmos pedidos que você mandou ao Prism na Tab 4 — só o endereço mudou (<code>4010</code> → <code>5000</code>). É a <strong>conferência</strong> do ciclo API-First: a API real cumpre o contrato?</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Api/requests.http</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Api/requests.http"># ─────────────────────────────────────────────────────────────
+#  Testes da API REAL (REST Client no VS Code). A API precisa estar rodando
+#  (F5 ou Ctrl+F5) e o MySQL da Tab 5 ligado. Clique em "Send Request", na ordem.
+#  São os MESMOS pedidos do mock da Tab 4 — só mudou o @host. A diferença:
+#  aqui os dados são de verdade (o produto criado no 4 some de fato no 8).
+# ─────────────────────────────────────────────────────────────
+@host = http://localhost:5000
+
+### 1) Listar SEM token → 200 com os produtos do loja_db (Tab 5)
+GET {{host}}/api/produtos?page=0&amp;size=20
+
+### 2) Criar SEM token → 401 (problem+json)
+POST {{host}}/api/produtos
+Content-Type: application/json
+
+{ "nome": "Monitor Ultrawide 34", "preco": 2499.90, "estoque": 8 }
+
+### 3) Login → 200 com tokenAcesso
+# @name login
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "dev@loja.com.br", "senha": "SenhaForte#2026" }
+
+###
+@token = {{login.response.body.$.tokenAcesso}}
+
+### 4) Criar COM token → 201 (guarda o id novo)
+# @name criar
+POST {{host}}/api/produtos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "nome": "Monitor Ultrawide 34", "preco": 2499.90, "estoque": 8 }
+
+###
+@novoId = {{criar.response.body.$.id}}
+
+### 5) Dados inválidos → 400 (a regra do domínio barra)
+POST {{host}}/api/produtos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "nome": "X", "preco": -5, "estoque": 8 }
+
+### 6) Buscar o produto criado → 200
+GET {{host}}/api/produtos/{{novoId}}
+
+### 7) Atualizar → 200
+PUT {{host}}/api/produtos/{{novoId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "nome": "Monitor Ultrawide 34 4K", "preco": 2999.90, "estoque": 12 }
+
+### 8) Excluir → 204
+DELETE {{host}}/api/produtos/{{novoId}}
+Authorization: Bearer {{token}}
+
+### 9) Buscar de novo → 404 (agora ele não existe MESMO — no mock isso não acontecia)
+GET {{host}}/api/produtos/{{novoId}}</pre>
+</div>
+<div class="table-wrap"><table>
+<thead><tr><th>#</th><th>Pedido</th><th>Esperado</th><th>No mock (Tab 4) era…</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Listar sem token</td><td><code>200</code> com os produtos do banco</td><td>sempre o mesmo exemplo</td></tr>
+<tr><td>2</td><td>Criar sem token</td><td><code>401</code> problem+json</td><td>igual</td></tr>
+<tr><td>3</td><td>Login</td><td><code>200</code> + <code>tokenAcesso</code></td><td>aceitava qualquer e-mail</td></tr>
+<tr><td>4</td><td>Criar com token</td><td><code>201</code> com um <code>id</code> novo</td><td>id sempre 101</td></tr>
+<tr><td>5</td><td>Dados inválidos</td><td><code>400</code> (regra do domínio)</td><td>igual (regra do contrato)</td></tr>
+<tr><td>6–7</td><td>Buscar e atualizar o criado</td><td><code>200</code></td><td>exemplo fixo</td></tr>
+<tr><td>8</td><td>Excluir</td><td><code>204</code></td><td>igual</td></tr>
+<tr><td>9</td><td>Buscar o excluído</td><td><code>404</code> — de verdade!</td><td>só com <code>Prefer: code=404</code></td></tr>
+</tbody></table></div>
+<div class="info-banner"><strong>💡 Quer ver o mesmo contrato nos dois?</strong> Rode o <code>testes-mock.http</code> da Tab 4 trocando a primeira linha para <code>@host = http://localhost:5000</code>. Repare: o <code>Prefer: code=404</code> do teste 9 é ignorado pela API real (só o Prism entende esse header), e o PUT/DELETE no id <code>101</code> dão <code>404</code> — porque esse produto não existe no seu banco.</div>
+</div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">⌨️ Prefere o terminal? Rodar e testar por comando</div>
+<div class="faq-a">
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal — rodar a API (na pasta LojaApi)</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">dotnet run --project LojaApi.Api        # usa a porta 5000 do launchSettings.json</pre>
+</div>
+<p>Em outro terminal — <strong>Git Bash, macOS ou Linux</strong> (sem <code>jq</code>):</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal — testes com curl</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">H=http://localhost:5000
+curl -s -o /dev/null -w "GET lista: %{http_code}\n" "$H/api/produtos"
+curl -s -o /dev/null -w "POST sem token: %{http_code}\n" -X POST "$H/api/produtos" -H "Content-Type: application/json" -d '{"nome":"Monitor","preco":2499.90,"estoque":8}'
+TOKEN=$(curl -s -X POST "$H/api/auth/login" -H "Content-Type: application/json" -d '{"email":"dev@loja.com.br","senha":"SenhaForte#2026"}' | sed -E 's/.*"tokenAcesso" *: *"([^"]+)".*/\1/')
+curl -i -X POST "$H/api/produtos" -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"nome":"Monitor","preco":2499.90,"estoque":8}'</pre>
+</div>
+<p><strong>PowerShell:</strong></p>
+<div class="code-editor-wrap">
+<span class="code-filepath">PowerShell — testes com Invoke-RestMethod</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">$H = "http://localhost:5000"
+Invoke-RestMethod "$H/api/produtos"                                   # lista (público)
+$login = Invoke-RestMethod -Method Post "$H/api/auth/login" -ContentType "application/json" `
+         -Body '{"email":"dev@loja.com.br","senha":"SenhaForte#2026"}'
+$auth = @{ Authorization = "Bearer $($login.tokenAcesso)" }
+Invoke-RestMethod -Method Post "$H/api/produtos" -Headers $auth -ContentType "application/json" `
+         -Body '{"nome":"Monitor","preco":2499.90,"estoque":8}'        # 201: mostra o produto criado</pre>
+</div>
+</div></div>
+<div class="warning-banner"><strong>⚠️ Erros comuns:</strong>
+<ul>
+<li><strong><code>Unable to connect to any of the specified MySQL hosts</code></strong> → o <code>dev_mysql_server</code> não está ligado (passo 1).</li>
+<li><strong><code>Access denied for user 'devuser'</code></strong> → o volume do MySQL foi criado com outra senha: na Tab 5, <code>docker compose down -v</code> e <code>up -d</code> de novo.</li>
+<li><strong><code>Table 'loja_db.produtos' doesn't exist</code></strong> → o <code>init-sql</code> da Tab 5 não rodou (mesma solução acima).</li>
+<li><strong>Porta 5000 ocupada</strong> → troque <code>applicationUrl</code> no <code>launchSettings.json</code> (ex.: <code>http://localhost:5050</code>) e o <code>@host</code> do <code>requests.http</code>.</li>
+<li><strong>401 mesmo com token</strong> → rode o teste 3 (login) antes; o token vence em 60 minutos.</li>
+</ul></div>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=swagger+asp.net+core+testar+api" target="_blank">Swagger no ASP.NET Core</a> · <a class="ext" href="https://www.youtube.com/results?search_query=rest+client+vs+code+testar+api" target="_blank">REST Client no VS Code</a></div>
+</div>
+
+<!-- ══════════════════════════ ⑤ TDD ══════════════════════════ -->
+<div class="lab-container">
+<div class="lab-header"><h3>⑤ 🧪 Testes automáticos (TDD): 15 testes, 17 casos</h3></div>
+<p><strong>TDD</strong> (Test-Driven Development) é escrever o teste <strong>antes</strong> do código: o teste falha (🔴), você escreve o mínimo para passar (🟢) e depois melhora (🔵). Aqui há dois tipos de teste: os de <strong>domínio</strong> (a entidade sozinha) e os de <strong>serviço</strong> (o caso de uso com um repositório falso, feito com <strong>Moq</strong>) — nenhum precisa de banco.</p>
+<h4 class="diag-title">📐 D-14 <span class="dt-type">Fluxo</span> — Ciclo Red-Green-Refactor</h4>
 <div class="mermaid-box er-small" data-code='flowchart LR
-    R["🔴 RED"] --> G["🟢 GREEN"] --> RF["🔵 REFACTOR"] --> R
-    style R fill:#7f1d1d,color:#fff
-    style G fill:#14532d,color:#fff
-    style RF fill:#1e3a8a,color:#fff'>
+    R["🔴 RED: teste falha"] --> G["🟢 GREEN: código mínimo"] --> RF["🔵 REFACTOR: melhora"] --> R'>
 <div class="mermaid"></div>
 </div>
-<h4 class="diag-title">📐 D-15 <span class="dt-type">UML · Sequência</span> — Teste xUnit + Moq</h4>
+<h4 class="diag-title">📐 D-15 <span class="dt-type">UML · Sequência</span> — Um teste com Moq</h4>
 <div class="mermaid-box er-small" data-code='sequenceDiagram
     participant T as Teste xUnit
-    participant M as Moq (IProdutoRepository)
+    participant M as Moq (repositório falso)
     participant S as ProdutoService
-    T->>M: Setup(SalvarAsync) retorna produto c/ id
+    T->>M: Setup: SalvarAsync devolve o produto com id 7
     T->>S: CriarAsync(request)
-    S->>S: Produto.Criar (invariantes)
+    S->>S: Produto.Criar (regras)
     S->>M: SalvarAsync(produto)
-    M-->>S: produto salvo
+    M-->>S: produto com id 7
     S-->>T: ProdutoResponse
-    T->>T: Assert.NotNull / Assert.Equal'>
+    T->>T: Assert.Equal(7, resp.Id)'>
 <div class="mermaid"></div>
 </div>
-<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Tests/ProdutoTests.cs (domínio — 4 testes)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Tests/ProdutoTests.cs (domínio — 6 testes, 8 casos)</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="LojaApi.Tests/ProdutoTests.cs">using LojaApi.Domain.Entities;
+using LojaApi.Domain.Events;
 using LojaApi.Domain.Exceptions;
 using LojaApi.Domain.ValueObjects;
 using Xunit;
 
-/// &lt;summary&gt;Testes de domínio (DDD).&lt;/summary&gt;
+namespace LojaApi.Tests;
+
+/// &lt;summary&gt;Testes de DOMÍNIO: a entidade sozinha, sem banco e sem mock.&lt;/summary&gt;
 public class ProdutoTests
 {
-    [Theory][InlineData(0)][InlineData(-1)]
-    public void RecusaPrecoInvalido(decimal preco) =&gt;
-        Assert.Throws&lt;DomainException&gt;(() =&gt; Produto.Criar("X", new Dinheiro(preco), 1));
+    // [Theory] = o mesmo teste com vários dados (cada InlineData conta como 1 caso)
+    [Theory(DisplayName = "📦 Recusa preço zero ou negativo")]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void RecusaPrecoInvalido(int preco) =&gt;
+        Assert.Throws&lt;DomainException&gt;(() =&gt; Produto.Criar("Teclado", new Dinheiro(preco), 1));
 
-    [Theory][InlineData("")][InlineData("A")]
+    [Theory(DisplayName = "📦 Recusa nome vazio ou com 1 letra")]
+    [InlineData("")]
+    [InlineData("A")]
     public void RecusaNomeInvalido(string nome) =&gt;
         Assert.Throws&lt;DomainException&gt;(() =&gt; Produto.Criar(nome, new Dinheiro(10m), 1));
 
-    [Fact]
-    public void CriaQuandoValido_PublicaEvento()
+    [Fact(DisplayName = "📦 Cria produto válido, ainda sem id e sem evento")]
+    public void CriaQuandoValido()
     {
-        var p = Produto.Criar("Teclado", new Dinheiro(10m), 1);
-        Assert.Equal("Teclado", p.Nome);
-        Assert.Single(p.DomainEvents);
+        var p = Produto.Criar("  Teclado  ", new Dinheiro(10m), 1);
+        Assert.Equal("Teclado", p.Nome);      // o nome é aparado
+        Assert.Equal(0, p.Id);                // quem gera o id é o banco
+        Assert.Empty(p.DomainEvents);         // evento só depois de salvar
     }
 
-    [Fact]
+    [Fact(DisplayName = "📦 ConfirmarCriacao publica o evento com o id real")]
+    public void ConfirmarCriacao_PublicaEventoComId()
+    {
+        var p = Produto.Reconstituir(42, "Teclado", new Dinheiro(10m), 1);
+        p.ConfirmarCriacao();
+        var ev = Assert.IsType&lt;ProdutoCriadoEvent&gt;(Assert.Single(p.DomainEvents));
+        Assert.Equal(42, ev.ProdutoId);
+    }
+
+    [Fact(DisplayName = "📦 ConfirmarCriacao sem id lança erro")]
+    public void ConfirmarCriacao_SemId_Lanca() =&gt;
+        Assert.Throws&lt;DomainException&gt;(() =&gt; Produto.Criar("Teclado", new Dinheiro(10m), 1).ConfirmarCriacao());
+
+    [Fact(DisplayName = "📦 Remover mais estoque do que existe lança erro")]
     public void RemoverEstoque_Insuficiente_Lanca()
     {
         var p = Produto.Criar("Headset", new Dinheiro(420m), 3);
         Assert.Throws&lt;DomainException&gt;(() =&gt; p.RemoverEstoque(10));
     }
-}</pre></div>
-<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Tests/ProdutoServiceTests.cs (serviço — 8 testes, Moq)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Tests/ProdutoServiceTests.cs (serviço — 9 testes, Moq)</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="LojaApi.Tests/ProdutoServiceTests.cs">using LojaApi.Application.DTOs;
 using LojaApi.Application.Services;
 using LojaApi.Domain.Entities;
 using LojaApi.Domain.Exceptions;
 using LojaApi.Domain.Interfaces;
+using LojaApi.Domain.ValueObjects;
 using Moq;
 using Xunit;
 
-/// &lt;summary&gt;Testes de serviço (paridade com os casos de uso do Java).&lt;/summary&gt;
+namespace LojaApi.Tests;
+
+/// &lt;summary&gt;
+/// Testes de SERVIÇO: o ProdutoService com um repositório FALSO (Moq).
+/// Nada de banco — o mock responde o que mandarmos.
+/// &lt;/summary&gt;
 public class ProdutoServiceTests
 {
     private readonly Mock&lt;IProdutoRepository&gt; _repo = new();
@@ -813,315 +1172,281 @@ public class ProdutoServiceTests
 
     public ProdutoServiceTests() { _svc = new ProdutoService(_repo.Object); }
 
-    [Fact]
-    public async Task CriaQuandoValido()
-    {
+    // Simula o banco: devolve o produto já com um id gerado
+    private void RepoSalvaComId(long id) =&gt;
         _repo.Setup(r =&gt; r.SalvarAsync(It.IsAny&lt;Produto&gt;()))
-             .ReturnsAsync((Produto p) =&gt; p);
-        var resp = await _svc.CriarAsync(new CriarProdutoRequest("Teclado", 10m, 1));
-        Assert.NotNull(resp);
+             .ReturnsAsync((Produto p) =&gt; Produto.Reconstituir(id, p.Nome, p.Preco, p.Estoque));
+
+    [Fact(DisplayName = "⚙️ Criar válido salva e devolve o id do banco")]
+    public async Task Criar_Valido_DevolveId()
+    {
+        RepoSalvaComId(7);
+        var resp = await _svc.CriarAsync(new ProdutoRequest("Teclado", 10m, 1));
+        Assert.Equal(7, resp.Id);
         _repo.Verify(r =&gt; r.SalvarAsync(It.IsAny&lt;Produto&gt;()), Times.Once);
     }
 
-    [Fact]
-    public async Task RecusaPrecoInvalido() =&gt;
-        await Assert.ThrowsAsync&lt;DomainException&gt;(() =&gt; _svc.CriarAsync(new CriarProdutoRequest("X", 0m, 1)));
-
-    [Fact]
-    public async Task RecusaNomeVazio() =&gt;
-        await Assert.ThrowsAsync&lt;DomainException&gt;(() =&gt; _svc.CriarAsync(new CriarProdutoRequest("  ", 10m, 1)));
-
-    [Fact]
-    public async Task ObterInexistente_Lanca()
+    [Fact(DisplayName = "⚙️ Criar com preço zero não chega ao banco")]
+    public async Task Criar_PrecoInvalido_NaoSalva()
     {
-        _repo.Setup(r =&gt; r.BuscarPorIdAsync(999)).ReturnsAsync((Produto?)null);
-        await Assert.ThrowsAsync&lt;DomainException&gt;(() =&gt; _svc.ObterPorIdAsync(999));
+        await Assert.ThrowsAsync&lt;DomainException&gt;(() =&gt; _svc.CriarAsync(new ProdutoRequest("Teclado", 0m, 1)));
+        _repo.Verify(r =&gt; r.SalvarAsync(It.IsAny&lt;Produto&gt;()), Times.Never);
     }
 
-    [Fact]
-    public async Task ExcluirExistente_Delega()
+    [Fact(DisplayName = "⚙️ Obter inexistente lança NaoEncontrado (404)")]
+    public async Task Obter_Inexistente_Lanca404()
+    {
+        _repo.Setup(r =&gt; r.BuscarPorIdAsync(999)).ReturnsAsync((Produto?)null);
+        await Assert.ThrowsAsync&lt;NaoEncontradoException&gt;(() =&gt; _svc.ObterPorIdAsync(999));
+    }
+
+    [Fact(DisplayName = "⚙️ Listar com size 0 é recusado")]
+    public async Task Listar_SizeInvalido_Lanca() =&gt;
+        await Assert.ThrowsAsync&lt;DomainException&gt;(() =&gt; _svc.ListarAsync(0, 0));
+
+    [Fact(DisplayName = "⚙️ Listar pede ao repositório só a página")]
+    public async Task Listar_RepassaPagina()
+    {
+        _repo.Setup(r =&gt; r.ListarAsync(2, 10)).ReturnsAsync(new List&lt;Produto&gt;());
+        await _svc.ListarAsync(2, 10);
+        _repo.Verify(r =&gt; r.ListarAsync(2, 10), Times.Once);
+    }
+
+    [Fact(DisplayName = "⚙️ Atualizar existente aplica as mudanças")]
+    public async Task Atualizar_Existente_Aplica()
+    {
+        _repo.Setup(r =&gt; r.BuscarPorIdAsync(1)).ReturnsAsync(Produto.Reconstituir(1, "Teclado", new Dinheiro(10m), 1));
+        _repo.Setup(r =&gt; r.SalvarAsync(It.IsAny&lt;Produto&gt;())).ReturnsAsync((Produto p) =&gt; p);
+        var resp = await _svc.AtualizarAsync(1, new ProdutoRequest("Teclado V2", 12m, 2));
+        Assert.Equal("Teclado V2", resp.Nome);
+        Assert.Equal(12m, resp.Preco);
+    }
+
+    [Fact(DisplayName = "⚙️ Atualizar inexistente lança NaoEncontrado (404)")]
+    public async Task Atualizar_Inexistente_Lanca404()
+    {
+        _repo.Setup(r =&gt; r.BuscarPorIdAsync(999)).ReturnsAsync((Produto?)null);
+        await Assert.ThrowsAsync&lt;NaoEncontradoException&gt;(() =&gt; _svc.AtualizarAsync(999, new ProdutoRequest("Teclado", 10m, 1)));
+    }
+
+    [Fact(DisplayName = "⚙️ Excluir existente delega ao repositório")]
+    public async Task Excluir_Existente_Delega()
     {
         _repo.Setup(r =&gt; r.ExistePorIdAsync(1)).ReturnsAsync(true);
         await _svc.ExcluirAsync(1);
         _repo.Verify(r =&gt; r.DeletarAsync(1), Times.Once);
     }
 
-    [Fact]
-    public async Task ExcluirInexistente_Lanca()
+    [Fact(DisplayName = "⚙️ Excluir inexistente lança 404 e não apaga nada")]
+    public async Task Excluir_Inexistente_Lanca404()
     {
         _repo.Setup(r =&gt; r.ExistePorIdAsync(2)).ReturnsAsync(false);
-        await Assert.ThrowsAsync&lt;DomainException&gt;(() =&gt; _svc.ExcluirAsync(2));
-        _repo.Verify(r => r.DeletarAsync(It.IsAny<int>()), Times.Never);
-        }
-        [Fact]
-        public async Task AtualizarExistente_Delega()
-        {
-            _repo.Setup(r => r.BuscarPorIdAsync(1)).ReturnsAsync(Produto.Criar("Teclado", new Dinheiro(10m), 1));
-            _repo.Setup(r => r.SalvarAsync(It.IsAny<Produto>())).ReturnsAsync((Produto p) => p);
-            var resp = await _svc.AtualizarAsync(1, new CriarProdutoRequest("Teclado V2", 12m, 2));
-            Assert.Equal("Teclado V2", resp.Nome);
-            _repo.Verify(r => r.SalvarAsync(It.IsAny<Produto>()), Times.Once);
-        }
-        [Fact]
-        public async Task AtualizarInexistente_Lanca()
-        {
-            _repo.Setup(r => r.BuscarPorIdAsync(999)).ReturnsAsync((Produto?)null);
-            await Assert.ThrowsAsync<DomainException>(() => _svc.AtualizarAsync(999, new CriarProdutoRequest("X", 10m, 1)));
-        }
+        await Assert.ThrowsAsync&lt;NaoEncontradoException&gt;(() =&gt; _svc.ExcluirAsync(2));
+        _repo.Verify(r =&gt; r.DeletarAsync(It.IsAny&lt;long&gt;()), Times.Never);
     }
-</pre></div>
-<div class="term-help"><strong>🖥️ Rodar:</strong> <span class="ide-tag cs">VS Code</span> <kbd>Ctrl+`</kbd> → <code>dotnet test</code>. Ou Test Explorer (C# Dev Kit).</div>
-<div class="success-banner"><strong>✅ Paridade de testes:</strong> 4 de domínio + 8 de serviço = 12 testes C#; casos de uso espelham o Java (criar, listar, obter, atualizar, excluir + bordas).</div>
+}</pre>
+</div>
+<div class="step-box">
+<h4><span class="step-num-big">▶</span> 🖱️ Rodar os testes pelo Test Explorer</h4>
+<ol class="step-number-list">
+<li>Na barra da esquerda, clique no ícone do <strong>tubo de ensaio</strong> 🧪 (<em>Testing</em>).</li>
+<li>Clique no <strong>▶▶ Run Tests</strong> no topo do painel.</li>
+</ol>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> todos os 17 casos com ✔ verde. No terminal (<code>dotnet test</code>): <code>Passed! - Failed: 0, Passed: 17, Skipped: 0, Total: 17</code>.</div>
+<div class="info-banner"><strong>🧪 Experimente o 🔴:</strong> em <code>Produto.cs</code>, troque <code>preco.Valor &lt;= 0</code> por <code>preco.Valor &lt; 0</code> e rode de novo: o teste "Recusa preço zero" fica vermelho. Desfaça e ele volta a ficar verde.</div>
+</div>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=xunit+testes+unit%C3%A1rios+c%23+iniciantes" target="_blank">xUnit para iniciantes</a> · <a class="ext" href="https://www.youtube.com/results?search_query=moq+c%23+mock+testes" target="_blank">Moq: mocks em C#</a> · <a class="ext" href="https://www.youtube.com/results?search_query=tdd+test+driven+development+explicado" target="_blank">O que é TDD</a></div>
 </div>
 
-<!-- ══════════ SEÇÃO 5: MIGRAÇÃO (C#) ══════════ -->
+<!-- ══════════════════════════ ⑥ DOCKER ══════════════════════════ -->
 <div class="lab-container">
-<div class="lab-header"><h3>🔄 Migração relacional → NoSQL (Strangler Fig — C#)</h3></div>
-<div class="deep-concept-box" style="margin-bottom:14px">
-<p><strong>Motivações:</strong> escala horizontal, schema flexível. <strong>Riscos:</strong> perda de ACID, consistência eventual. A migração acontece DENTRO da API, via toggle <code>Persistence:Provider</code> no <code>appsettings.json</code>, trocando qual adapter é injetado no DI.</p>
-</div>
-<div class="adr"><h5>ADR-004 · Migração Strangler Fig com toggle <span class="stack-tag">🔷 C#</span><span class="status">Aceita</span></h5>
-<p><b>Contexto:</b> catálogo com atributos variáveis cresce; o relacional limita o schema; necessidade de escala horizontal sem downtime.</p>
-<p><b>Decisão:</b> migrar em 4 fases (dual-write → backfill → cut-over → desligamento) controladas por toggle (<code>persistence.provider</code> / <code>Persistence:Provider</code>), com a API escrevendo/lendo via porta <code>ProdutoRepository</code>/<code>IProdutoRepository</code>.</p>
-<p><b>Alternativas consideradas:</b> big-bang (rejeitada: downtime e risco); manter só relacional (rejeitada: limite de schema); CDC + ETL externo (rejeitada: complexidade de infra).</p>
-<p><b>Consequências:</b> (+) rollback trivial (1 chave), sem downtime, validação progressiva; (−) complexidade temporária de 2 adapters e necessidade de reconciliação.</p>
-<p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend, QA, SRE.</p>
-<p><b>Ref:</b> <a class="ext" href="https://docs.aws.amazon.com/pt_br/prescriptive-guidance/latest/architectural-decision-records/adr-process.html" target="_blank">AWS ADR process</a>.</p></div>
-<h4 class="diag-title">📐 D-12 <span class="dt-type">Fluxo</span> — Migração Strangler Fig (4 fases)</h4>
-<div class="mermaid-box er-small" data-code='flowchart LR
-    F1["1 Dual Write"] --> F2["2 Backfill"] --> F3["3 Cut-over"] --> F4["4 Só Mongo"]'>
-<div class="mermaid"></div>
-</div>
-<div class="table-wrap mb-3">
-<table>
-<thead><tr><th>Fase</th><th>Toggle</th><th>Escrita</th><th>Leitura</th><th>Rollback</th></tr></thead>
-<tbody>
-<tr><td>1</td><td><code>dual</code></td><td>MySQL+Mongo</td><td>MySQL</td><td><code>relational</code></td></tr>
-<tr><td>2</td><td><code>dual</code>+job</td><td>MySQL+Mongo</td><td>MySQL</td><td><code>relational</code></td></tr>
-<tr><td>3</td><td><code>nosql</code></td><td>Mongo</td><td>Mongo</td><td><code>dual</code></td></tr>
-<tr><td>4</td><td><code>nosql</code></td><td>Mongo</td><td>Mongo</td><td>backup</td></tr>
-</tbody>
-</table>
-</div>
-<div class="code-editor-wrap"><span class="code-filepath">LojaApi.Infrastructure/Migration/BackfillJob.cs (fase 2)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor" data-zip-path="LojaApi.Infrastructure/Migration/BackfillJob.cs">using LojaApi.Infrastructure.Mongo;
-using LojaApi.Infrastructure.Repositories;
-
-namespace LojaApi.Infrastructure.Migration;
-
-/// &lt;summary&gt;Backfill idempotente: copia dados históricos do MySQL → Mongo (fase 2).&lt;/summary&gt;
-public class BackfillJob
-{
-    private readonly EfProdutoRepository _ef;
-    private readonly MongoProdutoRepository _mongo;
-
-    public BackfillJob(EfProdutoRepository ef, MongoProdutoRepository mongo)
-    { _ef = ef; _mongo = mongo; }
-
-    public async Task RunAsync()
-    {
-        foreach (var p in await _ef.ListarAsync())
-            await _mongo.SalvarAsync(p);   // upsert via IdLegado (idempotente)
-    }
-}</pre></div>
-<div class="code-editor-wrap"><span class="code-filepath">appsettings.json (toggle)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor">"Persistence": { "Provider": "dual" }   // dual | nosql | relational (rollback)</pre></div>
-<div class="warning-banner"><strong>⚠️ Regras de ouro:</strong> (1) documento guarda <code>IdLegado</code>; (2) backfill idempotente; (3) monitore 7 dias; (4) rollback = 1 chave.</div>
-</div>
-
-<!-- ══════════ SEÇÃO 6: DOCKER (C#/VS Code) ══════════ -->
-<div class="lab-container">
-<div class="lab-header"><h3>🐳 Docker: build, run e teste (VS Code)</h3></div>
-<div class="deep-concept-box" style="margin-bottom:14px"><p><strong>Dockerfile multi-stage:</strong> separa build (SDK) de runtime (aspnet), gerando imagem pequena. <a class="ext" href="https://docs.docker.com/build/building/multi-stage/" target="_blank">Multi-stage docs</a>.</p></div>
-<div class="code-editor-wrap"><span class="code-filepath">Dockerfile (.NET multi-stage)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor" data-zip-path="dotnet/Dockerfile">FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+<div class="lab-header"><h3>⑥ 🐳 Empacotar a API em Docker</h3></div>
+<p>O <strong>Dockerfile multi-stage</strong> compila com a imagem do SDK (grande) e roda com a imagem só de runtime (pequena). <a class="ext" href="https://docs.docker.com/build/building/multi-stage/" target="_blank">Multi-stage (docs)</a></p>
+<div class="code-editor-wrap">
+<span class="code-filepath">Dockerfile</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="Dockerfile"># ── ESTÁGIO 1: BUILD — imagem com o SDK completo (compila e publica) ──
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY . .
 RUN dotnet publish LojaApi.Api -c Release -o /out
 
+# ── ESTÁGIO 2: RUNTIME — só o necessário para rodar (imagem bem menor) ──
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 COPY --from=build /out .
+# Dentro do container a API escuta na 8080 (padrão das imagens .NET 8+)
 EXPOSE 8080
-ENTRYPOINT ["dotnet","LojaApi.Api.dll"]</pre></div>
-<div class="term-help"><strong>🖥️ VS Code:</strong> <kbd>Ctrl+`</kbd>. Extensão Docker: ícone Docker na barra lateral → right-click no Dockerfile → <em>Build Image</em>; veja containers/logs/inspect visualmente.</div>
-<div class="code-editor-wrap"><span class="code-filepath">terminal do VS Code - build, run, test</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor"># Build da imagem
-docker build -t loja-api-dotnet:latest .
-# Roda na rede dos bancos (Tab 5)
-docker run -d --name loja-dotnet -p 8081:8080 \
+ENTRYPOINT ["dotnet", "LojaApi.Api.dll"]</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">.dockerignore</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path=".dockerignore"># Sem isto, bin/ e obj/ do seu PC entram no container e quebram o restore.
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
+.git/</pre>
+</div>
+<div class="step-box">
+<h4><span class="step-num-big">1</span> 🖱️ Construir a imagem pelo VS Code</h4>
+<ol class="step-number-list">
+<li>No Explorer, botão direito no <code>Dockerfile</code> → <strong>Build Image…</strong> (extensão <strong>Container Tools</strong>) → nome <code>loja-api-dotnet:latest</code> → <kbd>Enter</kbd>.</li>
+</ol>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> no Docker Desktop → <strong>Images</strong> aparece <code>loja-api-dotnet</code>.</div>
+</div>
+<div class="step-box">
+<h4><span class="step-num-big">2</span> Rodar o container na rede da Tab 5</h4>
+<p>Aqui o terminal é o caminho mais simples, porque o container precisa de variáveis e da rede dos bancos:</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">terminal — rodar o container (Windows PowerShell: troque cada \ do fim da linha por `)</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">docker run -d --name loja-dotnet -p 8081:8080 \
   --network loja_dev_network \
   -e ConnectionStrings__DefaultConnection="Server=mysql-db;Port=3306;Database=loja_db;User=devuser;Password=devpass;" \
-  loja-api-dotnet:latest
-# Testa
-curl -i http://localhost:8081/hello
-curl -i http://localhost:8081/api/produtos
-# Logs em tempo real
-docker logs -f loja-dotnet
-# Status
-docker ps</pre></div>
-<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> porta 8081 já em uso; rede <code>loja_dev_network</code> não existe (suba o compose da Tab 5 primeiro); esquecer <code>-c Release</code> no publish.</div>
+  loja-api-dotnet:latest</pre>
+</div>
+<ul>
+<li><code>-p 8081:8080</code>: a porta <code>8081</code> do seu PC → a <code>8080</code> da API no container.</li>
+<li><code>--network loja_dev_network</code>: a mesma rede do MySQL da Tab 5. Dentro dela, o banco se chama <code>mysql-db</code> (não <code>localhost</code>).</li>
+<li><code>ConnectionStrings__DefaultConnection</code>: o <code>__</code> (dois sublinhados) substitui o <code>:</code> do <code>appsettings.json</code>.</li>
+</ul>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> <a class="ext" href="http://localhost:8081/api/produtos" target="_blank">http://localhost:8081/api/produtos</a> mostra os produtos; no Docker Desktop, <code>loja-dotnet</code> fica verde (os logs ficam em <strong>Containers → loja-dotnet → Logs</strong>). Para testar pelo REST Client, troque o <code>@host</code> para <code>http://localhost:8081</code>.</div>
+</div>
+<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> <code>network loja_dev_network not found</code> → suba o compose da Tab 5 primeiro · porta <code>8081</code> ocupada → use outra à esquerda (ex.: <code>8082:8080</code>) · <code>MSB1003</code> no build → o Dockerfile precisa estar na pasta do <code>LojaApi.sln</code>.</div>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=dockerfile+asp.net+core+multi+stage" target="_blank">Dockerfile multi-stage para .NET</a> · <a class="ext" href="https://www.youtube.com/results?search_query=docker+network+containers+conversando" target="_blank">Redes no Docker</a></div>
 </div>
 
-<!-- ══════════ SEÇÃO 7: CI/CD (C#) ══════════ -->
+<!-- ══════════════════════════ ⑦ CI/CD ══════════════════════════ -->
 <div class="lab-container">
-<div class="lab-header"><h3>🔁 CI/CD: conceitos + GitHub Actions + GitLab CI (C#)</h3></div>
-<div class="deep-concept-box" style="margin-bottom:14px">
-<h3>🔁 CI vs CD (o que é cada um)</h3>
+<div class="lab-header"><h3>⑦ 🔁 CI/CD: testes a cada push (GitHub Actions + GitLab CI)</h3></div>
 <ul>
-<li><strong>CI (Integração Contínua):</strong> a cada push/PR o pipeline <strong>compila + testa</strong> automaticamente.</li>
-<li><strong>CD (Entrega Contínua):</strong> após CI verde, o artefato é <strong>empacotado e deixado pronto</strong> p/ deploy.</li>
-<li><strong>Pipeline / Stage / Job:</strong> pipeline = sequência; stage = fase (build, test); job = tarefa.</li>
-<li><strong>Runner:</strong> máquina/agente que executa os jobs.</li>
+<li><strong>CI (Integração Contínua):</strong> a cada push ou Pull Request, um servidor <strong>compila e roda os testes</strong> sozinho.</li>
+<li><strong>CD (Entrega Contínua):</strong> com tudo verde, o resultado é empacotado e fica pronto para publicar.</li>
+<li><strong>Pipeline / stage / job / runner:</strong> a sequência toda / uma fase (build, test) / uma tarefa / a máquina que executa.</li>
 </ul>
-<p><strong>Aprofundar:</strong> <a class="ext" href="https://martinfowler.com/articles/continuousIntegration.html" target="_blank">Martin Fowler (CI)</a> · <a class="ext" href="https://www.atlassian.com/continuous-delivery" target="_blank">Atlassian CI/CD</a>.</p>
-</div>
-<h4 style="color:var(--primary);margin:14px 0 8px">🖱️ Onde configurar (menus)</h4>
-<ol class="step-number-list">
-<li><strong>GitLab:</strong> repo → <em>Settings → CI/CD</em> → habilitar Runners / Variables; o arquivo <code>.gitlab-ci.yml</code> na raiz ativa o pipeline automaticamente.</li>
-<li><strong>GitHub:</strong> repo → aba <em>Actions</em> → <em>set up a workflow</em> → criar <code>.github/workflows/ci.yml</code>.</li>
-<li><strong>Proteger a main:</strong> GitHub → <em>Settings → Branches</em> → Add rule → exigir checks; GitLab → <em>Settings → Repository → Protected branches</em>.</li>
-<li><strong>Testar:</strong> abrir um PR/MR de um branch <code>feature/x</code> → os checks rodam; ao mergear na main, rodam de novo.</li>
-</ol>
 <div class="split-view">
-<div class="split-col"><h4 style="color:var(--primary)">🐙 GitHub Actions (C#)</h4>
-<div class="code-editor-wrap"><span class="code-filepath">.github/workflows/ci-dotnet.yml</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<div class="split-col"><h4 style="color:var(--primary)">🐙 GitHub Actions</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">.github/workflows/ci-dotnet.yml</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path=".github/workflows/ci-dotnet.yml">name: ci-dotnet                        # nome do workflow
 on:                                     # gatilhos (triggers)
   pull_request: { branches: [main] }    # roda em todo PR p/ main
   push: { branches: [main] }            # roda ao mergear na main
-jobs:                                   # conjunto de jobs
-  build-test:                           # job único: build + test
-    runs-on: ubuntu-latest              # runner (máquina) Ubuntu
+jobs:
+  build-test:
+    runs-on: ubuntu-latest              # máquina (runner) Ubuntu
     steps:
       - uses: actions/checkout@v4                  # 1. baixa o código
-      - uses: actions/setup-dotnet@v4              # 2. instala .NET 10
+      - uses: actions/setup-dotnet@v4              # 2. instala o .NET 10
         with: { dotnet-version: '10.0.x' }
-      - run: dotnet build                          # 3. compila
-      - run: dotnet test                           # 4. roda testes (falha pipeline se vermelho)</pre></div>
+      - run: dotnet build                          # 3. compila a solução
+      - run: dotnet test                           # 4. roda os testes (vermelho = pipeline falha)</pre>
 </div>
-<div class="split-col"><h4 style="color:var(--primary)">🦊 GitLab CI (C#)</h4>
-<div class="code-editor-wrap"><span class="code-filepath">.gitlab-ci.yml (seção C#)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+</div>
+<div class="split-col"><h4 style="color:var(--primary)">🦊 GitLab CI</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">.gitlab-ci.yml</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path=".gitlab-ci.yml">stages: [build, test]                   # fases do pipeline, em ordem
-build:dotnet:                           # job "build:dotnet"
-  stage: build                          # pertence à fase build
-  image: mcr.microsoft.com/dotnet/sdk:10.0   # imagem do runner
-  script: [ dotnet build ]              # compila
-test:dotnet:                            # job "test:dotnet"
-  stage: test                           # fase test (roda depois de build)
+build:dotnet:
+  stage: build
   image: mcr.microsoft.com/dotnet/sdk:10.0
-  script: [ dotnet test ]               # roda testes</pre></div>
+  script: [ dotnet build ]              # compila
+test:dotnet:
+  stage: test                           # roda depois do build
+  image: mcr.microsoft.com/dotnet/sdk:10.0
+  script: [ dotnet test ]               # roda os testes</pre>
 </div>
 </div>
+</div>
+<p class="text-sm text-muted"><strong>Onde fica:</strong> GitHub → aba <em>Actions</em> do repositório · GitLab → <em>Build → Pipelines</em>. O arquivo na raiz do repositório já liga o pipeline. Proteger a <code>main</code>: GitHub → <em>Settings → Branches</em>; GitLab → <em>Settings → Repository → Protected branches</em>.</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">.gitignore — o que o Git não deve guardar</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path=".gitignore">bin/
+obj/
+.vs/
+*.user</pre>
+</div>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=github+actions+dotnet+build+test" target="_blank">GitHub Actions com .NET</a> · <a class="ext" href="https://www.youtube.com/results?search_query=o+que+%C3%A9+ci+cd+explicado" target="_blank">O que é CI/CD</a></div>
 </div>
 
-<!-- ══════════ SEÇÃO 8: DIAGRAMAS C# ══════════ -->
+<!-- ══════════════════════════ ⑧ DIAGRAMAS + ADRs ══════════════════════════ -->
 <div class="lab-container">
-<div class="lab-header"><h3>📐 Diagramas C# (D-16…D-19, D-14, D-15)</h3></div>
-<h4 class="diag-title">📐 D-16 <span class="dt-type">C4 · Nível 2 (Container)</span> — Loja API + bancos (C#)</h4>
+<div class="lab-header"><h3>⑧ 📐 Diagramas e 📑 decisões (ADRs)</h3></div>
+<h4 class="diag-title">📐 D-16 <span class="dt-type">C4 · Nível 2 (Container)</span> — A API e o banco</h4>
 <div class="mermaid-box er-small" data-code='flowchart LR
-    U["👤 Usuário"] -->|HTTPS+JWT| API["🖥️ Loja API (.NET) :8081"]
-    API -->|3306| MY["🐬 MySQL"]
-    API -->|27017| MO["🍃 Mongo"]'>
+    U["👤 Cliente"] -->|"HTTP + JWT"| API["🔷 Loja API .NET :5000 / :8081"]
+    API -->|"3306"| MY["🐬 MySQL loja_db (Tab 5)"]'>
 <div class="mermaid"></div>
 </div>
-<h4 class="diag-title">📐 D-17 <span class="dt-type">C4 · Nível 3 (Componente)</span> — Dentro da Loja API (C#)</h4>
+<h4 class="diag-title">📐 D-17 <span class="dt-type">C4 · Nível 3 (Componente)</span> — Dentro da API</h4>
 <div class="mermaid-box er-small" data-code='flowchart TD
-    subgraph API["Loja API .NET (Componentes)"]
-      C["ProdutosController"] --> S["ProdutoService"]
-      S --> R["IProdutoRepository (porta)"]
-      R -.-> A1["EfProdutoRepository"]
-      R -.-> A2["MongoProdutoRepository"]
-      R -.-> A3["DualWrite"]
-      EXM["ExceptionMiddleware"]
-    end'>
+    C["ProdutosController"] --> S["ProdutoService"]
+    S --> R["IProdutoRepository (porta)"]
+    R -.-> A1["EfProdutoRepository (adapter)"]
+    A1 --> X["AppDbContext"]
+    EXM["ExceptionMiddleware"] -.->|"envolve tudo"| C'>
 <div class="mermaid"></div>
 </div>
-<h4 class="diag-title">📐 D-18 <span class="dt-type">UML · Sequência</span> — Criação de produto (C#)</h4>
+<h4 class="diag-title">📐 D-18 <span class="dt-type">UML · Sequência</span> — Criar um produto</h4>
 <div class="mermaid-box er-small" data-code='sequenceDiagram
     participant C as Cliente
     participant K as ProdutosController
     participant S as ProdutoService
-    participant R as IProdutoRepository
+    participant R as EfProdutoRepository
     C->>K: POST /api/produtos (Bearer)
     K->>S: CriarAsync(request)
-    S->>S: Produto.Criar (invariantes + evento)
-    S->>R: SalvarAsync(entidade)
-    R-->>S: entidade c/ id
+    S->>S: Produto.Criar (regras)
+    S->>R: SalvarAsync(produto)
+    R-->>S: produto com id do banco
+    S->>S: ConfirmarCriacao (evento com id)
     S-->>K: ProdutoResponse
     K-->>C: 201 Created'>
 <div class="mermaid"></div>
 </div>
-<h4 class="diag-title">📐 D-19 <span class="dt-type">UML · Classes</span> — Modelo de domínio + portas (C#)</h4>
+<h4 class="diag-title">📐 D-19 <span class="dt-type">UML · Classes</span> — Domínio e portas</h4>
 <div class="mermaid-box er-small" data-code='classDiagram
-    class Produto { +int Id +string Nome +Dinheiro Preco +int Estoque +Criar() +RemoverEstoque() }
+    class Produto { +long Id +string Nome +Dinheiro Preco +int Estoque +Criar() +Reconstituir() +ConfirmarCriacao() +AplicarAtualizacao() }
     class Dinheiro { +decimal Valor +string Moeda }
     class IProdutoRepository { <<interface>> +SalvarAsync() +BuscarPorIdAsync() +ListarAsync() +ExistePorIdAsync() +DeletarAsync() }
-    class IProdutoService { <<interface>> +CriarAsync() +ListarAsync() +ObterPorIdAsync() +ExcluirAsync() }
-    class ProdutoService
-    class EfProdutoRepository
-    class MongoProdutoRepository
-    class DualWrite
+    class IProdutoService { <<interface>> +ListarAsync() +ObterPorIdAsync() +CriarAsync() +AtualizarAsync() +ExcluirAsync() }
     IProdutoService <|.. ProdutoService
     IProdutoRepository <|.. EfProdutoRepository
-    IProdutoRepository <|.. MongoProdutoRepository
-    IProdutoRepository <|.. DualWrite
     ProdutoService --> IProdutoRepository
-    IProdutoRepository --> Produto
     Produto --> Dinheiro'>
 <div class="mermaid"></div>
 </div>
-<h4 style="color:var(--accent);margin:16px 0 8px">🗺️ Legenda de diagramas C#</h4>
-<div class="table-wrap">
-<table>
-<thead><tr><th>ID</th><th>Tipo</th><th>Quando aplicar</th></tr></thead>
-<tbody>
-<tr><td>D-07</td><td>Flowchart (arquitetura)</td><td>Camadas + dependências + testes</td></tr>
-<tr><td>D-14</td><td>Flowchart</td><td>Ciclo TDD Red-Green-Refactor</td></tr>
-<tr><td>D-15</td><td>UML Sequência</td><td>Teste xUnit + Moq</td></tr>
-<tr><td>D-16</td><td>C4 Nível 2 (Container)</td><td>Visão de sistema e bancos</td></tr>
-<tr><td>D-17</td><td>C4 Nível 3 (Componente)</td><td>Componentes internos da API</td></tr>
-<tr><td>D-18</td><td>UML Sequência</td><td>Interação ao longo do tempo (request)</td></tr>
-<tr><td>D-19</td><td>UML Classes</td><td>Estrutura estática (domínio DDD + portas)</td></tr>
-</tbody>
-</table>
-</div>
-</div>
-
-<!-- ══════════ SEÇÃO 9: ADRs C# ══════════ -->
-<div class="lab-container">
-<div class="lab-header"><h3>📑 ADRs (C# / VS Code)</h3></div>
 <div class="adr"><h5>ADR-002 · Clean Architecture em projetos .csproj <span class="stack-tag">🔷 C#</span><span class="status">Aceita</span></h5>
-<p><b>Contexto:</b> acoplamento domínio↔infra dificultava troca de banco.</p>
-<p><b>Decisão:</b> projetos Domain/Application/Infrastructure/Api/Tests com referências unidirecionais.</p>
-<p><b>Alternativas consideradas:</b> camadas por tecnologia (rejeitada); monolito (rejeitada).</p>
-<p><b>Consequências:</b> (+) testabilidade ↑; (−) custo inicial de scaffolding ↑.</p>
+<p><b>Contexto:</b> regra de negócio misturada com banco e HTTP dificulta testar e trocar tecnologia.</p>
+<p><b>Decisão:</b> projetos Domain, Application, Infrastructure, Api e Tests, com referências só para dentro.</p>
+<p><b>Alternativas consideradas:</b> um projeto só (rejeitada: nada impede o acoplamento); pastas por tecnologia (rejeitada).</p>
+<p><b>Consequências:</b> (+) testes sem banco, troca de persistência sem tocar no domínio (Tab 9-B); (−) mais arquivos no começo.</p>
 <p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend C#, Arquitetura.</p></div>
-<div class="adr"><h5>ADR-C1 · Domínio rico (DDD) com Value Objects e Domain Events <span class="stack-tag">🔷 C#</span><span class="status">Aceita</span></h5>
-<p><b>Contexto:</b> invariantes fortes e necessidade de publicar fatos de negócio.</p>
-<p><b>Decisão:</b> Aggregate Root <code>Produto</code> com setters privados; <code>Dinheiro</code> (VO, record); <code>ProdutoCriadoEvent</code>.</p>
-<p><b>Alternativas consideradas:</b> domínio anêmico (rejeitada p/ C#); CQRS (adiado).</p>
-<p><b>Consequências:</b> (+) invariantes garantidas, eventos p/ reações; (−) mais código de domínio.</p>
+<div class="adr"><h5>ADR-C1 · Domínio rico (DDD) com Value Object e Domain Event <span class="stack-tag">🔷 C#</span><span class="status">Aceita</span></h5>
+<p><b>Contexto:</b> as regras do produto (nome, preço, estoque) precisam valer sempre, venham de onde vierem.</p>
+<p><b>Decisão:</b> <code>Produto</code> com setters privados e fábricas <code>Criar</code>/<code>Reconstituir</code>; <code>Dinheiro</code> como record; <code>ProdutoCriadoEvent</code> registrado só depois de salvar (com o id real).</p>
+<p><b>Alternativas consideradas:</b> entidade anêmica com validação no controller (rejeitada); CQRS (adiado).</p>
+<p><b>Consequências:</b> (+) regra num lugar só, testável; (−) mais código no domínio.</p>
 <p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend C#.</p></div>
-<div class="adr"><h5>ADR-C2 · EF Core como ORM padrão <span class="stack-tag">🔷 C#</span><span class="status">Aceita</span></h5>
-<p><b>Contexto:</b> persistência relacional com MySQL.</p>
-<p><b>Decisão:</b> EF Core (Pomelo MySQL); mapeamento via <code>OnModelCreating</code> (OwnsOne p/ VO).</p>
-<p><b>Alternativas consideradas:</b> Dapper (rejeitada: mais boilerplate); ADO.NET puro (rejeitada).</p>
-<p><b>Consequências:</b> (+) produtividade, migrações code-first; (−) abstração pode gerar queries ineficientes (monitorar).</p>
+<div class="adr"><h5>ADR-C2 · EF Core + Pomelo sobre o schema da Tab 5 <span class="stack-tag">🔷 C#</span><span class="status">Aceita</span></h5>
+<p><b>Contexto:</b> o <code>loja_db</code> já existe, criado pelo <code>init-sql</code> da Tab 5 (com CHECKs e chaves).</p>
+<p><b>Decisão:</b> EF Core 9 + Pomelo 9 (versões fixas), mapeando as colunas existentes; sem migrations nesta aba.</p>
+<p><b>Alternativas consideradas:</b> Dapper (rejeitada: mais SQL à mão); migrations do EF (adiada: o schema é da Tab 5).</p>
+<p><b>Consequências:</b> (+) um banco para Java (Tab 6) e C#; (−) mudança de schema exige combinar com a Tab 5.</p>
 <p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend C#, DBA.</p></div>
-<div class="adr"><h5>ADR-004 · Migração Strangler Fig com toggle <span class="stack-tag">🔷 C#</span><span class="status">Aceita</span></h5>
-<p><b>Contexto:</b> catálogo com atributos variáveis cresce; relacional limita schema.</p>
-<p><b>Decisão:</b> migrar em 4 fases controladas por <code>Persistence:Provider</code> no <code>appsettings.json</code>.</p>
-<p><b>Alternativas consideradas:</b> big-bang (rejeitada); manter só relacional (rejeitada).</p>
-<p><b>Consequências:</b> (+) rollback trivial (1 chave); (−) complexidade temporária de 2 adapters.</p>
-<p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend C#, QA, SRE.</p></div>
-<div class="adr"><h5>ADR-006 · Persistência poliglota MySQL+Mongo <span class="stack-tag">🔷 C#</span><span class="status">Aceita</span></h5>
-<p><b>Contexto:</b> dados relacionais transacionais + catálogo flexível.</p>
-<p><b>Decisão:</b> MySQL p/ transações, Mongo p/ catálogo, ambos no dev via compose.</p>
-<p><b>Consequências:</b> (+) flexibilidade; (−) disciplina de consistência entre bases.</p>
-<p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend C#, SRE, Dados.</p></div>
-
-<div class="info-banner"><strong>✅ Checklist completo C# (Tab 7):</strong> Clean Architecture ✓ · SoC ✓ · DIP ✓ · Repository ✓ · Service interfaces ✓ · Rich Domain (DDD) ✓ · Value Objects ✓ · Aggregates/Aggregate Root ✓ · Domain Events ✓ · Interfaces-as-contracts ✓ · EF Core ✓ · MySQL ✓ · REST API ✓ · DTOs ✓ · DI (ASP.NET) ✓ · Validation (domínio + FluentValidation opcional) ✓ · Centralized exception (ExceptionMiddleware RFC 7807) ✓ · Technology isolation ✓ · Replaceable persistence (EF/Mongo/DualWrite) ✓ · SOLID mapeado ✓ · TDD 16 testes ✓ · CRUD completo por contexto ✓ · Migração ✓ · Docker ✓ · CI/CD ✓ · Diagramas ✓ · ADRs ✓.</div>
+<div class="adr"><h5>ADR-C3 · Só autenticação e erros RFC 7807, como no contrato <span class="stack-tag">🔷 C#</span><span class="status">Aceita</span></h5>
+<p><b>Contexto:</b> o contrato da Tab 4 só pergunta "está logado?" e define os erros em <code>problem+json</code>.</p>
+<p><b>Decisão:</b> <code>[Authorize]</code> sem roles nas escritas; <code>ExceptionMiddleware</code> com 400/404/500 e <code>OnChallenge</code> para o 401 — todos com os <code>type</code> do contrato.</p>
+<p><b>Alternativas consideradas:</b> roles (<code>[Authorize(Roles="ADMIN")]</code>, rejeitada pela decisão B); erros em formato próprio (rejeitada).</p>
+<p><b>Consequências:</b> (+) o mesmo <code>.http</code> serve para o mock e para a API real; (−) qualquer usuário logado pode escrever (aceitável no estudo).</p>
+<p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend, QA, Segurança.</p></div>
+<div class="info-banner"><strong>🔄 E a migração para o MongoDB?</strong> Ficou na <a href="javascript:switchTab('tab9b')" style="color:var(--primary);text-decoration:underline">Tab 9-B</a>, que faz a migração completa em C#. Esta aba prepara o terreno: como o <code>ProdutoService</code> só conhece a interface, um <code>MongoProdutoRepository</code> entra sem mudar nenhuma regra.</div>
 </div>
+
+<div class="success-banner"><strong>✅ Checklist da aba:</strong> solução aberta e compilando · MySQL da Tab 5 verde · Swagger em <code>localhost:5000/swagger</code> · <code>requests.http</code>: 200, 401, token, 201, 400, 200, 200, 204, 404 · 17 testes verdes · imagem Docker rodando na <code>8081</code>.</div>
 </div>
 </section>

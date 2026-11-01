@@ -84,7 +84,7 @@ if(hasM('/api/produtos/{id}','DELETE'))paths+="    delete:\n      summary: Exclu
 const resp=(name,desc,status,title,detail)=>"    "+name+":\n      description: "+desc+"\n      content:\n        "+errCT+":\n          schema: { $ref: '#/components/schemas/"+errName+"' }\n          example:\n"+(custom?"            erro: '"+detail+"'\n":"            type: 'https://example.com/erros/"+name.toLowerCase()+"'\n            title: '"+title+"'\n            status: "+status+"\n            detail: '"+detail+"'\n");
 const responses=resp('Validacao','Dados inválidos',400,'Requisição inválida','O campo preco deve ser maior que zero.')+resp('NaoAutenticado','Token ausente, inválido ou expirado',401,'Não autenticado','Envie o header Authorization: Bearer <token>.')+resp('NaoEncontrado','Recurso não encontrado',404,'Não encontrado','Produto 999 não existe.');
 const pagina=d.pag==='cursor'?"    ProdutoPagina:\n      type: object\n      required: [itens]\n      properties:\n        itens:\n          type: array\n          items: { $ref: '#/components/schemas/ProdutoResponse' }\n        proximoCursor:\n          type: string\n          description: Mande em ?cursor= para pegar a próxima página (ausente = acabou)\n          example: 'eyJpZCI6MTAxfQ'\n":'';
-const campos="        nome:\n          type: string\n          minLength: 2\n          maxLength: 120\n          example: 'Teclado Mecânico RGB'\n        preco:\n          "+priceY+"\n        estoque:\n          type: integer\n          minimum: 0\n          example: 50";
+const campos="        nome:\n          type: string\n          minLength: 2\n          maxLength: 100\n          example: 'Teclado Mecânico RGB'\n        preco:\n          "+priceY+"\n        estoque:\n          type: integer\n          minimum: 0\n          example: 50";
 return `openapi: 3.1.0
 info:
   title: Loja de Produtos REST API
@@ -92,7 +92,8 @@ info:
   description: Contrato da Sala de Contrato (Tab 4). Leitura pública; escrita exige login (JWT).
 servers:
   - { url: http://localhost:4010, description: Mock (Prism) }
-  - { url: http://localhost:8080, description: Backend real }
+  - { url: http://localhost:8080, description: Backend Java (Tab 6) }
+  - { url: http://localhost:5000, description: Backend C# (Tab 7) }
 security:
   - bearerAuth: []
 paths:
