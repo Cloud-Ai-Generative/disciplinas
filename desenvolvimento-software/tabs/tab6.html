@@ -1,7 +1,7 @@
 <section class="tab-panel" id="tab6">
 <div class="card">
-<h2 class="card-title">☕ API Java Completa — Clean Arch + SOLID + TDD + Migração + Docker + CI/CD</h2>
-<p class="section-intro">Aba <strong>100% auto-contida para Java/IntelliJ</strong>: conceitos detalhados (Clean Arch, SOLID, padrões, DI, ORM, JPA) com links, todos os arquivos do projeto, TDD com 11 testes, código <strong>preparado para a migração MySQL → MongoDB</strong> (executada na <a href="javascript:switchTab('tab6b')" style="color:var(--primary);text-decoration:underline">Tab 6-B</a>), Docker, CI/CD e diagramas. <span class="ide-tag java">IDE: IntelliJ</span></p>
+<h2 class="card-title">☕ API Java Completa — Clean Arch + SOLID + TDD + Docker + CI/CD</h2>
+<p class="section-intro">Aba <strong>100% auto-contida para Java/IntelliJ</strong>: conceitos detalhados (Clean Arch, SOLID, padrões, DI, ORM, JPA) com links, todos os arquivos do projeto, TDD com 19 testes (service + HTTP), Docker, CI/CD e diagramas. A API usa o MySQL da Tab 5 e cumpre o contrato da Tab 4 (porta <strong>8080</strong>). A troca do banco por MongoDB fica para a <a href="javascript:switchTab('tab6b')" style="color:var(--primary);text-decoration:underline">Tab 6-B</a>. <span class="ide-tag java">IDE: IntelliJ</span></p>
 <div class="doc-banner"><strong>🧔 Rafael Souza · ☕ Backend (Java):</strong> esta API é a <strong>implementação backend do contrato</strong> definido na Sala de Contrato (Tab 4). Mini-fluxo: <em>Sala de Contrato → <code>openapi.yaml</code> → implementação (esta aba) → validação (testes + Prism)</em>. <a href="javascript:switchTab('tab4')" style="color:var(--primary);text-decoration:underline">Ir p/ Sala/Contrato (Tab 4) →</a></div>
 <!-- ══════════ SEÇÃO 1: CONCEITOS ══════════ -->
 <div class="deep-concept-box">
@@ -12,11 +12,12 @@
 <li><strong>Entities (Domain):</strong> regras de negócio puras (nosso <code>Produto</code> POJO — sem anotações de framework).</li>
 <li><strong>Use Cases (Application):</strong> orquestram as regras (nosso <code>ProdutoServiceImpl</code>).</li>
 <li><strong>Interface Adapters:</strong> controllers, gateways/repositórios (convertem mundo externo ↔ interno).</li>
-<li><strong>Frameworks &amp; Drivers:</strong> banco, web, UI, mensageria (Spring, JPA, MySQL, Mongo).</li>
+<li><strong>Frameworks &amp; Drivers:</strong> banco, web, UI, mensageria (Spring, JPA, MySQL).</li>
 </ol>
 <h4>🔑 A Regra de Dependência</h4>
-<p>Setas de dependência <strong>só apontam para dentro</strong>. Camadas internas <strong>não conhecem</strong> camadas externas. É por isso que <code>ProdutoServiceImpl</code> depende da <em>interface</em> <code>ProdutoRepository</code>, nunca do JPA/Mongo diretamente.</p>
+<p>Setas de dependência <strong>só apontam para dentro</strong>. Camadas internas <strong>não conhecem</strong> camadas externas. É por isso que <code>ProdutoServiceImpl</code> depende da <em>interface</em> <code>ProdutoRepository</code>, nunca do JPA diretamente.</p>
 <p><strong>Aprofundar:</strong> <a class="ext" href="https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html" target="_blank">Uncle Bob — The Clean Architecture (2012)</a> · <a class="ext" href="https://alistair.cockburn.us/hexagonal-architecture/" target="_blank">Hexagonal (Cockburn)</a> · <a class="ext" href="https://jeffreypalermo.com/2008/07/the-onion-architecture-part-1/" target="_blank">Onion (Palermo)</a>.</p>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=clean+architecture+explicado+para+iniciantes" target="_blank">Clean Architecture explicada</a> · <a class="ext" href="https://www.youtube.com/results?search_query=clean+architecture+java+spring+boot" target="_blank">Clean Architecture com Spring Boot</a> · <a class="ext" href="https://www.youtube.com/results?search_query=maven+multi+modulo+spring+boot" target="_blank">Projeto Maven multi-módulo</a></div>
 </div>
 
 <div class="deep-concept-box">
@@ -27,14 +28,15 @@
 <thead><tr><th>Princípio</th><th>O que diz</th><th>Onde aparece no projeto Java</th></tr></thead>
 <tbody>
 <tr><td><strong>S</strong> — Single Responsibility</td><td>Uma classe, uma razão para mudar</td><td><code>ProdutoController</code> só recebe/responde HTTP; <code>ProdutoServiceImpl</code> só orquestra regras; <code>ProdutoRepositoryAdapter</code> só persiste.</td></tr>
-<tr><td><strong>O</strong> — Open/Closed</td><td>Aberta para extensão, fechada para modificação</td><td>Novo adapter (Mongo, na Tab 6-B) sem alterar <code>ProdutoServiceImpl</code> — basta implementar <code>ProdutoRepository</code> e registrá-lo no <code>PersistenceConfig</code>.</td></tr>
-<tr><td><strong>L</strong> — Liskov Substitution</td><td>Subtipos substituem o tipo base sem quebrar</td><td><code>ProdutoRepositoryAdapter</code> (JPA) e, na Tab 6-B, <code>MongoProdutoRepository</code> são intercambiáveis via interface — os mesmos 11 testes valem para ambos.</td></tr>
+<tr><td><strong>O</strong> — Open/Closed</td><td>Aberta para extensão, fechada para modificação</td><td>Um banco novo (a Tab 6-B usa MongoDB) entra sem alterar <code>ProdutoServiceImpl</code> — basta outra classe implementar <code>ProdutoRepository</code>.</td></tr>
+<tr><td><strong>L</strong> — Liskov Substitution</td><td>Subtipos substituem o tipo base sem quebrar</td><td>Qualquer classe que implemente <code>ProdutoRepository</code> pode substituir o <code>ProdutoRepositoryAdapter</code> (JPA): os testes do service usam um <strong>mock</strong> no lugar dele e o service nem percebe.</td></tr>
 <tr><td><strong>I</strong> — Interface Segregation</td><td>Interfaces coesas, não "gordas"</td><td><code>ProdutoRepository</code> tem só 6 métodos de persistência; <code>ProdutoService</code> tem só os 5 casos de uso que o controller usa.</td></tr>
-<tr><td><strong>D</strong> — Dependency Inversion</td><td>Depender de abstrações, não de concreções</td><td><code>ProdutoServiceImpl(ProdutoRepository repo)</code> — o construtor recebe a <strong>interface</strong>, nunca a classe concreta JPA/Mongo.</td></tr>
+<tr><td><strong>D</strong> — Dependency Inversion</td><td>Depender de abstrações, não de concreções</td><td><code>ProdutoServiceImpl(ProdutoRepository repo)</code> — o construtor recebe a <strong>interface</strong>, nunca a classe concreta JPA.</td></tr>
 </tbody>
 </table>
 </div>
 <p><strong>Aprofundar:</strong> <a class="ext" href="https://web.archive.org/web/2020/https://fi.ort.edu.uy/innovaportal/file/2032/1/design_principles.pdf" target="_blank">Design Principles (Martin, 2000)</a> · <a class="ext" href="https://en.wikipedia.org/wiki/SOLID" target="_blank">Wikipedia SOLID</a>.</p>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=solid+java+exemplos+pr%C3%A1ticos" target="_blank">SOLID com exemplos em Java</a></div>
 </div>
 
 <div class="deep-concept-box">
@@ -44,8 +46,8 @@
 <thead><tr><th>Padrão / peça</th><th>O que é</th><th>Para que serve</th><th>Arquivo Java</th></tr></thead>
 <tbody>
 <tr><td><strong>Repository</strong></td><td><a class="ext" href="https://martinfowler.com/eaaCatalog/repository.html" target="_blank">Interface que abstrai persistência</a></td><td>Trocar banco sem tocar no domínio</td><td><code>ProdutoRepository.java</code></td></tr>
-<tr><td><strong>Adapter</strong></td><td><a class="ext" href="https://alistair.cockburn.us/hexagonal-architecture/" target="_blank">Concretiza a porta p/ tecnologia</a></td><td>Ligar domínio a JPA (e ao Mongo na Tab 6-B)</td><td><code>ProdutoRepositoryAdapter.java</code></td></tr>
-<tr><td><strong>Factory de beans (ponto de troca)</strong></td><td><a class="ext" href="https://docs.spring.io/spring-framework/reference/core/beans/java/bean-annotation.html" target="_blank"><code>@Bean</code> com escolha por configuração</a></td><td>Decidir o adapter em UM lugar</td><td><code>PersistenceConfig.java</code></td></tr>
+<tr><td><strong>Adapter</strong></td><td><a class="ext" href="https://alistair.cockburn.us/hexagonal-architecture/" target="_blank">Concretiza a porta p/ tecnologia</a></td><td>Ligar o domínio ao JPA/MySQL</td><td><code>ProdutoRepositoryAdapter.java</code></td></tr>
+<tr><td><strong>Configuração de beans</strong></td><td><a class="ext" href="https://docs.spring.io/spring-framework/reference/core/beans/java/bean-annotation.html" target="_blank"><code>@Configuration</code> + <code>@Bean</code></a></td><td>Ligar a porta ao adapter num lugar só</td><td><code>PersistenceConfig.java</code></td></tr>
 <tr><td><strong>Service Interface</strong></td><td><a class="ext" href="https://martinfowler.com/eaaCatalog/serviceLayer.html" target="_blank">Contrato do caso de uso</a></td><td>Testar c/ mock; trocar impl.</td><td><code>ProdutoService.java</code> → <code>ProdutoServiceImpl.java</code></td></tr>
 <tr><td><strong>DTO</strong></td><td><a class="ext" href="https://martinfowler.com/eaaCatalog/dataTransferObject.html" target="_blank">Objeto p/ transporte</a></td><td>Não expor a entidade</td><td><code>CriarProdutoRequest.java</code>, <code>ProdutoResponse.java</code></td></tr>
 <tr><td><strong>Mapper</strong></td><td><a class="ext" href="https://en.wikipedia.org/wiki/Data_mapper_pattern" target="_blank">Converte entidade ↔ DTO</a></td><td>Isolar formato externo</td><td><code>ProdutoMapper.java</code></td></tr>
@@ -67,6 +69,7 @@
 <li><strong>ORM / JPA / Hibernate:</strong> JPA é a especificação (Jakarta Persistence); Hibernate é a implementação. Mapeia objetos ↔ tabelas. <a class="ext" href="https://jakarta.ee/specifications/persistence/3.1/" target="_blank">Jakarta Persistence 3.1</a> · <a class="ext" href="https://hibernate.org/orm/documentation/" target="_blank">Hibernate docs</a>.</li>
 <li><strong>Bean Validation:</strong> <code>@Valid</code> + anotações (<code>@NotBlank</code>, <code>@Positive</code>) no DTO validam antes de chegar ao service. <a class="ext" href="https://beanvalidation.org/" target="_blank">beanvalidation.org</a>.</li>
 </ul>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=inje%C3%A7%C3%A3o+de+depend%C3%AAncia+spring+boot" target="_blank">Injeção de dependência no Spring</a> · <a class="ext" href="https://www.youtube.com/results?search_query=spring+data+jpa+hibernate+mysql+spring+boot" target="_blank">JPA e Hibernate com Spring Boot</a> · <a class="ext" href="https://www.youtube.com/results?search_query=bean+validation+spring+boot+valid" target="_blank">Bean Validation</a></div>
 </div>
 
 <h4 class="diag-title">📐 D-06 <span class="dt-type">Arquitetura</span> — Clean Arch Java (camadas + dependências + testes)</h4>
@@ -88,7 +91,7 @@
   end
   subgraph I["🏭 Infrastructure"]
     ADP["ProdutoRepositoryAdapter (JPA)"]
-    PCFG["PersistenceConfig 🔀"]
+    PCFG["PersistenceConfig + JpaConfig"]
     CFG["CoreBeansConfig"]
   end
   subgraph T["🧪 Tests"]
@@ -96,7 +99,7 @@
   end
   P --> A --> D
   ADP -.->|implements| IR
-  PCFG -->|escolhe o adapter| ADP
+  PCFG -->|registra| ADP
   SVC -.->|implements| IS
   UT -.->|testa| A'>
 <div class="mermaid"></div>
@@ -111,7 +114,23 @@
 <button class="btn btn-zip" onclick="openDlModal('tab6')">📦 Baixar ZIP</button>
 </div>
 </div>
-<div class="info-banner"><strong>💡 Auto-contido:</strong> simulador presetado para <code>com.loja/loja-api</code> + deps completas; todos os 4 módulos em seguida.</div>
+<div class="info-banner"><strong>🧭 O que vai acontecer:</strong> você baixa o ZIP (projeto pronto, com o <strong>Maven Wrapper</strong>: não precisa instalar o Maven), abre no IntelliJ, liga o MySQL da Tab 5 e aperta ▶. <strong>Tempo: ~20 min</strong> (a 1ª vez o Maven baixa as bibliotecas, ~150 MB). O simulador abaixo mostra como esse projeto nasceria no Spring Initializr — é só para entender; o ZIP já vem pronto.</div>
+<div class="step-box">
+<h4><span class="step-num">0</span>🖱️ Abrir o projeto no IntelliJ</h4>
+<ol class="step-number-list">
+<li>Clique em <strong>📦 Baixar ZIP</strong> (acima) e descompacte em <strong>Documentos\Projetos\loja-api</strong>.</li>
+<li>No IntelliJ: <strong>File → Open…</strong> → escolha a pasta <code>loja-api</code> (a que tem o <code>pom.xml</code> pai) → <strong>OK</strong> → <strong>Trust Project</strong>.</li>
+<li>Confira o Java: <strong>File → Project Structure… → Project → SDK</strong> = <strong>21</strong> (se não houver, <em>Add SDK → Download JDK… → versão 21</em>).</li>
+<li>Abra a janela do Maven: ícone <strong>m</strong> na barra lateral direita. Clique em 🔄 <strong>Reload All Maven Projects</strong> e espere a barra de progresso lá embaixo terminar.</li>
+</ol>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> na janela do Maven aparecem <strong>loja-api</strong> e os 4 módulos (<code>produtos-core-domain</code>, <code>produtos-core-application</code>, <code>produtos-infrastructure</code>, <code>produtos-presentation</code>); no painel <em>Project</em>, as pastas <code>src/main/java</code> ficam azuis e <code>src/test/java</code> verdes.</div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">✋ Errou? Pastas não ficaram azuis / "Cannot resolve symbol"</div>
+<div class="faq-a"><ul>
+<li><strong>Abriu a pasta errada</strong> (um módulo, em vez da raiz): feche (<em>File → Close Project</em>) e abra a pasta que contém o <code>pom.xml</code> com <code>&lt;modules&gt;</code>.</li>
+<li><strong>"release version 21 not supported"</strong>: o SDK do projeto é 17. Troque para 21 no <em>Project Structure</em> e também em <em>Settings → Build, Execution, Deployment → Build Tools → Maven → Runner → JRE</em>.</li>
+<li><strong>Vermelho em tudo depois do download</strong>: Maven → 🔄 Reload. Se continuar, <em>File → Invalidate Caches… → Invalidate and Restart</em>.</li>
+</ul></div></div>
+</div>
 <div class="step-box">
 <h4><span class="step-num">▶</span>Simulador guiado (preset projeto)</h4>
 <div id="sim-proj"></div>
@@ -124,12 +143,15 @@
 │   └── Produto.java, ProdutoRepository.java, ProdutoService.java, DomainException.java, RecursoNaoEncontradoException.java
 ├── <span class="folder">📁 produtos-core-application/</span>         <span class="comment"># ⚙️ casos de uso + DTOs + testes</span>
 │   └── ProdutoServiceImpl.java, DTOs, Mapper, ProdutoServiceTest.java
-├── <span class="folder">📁 produtos-infrastructure/</span>           <span class="comment"># 🏭 adapter JPA + ponto de troca (Mongo: Tab 6-B)</span>
-│   └── ProdutoRepositoryAdapter, ProdutoJpaEntity, SpringDataProdutoRepository, PersistenceConfig 🔀, CoreBeansConfig
+├── <span class="folder">📁 produtos-infrastructure/</span>           <span class="comment"># 🏭 adapter JPA + configuração</span>
+│   └── ProdutoRepositoryAdapter, ProdutoJpaEntity, SpringDataProdutoRepository, PersistenceConfig, JpaConfig, CoreBeansConfig
 ├── <span class="folder">📁 produtos-presentation/</span>             <span class="comment"># 🎯 REST/JWT + exception handler</span>
-│   └── Main.java, ProdutoController, AuthController, JwtService, JwtTokenFilter, SecurityConfig, GlobalExceptionHandler, application.yml
+│   └── Main.java, ProdutoController, AuthController, JwtService, JwtTokenFilter, SecurityConfig, GlobalExceptionHandler, application.yml, ApiHttpTest.java
+├── <span class="folder">📁 .mvn/wrapper/</span> + <span class="file">📄 mvnw</span>, <span class="file">📄 mvnw.cmd</span>   <span class="comment"># Maven Wrapper: baixa o Maven sozinho</span>
+├── <span class="file">📄 requests.http</span>                     <span class="comment"># 🧪 roteiro do REST Client (o mesmo da Tab 4)</span>
 ├── <span class="file">📄 Dockerfile</span>                        <span class="comment"># 🐳 multi-stage (na raiz)</span>
-└── <span class="file">📄 .dockerignore</span></div>
+├── <span class="file">📄 .dockerignore</span>
+└── <span class="file">📄 .gitignore</span>                        <span class="comment"># não versiona target/ nem .idea/</span></div>
 </div>
 </div>
 
@@ -183,7 +205,7 @@
   &lt;/parent&gt;
   &lt;artifactId&gt;produtos-core-domain&lt;/artifactId&gt;
   &lt;!-- SEM DEPENDÊNCIAS: o domínio não conhece frameworks nem bancos.
-       É por isso que trocar MySQL por MongoDB (Tab 6-B) não toca neste módulo. --&gt;
+       Trocar de banco nunca toca neste módulo. --&gt;
 &lt;/project&gt;</pre></div>
 <div class="code-editor-wrap"><span class="code-filepath">produtos-core-application/pom.xml</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-core-application/pom.xml">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
@@ -250,7 +272,6 @@
       &lt;artifactId&gt;mysql-connector-j&lt;/artifactId&gt;
       &lt;scope&gt;runtime&lt;/scope&gt;
     &lt;/dependency&gt;
-    &lt;!-- 🍃 spring-boot-starter-data-mongodb entra só na Tab 6-B (migração) --&gt;
   &lt;/dependencies&gt;
 &lt;/project&gt;</pre></div>
 <div class="code-editor-wrap"><span class="code-filepath">produtos-presentation/pom.xml</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -307,6 +328,18 @@
       &lt;version&gt;${jjwt.version}&lt;/version&gt;
       &lt;scope&gt;runtime&lt;/scope&gt;
     &lt;/dependency&gt;
+    &lt;!-- Testes HTTP (ApiHttpTest): JUnit 5 + Mockito + MockMvc.
+         Spring Boot 4 separou o @WebMvcTest no starter "webmvc-test". --&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-boot-starter-test&lt;/artifactId&gt;
+      &lt;scope&gt;test&lt;/scope&gt;
+    &lt;/dependency&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-boot-starter-webmvc-test&lt;/artifactId&gt;
+      &lt;scope&gt;test&lt;/scope&gt;
+    &lt;/dependency&gt;
   &lt;/dependencies&gt;
   &lt;build&gt;
     &lt;plugins&gt;
@@ -334,12 +367,8 @@ import java.math.BigDecimal;
  * Entidade de domínio Produto (POJO puro, anêmico — sem anotações ORM).
  * A lógica de negócio fica no Use Case (ProdutoServiceImpl) — ver ADR-J1.
  *
- * 🧭 PREPARAÇÃO PARA A MIGRAÇÃO (Tab 6-B):
- * - Nenhuma anotação de banco aqui (@Entity, @Document, @Id...). O mapeamento
- *   MySQL fica em ProdutoJpaEntity; o do MongoDB ficará em ProdutoDocument.
- *   Trocar de banco = trocar o adapter, nunca esta classe.
- * - id é Long: no MongoDB ele vira o próprio _id (numérico), preservando os
- *   ids do MySQL e as URLs da API (/api/produtos/1).
+ * Nenhuma anotação de banco aqui (@Entity, @Id...): o mapeamento MySQL fica
+ * em ProdutoJpaEntity. Trocar de banco = trocar o adapter, nunca esta classe.
  *
  * @since 1.0.0
  */
@@ -413,22 +442,16 @@ import java.util.Optional;
  * 🚪 PORTA DE SAÍDA do domínio (Dependency Inversion Principle).
  * O domínio define O QUE precisa; a infraestrutura decide COMO fazer.
  *
- *   ProdutoRepositoryAdapter  → MySQL via JPA      (esta Tab 6)
- *   MongoProdutoRepository    → MongoDB            (Tab 6-B)
- *   DualWriteProdutoRepository→ MySQL + MongoDB    (Tab 6-B, fase de migração)
+ *   ProdutoRepositoryAdapter → MySQL via JPA (esta Tab 6)
  *
- * ✅ Regras para uma porta "migrável":
- * 1) Nenhum tipo de framework na assinatura (nada de Page, Pageable, Specification
- *    do Spring Data): a porta fala a língua do domínio.
- * 2) Todo método precisa ser implementável com a MESMA semântica em SQL e em
- *    MongoDB — por isso a paginação é (page, size) e a ordem é por id.
+ * ✅ Nenhum tipo de framework na assinatura (nada de Page, Pageable,
+ *    Specification do Spring Data): a porta fala a língua do domínio.
  */
 public interface ProdutoRepository {
 
     /**
      * Insere (id == null) ou atualiza (id != null) e DEVOLVE o produto salvo.
-     * Use sempre o retorno: é ele que traz o id gerado — pelo AUTO_INCREMENT no
-     * MySQL ou, na Tab 6-B, por uma sequência no MongoDB.
+     * Use sempre o retorno: é ele que traz o id gerado (AUTO_INCREMENT do MySQL).
      */
     Produto salvar(Produto produto);
 
@@ -436,13 +459,13 @@ public interface ProdutoRepository {
 
     /**
      * Página de produtos ordenada por id (page começa em 0).
-     * A paginação acontece NO BANCO (LIMIT/OFFSET no MySQL; skip/limit no Mongo).
+     * A paginação acontece NO BANCO (LIMIT/OFFSET no MySQL).
      * Antes, a API carregava TODOS os produtos e cortava a lista em memória:
      * com 1 milhão de produtos, cada GET traria 1 milhão de linhas.
      */
     List&lt;Produto&gt; listarPagina(int page, int size);
 
-    /** Todos os produtos — uso administrativo (ex.: backfill da Tab 6-B). */
+    /** Todos os produtos, ordenados por id — uso administrativo (relatórios, cópias). */
     List&lt;Produto&gt; listarTodos();
 
     boolean existePorId(Long id);
@@ -482,14 +505,15 @@ import java.util.List;
 /**
  * Implementa os casos de uso. Recebe a INTERFACE ProdutoRepository (DIP).
  * Registrado como bean via CoreBeansConfig (não tem @Service — é classe pura).
- *
- * 🧭 Esta classe NÃO muda na migração para MongoDB (Tab 6-B): ela só conhece
- * a porta ProdutoRepository, nunca JPA ou Mongo.
+ * Ela só conhece a porta ProdutoRepository, nunca o JPA.
  */
 public class ProdutoServiceImpl implements ProdutoService {
 
     /** Limite de itens por página: protege o banco de "size=1000000". */
     static final int TAMANHO_MAXIMO_PAGINA = 100;
+
+    /** Mesmo limite do contrato (maxLength: 100) e da coluna VARCHAR(100). */
+    static final int TAMANHO_MAXIMO_NOME = 100;
 
     private final ProdutoRepository repository;
 
@@ -546,6 +570,8 @@ public class ProdutoServiceImpl implements ProdutoService {
             throw new DomainException("O nome do produto é obrigatório");
         if (p.getNome().trim().length() &lt; 2)
             throw new DomainException("O nome deve ter pelo menos 2 caracteres");
+        if (p.getNome().trim().length() &gt; TAMANHO_MAXIMO_NOME)
+            throw new DomainException("O nome deve ter no máximo " + TAMANHO_MAXIMO_NOME + " caracteres");
         if (p.getPreco() == null || p.getPreco().compareTo(BigDecimal.ZERO) &lt;= 0)
             throw new DomainException("O preço deve ser maior que zero");
         if (p.getEstoque() == null || p.getEstoque() &lt; 0)
@@ -560,14 +586,17 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 
 /**
  * DTO de entrada (não expõe a entidade). Bean Validation valida no controller.
+ * As regras são as MESMAS do contrato da Tab 4 (minLength 2, maxLength 100...).
  * Obs.: @Positive/@PositiveOrZero ACEITAM null — por isso o @NotNull junto.
  */
 public record CriarProdutoRequest(
-    @NotBlank(message = "Nome é obrigatório") String nome,
+    @NotBlank(message = "Nome é obrigatório")
+    @Size(min = 2, max = 100, message = "Nome deve ter de 2 a 100 caracteres") String nome,
     @NotNull(message = "Preço é obrigatório") @Positive(message = "Preço deve ser &gt; 0") BigDecimal preco,
     @NotNull(message = "Estoque é obrigatório") @PositiveOrZero(message = "Estoque &gt;= 0") Integer estoque
 ) {}</pre></div>
@@ -579,7 +608,7 @@ import java.math.BigDecimal;
 
 /**
  * DTO de saída — o que o cliente recebe (nunca a entidade de domínio).
- * 🧭 Este é o CONTRATO da API: ele é o mesmo com MySQL ou MongoDB (Tab 6-B).
+ * É o schema ProdutoResponse do contrato da Tab 4.
  */
 public record ProdutoResponse(Long id, String nome, BigDecimal preco, Integer estoque) {}</pre></div>
 
@@ -603,7 +632,7 @@ public final class ProdutoMapper {
     }
 }</pre></div>
 
-<h4 style="color:var(--accent);margin:16px 0 8px">🏭 Camada Infrastructure (JPA + ponto de troca + Config)</h4>
+<h4 style="color:var(--accent);margin:16px 0 8px">🏭 Camada Infrastructure (JPA + Config)</h4>
 <div class="code-editor-wrap"><span class="code-filepath">infrastructure/persistence/ProdutoJpaEntity.java</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-infrastructure/src/main/java/com/loja/infrastructure/persistence/ProdutoJpaEntity.java">package com.loja.infrastructure.persistence;
 
@@ -614,11 +643,15 @@ import java.math.BigDecimal;
  * Entidade JPA — representação da tabela "produtos" no MySQL.
  *
  * Separada do domínio de propósito: as anotações @Entity/@Column ficam AQUI,
- * e o Produto (domínio) continua puro. Na Tab 6-B, o MongoDB terá a sua
- * própria representação (ProdutoDocument) — e o domínio não muda.
+ * e o Produto (domínio) continua puro.
  *
  * ⚠️ ddl-auto: validate → a tabela precisa existir com tipos compatíveis:
  *    id BIGINT (Long), nome VARCHAR(100), preco DECIMAL(10,2), estoque INT.
+ *
+ * E a coluna categoria_id da Tab 5? Ela aceita NULL, e o contrato da Tab 4
+ * não fala de categoria — então a API simplesmente não a mapeia. Produtos
+ * criados pela API ficam com categoria_id = NULL (os 3 do script continuam
+ * com a categoria deles). O validate só confere as colunas MAPEADAS.
  */
 @Entity
 @Table(name = "produtos")
@@ -659,13 +692,8 @@ import org.springframework.data.domain.Sort;
 /**
  * 🔌 ADAPTER JPA/MySQL — implementa a porta do domínio (Hexagonal).
  *
- * Repare: SEM @Repository e SEM @ConditionalOnProperty. Quem decide se este
- * adapter é usado é o PersistenceConfig (um único ponto de escolha).
- * Antes, cada adapter tinha sua própria condição, espalhadas pelo código —
- * e a combinação delas impedia a aplicação de subir em qualquer modo.
- *
- * Na Tab 6-B, este mesmo adapter é reaproveitado DENTRO do
- * DualWriteProdutoRepository e como ORIGEM do backfill.
+ * Repare: SEM @Repository. É uma classe simples; quem a registra como
+ * bean é o PersistenceConfig.
  */
 public class ProdutoRepositoryAdapter implements ProdutoRepository {
 
@@ -689,7 +717,7 @@ public class ProdutoRepositoryAdapter implements ProdutoRepository {
     @Override
     public List&lt;Produto&gt; listarPagina(int page, int size) {
         // SELECT ... ORDER BY id LIMIT :size OFFSET :page*size  (paginação NO BANCO)
-        // Ordenar por id garante a MESMA ordem que o MongoDB usará (sort _id).
+        // Ordenar por id: sem ORDER BY, o banco pode devolver as páginas em qualquer ordem.
         return jpaRepo.findAll(PageRequest.of(page, size, Sort.by("id")))
                 .getContent().stream().map(this::toDomain).toList();
     }
@@ -720,56 +748,51 @@ public class ProdutoRepositoryAdapter implements ProdutoRepository {
 
 
 
-<div class="info-banner"><strong>🔀 Ponto de troca do banco:</strong> antes, cada adapter tinha seu próprio <code>@ConditionalOnProperty</code> e o <code>BackfillJob</code> exigia os dois adapters ao mesmo tempo — com isso a aplicação <strong>não subia em nenhum modo</strong>. Agora um único <code>@Bean</code> lê <code>persistence.provider</code> e devolve <strong>exatamente um</strong> <code>ProdutoRepository</code>. Na Tab 6-B, os casos <code>dual</code> e <code>nosql</code> ganham seus adapters — e nada mais muda.</div>
-<div class="code-editor-wrap"><span class="code-filepath">infrastructure/config/PersistenceConfig.java (🔀 ponto de troca)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<div class="info-banner"><strong>🔌 Quem liga a porta ao adapter?</strong> O domínio só conhece a interface <code>ProdutoRepository</code>. O <code>PersistenceConfig</code> diz ao Spring: "quando alguém pedir um <code>ProdutoRepository</code>, entregue um <code>ProdutoRepositoryAdapter</code>". O <code>JpaConfig</code> diz onde estão a <code>@Entity</code> e o repositório do Spring Data.</div>
+<div class="code-editor-wrap"><span class="code-filepath">infrastructure/config/PersistenceConfig.java (porta → adapter)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-infrastructure/src/main/java/com/loja/infrastructure/config/PersistenceConfig.java">package com.loja.infrastructure.config;
 
 import com.loja.domain.ProdutoRepository;
 import com.loja.infrastructure.persistence.ProdutoRepositoryAdapter;
 import com.loja.infrastructure.persistence.SpringDataProdutoRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * 🔀 PONTO DE TROCA DO BANCO — o ÚNICO lugar que decide qual adapter
- * implementa a porta ProdutoRepository.
+ * Liga a PORTA do domínio (ProdutoRepository) ao ADAPTER JPA.
  *
- * Chave no application.yml:  persistence.provider
- *   relational → ProdutoRepositoryAdapter (JPA/MySQL)      ← esta Tab 6
- *   dual       → DualWriteProdutoRepository (MySQL+Mongo)  ← Tab 6-B (fase 1–2)
- *   nosql      → MongoProdutoRepository (MongoDB)         ← Tab 6-B (fase 3–4)
- *
- * Por que um @Bean com switch, e não @ConditionalOnProperty em cada adapter?
- * 1) Um só ponto de decisão, fácil de ler e de testar.
- * 2) Sempre existe EXATAMENTE UM bean ProdutoRepository → nada de
- *    "NoSuchBeanDefinition" nem "NoUniqueBeanDefinition".
- * 3) Valor inválido falha NA SUBIDA, com mensagem clara (fail fast).
- *
- * Pode ser trocado sem recompilar:  PERSISTENCE_PROVIDER=dual java -jar app.jar
+ * É o único lugar do projeto que sabe qual banco está por trás da porta:
+ * service, controller e testes só enxergam a interface.
  */
 @Configuration
 public class PersistenceConfig {
 
     @Bean
-    public ProdutoRepository produtoRepository(
-            @Value("${persistence.provider:relational}") String provider,
-            SpringDataProdutoRepository jpaRepo) {
-
-        return switch (provider) {
-            case "relational" -&gt; new ProdutoRepositoryAdapter(jpaRepo);
-
-            // Os adapters Mongo e Dual-Write são criados na Tab 6-B
-            case "dual", "nosql" -&gt; throw new IllegalStateException(
-                    "persistence.provider=" + provider + " ainda não implementado: "
-                    + "os adapters MongoDB chegam na Tab 6-B. Use 'relational'.");
-
-            default -&gt; throw new IllegalStateException(
-                    "persistence.provider inválido: '" + provider
-                    + "'. Valores aceitos: relational | dual | nosql");
-        };
+    public ProdutoRepository produtoRepository(SpringDataProdutoRepository jpaRepo) {
+        return new ProdutoRepositoryAdapter(jpaRepo);
     }
 }</pre></div>
+
+<div class="code-editor-wrap"><span class="code-filepath">infrastructure/config/JpaConfig.java (onde estão a @Entity e o repositório)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="produtos-infrastructure/src/main/java/com/loja/infrastructure/config/JpaConfig.java">package com.loja.infrastructure.config;
+
+import org.springframework.boot.persistence.autoconfigure.EntityScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+
+/**
+ * A Main fica em com.loja.presentation, e o Spring Boot só procura @Entity e
+ * repositórios JPA no pacote da Main. Este arquivo aponta para o pacote certo.
+ *
+ * Por que aqui, e não em cima da Main? Assim os testes HTTP (ApiHttpTest)
+ * sobem só a camada web, sem tentar abrir conexão com o MySQL.
+ * (Spring Boot 4: @EntityScan mudou de pacote — antes era
+ *  org.springframework.boot.autoconfigure.domain.)
+ */
+@Configuration
+@EnableJpaRepositories(basePackages = "com.loja.infrastructure.persistence")
+@EntityScan(basePackages = "com.loja.infrastructure.persistence")
+public class JpaConfig {}</pre></div>
 
 <div class="code-editor-wrap"><span class="code-filepath">infrastructure/config/CoreBeansConfig.java</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-infrastructure/src/main/java/com/loja/infrastructure/config/CoreBeansConfig.java">package com.loja.infrastructure.config;
@@ -782,7 +805,7 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * Ponte Spring → classes puras (domain/application). Não polui o domínio com @Service.
- * O ProdutoRepository injetado aqui é o escolhido pelo PersistenceConfig —
+ * O ProdutoRepository injetado aqui é o registrado pelo PersistenceConfig —
  * o service não sabe (nem precisa saber) qual banco está por trás.
  */
 @Configuration
@@ -799,19 +822,14 @@ public class CoreBeansConfig {
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-// Spring Boot 4: @EntityScan mudou de pacote (antes: org.springframework.boot.autoconfigure.domain)
-import org.springframework.boot.persistence.autoconfigure.EntityScan;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 /**
  * Ponto de entrada. Como a Main está em com.loja.presentation, o Spring só
- * enxergaria esse pacote por padrão — por isso indicamos explicitamente:
- * - scanBasePackages: todos os @Configuration/@RestController de com.loja;
- * - @EnableJpaRepositories / @EntityScan: onde estão o repositório e a @Entity JPA.
+ * enxergaria esse pacote por padrão — por isso o scanBasePackages = "com.loja":
+ * ele encontra os @Configuration/@RestController de todos os módulos.
+ * (Onde ficam a @Entity e o repositório JPA é dito no JpaConfig.)
  */
 @SpringBootApplication(scanBasePackages = "com.loja")
-@EnableJpaRepositories(basePackages = "com.loja.infrastructure.persistence")
-@EntityScan(basePackages = "com.loja.infrastructure.persistence")
 public class Main {
     public static void main(String[] args) { SpringApplication.run(Main.class, args); }
 }</pre></div>
@@ -832,7 +850,7 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * Controller REST — Single Responsibility: só recebe/responde HTTP.
- * 🧭 Não muda na migração para MongoDB (Tab 6-B): depende só de ProdutoService.
+ * Depende só da interface ProdutoService (não sabe que existe MySQL).
  */
 @RestController
 @RequestMapping("/api/produtos")
@@ -895,6 +913,7 @@ import org.springframework.web.bind.annotation.*;
  * Endpoint público de login — emite JWT.
  * Didático: credencial fixa (a mesma do contrato da Tab 4). Em produção,
  * valide contra uma base de usuários com senha em hash (BCrypt/Argon2).
+ * Só AUTENTICAÇÃO ("quem é você?"): não há papéis (roles) nesta aula.
  */
 @RestController
 @RequestMapping("/api/auth")
@@ -910,15 +929,16 @@ public class AuthController {
         String senha = body.get("senha");
 
         if (!"dev@loja.com.br".equals(email) || !"SenhaForte#2026".equals(senha)) {
+            // Mesmo formato (e mesmo type) do NaoAutenticado do contrato
             return ResponseEntity.status(401)
                 .contentType(MediaType.APPLICATION_PROBLEM_JSON)
                 .body(Map.of(
-                    "type", "https://example.com/erros/auth",
-                    "title", "Unauthorized", "status", 401,
-                    "detail", "Credenciais inválidas"));
+                    "type", "https://example.com/erros/naoautenticado",
+                    "title", "Não autenticado", "status", 401,
+                    "detail", "E-mail ou senha inválidos"));
         }
 
-        String token = jwtService.gerarToken(email, "ADMIN");
+        String token = jwtService.gerarToken(email);
         return ResponseEntity.ok(Map.of(
             "tokenAcesso", token,
             "tipo", "Bearer",
@@ -959,11 +979,11 @@ public class JwtService {
         this.expirationMs = expirationMs;
     }
 
-    public String gerarToken(String username, String role) {
+    /** O token diz só QUEM é o usuário (sub). Sem papéis/roles nesta aula. */
+    public String gerarToken(String email) {
         Date agora = new Date();
         return Jwts.builder()
-                .subject(username)                                      // sub
-                .claim("role", role)                                    // claim própria
+                .subject(email)                                         // sub
                 .issuedAt(agora)                                        // iat
                 .expiration(new Date(agora.getTime() + expirationMs))   // exp
                 .signWith(key, Jwts.SIG.HS256)
@@ -1000,7 +1020,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -1027,11 +1046,10 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         String header = req.getHeader("Authorization");
         if (header != null &amp;&amp; header.startsWith("Bearer ")) {
             jwtService.validar(header.substring(7)).ifPresent(claims -&gt; {
-                // Sem claim "role"? Assume USER (evita a autoridade "ROLE_null")
-                String role = claims.get("role", String.class);
+                // Token válido = usuário autenticado. Lista de permissões vazia:
+                // nesta aula não há papéis (roles), só "logado ou não".
                 var auth = new UsernamePasswordAuthenticationToken(
-                    claims.getSubject(), null,
-                    List.of(new SimpleGrantedAuthority("ROLE_" + (role != null ? role : "USER"))));
+                    claims.getSubject(), null, List.of());
                 SecurityContextHolder.getContext().setAuthentication(auth);
             });
         }
@@ -1048,6 +1066,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -1060,6 +1079,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  *   qualquer outra         → exige JWT válido
  */
 @Configuration
+@EnableWebSecurity   // explícito: garante a cadeia de segurança também nos testes HTTP
 public class SecurityConfig {
 
     @Bean
@@ -1072,13 +1092,10 @@ public class SecurityConfig {
             .sessionManagement(s -&gt; s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(e -&gt; e
                 // Sem token / token inválido → 401 (o padrão do Spring seria 403!)
+                // type e title iguais ao NaoAutenticado do contrato da Tab 4
                 .authenticationEntryPoint((req, res, ex) -&gt; problema(res, 401,
-                    "Unauthorized", "Token ausente, inválido ou expirado",
-                    "https://example.com/erros/auth"))
-                // Autenticado mas sem permissão → 403
-                .accessDeniedHandler((req, res, ex) -&gt; problema(res, 403,
-                    "Forbidden", "Acesso negado",
-                    "https://example.com/erros/acesso-negado")))
+                    "Não autenticado", "Envie o header Authorization: Bearer &lt;token&gt;.",
+                    "https://example.com/erros/naoautenticado")))
             .authorizeHttpRequests(a -&gt; a
                 .requestMatchers("/api/auth/**", "/error").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/produtos/**").permitAll()
@@ -1116,6 +1133,8 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
  * Captura exceções e retorna RFC 7807 (application/problem+json).
  * O Spring escolhe o handler MAIS ESPECÍFICO: RecursoNaoEncontradoException
  * (subclasse) vai para o 404, as demais DomainException para o 400.
+ * Os "type" e "title" são os MESMOS do contrato da Tab 4:
+ *   400 → erros/validacao · 401 → erros/naoautenticado · 404 → erros/naoencontrado
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -1123,15 +1142,15 @@ public class GlobalExceptionHandler {
     /** 404 — recurso inexistente (GET/PUT/DELETE de id que não existe). */
     @ExceptionHandler(RecursoNaoEncontradoException.class)
     public ResponseEntity&lt;ProblemDetail&gt; handleNotFound(RecursoNaoEncontradoException ex) {
-        return problema(HttpStatus.NOT_FOUND, "https://example.com/erros/nao-encontrado",
-                "Recurso não encontrado", ex.getMessage());
+        return problema(HttpStatus.NOT_FOUND, "https://example.com/erros/naoencontrado",
+                "Não encontrado", ex.getMessage());
     }
 
-    /** 400 — regra de negócio violada. */
+    /** 400 — regra de negócio violada (para o cliente, é dado inválido do mesmo jeito). */
     @ExceptionHandler(DomainException.class)
     public ResponseEntity&lt;ProblemDetail&gt; handleDomain(DomainException ex) {
-        return problema(HttpStatus.BAD_REQUEST, "https://example.com/erros/dominio",
-                "Regra de negócio violada", ex.getMessage());
+        return problema(HttpStatus.BAD_REQUEST, "https://example.com/erros/validacao",
+                "Requisição inválida", ex.getMessage());
     }
 
     /** 400 — Bean Validation (@Valid no DTO). */
@@ -1171,12 +1190,13 @@ public class GlobalExceptionHandler {
 <div class="lab-container">
 <div class="lab-header"><h3>🔑 JWT na prática (Java): quem faz o quê</h3></div>
 <ol class="step-number-list">
-<li><strong>Emissão — <code>JwtService.gerarToken()</code>:</strong> monta claims (<code>sub</code>, <code>role</code>, <code>iat</code>, <code>exp</code>) e assina com <code>HS256</code> usando o secret vindo de <code>${jwt.secret}</code>.</li>
+<li><strong>Emissão — <code>JwtService.gerarToken()</code>:</strong> monta as claims (<code>sub</code> = e-mail, <code>iat</code>, <code>exp</code>) — <strong>sem papéis (roles)</strong>: nesta aula basta saber se a pessoa está logada — e assina com <code>HS256</code> usando o secret vindo de <code>${jwt.secret}</code>.</li>
 <li><strong>Verificação — <code>JwtTokenFilter</code>:</strong> em <strong>toda</strong> request, lê <code>Authorization: Bearer …</code>, valida assinatura/expiração num único parse e popula o <code>SecurityContext</code>. Se o token faltar ou for inválido, o filtro <strong>não responde</strong>: a request segue sem autenticação e, se o endpoint for protegido, o <code>authenticationEntryPoint</code> responde <strong>401 problem+json</strong> (sem ele, o Spring responderia 403).</li>
 <li><strong>Fio condutor — <code>SecurityConfig</code>:</strong> cria o filtro (ele <strong>não</strong> é <code>@Component</code>, para não ser registrado também como filtro global do servlet), sessão <code>STATELESS</code>, libera <code>/api/auth/**</code>, <code>/error</code> e GETs de produtos, exige auth no resto.</li>
 <li><strong>Secret:</strong> vem de <code>${jwt.secret}</code> no <code>application.yml</code> em dev; em produção use <strong>variável de ambiente</strong> (<code>export JWT_SECRET=…</code>) ou secret manager — nunca commitado.</li>
 </ol>
-<div class="term-help"><strong>🖥️ Testar:</strong> <span class="ide-tag java">IntelliJ</span> <kbd>Alt+F12</kbd> → login p/ obter token → <code>curl -H "Authorization: Bearer $TOKEN" …</code> (roteiro completo na Tab 4).</div>
+<div class="term-help"><strong>🔍 Veja por dentro:</strong> cole o <code>tokenAcesso</code> no decodificador de JWT da <a href="javascript:switchTab('tab4')" style="color:var(--primary);text-decoration:underline">Tab 4</a> (ou em <a class="ext" href="https://jwt.io" target="_blank">jwt.io</a>): o payload tem só <code>sub</code>, <code>iat</code> e <code>exp</code>.</div>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=spring+security+jwt+spring+boot+tutorial" target="_blank">JWT com Spring Security</a> · <a class="ext" href="https://www.youtube.com/results?search_query=o+que+%C3%A9+jwt+token+explicado" target="_blank">O que é JWT</a></div>
 </div>
 <div class="code-editor-wrap"><span class="code-filepath">presentation/src/main/resources/application.yml</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-presentation/src/main/resources/application.yml">server:
@@ -1184,7 +1204,7 @@ public class GlobalExceptionHandler {
 
 spring:
   datasource:
-    # Banco da Tab 5 (container mysql-db). Em Docker: SPRING_DATASOURCE_URL
+    # MySQL da Tab 5 (container dev_mysql_server). Em Docker: SPRING_DATASOURCE_URL
     url: jdbc:mysql://localhost:3306/loja_db?useSSL=false&amp;serverTimezone=UTC
     username: devuser
     password: devpass
@@ -1193,59 +1213,590 @@ spring:
       ddl-auto: validate      # o schema vem dos scripts SQL; o Hibernate só CONFERE
     open-in-view: false       # não segura conexão aberta durante a renderização da resposta
 
-# 🔀 Ponto de troca do banco (lido pelo PersistenceConfig)
-#   relational → MySQL (esta Tab 6)
-#   dual | nosql → MongoDB (implementados na Tab 6-B)
-persistence:
-  provider: relational
-
 jwt:
   # Dev apenas! Produção: variável de ambiente JWT_SECRET (nunca commitar)
   secret: MinhaChaveSecretaSuperSeguraLojaAPI2026DeveTerMin32Caracteres
   expiration: 3600000       # 1 hora, em milissegundos</pre></div>
-<div class="code-editor-wrap"><span class="code-filepath">terminal do IntelliJ - compilar, subir e testar com curl</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor"># ──────────────────────────────────────────────────────────────
-# 1) Compilar e instalar os 4 módulos (na raiz, onde está o pom.xml pai)
-#    install = coloca domain/application/infrastructure no repositório local,
-#    para o módulo de apresentação encontrá-los
-# ──────────────────────────────────────────────────────────────
-mvn -q -DskipTests install
+<h4 style="color:var(--accent);margin:20px 0 8px">▶️ Rodar e testar a API</h4>
+<div class="step-box">
+<h4><span class="step-num">1</span>🖱️ Ligar o MySQL da Tab 5</h4>
+<p>Abra o <strong>Docker Desktop → Containers</strong> e clique ▶ em <code>dev_mysql_server</code> (ou no grupo do compose da Tab 5).</p>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> <code>dev_mysql_server</code> com bolinha verde e <code>3306:3306</code> na coluna <em>Port(s)</em>.</div>
+</div>
+<div class="step-box">
+<h4><span class="step-num">2</span>🖱️ Compilar os 4 módulos (Maven → install)</h4>
+<p>Janela do Maven (ícone <strong>m</strong>, à direita) → <strong>loja-api → Lifecycle</strong> → dois cliques em <strong>install</strong>. O <em>install</em> guarda os módulos <code>domain</code>, <code>application</code> e <code>infrastructure</code> no repositório local, para o <code>presentation</code> encontrá-los. Ele também roda os testes.</p>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> na janela <em>Run</em>, <code>Reactor Summary</code> com os 5 itens <strong>SUCCESS</strong> e <code>BUILD SUCCESS</code>.</div>
+</div>
+<div class="step-box">
+<h4><span class="step-num">3</span>🖱️ Subir a API (▶ na Main)</h4>
+<p>Abra <code>produtos-presentation/src/main/java/com/loja/presentation/Main.java</code> e clique no <strong>▶ verde</strong> ao lado de <code>public class Main</code> → <strong>Run 'Main.main()'</strong>.</p>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> no fim do log, <code>Tomcat started on port 8080</code> e <code>Started Main in … seconds</code>. Abra <a class="ext" href="http://localhost:8080/api/produtos" target="_blank">http://localhost:8080/api/produtos</a>: aparecem os 3 produtos do <code>loja_db</code> (Teclado, Mouse e Headset).</div>
+</div>
+<div class="step-box">
+<h4><span class="step-num">4</span>🖱️ Testar com o REST Client — o mesmo roteiro do mock</h4>
+<p>O <code>requests.http</code> (na raiz do ZIP) tem os mesmos pedidos que você mandou ao Prism na Tab 4 — só o endereço mudou (<code>4010</code> → <code>8080</code>). É a conferência do ciclo API-First: a API real cumpre o contrato? Abra a pasta <code>loja-api</code> no <strong>VS Code</strong> (com a extensão REST Client da Tab 4) e clique em <strong>Send Request</strong> em cada pedido, na ordem, com a API rodando no IntelliJ.</p>
+<div class="code-editor-wrap"><span class="code-filepath">requests.http</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="requests.http"># ─────────────────────────────────────────────────────────────
+#  Testes da API REAL Java (REST Client no VS Code). A API precisa estar
+#  rodando (▶ na Main, no IntelliJ) e o MySQL da Tab 5 ligado.
+#  Clique em "Send Request" em cada pedido, na ordem.
+#  São os MESMOS pedidos do mock da Tab 4 — só mudou o @host. A diferença:
+#  aqui os dados são de verdade (o produto criado no 4 some de fato no 8).
+# ─────────────────────────────────────────────────────────────
+@host = http://localhost:8080
 
-# 2) MySQL da Tab 5 no ar (banco loja_db com a tabela produtos)
-#    e então subir a API
-mvn -pl produtos-presentation spring-boot:run
+### 1) Listar SEM token → 200 com os produtos do loja_db (Tab 5)
+GET {{host}}/api/produtos?page=0&amp;size=20
 
-# ── Em OUTRO terminal ──
-# 3) Login (público) → token
-TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"dev@loja.com.br","senha":"SenhaForte#2026"}' | jq -r '.tokenAcesso')
+### 2) Criar SEM token → 401 (problem+json, type erros/naoautenticado)
+POST {{host}}/api/produtos
+Content-Type: application/json
 
-# 4) GET público, paginado no banco → 200
-curl -i "http://localhost:8080/api/produtos?page=0&amp;size=10"
+{ "nome": "Monitor Ultrawide 34", "preco": 2499.90, "estoque": 8 }
 
-# 5) POST SEM token → 401 problem+json (antes: 403)
-curl -i -X POST http://localhost:8080/api/produtos \
-  -H "Content-Type: application/json" -d '{"nome":"Mouse","preco":99.90,"estoque":5}'
+### 3) Login → 200 com tokenAcesso
+# @name login
+POST {{host}}/api/auth/login
+Content-Type: application/json
 
-# 6) POST COM token → 201 + header Location
-curl -i -X POST http://localhost:8080/api/produtos \
-  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d '{"nome":"Mouse","preco":99.90,"estoque":5}'
+{ "email": "dev@loja.com.br", "senha": "SenhaForte#2026" }
 
-# 7) GET de id inexistente → 404 problem+json (antes: 400)
-curl -i http://localhost:8080/api/produtos/999999
+###
+@token = {{login.response.body.$.tokenAcesso}}
 
-# 8) Paginação inválida → 400 (antes: 500)
-curl -i "http://localhost:8080/api/produtos?page=-1"</pre></div>
-<div class="success-banner"><strong>✅ Sucesso esperado:</strong> login 200 com <code>tokenAcesso</code> · GET 200 · POST sem token <strong>401</strong> · POST com token <strong>201</strong> + <code>Location</code> · id inexistente <strong>404</strong> · <code>page=-1</code> <strong>400</strong>.</div>
-<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> <code>Schema-validation: wrong column type ... found [int], but expecting [bigint]</code> → o <code>ddl-auto: validate</code> confere a tabela: <code>id</code> precisa ser <code>BIGINT</code> (o campo é <code>Long</code>) — ajuste o script SQL da Tab 5; <code>Could not resolve dependencies ... produtos-core-domain</code> → rode o <code>mvn install</code> na raiz antes do <code>-pl</code>; <code>Communications link failure</code> → MySQL da Tab 5 fora do ar.</div>
+### 4) Criar COM token → 201 + header Location (guarda o id novo)
+# @name criar
+POST {{host}}/api/produtos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "nome": "Monitor Ultrawide 34", "preco": 2499.90, "estoque": 8 }
+
+###
+@novoId = {{criar.response.body.$.id}}
+
+### 5) Nome com 101 letras → 400 (contrato: maxLength 100; type erros/validacao)
+POST {{host}}/api/produtos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "nome": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "preco": 10, "estoque": 1 }
+
+### 6) Buscar o produto criado → 200
+GET {{host}}/api/produtos/{{novoId}}
+
+### 7) Atualizar → 200
+PUT {{host}}/api/produtos/{{novoId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "nome": "Monitor Ultrawide 34 4K", "preco": 2999.90, "estoque": 12 }
+
+### 8) Excluir → 204
+DELETE {{host}}/api/produtos/{{novoId}}
+Authorization: Bearer {{token}}
+
+### 9) Buscar de novo → 404 (agora ele não existe MESMO — no mock isso não acontecia)
+GET {{host}}/api/produtos/{{novoId}}
+
+### 10) Paginação inválida → 400
+GET {{host}}/api/produtos?page=-1
+</pre></div>
+<div class="table-wrap"><table>
+<thead><tr><th>#</th><th>Pedido</th><th>Esperado</th><th>No mock (Tab 4) era…</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Listar sem token</td><td><code>200</code> com os produtos do banco</td><td>sempre o mesmo exemplo</td></tr>
+<tr><td>2</td><td>Criar sem token</td><td><code>401</code> problem+json (<code>erros/naoautenticado</code>)</td><td>igual</td></tr>
+<tr><td>3</td><td>Login</td><td><code>200</code> + <code>tokenAcesso</code></td><td>aceitava qualquer e-mail</td></tr>
+<tr><td>4</td><td>Criar com token</td><td><code>201</code> + header <code>Location</code> e um <code>id</code> novo</td><td>id sempre 101</td></tr>
+<tr><td>5</td><td>Nome com 101 letras</td><td><code>400</code> (<code>erros/validacao</code>)</td><td>igual (maxLength 100)</td></tr>
+<tr><td>6–7</td><td>Buscar e atualizar o criado</td><td><code>200</code></td><td>exemplo fixo</td></tr>
+<tr><td>8</td><td>Excluir</td><td><code>204</code></td><td>igual</td></tr>
+<tr><td>9</td><td>Buscar o excluído</td><td><code>404</code> (<code>erros/naoencontrado</code>) — de verdade!</td><td>só com <code>Prefer: code=404</code></td></tr>
+<tr><td>10</td><td><code>page=-1</code></td><td><code>400</code></td><td>—</td></tr>
+</tbody></table></div>
+<div class="info-banner"><strong>💡 Prefere ficar no IntelliJ?</strong> O IntelliJ <strong>Ultimate</strong> tem um HTTP Client que abre <code>.http</code>, mas ele não entende as linhas <code># @name</code> / <code>{{login.response…}}</code> do REST Client (usa scripts próprios). Para seguir igual à Tab 4, use o VS Code só para este passo.</div>
+</div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">⌨️ Prefere o terminal? Compilar, rodar e testar por comando</div>
+<div class="faq-a">
+<div class="code-editor-wrap"><span class="code-filepath">terminal do IntelliJ (Alt+F12) — na pasta loja-api</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor"># Windows (PowerShell/CMD): troque ./mvnw por .\mvnw.cmd
+# macOS/Linux: se der "permission denied", rode antes: chmod +x mvnw
+
+# 1) Compila, testa e instala os 4 módulos
+./mvnw -q install
+
+# 2) Sobe a API (MySQL da Tab 5 ligado)
+./mvnw -pl produtos-presentation spring-boot:run</pre></div>
+<p>Em outro terminal — <strong>Git Bash, macOS ou Linux</strong> (no PowerShell do Windows, escreva <code>curl.exe</code>):</p>
+<div class="code-editor-wrap"><span class="code-filepath">terminal — testes com curl</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">H=http://localhost:8080
+curl -s -o /dev/null -w "GET lista: %{http_code}\n" "$H/api/produtos"
+curl -s -o /dev/null -w "POST sem token: %{http_code}\n" -X POST "$H/api/produtos" -H "Content-Type: application/json" -d '{"nome":"Monitor","preco":2499.90,"estoque":8}'
+TOKEN=$(curl -s -X POST "$H/api/auth/login" -H "Content-Type: application/json" -d '{"email":"dev@loja.com.br","senha":"SenhaForte#2026"}' | sed -E 's/.*"tokenAcesso" *: *"([^"]+)".*/\1/')
+curl -i -X POST "$H/api/produtos" -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"nome":"Monitor","preco":2499.90,"estoque":8}'
+curl -i "$H/api/produtos/999999"        # 404 problem+json
+curl -i "$H/api/produtos?page=-1"       # 400</pre></div>
+<p><strong>PowerShell:</strong></p>
+<div class="code-editor-wrap"><span class="code-filepath">PowerShell — testes com Invoke-RestMethod</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">$H = "http://localhost:8080"
+Invoke-RestMethod "$H/api/produtos"                                   # lista (público)
+$login = Invoke-RestMethod -Method Post "$H/api/auth/login" -ContentType "application/json" `
+         -Body '{"email":"dev@loja.com.br","senha":"SenhaForte#2026"}'
+$auth = @{ Authorization = "Bearer $($login.tokenAcesso)" }
+Invoke-RestMethod -Method Post "$H/api/produtos" -Headers $auth -ContentType "application/json" `
+         -Body '{"nome":"Monitor","preco":2499.90,"estoque":8}'        # 201: mostra o produto criado</pre></div>
+</div></div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">📄 Os arquivos do Maven Wrapper (mvnw, mvnw.cmd, maven-wrapper.properties) — gerados, não precisa ler</div>
+<div class="faq-a">
+<p>O <strong>Maven Wrapper</strong> é um script que baixa a versão certa do Maven na 1ª execução (fica em <code>~/.m2/wrapper</code>). Assim todo mundo — você, o colega e o CI — usa o mesmo Maven, sem instalar nada. São os arquivos oficiais do <a class="ext" href="https://maven.apache.org/tools/wrapper/" target="_blank">Apache Maven Wrapper 3.3.2</a> (tipo <em>only-script</em>).</p>
+<div class="code-editor-wrap"><span class="code-filepath">.mvn/wrapper/maven-wrapper.properties</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path=".mvn/wrapper/maven-wrapper.properties">wrapperVersion=3.3.2
+distributionType=only-script
+distributionUrl=https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.9/apache-maven-3.9.9-bin.zip</pre></div>
+<div class="code-editor-wrap"><span class="code-filepath">mvnw (macOS/Linux/Git Bash)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="mvnw">#!/bin/sh
+# ----------------------------------------------------------------------------
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+# ----------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------
+# Apache Maven Wrapper startup batch script, version 3.3.2
+#
+# Optional ENV vars
+# -----------------
+#   JAVA_HOME - location of a JDK home dir, required when download maven via java source
+#   MVNW_REPOURL - repo url base for downloading maven distribution
+#   MVNW_USERNAME/MVNW_PASSWORD - user and password for downloading maven
+#   MVNW_VERBOSE - true: enable verbose log; debug: trace the mvnw script; others: silence the output
+# ----------------------------------------------------------------------------
+
+set -euf
+[ "${MVNW_VERBOSE-}" != debug ] || set -x
+
+# OS specific support.
+native_path() { printf %s\\n "$1"; }
+case "$(uname)" in
+CYGWIN* | MINGW*)
+  [ -z "${JAVA_HOME-}" ] || JAVA_HOME="$(cygpath --unix "$JAVA_HOME")"
+  native_path() { cygpath --path --windows "$1"; }
+  ;;
+esac
+
+# set JAVACMD and JAVACCMD
+set_java_home() {
+  # For Cygwin and MinGW, ensure paths are in Unix format before anything is touched
+  if [ -n "${JAVA_HOME-}" ]; then
+    if [ -x "$JAVA_HOME/jre/sh/java" ]; then
+      # IBM's JDK on AIX uses strange locations for the executables
+      JAVACMD="$JAVA_HOME/jre/sh/java"
+      JAVACCMD="$JAVA_HOME/jre/sh/javac"
+    else
+      JAVACMD="$JAVA_HOME/bin/java"
+      JAVACCMD="$JAVA_HOME/bin/javac"
+
+      if [ ! -x "$JAVACMD" ] || [ ! -x "$JAVACCMD" ]; then
+        echo "The JAVA_HOME environment variable is not defined correctly, so mvnw cannot run." &gt;&amp;2
+        echo "JAVA_HOME is set to \"$JAVA_HOME\", but \"\$JAVA_HOME/bin/java\" or \"\$JAVA_HOME/bin/javac\" does not exist." &gt;&amp;2
+        return 1
+      fi
+    fi
+  else
+    JAVACMD="$(
+      'set' +e
+      'unset' -f command 2&gt;/dev/null
+      'command' -v java
+    )" || :
+    JAVACCMD="$(
+      'set' +e
+      'unset' -f command 2&gt;/dev/null
+      'command' -v javac
+    )" || :
+
+    if [ ! -x "${JAVACMD-}" ] || [ ! -x "${JAVACCMD-}" ]; then
+      echo "The java/javac command does not exist in PATH nor is JAVA_HOME set, so mvnw cannot run." &gt;&amp;2
+      return 1
+    fi
+  fi
+}
+
+# hash string like Java String::hashCode
+hash_string() {
+  str="${1:-}" h=0
+  while [ -n "$str" ]; do
+    char="${str%"${str#?}"}"
+    h=$(((h * 31 + $(LC_CTYPE=C printf %d "'$char")) % 4294967296))
+    str="${str#?}"
+  done
+  printf %x\\n $h
+}
+
+verbose() { :; }
+[ "${MVNW_VERBOSE-}" != true ] || verbose() { printf %s\\n "${1-}"; }
+
+die() {
+  printf %s\\n "$1" &gt;&amp;2
+  exit 1
+}
+
+trim() {
+  # MWRAPPER-139:
+  #   Trims trailing and leading whitespace, carriage returns, tabs, and linefeeds.
+  #   Needed for removing poorly interpreted newline sequences when running in more
+  #   exotic environments such as mingw bash on Windows.
+  printf "%s" "${1}" | tr -d '[:space:]'
+}
+
+# parse distributionUrl and optional distributionSha256Sum, requires .mvn/wrapper/maven-wrapper.properties
+while IFS="=" read -r key value; do
+  case "${key-}" in
+  distributionUrl) distributionUrl=$(trim "${value-}") ;;
+  distributionSha256Sum) distributionSha256Sum=$(trim "${value-}") ;;
+  esac
+done &lt;"${0%/*}/.mvn/wrapper/maven-wrapper.properties"
+[ -n "${distributionUrl-}" ] || die "cannot read distributionUrl property in ${0%/*}/.mvn/wrapper/maven-wrapper.properties"
+
+case "${distributionUrl##*/}" in
+maven-mvnd-*bin.*)
+  MVN_CMD=mvnd.sh _MVNW_REPO_PATTERN=/maven/mvnd/
+  case "${PROCESSOR_ARCHITECTURE-}${PROCESSOR_ARCHITEW6432-}:$(uname -a)" in
+  *AMD64:CYGWIN* | *AMD64:MINGW*) distributionPlatform=windows-amd64 ;;
+  :Darwin*x86_64) distributionPlatform=darwin-amd64 ;;
+  :Darwin*arm64) distributionPlatform=darwin-aarch64 ;;
+  :Linux*x86_64*) distributionPlatform=linux-amd64 ;;
+  *)
+    echo "Cannot detect native platform for mvnd on $(uname)-$(uname -m), use pure java version" &gt;&amp;2
+    distributionPlatform=linux-amd64
+    ;;
+  esac
+  distributionUrl="${distributionUrl%-bin.*}-$distributionPlatform.zip"
+  ;;
+maven-mvnd-*) MVN_CMD=mvnd.sh _MVNW_REPO_PATTERN=/maven/mvnd/ ;;
+*) MVN_CMD="mvn${0##*/mvnw}" _MVNW_REPO_PATTERN=/org/apache/maven/ ;;
+esac
+
+# apply MVNW_REPOURL and calculate MAVEN_HOME
+# maven home pattern: ~/.m2/wrapper/dists/{apache-maven-&lt;version&gt;,maven-mvnd-&lt;version&gt;-&lt;platform&gt;}/&lt;hash&gt;
+[ -z "${MVNW_REPOURL-}" ] || distributionUrl="$MVNW_REPOURL$_MVNW_REPO_PATTERN${distributionUrl#*"$_MVNW_REPO_PATTERN"}"
+distributionUrlName="${distributionUrl##*/}"
+distributionUrlNameMain="${distributionUrlName%.*}"
+distributionUrlNameMain="${distributionUrlNameMain%-bin}"
+MAVEN_USER_HOME="${MAVEN_USER_HOME:-${HOME}/.m2}"
+MAVEN_HOME="${MAVEN_USER_HOME}/wrapper/dists/${distributionUrlNameMain-}/$(hash_string "$distributionUrl")"
+
+exec_maven() {
+  unset MVNW_VERBOSE MVNW_USERNAME MVNW_PASSWORD MVNW_REPOURL || :
+  exec "$MAVEN_HOME/bin/$MVN_CMD" "$@" || die "cannot exec $MAVEN_HOME/bin/$MVN_CMD"
+}
+
+if [ -d "$MAVEN_HOME" ]; then
+  verbose "found existing MAVEN_HOME at $MAVEN_HOME"
+  exec_maven "$@"
+fi
+
+case "${distributionUrl-}" in
+*?-bin.zip | *?maven-mvnd-?*-?*.zip) ;;
+*) die "distributionUrl is not valid, must match *-bin.zip or maven-mvnd-*.zip, but found '${distributionUrl-}'" ;;
+esac
+
+# prepare tmp dir
+if TMP_DOWNLOAD_DIR="$(mktemp -d)" &amp;&amp; [ -d "$TMP_DOWNLOAD_DIR" ]; then
+  clean() { rm -rf -- "$TMP_DOWNLOAD_DIR"; }
+  trap clean HUP INT TERM EXIT
+else
+  die "cannot create temp dir"
+fi
+
+mkdir -p -- "${MAVEN_HOME%/*}"
+
+# Download and Install Apache Maven
+verbose "Couldn't find MAVEN_HOME, downloading and installing it ..."
+verbose "Downloading from: $distributionUrl"
+verbose "Downloading to: $TMP_DOWNLOAD_DIR/$distributionUrlName"
+
+# select .zip or .tar.gz
+if ! command -v unzip &gt;/dev/null; then
+  distributionUrl="${distributionUrl%.zip}.tar.gz"
+  distributionUrlName="${distributionUrl##*/}"
+fi
+
+# verbose opt
+__MVNW_QUIET_WGET=--quiet __MVNW_QUIET_CURL=--silent __MVNW_QUIET_UNZIP=-q __MVNW_QUIET_TAR=''
+[ "${MVNW_VERBOSE-}" != true ] || __MVNW_QUIET_WGET='' __MVNW_QUIET_CURL='' __MVNW_QUIET_UNZIP='' __MVNW_QUIET_TAR=v
+
+# normalize http auth
+case "${MVNW_PASSWORD:+has-password}" in
+'') MVNW_USERNAME='' MVNW_PASSWORD='' ;;
+has-password) [ -n "${MVNW_USERNAME-}" ] || MVNW_USERNAME='' MVNW_PASSWORD='' ;;
+esac
+
+if [ -z "${MVNW_USERNAME-}" ] &amp;&amp; command -v wget &gt;/dev/null; then
+  verbose "Found wget ... using wget"
+  wget ${__MVNW_QUIET_WGET:+"$__MVNW_QUIET_WGET"} "$distributionUrl" -O "$TMP_DOWNLOAD_DIR/$distributionUrlName" || die "wget: Failed to fetch $distributionUrl"
+elif [ -z "${MVNW_USERNAME-}" ] &amp;&amp; command -v curl &gt;/dev/null; then
+  verbose "Found curl ... using curl"
+  curl ${__MVNW_QUIET_CURL:+"$__MVNW_QUIET_CURL"} -f -L -o "$TMP_DOWNLOAD_DIR/$distributionUrlName" "$distributionUrl" || die "curl: Failed to fetch $distributionUrl"
+elif set_java_home; then
+  verbose "Falling back to use Java to download"
+  javaSource="$TMP_DOWNLOAD_DIR/Downloader.java"
+  targetZip="$TMP_DOWNLOAD_DIR/$distributionUrlName"
+  cat &gt;"$javaSource" &lt;&lt;-END
+	public class Downloader extends java.net.Authenticator
+	{
+	  protected java.net.PasswordAuthentication getPasswordAuthentication()
+	  {
+	    return new java.net.PasswordAuthentication( System.getenv( "MVNW_USERNAME" ), System.getenv( "MVNW_PASSWORD" ).toCharArray() );
+	  }
+	  public static void main( String[] args ) throws Exception
+	  {
+	    setDefault( new Downloader() );
+	    java.nio.file.Files.copy( java.net.URI.create( args[0] ).toURL().openStream(), java.nio.file.Paths.get( args[1] ).toAbsolutePath().normalize() );
+	  }
+	}
+	END
+  # For Cygwin/MinGW, switch paths to Windows format before running javac and java
+  verbose " - Compiling Downloader.java ..."
+  "$(native_path "$JAVACCMD")" "$(native_path "$javaSource")" || die "Failed to compile Downloader.java"
+  verbose " - Running Downloader.java ..."
+  "$(native_path "$JAVACMD")" -cp "$(native_path "$TMP_DOWNLOAD_DIR")" Downloader "$distributionUrl" "$(native_path "$targetZip")"
+fi
+
+# If specified, validate the SHA-256 sum of the Maven distribution zip file
+if [ -n "${distributionSha256Sum-}" ]; then
+  distributionSha256Result=false
+  if [ "$MVN_CMD" = mvnd.sh ]; then
+    echo "Checksum validation is not supported for maven-mvnd." &gt;&amp;2
+    echo "Please disable validation by removing 'distributionSha256Sum' from your maven-wrapper.properties." &gt;&amp;2
+    exit 1
+  elif command -v sha256sum &gt;/dev/null; then
+    if echo "$distributionSha256Sum  $TMP_DOWNLOAD_DIR/$distributionUrlName" | sha256sum -c &gt;/dev/null 2&gt;&amp;1; then
+      distributionSha256Result=true
+    fi
+  elif command -v shasum &gt;/dev/null; then
+    if echo "$distributionSha256Sum  $TMP_DOWNLOAD_DIR/$distributionUrlName" | shasum -a 256 -c &gt;/dev/null 2&gt;&amp;1; then
+      distributionSha256Result=true
+    fi
+  else
+    echo "Checksum validation was requested but neither 'sha256sum' or 'shasum' are available." &gt;&amp;2
+    echo "Please install either command, or disable validation by removing 'distributionSha256Sum' from your maven-wrapper.properties." &gt;&amp;2
+    exit 1
+  fi
+  if [ $distributionSha256Result = false ]; then
+    echo "Error: Failed to validate Maven distribution SHA-256, your Maven distribution might be compromised." &gt;&amp;2
+    echo "If you updated your Maven version, you need to update the specified distributionSha256Sum property." &gt;&amp;2
+    exit 1
+  fi
+fi
+
+# unzip and move
+if command -v unzip &gt;/dev/null; then
+  unzip ${__MVNW_QUIET_UNZIP:+"$__MVNW_QUIET_UNZIP"} "$TMP_DOWNLOAD_DIR/$distributionUrlName" -d "$TMP_DOWNLOAD_DIR" || die "failed to unzip"
+else
+  tar xzf${__MVNW_QUIET_TAR:+"$__MVNW_QUIET_TAR"} "$TMP_DOWNLOAD_DIR/$distributionUrlName" -C "$TMP_DOWNLOAD_DIR" || die "failed to untar"
+fi
+printf %s\\n "$distributionUrl" &gt;"$TMP_DOWNLOAD_DIR/$distributionUrlNameMain/mvnw.url"
+mv -- "$TMP_DOWNLOAD_DIR/$distributionUrlNameMain" "$MAVEN_HOME" || [ -d "$MAVEN_HOME" ] || die "fail to move MAVEN_HOME"
+
+clean || :
+exec_maven "$@"
+</pre></div>
+<div class="code-editor-wrap"><span class="code-filepath">mvnw.cmd (Windows)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="mvnw.cmd">&lt;# : batch portion
+@REM ----------------------------------------------------------------------------
+@REM Licensed to the Apache Software Foundation (ASF) under one
+@REM or more contributor license agreements.  See the NOTICE file
+@REM distributed with this work for additional information
+@REM regarding copyright ownership.  The ASF licenses this file
+@REM to you under the Apache License, Version 2.0 (the
+@REM "License"); you may not use this file except in compliance
+@REM with the License.  You may obtain a copy of the License at
+@REM
+@REM    http://www.apache.org/licenses/LICENSE-2.0
+@REM
+@REM Unless required by applicable law or agreed to in writing,
+@REM software distributed under the License is distributed on an
+@REM "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+@REM KIND, either express or implied.  See the License for the
+@REM specific language governing permissions and limitations
+@REM under the License.
+@REM ----------------------------------------------------------------------------
+
+@REM ----------------------------------------------------------------------------
+@REM Apache Maven Wrapper startup batch script, version 3.3.2
+@REM
+@REM Optional ENV vars
+@REM   MVNW_REPOURL - repo url base for downloading maven distribution
+@REM   MVNW_USERNAME/MVNW_PASSWORD - user and password for downloading maven
+@REM   MVNW_VERBOSE - true: enable verbose log; others: silence the output
+@REM ----------------------------------------------------------------------------
+
+@IF "%__MVNW_ARG0_NAME__%"=="" (SET __MVNW_ARG0_NAME__=%~nx0)
+@SET __MVNW_CMD__=
+@SET __MVNW_ERROR__=
+@SET __MVNW_PSMODULEP_SAVE=%PSModulePath%
+@SET PSModulePath=
+@FOR /F "usebackq tokens=1* delims==" %%A IN (`powershell -noprofile "&amp; {$scriptDir='%~dp0'; $script='%__MVNW_ARG0_NAME__%'; icm -ScriptBlock ([Scriptblock]::Create((Get-Content -Raw '%~f0'))) -NoNewScope}"`) DO @(
+  IF "%%A"=="MVN_CMD" (set __MVNW_CMD__=%%B) ELSE IF "%%B"=="" (echo %%A) ELSE (echo %%A=%%B)
+)
+@SET PSModulePath=%__MVNW_PSMODULEP_SAVE%
+@SET __MVNW_PSMODULEP_SAVE=
+@SET __MVNW_ARG0_NAME__=
+@SET MVNW_USERNAME=
+@SET MVNW_PASSWORD=
+@IF NOT "%__MVNW_CMD__%"=="" (%__MVNW_CMD__% %*)
+@echo Cannot start maven from wrapper &gt;&amp;2 &amp;&amp; exit /b 1
+@GOTO :EOF
+: end batch / begin powershell #&gt;
+
+$ErrorActionPreference = "Stop"
+if ($env:MVNW_VERBOSE -eq "true") {
+  $VerbosePreference = "Continue"
+}
+
+# calculate distributionUrl, requires .mvn/wrapper/maven-wrapper.properties
+$distributionUrl = (Get-Content -Raw "$scriptDir/.mvn/wrapper/maven-wrapper.properties" | ConvertFrom-StringData).distributionUrl
+if (!$distributionUrl) {
+  Write-Error "cannot read distributionUrl property in $scriptDir/.mvn/wrapper/maven-wrapper.properties"
+}
+
+switch -wildcard -casesensitive ( $($distributionUrl -replace '^.*/','') ) {
+  "maven-mvnd-*" {
+    $USE_MVND = $true
+    $distributionUrl = $distributionUrl -replace '-bin\.[^.]*$',"-windows-amd64.zip"
+    $MVN_CMD = "mvnd.cmd"
+    break
+  }
+  default {
+    $USE_MVND = $false
+    $MVN_CMD = $script -replace '^mvnw','mvn'
+    break
+  }
+}
+
+# apply MVNW_REPOURL and calculate MAVEN_HOME
+# maven home pattern: ~/.m2/wrapper/dists/{apache-maven-&lt;version&gt;,maven-mvnd-&lt;version&gt;-&lt;platform&gt;}/&lt;hash&gt;
+if ($env:MVNW_REPOURL) {
+  $MVNW_REPO_PATTERN = if ($USE_MVND) { "/org/apache/maven/" } else { "/maven/mvnd/" }
+  $distributionUrl = "$env:MVNW_REPOURL$MVNW_REPO_PATTERN$($distributionUrl -replace '^.*'+$MVNW_REPO_PATTERN,'')"
+}
+$distributionUrlName = $distributionUrl -replace '^.*/',''
+$distributionUrlNameMain = $distributionUrlName -replace '\.[^.]*$','' -replace '-bin$',''
+$MAVEN_HOME_PARENT = "$HOME/.m2/wrapper/dists/$distributionUrlNameMain"
+if ($env:MAVEN_USER_HOME) {
+  $MAVEN_HOME_PARENT = "$env:MAVEN_USER_HOME/wrapper/dists/$distributionUrlNameMain"
+}
+$MAVEN_HOME_NAME = ([System.Security.Cryptography.MD5]::Create().ComputeHash([byte[]][char[]]$distributionUrl) | ForEach-Object {$_.ToString("x2")}) -join ''
+$MAVEN_HOME = "$MAVEN_HOME_PARENT/$MAVEN_HOME_NAME"
+
+if (Test-Path -Path "$MAVEN_HOME" -PathType Container) {
+  Write-Verbose "found existing MAVEN_HOME at $MAVEN_HOME"
+  Write-Output "MVN_CMD=$MAVEN_HOME/bin/$MVN_CMD"
+  exit $?
+}
+
+if (! $distributionUrlNameMain -or ($distributionUrlName -eq $distributionUrlNameMain)) {
+  Write-Error "distributionUrl is not valid, must end with *-bin.zip, but found $distributionUrl"
+}
+
+# prepare tmp dir
+$TMP_DOWNLOAD_DIR_HOLDER = New-TemporaryFile
+$TMP_DOWNLOAD_DIR = New-Item -Itemtype Directory -Path "$TMP_DOWNLOAD_DIR_HOLDER.dir"
+$TMP_DOWNLOAD_DIR_HOLDER.Delete() | Out-Null
+trap {
+  if ($TMP_DOWNLOAD_DIR.Exists) {
+    try { Remove-Item $TMP_DOWNLOAD_DIR -Recurse -Force | Out-Null }
+    catch { Write-Warning "Cannot remove $TMP_DOWNLOAD_DIR" }
+  }
+}
+
+New-Item -Itemtype Directory -Path "$MAVEN_HOME_PARENT" -Force | Out-Null
+
+# Download and Install Apache Maven
+Write-Verbose "Couldn't find MAVEN_HOME, downloading and installing it ..."
+Write-Verbose "Downloading from: $distributionUrl"
+Write-Verbose "Downloading to: $TMP_DOWNLOAD_DIR/$distributionUrlName"
+
+$webclient = New-Object System.Net.WebClient
+if ($env:MVNW_USERNAME -and $env:MVNW_PASSWORD) {
+  $webclient.Credentials = New-Object System.Net.NetworkCredential($env:MVNW_USERNAME, $env:MVNW_PASSWORD)
+}
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+$webclient.DownloadFile($distributionUrl, "$TMP_DOWNLOAD_DIR/$distributionUrlName") | Out-Null
+
+# If specified, validate the SHA-256 sum of the Maven distribution zip file
+$distributionSha256Sum = (Get-Content -Raw "$scriptDir/.mvn/wrapper/maven-wrapper.properties" | ConvertFrom-StringData).distributionSha256Sum
+if ($distributionSha256Sum) {
+  if ($USE_MVND) {
+    Write-Error "Checksum validation is not supported for maven-mvnd. `nPlease disable validation by removing 'distributionSha256Sum' from your maven-wrapper.properties."
+  }
+  Import-Module $PSHOME\Modules\Microsoft.PowerShell.Utility -Function Get-FileHash
+  if ((Get-FileHash "$TMP_DOWNLOAD_DIR/$distributionUrlName" -Algorithm SHA256).Hash.ToLower() -ne $distributionSha256Sum) {
+    Write-Error "Error: Failed to validate Maven distribution SHA-256, your Maven distribution might be compromised. If you updated your Maven version, you need to update the specified distributionSha256Sum property."
+  }
+}
+
+# unzip and move
+Expand-Archive "$TMP_DOWNLOAD_DIR/$distributionUrlName" -DestinationPath "$TMP_DOWNLOAD_DIR" | Out-Null
+Rename-Item -Path "$TMP_DOWNLOAD_DIR/$distributionUrlNameMain" -NewName $MAVEN_HOME_NAME | Out-Null
+try {
+  Move-Item -Path "$TMP_DOWNLOAD_DIR/$MAVEN_HOME_NAME" -Destination $MAVEN_HOME_PARENT | Out-Null
+} catch {
+  if (! (Test-Path -Path "$MAVEN_HOME" -PathType Container)) {
+    Write-Error "fail to move MAVEN_HOME"
+  }
+} finally {
+  try { Remove-Item $TMP_DOWNLOAD_DIR -Recurse -Force | Out-Null }
+  catch { Write-Warning "Cannot remove $TMP_DOWNLOAD_DIR" }
+}
+
+Write-Output "MVN_CMD=$MAVEN_HOME/bin/$MVN_CMD"
+</pre></div>
+</div></div>
+<div class="code-editor-wrap"><span class="code-filepath">.gitignore (o que o Git não deve guardar)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path=".gitignore"># Saída do Maven (gerada a cada build)
+target/
+
+# Configurações do IntelliJ (cada um tem as suas)
+.idea/
+*.iml
+
+# VS Code e sistema operacional
+.vscode/
+.DS_Store
+Thumbs.db</pre></div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">✋ Errou? Erros comuns ao rodar</div>
+<div class="faq-a"><ul>
+<li><strong><code>Communications link failure</code></strong> → o <code>dev_mysql_server</code> não está ligado (passo 1).</li>
+<li><strong><code>Access denied for user 'devuser'</code></strong> → o volume do MySQL foi criado com outra senha: na Tab 5, <code>docker compose down -v</code> e <code>up -d</code> de novo.</li>
+<li><strong><code>Schema-validation: missing table [produtos]</code></strong> → o <code>init-sql</code> da Tab 5 não rodou (mesma solução acima).</li>
+<li><strong><code>Schema-validation: wrong column type … found [int], but expecting [bigint]</code></strong> → o <code>ddl-auto: validate</code> confere a tabela: <code>id</code> precisa ser <code>BIGINT</code> (o campo é <code>Long</code>). Use o script SQL atual da Tab 5 e recrie o volume.</li>
+<li><strong><code>Could not resolve dependencies … produtos-core-domain</code></strong> → rode o <strong>install</strong> na raiz (passo 2) antes de subir só o <code>presentation</code>.</li>
+<li><strong><code>Port 8080 was already in use</code></strong> → outra API (ou o container <code>loja-java</code>) está na 8080: pare-a no Docker Desktop ou na janela <em>Run</em> (■ vermelho).</li>
+<li><strong>401 mesmo com token</strong> → rode o pedido 3 (login) antes; o token vence em 60 minutos.</li>
+</ul></div></div>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=spring+boot+mysql+api+rest+intellij" target="_blank">Spring Boot com MySQL na prática</a> · <a class="ext" href="https://www.youtube.com/results?search_query=rest+client+vs+code+testar+api" target="_blank">REST Client no VS Code</a> · <a class="ext" href="https://www.youtube.com/results?search_query=maven+wrapper+mvnw+o+que+%C3%A9" target="_blank">Maven Wrapper (mvnw)</a></div>
 
 </div>
 
 <!-- ══════════ SEÇÃO 5: TDD ══════════ -->
 <div class="lab-container">
-<div class="lab-header"><h3>🧪 TDD: 11 testes (JUnit 5 + Mockito)</h3></div>
+<div class="lab-header"><h3>🧪 TDD: 19 testes (12 de service + 7 de HTTP)</h3></div>
 <h4 class="diag-title">📐 D-13 <span class="dt-type">Fluxo</span> — Ciclo TDD Red-Green-Refactor</h4>
 <div class="mermaid-box er-small" data-code='flowchart LR
     R["🔴 RED: escreve teste que falha"] --> G["🟢 GREEN: código mínimo p/ passar"]
@@ -1253,7 +1804,7 @@ curl -i "http://localhost:8080/api/produtos?page=-1"</pre></div>
     RF --> R'>
 <div class="mermaid"></div>
 </div>
-<div class="code-editor-wrap"><span class="code-filepath">application/ProdutoServiceTest.java (11 testes — AAA: Arrange, Act, Assert)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<div class="code-editor-wrap"><span class="code-filepath">application/ProdutoServiceTest.java (12 testes — AAA: Arrange, Act, Assert)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-core-application/src/test/java/com/loja/application/ProdutoServiceTest.java">package com.loja.application;
 
 import com.loja.domain.Produto;
@@ -1270,8 +1821,8 @@ import static org.mockito.Mockito.*;
 /**
  * Suíte TDD completa (padrão AAA: Arrange → Act → Assert).
  *
- * 🧭 Estes testes mockam a PORTA ProdutoRepository: não sabem se o banco é
- * MySQL ou MongoDB. Por isso continuam valendo, sem alteração, na Tab 6-B.
+ * Estes testes mockam a PORTA ProdutoRepository: não precisam de banco nenhum
+ * (rodam em milissegundos, até sem o Docker ligado).
  */
 class ProdutoServiceTest {
 
@@ -1320,6 +1871,14 @@ class ProdutoServiceTest {
     void recusaNomeCurto() {
         assertThrows(DomainException.class,
             () -&gt; service.criarProduto(new Produto(null, "A", BigDecimal.TEN, 1)));
+        verify(repoMock, never()).salvar(any());
+    }
+
+    @Test @DisplayName("🔴 recusa nome com mais de 100 chars (contrato: maxLength 100)")
+    void recusaNomeLongo() {
+        String nome101 = "A".repeat(101);
+        assertThrows(DomainException.class,
+            () -&gt; service.criarProduto(new Produto(null, nome101, BigDecimal.TEN, 1)));
         verify(repoMock, never()).salvar(any());
     }
 
@@ -1386,60 +1945,147 @@ class ProdutoServiceTest {
         verify(repoMock, never()).deletarPorId(anyLong());
     }
 }</pre></div>
-<div class="term-help"><strong>🖥️ Rodar testes:</strong> <span class="ide-tag java">IntelliJ</span> <kbd>Alt+F12</kbd> → <code>mvn -pl produtos-core-application -am test</code> (<code>-am</code> = "also make": compila junto o <code>produtos-core-domain</code>, do qual o módulo depende). Ou clique no ▶ verde ao lado da classe de teste.</div>
-<div class="success-banner"><strong>✅ Checklist:</strong> 11 testes de service (criar, listar paginado, obter, atualizar, excluir + bordas e 404) → todos verdes. 🧭 Eles mockam a porta <code>ProdutoRepository</code>: valem sem alteração para MySQL e para MongoDB (Tab 6-B).</div>
+<h4 style="color:var(--accent);margin:16px 0 8px">🌐 Testes HTTP — a API cumpre o contrato?</h4>
+<p>Os testes de service não passam pelo HTTP. O <code>ApiHttpTest</code> sobe <strong>só a camada web</strong> (controllers, segurança e tratamento de erros) com o <strong>MockMvc</strong> — um "navegador de mentira" que manda requisições sem abrir porta nenhuma. O service é trocado por um mock, então também não precisa do MySQL. Ele confere exatamente o que o contrato da Tab 4 promete: status, <code>Location</code> e os <code>type</code> dos erros.</p>
+<div class="code-editor-wrap"><span class="code-filepath">presentation/ApiHttpTest.java (7 testes — MockMvc)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="produtos-presentation/src/test/java/com/loja/presentation/ApiHttpTest.java">package com.loja.presentation;
+
+import com.loja.domain.Produto;
+import com.loja.domain.ProdutoService;
+import com.loja.domain.exception.RecursoNaoEncontradoException;
+import com.loja.presentation.controller.AuthController;
+import com.loja.presentation.controller.ProdutoController;
+import com.loja.presentation.exception.GlobalExceptionHandler;
+import com.loja.presentation.security.JwtService;
+import com.loja.presentation.security.SecurityConfig;
+import java.math.BigDecimal;
+import java.util.List;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+/**
+ * Testes HTTP: a API cumpre o CONTRATO da Tab 4?
+ *
+ * @WebMvcTest sobe só a camada web (sem banco, sem Tomcat de verdade).
+ * A classe Config abaixo diz EXATAMENTE quais peças entram: os 2 controllers,
+ * o tratamento de erros e a segurança. O ProdutoService é um mock (@MockitoBean):
+ * nós dizemos o que ele responde, e conferimos o que sai pelo HTTP.
+ */
+@WebMvcTest
+class ApiHttpTest {
+
+    @Configuration
+    @Import({ProdutoController.class, AuthController.class, GlobalExceptionHandler.class,
+             SecurityConfig.class, JwtService.class})
+    static class Config {}
+
+    private static final String ERROS = "https://example.com/erros/";
+
+    @Autowired MockMvc mvc;          // "navegador de mentira"
+    @Autowired JwtService jwt;       // gera um token válido para os testes
+    @MockitoBean ProdutoService service;
+
+    private String bearer() { return "Bearer " + jwt.gerarToken("dev@loja.com.br"); }
+
+    @Test @DisplayName("🟢 GET /api/produtos é público → 200 com a lista")
+    void listarPublico() throws Exception {
+        when(service.listarProdutos(0, 20))
+            .thenReturn(List.of(new Produto(1L, "Teclado", new BigDecimal("199.90"), 50)));
+
+        mvc.perform(get("/api/produtos"))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$[0].nome").value("Teclado"));
+    }
+
+    @Test @DisplayName("🔴 POST sem token → 401 problem+json (naoautenticado)")
+    void criarSemToken() throws Exception {
+        mvc.perform(post("/api/produtos").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nome\":\"Mouse\",\"preco\":99.90,\"estoque\":5}"))
+           .andExpect(status().isUnauthorized())
+           .andExpect(jsonPath("$.type").value(ERROS + "naoautenticado"));
+        verifyNoInteractions(service);   // nem chegou no service
+    }
+
+    @Test @DisplayName("🟢 POST com token → 201 + Location")
+    void criarComToken() throws Exception {
+        when(service.criarProduto(any()))
+            .thenReturn(new Produto(7L, "Mouse", new BigDecimal("99.90"), 5));
+
+        mvc.perform(post("/api/produtos").header("Authorization", bearer())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nome\":\"Mouse\",\"preco\":99.90,\"estoque\":5}"))
+           .andExpect(status().isCreated())
+           .andExpect(header().string("Location", "/api/produtos/7"))
+           .andExpect(jsonPath("$.id").value(7));
+    }
+
+    @Test @DisplayName("🔴 nome com 101 chars → 400 (validacao, maxLength 100)")
+    void nomeLongo() throws Exception {
+        String json = "{\"nome\":\"" + "A".repeat(101) + "\",\"preco\":10,\"estoque\":1}";
+        mvc.perform(post("/api/produtos").header("Authorization", bearer())
+                .contentType(MediaType.APPLICATION_JSON).content(json))
+           .andExpect(status().isBadRequest())
+           .andExpect(jsonPath("$.type").value(ERROS + "validacao"));
+        verifyNoInteractions(service);   // o @Valid barrou antes
+    }
+
+    @Test @DisplayName("🔴 GET de id inexistente → 404 (naoencontrado)")
+    void obterInexistente() throws Exception {
+        when(service.obterPorId(999L))
+            .thenThrow(new RecursoNaoEncontradoException("Produto não encontrado: 999"));
+
+        mvc.perform(get("/api/produtos/999"))
+           .andExpect(status().isNotFound())
+           .andExpect(jsonPath("$.type").value(ERROS + "naoencontrado"));
+    }
+
+    @Test @DisplayName("🟢 login correto → 200 com tokenAcesso")
+    void loginOk() throws Exception {
+        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"dev@loja.com.br\",\"senha\":\"SenhaForte#2026\"}"))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$.tokenAcesso").isNotEmpty());
+    }
+
+    @Test @DisplayName("🔴 login com senha errada → 401 (naoautenticado)")
+    void loginErrado() throws Exception {
+        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"dev@loja.com.br\",\"senha\":\"errada\"}"))
+           .andExpect(status().isUnauthorized())
+           .andExpect(jsonPath("$.type").value(ERROS + "naoautenticado"));
+    }
+}
+</pre></div>
+<div class="step-box">
+<h4><span class="step-num">▶</span>🖱️ Rodar os 19 testes</h4>
+<p>No painel <em>Project</em>, botão direito na pasta <code>loja-api</code> (a raiz) → <strong>Run 'All Tests'</strong>. Ou abra uma classe de teste e clique no ▶ verde ao lado do nome dela.</p>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> janela <em>Run</em> com a barra verde e <strong>Tests passed: 19</strong> — 12 em <code>ProdutoServiceTest</code> e 7 em <code>ApiHttpTest</code>. Nenhum precisa do Docker ligado.</div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">⌨️ Prefere o terminal?</div>
+<div class="faq-a"><div class="code-editor-wrap"><span class="code-filepath">terminal do IntelliJ (Alt+F12)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">./mvnw test                                        # todos os módulos (Windows: .\mvnw.cmd test)
+./mvnw -pl produtos-core-application -am test       # só o service (-am = compila junto o domain)</pre></div></div></div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">✋ Errou? Um teste ficou vermelho</div>
+<div class="faq-a"><ul>
+<li><strong>Clique no teste vermelho</strong>: à direita aparecem <em>Expected</em> (o que o teste esperava) e <em>Actual</em> (o que veio). Ex.: esperava <code>401</code> e veio <code>403</code> → o <code>authenticationEntryPoint</code> do <code>SecurityConfig</code> foi apagado.</li>
+<li><strong><code>No tests were found</code></strong> → o método precisa do <code>@Test</code> de <code>org.junit.jupiter.api</code> (JUnit 5), não do JUnit 4.</li>
+<li><strong><code>package org.springframework.boot.webmvc.test.autoconfigure does not exist</code></strong> → faltou a dependência <code>spring-boot-starter-webmvc-test</code> no <code>produtos-presentation/pom.xml</code> (Maven → 🔄 Reload depois de corrigir).</li>
+</ul></div></div>
+</div>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=junit+5+mockito+testes+unit%C3%A1rios+java" target="_blank">JUnit 5 e Mockito</a> · <a class="ext" href="https://www.youtube.com/results?search_query=tdd+test+driven+development+java+na+pr%C3%A1tica" target="_blank">TDD na prática</a> · <a class="ext" href="https://www.youtube.com/results?search_query=mockmvc+webmvctest+spring+boot+testes" target="_blank">MockMvc / @WebMvcTest</a></div>
 </div>
 
-<!-- ══════════ SEÇÃO 6: PREPARAÇÃO PARA A MIGRAÇÃO ══════════ -->
-<div class="lab-container">
-<div class="lab-header"><h3>🧭 Preparação para a migração relacional → MongoDB (executada na Tab 6-B)</h3></div>
-<div class="deep-concept-box" style="margin-bottom:14px">
-<p><strong>Motivações:</strong> escala horizontal, schema flexível. <strong>Riscos:</strong> perda de ACID entre documentos, consistência eventual. A migração acontece <strong>dentro da API</strong>, sem downtime, via toggle <code>persistence.provider</code> trocando qual adapter implementa a porta <code>ProdutoRepository</code>.</p>
-<p>Esta aba <strong>não migra</strong> — ela deixa o código <strong>pronto</strong> para migrar. A execução (adapters Mongo, dual-write, backfill e reconciliação) está na <a href="javascript:switchTab('tab6b')" style="color:var(--primary);text-decoration:underline">Tab 6-B</a>.</p>
-<p><strong>Aprofundar:</strong> <a class="ext" href="https://martinfowler.com/bliki/StranglerFigApplication.html" target="_blank">Strangler Fig (Fowler)</a> · <a class="ext" href="https://martinfowler.com/bliki/ParallelChange.html" target="_blank">Parallel Change</a>.</p>
-</div>
-<div class="table-wrap mb-3">
-<table>
-<thead><tr><th>O que foi preparado</th><th>Onde</th><th>Por que facilita a migração</th></tr></thead>
-<tbody>
-<tr><td>Porta sem tipos do Spring Data, com paginação <code>(page, size)</code> ordenada por id</td><td><code>ProdutoRepository</code></td><td>O adapter Mongo implementa a mesma semântica (<code>sort _id · skip · limit</code>)</td></tr>
-<tr><td><code>salvar</code> devolve o produto com o id gerado</td><td><code>ProdutoRepository</code> / service</td><td>No Mongo o id virá de uma sequência — quem chama já usa o retorno</td></tr>
-<tr><td>Um único ponto de escolha do adapter</td><td><code>PersistenceConfig</code></td><td>A Tab 6-B só adiciona os <code>case "dual"</code> e <code>"nosql"</code></td></tr>
-<tr><td>Adapter JPA sem anotações de condição</td><td><code>ProdutoRepositoryAdapter</code></td><td>Reaproveitado dentro do dual-write e como origem do backfill</td></tr>
-<tr><td>Domínio e DTOs sem anotações de banco</td><td><code>Produto</code>, <code>ProdutoResponse</code></td><td>O contrato da API não muda com o banco</td></tr>
-<tr><td>Testes mockam a porta</td><td><code>ProdutoServiceTest</code></td><td>Os 11 testes provam "funciona como antes" nos dois bancos</td></tr>
-<tr><td><code>id</code> <code>Long</code> preservado</td><td>Domínio</td><td>No Mongo vira o próprio <code>_id</code> — URLs e ids migrados não mudam</td></tr>
-</tbody>
-</table>
-</div>
-<div class="adr"><h5>ADR-004 · Migração Strangler Fig com toggle <span class="stack-tag">☕ Java</span><span class="status">Aceita · executada na Tab 6-B</span></h5>
-<p><b>Contexto:</b> catálogo com atributos variáveis cresce; o relacional limita o schema; necessidade de escala horizontal sem downtime.</p>
-<p><b>Decisão:</b> migrar em 4 fases (dual-write → backfill → cut-over → desligamento) controladas por toggle (<code>persistence.provider</code> / <code>Persistence:Provider</code>), com a API escrevendo/lendo via porta <code>ProdutoRepository</code>/<code>IProdutoRepository</code>.</p>
-<p><b>Alternativas consideradas:</b> big-bang (rejeitada: downtime e risco); manter só relacional (rejeitada: limite de schema); CDC + ETL externo (rejeitada: complexidade de infra).</p>
-<p><b>Consequências:</b> (+) rollback trivial (1 chave), sem downtime, validação progressiva; (−) complexidade temporária de 2 adapters e necessidade de reconciliação.</p>
-<p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend, QA, SRE.</p>
-<p><b>Ref:</b> <a class="ext" href="https://docs.aws.amazon.com/pt_br/prescriptive-guidance/latest/architectural-decision-records/adr-process.html" target="_blank">AWS ADR process</a>.</p></div>
-<h4 class="diag-title">📐 D-12 <span class="dt-type">Fluxo</span> — Migração Strangler Fig (4 fases)</h4>
-<div class="mermaid-box er-small" data-code='flowchart LR
-    F1["1 Dual Write"] --> F2["2 Backfill"] --> F3["3 Cut-over"] --> F4["4 Só Mongo"]'>
-<div class="mermaid"></div>
-</div>
-<div class="table-wrap mb-3">
-<table>
-<thead><tr><th>Fase</th><th>Toggle</th><th>Escrita</th><th>Leitura</th><th>Rollback</th></tr></thead>
-<tbody>
-<tr><td>1</td><td><code>dual</code></td><td>MySQL+Mongo</td><td>MySQL</td><td><code>relational</code></td></tr>
-<tr><td>2</td><td><code>dual</code>+job</td><td>MySQL+Mongo</td><td>MySQL</td><td><code>relational</code></td></tr>
-<tr><td>3</td><td><code>nosql</code></td><td>Mongo</td><td>Mongo</td><td><code>dual</code></td></tr>
-<tr><td>4</td><td><code>nosql</code></td><td>Mongo</td><td>Mongo</td><td>backup</td></tr>
-</tbody>
-</table>
-</div>
-<div class="code-editor-wrap"><span class="code-filepath">application.yml (toggle — valores dual/nosql só funcionam a partir da Tab 6-B)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor">persistence:
-  provider: relational   # relational (Tab 6) | dual | nosql (Tab 6-B)</pre></div>
-<div class="warning-banner"><strong>⚠️ Teste o ponto de troca:</strong> suba com <code>PERSISTENCE_PROVIDER=dual mvn -pl produtos-presentation spring-boot:run</code> → a API <strong>não sobe</strong> e mostra "ainda não implementado ... Tab 6-B". Isso é <em>fail fast</em>: melhor falhar na inicialização do que na primeira request.</div>
-</div>
 
 <!-- ══════════ SEÇÃO 7: DOCKER ══════════ -->
 <div class="lab-container">
@@ -1491,7 +2137,6 @@ docker run -d --name loja-java -p 8080:8080 \
   -e SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/loja_db \
   -e SPRING_DATASOURCE_USERNAME=devuser \
   -e SPRING_DATASOURCE_PASSWORD=devpass \
-  -e PERSISTENCE_PROVIDER=relational \
   loja-api-java:latest
 # Testa: GET público → 200; POST sem token → 401
 curl -i "http://localhost:8080/api/produtos?page=0&amp;size=10"
@@ -1500,30 +2145,16 @@ curl -i -X POST http://localhost:8080/api/produtos -H "Content-Type: application
 docker logs -f loja-java
 # Status
 docker ps</pre></div>
-<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> porta 8080 já em uso; rede <code>loja_dev_network</code> não existe (suba o compose da Tab 5 primeiro); <code>Dockerfile</code> fora da raiz do projeto (ele precisa enxergar o <code>pom.xml</code> pai e os 4 módulos); <code>target/</code> local copiado para a imagem (por isso o <code>.dockerignore</code>).</div>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> no Docker Desktop, <code>loja-java</code> fica verde; <a class="ext" href="http://localhost:8080/api/produtos" target="_blank">http://localhost:8080/api/produtos</a> mostra os produtos. Dentro da rede Docker o MySQL se chama <code>mysql-db</code> (o nome do serviço no compose da Tab 5), não <code>localhost</code>.</div>
+<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> porta 8080 já em uso (pare a API que está rodando no IntelliJ: ■ vermelho); rede <code>loja_dev_network</code> não existe (suba o compose da Tab 5 primeiro); <code>Dockerfile</code> fora da raiz do projeto (ele precisa enxergar o <code>pom.xml</code> pai e os 4 módulos); <code>target/</code> local copiado para a imagem (por isso o <code>.dockerignore</code>).</div>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=docker+spring+boot+dockerfile+multi+stage" target="_blank">Docker com Spring Boot</a></div>
 </div>
 
 <!-- ══════════ SEÇÃO 8: CI/CD ══════════ -->
 <div class="lab-container">
-<div class="lab-header"><h3>🔁 CI/CD: conceitos + GitHub Actions + GitLab CI (Java)</h3></div>
-<div class="deep-concept-box" style="margin-bottom:14px">
-<h3>🔁 CI vs CD (o que é cada um)</h3>
-<ul>
-<li><strong>CI (Integração Contínua):</strong> a cada push/PR o pipeline <strong>compila + testa</strong> automaticamente, pegando erros cedo.</li>
-<li><strong>CD (Entrega Contínua):</strong> após CI verde, o artefato é <strong>empacotado e deixado pronto</strong> p/ deploy.</li>
-<li><strong>Pipeline / Stage / Job:</strong> pipeline = sequência; stage = fase (build, test); job = tarefa.</li>
-<li><strong>Runner:</strong> máquina/agente que executa os jobs.</li>
-<li><strong>Artifact / Cache:</strong> artifact = saída (jar); cache = reaproveita deps.</li>
-</ul>
-<p><strong>Aprofundar:</strong> <a class="ext" href="https://martinfowler.com/articles/continuousIntegration.html" target="_blank">Martin Fowler (CI)</a> · <a class="ext" href="https://www.atlassian.com/continuous-delivery" target="_blank">Atlassian CI/CD</a>.</p>
-</div>
-<h4 style="color:var(--primary);margin:14px 0 8px">🖱️ Onde configurar (menus)</h4>
-<ol class="step-number-list">
-<li><strong>GitLab:</strong> repo → <em>Settings → CI/CD</em> → habilitar Runners / Variables; o arquivo <code>.gitlab-ci.yml</code> na raiz ativa o pipeline automaticamente.</li>
-<li><strong>GitHub:</strong> repo → aba <em>Actions</em> → <em>set up a workflow</em> → criar <code>.github/workflows/ci.yml</code>.</li>
-<li><strong>Proteger a main:</strong> GitHub → <em>Settings → Branches</em> → Add rule → exigir checks; GitLab → <em>Settings → Repository → Protected branches</em>.</li>
-<li><strong>Testar:</strong> abrir um PR/MR de um branch <code>feature/x</code> → os checks rodam; ao mergear na main, rodam de novo.</li>
-</ol>
+<div class="lab-header"><h3>🔁 CI/CD: GitHub Actions + GitLab CI (Java)</h3></div>
+
+<p>A cada push ou Pull Request, um robô <strong>compila e roda os 19 testes</strong>; se algo quebrar, o PR fica vermelho. O que é CI/CD, pipeline e runner — e onde clicar no GitHub e no GitLab — está na <a href="javascript:switchTab('tab3g')" style="color:var(--primary);text-decoration:underline">Tab 3-G, parte ⑧</a>. Aqui estão os arquivos de verdade deste projeto (já vêm no ZIP):</p>
 <div class="split-view">
 <div class="split-col"><h4 style="color:var(--primary)">🐙 GitHub Actions (Java)</h4>
 <div class="code-editor-wrap"><span class="code-filepath">.github/workflows/ci-java.yml</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -1531,39 +2162,38 @@ docker ps</pre></div>
 on:                                     # gatilhos (triggers)
   pull_request: { branches: [main] }    # roda em todo PR p/ main
   push: { branches: [main] }            # roda ao mergear na main
-jobs:                                   # conjunto de jobs
+jobs:
   build-test:                           # job único: build + test
     runs-on: ubuntu-latest              # runner (máquina) Ubuntu
     steps:
       - uses: actions/checkout@v4                  # 1. baixa o código
-      - uses: actions/setup-java@v4                # 2. instala JDK 21
-        with: { distribution: temurin, java-version: '21' }
-      - run: mvn -q -DskipTests package            # 3. compila
-      - run: mvn test                              # 4. roda testes (falha pipeline se vermelho)</pre></div>
+      - uses: actions/setup-java@v4                # 2. instala JDK 21 (+ cache do Maven)
+        with: { distribution: temurin, java-version: '21', cache: maven }
+      - run: chmod +x mvnw                         # o ZIP pode perder a permissão de execução
+      - run: ./mvnw -B verify                      # 3. compila + roda os 19 testes (vermelho = PR bloqueado)</pre></div>
 </div>
 <div class="split-col"><h4 style="color:var(--primary)">🦊 GitLab CI (Java)</h4>
 <div class="code-editor-wrap"><span class="code-filepath">.gitlab-ci.yml (seção Java)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path=".gitlab-ci.yml">stages: [build, test]                   # fases do pipeline, em ordem
+default:
+  image: maven:3.9-eclipse-temurin-21   # imagem do runner (já tem JDK 21 + Maven)
 build:java:                             # job "build:java"
   stage: build                          # pertence à fase build
-  image: maven:3.9-eclipse-temurin-21   # imagem do runner
-  script: [ mvn -q -DskipTests package ]  # compila sem testes
+  script: [ mvn -B -q -DskipTests package ]  # compila sem testes
 test:java:                              # job "test:java"
   stage: test                           # fase test (roda depois de build)
-  image: maven:3.9-eclipse-temurin-21
-  script: [ mvn test ]                  # roda testes</pre></div>
+  script: [ mvn -B verify ]             # roda os 19 testes</pre></div>
 </div>
 </div>
 </div>
 
 <!-- ══════════ SEÇÃO 9: DIAGRAMAS ══════════ -->
 <div class="lab-container">
-<div class="lab-header"><h3>📐 Diagramas Java (D-08…D-11, D-13)</h3></div>
+<div class="lab-header"><h3>📐 Diagramas Java (D-06, D-08…D-11, D-13)</h3></div>
 <h4 class="diag-title">📐 D-08 <span class="dt-type">C4 · Nível 2 (Container)</span> — Loja API + bancos</h4>
 <div class="mermaid-box er-small" data-code='flowchart LR
     U["👤 Usuário"] -->|HTTPS+JWT| API["🖥️ Loja API Java :8080"]
-    API -->|3306| MY["🐬 MySQL"]
-    API -.->|27017 · Tab 6-B| MO["🍃 Mongo"]'>
+    API -->|3306 · JDBC| MY["🐬 MySQL (Tab 5)"]'>
 <div class="mermaid"></div>
 </div>
 <h4 class="diag-title">📐 D-09 <span class="dt-type">C4 · Nível 3 (Componente)</span> — Dentro da Loja API Java</h4>
@@ -1571,10 +2201,9 @@ test:java:                              # job "test:java"
     subgraph API["Loja API Java (Componentes)"]
       C["ProdutoController"] --> S["ProdutoServiceImpl"]
       S --> R["ProdutoRepository (porta)"]
-      R -.-> A1["Adapter JPA"]
-      R -.-> A2["Adapter Mongo (Tab 6-B)"]
-      R -.-> A3["DualWrite (Tab 6-B)"]
-      PC["PersistenceConfig 🔀"] --> R
+      R -.-> A1["ProdutoRepositoryAdapter (JPA)"]
+      PC["PersistenceConfig"] -->|registra| A1
+      SEC["SecurityConfig + JwtTokenFilter"] --> C
       EXH["GlobalExceptionHandler"]
     end'>
 <div class="mermaid"></div>
@@ -1625,7 +2254,7 @@ test:java:                              # job "test:java"
     class PersistenceConfig
     ProdutoService <|.. ProdutoServiceImpl
     ProdutoRepository <|.. ProdutoRepositoryAdapter
-    PersistenceConfig ..> ProdutoRepositoryAdapter : cria
+    PersistenceConfig ..> ProdutoRepositoryAdapter : registra
     ProdutoServiceImpl --> ProdutoRepository
     ProdutoRepository --> Produto'>
 <div class="mermaid"></div>
@@ -1640,7 +2269,6 @@ test:java:                              # job "test:java"
 <tr><td>D-09</td><td>C4 Nível 3 (Componente)</td><td>Componentes internos da API</td></tr>
 <tr><td>D-10</td><td>UML Sequência</td><td>Interação ao longo do tempo (request)</td></tr>
 <tr><td>D-11</td><td>UML Classes</td><td>Estrutura estática (domínio + portas)</td></tr>
-<tr><td>D-12</td><td>Flowchart</td><td>Fases da migração</td></tr>
 <tr><td>D-13</td><td>Flowchart</td><td>Ciclo TDD Red-Green-Refactor</td></tr>
 </tbody>
 </table>
@@ -1668,20 +2296,14 @@ test:java:                              # job "test:java"
 <p><b>Alternativas consideradas:</b> JDBC puro (rejeitada: boilerplate); jOOQ (rejeitada: curva).</p>
 <p><b>Consequências:</b> (+) produtividade alta; (−) abstração pode gerar queries ineficientes (monitorar).</p>
 <p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend Java, DBA.</p></div>
-<div class="adr"><h5>ADR-004 · Migração Strangler Fig com toggle <span class="stack-tag">☕ Java</span><span class="status">Aceita · executada na Tab 6-B</span></h5>
-<p><b>Contexto:</b> catálogo com atributos variáveis cresce; relacional limita schema.</p>
-<p><b>Decisão:</b> migrar em 4 fases controladas por <code>persistence.provider</code> no <code>application.yml</code>.</p>
-<p><b>Alternativas consideradas:</b> big-bang (rejeitada: risco); manter só relacional (rejeitada: limite).</p>
-<p><b>Consequências:</b> (+) rollback trivial (1 chave), sem downtime; (−) complexidade temporária de 2 adapters.</p>
-<p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend Java, QA, SRE.</p></div>
-<div class="adr"><h5>ADR-J3 · Ponto único de escolha do adapter <span class="stack-tag">☕ Java</span><span class="status">Aceita</span></h5>
-<p><b>Contexto:</b> adapters com <code>@ConditionalOnProperty</code> espalhados e um job que dependia de dois adapters ao mesmo tempo impediam a aplicação de subir.</p>
-<p><b>Decisão:</b> um <code>@Bean</code> em <code>PersistenceConfig</code> lê <code>persistence.provider</code> e devolve exatamente um <code>ProdutoRepository</code>; adapters são classes simples, sem condição.</p>
-<p><b>Alternativas consideradas:</b> condições por adapter (rejeitada: combinações frágeis); profiles do Spring (rejeitada: menos explícito para a aula).</p>
-<p><b>Consequências:</b> (+) uma decisão num lugar só, valor inválido falha na subida; (−) o switch cresce a cada novo adapter.</p>
-<p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend Java.</p></div>
+<div class="adr"><h5>ADR-J3 · Só autenticação, sem papéis (roles) <span class="stack-tag">☕ Java</span><span class="status">Aceita</span></h5>
+<p><b>Contexto:</b> o contrato da Tab 4 só distingue "logado" de "não logado": leitura pública, escrita com token.</p>
+<p><b>Decisão:</b> o JWT carrega só <code>sub</code>/<code>iat</code>/<code>exp</code>; o filtro autentica sem autoridades; sem 403. Igual à API C# (Tab 7).</p>
+<p><b>Alternativas consideradas:</b> roles ADMIN/USER com <code>hasRole</code> (adiada: o contrato não pede e aumentaria a aula).</p>
+<p><b>Consequências:</b> (+) menos código e o mesmo comportamento nas duas stacks; (−) qualquer usuário logado pode escrever.</p>
+<p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend Java, Segurança.</p></div>
 
-<div class="info-banner"><strong>✅ Checklist completo Java (Tab 6):</strong> Clean Architecture ✓ · SoC ✓ · DIP ✓ · Repository ✓ · Service interfaces ✓ · Anemic Domain ✓ · Interfaces-as-contracts ✓ · JPA/Hibernate ✓ · MySQL ✓ · REST API ✓ · DTOs ✓ · DI (Spring) ✓ · Validation (Bean Validation + domínio) ✓ · Centralized exception (GlobalExceptionHandler RFC 7807) ✓ · Technology isolation ✓ · Persistência substituível (porta + <code>PersistenceConfig</code>; Mongo/Dual-Write na Tab 6-B) ✓ · Erros HTTP corretos (400/401/404) ✓ · Paginação no banco ✓ · SOLID mapeado ✓ · TDD 11 testes ✓ · Preparação para migração ✓ · Docker ✓ · CI/CD ✓ · Diagramas ✓ · ADRs ✓.</div>
+<div class="info-banner"><strong>✅ Checklist completo Java (Tab 6):</strong> Clean Architecture ✓ · SoC ✓ · DIP ✓ · Repository ✓ · Service interfaces ✓ · Anemic Domain ✓ · Interfaces-as-contracts ✓ · JPA/Hibernate ✓ · MySQL ✓ · REST API ✓ · DTOs ✓ · DI (Spring) ✓ · Validation (Bean Validation + domínio) ✓ · Centralized exception (GlobalExceptionHandler RFC 7807) ✓ · Technology isolation ✓ · Persistência substituível (porta + <code>PersistenceConfig</code>) ✓ · Erros HTTP do contrato (400/401/404, mesmos <code>type</code>) ✓ · Paginação no banco ✓ · SOLID mapeado ✓ · TDD 19 testes (service + HTTP) ✓ · Maven Wrapper ✓ · requests.http ✓ · Docker ✓ · CI/CD ✓ · Diagramas ✓ · ADRs ✓.</div>
 </div>
 </div>
 </section>
