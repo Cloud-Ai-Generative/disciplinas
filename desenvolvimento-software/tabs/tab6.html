@@ -420,9 +420,9 @@ public class DomainException extends RuntimeException {
 /**
  * Recurso inexistente → HTTP 404.
  *
- * Por que uma exceção própria? Antes, "produto não encontrado" era uma
- * DomainException genérica e virava 400 Bad Request — mas o pedido não estava
- * "mal formado": o recurso é que não existe. O contrato REST pede 404.
+ * Por que uma exceção própria, e não uma DomainException comum (400)?
+ * Porque o pedido não está "mal formado": o recurso é que não existe.
+ * O contrato REST pede 404 para esse caso.
  *
  * Herda de DomainException: quem só trata DomainException continua funcionando;
  * o GlobalExceptionHandler trata esta subclasse de forma mais específica.
@@ -460,7 +460,7 @@ public interface ProdutoRepository {
     /**
      * Página de produtos ordenada por id (page começa em 0).
      * A paginação acontece NO BANCO (LIMIT/OFFSET no MySQL).
-     * Antes, a API carregava TODOS os produtos e cortava a lista em memória:
+     * Nunca carregue TODOS os produtos para cortar a lista em memória:
      * com 1 milhão de produtos, cada GET traria 1 milhão de linhas.
      */
     List&lt;Produto&gt; listarPagina(int page, int size);
@@ -531,7 +531,7 @@ public class ProdutoServiceImpl implements ProdutoService {
 
     @Override
     public List&lt;Produto&gt; listarProdutos(int page, int size) {
-        // Validação de entrada: antes, page negativo derrubava a API com erro 500
+        // Validação de entrada: sem ela, page negativo derrubaria a API com erro 500
         if (page &lt; 0)
             throw new DomainException("page deve ser &gt;= 0");
         if (size &lt; 1 || size &gt; TAMANHO_MAXIMO_PAGINA)
@@ -992,7 +992,6 @@ public class JwtService {
 
     /**
      * Valida assinatura + expiração e devolve as claims, num ÚNICO parse.
-     * (Antes: isTokenValido() + extrairClaims() = o token era verificado 2x.)
      * Token inválido, expirado ou malformado → Optional.empty().
      */
     public Optional&lt;Claims&gt; validar(String token) {

@@ -2,8 +2,8 @@
 <section class="tab-panel" id="tab6b">
 <div class="card">
 <h2 class="card-title">🍃 Migração MySQL → MongoDB sem downtime — Java: Dual-Write + Backfill + Reconciliação + Cut-over</h2>
-<p class="section-intro">Continua a <strong>Tab 6</strong>: a mesma API de produtos (Spring Boot 4, Clean Architecture), agora com o banco <strong>substituído por MongoDB sem tirar a API do ar</strong>. Como a Tab 6 já foi preparada (porta <code>ProdutoRepository</code> paginada + ponto único de troca <code>PersistenceConfig</code>), a migração mexe <strong>só na infraestrutura</strong>: domínio, service, controller, DTOs e os 11 testes <strong>não mudam</strong>. Guia passo a passo com o porquê, código comentado, como conferir e erros comuns. <span class="ide-tag java">IDE: IntelliJ</span></p>
-<div class="doc-banner"><strong>🧔 Rafael Souza · ☕ Backend (Migração MongoDB):</strong> esta aba executa o <strong>ADR-004</strong> (Strangler Fig com toggle) registrado na Tab 6. Mini-fluxo: <em>Tab 6 (MySQL preparado) → adapter Mongo → dual-write → backfill → reconciliação → cut-over</em>. <a href="javascript:switchTab('tab6')" style="color:var(--primary);text-decoration:underline">← Solução MySQL preparada (Tab 6)</a></div>
+<p class="section-intro">Continua a <strong>Tab 6</strong>: a mesma API de produtos (Spring Boot 4, Clean Architecture), agora com o banco <strong>substituído por MongoDB sem tirar a API do ar</strong>. Na Tab 6 o banco ficou escondido atrás da porta <code>ProdutoRepository</code>; por isso a migração mexe <strong>só na infraestrutura</strong>: novos adapters + um interruptor de 3 posições no <code>PersistenceConfig</code>. Domínio, service, controller, DTOs e os 19 testes da Tab 6 <strong>não mudam</strong>. Guia passo a passo com o porquê, código comentado, como conferir e erros comuns. <strong>Tempo: ~2 h.</strong> <span class="ide-tag java">IDE: IntelliJ</span></p>
+<div class="doc-banner"><strong>🧔 Rafael Souza · ☕ Backend (Migração MongoDB):</strong> esta aba executa o <strong>ADR-004</strong> (Strangler Fig com toggle), registrado no fim da aba. Mini-fluxo: <em>Tab 6 (API no MySQL) → adapter Mongo → dual-write → backfill → reconciliação → cut-over</em>. <a href="javascript:switchTab('tab6')" style="color:var(--primary);text-decoration:underline">← API Java no MySQL (Tab 6)</a></div>
 
 <!-- ══════════ CONCEITOS ══════════ -->
 <div class="deep-concept-box">
@@ -14,13 +14,14 @@
 <tbody>
 <tr><td>1</td><td><strong>Substitua o banco de dados existente pelo MongoDB</strong></td><td><code>MongoProdutoRepository</code> + <code>persistence.provider: nosql</code> no cut-over</td><td>3 – 7, 11</td></tr>
 <tr><td>2</td><td><strong>Adapte as APIs para serem compatíveis com o novo banco</strong></td><td>Só a infraestrutura muda; endpoints, JSON e contrato (Tab 4) ficam idênticos</td><td>6 – 7</td></tr>
-<tr><td>3</td><td><strong>O sistema deve continuar a funcionar como antes</strong></td><td>Os mesmos 11 testes + o mesmo <code>smoke.sh</code> nos 3 modos (<code>relational</code>, <code>dual</code>, <code>nosql</code>), com resultado idêntico — e <strong>sem downtime</strong></td><td>8, 11</td></tr>
+<tr><td>3</td><td><strong>O sistema deve continuar a funcionar como antes</strong></td><td>Os 19 testes da Tab 6 (sem alteração) + 5 da migração + o mesmo <code>smoke</code> nos 3 modos (<code>relational</code>, <code>dual</code>, <code>nosql</code>), com resultado idêntico — e <strong>sem downtime</strong></td><td>8, 11</td></tr>
 <tr><td>4</td><td><strong>Migre os dados existentes com precisão</strong> <sup>*</sup></td><td>Dual-write (dados novos) + backfill idempotente (histórico) + <strong>reconciliação</strong> em 3 camadas com relatório</td><td>8 – 10</td></tr>
 <tr><td>5</td><td><strong>Mantenha o desempenho adequado após a movimentação</strong></td><td>Paginação no banco, <code>_id</code> numérico (índice primário), bulkWrite no backfill, k6 antes × depois</td><td>5, 9, 11</td></tr>
 </tbody>
 </table>
 </div>
 <p style="font-size:.9em"><sup>*</sup> O enunciado diz "para o banco de dados <em>original</em>" — entendemos como o <strong>novo</strong> banco (MongoDB). Vale confirmar com o professor.</p>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=migra%C3%A7%C3%A3o+de+banco+de+dados+sem+downtime" target="_blank">Migração de banco sem downtime</a> · <a class="ext" href="https://www.youtube.com/results?search_query=mongodb+para+iniciantes+curso" target="_blank">MongoDB para iniciantes</a> · <a class="ext" href="https://www.youtube.com/results?search_query=spring+data+mongodb+spring+boot+tutorial" target="_blank">Spring Data MongoDB</a></div>
 </div>
 
 <div class="deep-concept-box">
@@ -39,6 +40,7 @@
 </table>
 </div>
 <div class="analogy-highlight"><span class="icon">🌳</span><div><strong>Strangler Fig (figueira-estranguladora):</strong> a figueira cresce <em>em volta</em> da árvore hospedeira até substituí-la — sem derrubá-la de uma vez. Aqui o MongoDB "cresce em volta" do MySQL: primeiro recebe cópias das escritas, depois o histórico, é conferido, e só então assume. O MySQL é desligado por último.</div></div>
+<p><strong>Aprofundar:</strong> <a class="ext" href="https://martinfowler.com/bliki/StranglerFigApplication.html" target="_blank">Strangler Fig (Martin Fowler)</a> · <a class="ext" href="https://martinfowler.com/bliki/ParallelChange.html" target="_blank">Parallel Change</a> · <a class="ext" href="https://docs.spring.io/spring-data/mongodb/reference/" target="_blank">Spring Data MongoDB (docs)</a> · <a class="ext" href="https://www.mongodb.com/docs/manual/core/document/" target="_blank">Documentos no MongoDB</a>.</p>
 </div>
 
 <h4 class="diag-title">📐 D-6B.1 <span class="dt-type">Fluxo</span> — As 4 fases e o que o toggle faz em cada uma</h4>
@@ -79,43 +81,43 @@ S-->>C: 201 Created'>
 <h3>🧭 Parte 1 — Preparar o terreno (Passos 0 a 2)</h3>
 <div class="lab-actions"><button class="btn btn-zip" onclick="openDlModal('tab6b')">📦 Baixar ZIP desta aba</button></div>
 </div>
-<div class="info-banner"><strong>📦 Como usar o ZIP desta aba:</strong> ele contém <strong>só os arquivos novos e alterados</strong>. Extraia <strong>por cima</strong> do projeto <code>loja-api/</code> da Tab 6 (aceite substituir).</div>
+<div class="info-banner"><strong>📦 Como usar o ZIP desta aba:</strong> ele contém <strong>só os arquivos que a migração acrescenta ou substitui</strong> (código, testes e scripts). Extraia <strong>por cima</strong> do projeto <code>loja-api/</code> da Tab 6 e aceite substituir — faça isso no Passo 7; até lá, só leia o código.</div>
 
 <h4 style="color:var(--accent);margin:16px 0 8px">🟢 Passo 0 — Ponto de partida seguro</h4>
-<p>Uma migração começa com um <strong>"antes" comprovado</strong> e com <strong>backup</strong>.</p>
-<div class="term-help"><strong>🖥️ Terminal:</strong> <span class="ide-tag java">IntelliJ</span> <kbd>Alt+F12</kbd>, na raiz do projeto (onde está o <code>pom.xml</code> pai).</div>
-<div class="code-editor-wrap">
-<span class="code-filepath">terminal do IntelliJ - Passo 0: linha de base + backup</span>
-<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor"># 1) A Tab 6 precisa estar VERDE
-mvn -q -DskipTests install
-mvn test                                  # esperado: Tests run: 11, Failures: 0
-
-# 2) MySQL da Tab 5 no ar e a API respondendo em modo relational
-mvn -pl produtos-presentation spring-boot:run
-#    (outro terminal)
-curl -s "http://localhost:8080/api/produtos?page=0&amp;size=5"
-
-# 3) BACKUP do banco relacional (ajuste o nome do container/senha da Tab 5)
-docker exec &lt;container-mysql-da-tab5&gt; mysqldump -uroot -p&lt;senha-root&gt; loja_db &gt; backup-antes-da-migracao.sql
-ls -lh backup-antes-da-migracao.sql</pre>
+<p>Uma migração começa com um <strong>ponto de partida comprovado</strong> e com <strong>backup</strong>.</p>
+<div class="step-box">
+<h4><span class="step-num">0a</span>🖱️ Tab 6 verde</h4>
+<p>No IntelliJ, com o projeto <code>loja-api</code> da Tab 6 aberto: botão direito na raiz → <strong>Run 'All Tests'</strong>.</p>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> <strong>Tests passed: 19</strong>.</div>
 </div>
-<div class="success-banner"><strong>✅ Como conferir:</strong> 11 testes verdes · GET respondendo 200 · arquivo de backup com alguns KB.</div>
+<div class="step-box">
+<h4><span class="step-num">0b</span>🖱️ Os dois bancos da Tab 5 ligados</h4>
+<p>No <strong>Docker Desktop → Containers</strong>, deixe ligados (▶) o <code>dev_mysql_server</code> <strong>e</strong> o <code>dev_mongo_server</code> — os dois sobem com o compose da Tab 5.</p>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> os dois com bolinha verde, nas portas <code>3306</code> e <code>27017</code>.</div>
+</div>
+<div class="step-box">
+<h4><span class="step-num">0c</span>⌨️ Backup do MySQL (este é por comando mesmo)</h4>
+<p>Terminal do IntelliJ (<kbd>Alt+F12</kbd>), na pasta <code>loja-api</code>. O dump é feito <strong>dentro</strong> do container e depois copiado para fora — assim funciona igual no PowerShell, no Git Bash e no macOS/Linux.</p>
+<div class="code-editor-wrap"><span class="code-filepath">terminal - backup antes da migração</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">docker exec dev_mysql_server sh -c "mysqldump -uroot -proot123 loja_db &gt; /tmp/backup.sql"
+docker cp dev_mysql_server:/tmp/backup.sql backup-antes-da-migracao.sql</pre></div>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> o arquivo <code>backup-antes-da-migracao.sql</code> aparece no painel <em>Project</em>, com <code>CREATE TABLE</code> e <code>INSERT INTO</code> dentro. (O aviso <em>"Using a password on the command line…"</em> é normal.)</div>
+</div>
 
 <h4 style="color:var(--accent);margin:16px 0 8px">🧩 Passo 1 — Desenhar o documento</h4>
 <p>O produto é um agregado simples: vira <strong>um documento por produto</strong>. A decisão mais importante é o <code>_id</code>: usamos o <strong>mesmo <code>Long</code> do MySQL</strong>.</p>
 <div class="code-editor-wrap">
-<span class="code-filepath">documentos de exemplo (formato mongosh) — database loja_nosql</span>
+<span class="code-filepath">documentos de exemplo (formato mongosh) — database loja_migracao</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor">// loja_nosql.produtos — _id numérico = o mesmo id do MySQL
+<pre class="code-editor">// loja_migracao.produtos — _id numérico = o mesmo id do MySQL
 { _id: 1, nome: "Teclado Mecânico", preco: NumberDecimal("349.90"), estoque: 15, _class: "..." }
 
-// loja_nosql.counters — substitui o AUTO_INCREMENT
+// loja_migracao.counters — substitui o AUTO_INCREMENT
 { _id: "produtos", seq: 1 }</pre>
 </div>
 <div class="table-wrap" style="margin:12px 0">
 <table>
-<thead><tr><th>Decisão</th><th>❌ Versão antiga da Tab 6</th><th>✅ Agora</th></tr></thead>
+<thead><tr><th>Decisão</th><th>❌ Jeito ingênuo (erro comum)</th><th>✅ Nesta aba</th></tr></thead>
 <tbody>
 <tr><td>Chave</td><td><code>_id</code> ObjectId + campo <code>idLegado</code></td><td><code>_id</code> = id <code>Long</code> do domínio</td></tr>
 <tr><td>Salvar</td><td>Sempre inseria (<code>mongoId</code> nulo) → <strong>duplicava</strong></td><td><code>save</code> substitui pelo <code>_id</code> → <strong>idempotente</strong></td></tr>
@@ -127,61 +129,18 @@ ls -lh backup-antes-da-migracao.sql</pre>
 </div>
 <div class="info-banner"><strong>ℹ️ O campo <code>_class</code>:</strong> o Spring Data grava o nome da classe Java em cada documento (útil para herança). É inofensivo. Para documentos "limpos", configure um <code>MappingMongoConverter</code> com <code>DefaultMongoTypeMapper(null)</code> — exercício opcional.</div>
 
-<h4 style="color:var(--accent);margin:16px 0 8px">🍃 Passo 2 — Subir o MongoDB ao lado do MySQL</h4>
-<div class="code-editor-wrap">
-<span class="code-filepath">docker-compose.mongo.yml</span>
-<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor" data-zip-path="docker-compose.mongo.yml"># ══════════════════════════════════════════════════════════
-# 🍃 MongoDB para a migração da Tab 6-B — roda AO LADO do MySQL da Tab 5
-# ══════════════════════════════════════════════════════════
-# Se o compose da Tab 5 JÁ sobe um MongoDB na porta 27017 com root/root123,
-# use aquele e pule este arquivo.
-#
-#   docker compose -f docker-compose.mongo.yml up -d
-#   docker compose -f docker-compose.mongo.yml ps          (healthy?)
-#   docker compose -f docker-compose.mongo.yml down -v     (apaga os dados)
-# ══════════════════════════════════════════════════════════
-services:
-  mongo-db:
-    image: mongo:8
-    container_name: dev_mongo_java
-    restart: unless-stopped
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: root123
-      TZ: America/Sao_Paulo
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_java_data:/data/db
-    networks:
-      - loja_dev_network
-    healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "-u", "root", "-p", "root123", "--authenticationDatabase", "admin", "--eval", "db.adminCommand('ping').ok"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
-
-volumes:
-  mongo_java_data:
-
-# Rede criada pelo compose da Tab 5: a API em container enxerga mysql-db e mongo-db
-networks:
-  loja_dev_network:
-    external: true</pre>
+<h4 style="color:var(--accent);margin:16px 0 8px">🍃 Passo 2 — Um banco só para a migração: <code>loja_migracao</code></h4>
+<p>Usamos o <strong>mesmo MongoDB da Tab 5</strong> (<code>dev_mongo_server</code>, porta 27017, <code>root</code>/<code>root123</code>) — nada novo para instalar. Mas <strong>não</strong> o banco <code>loja_nosql</code>: os produtos de exemplo da Tab 5 têm <code>_id</code> do tipo <em>ObjectId</em>, e a migração grava <code>_id</code> <strong>numérico</strong>. Misturar os dois na mesma coleção quebraria a reconciliação e a leitura. Por isso a migração escreve num banco próprio, <code>loja_migracao</code>, que o MongoDB cria sozinho na 1ª gravação.</p>
+<div class="step-box">
+<h4><span class="step-num">2</span>🖱️ Conferir no MongoDB Compass</h4>
+<p>Abra o <strong>Compass</strong> (Tab 5) e conecte em <code>mongodb://root:root123@localhost:27017/?authSource=admin</code>.</p>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> aparecem <code>loja_nosql</code> (da Tab 5), <code>admin</code>, <code>config</code> e <code>local</code>. O <code>loja_migracao</code> <strong>ainda não existe</strong> — ele nasce no Passo 8. Volte ao Compass depois de cada passo e clique em 🔄 para acompanhar.</div>
 </div>
-<div class="code-editor-wrap">
-<span class="code-filepath">terminal do IntelliJ - Passo 2: subir e conferir</span>
-<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor">docker compose -f docker-compose.mongo.yml up -d
-docker compose -f docker-compose.mongo.yml ps          # dev_mongo_java "healthy"
-
-docker exec -it dev_mongo_java mongosh -u root -p root123 --authenticationDatabase admin
-#   show dbs     → ainda sem loja_nosql (é criado na 1ª gravação)
-#   exit</pre>
-</div>
-<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> <code>network loja_dev_network ... not found</code> → suba antes o compose da Tab 5; <code>port 27017 already in use</code> → a Tab 5 já tem um MongoDB: use-o (mesmo usuário/senha) e pule este compose; <code>Authentication failed</code> → o usuário root é criado só no primeiro boot (<code>down -v</code> recria).</div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">✋ Errou? O Compass não conecta</div>
+<div class="faq-a"><ul>
+<li><strong><code>connect ECONNREFUSED 127.0.0.1:27017</code></strong> → o <code>dev_mongo_server</code> está desligado (Passo 0b).</li>
+<li><strong><code>Authentication failed</code></strong> → faltou <code>?authSource=admin</code> no fim do endereço, ou o volume do Mongo foi criado com outra senha (na Tab 5: <code>docker compose down -v</code> e <code>up -d</code>).</li>
+</ul></div></div>
 </div>
 
 <!-- ══════════ PARTE 2 ══════════ -->
@@ -228,18 +187,24 @@ docker exec -it dev_mongo_java mongosh -u root -p root123 --authenticationDataba
       &lt;artifactId&gt;mysql-connector-j&lt;/artifactId&gt;
       &lt;scope&gt;runtime&lt;/scope&gt;
     &lt;/dependency&gt;
-    &lt;!-- 🍃 NOVO na Tab 6-B: Spring Data MongoDB (MongoTemplate + mapeamento @Document).
+    &lt;!-- 🍃 Spring Data MongoDB (MongoTemplate + mapeamento @Document).
          O JPA/MySQL CONTINUA: durante a migração os dois bancos convivem. --&gt;
     &lt;dependency&gt;
       &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
       &lt;artifactId&gt;spring-boot-starter-data-mongodb&lt;/artifactId&gt;
     &lt;/dependency&gt;
+    &lt;!-- 🧪 Testes da migração (dual-write e reconciliação): JUnit 5 + Mockito --&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+      &lt;artifactId&gt;spring-boot-starter-test&lt;/artifactId&gt;
+      &lt;scope&gt;test&lt;/scope&gt;
+    &lt;/dependency&gt;
   &lt;/dependencies&gt;
 &lt;/project&gt;</pre>
 </div>
-<p>No <code>application.yml</code>, atenção à mudança do <strong>Spring Boot 4</strong>: a URI do Mongo agora é <code>spring.mongodb.uri</code> (no Boot 3 era <code>spring.data.mongodb.uri</code> — com o nome antigo, o Spring ignora a configuração e tenta <code>localhost:27017</code> <strong>sem senha</strong>).</p>
+<p>No <code>application.yml</code>, atenção ao nome da chave no <strong>Spring Boot 4</strong>: <code>spring.mongodb.uri</code>. Tutoriais de Boot 3 usam <code>spring.data.mongodb.uri</code> — com esse nome, o Boot 4 ignora a configuração e tenta <code>localhost:27017</code> <strong>sem senha</strong>. Repare também no bloco <code>persistence.provider</code>: é o <strong>interruptor</strong> que escolhe o banco (Passo 7).</p>
 <div class="code-editor-wrap">
-<span class="code-filepath">produtos-presentation/src/main/resources/application.yml</span>
+<span class="code-filepath">produtos-presentation/src/main/resources/application.yml (substitui o da Tab 6)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-presentation/src/main/resources/application.yml">server:
   port: 8080
@@ -256,11 +221,12 @@ spring:
       ddl-auto: validate
     open-in-view: false
   # 🍃 MongoDB. Spring Boot 4: a chave é spring.mongodb.uri
-  # (no Boot 3 era spring.data.mongodb.uri). Em Docker: SPRING_MONGODB_URI
+  # (tutoriais de Boot 3 usam spring.data.mongodb.uri). Em Docker: SPRING_MONGODB_URI
   mongodb:
-    uri: mongodb://root:root123@localhost:27017/loja_nosql?authSource=admin
+    # Mongo da Tab 5, banco PRÓPRIO da migração (loja_nosql tem dados de exemplo com ObjectId)
+    uri: mongodb://root:root123@localhost:27017/loja_migracao?authSource=admin
 
-# 🔀 Ponto de troca do banco (PersistenceConfig)
+# 🔀 Interruptor do banco (lido pelo PersistenceConfig)
 #   relational → só MySQL                         (antes / rollback)
 #   dual       → grava nos dois, lê do MySQL      (fases 1 e 2)
 #   nosql      → só MongoDB                       (fases 3 e 4)
@@ -301,13 +267,13 @@ import org.springframework.data.mongodb.core.mapping.FieldType;
  * Documento resultante:
  *   { _id: 1, nome: "Teclado", preco: NumberDecimal("349.90"), estoque: 15 }
  *
- * O QUE MUDOU em relação à versão antiga da Tab 6:
- * - Antes: @Id String mongoId (ObjectId) + campo "idLegado". Como mongoId ficava
- *   nulo, cada save() INSERIA um documento novo → updates e backfill duplicavam
- *   tudo, e produto novo ficava com id nulo.
- * - Agora: o próprio id Long do domínio É o _id. save() vira "substituir pelo
- *   _id ou inserir" (upsert) → idempotente por natureza, e as URLs da API
- *   (/api/produtos/1) continuam as mesmas.
+ * Por que o _id é o próprio id Long do domínio (e não um ObjectId)?
+ * - save() vira "substituir pelo _id ou inserir" (upsert) → idempotente:
+ *   rodar o backfill 2x não duplica nada;
+ * - as URLs da API (/api/produtos/1) continuam as mesmas depois da migração;
+ * - a busca por id usa o índice primário do _id (automático).
+ * O erro comum é usar ObjectId + um campo "idLegado": cada save() insere um
+ * documento NOVO, updates duplicam e a busca por id varre a coleção.
  */
 @Document(collection = "produtos")
 public class ProdutoDocument {
@@ -320,7 +286,7 @@ public class ProdutoDocument {
 
     /**
      * 💰 DECIMAL128 explícito: decimal EXATO de 128 bits.
-     * O Spring Data MongoDB 5 (Spring Boot 4) não define mais uma representação
+     * O Spring Data MongoDB 5 (Spring Boot 4) não define uma representação
      * padrão para BigDecimal — sem isto, o preço não seria gravado de forma
      * confiável (e somas/ordenações no banco ficariam erradas se virasse texto).
      */
@@ -353,7 +319,7 @@ public class ProdutoDocument {
     public Integer getEstoque() { return estoque; }
 }</pre>
 </div>
-<div class="warning-banner"><strong>⚠️ Por que <code>targetType = FieldType.DECIMAL128</code>:</strong> o Spring Data MongoDB 5 (Spring Boot 4) <strong>não define mais</strong> uma representação padrão para <code>BigDecimal</code>. Sem declarar, o preço não é gravado de forma confiável. <code>Decimal128</code> é exato: <code>349.90</code> continua <code>349.90</code> — essencial para "migrar com precisão".</div>
+<div class="warning-banner"><strong>⚠️ Por que <code>targetType = FieldType.DECIMAL128</code>:</strong> o Spring Data MongoDB 5 (Spring Boot 4) <strong>não define</strong> uma representação padrão para <code>BigDecimal</code>. Sem declarar, o preço não é gravado de forma confiável. <code>Decimal128</code> é exato: <code>349.90</code> continua <code>349.90</code> — essencial para "migrar com precisão".</div>
 
 <h4 style="color:var(--accent);margin:16px 0 8px">🔢 Passo 5 — Ids sem AUTO_INCREMENT (<code>SequenceGenerator</code>)</h4>
 <p>No MongoDB não existe <code>AUTO_INCREMENT</code>. A coleção <code>counters</code> com <code>$inc</code> atômico gera ids <code>Long</code> — e o método <code>garantirMinimo</code> resolve um problema específico da migração <strong>online</strong>: durante o dual-write <strong>quem gera os ids é o MySQL</strong>; no cut-over, o Mongo precisa continuar a numeração <strong>depois</strong> do maior id existente.</p>
@@ -418,7 +384,8 @@ public class SequenceGenerator {
     }
 }</pre>
 </div>
-<div class="warning-banner"><strong>⚠️ Erro clássico: <code>E11000 duplicate key error ... _id: 5</code></strong> depois do cut-over → o contador ficou atrás dos ids que vieram do MySQL. Aqui isso é evitado em dois lugares: todo <code>salvar</code> com id chama <code>garantirMinimo</code>, e o backfill ajusta o contador ao final. Conferência: <code>use loja_nosql; db.counters.find()</code>.</div>
+<div class="warning-banner"><strong>⚠️ Erro clássico: <code>E11000 duplicate key error ... _id: 5</code></strong> depois do cut-over → o contador ficou atrás dos ids que vieram do MySQL. Aqui isso é evitado em dois lugares: todo <code>salvar</code> com id chama <code>garantirMinimo</code>, e o backfill ajusta o contador ao final. Conferência: no Compass, <code>loja_migracao → counters</code>.</div>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=mongodb+documento+_id+objectid+explicado" target="_blank">Documento e _id no MongoDB</a> · <a class="ext" href="https://www.youtube.com/results?search_query=mongodb+decimal128+dinheiro" target="_blank">Decimal128 (dinheiro no MongoDB)</a></div>
 </div>
 
 <!-- ══════════ PARTE 3 ══════════ -->
@@ -598,9 +565,9 @@ public class DualWriteProdutoRepository implements ProdutoRepository {
     @Override public boolean existePorId(Long id) { return mysql.existePorId(id); }
 }</pre>
 </div>
-<p>No <code>PersistenceConfig</code>, os <code>case "dual"</code> e <code>"nosql"</code> — que na Tab 6 lançavam "ainda não implementado" — agora montam os adapters. <strong>É a única classe de configuração que muda.</strong></p>
+<p>Na Tab 6, o <code>PersistenceConfig</code> só entregava o adapter JPA. Aqui ele vira um <strong>interruptor de 3 posições</strong>, lido da chave <code>persistence.provider</code>: um só lugar decide qual adapter atende a porta, e trocar de fase é trocar <strong>um valor</strong> — sem recompilar. <strong>É a única classe de configuração da Tab 6 que muda.</strong></p>
 <div class="code-editor-wrap">
-<span class="code-filepath">infrastructure/config/PersistenceConfig.java (🔀 agora com 3 modos)</span>
+<span class="code-filepath">infrastructure/config/PersistenceConfig.java (🔀 interruptor de 3 posições — substitui o da Tab 6)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-infrastructure/src/main/java/com/loja/infrastructure/config/PersistenceConfig.java">package com.loja.infrastructure.config;
 
@@ -616,14 +583,19 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
 /**
- * 🔀 PONTO DE TROCA DO BANCO — agora com os 3 modos funcionando.
+ * 🔀 INTERRUPTOR DO BANCO — o ÚNICO lugar que decide qual adapter atende a
+ * porta ProdutoRepository. Lido de persistence.provider (application.yml).
  *
  *   relational → só MySQL                     (antes da migração / rollback)
  *   dual       → escreve nos dois, lê do MySQL (fases 1 e 2)
  *   nosql      → só MongoDB                   (fases 3 e 4: cut-over)
  *
- * Compare com a Tab 6: só os "case" mudaram. Service, controller, domínio,
- * DTOs e os 11 testes continuam idênticos.
+ * Por que um switch num @Bean (e não @ConditionalOnProperty em cada adapter)?
+ * 1) uma decisão num lugar só, fácil de ler;
+ * 2) sempre existe EXATAMENTE UM bean ProdutoRepository;
+ * 3) valor inválido falha NA SUBIDA, com mensagem clara (fail fast).
+ *
+ * Service, controller, domínio, DTOs e os 19 testes da Tab 6 não mudam.
  */
 @Configuration
 public class PersistenceConfig {
@@ -648,13 +620,185 @@ public class PersistenceConfig {
     }
 }</pre>
 </div>
-<div class="code-editor-wrap">
-<span class="code-filepath">terminal do IntelliJ - Passo 7: compilar e testar</span>
-<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor">mvn -q -DskipTests install
-mvn test          # esperado: Tests run: 11, Failures: 0 — NENHUM teste alterado</pre>
+<h4 style="color:var(--accent);margin:16px 0 8px">🧪 Testes da migração (5 novos, sem banco)</h4>
+<p>O código novo também ganha testes — e nenhum precisa de Docker: as "pontas" são <strong>mocks</strong> ou "bancos" em memória que implementam a mesma porta <code>ProdutoRepository</code>. É a Clean Architecture da Tab 6 pagando dividendos.</p>
+<div class="code-editor-wrap"><span class="code-filepath">infrastructure (test)/DualWriteProdutoRepositoryTest.java (3 testes)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="produtos-infrastructure/src/test/java/com/loja/infrastructure/persistence/DualWriteProdutoRepositoryTest.java">package com.loja.infrastructure.persistence;
+
+import com.loja.domain.Produto;
+import com.loja.domain.ProdutoRepository;
+import java.math.BigDecimal;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+/**
+ * O dual-write tem 3 promessas — cada teste prova uma.
+ * As duas "pontas" são MOCKS da porta ProdutoRepository: nada de banco.
+ */
+class DualWriteProdutoRepositoryTest {
+
+    private ProdutoRepository mysql;
+    private ProdutoRepository mongo;
+    private DualWriteProdutoRepository dual;
+
+    @BeforeEach
+    void setUp() {
+        mysql = mock(ProdutoRepository.class);
+        mongo = mock(ProdutoRepository.class);
+        dual = new DualWriteProdutoRepository(mysql, mongo);
+    }
+
+    @Test @DisplayName("🟢 grava no MySQL e espelha no Mongo com o MESMO id")
+    void espelhaComMesmoId() {
+        var novo  = new Produto(null, "Webcam", new BigDecimal("259.90"), 8);
+        var salvo = new Produto(42L,  "Webcam", new BigDecimal("259.90"), 8);
+        when(mysql.salvar(novo)).thenReturn(salvo);
+
+        Produto resposta = dual.salvar(novo);
+
+        assertEquals(42L, resposta.getId());
+        verify(mongo).salvar(salvo);              // o Mongo recebe o produto JÁ com id 42
+    }
+
+    @Test @DisplayName("🟢 Mongo fora do ar: a API NÃO falha (a reconciliação corrige depois)")
+    void mongoFalhaNaoDerrubaAApi() {
+        var salvo = new Produto(42L, "Webcam", BigDecimal.TEN, 1);
+        when(mysql.salvar(any())).thenReturn(salvo);
+        when(mongo.salvar(any())).thenThrow(new RuntimeException("Mongo fora do ar"));
+
+        assertDoesNotThrow(() -&gt; dual.salvar(salvo));
+        verify(mysql).salvar(any());              // a verdade (MySQL) gravou
+    }
+
+    @Test @DisplayName("🟢 leituras vêm SÓ do MySQL (a fonte da verdade)")
+    void leSoDoMysql() {
+        when(mysql.buscarPorId(1L)).thenReturn(Optional.of(new Produto(1L, "Teclado", BigDecimal.TEN, 1)));
+
+        assertTrue(dual.buscarPorId(1L).isPresent());
+        dual.listarPagina(0, 20);
+
+        verifyNoInteractions(mongo);
+    }
+}
+</pre></div>
+<div class="code-editor-wrap"><span class="code-filepath">infrastructure (test)/ReconciliacaoServiceTest.java (2 testes)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="produtos-infrastructure/src/test/java/com/loja/infrastructure/migration/ReconciliacaoServiceTest.java">package com.loja.infrastructure.migration;
+
+import com.loja.domain.Produto;
+import com.loja.domain.ProdutoRepository;
+import java.math.BigDecimal;
+import java.nio.file.Path;
+import java.util.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * A reconciliação é a PROVA da migração — então ela também precisa de prova.
+ * Os dois "bancos" aqui são mapas em memória (BancoFalso): rápido e sem Docker.
+ */
+class ReconciliacaoServiceTest {
+
+    @TempDir Path pasta;   // o relatório vai para uma pasta temporária
+
+    /** Implementação em memória da porta: um "banco" de mentira. */
+    static class BancoFalso implements ProdutoRepository {
+        final Map&lt;Long, Produto&gt; dados = new TreeMap&lt;&gt;();
+        BancoFalso com(long id, String nome, String preco, int estoque) {
+            dados.put(id, new Produto(id, nome, new BigDecimal(preco), estoque));
+            return this;
+        }
+        @Override public Produto salvar(Produto p) { dados.put(p.getId(), p); return p; }
+        @Override public Optional&lt;Produto&gt; buscarPorId(Long id) { return Optional.ofNullable(dados.get(id)); }
+        @Override public List&lt;Produto&gt; listarPagina(int page, int size) {
+            return listarTodos().stream().skip((long) page * size).limit(size).toList();
+        }
+        @Override public List&lt;Produto&gt; listarTodos() { return new ArrayList&lt;&gt;(dados.values()); }
+        @Override public boolean existePorId(Long id) { return dados.containsKey(id); }
+        @Override public void deletarPorId(Long id) { dados.remove(id); }
+    }
+
+    private ReconciliacaoService servico(BancoFalso mysql, BancoFalso mongo) {
+        return new ReconciliacaoService(mysql, mongo, pasta.resolve("relatorio.md"));
+    }
+
+    @Test @DisplayName("🟢 bancos iguais → EQUIVALENTES (349.9 e 349.90 são o mesmo preço)")
+    void equivalentes() {
+        var mysql = new BancoFalso().com(1, "Teclado", "349.90", 15).com(2, "Mouse", "99.90", 3);
+        var mongo = new BancoFalso().com(1, "Teclado", "349.9",  15).com(2, "Mouse", "99.90", 3);
+
+        assertTrue(servico(mysql, mongo).executar(false));
+        assertTrue(pasta.resolve("relatorio.md").toFile().exists());
+    }
+
+    @Test @DisplayName("🔴 detecta faltando, sobrando e diferente — e a correção resolve")
+    void detectaECorrige() {
+        var mysql = new BancoFalso().com(1, "Teclado", "349.90", 15).com(2, "Mouse", "99.90", 3);
+        var mongo = new BancoFalso().com(1, "Teclado", "1.00",   15)      // DIFERENTE (preço)
+                                    .com(9, "Fantasma", "5.00",  1);      // SOBRANDO
+                                                                          // id 2: FALTANDO
+        var servico = servico(mysql, mongo);
+
+        assertFalse(servico.executar(true));                // 1ª rodada: acusa e corrige
+        assertTrue(servico.executar(false));                // 2ª rodada: equivalentes
+        assertEquals(mysql.dados.keySet(), mongo.dados.keySet());
+    }
+}
+</pre></div>
+<div class="step-box">
+<h4><span class="step-num">7</span>🖱️ Compilar e rodar os 24 testes</h4>
+<p>Extraia o ZIP desta aba <strong>por cima</strong> do <code>loja-api</code> (aceite substituir). No IntelliJ: janela do Maven → 🔄 <strong>Reload</strong> (baixa o driver do MongoDB) → <strong>Lifecycle → install</strong>. Depois, botão direito na raiz → <strong>Run 'All Tests'</strong>.</p>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> <code>BUILD SUCCESS</code> e <strong>Tests passed: 24</strong> — os 19 da Tab 6, sem nenhuma alteração, + 5 da migração. Nenhum teste precisou de banco ligado.</div>
 </div>
-<div class="success-banner"><strong>✅ Como conferir:</strong> build verde e os <strong>mesmos 11 testes</strong> passando. Compare as pastas com a Tab 6: <code>domain</code>, <code>application</code>, controllers e DTOs estão idênticos — mudaram só <code>infrastructure</code> e o <code>application.yml</code>.</div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">⌨️ Prefere o terminal? Os mesmos passos por comando</div>
+<div class="faq-a">
+<div class="code-editor-wrap"><span class="code-filepath">terminal do IntelliJ (Alt+F12) — Windows: .\mvnw.cmd no lugar de ./mvnw</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">./mvnw -q -DskipTests install
+./mvnw test          # esperado: Tests run: 24, Failures: 0</pre></div>
+</div></div>
+<div class="success-banner"><strong>✅ Como conferir que a arquitetura funcionou:</strong> compare as pastas com a Tab 6 — <code>domain</code>, <code>application</code>, controllers e DTOs estão idênticos; mudaram só <code>infrastructure</code> e o <code>application.yml</code>.</div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">✋ Errou? Erros comuns de compilação</div>
+<div class="faq-a"><ul>
+<li><strong><code>package org.springframework.data.mongodb… does not exist</code></strong> → faltou o 🔄 Reload do Maven depois de substituir o <code>pom.xml</code> do <code>produtos-infrastructure</code>.</li>
+<li><strong><code>No qualifying bean of type 'MongoTemplate'</code></strong> → o <code>spring-boot-starter-data-mongodb</code> não está no <code>pom.xml</code> (o ZIP não foi extraído por cima, ou foi extraído numa subpasta).</li>
+<li><strong>Arquivos duplicados (<code>loja-api/loja-api/…</code>)</strong> → o ZIP foi extraído numa pasta nova. Extraia <strong>dentro</strong> do <code>loja-api</code> existente.</li>
+</ul></div></div>
+<h4 style="color:var(--accent);margin:20px 0 8px">🎛️ As Run Configurations da migração (uma por fase)</h4>
+<p>Cada fase é a <strong>mesma</strong> aplicação com <strong>argumentos diferentes</strong>. No IntelliJ, isso é uma <em>Run Configuration</em>: crie as 5 abaixo uma vez e depois é só escolher no menu lá em cima, ao lado do ▶.</p>
+<ol class="step-number-list">
+<li>Rode a <code>Main</code> uma vez pelo ▶ (cria a configuração <strong>Main</strong>) e pare (■).</li>
+<li>Menu <strong>Run → Edit Configurations…</strong> → selecione <strong>Main</strong> → ícone <strong>Copy Configuration</strong> (<kbd>Ctrl+D</kbd>).</li>
+<li>Dê o nome da tabela abaixo e cole os argumentos em <strong>Program arguments</strong> (se o campo não aparecer: <em>Modify options → Program arguments</em>). <strong>OK</strong>.</li>
+<li>Repita para as 5.</li>
+</ol>
+<div class="table-wrap"><table>
+<thead><tr><th>Nome</th><th>Program arguments</th><th>Usada no</th></tr></thead>
+<tbody>
+<tr><td><strong>API dual</strong></td><td><code>--persistence.provider=dual</code></td><td>Passos 8 a 10</td></tr>
+<tr><td><strong>Backfill</strong></td><td><code>--spring.main.web-application-type=none --migracao.backfill=true --migracao.encerrar=true</code></td><td>Passo 9</td></tr>
+<tr><td><strong>Reconciliar</strong></td><td><code>--spring.main.web-application-type=none --migracao.reconciliar=true --migracao.encerrar=true</code></td><td>Passos 10 e 11</td></tr>
+<tr><td><strong>Reconciliar + corrigir</strong></td><td><code>--spring.main.web-application-type=none --migracao.reconciliar=true --migracao.corrigir=true --migracao.encerrar=true</code></td><td>Passos 10 e 11</td></tr>
+<tr><td><strong>API nosql</strong></td><td><code>--persistence.provider=nosql</code></td><td>Passo 11</td></tr>
+</tbody></table></div>
+<div class="info-banner"><strong>💡 Por que <code>web-application-type=none</code>?</strong> Backfill e reconciliação rodam <strong>ao mesmo tempo</strong> que a <em>API dual</em>. Sem servidor web, elas não disputam a porta 8080: fazem a tarefa e encerram. É assim que se migra com a API no ar.</div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">⌨️ Prefere o terminal? As mesmas fases com java -jar</div>
+<div class="faq-a"><div class="code-editor-wrap"><span class="code-filepath">terminal — gerar o JAR uma vez e rodar cada fase</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">./mvnw -q -DskipTests package                 # gera o JAR (Windows: .\mvnw.cmd)
+
+java -jar produtos-presentation/target/produtos-presentation-1.0.0.jar --persistence.provider=dual
+java -jar produtos-presentation/target/produtos-presentation-1.0.0.jar --spring.main.web-application-type=none --migracao.backfill=true --migracao.encerrar=true
+java -jar produtos-presentation/target/produtos-presentation-1.0.0.jar --spring.main.web-application-type=none --migracao.reconciliar=true --migracao.encerrar=true
+java -jar produtos-presentation/target/produtos-presentation-1.0.0.jar --spring.main.web-application-type=none --migracao.reconciliar=true --migracao.corrigir=true --migracao.encerrar=true
+java -jar produtos-presentation/target/produtos-presentation-1.0.0.jar --persistence.provider=nosql</pre></div><p>⚠️ <code>java</code> precisa estar no PATH (<code>java -version</code> → 21). Se o JDK foi baixado pelo IntelliJ, ele normalmente <strong>não</strong> está: use as Run Configurations.</p>
+</div></div>
 </div>
 
 <!-- ══════════ PARTE 4 ══════════ -->
@@ -667,7 +811,7 @@ mvn test          # esperado: Tests run: 11, Failures: 0 — NENHUM teste altera
 <h4 style="color:var(--accent);margin:16px 0 8px">✍️ Passo 8 — Fase 1: ligar o dual-write</h4>
 <p>A partir daqui, <strong>toda escrita nova</strong> vai para os dois bancos. O histórico ainda não está no Mongo — e tudo bem: a API continua lendo do MySQL.</p>
 <div class="code-editor-wrap">
-<span class="code-filepath">scripts/smoke.sh</span>
+<span class="code-filepath">scripts/smoke.sh (Git Bash, macOS, Linux — precisa de curl e jq)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="scripts/smoke.sh">#!/usr/bin/env bash
 # ══════════════════════════════════════════════════════════════
@@ -722,11 +866,88 @@ echo
 if [ "$falhas" -eq 0 ]; then echo "🟢 SMOKE APROVADO"; else echo "🔴 $falhas falha(s)"; fi
 exit "$falhas"</pre>
 </div>
+<div class="code-editor-wrap"><span class="code-filepath">scripts/smoke.ps1 (Windows PowerShell — não precisa de nada instalado)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="scripts/smoke.ps1"># ==============================================================
+#  SMOKE TEST (PowerShell 5.1 e 7) - "a API funciona igual em qualquer modo?"
+#  Mesmo roteiro do smoke.sh. Rode com a API em relational, dual e nosql:
+#  o resultado tem que ser IDENTICO nas tres execucoes.
+#
+#  Uso (na pasta loja-api):
+#    powershell -ExecutionPolicy Bypass -File scripts\smoke.ps1
+#    powershell -ExecutionPolicy Bypass -File scripts\smoke.ps1 http://localhost:8080
+#  Cria, altera e remove um produto de teste (o banco volta ao estado inicial).
+# ==============================================================
+param([string]$Base = "http://localhost:8080")
+$falhas = 0
+
+# Faz a chamada e devolve SO o status HTTP (tambem para 4xx/5xx, sem erro vermelho)
+function Status($Metodo, $Url, $Corpo = $null, $Token = $null) {
+    $h = @{}
+    if ($Token) { $h["Authorization"] = "Bearer $Token" }
+    try {
+        $r = Invoke-WebRequest -Method $Metodo -Uri $Url -Headers $h -Body $Corpo `
+             -ContentType "application/json" -UseBasicParsing
+        return [int]$r.StatusCode
+    } catch {
+        if ($_.Exception.Response) { return [int]$_.Exception.Response.StatusCode }
+        return 0   # API fora do ar
+    }
+}
+function Esperar($Rotulo, $Esperado, $Obtido) {
+    if ("$Esperado" -eq "$Obtido") { Write-Host "  OK    $Rotulo ($Obtido)" -ForegroundColor Green }
+    else { Write-Host "  FALHA $Rotulo - esperado: $Esperado - obtido: $Obtido" -ForegroundColor Red; $script:falhas++ }
+}
+
+Write-Host "SMOKE TEST - $Base"
+
+# 1) Login -&gt; token
+$login = Invoke-RestMethod -Method Post -Uri "$Base/api/auth/login" -ContentType "application/json" `
+         -Body '{"email":"dev@loja.com.br","senha":"SenhaForte#2026"}'
+$T = $login.tokenAcesso
+if ($T) { Write-Host "  OK    login devolve token" -ForegroundColor Green } else { Write-Host "  FALHA login"; exit 1 }
+
+# 2) Regras de acesso e validacao
+Esperar "GET /api/produtos (publico)"  200 (Status GET  "$Base/api/produtos?page=0&amp;size=5")
+Esperar "POST sem token"               401 (Status POST "$Base/api/produtos" '{"nome":"Xx","preco":1,"estoque":1}')
+Esperar "paginacao invalida (page=-1)" 400 (Status GET  "$Base/api/produtos?page=-1")
+Esperar "preco invalido (0)"           400 (Status POST "$Base/api/produtos" '{"nome":"Xx","preco":0,"estoque":1}' $T)
+
+# 3) Ciclo de vida completo de um produto
+$auth = @{ Authorization = "Bearer $T" }
+$novo = Invoke-RestMethod -Method Post -Uri "$Base/api/produtos" -Headers $auth -ContentType "application/json" `
+        -Body '{"nome":"Produto Smoke","preco":123.45,"estoque":7}'
+$ID = $novo.id
+if ($ID) { Write-Host "  OK    POST com token: id gerado ($ID)" -ForegroundColor Green } else { Write-Host "  FALHA id nulo"; $falhas++ }
+
+Esperar "GET do produto criado: preco exato" "123.45" (Invoke-RestMethod "$Base/api/produtos/$ID").preco
+Esperar "PUT altera o produto" 200 (Status PUT "$Base/api/produtos/$ID" '{"nome":"Produto Smoke V2","preco":99.90,"estoque":3}' $T)
+$p = Invoke-RestMethod "$Base/api/produtos/$ID"
+Esperar "GET reflete o PUT" "Produto Smoke V2|99.9|3" "$($p.nome)|$($p.preco)|$($p.estoque)"   # "$()" usa ponto decimal em qualquer Windows
+Esperar "DELETE"               204 (Status DELETE "$Base/api/produtos/$ID" $null $T)
+Esperar "GET depois do DELETE" 404 (Status GET    "$Base/api/produtos/$ID")
+Esperar "DELETE de novo"       404 (Status DELETE "$Base/api/produtos/$ID" $null $T)
+
+Write-Host ""
+if ($falhas -eq 0) { Write-Host "SMOKE APROVADO" -ForegroundColor Green } else { Write-Host "$falhas falha(s)" -ForegroundColor Red }
+exit $falhas
+</pre></div>
+<div class="step-box">
+<h4><span class="step-num">8</span>🖱️ Ligar o dual-write e passar o smoke</h4>
+<ol class="step-number-list">
+<li>Escolha <strong>API dual</strong> no menu de Run Configurations e clique ▶. Ela fica no ar daqui até o Passo 11.</li>
+<li>Terminal (<kbd>Alt+F12</kbd>), na pasta <code>loja-api</code>: <strong>Windows</strong> → <code>powershell -ExecutionPolicy Bypass -File scripts\smoke.ps1</code> · <strong>Git Bash/macOS/Linux</strong> → <code>bash scripts/smoke.sh</code>.</li>
+<li>Crie um produto "de verdade" pelo REST Client: rode os pedidos 3 (login) e 4 (criar) do <code>requests.http</code> da Tab 6.</li>
+<li>No <strong>Compass</strong>: 🔄 → <code>loja_migracao → produtos</code>.</li>
+</ol>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> o log da API mostra <code>Started Main</code>; o smoke termina em <strong>SMOKE APROVADO</strong> (o mesmo resultado que daria em <code>relational</code>); no Compass, o banco <code>loja_migracao</code> apareceu e tem <strong>só</strong> o produto criado agora — <strong>com o mesmo id</strong> do MySQL e preço <code>Decimal128</code>. O histórico vem no Passo 9.</div>
+</div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">⌨️ Prefere o terminal? Os mesmos passos por comando</div>
+<div class="faq-a">
 <div class="code-editor-wrap">
 <span class="code-filepath">terminal do IntelliJ - Passo 8: fase 1 (dual)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor"># Sobe a API em modo DUAL (fica no ar daqui até o fim da migração)
-mvn -q -DskipTests package
+./mvnw -q -DskipTests package
 java -jar produtos-presentation/target/produtos-presentation-1.0.0.jar --persistence.provider=dual
 
 # ── Outro terminal ──
@@ -739,12 +960,19 @@ TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/login -H "Content-Type: a
 curl -s -X POST http://localhost:8080/api/produtos -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" -d '{"nome":"Webcam HD","preco":259.90,"estoque":8}'
 
-docker exec dev_mongo_java mongosh -u root -p root123 --authenticationDatabase admin --quiet \
-  --eval 'db.getSiblingDB("loja_nosql").produtos.find()'
+docker exec dev_mongo_server mongosh -u root -p root123 --authenticationDatabase admin --quiet \
+  --eval 'db.getSiblingDB("loja_migracao").produtos.find()'
 # → só os produtos criados/alterados DEPOIS do dual-write. O histórico vem no Passo 9.</pre>
 </div>
-<div class="success-banner"><strong>✅ Como conferir:</strong> smoke aprovado em modo <code>dual</code>; o produto novo aparece no Mongo <strong>com o mesmo id</strong> do MySQL e preço <code>NumberDecimal("259.90")</code>.</div>
-<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> nenhum documento no Mongo e um <code>WARN DUAL-WRITE</code> no log → o Mongo está fora do ar ou a URI está errada (lembre: <code>spring.mongodb.uri</code>) — a API continua funcionando, e a reconciliação corrige depois; <code>Exception authenticating</code> → faltou <code>?authSource=admin</code>.</div>
+</div></div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">✋ Errou? Erros comuns do Passo 8</div>
+<div class="faq-a"><ul>
+<li><strong>Nenhum documento no Mongo e um <code>WARN DUAL-WRITE</code> no log</strong> → o Mongo está fora do ar ou a URI está errada (lembre: <code>spring.mongodb.uri</code>). Repare: a API <strong>continua funcionando</strong> — o dual-write foi feito para isso — e a reconciliação corrige depois.</li>
+<li><strong><code>Exception authenticating MongoCredential</code></strong> → faltou <code>?authSource=admin</code> na URI.</li>
+<li><strong>PowerShell: <em>"execução de scripts foi desabilitada"</em></strong> → use exatamente <code>powershell -ExecutionPolicy Bypass -File …</code> (vale só para aquele comando).</li>
+<li><strong>Git Bash: <code>jq: command not found</code></strong> → use o <code>smoke.ps1</code>, ou instale: <code>winget install jqlang.jq</code> e reabra o terminal.</li>
+<li><strong><code>Port 8080 was already in use</code></strong> → a <em>Main</em> (ou o container <code>loja-java</code>) ainda está rodando: pare (■) antes de ligar a <em>API dual</em>.</li>
+</ul></div></div>
 
 <h4 style="color:var(--accent);margin:16px 0 8px">📦 Passo 9 — Fase 2: backfill do histórico (com a API no ar)</h4>
 <p>O backfill copia os produtos antigos. Ele roda numa <strong>segunda instância do mesmo JAR, sem servidor web</strong>, enquanto a instância do Passo 8 continua atendendo os clientes: isso é migrar <strong>sem downtime</strong>.</p>
@@ -839,6 +1067,7 @@ import com.loja.infrastructure.mongo.MongoProdutoRepository;
 import com.loja.infrastructure.mongo.SequenceGenerator;
 import com.loja.infrastructure.persistence.ProdutoRepositoryAdapter;
 import com.loja.infrastructure.persistence.SpringDataProdutoRepository;
+import java.nio.file.Path;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -902,7 +1131,8 @@ public class MigracaoRunner implements ApplicationRunner {
 
         if (reconciliar) {
             System.out.println("🔍 RECONCILIAÇÃO MySQL × MongoDB" + (corrigir ? " (com correção)" : ""));
-            ok = new ReconciliacaoService(mysqlAdapter, mongoAdapter).executar(corrigir);
+            ok = new ReconciliacaoService(mysqlAdapter, mongoAdapter,
+                    Path.of("relatorio-reconciliacao.md")).executar(corrigir);
         }
 
         if (encerrar) {
@@ -912,12 +1142,14 @@ public class MigracaoRunner implements ApplicationRunner {
     }
 }</pre>
 </div>
-<div class="info-banner"><strong>📈 (Opcional, recomendado) Gere volume antes:</strong> com poucos produtos, os lotes e o teste de carga não mostram nada. O script abaixo cria 10 mil produtos no MySQL — rode-o com a API em modo <code>dual</code> já no ar e note: eles entram <strong>direto no MySQL</strong>, sem passar pela API, então <strong>não</strong> são espelhados. É exatamente o "histórico" que o backfill existe para copiar.</div>
+<div class="info-banner"><strong>📈 (Opcional, recomendado) Gere volume antes:</strong> com poucos produtos, os lotes e o teste de carga não mostram nada. O script abaixo cria 10 mil produtos no MySQL — rode-o pelo <strong>DBeaver</strong> (abra o arquivo → <em>Executar script</em>, <kbd>Alt+X</kbd>) com a API em modo <code>dual</code> já no ar e note: eles entram <strong>direto no MySQL</strong>, sem passar pela API, então <strong>não</strong> são espelhados. É exatamente o "histórico" que o backfill existe para copiar.</div>
 <div class="code-editor-wrap">
 <span class="code-filepath">perf/seed-volume.sql</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="perf/seed-volume.sql">-- 📈 (OPCIONAL) 10.000 produtos no MySQL para o backfill em lotes e o teste de carga
--- docker exec -i &lt;container-mysql-da-tab5&gt; mysql -uroot -p&lt;senha&gt; loja_db &lt; perf/seed-volume.sql
+-- Rode pelo DBeaver (abra este arquivo → Executar script, Alt+X) ou pelo terminal:
+-- docker cp perf/seed-volume.sql dev_mysql_server:/tmp/seed.sql
+-- docker exec dev_mysql_server sh -c "mysql -uroot -proot123 loja_db &lt; /tmp/seed.sql"
 SET SESSION cte_max_recursion_depth = 20000;
 INSERT INTO produtos (nome, preco, estoque)
 WITH RECURSIVE seq(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM seq WHERE n &lt; 10000)
@@ -925,11 +1157,19 @@ SELECT CONCAT('Produto de carga ', n), ROUND(10 + RAND() * 990, 2), FLOOR(RAND()
 FROM seq;
 SELECT COUNT(*) AS produtos FROM produtos;</pre>
 </div>
+<div class="step-box">
+<h4><span class="step-num">9</span>🖱️ Backfill com a API no ar</h4>
+<p>Com a <strong>API dual</strong> ainda rodando, escolha <strong>Backfill</strong> no menu e clique ▶. O IntelliJ abre uma <strong>segunda aba</strong> na janela <em>Run</em> — as duas instâncias rodam juntas. Depois, rode o <strong>Backfill</strong> de novo (idempotência).</p>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> na aba <em>Backfill</em>: <code>🚚 BACKFILL MySQL → MongoDB (lotes de 500)</code>, um <code>✔ lote N gravado</code> por lote e <code>✅ Backfill concluído: N produto(s)</code>; o processo termina sozinho (<em>exit code 0</em>). No Compass, <code>loja_migracao → produtos</code> tem agora <strong>a mesma quantidade</strong> que a tabela do MySQL — e continua igual depois da 2ª execução (nada duplicado).</div>
+</div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">⌨️ Prefere o terminal? Os mesmos passos por comando</div>
+<div class="faq-a">
 <div class="code-editor-wrap">
 <span class="code-filepath">terminal do IntelliJ - Passo 9: backfill em uma 2ª instância</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor"># (Opcional) volume no MySQL
-docker exec -i &lt;container-mysql-da-tab5&gt; mysql -uroot -p&lt;senha-root&gt; loja_db &lt; perf/seed-volume.sql
+docker cp perf/seed-volume.sql dev_mysql_server:/tmp/seed.sql
+docker exec dev_mysql_server sh -c "mysql -uroot -proot123 loja_db &lt; /tmp/seed.sql"
 
 # 2ª instância: SEM web (não disputa a porta 8080), só a tarefa de backfill
 java -jar produtos-presentation/target/produtos-presentation-1.0.0.jar \
@@ -940,12 +1180,13 @@ java -jar produtos-presentation/target/produtos-presentation-1.0.0.jar \
 #   🚚 BACKFILL MySQL → MongoDB (lotes de 500)
 #      ✔ backfill: lote 1 gravado (500 produtos até agora)
 #      ...
-#   ✅ Backfill concluído: 10003 produto(s) copiado(s)
+#   ✅ Backfill concluído: 10003 produto(s) copiado(s)   (3 da Tab 5 + 10.000 do seed)
 
 # IDEMPOTÊNCIA: rode de novo → mesma contagem no Mongo, nenhum duplicado
-docker exec dev_mongo_java mongosh -u root -p root123 --authenticationDatabase admin --quiet \
-  --eval 'db.getSiblingDB("loja_nosql").produtos.countDocuments()'</pre>
+docker exec dev_mongo_server mongosh -u root -p root123 --authenticationDatabase admin --quiet \
+  --eval 'db.getSiblingDB("loja_migracao").produtos.countDocuments()'</pre>
 </div>
+</div></div>
 <div class="warning-banner"><strong>⚠️ A corrida do backfill (e por que existe o Passo 10):</strong> se a API atualizar um produto <em>depois</em> que o backfill o leu e <em>antes</em> de gravá-lo, o backfill grava a versão antiga por cima da nova. É uma janela pequena, mas real em migrações online. Ela não é "evitada" — é <strong>detectada e corrigida</strong> pela reconciliação.</div>
 
 <h4 style="color:var(--accent);margin:16px 0 8px">🔍 Passo 10 — Reconciliação: provar (e corrigir) a precisão</h4>
@@ -956,8 +1197,7 @@ docker exec dev_mongo_java mongosh -u root -p root123 --authenticationDatabase a
 <pre class="code-editor" data-zip-path="produtos-infrastructure/src/main/java/com/loja/infrastructure/migration/ReconciliacaoService.java">package com.loja.infrastructure.migration;
 
 import com.loja.domain.Produto;
-import com.loja.infrastructure.mongo.MongoProdutoRepository;
-import com.loja.infrastructure.persistence.ProdutoRepositoryAdapter;
+import com.loja.domain.ProdutoRepository;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
@@ -980,15 +1220,20 @@ import java.util.stream.Collectors;
  *   - faltando no Mongo  → copia do MySQL
  *   - diferente          → recopia do MySQL (resolve a corrida do backfill)
  *   - sobrando no Mongo  → remove (ex.: delete do dual-write que falhou)
+ *
+ * Recebe as duas PORTAS (ProdutoRepository), não as classes concretas:
+ * assim o teste usa "bancos" em memória e roda sem Docker.
  */
 public class ReconciliacaoService {
 
-    private final ProdutoRepositoryAdapter mysql;
-    private final MongoProdutoRepository mongo;
+    private final ProdutoRepository mysql;    // origem (a verdade)
+    private final ProdutoRepository mongo;    // destino
+    private final Path relatorio;
 
-    public ReconciliacaoService(ProdutoRepositoryAdapter mysql, MongoProdutoRepository mongo) {
+    public ReconciliacaoService(ProdutoRepository mysql, ProdutoRepository mongo, Path relatorio) {
         this.mysql = mysql;
         this.mongo = mongo;
+        this.relatorio = relatorio;
     }
 
     /** Assinatura normalizada: 349.9 e 349.90 são o mesmo preço. */
@@ -998,7 +1243,7 @@ public class ReconciliacaoService {
              + (preco == null ? "null" : preco.toPlainString()) + "|" + p.getEstoque();
     }
 
-    /** @return true se, ao final, os dois bancos estiverem equivalentes */
+    /** @return true se os dois bancos estiverem equivalentes (antes de qualquer correção) */
     public boolean executar(boolean corrigir) {
         Map&lt;Long, Produto&gt; origem = indexar(mysql.listarTodos());
         Map&lt;Long, Produto&gt; destino = indexar(mongo.listarTodos());
@@ -1051,8 +1296,8 @@ public class ReconciliacaoService {
 
         System.out.println(r);
         try {
-            Files.writeString(Path.of("relatorio-reconciliacao.md"), r.toString());
-            System.out.println("📝 Relatório salvo em: " + Path.of("relatorio-reconciliacao.md").toAbsolutePath());
+            Files.writeString(relatorio, r.toString());
+            System.out.println("📝 Relatório salvo em: " + relatorio.toAbsolutePath());
         } catch (IOException e) {
             System.out.println("⚠️ Não foi possível salvar o relatório: " + e.getMessage());
         }
@@ -1075,8 +1320,21 @@ public class ReconciliacaoService {
          .append(" | ").append(ok ? "✅" : "❌").append(" |\n");
         return ok;
     }
-}</pre>
+}
+</pre>
 </div>
+<div class="step-box">
+<h4><span class="step-num">10</span>🖱️ Reconciliar, "testar o teste" e corrigir</h4>
+<ol class="step-number-list">
+<li>Rode <strong>Reconciliar</strong> (▶). A tabela do relatório aparece no log.</li>
+<li><strong>Teste do teste:</strong> no Compass, em <code>loja_migracao → produtos</code>, edite o documento <code>_id: 1</code> (✏️) e troque o <code>preco</code> para <code>1.00</code> → <em>Update</em>; depois apague o <code>_id: 2</code> (🗑️).</li>
+<li>Rode <strong>Reconciliar</strong> de novo → agora deve acusar as duas divergências.</li>
+<li>Rode <strong>Reconciliar + corrigir</strong> e, por fim, <strong>Reconciliar</strong> mais uma vez.</li>
+</ol>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> 1ª e última rodadas: <code>**Resultado: 🟢 EQUIVALENTES**</code> e <em>exit code 0</em>. Depois de estragar: <code>🔴 DIVERGENTES</code> com <code>DIFERENTE id 1</code> e <code>FALTANDO no Mongo: id 2</code> (<em>exit code 1</em>). O log mostra onde o <code>relatorio-reconciliacao.md</code> foi salvo (<code>📝 Relatório salvo em: …</code>, na pasta <em>Working directory</em> da Run Configuration).</div>
+</div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">⌨️ Prefere o terminal? Os mesmos passos por comando</div>
+<div class="faq-a">
 <div class="code-editor-wrap">
 <span class="code-filepath">terminal do IntelliJ - Passo 10: reconciliar, testar o teste, corrigir</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -1095,8 +1353,8 @@ echo "código de saída: $?"
 # **Resultado: 🟢 EQUIVALENTES**
 
 # 2) TESTE DO TESTE: estrague um preço e apague um produto no Mongo
-docker exec dev_mongo_java mongosh -u root -p root123 --authenticationDatabase admin --quiet --eval '
-  const db2 = db.getSiblingDB("loja_nosql");
+docker exec dev_mongo_server mongosh -u root -p root123 --authenticationDatabase admin --quiet --eval '
+  const db2 = db.getSiblingDB("loja_migracao");
   db2.produtos.updateOne({_id: 1}, {$set: {preco: NumberDecimal("1.00")}});
   db2.produtos.deleteOne({_id: 2});'
 #    reconcilie de novo → 🔴 DIVERGENTES: "DIFERENTE id 1", "FALTANDO no Mongo: id 2"
@@ -1109,7 +1367,9 @@ java -jar produtos-presentation/target/produtos-presentation-1.0.0.jar \
   --spring.main.web-application-type=none \
   --migracao.reconciliar=true --migracao.encerrar=true        # → 🟢 EQUIVALENTES</pre>
 </div>
+</div></div>
 <div class="success-banner"><strong>✅ Como conferir:</strong> <code>🟢 EQUIVALENTES</code>, código de saída <code>0</code> e <code>relatorio-reconciliacao.md</code> gerado — anexe-o como <strong>evidência do requisito 4</strong>. O "teste do teste" provou que a reconciliação realmente detecta e corrige divergências.</div>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=consist%C3%AAncia+eventual+banco+de+dados+explicado" target="_blank">Consistência eventual</a> · <a class="ext" href="https://www.youtube.com/results?search_query=dual+write+migra%C3%A7%C3%A3o+banco+de+dados" target="_blank">Dual write e migração online</a></div>
 <div class="warning-banner"><strong>⚠️ Erros comuns:</strong> divergência só no preço com valores "iguais" (ex.: 349.9 × 349.90) → a assinatura normaliza com <code>stripTrailingZeros()</code>; se aparecer, o preço não está em Decimal128 (confira o <code>@Field</code>); reconciliação demora com muitos dados → ela carrega tudo em memória (didático); em bases grandes, compare por lotes de id + amostragem.</div>
 </div>
 
@@ -1152,6 +1412,19 @@ export default function () {
   check(http.get(`${BASE}/api/produtos/1`), { 'por id 200/404': (r) =&gt; r.status === 200 || r.status === 404 });
 }</pre>
 </div>
+<div class="step-box">
+<h4><span class="step-num">11</span>🖱️ Cut-over: o MongoDB assume</h4>
+<ol class="step-number-list">
+<li>Última conferência antes da virada: rode <strong>Reconciliar + corrigir</strong> e depois <strong>Reconciliar</strong> (🟢).</li>
+<li>(Opcional) <strong>Carga de base</strong>, com a API ainda em dual: no terminal, o comando <code>docker run … grafana/k6</code> do bloco abaixo. Anote o <code>p(95)</code>.</li>
+<li><strong>Cut-over:</strong> pare a <strong>API dual</strong> (■) e rode <strong>API nosql</strong> (▶).</li>
+<li><strong>Provas:</strong> o smoke de novo (Passo 8), <strong>Run 'All Tests'</strong> e, se fez o item 2, o k6 de novo.</li>
+<li>Crie um produto pelo REST Client e veja no Compass: <code>loja_migracao → counters</code>.</li>
+</ol>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> smoke <strong>APROVADO</strong> (igual aos modos relational e dual) · <strong>24 testes</strong> verdes · o produto novo recebe o id <strong>seguinte ao maior id migrado</strong> (o <code>seq</code> do <code>counters</code> acompanha) · p95 na mesma ordem de grandeza do MySQL.</div>
+</div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">⌨️ Prefere o terminal? Os mesmos passos por comando</div>
+<div class="faq-a">
 <div class="code-editor-wrap">
 <span class="code-filepath">terminal do IntelliJ - Passo 11: cut-over + provas</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -1167,24 +1440,25 @@ docker run --rm -i --network host -e BASE_URL=http://localhost:8080 grafana/k6 r
 java -jar produtos-presentation/target/produtos-presentation-1.0.0.jar --persistence.provider=nosql
 
 # 4) PROVAS
-mvn test                                     # 11 testes (independem do banco)
-./scripts/smoke.sh http://localhost:8080     # 🟢 mesmo resultado dos modos relational e dual
+./mvnw test                                  # 24 testes (independem do banco)
+bash scripts/smoke.sh                        # 🟢 mesmo resultado dos modos relational e dual
 docker run --rm -i --network host -e BASE_URL=http://localhost:8080 grafana/k6 run - &lt; perf/carga.js
 #   compare o http_req_duration p(95) com o passo 2
 
 # 5) Produto novo agora recebe id da sequência do Mongo (continua APÓS o maior id migrado)
-docker exec dev_mongo_java mongosh -u root -p root123 --authenticationDatabase admin --quiet \
-  --eval 'db.getSiblingDB("loja_nosql").counters.find()'
+docker exec dev_mongo_server mongosh -u root -p root123 --authenticationDatabase admin --quiet \
+  --eval 'db.getSiblingDB("loja_migracao").counters.find()'
 
-# 6) Em container, apontando para o Mongo
+# 6) Em container, apontando para o Mongo (pare antes a API nosql do IntelliJ: porta 8080)
 docker build -t loja-api-java:mongo .
 docker run -d --name loja-java -p 8080:8080 --network loja_dev_network \
   -e SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/loja_db \
   -e SPRING_DATASOURCE_USERNAME=devuser -e SPRING_DATASOURCE_PASSWORD=devpass \
-  -e SPRING_MONGODB_URI="mongodb://root:root123@mongo-db:27017/loja_nosql?authSource=admin" \
+  -e SPRING_MONGODB_URI="mongodb://root:root123@mongo-db:27017/loja_migracao?authSource=admin" \
   -e PERSISTENCE_PROVIDER=nosql \
   loja-api-java:mongo</pre>
 </div>
+</div></div>
 <div class="table-wrap" style="margin:12px 0">
 <table>
 <thead><tr><th>Métrica (preencha com os seus números)</th><th>🐬 MySQL (dual)</th><th>🍃 MongoDB (nosql)</th><th>Critério</th></tr></thead>
@@ -1195,8 +1469,9 @@ docker run -d --name loja-java -p 8080:8080 --network loja_dev_network \
 </tbody>
 </table>
 </div>
-<div class="success-banner"><strong>✅ Como conferir:</strong> 11 testes verdes, smoke 🟢 nos <strong>três</strong> modos e p95 equivalente — <strong>evidências dos requisitos 1, 3 e 5</strong>. Nenhuma requisição foi recusada durante toda a migração.</div>
-<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> com <code>nosql</code> a API <strong>ainda exige o MySQL no ar</strong> na subida (o JPA valida o schema) — é intencional enquanto o MySQL for o plano de rollback (na fase 4, removemos o JPA); <code>E11000 duplicate key</code> no primeiro POST → contador atrás (rode o backfill de novo: ele ajusta a sequência); <code>host.docker.internal</code> no k6 em Windows/macOS.</div>
+<div class="success-banner"><strong>✅ Como conferir:</strong> 24 testes verdes, smoke 🟢 nos <strong>três</strong> modos e p95 equivalente — <strong>evidências dos requisitos 1, 3 e 5</strong>. Nenhuma requisição foi recusada durante toda a migração.</div>
+<div class="warning-banner"><strong>⚠️ Erros comuns:</strong> com <code>nosql</code> a API <strong>ainda exige o MySQL no ar</strong> na subida (o JPA valida o schema) — é intencional enquanto o MySQL for o plano de rollback (na fase 4, removemos o JPA); <code>E11000 duplicate key</code> no primeiro POST → contador atrás (rode o backfill de novo: ele ajusta a sequência); no Windows/macOS, o k6 em container chega na API por <code>BASE_URL=http://host.docker.internal:8080</code> (sem <code>--network host</code>).</div>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=k6+teste+de+carga+tutorial" target="_blank">Teste de carga com k6</a> · <a class="ext" href="https://www.youtube.com/results?search_query=estrat%C3%A9gia+de+rollback+deploy+migra%C3%A7%C3%A3o" target="_blank">Cut-over e rollback</a></div>
 
 <h4 style="color:var(--accent);margin:16px 0 8px">↩️ Passo 12 — Fase 4, rollback e checklist final</h4>
 <div class="code-editor-wrap">
@@ -1221,7 +1496,7 @@ java -jar produtos-presentation/target/produtos-presentation-1.0.0.jar --persist
 <tbody>
 <tr><td>1</td><td>Substituir o banco pelo MongoDB</td><td>API rodando com <code>persistence.provider: nosql</code> + <code>MongoProdutoRepository</code></td><td>6, 11</td><td>⬜</td></tr>
 <tr><td>2</td><td>Adaptar as APIs</td><td>Diff mostrando que só <code>infrastructure</code> e <code>application.yml</code> mudaram</td><td>6 – 7</td><td>⬜</td></tr>
-<tr><td>3</td><td>Funcionar como antes</td><td>11 testes + <code>smoke.sh</code> 🟢 em relational, dual e nosql; zero downtime</td><td>8, 11</td><td>⬜</td></tr>
+<tr><td>3</td><td>Funcionar como antes</td><td>24 testes + smoke 🟢 em relational, dual e nosql; zero downtime</td><td>8, 11</td><td>⬜</td></tr>
 <tr><td>4</td><td>Migrar com precisão</td><td><code>relatorio-reconciliacao.md</code> 🟢 + "teste do teste"</td><td>9 – 10</td><td>⬜</td></tr>
 <tr><td>5</td><td>Manter o desempenho</td><td>Tabela de p95 dual × nosql</td><td>11</td><td>⬜</td></tr>
 </tbody>
@@ -1232,21 +1507,53 @@ java -jar produtos-presentation/target/produtos-presentation-1.0.0.jar --persist
 <thead><tr><th>#</th><th>Item técnico</th><th>Status</th></tr></thead>
 <tbody>
 <tr><td>1</td><td>Backup do MySQL e Tab 6 verde (Passo 0)</td><td>⬜</td></tr>
-<tr><td>2</td><td><code>spring-boot-starter-data-mongodb</code> + <code>spring.mongodb.uri</code> (Boot 4)</td><td>⬜</td></tr>
+<tr><td>2</td><td><code>spring-boot-starter-data-mongodb</code> + <code>spring.mongodb.uri</code> (Boot 4) apontando para <code>loja_migracao</code></td><td>⬜</td></tr>
 <tr><td>3</td><td><code>ProdutoDocument</code> com <code>_id</code> Long e <code>DECIMAL128</code></td><td>⬜</td></tr>
 <tr><td>4</td><td><code>SequenceGenerator</code> com <code>proximo</code> e <code>garantirMinimo</code></td><td>⬜</td></tr>
 <tr><td>5</td><td><code>MongoProdutoRepository</code> com a mesma semântica do JPA</td><td>⬜</td></tr>
 <tr><td>6</td><td><code>DualWriteProdutoRepository</code> (MySQL = verdade)</td><td>⬜</td></tr>
-<tr><td>7</td><td><code>PersistenceConfig</code> com relational | dual | nosql</td><td>⬜</td></tr>
+<tr><td>7</td><td><code>PersistenceConfig</code> com relational | dual | nosql + 5 Run Configurations</td><td>⬜</td></tr>
+<tr><td>7b</td><td>5 testes da migração verdes (24 no total)</td><td>⬜</td></tr>
 <tr><td>8</td><td>Backfill idempotente em lotes, com a API no ar</td><td>⬜</td></tr>
 <tr><td>9</td><td>Reconciliação 🟢 + correção testada</td><td>⬜</td></tr>
 <tr><td>10</td><td>Cut-over sem downtime + limites do rollback documentados</td><td>⬜</td></tr>
 </tbody>
 </table>
 </div>
-<div class="success-banner"><strong>✅ Tab 6-B completa:</strong> MongoDB no lugar do MySQL ✓ · mesma API e contrato ✓ · 11 testes sem alteração ✓ · <strong>zero downtime</strong> (dual-write + backfill online) ✓ · precisão provada pela reconciliação ✓ · desempenho medido ✓ · rollback e seus limites documentados ✓. A lição central: <strong>com a porta e o ponto único de troca preparados na Tab 6, migrar virou acrescentar adapters — e não reescrever a aplicação.</strong></div>
-<div class="info-banner"><strong>📦 ZIP desta aba:</strong> todos os arquivos com <code>data-zip-path</code> (adapters, migração, config, compose, scripts). Extraia <strong>por cima</strong> do projeto da Tab 6.</div>
-<div class="warning-banner"><strong>⚠️ GitHub Pages:</strong> salve como <code>tabs/tab6b.html</code> e adicione no <code>index.html</code> o botão da aba (sugestão: <code>☕🍃 6-B · MongoDB</code>) chamando <code>switchTab('tab6b')</code>.</div>
+<div class="success-banner"><strong>✅ Tab 6-B completa:</strong> MongoDB no lugar do MySQL ✓ · mesma API e contrato ✓ · 19 testes da Tab 6 sem alteração + 5 da migração ✓ · <strong>zero downtime</strong> (dual-write + backfill online) ✓ · precisão provada pela reconciliação ✓ · desempenho medido ✓ · rollback e seus limites documentados ✓. A lição central: <strong>como na Tab 6 o banco ficou atrás de uma porta, migrar virou acrescentar adapters e um interruptor — e não reescrever a aplicação.</strong></div>
+<h4 class="diag-title">📐 D-6B.3 <span class="dt-type">UML · Classes</span> — Uma porta, três adapters, um interruptor</h4>
+<div class="mermaid-box" data-code='classDiagram
+class ProdutoRepository {
+  <<interface>>
+  +salvar()
+  +buscarPorId()
+  +listarPagina(page, size)
+  +listarTodos()
+  +existePorId()
+  +deletarPorId()
+}
+class ProdutoRepositoryAdapter
+class MongoProdutoRepository
+class DualWriteProdutoRepository
+class PersistenceConfig
+class ProdutoServiceImpl
+ProdutoRepository <|.. ProdutoRepositoryAdapter : MySQL
+ProdutoRepository <|.. MongoProdutoRepository : MongoDB
+ProdutoRepository <|.. DualWriteProdutoRepository : os dois
+DualWriteProdutoRepository o-- ProdutoRepositoryAdapter
+DualWriteProdutoRepository o-- MongoProdutoRepository
+PersistenceConfig ..> ProdutoRepository : relational | dual | nosql
+ProdutoServiceImpl --> ProdutoRepository'>
+<div class="mermaid"></div>
+</div>
+<div class="adr"><h5>ADR-004 · Migração Strangler Fig com interruptor <span class="stack-tag">☕ Java</span><span class="status">Aceita</span></h5>
+<p><b>Contexto:</b> o catálogo vai para o MongoDB, mas a loja não pode parar (e-commerce 24×7) e os dados precisam chegar com precisão comprovada.</p>
+<p><b>Decisão:</b> migrar online em 4 fases (dual-write → backfill → cut-over → desligamento), controladas por um interruptor <code>persistence.provider</code> (relational | dual | nosql) num único <code>@Bean</code> do <code>PersistenceConfig</code>; precisão provada por reconciliação em 3 camadas.</p>
+<p><b>Alternativas consideradas:</b> big-bang com janela de manutenção (rejeitada aqui: downtime — é a estratégia da Tab 9-B); CDC + ETL externo (rejeitada: infraestrutura extra para a aula); <code>@ConditionalOnProperty</code> em cada adapter (rejeitada: decisão espalhada e combinações frágeis).</p>
+<p><b>Consequências:</b> (+) zero downtime, rollback trivial até o cut-over (um valor de configuração), validação progressiva; (−) dois bancos vivos por um tempo, consistência eventual no Mongo, reconciliação obrigatória; rollback depois do cut-over exige backfill reverso.</p>
+<p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend Java, QA, SRE.</p>
+<p><b>Ref:</b> <a class="ext" href="https://martinfowler.com/bliki/StranglerFigApplication.html" target="_blank">Strangler Fig (Fowler)</a> · <a class="ext" href="https://docs.aws.amazon.com/pt_br/prescriptive-guidance/latest/architectural-decision-records/adr-process.html" target="_blank">AWS — processo de ADR</a>.</p></div>
+<div class="info-banner"><strong>📦 ZIP desta aba:</strong> todos os arquivos com <code>data-zip-path</code> (adapters, migração, config, testes, scripts). Extraia <strong>por cima</strong> do projeto da Tab 6.</div>
 </div>
 </div>
 </section>
