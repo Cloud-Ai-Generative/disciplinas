@@ -1,0 +1,2035 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Computação em Nuvem — Aula 05</title>
+<!-- HTMLearning v2.17 — Nenhum campo pedagógico foi inventado. -->
+<style>
+:root {
+  --cor-destaque: #0EA5E9;
+  --cor-destaque-claro: #E0F2FE;
+  --cor-destaque-escuro: #0C4A6E;
+  --fundo: #FFFFFF;
+  --fundo-cartao: #F8FAFC;
+  --fundo-codigo: #F1F5F9;
+  --texto: #0F172A;
+  --texto-suave: #64748B;
+  --borda: #E2E8F0;
+  --sucesso: #059669;
+  --erro: #DC2626;
+  --aviso: #F59E0B;
+}
+[data-theme="dark"] {
+  --fundo: #0F172A;
+  --fundo-cartao: #1E293B;
+  --fundo-codigo: #334155;
+  --texto: #F1F5F9;
+  --texto-suave: #94A3B8;
+  --borda: #475569;
+  --cor-destaque-claro: #0C4A6E;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 18px;
+  line-height: 1.6;
+  background: var(--fundo);
+  color: var(--texto);
+  transition: background 0.3s, color 0.3s;
+}
+body.modo-apresentacao { font-size: 22px; }
+header {
+  background: linear-gradient(135deg, var(--cor-destaque), var(--cor-destaque-escuro));
+  color: white;
+  padding: 2rem 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+header .meta { opacity: 0.95; font-size: 0.95rem; }
+.controles-topo { position: fixed; top: 1rem; right: 1rem; z-index: 1000; display: flex; gap: 0.5rem; }
+.controles-topo button {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--cor-destaque);
+  color: var(--cor-destaque);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+.controles-topo button:hover { background: var(--cor-destaque); color: white; }
+.xp-bar {
+  position: sticky;
+  top: 0;
+  background: var(--cor-destaque-claro);
+  padding: 0.75rem 1.5rem;
+  border-bottom: 2px solid var(--cor-destaque);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  z-index: 99;
+}
+.tabs-container {
+  position: sticky;
+  top: 52px;
+  background: var(--fundo);
+  border-bottom: 2px solid var(--borda);
+  z-index: 98;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+.tabs { display: flex; padding: 0 1rem; gap: 0.25rem; }
+.tab {
+  padding: 1rem 1.5rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--texto-suave);
+  font-size: 1rem;
+  font-weight: 600;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.tab:hover { color: var(--cor-destaque); }
+.tab[aria-selected="true"] {
+  color: var(--cor-destaque);
+  border-bottom-color: var(--cor-destaque);
+  background: var(--fundo);
+}
+.painel { display: none; padding: 2rem 1.5rem; max-width: 1100px; margin: 0 auto; }
+.painel.active { display: block; animation: fade 0.3s; }
+@keyframes fade { from {opacity:0} to {opacity:1} }
+h2 {
+  color: var(--cor-destaque-escuro);
+  border-left: 5px solid var(--cor-destaque);
+  padding-left: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.6rem;
+}
+h3 { color: var(--cor-destaque-escuro); margin: 1.5rem 0 1rem; font-size: 1.3rem; }
+.cartao {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.missao {
+  background: linear-gradient(135deg, var(--cor-destaque-claro), var(--fundo-cartao));
+  border-left: 5px solid var(--cor-destaque);
+}
+.missao::before {
+  content: "🎯 MISSÃO";
+  display: block;
+  font-weight: bold;
+  color: var(--cor-destaque-escuro);
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.mundo-real { background: #E7F5FF; border-left: 5px solid #1971C2; }
+[data-theme="dark"] .mundo-real { background: #1A3A52; }
+.mundo-real::before {
+  content: "🌎 NO MUNDO REAL";
+  display: block;
+  font-weight: bold;
+  color: #1971C2;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.ferramentas { background: #D3F9D8; border-left: 5px solid #059669; }
+[data-theme="dark"] .ferramentas { background: #1B4332; }
+.ferramentas::before {
+  content: "🛠️ FERRAMENTAS";
+  display: block;
+  font-weight: bold;
+  color: #059669;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.demo-box {
+  background: var(--fundo-codigo);
+  border: 3px solid var(--cor-destaque);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+.instrucoes {
+  background: #FFF9DB;
+  border: 2px solid var(--aviso);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .instrucoes { background: #3D3518; }
+.instrucoes::before {
+  content: "📋 INSTRUÇÕES PASSO A PASSO";
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.roteiro {
+  background: #F3D9FA;
+  border-left: 4px solid #9C36B5;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+[data-theme="dark"] .roteiro { background: #3D1F47; }
+.roteiro::before { content: "🎤 Roteiro do apresentador: "; font-weight: bold; font-style: normal; }
+.prever {
+  background: #E3FAFC;
+  border: 2px dashed #0C8599;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+[data-theme="dark"] .prever { background: #0F3742; }
+.prever::before {
+  content: "🔮 PREVISÃO";
+  display: block;
+  font-weight: bold;
+  color: #0C8599;
+  margin-bottom: 0.5rem;
+}
+.legenda {
+  background: #FFF3BF;
+  border-left: 4px solid #F59F00;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+  border-radius: 6px;
+}
+[data-theme="dark"] .legenda { background: #3D3518; }
+.legenda::before { content: "🔑 Legenda: "; font-weight: bold; }
+.quiz-box {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+.termos-quiz {
+  background: #FFF3BF;
+  border: 2px solid #F59F00;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+[data-theme="dark"] .termos-quiz { background: #3D3518; }
+.termos-quiz::before {
+  content: "🔑 Termos deste quiz";
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.pergunta {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--fundo);
+  border-radius: 8px;
+  border: 2px solid var(--borda);
+}
+.pergunta p { font-weight: 600; margin-bottom: 0.75rem; }
+.alt {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+  background: white;
+  border: 2px solid var(--borda);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--texto);
+  transition: all 0.2s;
+}
+[data-theme="dark"] .alt { background: var(--fundo-cartao); }
+.alt:hover:not(:disabled) { border-color: var(--cor-destaque); background: var(--cor-destaque-claro); }
+.alt.certa { background: #D3F9D8 !important; border-color: var(--sucesso) !important; color: var(--sucesso); font-weight: bold; }
+.alt.errada { background: #FFE3E3 !important; border-color: var(--erro) !important; color: var(--erro); }
+[data-theme="dark"] .alt.certa { background: #1B4332 !important; color: #51CF66 !important; }
+[data-theme="dark"] .alt.errada { background: #3D1F24 !important; color: #FF6B6B !important; }
+.alt:disabled { cursor: not-allowed; opacity: 0.7; }
+.fb { margin-top: 0.5rem; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.95rem; display: none; }
+.fb.show { display: block; }
+.fb.fb-certa { background: #D3F9D8; border-left: 4px solid var(--sucesso); color: #087F23; }
+.fb.fb-errada { background: #FFE3E3; border-left: 4px solid var(--erro); color: #C92A2A; }
+[data-theme="dark"] .fb.fb-certa { background: #1B4332; color: #69DB7C; }
+[data-theme="dark"] .fb.fb-errada { background: #3D1F24; color: #FFA8A8; }
+details {
+  background: var(--fundo-codigo);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+  border: 1px solid var(--borda);
+}
+details[open] { background: var(--cor-destaque-claro); }
+summary { cursor: pointer; font-weight: bold; color: var(--cor-destaque-escuro); padding: 0.25rem 0; }
+.demo-area {
+  background: white;
+  border: 2px dashed var(--cor-destaque);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+  min-height: 150px;
+}
+[data-theme="dark"] .demo-area { background: var(--fundo-cartao); }
+.btn {
+  background: var(--cor-destaque);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.95rem;
+  margin: 0.25rem;
+}
+.btn:hover { background: var(--cor-destaque-escuro); }
+.btn-secundario { background: var(--texto-suave); color: white; }
+.resultado-demo {
+  background: #D3F9D8;
+  border-left: 4px solid var(--sucesso);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .resultado-demo { background: #1B4332; color: #69DB7C; }
+.resultado-erro {
+  background: #FFE3E3;
+  border-left: 4px solid var(--erro);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .resultado-erro { background: #3D1F24; color: #FFA8A8; }
+footer {
+  background: var(--fundo-cartao);
+  border-top: 3px solid var(--cor-destaque);
+  padding: 2rem 1.5rem;
+  margin-top: 3rem;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+footer h4 { color: var(--cor-destaque-escuro); margin-bottom: 0.75rem; font-size: 1rem; }
+footer .bloco { padding: 1rem 0; line-height: 1.7; }
+footer .bloco + .bloco { border-top: 2px solid var(--borda); margin-top: 1rem; padding-top: 1.5rem; }
+footer a { color: var(--cor-destaque-escuro); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+footer ul { list-style: none; padding-left: 0; }
+footer ul li { margin: 0.4rem 0; }
+.revisao-mapa {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+.no-mapa {
+  background: var(--cor-destaque-claro);
+  border: 2px solid var(--cor-destaque);
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+}
+.no-mapa h4 { color: var(--cor-destaque-escuro); margin-bottom: 0.5rem; }
+.cola-rapida {
+  background: #FFF9DB;
+  border: 2px solid var(--aviso);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin: 1rem 0;
+}
+[data-theme="dark"] .cola-rapida { background: #3D3518; }
+.cola-rapida dt { font-weight: bold; color: var(--cor-destaque-escuro); margin-top: 0.75rem; }
+.cola-rapida dd { margin-left: 1rem; margin-bottom: 0.5rem; color: var(--texto); }
+.chefao {
+  background: linear-gradient(135deg, var(--cor-destaque-claro), white);
+  border: 3px solid var(--cor-destaque);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+[data-theme="dark"] .chefao { background: linear-gradient(135deg, var(--cor-destaque-claro), var(--fundo-cartao)); }
+.chefao::before {
+  content: "👑 CHEFÃO — DESAFIO FINAL";
+  display: block;
+  font-weight: bold;
+  color: var(--cor-destaque-escuro);
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+}
+.mitoverdade {
+  background: #F3D9FA;
+  border-left: 5px solid #9C36B5;
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 8px;
+}
+[data-theme="dark"] .mitoverdade { background: #3D1F47; }
+code {
+  background: var(--fundo-codigo);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-family: "Courier New", monospace;
+  font-size: 0.95em;
+  color: var(--cor-destaque-escuro);
+}
+.pizza-layer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 1rem;
+  margin: 0.4rem 0;
+  background: var(--fundo-codigo);
+  border-radius: 6px;
+  border-left: 4px solid var(--borda);
+  font-size: 0.95rem;
+}
+.pizza-layer.eu { border-left-color: var(--cor-destaque); background: var(--cor-destaque-claro); }
+.pizza-layer.nuvem { border-left-color: var(--sucesso); background: #D3F9D8; }
+[data-theme="dark"] .pizza-layer.nuvem { background: #1B4332; }
+.dc-rack {
+  display: inline-block;
+  width: 60px;
+  height: 80px;
+  background: #475569;
+  border: 2px solid #1E293B;
+  border-radius: 4px;
+  margin: 0.3rem;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.dc-rack:hover { transform: scale(1.05); }
+.dc-rack.ligado::after {
+  content: "";
+  position: absolute;
+  top: 10px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  background: #22C55E;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #22C55E;
+}
+.dc-rack.desligado::after {
+  content: "";
+  position: absolute;
+  top: 10px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  background: #DC2626;
+  border-radius: 50%;
+}
+.dc-rack .slot {
+  width: 80%;
+  height: 8px;
+  background: #1E293B;
+  margin: 6px auto;
+  border-radius: 2px;
+}
+.saas-card {
+  display: inline-block;
+  padding: 0.75rem 1rem;
+  margin: 0.3rem;
+  background: var(--cor-destaque-claro);
+  border: 2px solid var(--cor-destaque);
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.saas-card:hover { background: var(--cor-destaque); color: white; }
+.saas-card.selecionado { background: var(--cor-destaque); color: white; }
+.comparador-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+  padding: 0.75rem;
+  background: var(--fundo-codigo);
+  border-radius: 6px;
+}
+.comparador-row .col { padding: 0.3rem; }
+.comparador-row .titulo { font-weight: bold; color: var(--cor-destaque-escuro); }
+@media (max-width: 600px) {
+  header h1 { font-size: 1.5rem; }
+  .tab { padding: 0.75rem 1rem; font-size: 0.9rem; }
+  .painel { padding: 1rem; }
+  .controles-topo { position: static; padding: 0.5rem; }
+  .comparador-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="controles-topo">
+  <button id="btn-modo" type="button">🎤 Apresentação</button>
+  <button id="btn-tema" type="button">🌙 Escuro</button>
+</div>
+
+<header>
+  <h1>Computação em Nuvem</h1>
+  <div class="meta">Aula 05 · Unidade 2 · Págs. 26 a 44 · Modelos de Serviço: IaaS, PaaS e SaaS</div>
+</header>
+
+<div class="xp-bar">
+  <div>⭐ XP: <span id="xp">0</span> · Selos: <span id="selos">0</span>/5</div>
+  <div id="progresso">Aba 1 de 6</div>
+</div>
+
+<div class="tabs-container">
+  <div class="tabs" role="tablist" aria-label="Abas da aula">
+    <button class="tab" role="tab" id="tab-1" aria-selected="true" aria-controls="painel-1" data-aba="1" type="button">1 · Visão geral</button>
+    <button class="tab" role="tab" id="tab-2" aria-selected="false" aria-controls="painel-2" data-aba="2" type="button">2 · IaaS (datacenter)</button>
+    <button class="tab" role="tab" id="tab-3" aria-selected="false" aria-controls="painel-3" data-aba="3" type="button">3 · IaaS (componentes)</button>
+    <button class="tab" role="tab" id="tab-4" aria-selected="false" aria-controls="painel-4" data-aba="4" type="button">4 · PaaS</button>
+    <button class="tab" role="tab" id="tab-5" aria-selected="false" aria-controls="painel-5" data-aba="5" type="button">5 · SaaS</button>
+    <button class="tab" role="tab" id="tab-6" aria-selected="false" aria-controls="painel-6" data-aba="6" type="button">⭐ Revisão</button>
+  </div>
+</div>
+
+<!-- ============ ABA 1 ============ -->
+<div class="painel active" id="painel-1" role="tabpanel" aria-labelledby="tab-1">
+  <h2>Aba 1 · O que são modelos de serviço em nuvem?</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é entender por que a computação em nuvem (do inglês <em>cloud computing</em>; em português, computação em nuvem) se organiza em <strong>três camadas de serviço</strong> — IaaS, PaaS e SaaS — em vez de entregar tudo de uma vez. A metáfora clássica é a da <strong>pizza</strong>: você pode fazer a pizza do zero em casa, comprar a massa pronta e só rechear, ou pedir a pizza entregue. Cada opção entrega mais ou menos trabalho para você, e os três modelos de nuvem fazem exatamente o mesmo com a tecnologia.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 A metáfora da pizza</h3>
+    <p>Uma pizza tem várias camadas: a cozinha (forno, gás, mesa), a massa, o molho, o recheio, o refrigerante e a entrega. Imagine três formas de ter pizza hoje à noite:</p>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Feita em casa</strong> (on-premise, em português, no local): você compra farinha, tomate, queijo, liga o forno e faz tudo. É o equivalente a ter seu próprio datacenter (sala com servidores físicos, ar-condicionado, energia redundante e equipe de TI).</li>
+      <li><strong>Massa pronta e delivery do recheio</strong> (PaaS, Platform as a Service; em português, Plataforma como Serviço): alguém entrega a massa, o molho e o forno; você só monta o recheio e assa. É o equivalente a usar uma plataforma onde o provedor cuida do sistema operacional e você só implanta seu aplicativo.</li>
+      <li><strong>Pizza pronta entregue</strong> (SaaS, Software as a Service; em português, Software como Serviço): você pede, paga e come. Não compra farinha, não acende forno, não lava prato. É o equivalente a usar o Gmail ou o Google Docs: o software vem pronto e você só usa.</li>
+    </ul>
+    <p>No meio dessa escala existe o <strong>IaaS</strong> (Infrastructure as a Service; em português, Infraestrutura como Serviço): você aluga a cozinha equipada (servidor virtual, rede, storage) e cozinha o que quiser. É o modelo da <strong>AWS EC2</strong> (do inglês <em>Amazon Web Services Elastic Compute Cloud</em>; serviço de máquinas virtuais da Amazon) e do <strong>Azure Virtual Machines</strong> (máquinas virtuais da Microsoft).</p>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Os três gigantes do mercado</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>AWS (Amazon Web Services)</strong>: braço de nuvem da Amazon (empresa americana de comércio eletrônico). Líder mundial desde 2006, quando lançou o <strong>S3</strong> (do inglês <em>Simple Storage Service</em>; em português, Serviço Simples de Armazenamento) e o EC2. Atende Netflix, Nubank e o governo dos Estados Unidos.</li>
+      <li><strong>Microsoft Azure</strong>: nuvem da Microsoft (empresa americana de software). Forte em empresas que já usam Windows e Office, integra com o Active Directory (serviço de diretório da Microsoft) e atende o Banco do Brasil.</li>
+      <li><strong>Google Cloud Platform (GCP)</strong>: nuvem do Google (empresa americana de buscas). Forte em análise de dados e inteligência artificial; o motor do BigQuery (ferramenta de análise do Google) é o mesmo que indexa a busca do Google.</li>
+    </ul>
+    <p>Segundo a consultoria <strong>Sygnt Group</strong> (empresa americana de análise de mercado de nuvem), em 2024 esses três provedores somavam cerca de 66% do mercado mundial de nuvem.</p>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Por que dividir em camadas?</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Responsabilidade clara</strong>: cada camada deixa evidente quem cuida de quê — o provedor ou você.</li>
+      <li><strong>Escolha flexível</strong>: uma startup pequena pode começar só com SaaS (Google Workspace) e crescer para IaaS quando precisar de controle.</li>
+      <li><strong>Custo previsível</strong>: cada camada tem modelo de cobrança diferente, e entender isso evita surpresas na fatura.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: pizza as a service interativa</h3>
+
+    <div class="prever">
+      <strong>Antes de clicar, preveja:</strong> se você pedir uma pizza pronta pelo aplicativo, quem fica responsável por comprar a farinha, acender o forno e lavar a forma: você ou a pizzaria? E se você comprar a massa pronta no mercado e só rechear em casa?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 1:</strong> escolha um dos três modelos (em casa, massa pronta, pizza entregue).<br>
+      <strong>Passo 2:</strong> veja, para cada camada da pizza, quem fica responsável (você ou a pizzaria).<br>
+      <strong>Passo 3:</strong> compare com o equivalente em nuvem que aparece ao lado.<br>
+      <strong>Passo 4:</strong> observe que, quanto mais para a direita, menos trabalho sobra para você.
+    </div>
+
+    <div class="roteiro">
+      pergunte à turma quem já pediu pizza pelo iFood. Clique em pizza entregue e mostre que tudo fica por conta da pizzaria, assim como no SaaS tudo fica por conta do provedor. Depois volte para em casa e mostre que, como no on-premise, você faz tudo sozinho.
+    </div>
+
+    <div class="legenda">
+      camada = parte da pizza ou da pilha de TI · on-premise = no local, na sua própria infraestrutura · IaaS = Infraestrutura como Serviço · PaaS = Plataforma como Serviço · SaaS = Software como Serviço
+    </div>
+
+    <div class="demo-area" id="demo1-area">
+      <div>
+        <button class="btn" type="button" data-pizza="casa">🏠 Pizza em casa (on-premise)</button>
+        <button class="btn" type="button" data-pizza="iaas">🍕 Massa pronta (IaaS)</button>
+        <button class="btn" type="button" data-pizza="paas">🍕+🔥 Massa + forno (PaaS)</button>
+        <button class="btn" type="button" data-pizza="saas">📦 Pizza entregue (SaaS)</button>
+      </div>
+      <div id="demo1-pizza" style="margin-top:1rem"></div>
+      <button class="btn btn-secundario" type="button" id="demo1-reset" style="margin-top:1rem">🔄 Reiniciar</button>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> cada modelo transfere uma parte do trabalho para o provedor. Em casa (on-premise) você faz tudo. No SaaS, o provedor faz tudo e você só usa. IaaS e PaaS ficam no meio, com divisões diferentes de responsabilidade.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 1</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      nuvem = entrega de recursos de TI pela internet, sob demanda ·
+      on-premise = infraestrutura própria, no local da empresa ·
+      IaaS = Infraestrutura como Serviço (você aluga servidor, rede e storage) ·
+      PaaS = Plataforma como Serviço (provedor cuida do sistema operacional e você implanta seu código) ·
+      SaaS = Software como Serviço (software pronto, você só usa).
+    </div>
+
+    <div class="pergunta" data-pergunta="1-1">
+      <p>1. Qual é a principal vantagem de dividir a nuvem em três modelos (IaaS, PaaS e SaaS)?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! Os três modelos não são obrigatórios: uma empresa pode usar só SaaS, só IaaS ou combinar os três. A divisão não é imposição, é organização.">Obrigar toda empresa a usar os três modelos ao mesmo tempo</button>
+        <button class="alt" type="button" data-fb="Correto! A divisão deixa claro quem cuida de quê em cada camada, ajuda a escolher o nível certo de controle e custo, e permite que cada empresa monte a combinação que faz sentido para ela.">Deixar clara a responsabilidade de cada parte e permitir escolha flexível conforme a necessidade</button>
+        <button class="alt" type="button" data-fb="Errado! Os três modelos existem em nuvens públicas, privadas e híbridas. A divisão é sobre o que é entregue como serviço, não sobre o tipo de nuvem.">Separar apenas nuvens públicas de nuvens privadas</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="1-2">
+      <p>2. Na metáfora da pizza, qual modelo de nuvem equivale a comprar a massa pronta, o molho e o recheio, mas montar e assar em casa?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! No IaaS você recebe a cozinha equipada (servidor, rede), mas precisa preparar a massa, o molho e tudo mais. A massa pronta já vem preparada no próximo modelo da escala.">IaaS (Infraestrutura como Serviço)</button>
+        <button class="alt" type="button" data-fb="Correto! No PaaS, o provedor entrega a plataforma (massa, molho, forno) e você só cuida do recheio (seu aplicativo e seus dados). É o meio-termo entre IaaS e SaaS.">PaaS (Plataforma como Serviço)</button>
+        <button class="alt" type="button" data-fb="Errado! No SaaS a pizza vem pronta, você só come. Não há massa para montar nem forno para ligar.">SaaS (Software como Serviço)</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="1-3">
+      <p>3. AWS, Azure e Google Cloud Platform são exemplos de quê?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! Softwares de planilha são SaaS específicos (como Excel ou Google Sheets). AWS, Azure e GCP são provedores completos de nuvem, com IaaS, PaaS e SaaS.">Softwares de planilha eletrônica na nuvem</button>
+        <button class="alt" type="button" data-fb="Errado! Cada um deles oferece muito mais que IaaS: têm também PaaS (bancos de dados gerenciados, plataformas de containers) e SaaS (como Microsoft 365 no Azure).">Apenas serviços de IaaS sem outras camadas</button>
+        <button class="alt" type="button" data-fb="Correto! São provedores de nuvem pública (public cloud providers; em inglês) que entregam IaaS, PaaS e SaaS em um catálogo unificado. Juntos dominam cerca de 66% do mercado mundial, segundo a Synergy Group.">Provedores de nuvem pública que entregam IaaS, PaaS e SaaS em um catálogo unificado</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 1</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=modelos+de+serviço+em+nuvem+IaaS+PaaS+SaaS" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=modelos+de+serviço+cloud+computing+IaaS+PaaS+SaaS" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=IaaS+PaaS+SaaS+metáfora+pizza+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Nuvem</strong>: entrega de recursos de TI pela internet, sob demanda.</li>
+      <li><strong>On-premise</strong>: infraestrutura própria, no local da empresa.</li>
+      <li><strong>Provedor</strong>: empresa que oferece serviços de nuvem (AWS, Azure, GCP).</li>
+      <li><strong>Catálogo</strong>: lista de serviços disponíveis para contratação.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Toda empresa precisa usar os três modelos (IaaS, PaaS e SaaS) ao mesmo tempo.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> uma empresa pode usar só SaaS (como um escritório que usa Google Workspace) ou combinar modelos diferentes para sistemas diferentes. A divisão é uma ferramenta de escolha, não uma obrigação.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 2 ============ -->
+<div class="painel" id="painel-2" role="tabpanel" aria-labelledby="tab-2">
+  <h2>Aba 2 · Infraestrutura de um datacenter (o que a IaaS substitui)</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é entender o que existe dentro de um <strong>datacenter</strong> (sala especializada que abriga servidores, equipamentos de rede, sistemas de refrigeração e energia redundante) para depois compreender o que a IaaS entrega virtualmente. Sem conhecer o hardware real, os termos vCPU, storage e subnet parecem magia; conhecendo o datacenter, eles viram escolhas de engenharia.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 O que tem dentro de um datacenter?</h3>
+    <p>Um datacenter típico de médio porte (como os que empresas brasileiras de varejo mantinham antes de migrar para nuvem) reúne cinco grandes grupos de equipamento:</p>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Servidores</strong>: computadores especializados que rodam 24 horas por dia, montados em racks (estruturas metálicas padronizadas de 19 polegadas de largura). Um servidor moderno como o Dell PowerEdge R750 (linha de servidores da Dell, empresa americana) tem dois processadores Intel Xeon (linha de processadores para servidores da Intel), até 4 TB de RAM e dezenas de discos.</li>
+      <li><strong>Storage</strong>: sistemas de armazenamento. Podem ser <strong>SAN</strong> (do inglês <em>Storage Area Network</em>; em português, Rede de Área de Armazenamento, rede dedicada só para disco) ou <strong>NAS</strong> (do inglês <em>Network Attached Storage</em>; em português, Armazenamento Conectado à Rede, disco acessado pela rede comum). Marcas conhecidas: NetApp (empresa americana) e EMC (hoje parte da Dell).</li>
+      <li><strong>Rede</strong>: switches (equipamentos que conectam vários servidores entre si) e roteadores (equipamentos que conectam o datacenter à internet). Cisco (empresa americana) e Juniper (empresa americana) dominam esse mercado.</li>
+      <li><strong>Energia</strong>: duas entradas de energia da concessionária, mais <strong>UPS</strong> (do inglês <em>Uninterruptible Power Supply</em>; em português, Nobreak) que seguram a carga por minutos até os <strong>geradores a diesel</strong> ligarem.</li>
+      <li><strong>Refrigeração</strong>: ar-condicionado de precisão que mantém a sala entre 18 e 22 graus Celsius, com corredores frios (onde entra ar gelado) e corredores quentes (onde sai ar quente dos servidores).</li>
+    </ul>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Datacenters famosos</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>AWS Region us-east-1</strong> (região da AWS no norte da Virgínia, Estados Unidos): a maior região de nuvem do mundo, concentra grande parte da infraestrutura global da Amazon. Um apagão nela em 2021 tirou do ar serviços como Disney+ e Slack por horas.</li>
+      <li><strong>Datacenter da Equinix em São Paulo</strong> (empresa americana de datacenters): um dos maiores da América Latina, abriga servidores de bancos, operadoras e provedores de nuvem que querem ficar perto do usuário brasileiro.</li>
+      <li><strong>Microsoft Azure Brazil South</strong> (região do Azure no estado de São Paulo): inaugurada em 2014, foi a primeira região do Azure na América Latina. Atende empresas que precisam que os dados fiquem fisicamente no Brasil por questões regulatórias.</li>
+      <li><strong>Google Datacenter em Quilmes</strong> (cidade da Argentina): inaugurado em 2024, é o primeiro datacenter do Google na América Latina.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ O que um datacenter custa</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>CAPEX</strong> (do inglês <em>Capital Expenditure</em>; em português, Despesa de Capital): investimento inicial em equipamento, obra e instalação. Um rack completo com servidores e storage passa facilmente de 500 mil reais.</li>
+      <li><strong>OPEX</strong> (do inglês <em>Operational Expenditure</em>; em português, Despesa Operacional): custo recorrente de energia, refrigeração, equipe de TI, aluguel da sala e licenças de software. Representa 60 a 70% do custo total em cinco anos.</li>
+      <li><strong>Depreciação</strong>: servidores perdem valor contábil em 3 a 5 anos; depois desse tempo, a empresa precisa comprar novos, mesmo que os antigos ainda funcionem.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: tour por um datacenter virtual</h3>
+
+    <div class="prever">
+      <strong>Antes de clicar, preveja:</strong> em um datacenter típico, qual desses cinco grupos costuma consumir MAIS energia elétrica: os servidores, a refrigeração, a rede, o armazenamento ou os nobreaks?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 1:</strong> clique em cada componente do datacenter.<br>
+      <strong>Passo 2:</strong> leia a ficha com função, exemplo de equipamento e peso no custo total.<br>
+      <strong>Passo 3:</strong> ao final, veja o ranking de consumo de energia.<br>
+      <strong>Passo 4:</strong> compare com o que você previa e entenda por que a IaaS ajuda a economizar energia globalmente.
+    </div>
+
+    <div class="roteiro">
+      projete o datacenter e pergunte à turma o que mais gasta energia. A maioria acha que são os servidores. Ao revelar que refrigeração consome quase tanto quanto os servidores, mostre por que gigantes como AWS e Google constroem datacenters perto de rios e em climas frios.
+    </div>
+
+    <div class="legenda">
+      rack = estrutura metálica padronizada que abriga servidores · CAPEX = investimento inicial · OPEX = custo recorrente · UPS = nobreak, segura energia por minutos · PUE = eficácia do uso de energia (quanto menor, melhor)
+    </div>
+
+    <div class="demo-area" id="demo2-area">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:0.5rem">
+        <button class="btn" type="button" data-dc="servidor">🖥️ Servidores</button>
+        <button class="btn" type="button" data-dc="storage">💾 Storage</button>
+        <button class="btn" type="button" data-dc="rede">🔀 Rede</button>
+        <button class="btn" type="button" data-dc="energia">⚡ Energia</button>
+        <button class="btn" type="button" data-dc="refri">❄️ Refrigeração</button>
+      </div>
+      <div id="demo2-ficha" style="margin-top:1rem; padding:1rem; background:var(--fundo-codigo); border-radius:8px; min-height:120px">
+        👆 Clique em um componente para abrir a ficha técnica.
+      </div>
+      <button class="btn btn-secundario" type="button" id="demo2-reset" style="margin-top:1rem">🔄 Reiniciar</button>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> um datacenter gasta quase tanta energia em refrigeração quanto nos próprios servidores. É por isso que provedores de nuvem constroem datacenters em climas frios ou perto de hidrelétricas, e é por isso que migrar para IaaS pode reduzir a conta de luz da sua empresa.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 2</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      datacenter = sala especializada com servidores, rede, refrigeração e energia redundante ·
+      rack = estrutura metálica padronizada para montar servidores ·
+      SAN = rede dedicada só para armazenamento ·
+      UPS = nobreak, equipamento que segura energia por minutos ·
+      CAPEX = investimento inicial em equipamento ·
+      OPEX = custo recorrente de operação.
+    </div>
+
+    <div class="pergunta" data-pergunta="2-1">
+      <p>1. O que é um rack em um datacenter?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! Um rack é uma estrutura metálica padronizada (19 polegadas de largura, medida internacional) onde os servidores, switches e storages são montados, como gavetas em um armário.">Uma estrutura metálica padronizada onde servidores e equipamentos são montados</button>
+        <button class="alt" type="button" data-fb="Errado! O sistema de refrigeração é o ar-condicionado de precisão, com corredores frios e quentes. O rack é apenas a moldura física dos equipamentos.">O sistema de refrigeração do datacenter</button>
+        <button class="alt" type="button" data-fb="Errado! O nobreak é o UPS, equipamento separado que segura energia. O rack é apenas o móvel onde os equipamentos são instalados.">Um tipo de nobreak que segura energia por minutos</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="2-2">
+      <p>2. Qual é a diferença entre CAPEX e OPEX em um datacenter próprio?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! CAPEX e OPEX não são dois tipos de servidor nem duas marcas de equipamento. São categorias contábeis de custo.">CAPEX é servidor e OPEX é storage</button>
+        <button class="alt" type="button" data-fb="Correto! CAPEX é o investimento inicial (comprar servidor, montar a sala, instalar o ar-condicionado); OPEX é o custo recorrente (conta de luz, equipe de TI, manutenção, aluguel). Nuvem troca grande parte do CAPEX por OPEX.">CAPEX é investimento inicial em equipamento e obra; OPEX é o custo recorrente de operação</button>
+        <button class="alt" type="button" data-fb="Errado! A depreciação é um conceito contábil relacionado, mas não é nem CAPEX nem OPEX. É o reconhecimento de que o servidor perde valor ao longo dos anos.">CAPEX é o custo do servidor e OPEX é a depreciação contábil</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="2-3">
+      <p>3. Em um datacenter típico, qual componente costuma consumir quase tanta energia quanto os próprios servidores?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! Os switches e roteadores consomem bem menos energia que os servidores, tipicamente 5 a 10% do total do datacenter.">A rede (switches e roteadores)</button>
+        <button class="alt" type="button" data-fb="Errado! Os nobreaks (UPS) são acionados apenas quando a energia da concessionária cai. Em operação normal, eles ficam em modo de espera e consomem pouco.">Os nobreaks (UPS)</button>
+        <button class="alt" type="button" data-fb="Correto! A refrigeração (ar-condicionado de precisão, corredores frios e quentes) pode representar 30 a 40% do consumo total, próxima ao consumo dos próprios servidores. É por isso que gigantes de nuvem escolhem climas frios para seus datacenters.">A refrigeração (ar-condicionado de precisão)</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 2</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=datacenter+componentes+servidores+storage+rede" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=datacenter+infraestrutura+consumo+de+energia" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=como+funciona+um+datacenter+tour+virtual+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Datacenter</strong>: sala especializada com servidor, rede, energia e refrigeração.</li>
+      <li><strong>Servidor</strong>: computador que roda 24h atendendo pedidos.</li>
+      <li><strong>SAN / NAS</strong>: tipos de sistema de armazenamento em rede.</li>
+      <li><strong>UPS</strong>: nobreak que segura energia por minutos até o gerador ligar.</li>
+      <li><strong>PUE</strong>: métrica de eficiência energética do datacenter.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Manter um datacenter próprio é sempre mais barato que usar IaaS.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> datacenters próprios só fazem sentido em escala muito grande. Para a maioria das empresas, o custo total de propriedade em 5 anos (CAPEX mais OPEX) é maior que o mesmo serviço em IaaS, que divide a infraestrutura entre muitos clientes e ganha em eficiência.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 3 ============ -->
+<div class="painel" id="painel-3" role="tabpanel" aria-labelledby="tab-3">
+  <h2>Aba 3 · Componentes e benefícios de uma IaaS</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é conhecer os <strong>componentes que a IaaS entrega</strong> (máquina virtual, storage, rede virtual) e os <strong>benefícios</strong> que fazem empresas migrarem para esse modelo (elasticidade, pagamento por uso, globalização). Você vai montar uma pequena infraestrutura virtual na demo e ver a fatura ser calculada em tempo real.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Os três componentes principais de uma IaaS</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Computação (máquina virtual)</strong>: em vez de comprar um servidor físico, você aluga uma <strong>VM</strong> (do inglês <em>Virtual Machine</em>; em português, Máquina Virtual), um servidor simulado em software que roda dentro de um servidor físico real. Na AWS ela se chama <strong>EC2</strong>; no Azure, <strong>Virtual Machine</strong>; no GCP, <strong>Compute Engine</strong>. Você escolhe quantas <strong>vCPUs</strong> (do inglês <em>virtual CPUs</em>; em português, CPUs virtuais, núcleos de processamento) e quanta RAM quer.</li>
+      <li><strong>Storage (armazenamento)</strong>: blocos de disco virtual. Na AWS tem o <strong>EBS</strong> (do inglês <em>Elastic Block Store</em>; em português, Armazenamento Elástico em Blocos, disco conectado à VM) e o <strong>S3</strong> (armazenamento de objetos, para arquivos como fotos e vídeos). No Azure existe o <strong>Blob Storage</strong>; no GCP, o <strong>Cloud Storage</strong>.</li>
+      <li><strong>Rede (networking)</strong>: rede virtual privada. Na AWS chama <strong>VPC</strong> (do inglês <em>Virtual Private Cloud</em>; em português, Nuvem Privada Virtual), no Azure chama <strong>VNet</strong>. Você define a faixa de endereços IP (endereços numéricos que identificam cada máquina na rede), cria sub-redes (segmentos menores da rede) e controla o firewall (filtro de tráfego) por regras.</li>
+    </ul>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Casos reais de IaaS</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Netflix</strong> (serviço americano de streaming): migrou todo o seu back-end para a AWS entre 2008 e 2016, fechando datacenters próprios. Hoje roda milhares de VMs EC2 que entregam vídeo para 260 milhões de assinantes.</li>
+      <li><strong>Nubank</strong> (banco digital brasileiro): nasceu na nuvem desde o primeiro dia, usando AWS para escalar de 0 a 90 milhões de clientes sem jamais construir datacenter próprio.</li>
+      <li><strong>iFood</strong> (aplicativo brasileiro de entregas): usa AWS para lidar com picos de acesso no horário de almoço e jantar, subindo VMs extras nesses horários e desligando depois.</li>
+      <li><strong>Magazine Luiza (Magalu)</strong> (varejista brasileira): migrou o e-commerce para Azure em 2020 para aguentar picos da Black Friday sem investir em servidor novo.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Benefícios da IaaS</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Elasticidade</strong>: aumentar ou diminuir recursos em minutos, não em meses. Subiu o tráfego? Acrescente VMs. Caiu? Desligue as extras.</li>
+      <li><strong>Pagamento por uso</strong>: você paga só pelo que consome, por hora ou por segundo. Não há servidor ocioso na sala comendo energia.</li>
+      <li><strong>Globalização</strong>: subir uma VM em Tóquio leva o mesmo tempo que subir em São Paulo. Sua aplicação pode ficar perto do usuário de qualquer país.</li>
+      <li><strong>Recuperação de desastres</strong>: replicar dados para outra região é questão de cliques, sem precisar construir um segundo datacenter.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: montador de IaaS com fatura em tempo real</h3>
+
+    <div class="prever">
+      <strong>Antes de montar, preveja:</strong> se você ligar 3 VMs médias (4 vCPUs e 16 GB de RAM) por 30 dias, pagando cerca de R$ 0,50 por hora cada, qual será o custo mensal aproximado: R$ 100, R$ 1.000 ou R$ 10.000?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 1:</strong> defina quantas VMs quer ligar e o tamanho de cada uma.<br>
+      <strong>Passo 2:</strong> acrescente storage em GB.<br>
+      <strong>Passo 3:</strong> veja a fatura calculada em tempo real.<br>
+      <strong>Passo 4:</strong> experimente aumentar e diminuir VMs para sentir a elasticidade.<br>
+      <strong>Passo 5:</strong> desligue as VMs ociosas e veja o custo cair imediatamente.
+    </div>
+
+    <div class="roteiro">
+      comece com 1 VM pequena e mostre a fatura de R$ 60 mensais. Depois suba para 10 VMs médias e veja a fatura saltar. Desligue 8 e mostre como o custo cai: essa é a elasticidade da IaaS que não existe em datacenter próprio.
+    </div>
+
+    <div class="legenda">
+      vCPU = CPU virtual, núcleo de processamento da VM · RAM = memória de trabalho · storage = espaço em disco · fatura = custo mensal estimado · elasticidade = capacidade de aumentar ou diminuir recursos sob demanda
+    </div>
+
+    <div class="demo-area" id="demo3-area">
+      <div style="display:grid; gap:0.5rem; max-width:520px">
+        <label>🖥️ Quantidade de VMs: <input type="number" id="demo3-qtd" value="1" min="0" max="50" style="width:80px"></label>
+        <label>Tamanho:
+          <select id="demo3-tam" style="padding:0.4rem; border-radius:6px; border:1px solid var(--borda); background:var(--fundo); color:var(--texto)">
+            <option value="pequena">Pequena (2 vCPU, 8 GB RAM) — R$ 0,25/h</option>
+            <option value="media" selected>Média (4 vCPU, 16 GB RAM) — R$ 0,50/h</option>
+            <option value="grande">Grande (8 vCPU, 32 GB RAM) — R$ 1,00/h</option>
+          </select>
+        </label>
+        <label>💾 Storage (GB): <input type="number" id="demo3-st" value="100" min="0" max="10000" style="width:100px"> — R$ 0,10 por GB/mês</label>
+        <button class="btn btn-secundario" type="button" id="demo3-reset">🔄 Reiniciar</button>
+      </div>
+      <div id="demo3-visual" style="margin-top:1rem"></div>
+      <div id="demo3-fatura" style="margin-top:1rem"></div>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> a fatura acompanha o uso em tempo real, sem custo fixo de servidor ocioso. É essa a diferença entre pagar por um datacenter inteiro o mês todo e pagar apenas pelo que se usa na IaaS.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 3</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      VM = Máquina Virtual, servidor simulado em software ·
+      vCPU = núcleo virtual de processamento ·
+      elasticidade = capacidade de aumentar ou diminuir recursos sob demanda ·
+      VPC = Nuvem Privada Virtual, rede virtual da AWS ·
+      EBS = disco em blocos conectado à VM na AWS ·
+      S3 = armazenamento de objetos da AWS para arquivos.
+    </div>
+
+    <div class="pergunta" data-pergunta="3-1">
+      <p>1. O que é elasticidade na IaaS?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! Elasticidade é a capacidade de aumentar ou diminuir recursos (VMs, storage, rede) em minutos, conforme a demanda. É o que permite ao iFood subir VMs extras no horário de almoço e desligar depois.">A capacidade de aumentar ou diminuir recursos sob demanda em minutos</button>
+        <button class="alt" type="button" data-fb="Errado! Elasticidade não é sobre o servidor esticar fisicamente. É um conceito de provisionamento, não mecânico.">A capacidade do servidor físico dobrar de tamanho quando precisa</button>
+        <button class="alt" type="button" data-fb="Errado! Isso descreveria redundância (ter equipamento reserva), não elasticidade. Redundância protege contra falhas; elasticidade responde a mudanças de demanda.">A capacidade de trocar de provedor de nuvem sem perder dados</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="3-2">
+      <p>2. O Nubank (banco digital brasileiro) nasceu na nuvem em vez de construir datacenter. Qual benefício da IaaS foi mais decisivo para essa escolha?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! A cor do painel é irrelevante para a escolha técnica. O motivo foi econômico e de velocidade, não estético.">O painel de controle mais bonito que o de datacenters próprios</button>
+        <button class="alt" type="button" data-fb="Correto! Para uma startup nascendo, construir datacenter próprio exigiria CAPEX milionário e meses de obra. A IaaS permitiu começar com poucos reais e escalar junto com a base de clientes, até 90 milhões hoje.">O pagamento por uso e a elasticidade, que permitiram começar pequeno e escalar sem construir datacenter</button>
+        <button class="alt" type="button" data-fb="Errado! A AWS não dá hardware de brinde: o modelo é aluguel de recursos virtuais. O benefício foi financeiro e de agilidade, não de doação.">A doação de servidores físicos que a AWS fez ao Nubank no início</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="3-3">
+      <p>3. Qual componente da IaaS equivale a um disco rígido conectado a uma VM, usado para guardar o sistema operacional e os arquivos do servidor?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! VPC é a rede virtual, não o disco. Ela conecta VMs entre si e com a internet, mas não armazena dados.">VPC (Virtual Private Cloud)</button>
+        <button class="alt" type="button" data-fb="Errado! O S3 é armazenamento de objetos, usado para arquivos como fotos e vídeos, não para disco de VM. O disco de VM na AWS é outro serviço.">S3 (Simple Storage Service)</button>
+        <button class="alt" type="button" data-fb="Correto! O EBS (Elastic Block Store, Armazenamento Elástico em Blocos) é o disco virtual conectado à VM EC2. É nele que ficam o sistema operacional e os arquivos da aplicação, igual ao HD do seu notebook.">EBS (Elastic Block Store), o disco virtual conectado à VM</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 3</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=IaaS+componentes+VM+storage+rede+AWS+Azure" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=IaaS+benefícios+elasticidade+cloud+computing" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=IaaS+AWS+EC2+EBS+VPC+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>IaaS</strong>: Infraestrutura como Serviço; aluguel de VM, storage e rede.</li>
+      <li><strong>VM</strong>: Máquina Virtual, servidor simulado em software.</li>
+      <li><strong>Elasticidade</strong>: escalar recursos para cima ou para baixo sob demanda.</li>
+      <li><strong>VPC / VNet</strong>: rede virtual privada.</li>
+      <li><strong>Pagamento por uso</strong>: só paga o que consome, por hora ou segundo.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Na IaaS, o provedor cuida do sistema operacional e do aplicativo, você só paga.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> na IaaS o provedor cuida só da infraestrutura física (servidor, rede, storage e virtualização). O sistema operacional, o middleware e o aplicativo rodando dentro da VM são responsabilidade sua. É por isso que existe o PaaS, que sobe um degrau nessa responsabilidade.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 4 ============ -->
+<div class="painel" id="painel-4" role="tabpanel" aria-labelledby="tab-4">
+  <h2>Aba 4 · PaaS — Plataforma como Serviço</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é entender a <strong>diferença essencial entre IaaS e PaaS</strong>: no IaaS, o provedor entrega a casa vazia e você mobilia (instala sistema operacional, banco, middleware, runtime); no PaaS, o provedor entrega a casa mobiliada e você só traz suas coisas (seu código e seus dados). Com essa imagem, você vai reconhecer um PaaS quando vir um e vai saber quando usá-lo.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 O que o PaaS entrega além do IaaS</h3>
+    <p>O PaaS sobe um degrau na pilha de responsabilidade. Se no IaaS você ainda precisa instalar e atualizar o sistema operacional, configurar o servidor web, escolher o banco de dados e manter tudo funcionando, no PaaS essa camada inteira é gerenciada pelo provedor. Você entrega <strong>apenas o código do aplicativo e os dados</strong>.</p>
+    <ul style="margin-left:1.5rem">
+      <li><strong>No IaaS</strong>: você recebe uma VM EC2 da AWS vazia, escolhe Ubuntu ou Windows Server, instala o Nginx (servidor web de código aberto), configura o PostgreSQL (banco de dados relacional de código aberto) e cuida das atualizações de segurança.</li>
+      <li><strong>No PaaS</strong>: você sobe seu código Python ou Node.js (duas linguagens de programação populares) no <strong>Heroku</strong> (plataforma PaaS pertencente à Salesforce, empresa americana de CRM) ou no <strong>Google App Engine</strong> (PaaS do Google Cloud), e a plataforma cuida de servidor web, banco, escalabilidade e atualizações sozinha.</li>
+    </ul>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Exemplos reais de PaaS</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Heroku</strong>: um dos PaaS mais antigos, lançado em 2007. Foi usado por startups como a <strong>Shopify</strong> (plataforma canadense de e-commerce) nos primeiros anos.</li>
+      <li><strong>Google App Engine</strong>: PaaS do Google, lançado em 2008. Foi usado pelo <strong>Snapchat</strong> (aplicativo americano de mensagens efêmeras) no início.</li>
+      <li><strong>AWS Elastic Beanstalk</strong>: PaaS da AWS que recebe código em Java, .NET, PHP, Node.js, Python, Ruby ou Go e entrega tudo pronto.</li>
+      <li><strong>Azure App Service</strong>: PaaS da Microsoft para hospedar aplicações web e APIs. Muito usado em empresas que já estão no ecossistema Microsoft.</li>
+      <li><strong>Render</strong> e <strong>Railway</strong>: PaaS modernos que nasceram como alternativas mais simples ao Heroku, muito usados por desenvolvedores independentes.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Comparativo direto: IaaS versus PaaS</h3>
+    <table style="width:100%; border-collapse:collapse; margin-top:0.75rem">
+      <thead>
+        <tr style="background:var(--cor-destaque-claro)">
+          <th style="padding:0.5rem; text-align:left; border:1px solid var(--borda)">Responsabilidade</th>
+          <th style="padding:0.5rem; text-align:left; border:1px solid var(--borda)">IaaS</th>
+          <th style="padding:0.5rem; text-align:left; border:1px solid var(--borda)">PaaS</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Servidor físico</td>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Provedor</td>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Provedor</td>
+        </tr>
+        <tr>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Virtualização</td>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Provedor</td>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Provedor</td>
+        </tr>
+        <tr>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Sistema operacional</td>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Você</td>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Provedor</td>
+        </tr>
+        <tr>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Servidor web e banco</td>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Você</td>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Provedor</td>
+        </tr>
+        <tr>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Runtime (linguagem)</td>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Você</td>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Provedor</td>
+        </tr>
+        <tr>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Seu código e seus dados</td>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Você</td>
+          <td style="padding:0.5rem; border:1px solid var(--borda)">Você</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: comparador visual IaaS versus PaaS</h3>
+
+    <div class="prever">
+      <strong>Antes de comparar, preveja:</strong> em uma aplicação web simples, quem fica responsável por aplicar patches de segurança no sistema operacional Ubuntu (distribuição Linux muito usada em servidores): você, no IaaS, ou o provedor, no PaaS?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 1:</strong> clique em uma camada da pilha (hardware, virtualização, sistema operacional, runtime, aplicação, dados).<br>
+      <strong>Passo 2:</strong> veja quem é o responsável em cada modelo.<br>
+      <strong>Passo 3:</strong> observe que a diferença entre IaaS e PaaS começa exatamente na camada de sistema operacional.<br>
+      <strong>Passo 4:</strong> repita para outras camadas até fixar a divisão.
+    </div>
+
+    <div class="roteiro">
+      comece pela camada de sistema operacional e mostre que é exatamente aí que a responsabilidade troca: no IaaS é sua, no PaaS é do provedor. Isso costuma gerar o clique de entendimento.
+    </div>
+
+    <div class="legenda">
+      camada = parte da pilha de TI · runtime = ambiente que executa sua linguagem (Python, Node.js, Java) · patch = atualização de segurança · pilha = conjunto de camadas empilhadas
+    </div>
+
+    <div class="demo-area" id="demo4-area">
+      <div id="demo4-comparador"></div>
+      <button class="btn btn-secundario" type="button" id="demo4-reset" style="margin-top:1rem">🔄 Reiniciar</button>
+      <div id="demo4-feedback" style="margin-top:1rem"></div>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> a fronteira entre IaaS e PaaS é a camada do sistema operacional. Do SO para baixo, o provedor cuida nos dois modelos. Do SO para cima, só o PaaS assume. É por isso que PaaS libera o desenvolvedor para focar só no código.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 4</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      PaaS = Plataforma como Serviço, provedor cuida até o runtime ·
+      runtime = ambiente que executa a linguagem do seu código ·
+      patch = atualização de segurança do sistema ·
+      Heroku = PaaS famoso adquirido pela Salesforce ·
+      App Engine = PaaS do Google Cloud.
+    </div>
+
+    <div class="pergunta" data-pergunta="4-1">
+      <p>1. Qual é a diferença ESSENCIAL entre IaaS e PaaS?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! Ambos podem rodar em nuvem pública. A diferença não é o tipo de nuvem, é quantas camadas o provedor gerencia.">O IaaS roda em nuvem privada e o PaaS só em nuvem pública</button>
+        <button class="alt" type="button" data-fb="Correto! No IaaS você cuida do sistema operacional para cima; no PaaS o provedor cuida até o runtime e você só entrega código e dados. A fronteira é a camada do sistema operacional.">No PaaS o provedor gerencia mais camadas (SO, runtime, servidor web) e você entrega só o código</button>
+        <button class="alt" type="button" data-fb="Errado! IaaS e PaaS podem ser tão seguros quanto; a diferença é de responsabilidade, não de segurança intrínseca.">O PaaS é mais seguro que o IaaS por causa da criptografia obrigatória</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="4-2">
+      <p>2. Qual destes é um exemplo clássico de PaaS?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! EC2 é IaaS: você recebe uma VM vazia e cuida do sistema operacional para cima. Não é PaaS.">AWS EC2 (Elastic Compute Cloud)</button>
+        <button class="alt" type="button" data-fb="Errado! S3 é armazenamento de objetos, classificado como serviço de storage, não como plataforma para hospedar aplicações.">AWS S3 (Simple Storage Service)</button>
+        <button class="alt" type="button" data-fb="Correto! Heroku é o PaaS clássico: você sobe o código e ele cuida do SO, do servidor web, do banco e da escalabilidade sozinho. Salesforce o comprou em 2021 por cerca de 25 bilhões de dólares.">Heroku</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="4-3">
+      <p>3. Uma startup pequena tem três desenvolvedores e quer lançar um aplicativo web rápido, sem contratar um administrador de sistemas. Qual modelo faz mais sentido?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! Sem administrador de sistemas, a equipe não teria braço para cuidar de SO, servidor web, banco e patches. PaaS entrega tudo isso pronto e a startup foca só no código.">PaaS, para que o provedor cuide do SO, do servidor web e do banco enquanto a equipe foca no código</button>
+        <button class="alt" type="button" data-fb="Errado! IaaS daria trabalho demais: a equipe teria que instalar Ubuntu, configurar Nginx, escolher banco, aplicar patches. Com três pessoas e pressa, é um peso desnecessário.">IaaS, porque dá mais controle e é sempre mais barato</button>
+        <button class="alt" type="button" data-fb="Errado! On-premise é justamente o oposto do que uma startup pequena sem equipe de infraestrutura precisa: exigiria datacenter próprio, equipe 24h e investimento inicial pesado.">On-premise, para ter controle total sobre o hardware</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 4</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=diferença+IaaS+PaaS+exemplos+Heroku+App+Engine" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=plataforma+como+serviço+PaaS+vantagens+limitações" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=PaaS+vs+IaaS+diferenças+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>PaaS</strong>: Plataforma como Serviço; provedor cuida até o runtime.</li>
+      <li><strong>Runtime</strong>: ambiente que executa sua linguagem (Python, Node, Java).</li>
+      <li><strong>Middleware</strong>: software que conecta componentes do sistema.</li>
+      <li><strong>Deploy</strong>: ato de publicar o aplicativo na plataforma.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> PaaS substitui completamente o IaaS, então ninguém mais usa IaaS.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> PaaS tira controle em troca de conveniência. Quando uma empresa precisa instalar software específico, usar sistema operacional próprio ou fazer configurações profundas de rede, o IaaS continua sendo a escolha certa. Os dois modelos convivem.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 5 ============ -->
+<div class="painel" id="painel-5" role="tabpanel" aria-labelledby="tab-5">
+  <h2>Aba 5 · SaaS — Software como Serviço</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é conhecer o modelo que está mais perto do usuário final: o <strong>SaaS</strong> (Software como Serviço), em que o software é entregue pronto pela internet e você só usa, sem instalar nada. É o modelo do Gmail, do Google Docs, do Microsoft 365, do Salesforce. Você vai reconhecer as <strong>características do SaaS</strong> e classificar alguns serviços famosos.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Características do SaaS</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Acesso pelo navegador ou aplicativo leve</strong>: você não instala um programa pesado no computador. Basta abrir o navegador e entrar com login e senha. O software roda nos servidores do provedor.</li>
+      <li><strong>Assinatura mensal ou anual</strong>: em vez de comprar uma licença perpétua de milhares de reais, você paga uma mensalidade por usuário. O <strong>Microsoft 365</strong> (pacote da Microsoft com Word, Excel, PowerPoint na nuvem) custa cerca de R$ 40 por mês por usuário no plano empresarial.</li>
+      <li><strong>Atualizações automáticas</strong>: o provedor aplica melhorias e correções sem você precisar fazer nada. O Gmail que você abre hoje é sempre a versão mais recente.</li>
+      <li><strong>Múltiplos clientes no mesmo software (multitenancy)</strong>: uma única instalação do software atende a milhares de empresas, com os dados de cada uma isolados. Isso reduz drasticamente o custo por cliente.</li>
+      <li><strong>Acesso de qualquer lugar</strong>: basta internet e um dispositivo. Você trabalha de casa, do celular, do notebook da empresa, tudo sincronizado.</li>
+    </ul>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Exemplos famosos de SaaS</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Gmail</strong> (e-mail do Google): lançado em 2004, tem mais de 1,8 bilhão de usuários ativos. Substituiu clientes de e-mail instalados como o Outlook Express.</li>
+      <li><strong>Google Workspace</strong> (pacote do Google com Gmail, Docs, Drive, Meet): usado por mais de 3 bilhões de usuários. Concorre com o Microsoft 365.</li>
+      <li><strong>Microsoft 365</strong>: versão em nuvem do Word, Excel e PowerPoint, com mais de 400 milhões de usuários pagantes.</li>
+      <li><strong>Salesforce</strong> (CRM, em português, Gestão de Relacionamento com o Cliente): pioneira do SaaS empresarial, fundada em 1999 por Marc Benioff. Hoje vale mais de 200 bilhões de dólares.</li>
+      <li><strong>Slack</strong> (aplicativo de mensagens corporativas): comprado pela Salesforce em 2021 por 27,7 bilhões de dólares.</li>
+      <li><strong>Zoom</strong> (videoconferência): explodiu durante a pandemia de 2020 e virou sinônimo de reunião online.</li>
+      <li><strong>Spotify</strong> (streaming de música para o usuário final): também é SaaS, do ponto de vista do assinante.</li>
+      <li><strong>Totvs</strong> (empresa brasileira de software): migrou seu ERP (sistema de gestão empresarial) para SaaS nos últimos anos, atendendo empresas brasileiras.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Quando usar SaaS?</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Aplicações de uso geral</strong>: e-mail, agenda, videoconferência, edição de documentos. Não faz sentido cada empresa desenvolver seu próprio Gmail.</li>
+      <li><strong>Processos de negócio padrão</strong>: CRM, RH, financeiro, help desk. Ferramentas como Salesforce, Zenefits (RH) e Zendesk (atendimento) são SaaS.</li>
+      <li><strong>Colaboração</strong>: times distribuídos se beneficiam do acesso de qualquer lugar. Slack, Microsoft Teams e Google Meet são SaaS por excelência.</li>
+      <li><strong>Quando não se quer cuidar de nada</strong>: a empresa quer focar no seu core business (atividade principal) e terceirizar toda a TI que não é diferencial competitivo.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: classificador de serviços em nuvem</h3>
+
+    <div class="prever">
+      <strong>Antes de classificar, preveja:</strong> o Gmail (e-mail do Google) é IaaS, PaaS ou SaaS? E o Dropbox (serviço americano de armazenamento de arquivos)? E o GitHub (site da Microsoft onde programadores guardam código)?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 1:</strong> leia o serviço que aparece.<br>
+      <strong>Passo 2:</strong> classifique como IaaS, PaaS ou SaaS.<br>
+      <strong>Passo 3:</strong> receba o feedback com explicação e caso real.<br>
+      <strong>Passo 4:</strong> acompanhe o placar de acertos.
+    </div>
+
+    <div class="roteiro">
+      comece com Gmail: a turma costuma acertar SaaS. Depois jogue GitHub, que muita gente classifica errado como IaaS por guardar código. Explique que o GitHub é SaaS para quem usa o site, mas também oferece recursos de PaaS (GitHub Actions) e até IaaS (Codespaces).
+    </div>
+
+    <div class="legenda">
+      SaaS = software pronto, você só usa · PaaS = plataforma, você sobe código · IaaS = infraestrutura, você cuida do SO para cima · classificar = decidir em qual modelo o serviço se encaixa
+    </div>
+
+    <div class="demo-area" id="demo5-area">
+      <div id="demo5-servico" style="background:var(--cor-destaque-claro); padding:1rem; border-radius:8px; margin-bottom:1rem; font-weight:600">
+        📋 O serviço aparecerá aqui. Clique em Novo serviço para começar.
+      </div>
+      <div id="demo5-opcoes" style="display:none">
+        <button class="btn" type="button" data-resp5="iaas">🏗️ IaaS</button>
+        <button class="btn" type="button" data-resp5="paas">🧱 PaaS</button>
+        <button class="btn" type="button" data-resp5="saas">📦 SaaS</button>
+      </div>
+      <div id="demo5-feedback" style="margin-top:1rem"></div>
+      <div style="margin-top:1rem">
+        <button class="btn" type="button" id="demo5-novo">🎲 Novo serviço</button>
+        <button class="btn btn-secundario" type="button" id="demo5-reset">🔄 Reiniciar</button>
+      </div>
+      <div id="demo5-placar" style="margin-top:1rem; font-weight:bold; color:var(--cor-destaque-escuro)"></div>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> alguns serviços podem ter várias camadas dependendo de como são usados. O GitHub é SaaS para quem usa o site, mas oferece PaaS (GitHub Actions) e IaaS (Codespaces). Essa ambiguidade é comum no mundo real.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 5</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      SaaS = Software como Serviço, você só usa ·
+      multitenancy = uma instalação atende vários clientes isolados ·
+      assinatura = pagamento recorrente por usuário ·
+      CRM = Gestão de Relacionamento com o Cliente, sistema de vendas ·
+      ERP = sistema integrado de gestão empresarial.
+    </div>
+
+    <div class="pergunta" data-pergunta="5-1">
+      <p>1. Qual é a principal característica do SaaS que o diferencia de IaaS e PaaS?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! Criptografia existe em todos os modelos de nuvem, não é exclusiva do SaaS.">O SaaS é o único modelo que oferece criptografia</button>
+        <button class="alt" type="button" data-fb="Errado! O SaaS não é gratuito; a maioria dos SaaS empresariais cobra por usuário. O que muda é o modelo de cobrança (assinatura em vez de licença perpétua), não o preço.">O SaaS é sempre gratuito e os outros modelos são pagos</button>
+        <button class="alt" type="button" data-fb="Correto! No SaaS o software vem pronto, você acessa pelo navegador e paga por assinatura. O provedor cuida de absolutamente tudo: hardware, sistema, aplicativo, atualizações. Você só usa.">O software vem pronto, é acessado pelo navegador e o provedor cuida de tudo, você só usa</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="5-2">
+      <p>2. O Salesforce é um exemplo clássico de:</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! Salesforce não aluga servidor virtual para você instalar o que quiser. Ele entrega um CRM pronto para usar.">IaaS, porque aluga servidores virtuais</button>
+        <button class="alt" type="button" data-fb="Errado! Salesforce não é plataforma para você subir seu próprio código. Ele é o CRM pronto. Existem PaaS da Salesforce (Heroku), mas o Salesforce principal é SaaS.">PaaS, porque permite que você suba seu código</button>
+        <button class="alt" type="button" data-fb="Correto! Salesforce é SaaS: um CRM (sistema de gestão de relacionamento com o cliente) pronto, acessado pelo navegador, pago por assinatura. Fundado em 1999 por Marc Benioff, foi pioneiro do SaaS empresarial.">SaaS, um CRM pronto acessado pelo navegador e pago por assinatura</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="5-3">
+      <p>3. O que significa multitenancy (multi-inquilino) em SaaS?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! Multitenancy não tem relação com o número de usuários por conta. Uma conta pode ter muitos usuários em qualquer modelo.">Que cada conta pode ter muitos usuários simultâneos</button>
+        <button class="alt" type="button" data-fb="Correto! Multitenancy significa que uma única instalação do software atende a milhares de clientes (inquilinos), com os dados de cada um isolados. É isso que reduz o custo por cliente no SaaS.">Que uma única instalação do software atende vários clientes, com dados isolados</button>
+        <button class="alt" type="button" data-fb="Errado! Isso descreveria multicloud (usar vários provedores), conceito diferente. Multitenancy é sobre clientes dentro do mesmo software.">Que o SaaS funciona em vários provedores de nuvem ao mesmo tempo</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 5</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=SaaS+características+exemplos+Salesforce+Gmail" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=software+as+a+service+SaaS+multitenancy+modelo+de+negócio" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=SaaS+exemplos+Salesforce+Google+Workspace+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>SaaS</strong>: Software como Serviço; software pronto via navegador.</li>
+      <li><strong>Multitenancy</strong>: um software atendendo vários clientes isolados.</li>
+      <li><strong>Assinatura</strong>: modelo de cobrança recorrente por usuário.</li>
+      <li><strong>CRM</strong>: sistema de gestão de relacionamento com o cliente.</li>
+      <li><strong>ERP</strong>: sistema integrado de gestão empresarial.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> No SaaS, os dados do cliente ficam no computador dele, não na nuvem.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> no SaaS, os dados ficam nos servidores do provedor. Isso permite acesso de qualquer lugar e atualizações automáticas, mas exige confiança no provedor e boas práticas de segurança e privacidade, como a LGPD (Lei Geral de Proteção de Dados) no Brasil.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 6 - REVISÃO ============ -->
+<div class="painel" id="painel-6" role="tabpanel" aria-labelledby="tab-6">
+  <h2>⭐ Revisão — Mapa completo da aula</h2>
+
+  <h3>🗺️ Mapa da aula</h3>
+  <div class="revisao-mapa">
+    <div class="no-mapa">
+      <h4>Aba 1 · Visão geral</h4>
+      <p>A metáfora da pizza e os três modelos: IaaS, PaaS e SaaS. Os três grandes provedores: AWS, Azure e GCP.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 2 · IaaS (datacenter)</h4>
+      <p>O que há dentro de um datacenter: servidor, storage, rede, energia e refrigeração. CAPEX e OPEX.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 3 · IaaS (componentes)</h4>
+      <p>VM, storage e rede virtual. Elasticidade, pagamento por uso e casos como Netflix e Nubank.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 4 · PaaS</h4>
+      <p>Diferença entre IaaS e PaaS: onde cada um assume a responsabilidade. Heroku, App Engine.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 5 · SaaS</h4>
+      <p>Software pronto, navegador, assinatura, multitenancy. Gmail, Salesforce, Microsoft 365.</p>
+    </div>
+    <div class="no-mapa">
+      <h4> Estudo em casa</h4>
+      <p>Refaça os quizzes para garantir os 5 selos e enfrente o Chefão com a cola rápida ao lado.</p>
+    </div>
+  </div>
+
+  <div class="cola-rapida">
+    <h3>🧷 Cola rápida — glossário da aula</h3>
+    <dl>
+      <dt><strong>Nuvem (cloud computing)</strong></dt>
+      <dd>Entrega de recursos de TI pela internet, sob demanda e com pagamento por uso.</dd>
+
+      <dt><strong>On-premise</strong></dt>
+      <dd>Infraestrutura própria, no local da empresa; o oposto de nuvem.</dd>
+
+      <dt><strong>IaaS (Infraestrutura como Serviço)</strong></dt>
+      <dd>Aluguel de VM, storage e rede virtual. Você cuida do SO para cima. Ex: AWS EC2, Azure VMs.</dd>
+
+      <dt><strong>PaaS (Plataforma como Serviço)</strong></dt>
+      <dd>Provedor cuida até o runtime; você entrega só código e dados. Ex: Heroku, App Engine.</dd>
+
+      <dt><strong>SaaS (Software como Serviço)</strong></dt>
+      <dd>Software pronto acessado pelo navegador, pago por assinatura. Ex: Gmail, Salesforce.</dd>
+
+      <dt><strong>Datacenter</strong></dt>
+      <dd>Sala especializada com servidores, rede, energia redundante e refrigeração de precisão.</dd>
+
+      <dt><strong>Servidor</strong></dt>
+      <dd>Computador especializado que roda 24h atendendo pedidos.</dd>
+
+      <dt><strong>Rack</strong></dt>
+      <dd>Estrutura metálica padronizada de 19 polegadas onde se montam servidores.</dd>
+
+      <dt><strong>SAN / NAS</strong></dt>
+      <dd>Tipos de sistema de armazenamento em rede; SAN é rede dedicada, NAS é acesso pela rede comum.</dd>
+
+      <dt><strong>UPS (nobreak)</strong></dt>
+      <dd>Equipamento que segura energia por minutos até o gerador ligar.</dd>
+
+      <dt><strong>CAPEX</strong></dt>
+      <dd>Despesa de capital, investimento inicial em equipamento e obra.</dd>
+
+      <dt><strong>OPEX</strong></dt>
+      <dd>Despesa operacional, custo recorrente de energia, equipe e manutenção.</dd>
+
+      <dt><strong>VM (Máquina Virtual)</strong></dt>
+      <dd>Servidor simulado em software que roda dentro de um servidor físico real.</dd>
+
+      <dt><strong>vCPU</strong></dt>
+      <dd>CPU virtual, núcleo de processamento da VM.</dd>
+
+      <dt><strong>Elasticidade</strong></dt>
+      <dd>Capacidade de aumentar ou diminuir recursos sob demanda em minutos.</dd>
+
+      <dt><strong>VPC (Virtual Private Cloud)</strong></dt>
+      <dd>Rede virtual privada na AWS; equivalente é VNet no Azure.</dd>
+
+      <dt><strong>EBS (Elastic Block Store)</strong></dt>
+      <dd>Disco virtual conectado à VM EC2 na AWS.</dd>
+
+      <dt><strong>S3 (Simple Storage Service)</strong></dt>
+      <dd>Armazenamento de objetos da AWS para arquivos.</dd>
+
+      <dt><strong>Runtime</strong></dt>
+      <dd>Ambiente que executa a linguagem do seu código (Python, Node.js, Java).</dd>
+
+      <dt><strong>Multitenancy</strong></dt>
+      <dd>Uma instalação do SaaS atendendo vários clientes isolados, reduzindo custo por cliente.</dd>
+
+      <dt><strong>CRM</strong></dt>
+      <dd>Sistema de Gestão de Relacionamento com o Cliente, usado por vendas.</dd>
+
+      <dt><strong>ERP</strong></dt>
+      <dd>Sistema integrado de gestão empresarial (financeiro, estoque, RH).</dd>
+
+      <dt><strong>Provedores líderes</strong></dt>
+      <dd>AWS (Amazon), Azure (Microsoft) e GCP (Google), juntos com cerca de 66% do mercado.</dd>
+    </dl>
+  </div>
+
+  <div class="chefao">
+    <h3>👑 CHEFÃO — Desafio final</h3>
+    <p><strong>Enunciado:</strong> Você é analista de TI na <strong>LogiBR Transportes</strong> (transportadora fictícia brasileira, inspirada no modelo da JSL, empresa brasileira de logística) e precisa desenhar a arquitetura de nuvem para três sistemas diferentes. Cada sistema tem exigências próprias e você precisa escolher o modelo de serviço mais adequado.</p>
+
+    <p style="margin-top:1rem"><strong>Sistema 1 — ERP próprio:</strong> a LogiBR tem um ERP antigo escrito em Delphi (linguagem de programação da empresa Embarcadero) que roda só em Windows Server 2012. A equipe de TI quer migrar para nuvem, mas precisa instalar o Windows, o banco SQL Server e configurar a rede interna manualmente.</p>
+
+    <p style="margin-top:0.75rem"><strong>Sistema 2 — Portal de rastreamento:</strong> a área de marketing quer lançar um portal web onde clientes rastreiem encomendas em tempo real. A equipe de desenvolvimento tem três programadores e zero administrador de sistemas. O portal será escrito em Python (linguagem de programação popular).</p>
+
+    <p style="margin-top:0.75rem"><strong>Sistema 3 — E-mail e agenda:</strong> os 500 colaboradores da LogiBR precisam de e-mail corporativo, agenda compartilhada e videoconferência. Não faz sentido desenvolver software próprio para isso.</p>
+
+    <p style="margin-top:1rem"><strong>Parte 1 — escolha de modelo:</strong> para cada sistema, indique qual modelo (IaaS, PaaS ou SaaS) é mais adequado e justifique em uma frase usando um conceito da cola rápida.</p>
+
+    <p style="margin-top:0.75rem"><strong>Parte 2 — provedor concreto:</strong> cite um serviço real de um provedor famoso (AWS, Azure ou GCP) que atenda cada sistema escolhido. Use nomes da cola rápida quando possível.</p>
+
+    <p style="margin-top:0.75rem"><strong>Parte 3 — custo estimado:</strong> para o Sistema 1 (ERP), se a LogiBR ligar 2 VMs médias (4 vCPUs, 16 GB RAM) 24 horas por dia durante 30 dias, com preço de R$ 0,50 por hora por VM, qual será o custo mensal só de computação? Mostre o cálculo.</p>
+
+    <p style="margin-top:0.75rem"><strong>Parte 4 — análise crítica:</strong> cite UM benefício (termo na cola rápida) que a LogiBR ganha ao migrar o Sistema 3 para SaaS em vez de manter servidor de e-mail próprio, e UM risco que a empresa precisa monitorar nesse modelo.</p>
+  </div>
+
+  <details>
+    <summary>📚 Dica para o Chefão</summary>
+    <p style="margin-top:0.75rem">Na Parte 1, o ERP antigo exige controle total de SO e banco: IaaS. O portal Python com equipe pequena pede PaaS. E-mail e agenda são commodities: SaaS. Na Parte 2, EC2 para o ERP, Heroku ou App Engine para o portal, Google Workspace ou Microsoft 365 para e-mail. Na Parte 3, o cálculo é 2 VM × 24 h × 30 dias × R$ 0,50 = R$ 720 mensais. Na Parte 4, benefício típico é acesso de qualquer lugar ou atualizações automáticas; risco típico é depender da conexão de internet e da continuidade do provedor.</p>
+  </details>
+</div>
+
+<!-- ============ RODAPÉ ============ -->
+<footer>
+  <div class="bloco">
+    <h4>📋 FICHA TÉCNICA DA AULA</h4>
+    <p>Computação em Nuvem — Aula 05, Unidade 2, págs. 26–44 · Gerado em 04/11/2026 · 5 abas de conteúdo + Revisão · 15 perguntas · 5 demos · cor #0EA5E9</p>
+  </div>
+
+  <div class="bloco">
+    <h4>🪄 SOBRE O HTMLearning · v2.17 (23/10/2026)</h4>
+    <p style="margin-bottom:0.75rem">Transformar o sumário de qualquer disciplina em uma classe interativa em HTML único e offline, com previsão antes do clique, tentativa e erro guiado e exemplos reais.</p>
+
+    <ul style="margin-left:1.5rem; margin-bottom:0.75rem">
+      <li>O que é: metodologia e arquitetura de prompts que converte sumários em aulas interativas em minutos, com IAs gratuitas.</li>
+      <li>O que entrega: 5 a 7 abas + Revisão, simulações com previsão, quiz com retry sem revelar gabarito, linguagem plana, Modos Apresentação/Leitura.</li>
+      <li>Por que é inclusivo: um único .html leve, 100% offline, roda em PC e celular e viaja em pen drive para escolas desconectadas ou áreas rurais.</li>
+    </ul>
+
+    <p style="margin-bottom:0.5rem">Idealizador do projeto: Professor Wellington Dimas da Cruz</p>
+    <p style="margin-bottom:0.75rem">Apoiadora do projeto: Prof.ª Dr.ª Mariella Berger Andrade (IFES / CEFOR)</p>
+
+    <p style="margin-top:0.75rem">Contatos e links do projeto:</p>
+    <ul>
+      <li>E-mail do idealizador: <a href="mailto:cloud.ai-generative@outlook.com">cloud.ai-generative@outlook.com</a></li>
+      <li>Repositório GitHub do idealizador: <a href="https://github.com/cloud-ai-Generative" target="_blank" rel="noopener">github.com/cloud-ai-Generative</a></li>
+      <li>Currículo Lattes do idealizador: <a href="https://lattes.cnpq.br/6801791839011321" target="_blank" rel="noopener">lattes.cnpq.br/6801791839011321</a></li>
+      <li>Currículo Lattes da apoiadora: <a href="https://lattes.cnpq.br/3929645439848570" target="_blank" rel="noopener">lattes.cnpq.br/3929645439848570</a></li>
+      <li>Site oficial do projeto: <a href="https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html" target="_blank" rel="noopener">https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html</a></li>
+    </ul>
+  </div>
+</footer>
+
+<script>
+"use strict";
+
+/* ================= ESTADO ================= */
+var estado = {
+  abaAtual: 1,
+  xp: 0,
+  selos: {},
+  totalSelos: 0,
+  respostas: {},
+  modo: "leitura",
+  tema: "claro"
+};
+
+/* ================= NAVEGAÇÃO ================= */
+function ativarAba(num) {
+  estado.abaAtual = num;
+  var tabs = document.querySelectorAll(".tab");
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].setAttribute("aria-selected", tabs[i].getAttribute("data-aba") === String(num) ? "true" : "false");
+  }
+  var paineis = document.querySelectorAll(".painel");
+  for (var j = 0; j < paineis.length; j++) {
+    paineis[j].classList.remove("active");
+  }
+  var alvo = document.getElementById("painel-" + num);
+  if (alvo) alvo.classList.add("active");
+  document.getElementById("progresso").textContent = "Aba " + num + " de 6";
+}
+
+function irParaAba(num) {
+  ativarAba(num);
+  var novo = "#aba-" + num;
+  if (window.location.hash !== novo) {
+    window.location.hash = novo;
+  }
+  window.scrollTo(0, 0);
+}
+
+function lerHash() {
+  var h = window.location.hash.replace("#aba-", "");
+  var n = parseInt(h, 10);
+  if (n >= 1 && n <= 6) return n;
+  return 0;
+}
+
+window.addEventListener("hashchange", function () {
+  var n = lerHash();
+  if (n && n !== estado.abaAtual) ativarAba(n);
+});
+
+/* ================= MODOS ================= */
+function alternarModo() {
+  if (estado.modo === "leitura") {
+    document.body.classList.add("modo-apresentacao");
+    document.getElementById("btn-modo").textContent = "📖 Leitura";
+    estado.modo = "apresentacao";
+  } else {
+    document.body.classList.remove("modo-apresentacao");
+    document.getElementById("btn-modo").textContent = "🎤 Apresentação";
+    estado.modo = "leitura";
+  }
+}
+
+function alternarTema() {
+  if (estado.tema === "claro") {
+    document.body.setAttribute("data-theme", "dark");
+    document.getElementById("btn-tema").textContent = "☀️ Claro";
+    estado.tema = "escuro";
+  } else {
+    document.body.removeAttribute("data-theme");
+    document.getElementById("btn-tema").textContent = "🌙 Escuro";
+    estado.tema = "claro";
+  }
+}
+
+/* ================= QUIZ ================= */
+function fisherYates(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function inicializarQuiz() {
+  var perguntas = document.querySelectorAll(".pergunta");
+  for (var p = 0; p < perguntas.length; p++) {
+    (function (perg) {
+      var altsDiv = perg.querySelector(".alts");
+      var certaKey = altsDiv.getAttribute("data-certa");
+      var alts = [];
+      var filhos = altsDiv.querySelectorAll(".alt");
+      for (var k = 0; k < filhos.length; k++) alts.push(filhos[k]);
+      for (var idx = 0; idx < alts.length; idx++) {
+        var letra = String.fromCharCode(97 + idx);
+        alts[idx].setAttribute("data-ehcerta", letra === certaKey ? "true" : "false");
+      }
+      var emb = fisherYates(alts);
+      altsDiv.innerHTML = "";
+      for (var e = 0; e < emb.length; e++) {
+        altsDiv.appendChild(emb[e]);
+        emb[e].addEventListener("click", function () { responderQuiz(perg, this); });
+      }
+    })(perguntas[p]);
+  }
+}
+
+function responderQuiz(perg, alt) {
+  var id = perg.getAttribute("data-pergunta");
+  var reg = estado.respostas[id];
+  if (reg && reg.acertou) return;
+
+  var acerto = alt.getAttribute("data-ehcerta") === "true";
+  var fbCerta = perg.querySelector(".fb-certa");
+  var fbErrada = perg.querySelector(".fb-errada");
+
+  if (acerto) {
+    alt.classList.add("certa");
+    alt.textContent = "✓ " + alt.textContent;
+    var todas = perg.querySelectorAll(".alt");
+    for (var i = 0; i < todas.length; i++) todas[i].disabled = true;
+    fbCerta.textContent = "✅ Por que esta está certa: " + alt.getAttribute("data-fb");
+    fbCerta.classList.add("show");
+    fbErrada.classList.remove("show");
+    var pontos = (reg && !reg.acertou) ? 5 : 10;
+    estado.xp += pontos;
+    estado.respostas[id] = { acertou: true };
+    verificarSelo(id);
+    atualizarXP();
+  } else {
+    alt.classList.add("errada");
+    alt.textContent = "✗ " + alt.textContent;
+    alt.disabled = true;
+    fbErrada.textContent = "❌ Por que esta está errada: " + alt.getAttribute("data-fb");
+    fbErrada.classList.add("show");
+    if (!reg) estado.respostas[id] = { acertou: false };
+  }
+}
+
+function verificarSelo(id) {
+  var aba = id.split("-")[0];
+  var ids = [aba + "-1", aba + "-2", aba + "-3"];
+  for (var i = 0; i < ids.length; i++) {
+    var r = estado.respostas[ids[i]];
+    if (!r || !r.acertou) return;
+  }
+  if (!estado.selos[aba]) {
+    estado.selos[aba] = true;
+    estado.totalSelos += 1;
+    document.getElementById("selos").textContent = estado.totalSelos;
+  }
+}
+
+function atualizarXP() {
+  document.getElementById("xp").textContent = estado.xp;
+}
+
+/* ================= DEMO 1: PIZZA AS A SERVICE ================= */
+var pizzaData = {
+  casa: {
+    titulo: "🏠 Pizza feita em casa (on-premise)",
+    desc: "Você faz tudo, da compra da farinha à lavagem da louça. Equivalente ao datacenter próprio.",
+    camadas: [
+      { nome: "Cozinha (forno, gás, mesa)", resp: "eu", nuvem: "Datacenter (sala, energia, refrigeração)" },
+      { nome: "Farinha, tomate, queijo", resp: "eu", nuvem: "Servidores físicos e storage" },
+      { nome: "Massa (preparo)", resp: "eu", nuvem: "Virtualização (hypervisor)" },
+      { nome: "Montagem e forno", resp: "eu", nuvem: "Sistema operacional" },
+      { nome: "Recheio e tempero", resp: "eu", nuvem: "Middleware e runtime" },
+      { nome: "Refrigerante e sobremesa", resp: "eu", nuvem: "Aplicativo" },
+      { nome: "Comer e lavar", resp: "eu", nuvem: "Seus dados" }
+    ]
+  },
+  iaas: {
+    titulo: "🍕 Massa pronta comprada (IaaS)",
+    desc: "Você aluga a cozinha equipada e cozinha. Equivalente a AWS EC2, Azure VM.",
+    camadas: [
+      { nome: "Cozinha (forno, gás, mesa)", resp: "nuvem", nuvem: "Datacenter (sala, energia, refrigeração)" },
+      { nome: "Farinha, tomate, queijo", resp: "nuvem", nuvem: "Servidores físicos e storage" },
+      { nome: "Massa (preparo)", resp: "nuvem", nuvem: "Virtualização (hypervisor)" },
+      { nome: "Montagem e forno", resp: "eu", nuvem: "Sistema operacional (VOCÊ instala)" },
+      { nome: "Recheio e tempero", resp: "eu", nuvem: "Middleware e runtime (VOCÊ instala)" },
+      { nome: "Refrigerante e sobremesa", resp: "eu", nuvem: "Aplicativo (VOCÊ desenvolve)" },
+      { nome: "Comer e lavar", resp: "eu", nuvem: "Seus dados" }
+    ]
+  },
+  paas: {
+    titulo: "🍕+🔥 Massa + forno entregue (PaaS)",
+    desc: "O provedor entrega massa, molho e forno; você só rechear e servir. Equivalente a Heroku, App Engine.",
+    camadas: [
+      { nome: "Cozinha (forno, gás, mesa)", resp: "nuvem", nuvem: "Datacenter (sala, energia, refrigeração)" },
+      { nome: "Farinha, tomate, queijo", resp: "nuvem", nuvem: "Servidores físicos e storage" },
+      { nome: "Massa (preparo)", resp: "nuvem", nuvem: "Virtualização (hypervisor)" },
+      { nome: "Montagem e forno", resp: "nuvem", nuvem: "Sistema operacional (provedor cuida)" },
+      { nome: "Recheio e tempero", resp: "nuvem", nuvem: "Middleware e runtime (provedor cuida)" },
+      { nome: "Refrigerante e sobremesa", resp: "eu", nuvem: "Aplicativo (só o SEU código)" },
+      { nome: "Comer e lavar", resp: "eu", nuvem: "Seus dados" }
+    ]
+  },
+  saas: {
+    titulo: "📦 Pizza entregue pelo app (SaaS)",
+    desc: "Você pede, paga e come. Equivalente a Gmail, Salesforce, Microsoft 365.",
+    camadas: [
+      { nome: "Cozinha (forno, gás, mesa)", resp: "nuvem", nuvem: "Datacenter (sala, energia, refrigeração)" },
+      { nome: "Farinha, tomate, queijo", resp: "nuvem", nuvem: "Servidores físicos e storage" },
+      { nome: "Massa (preparo)", resp: "nuvem", nuvem: "Virtualização (hypervisor)" },
+      { nome: "Montagem e forno", resp: "nuvem", nuvem: "Sistema operacional (provedor cuida)" },
+      { nome: "Recheio e tempero", resp: "nuvem", nuvem: "Middleware e runtime (provedor cuida)" },
+      { nome: "Refrigerante e sobremesa", resp: "nuvem", nuvem: "Aplicativo (provedor cuida)" },
+      { nome: "Comer e lavar", resp: "eu", nuvem: "Seus dados (só isso)" }
+    ]
+  }
+};
+
+function demo1Render(tipo) {
+  var d = pizzaData[tipo];
+  var html = "<h4 style='color:var(--cor-destaque-escuro); margin-bottom:0.75rem'>" + d.titulo + "</h4>";
+  html += "<p style='margin-bottom:1rem'>" + d.desc + "</p>";
+  for (var i = 0; i < d.camadas.length; i++) {
+    var c = d.camadas[i];
+    var classe = c.resp === "eu" ? "pizza-layer eu" : "pizza-layer nuvem";
+    var respTexto = c.resp === "eu" ? "👤 Você" : "☁️ Provedor";
+    html += "<div class='" + classe + "'>";
+    html += "<div style='flex:1'><strong>" + c.nome + "</strong><br><small>" + respTexto + "</small></div>";
+    html += "<div style='flex:1; text-align:right; font-size:0.85rem; color:var(--texto-suave)'>" + c.nuvem + "</div>";
+    html += "</div>";
+  }
+  document.getElementById("demo1-pizza").innerHTML = html;
+}
+
+function demo1Reset() {
+  document.getElementById("demo1-pizza").innerHTML = "";
+}
+
+/* ================= DEMO 2: DATACENTER ================= */
+var dcData = {
+  servidor: {
+    nome: "🖥️ Servidores",
+    funcao: "Computadores especializados que rodam 24h por dia, montados em racks de 19 polegadas. Executam os aplicativos, bancos de dados e serviços da empresa.",
+    exemplo: "Dell PowerEdge R750 (dois processadores Intel Xeon, até 4 TB de RAM, dezenas de discos).",
+    custo: "Cerca de 40% da conta de energia do datacenter.",
+    icone: "🖥️"
+  },
+  storage: {
+    nome: "💾 Storage (armazenamento)",
+    funcao: "Sistemas que guardam dados persistentes. Podem ser SAN (rede dedicada para disco) ou NAS (disco acessado pela rede comum).",
+    exemplo: "NetApp AFF (linha enterprise) e EMC PowerStore (hoje parte da Dell).",
+    custo: "Cerca de 10 a 15% da conta de energia.",
+    icone: "💾"
+  },
+  rede: {
+    nome: "🔀 Rede (switches e roteadores)",
+    funcao: "Switches conectam os servidores entre si dentro do datacenter; roteadores conectam o datacenter à internet.",
+    exemplo: "Cisco Catalyst (switches) e Cisco ASR (roteadores); Juniper é concorrente comum.",
+    custo: "Cerca de 5 a 10% da conta de energia.",
+    icone: "🔀"
+  },
+  energia: {
+    nome: "⚡ Energia e nobreaks",
+    funcao: "Duas entradas da concessionária, nobreaks (UPS) que seguram a carga por minutos e geradores a diesel que assumem quando a energia cai.",
+    exemplo: "UPS APC Symmetra (linha da Schneider Electric) e geradores Cummins (empresa americana).",
+    custo: "Cerca de 5 a 8% da conta de energia (só perdas do nobreak).",
+    icone: "⚡"
+  },
+  refri: {
+    nome: "❄️ Refrigeração de precisão",
+    funcao: "Ar-condicionado especializado que mantém a sala entre 18 e 22 graus, com corredores frios (entrada de ar gelado) e corredores quentes (saída de ar).",
+    exemplo: "Sistemas da Vertiv (empresa americana, antiga Emerson Network Power) e Stulz (empresa alemã).",
+    custo: "Cerca de 30 a 40% da conta de energia — quase tanto quanto os servidores.",
+    icone: "❄️"
+  }
+};
+
+function demo2Render(tipo) {
+  var d = dcData[tipo];
+  var html = "<div style='border-left:4px solid var(--cor-destaque); padding-left:1rem'>";
+  html += "<h4 style='color:var(--cor-destaque-escuro); margin-bottom:0.5rem'>" + d.nome + "</h4>";
+  html += "<p><strong>Função:</strong> " + d.funcao + "</p>";
+  html += "<p><strong>Exemplo de equipamento:</strong> " + d.exemplo + "</p>";
+  html += "<p><strong>Peso na conta de energia:</strong> " + d.custo + "</p>";
+  html += "</div>";
+  document.getElementById("demo2-ficha").innerHTML = html;
+}
+
+function demo2Reset() {
+  document.getElementById("demo2-ficha").innerHTML = "👆 Clique em um componente para abrir a ficha técnica.";
+}
+
+/* ================= DEMO 3: MONTADOR IaaS ================= */
+var precosVM = {
+  pequena: 0.25,
+  media: 0.50,
+  grande: 1.00
+};
+var specsVM = {
+  pequena: { vcpu: 2, ram: 8 },
+  media: { vcpu: 4, ram: 16 },
+  grande: { vcpu: 8, ram: 32 }
+};
+
+function demo3Atualizar() {
+  var qtd = parseInt(document.getElementById("demo3-qtd").value, 10) || 0;
+  if (qtd < 0) qtd = 0;
+  if (qtd > 50) qtd = 50;
+  var tam = document.getElementById("demo3-tam").value;
+  var storage = parseInt(document.getElementById("demo3-st").value, 10) || 0;
+  if (storage < 0) storage = 0;
+  if (storage > 10000) storage = 10000;
+
+  var precoHora = precosVM[tam];
+  var spec = specsVM[tam];
+  var horasMes = 720; // 30 dias × 24h
+  var custoVM = qtd * precoHora * horasMes;
+  var custoStorage = storage * 0.10;
+  var custoTotal = custoVM + custoStorage;
+
+  var visual = "";
+  if (qtd === 0) {
+    visual = "<p style='color:var(--texto-suave)'>Nenhuma VM ligada. Custo zero.</p>";
+  } else {
+    visual = "<p style='margin-bottom:0.5rem'><strong>" + qtd + " VM(s)</strong> " + spec.vcpu + " vCPU + " + spec.ram + " GB RAM</p>";
+    visual += "<div style='display:flex; flex-wrap:wrap; gap:0.3rem'>";
+    for (var i = 0; i < qtd; i++) {
+      visual += "<div class='dc-rack ligado'><div class='slot'></div><div class='slot'></div><div class='slot'></div><div class='slot'></div></div>";
+    }
+    visual += "</div>";
+  }
+  document.getElementById("demo3-visual").innerHTML = visual;
+
+  var fatura = "<div style='background:var(--fundo-codigo); padding:1rem; border-radius:8px'>";
+  fatura += "<h4 style='color:var(--cor-destaque-escuro); margin-bottom:0.5rem'>💰 Fatura mensal estimada</h4>";
+  fatura += "<div style='display:grid; grid-template-columns:2fr 1fr; gap:0.3rem; font-family:monospace'>";
+  fatura += "<div>Computação (" + qtd + " × R$ " + precoHora.toFixed(2) + "/h × 720h)</div><div style='text-align:right'>R$ " + custoVM.toFixed(2) + "</div>";
+  fatura += "<div>Storage (" + storage + " GB × R$ 0,10)</div><div style='text-align:right'>R$ " + custoStorage.toFixed(2) + "</div>";
+  fatura += "<div style='border-top:2px solid var(--borda); padding-top:0.3rem; font-weight:bold'>TOTAL</div>";
+  fatura += "<div style='border-top:2px solid var(--borda); padding-top:0.3rem; text-align:right; font-weight:bold; color:var(--cor-destaque-escuro)'>R$ " + custoTotal.toFixed(2) + "</div>";
+  fatura += "</div>";
+  if (qtd > 0) {
+    fatura += "<p style='margin-top:0.75rem; font-size:0.9rem; color:var(--texto-suave)'>💡 Dica de elasticidade: desligue VMs fora do horário comercial e veja a fatura cair proporcionalmente.</p>";
+  }
+  fatura += "</div>";
+  document.getElementById("demo3-fatura").innerHTML = fatura;
+}
+
+function demo3Reset() {
+  document.getElementById("demo3-qtd").value = "1";
+  document.getElementById("demo3-tam").value = "media";
+  document.getElementById("demo3-st").value = "100";
+  demo3Atualizar();
+}
+
+/* ================= DEMO 4: COMPARADOR IaaS vs PaaS ================= */
+var camadas = [
+  { nome: "Dados", desc: "As informações que seu aplicativo usa" },
+  { nome: "Aplicação", desc: "O código que você escreve" },
+  { nome: "Runtime", desc: "Ambiente da linguagem (Python, Node.js, Java)" },
+  { nome: "Middleware", desc: "Servidor web, banco de dados" },
+  { nome: "Sistema operacional", desc: "Ubuntu, Windows Server" },
+  { nome: "Virtualização", desc: "Hypervisor que cria VMs" },
+  { nome: "Servidores físicos", desc: "Hardware no datacenter" },
+  { nome: "Rede física", desc: "Switches e roteadores" }
+];
+
+function demo4Render(clicada) {
+  var html = "<table style='width:100%; border-collapse:collapse; margin-bottom:1rem'>";
+  html += "<tr style='background:var(--cor-destaque-claro)'><th style='padding:0.5rem; text-align:left; border:1px solid var(--borda)'>Camada</th><th style='padding:0.5rem; text-align:center; border:1px solid var(--borda)'>IaaS</th><th style='padding:0.5rem; text-align:center; border:1px solid var(--borda)'>PaaS</th></tr>";
+  for (var i = 0; i < camadas.length; i++) {
+    var c = camadas[i];
+    var idx = camadas.length - 1 - i;
+    var iaas = idx <= 2 ? "☁️ Provedor" : "👤 Você";
+    var paas = idx <= 4 ? "☁️ Provedor" : "👤 Você";
+    var destaque = c.nome === clicada ? "background:var(--cor-destaque-claro); font-weight:bold" : "";
+    html += "<tr style='" + destaque + "'><td style='padding:0.5rem; border:1px solid var(--borda)'><strong>" + c.nome + "</strong><br><small style='color:var(--texto-suave)'>" + c.desc + "</small></td>";
+    html += "<td style='padding:0.5rem; border:1px solid var(--borda); text-align:center'>" + iaas + "</td>";
+    html += "<td style='padding:0.5rem; border:1px solid var(--borda); text-align:center'>" + paas + "</td></tr>";
+  }
+  html += "</table>";
+  if (clicada) {
+    var layer = camadas.find(function (l) { return l.nome === clicada; });
+    var idx2 = camadas.length - 1 - camadas.indexOf(layer);
+    var msg = "";
+    if (idx2 <= 2) {
+      msg = "Nos dois modelos (IaaS e PaaS), o provedor cuida dessa camada. Você não precisa se preocupar.";
+    } else if (idx2 === 3 || idx2 === 4) {
+      msg = "Aqui começa a diferença: no IaaS essa camada é sua responsabilidade; no PaaS o provedor assume. É a fronteira entre os dois modelos.";
+    } else {
+      msg = "Nos dois modelos, essa camada é sua: você entrega o código e os dados.";
+    }
+    html += "<div class='resultado-demo'>📌 <strong>" + clicada + ":</strong> " + msg + "</div>";
+  }
+  document.getElementById("demo4-comparador").innerHTML = html;
+}
+
+function demo4Reset() {
+  demo4Render(null);
+  document.getElementById("demo4-feedback").innerHTML = "";
+}
+
+/* ================= DEMO 5: CLASSIFICADOR ================= */
+var servicos = [
+  {
+    nome: "📧 Gmail (e-mail do Google)",
+    certa: "saas",
+    fbCerta: "Isso mesmo! Gmail é SaaS clássico: software pronto, acessado pelo navegador, pago indiretamente por anúncios (na versão gratuita) ou por assinatura (no Google Workspace).",
+    fbOutros: "Não é esse o modelo. Gmail é SaaS: você não configura servidor, não instala nada, não sobe código. Só acessa pelo navegador."
+  },
+  {
+    nome: "🖥️ AWS EC2 (Elastic Compute Cloud)",
+    certa: "iaas",
+    fbCerta: "Isso mesmo! EC2 é IaaS puro: você recebe uma VM vazia e instala o sistema operacional, o servidor web e o aplicativo que quiser.",
+    fbOutros: "Não é esse o modelo. EC2 é IaaS: entrega infraestrutura virtual, não plataforma nem software pronto."
+  },
+  {
+    nome: "🚀 Heroku (plataforma para subir apps)",
+    certa: "paas",
+    fbCerta: "Isso mesmo! Heroku é o PaaS clássico: você entrega o código em Python, Node.js ou Ruby e ele cuida de SO, servidor web, banco e escalabilidade.",
+    fbOutros: "Não é esse o modelo. Heroku é PaaS: plataforma pronta para hospedar seu código, não infraestrutura bruta nem software de usuário."
+  },
+  {
+    nome: "🐙 GitHub (site para guardar código)",
+    certa: "saas",
+    fbCerta: "Isso mesmo! Para o usuário comum, GitHub é SaaS: um serviço pronto acessado pelo navegador. Obs: ele também oferece PaaS (GitHub Actions) e IaaS (Codespaces), mas o produto principal é SaaS.",
+    fbOutros: "Cuidado! Para o usuário comum, GitHub é SaaS: software pronto via navegador. Ele tem recursos PaaS e IaaS, mas a proposta principal é SaaS."
+  },
+  {
+    nome: "📊 Salesforce (CRM empresarial)",
+    certa: "saas",
+    fbCerta: "Isso mesmo! Salesforce é o SaaS pioneiro do mercado empresarial: CRM pronto, acessado pelo navegador, pago por assinatura. Fundado em 1999 por Marc Benioff.",
+    fbOutros: "Não é esse o modelo. Salesforce é SaaS: software de CRM pronto, entregue pela internet, sem instalação."
+  },
+  {
+    nome: "☁️ Google App Engine",
+    certa: "paas",
+    fbCerta: "Isso mesmo! App Engine é o PaaS do Google Cloud: você sobe o código e ele gerencia escalabilidade, balanceamento e infraestrutura sozinho.",
+    fbOutros: "Não é esse o modelo. App Engine é PaaS: você entrega só o código, não precisa cuidar de servidor nem de sistema operacional."
+  },
+  {
+    nome: "📹 Zoom (videoconferência)",
+    certa: "saas",
+    fbCerta: "Isso mesmo! Zoom é SaaS: software pronto de videoconferência, acessado pelo navegador ou app leve, pago por assinatura.",
+    fbOutros: "Não é esse o modelo. Zoom é SaaS: software de videoconferência pronto, você só usa."
+  },
+  {
+    nome: "🗂️ Azure Virtual Machines",
+    certa: "iaas",
+    fbCerta: "Isso mesmo! Azure VMs é IaaS: máquinas virtuais da Microsoft, equivalentes ao EC2 da AWS. Você recebe VM vazia e configura tudo do SO para cima.",
+    fbOutros: "Não é esse o modelo. Azure VMs é IaaS: infraestrutura virtual, não plataforma nem software pronto."
+  }
+];
+
+var demo5Estado = { atual: null, resolvidos: 0, acertos: 0 };
+
+function demo5Novo() {
+  var i = Math.floor(Math.random() * servicos.length);
+  demo5Estado.atual = servicos[i];
+  document.getElementById("demo5-servico").textContent = "📋 " + demo5Estado.atual.nome;
+  document.getElementById("demo5-opcoes").style.display = "block";
+  document.getElementById("demo5-feedback").innerHTML = "";
+}
+
+function demo5Responder(resp) {
+  if (!demo5Estado.atual) return;
+  var certa = resp === demo5Estado.atual.certa;
+  var fb = document.getElementById("demo5-feedback");
+  demo5Estado.resolvidos += 1;
+  if (certa) {
+    demo5Estado.acertos += 1;
+    fb.innerHTML = "<div class='resultado-demo'>✅ <strong>Classificação correta!</strong> " + demo5Estado.atual.fbCerta + "</div>";
+  } else {
+    fb.innerHTML = "<div class='resultado-erro'>❌ <strong>Ainda não.</strong> " + demo5Estado.atual.fbOutros + "</div>";
+  }
+  document.getElementById("demo5-opcoes").style.display = "none";
+  document.getElementById("demo5-placar").textContent = "Placar: " + demo5Estado.acertos + " acertos em " + demo5Estado.resolvidos + " serviços";
+}
+
+function demo5Reset() {
+  demo5Estado.atual = null;
+  demo5Estado.resolvidos = 0;
+  demo5Estado.acertos = 0;
+  document.getElementById("demo5-servico").textContent = "📋 O serviço aparecerá aqui. Clique em Novo serviço para começar.";
+  document.getElementById("demo5-opcoes").style.display = "none";
+  document.getElementById("demo5-feedback").innerHTML = "";
+  document.getElementById("demo5-placar").textContent = "";
+}
+
+/* ================= LIGAÇÕES ================= */
+function ligarBotoes() {
+  var tabs = document.querySelectorAll(".tab");
+  for (var t = 0; t < tabs.length; t++) {
+    (function (tab) {
+      tab.addEventListener("click", function () {
+        irParaAba(parseInt(tab.getAttribute("data-aba"), 10));
+      });
+      tab.addEventListener("keydown", function (ev) {
+        var lista = Array.prototype.slice.call(document.querySelectorAll(".tab"));
+        var idx = lista.indexOf(tab);
+        if (ev.key === "ArrowRight" && idx < lista.length - 1) { lista[idx + 1].focus(); ev.preventDefault(); }
+        if (ev.key === "ArrowLeft" && idx > 0) { lista[idx - 1].focus(); ev.preventDefault(); }
+      });
+    })(tabs[t]);
+  }
+
+  document.getElementById("btn-modo").addEventListener("click", alternarModo);
+  document.getElementById("btn-tema").addEventListener("click", alternarTema);
+
+  var pizzas = document.querySelectorAll("#demo1-area [data-pizza]");
+  for (var i = 0; i < pizzas.length; i++) {
+    (function (b) { b.addEventListener("click", function () { demo1Render(b.getAttribute("data-pizza")); }); })(pizzas[i]);
+  }
+  document.getElementById("demo1-reset").addEventListener("click", demo1Reset);
+
+  var dcs = document.querySelectorAll("#demo2-area [data-dc]");
+  for (var j = 0; j < dcs.length; j++) {
+    (function (b) { b.addEventListener("click", function () { demo2Render(b.getAttribute("data-dc")); }); })(dcs[j]);
+  }
+  document.getElementById("demo2-reset").addEventListener("click", demo2Reset);
+
+  document.getElementById("demo3-qtd").addEventListener("input", demo3Atualizar);
+  document.getElementById("demo3-tam").addEventListener("change", demo3Atualizar);
+  document.getElementById("demo3-st").addEventListener("input", demo3Atualizar);
+  document.getElementById("demo3-reset").addEventListener("click", demo3Reset);
+  demo3Atualizar();
+
+  document.getElementById("demo4-comparador").addEventListener("click", function (ev) {
+    var row = ev.target.closest("tr");
+    if (!row) return;
+    var td = row.querySelector("td");
+    if (!td) return;
+    var nomeCamada = td.textContent.split("\n")[0].trim();
+    var existe = camadas.find(function (l) { return l.nome === nomeCamada; });
+    if (existe) demo4Render(nomeCamada);
+  });
+  demo4Render(null);
+  document.getElementById("demo4-reset").addEventListener("click", demo4Reset);
+
+  document.getElementById("demo5-novo").addEventListener("click", demo5Novo);
+  document.getElementById("demo5-reset").addEventListener("click", demo5Reset);
+  var resp5 = document.querySelectorAll("#demo5-opcoes [data-resp5]");
+  for (var r = 0; r < resp5.length; r++) {
+    (function (b) { b.addEventListener("click", function () { demo5Responder(b.getAttribute("data-resp5")); }); })(resp5[r]);
+  }
+
+  document.addEventListener("keydown", function (ev) {
+    if (estado.modo === "apresentacao") {
+      if (ev.key === "ArrowRight" && estado.abaAtual < 6) irParaAba(estado.abaAtual + 1);
+      if (ev.key === "ArrowLeft" && estado.abaAtual > 1) irParaAba(estado.abaAtual - 1);
+    }
+  });
+}
+
+/* ================= CARGA INICIAL ================= */
+document.addEventListener("DOMContentLoaded", function () {
+  ligarBotoes();
+  inicializarQuiz();
+  var n = lerHash();
+  ativarAba(n ? n : 1);
+  atualizarXP();
+});
+</script>
+
+</body>
+</html>
