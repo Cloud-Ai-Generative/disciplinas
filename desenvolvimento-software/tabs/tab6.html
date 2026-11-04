@@ -137,21 +137,74 @@
 </div>
 <div class="step-box">
 <h4><span class="step-num">1</span>Estrutura em 4 módulos</h4>
+<p>A estrutura completa do ZIP — os 4 módulos Maven, de dentro para fora: 🧠 <code>domain</code> → ⚙️ <code>application</code> → 🏭 <code>infrastructure</code> → 🎯 <code>presentation</code>. Os pacotes aparecem compactos (<code>src/main/java/com/loja/…</code>), como no IntelliJ.</p>
 <div class="tree-view"><span class="folder">📁 loja-api/</span>
-├── <span class="file">📄 pom.xml</span>                           <span class="comment"># POM pai (multi-module)</span>
-├── <span class="folder">📁 produtos-core-domain/</span>              <span class="comment"># 🧠 puro, zero frameworks</span>
-│   └── Produto.java, ProdutoRepository.java, ProdutoService.java, DomainException.java, RecursoNaoEncontradoException.java
-├── <span class="folder">📁 produtos-core-application/</span>         <span class="comment"># ⚙️ casos de uso + DTOs + testes</span>
-│   └── ProdutoServiceImpl.java, DTOs, Mapper, ProdutoServiceTest.java
-├── <span class="folder">📁 produtos-infrastructure/</span>           <span class="comment"># 🏭 adapter JPA + configuração</span>
-│   └── ProdutoRepositoryAdapter, ProdutoJpaEntity, SpringDataProdutoRepository, PersistenceConfig, JpaConfig, CoreBeansConfig
-├── <span class="folder">📁 produtos-presentation/</span>             <span class="comment"># 🎯 REST/JWT + exception handler</span>
-│   └── Main.java, ProdutoController, AuthController, JwtService, JwtTokenFilter, SecurityConfig, GlobalExceptionHandler, application.yml, ApiHttpTest.java
-├── <span class="folder">📁 .mvn/wrapper/</span> + <span class="file">📄 mvnw</span>, <span class="file">📄 mvnw.cmd</span>   <span class="comment"># Maven Wrapper: baixa o Maven sozinho</span>
-├── <span class="file">📄 requests.http</span>                     <span class="comment"># 🧪 roteiro do REST Client (o mesmo da Tab 4)</span>
-├── <span class="file">📄 Dockerfile</span>                        <span class="comment"># 🐳 multi-stage (na raiz)</span>
-├── <span class="file">📄 .dockerignore</span>
-└── <span class="file">📄 .gitignore</span>                        <span class="comment"># não versiona target/ nem .idea/</span></div>
+├── <span class="file">📄 pom.xml</span>   <span class="comment"># 🧩 POM pai: Spring Boot 4.1.1, Java 21, os 4 módulos</span>
+├── <span class="file">📄 mvnw</span>   <span class="comment"># Maven Wrapper (macOS/Linux/Git Bash): baixa o Maven sozinho</span>
+├── <span class="file">📄 mvnw.cmd</span>   <span class="comment"># Maven Wrapper (Windows)</span>
+├── <span class="folder">📁 .mvn/</span>   <span class="comment"># configuração do wrapper</span>
+│   └── <span class="folder">📁 wrapper/</span>
+│       └── <span class="file">📄 maven-wrapper.properties</span>   <span class="comment"># qual versão do Maven baixar</span>
+├── <span class="file">📄 requests.http</span>   <span class="comment"># 🧪 o roteiro do REST Client (o mesmo da Tab 4, porta 8080)</span>
+├── <span class="file">📄 Dockerfile</span>   <span class="comment"># 🐳 imagem da API (multi-stage)</span>
+├── <span class="file">📄 .dockerignore</span>   <span class="comment"># 🙈 não manda target/ para o build</span>
+├── <span class="file">📄 .gitignore</span>   <span class="comment"># 🙈 o que o Git não guarda</span>
+├── <span class="folder">📁 .github/</span>   <span class="comment"># 🔁 CI no GitHub</span>
+│   └── <span class="folder">📁 workflows/</span>
+│       └── <span class="file">📄 ci-java.yml</span>   <span class="comment"># build + 19 testes a cada push/PR</span>
+├── <span class="file">📄 .gitlab-ci.yml</span>   <span class="comment"># 🔁 CI no GitLab</span>
+├── <span class="folder">📁 produtos-core-domain/</span>   <span class="comment"># 🧠 DOMAIN — as regras; sem dependências</span>
+│   ├── <span class="file">📄 pom.xml</span>   <span class="comment"># módulo (sem dependências)</span>
+│   └── <span class="folder">📁 src/main/java/com/loja/domain/</span>
+│       ├── <span class="file">📄 Produto.java</span>   <span class="comment"># entidade (POJO, sem anotações de banco)</span>
+│       ├── <span class="file">📄 ProdutoRepository.java</span>   <span class="comment"># 🚪 porta de persistência</span>
+│       ├── <span class="file">📄 ProdutoService.java</span>   <span class="comment"># contrato dos casos de uso</span>
+│       └── <span class="folder">📁 exception/</span>   <span class="comment"># erros de regra</span>
+│           ├── <span class="file">📄 DomainException.java</span>   <span class="comment"># regra violada → 400</span>
+│           └── <span class="file">📄 RecursoNaoEncontradoException.java</span>   <span class="comment"># não existe → 404</span>
+├── <span class="folder">📁 produtos-core-application/</span>   <span class="comment"># ⚙️ APPLICATION — casos de uso + DTOs; depende do domain</span>
+│   ├── <span class="file">📄 pom.xml</span>   <span class="comment"># módulo → domain + jakarta.validation</span>
+│   └── <span class="folder">📁 src/</span>
+│       ├── <span class="folder">📁 main/java/com/loja/application/</span>
+│       │   ├── <span class="file">📄 ProdutoServiceImpl.java</span>   <span class="comment"># casos de uso: validação, paginação, 404</span>
+│       │   ├── <span class="folder">📁 dto/</span>   <span class="comment"># formatos do contrato</span>
+│       │   │   ├── <span class="file">📄 CriarProdutoRequest.java</span>   <span class="comment"># entrada (Bean Validation: 2–100, &gt; 0, ≥ 0)</span>
+│       │   │   └── <span class="file">📄 ProdutoResponse.java</span>   <span class="comment"># saída</span>
+│       │   └── <span class="folder">📁 mapper/</span>   <span class="comment"># conversões</span>
+│       │       └── <span class="file">📄 ProdutoMapper.java</span>   <span class="comment"># DTO ↔ domínio</span>
+│       └── <span class="folder">📁 test/java/com/loja/application/</span>
+│           └── <span class="file">📄 ProdutoServiceTest.java</span>   <span class="comment"># 🧪 12 testes do service (Mockito)</span>
+├── <span class="folder">📁 produtos-infrastructure/</span>   <span class="comment"># 🏭 INFRASTRUCTURE — JPA + MySQL</span>
+│   ├── <span class="file">📄 pom.xml</span>   <span class="comment"># módulo → data-jpa + driver MySQL</span>
+│   └── <span class="folder">📁 src/main/java/com/loja/infrastructure/</span>
+│       ├── <span class="folder">📁 config/</span>   <span class="comment"># ligações do Spring</span>
+│       │   ├── <span class="file">📄 CoreBeansConfig.java</span>   <span class="comment"># registra o ProdutoServiceImpl (classe pura)</span>
+│       │   ├── <span class="file">📄 JpaConfig.java</span>   <span class="comment"># onde estão a @Entity e o repositório</span>
+│       │   └── <span class="file">📄 PersistenceConfig.java</span>   <span class="comment"># porta → adapter</span>
+│       └── <span class="folder">📁 persistence/</span>   <span class="comment"># adapter + JPA</span>
+│           ├── <span class="file">📄 ProdutoJpaEntity.java</span>   <span class="comment"># @Entity da tabela produtos (Tab 5)</span>
+│           ├── <span class="file">📄 ProdutoRepositoryAdapter.java</span>   <span class="comment"># adapter MySQL da porta ProdutoRepository</span>
+│           └── <span class="file">📄 SpringDataProdutoRepository.java</span>   <span class="comment"># Spring Data gera o SQL</span>
+└── <span class="folder">📁 produtos-presentation/</span>   <span class="comment"># 🎯 PRESENTATION — HTTP, JWT, erros; o executável</span>
+    ├── <span class="file">📄 pom.xml</span>   <span class="comment"># módulo: webmvc, security, validation, jjwt + testes MockMvc</span>
+    └── <span class="folder">📁 src/</span>
+        ├── <span class="folder">📁 main/</span>
+        │   ├── <span class="folder">📁 java/com/loja/presentation/</span>
+        │   │   ├── <span class="file">📄 Main.java</span>   <span class="comment"># ▶ ponto de entrada (porta 8080)</span>
+        │   │   ├── <span class="folder">📁 controller/</span>   <span class="comment"># rotas</span>
+        │   │   │   ├── <span class="file">📄 AuthController.java</span>   <span class="comment"># POST /api/auth/login → tokenAcesso</span>
+        │   │   │   └── <span class="file">📄 ProdutoController.java</span>   <span class="comment"># /api/produtos (GET público, escrita com token)</span>
+        │   │   ├── <span class="folder">📁 exception/</span>   <span class="comment"># 🚨 erros</span>
+        │   │   │   └── <span class="file">📄 GlobalExceptionHandler.java</span>   <span class="comment"># exceção → problem+json (RFC 7807)</span>
+        │   │   └── <span class="folder">📁 security/</span>   <span class="comment"># JWT sem roles</span>
+        │   │       ├── <span class="file">📄 JwtService.java</span>   <span class="comment"># gera e valida o token</span>
+        │   │       ├── <span class="file">📄 JwtTokenFilter.java</span>   <span class="comment"># lê o Bearer de cada pedido</span>
+        │   │       └── <span class="file">📄 SecurityConfig.java</span>   <span class="comment"># quem é público, 401 em problem+json</span>
+        │   └── <span class="folder">📁 resources/</span>
+        │       └── <span class="file">📄 application.yml</span>   <span class="comment"># porta, MySQL da Tab 5, JWT</span>
+        └── <span class="folder">📁 test/java/com/loja/presentation/</span>
+            └── <span class="file">📄 ApiHttpTest.java</span>   <span class="comment"># 🧪 7 testes HTTP (MockMvc): o contrato da Tab 4</span>
+</div>
 </div>
 </div>
 
