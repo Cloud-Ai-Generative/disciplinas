@@ -1,0 +1,1936 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Desenvolvimento Back-End — Aula 5</title>
+<!-- HTMLearning v2.17 — Campos não informados: professor da disciplina (nome, e-mail, lattes, orcid, site, instituição). Nenhum conteúdo pedagógico foi inventado. -->
+<style>
+:root {
+  --cor-destaque: #7E22CE;
+  --cor-destaque-claro: #F3E8FF;
+  --cor-destaque-escuro: #581C87;
+  --fundo: #FFFFFF;
+  --fundo-cartao: #F8FAFC;
+  --fundo-codigo: #F1F5F9;
+  --texto: #0F172A;
+  --texto-suave: #64748B;
+  --borda: #E2E8F0;
+  --sucesso: #059669;
+  --erro: #DC2626;
+  --aviso: #F59E0B;
+}
+[data-theme="dark"] {
+  --fundo: #0F172A;
+  --fundo-cartao: #1E293B;
+  --fundo-codigo: #334155;
+  --texto: #F1F5F9;
+  --texto-suave: #94A3B8;
+  --borda: #475569;
+  --cor-destaque-claro: #3B0764;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 18px;
+  line-height: 1.6;
+  background: var(--fundo);
+  color: var(--texto);
+  transition: background 0.3s, color 0.3s;
+}
+body.modo-apresentacao { font-size: 22px; }
+header {
+  background: linear-gradient(135deg, var(--cor-destaque), var(--cor-destaque-escuro));
+  color: white;
+  padding: 2rem 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+header .meta { opacity: 0.95; font-size: 0.95rem; }
+.controles-topo { position: fixed; top: 1rem; right: 1rem; z-index: 1000; display: flex; gap: 0.5rem; }
+.controles-topo button {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--cor-destaque);
+  color: var(--cor-destaque);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+.controles-topo button:hover { background: var(--cor-destaque); color: white; }
+.xp-bar {
+  position: sticky;
+  top: 0;
+  background: var(--cor-destaque-claro);
+  padding: 0.75rem 1.5rem;
+  border-bottom: 2px solid var(--cor-destaque);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  z-index: 99;
+}
+.tabs-container {
+  position: sticky;
+  top: 52px;
+  background: var(--fundo);
+  border-bottom: 2px solid var(--borda);
+  z-index: 98;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+.tabs { display: flex; padding: 0 1rem; gap: 0.25rem; }
+.tab {
+  padding: 1rem 1.5rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--texto-suave);
+  font-size: 1rem;
+  font-weight: 600;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.tab:hover { color: var(--cor-destaque); }
+.tab[aria-selected="true"] {
+  color: var(--cor-destaque);
+  border-bottom-color: var(--cor-destaque);
+  background: var(--fundo);
+}
+.painel { display: none; padding: 2rem 1.5rem; max-width: 1100px; margin: 0 auto; }
+.painel.active { display: block; animation: fade 0.3s; }
+@keyframes fade { from {opacity:0} to {opacity:1} }
+h2 {
+  color: var(--cor-destaque-escuro);
+  border-left: 5px solid var(--cor-destaque);
+  padding-left: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.6rem;
+}
+h3 { color: var(--cor-destaque-escuro); margin: 1.5rem 0 1rem; font-size: 1.3rem; }
+.cartao {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.missao {
+  background: linear-gradient(135deg, var(--cor-destaque-claro), var(--fundo-cartao));
+  border-left: 5px solid var(--cor-destaque);
+}
+.missao::before {
+  content: "🎯 MISSÃO";
+  display: block;
+  font-weight: bold;
+  color: var(--cor-destaque-escuro);
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.mundo-real { background: #E7F5FF; border-left: 5px solid #1971C2; }
+[data-theme="dark"] .mundo-real { background: #1A3A52; }
+.mundo-real::before {
+  content: "🌎 NO MUNDO REAL";
+  display: block;
+  font-weight: bold;
+  color: #1971C2;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.ferramentas { background: #D3F9D8; border-left: 5px solid #059669; }
+[data-theme="dark"] .ferramentas { background: #1B4332; }
+.ferramentas::before {
+  content: "🛠️ FERRAMENTAS";
+  display: block;
+  font-weight: bold;
+  color: #059669;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.demo-box {
+  background: var(--fundo-codigo);
+  border: 3px solid var(--cor-destaque);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+.instrucoes {
+  background: #FFF9DB;
+  border: 2px solid var(--aviso);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .instrucoes { background: #3D3518; }
+.instrucoes::before {
+  content: "📋 INSTRUÇÕES PASSO A PASSO";
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.roteiro {
+  background: #F3D9FA;
+  border-left: 4px solid #9C36B5;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+[data-theme="dark"] .roteiro { background: #3D1F47; }
+.roteiro::before { content: "🎤 Roteiro do apresentador: "; font-weight: bold; font-style: normal; }
+.prever {
+  background: #E3FAFC;
+  border: 2px dashed #0C8599;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+[data-theme="dark"] .prever { background: #0F3742; }
+.prever::before {
+  content: "🔮 PREVISÃO";
+  display: block;
+  font-weight: bold;
+  color: #0C8599;
+  margin-bottom: 0.5rem;
+}
+.legenda {
+  background: #FFF3BF;
+  border-left: 4px solid #F59F00;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+  border-radius: 6px;
+}
+[data-theme="dark"] .legenda { background: #3D3518; }
+.legenda::before { content: "🔑 Legenda: "; font-weight: bold; }
+.quiz-box {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+.termos-quiz {
+  background: #FFF3BF;
+  border: 2px solid #F59F00;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+[data-theme="dark"] .termos-quiz { background: #3D3518; }
+.termos-quiz::before {
+  content: "🔑 Termos deste quiz";
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.pergunta {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--fundo);
+  border-radius: 8px;
+  border: 2px solid var(--borda);
+}
+.pergunta p { font-weight: 600; margin-bottom: 0.75rem; }
+.alt {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+  background: white;
+  border: 2px solid var(--borda);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--texto);
+  transition: all 0.2s;
+}
+[data-theme="dark"] .alt { background: var(--fundo-cartao); }
+.alt:hover:not(:disabled) { border-color: var(--cor-destaque); background: var(--cor-destaque-claro); }
+.alt.certa { background: #D3F9D8 !important; border-color: var(--sucesso) !important; color: var(--sucesso); font-weight: bold; }
+.alt.errada { background: #FFE3E3 !important; border-color: var(--erro) !important; color: var(--erro); }
+[data-theme="dark"] .alt.certa { background: #1B4332 !important; color: #51CF66 !important; }
+[data-theme="dark"] .alt.errada { background: #3D1F24 !important; color: #FF6B6B !important; }
+.alt:disabled { cursor: not-allowed; opacity: 0.7; }
+.fb { margin-top: 0.5rem; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.95rem; display: none; }
+.fb.show { display: block; }
+.fb.fb-certa { background: #D3F9D8; border-left: 4px solid var(--sucesso); color: #087F23; }
+.fb.fb-errada { background: #FFE3E3; border-left: 4px solid var(--erro); color: #C92A2A; }
+[data-theme="dark"] .fb.fb-certa { background: #1B4332; color: #69DB7C; }
+[data-theme="dark"] .fb.fb-errada { background: #3D1F24; color: #FFA8A8; }
+details {
+  background: var(--fundo-codigo);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+  border: 1px solid var(--borda);
+}
+details[open] { background: var(--cor-destaque-claro); }
+summary { cursor: pointer; font-weight: bold; color: var(--cor-destaque-escuro); padding: 0.25rem 0; }
+.demo-area {
+  background: white;
+  border: 2px dashed var(--cor-destaque);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+  min-height: 150px;
+}
+[data-theme="dark"] .demo-area { background: var(--fundo-cartao); }
+.btn {
+  background: var(--cor-destaque);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.95rem;
+  margin: 0.25rem;
+}
+.btn:hover { background: var(--cor-destaque-escuro); }
+.btn-secundario { background: var(--texto-suave); color: white; }
+.resultado-demo {
+  background: #D3F9D8;
+  border-left: 4px solid var(--sucesso);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .resultado-demo { background: #1B4332; color: #69DB7C; }
+.resultado-erro {
+  background: #FFE3E3;
+  border-left: 4px solid var(--erro);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .resultado-erro { background: #3D1F24; color: #FFA8A8; }
+footer {
+  background: var(--fundo-cartao);
+  border-top: 3px solid var(--cor-destaque);
+  padding: 2rem 1.5rem;
+  margin-top: 3rem;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+footer h4 { color: var(--cor-destaque-escuro); margin-bottom: 0.75rem; font-size: 1rem; }
+footer .bloco { padding: 1rem 0; line-height: 1.7; }
+footer .bloco + .bloco { border-top: 2px solid var(--borda); margin-top: 1rem; padding-top: 1.5rem; }
+footer a { color: var(--cor-destaque-escuro); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+footer ul { list-style: none; padding-left: 0; }
+footer ul li { margin: 0.4rem 0; }
+.revisao-mapa {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+.no-mapa {
+  background: var(--cor-destaque-claro);
+  border: 2px solid var(--cor-destaque);
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+}
+.no-mapa h4 { color: var(--cor-destaque-escuro); margin-bottom: 0.5rem; }
+.cola-rapida {
+  background: #FFF9DB;
+  border: 2px solid var(--aviso);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin: 1rem 0;
+}
+[data-theme="dark"] .cola-rapida { background: #3D3518; }
+.cola-rapida dt { font-weight: bold; color: var(--cor-destaque-escuro); margin-top: 0.75rem; }
+.cola-rapida dd { margin-left: 1rem; margin-bottom: 0.5rem; color: var(--texto); }
+.chefao {
+  background: linear-gradient(135deg, var(--cor-destaque-claro), white);
+  border: 3px solid var(--cor-destaque);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+[data-theme="dark"] .chefao { background: linear-gradient(135deg, var(--cor-destaque-claro), var(--fundo-cartao)); }
+.chefao::before {
+  content: "👑 CHEFÃO — DESAFIO FINAL";
+  display: block;
+  font-weight: bold;
+  color: var(--cor-destaque-escuro);
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+}
+.mitoverdade {
+  background: #F3D9FA;
+  border-left: 5px solid #9C36B5;
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 8px;
+}
+[data-theme="dark"] .mitoverdade { background: #3D1F47; }
+code {
+  background: var(--fundo-codigo);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-family: "Courier New", monospace;
+  font-size: 0.95em;
+  color: var(--cor-destaque-escuro);
+}
+pre {
+  background: var(--fundo-codigo);
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  border-left: 4px solid var(--cor-destaque);
+  margin: 1rem 0;
+  font-family: "Courier New", monospace;
+  font-size: 0.9rem;
+}
+table.tab-dados { border-collapse: collapse; margin: 0.75rem 0; font-size: 0.85rem; width: 100%; }
+table.tab-dados th, table.tab-dados td { border: 1px solid var(--borda); padding: 0.35rem 0.5rem; text-align: left; }
+table.tab-dados th { background: var(--cor-destaque-claro); color: var(--cor-destaque-escuro); }
+.saldo-card {
+  display: inline-block;
+  padding: 0.75rem 1.25rem;
+  margin: 0.3rem;
+  border-radius: 8px;
+  background: var(--cor-destaque-claro);
+  border: 2px solid var(--cor-destaque);
+  font-weight: bold;
+  font-family: monospace;
+}
+.saldo-card.negativo { background: #FFE3E3; border-color: var(--erro); color: var(--erro); }
+@media (max-width: 600px) {
+  header h1 { font-size: 1.5rem; }
+  .tab { padding: 0.75rem 1rem; font-size: 0.9rem; }
+  .painel { padding: 1rem; }
+  .controles-topo { position: static; padding: 0.5rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="controles-topo">
+  <button id="btn-modo" type="button">🎤 Apresentação</button>
+  <button id="btn-tema" type="button">🌙 Escuro</button>
+</div>
+
+<header>
+  <h1>Desenvolvimento Back-End</h1>
+  <div class="meta">Aula 5 · Unidade 2 · Págs. 30 a 52 · Funcionalidades, Modelagem e Frameworks ORM</div>
+</header>
+
+<div class="xp-bar">
+  <div>⭐ XP: <span id="xp">0</span> · Selos: <span id="selos">0</span>/5</div>
+  <div id="progresso">Aba 1 de 6</div>
+</div>
+
+<div class="tabs-container">
+  <div class="tabs" role="tablist" aria-label="Abas da aula">
+    <button class="tab" role="tab" id="tab-1" aria-selected="true" aria-controls="painel-1" data-aba="1" type="button">1 · Funcionalidades</button>
+    <button class="tab" role="tab" id="tab-2" aria-selected="false" aria-controls="painel-2" data-aba="2" type="button">2 · Modelagem</button>
+    <button class="tab" role="tab" id="tab-3" aria-selected="false" aria-controls="painel-3" data-aba="3" type="button">3 · Integridade</button>
+    <button class="tab" role="tab" id="tab-4" aria-selected="false" aria-controls="painel-4" data-aba="4" type="button">4 · Frameworks</button>
+    <button class="tab" role="tab" id="tab-5" aria-selected="false" aria-controls="painel-5" data-aba="5" type="button">5 · ORM</button>
+    <button class="tab" role="tab" id="tab-6" aria-selected="false" aria-controls="painel-6" data-aba="6" type="button">⭐ Revisão</button>
+  </div>
+</div>
+
+<!-- ============ ABA 1 ============ -->
+<div class="painel active" id="painel-1" role="tabpanel" aria-labelledby="tab-1">
+  <h2>Aba 1 · Funcionalidades mais comuns em aplicações back-end</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é reconhecer o cardápio padrão de todo sistema back-end (a parte do sistema que roda no servidor, invisível para o usuário): <strong>CRUD</strong> (sigla em inglês para Create, Read, Update, Delete; em português, Criar, Ler, Atualizar e Apagar), <strong>autenticação</strong> (provar quem você é), <strong>autorização</strong> (definir o que você pode fazer), <strong>validação de entrada</strong> (barrar dados ruins antes de eles chegarem ao banco) e <strong>APIs REST</strong> (do inglês <em>Application Programming Interface</em>; em português, Interface de Programação de Aplicações, no estilo <em>Representational State Transfer</em>, Transferência de Estado Representacional). Você vai simular requisições (pedidos que um cliente faz ao servidor) e ver o caminho completo dentro do back-end.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 O cardápio padrão de um back-end</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>CRUD</strong>: as quatro operações básicas sobre qualquer recurso (cliente, pedido, produto). Criar (cadastrar um cliente), Ler (listar ou buscar), Atualizar (mudar o endereço), Apagar (remover um cadastro).</li>
+      <li><strong>Autenticação e autorização</strong>: primeiro o sistema confirma sua identidade (login com senha, ou <strong>OAuth2</strong>, protocolo de autorização usado pelo botão Entrar com Google), depois verifica suas permissões (um cliente não pode aprovar o próprio reembolso). O <strong>JWT</strong> (do inglês <em>JSON Web Token</em>; em português, Token Web em JSON) é o crachá digital assinado que o servidor emite após o login e confere a cada requisição.</li>
+      <li><strong>Validação de entrada</strong>: conferir tipo, tamanho e formato dos dados recebidos (e-mail com arroba, idade positiva) antes de tocar no banco. É a primeira linha de defesa contra dados corruptos e ataques.</li>
+      <li><strong>APIs REST com métodos HTTP</strong> (do inglês <em>Hypertext Transfer Protocol</em>; em português, Protocolo de Transferência de Hipertexto): GET para ler, POST para criar, PUT ou PATCH para atualizar, DELETE para apagar. Cada método devolve um <strong>código de status</strong> (como 200 para sucesso, 201 para criado, 404 para não encontrado).</li>
+      <li><strong>Registro de eventos (logging)</strong> e <strong>paginação</strong> (devolver listas em pedaços, 20 por página) completam o cardápio dos sistemas profissionais.</li>
+    </ul>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Essas funcionalidades no seu dia</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Login do iFood</strong> (aplicativo brasileiro de entregas): autenticação com OAuth2 do Google ou Facebook (rede social da Meta); o token JWT acompanha cada pedido que você faz ao servidor.</li>
+      <li><strong>Cadastro no Nubank</strong> (banco digital brasileiro): validação de entrada confere CPF (Cadastro de Pessoa Física) com o algoritmo de dígito verificador antes de criar a conta.</li>
+      <li><strong>Busca do Mercado Livre</strong> (marketplace latino-americano): uma API REST com GET /produtos?q=teclado devolve JSON (do inglês <em>JavaScript Object Notation</em>; formato de texto para trocar dados) paginado com 50 itens por página.</li>
+      <li><strong>Excluir conta no Instagram</strong> (rede social de fotos): um DELETE autenticado, que só o dono do JWT válido pode executar.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Ferramentas para ver as requisições</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Postman</strong> (aplicativo gratuito da empresa indiana Postman Inc.): envia requisições HTTP manualmente e mostra status, corpo e tempo de resposta.</li>
+      <li><strong>Aba Network do navegador</strong> (ferramenta de desenvolvedor do Chrome e do Firefox): mostra cada GET e POST que a página faz, com códigos de status coloridos.</li>
+      <li><strong>curl</strong> (comando de linha presente no Linux, macOS e Windows): envia requisições direto do terminal, útil em scripts de teste.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: simulador de requisições a uma API de clientes</h3>
+
+    <div class="prever">
+      <strong>Antes de clicar, preveja:</strong> ao criar um cliente novo com POST /clientes, qual código de status o servidor deve devolver: 200 (sucesso genérico), 201 (criado) ou 404 (não encontrado)?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, anuncie sua previsão de status.<br>
+      <strong>Passo 1:</strong> escolha um método HTTP e o endereço (endpoint).<br>
+      <strong>Passo 2:</strong> clique em Enviar requisição.<br>
+      <strong>Passo 3:</strong> acompanhe o caminho dentro do back-end: rota, controlador, validação, banco, resposta.<br>
+      <strong>Passo 4:</strong> teste um DELETE sem dono válido e veja a autorização barrar.
+    </div>
+
+    <div class="roteiro">
+      comece com GET /clientes e mostre o JSON de volta com status 200. Depois POST /clientes e destaque o 201. Feche com DELETE sem token: o servidor responde 401 ou 403, provando que autenticação e autorização vêm antes do CRUD.
+    </div>
+
+    <div class="legenda">
+      endpoint = endereço do recurso na API · método HTTP = verbo da requisição (GET, POST, PUT, DELETE) · status = código numérico de resultado (200, 201, 401, 404) · JSON = formato de texto para troca de dados · token JWT = crachá digital assinado que prova o login
+    </div>
+
+    <div class="demo-area" id="demo1-area">
+      <div>
+        <button class="btn" type="button" data-req="get">GET /clientes</button>
+        <button class="btn" type="button" data-req="post">POST /clientes</button>
+        <button class="btn" type="button" data-req="put">PUT /clientes/5</button>
+        <button class="btn" type="button" data-req="del-ok">DELETE /clientes/5 (com token)</button>
+        <button class="btn" type="button" data-req="del-bad">DELETE /clientes/5 (sem token)</button>
+      </div>
+      <div id="demo1-log" style="margin-top:1rem; font-family:monospace; font-size:0.9rem; min-height:120px; background:var(--fundo-codigo); padding:0.75rem; border-radius:8px"></div>
+      <button class="btn btn-secundario" type="button" id="demo1-reset" style="margin-top:0.75rem">🔄 Reiniciar</button>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> toda requisição percorre o mesmo caminho (rota, controlador, validação, banco, resposta), mudando apenas o verbo e o código final. A requisição sem token morre na camada de autorização, antes de tocar no banco: é a integridade do sistema sendo protegida.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 1</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      CRUD = Criar, Ler, Atualizar e Apagar, as quatro operações básicas ·
+      API REST = interface web com métodos HTTP e códigos de status ·
+      GET, POST, PUT, DELETE = métodos HTTP de leitura, criação, atualização e remoção ·
+      JWT = token assinado que prova o login a cada requisição ·
+      status 201 = código que significa recurso criado com sucesso.
+    </div>
+
+    <div class="pergunta" data-pergunta="1-1">
+      <p>1. A sigla CRUD reúne as quatro operações básicas de um back-end sobre qualquer recurso. Quais são elas?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! Conectar, Replicar e Utilizar não fazem parte da sigla. CRUD vem do inglês Create, Read, Update, Delete.">Conectar, Replicar, Utilizar e Desconectar</button>
+        <button class="alt" type="button" data-fb="Correto! CRUD vem do inglês Create, Read, Update, Delete: criar um registro, lê-lo, atualizá-lo e apagá-lo. É o esqueleto de quase toda API, do iFood ao sistema da faculdade.">Criar, Ler, Atualizar e Apagar</button>
+        <button class="alt" type="button" data-fb="Errado! Criptografar e Comprimir são técnicas de segurança e desempenho, não as operações básicas de persistência que a sigla descreve.">Criptografar, Recuperar, Unir e Dividir</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="1-2">
+      <p>2. Em uma API REST, qual método HTTP é tradicionalmente usado para CRIAR um recurso novo, devolvendo o status 201?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! GET é leitura: não muda nada no servidor e por isso nunca devolve 201 de criação.">GET</button>
+        <button class="alt" type="button" data-fb="Errado! DELETE remove recursos; o status típico de sucesso dele é 204 (sem conteúdo), não 201.">DELETE</button>
+        <button class="alt" type="button" data-fb="Correto! POST envia um corpo com os dados do novo recurso; se a validação passar e o registro nascer, o servidor responde 201 Created, muitas vezes com o endereço do novo recurso no cabeçalho Location.">POST</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="1-3">
+      <p>3. Qual é o papel do token JWT (Token Web em JSON) em um back-end moderno?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! O JWT é emitido no login, assinado pelo servidor, e volta em cada requisição no cabeçalho Authorization. Assim o servidor confirma quem é o cliente sem guardar sessão em memória, e a autorização sabe quais permissões aplicar.">Servir como crachá digital assinado que prova o login a cada requisição</button>
+        <button class="alt" type="button" data-fb="Errado! O JWT não criptografa o banco: ele carrega informações de identidade assinadas. Criptografia de dados em repouso é outra camada, feita pelo banco ou pelo disco.">Criptografar o banco de dados inteiro</button>
+        <button class="alt" type="button" data-fb="Errado! Substituir o SQL é papel dos ORMs (Aba 5). O JWT atua na camada de autenticação e autorização, não no acesso a dados.">Substituir as consultas SQL ao banco</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 1</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=funcionalidades+comuns+back-end+CRUD+autenticação+API+REST" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=arquitetura+REST+CRUD+autenticação+JWT" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=CRUD+API+REST+autenticação+JWT+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>CRUD</strong>: Criar, Ler, Atualizar, Apagar.</li>
+      <li><strong>API REST</strong>: interface web com verbos HTTP e códigos de status.</li>
+      <li><strong>Autenticação / autorização</strong>: provar quem é / definir o que pode.</li>
+      <li><strong>JWT</strong>: token assinado que acompanha as requisições.</li>
+      <li><strong>Validação de entrada</strong>: barrar dados ruins antes do banco.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> A validação de entrada pode ser feita só no front-end (a tela), porque o usuário não consegue burlar a interface.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> qualquer pessoa pode enviar requisições direto à API com Postman ou curl, ignorando a tela. Por isso a regra de ouro é: o front valida por conveniência, o back valida por segurança.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 2 ============ -->
+<div class="painel" id="painel-2" role="tabpanel" aria-labelledby="tab-2">
+  <h2>Aba 2 · Modelagem de dados para sistemas eficientes</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é aprender a desenhar o esqueleto de dados de um sistema antes de escrever código: o <strong>modelo entidade-relacionamento</strong> (representação gráfica criada por Peter Chen, pesquisador nipo-americano, em 1976, que mostra entidades, atributos e relacionamentos), as <strong>cardinalidades</strong> (1:1, 1:N e N:M, ou seja, quantas ocorrências de um lado se ligam ao outro) e a <strong>normalização</strong> (conjunto de regras que reduz repetição de dados e anomalias de atualização). Na demo, você vai normalizar uma tabela bagunçada passo a passo.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Entidades, relacionamentos e cardinalidades</h3>
+    <p>Uma <strong>entidade</strong> é uma coisa do mundo real que o sistema precisa guardar: Cliente, Pedido, Produto. Cada entidade vira uma <strong>tabela</strong> no banco, e cada característica vira uma <strong>coluna</strong> (atributo). Os <strong>relacionamentos</strong> dizem como as entidades se conectam, com três cardinalidades clássicas:</p>
+    <ul style="margin-left:1.5rem">
+      <li><strong>1:1 (um para um)</strong>: um Cliente tem exatamente um Carrinho ativo. Na implementação, uma chave estrangeira (coluna que aponta para a chave de outra tabela) com restrição de unicidade resolve.</li>
+      <li><strong>1:N (um para muitos)</strong>: um Cliente faz muitos Pedidos, mas cada Pedido é de um só Cliente. A tabela Pedido ganha a coluna cliente_id apontando para Cliente.</li>
+      <li><strong>N:M (muitos para muitos)</strong>: um Pedido contém muitos Produtos e um Produto aparece em muitos Pedidos. Nenhum lado pode guardar a lista do outro; cria-se uma <strong>tabela associativa</strong> (também chamada de tabela de junção), como item_pedido, com as duas chaves estrangeiras e a quantidade.</li>
+    </ul>
+    <p>A <strong>normalização</strong> organiza essas tabelas em formas normais (1FN, 2FN, 3FN) para que cada fato seja guardado uma única vez. O prêmio é triplo: menos espaço, menos inconsistência e atualizações em um lugar só.</p>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Modelagem bem e mal feita no mundo real</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>E-commerce da Magalu</strong> (varejista brasileira): o pedido N:M com produtos exige a tabela de itens; sem ela, seria impossível calcular o total de um pedido com dez produtos diferentes.</li>
+      <li><strong>Sistema SUS</strong> (Sistema Único de Saúde do Brasil): o cartão 1:1 com o paciente evita duplicar o histórico clínico em duas filas diferentes.</li>
+      <li><strong>Planilhas virando banco</strong>: empresas que começam controlando estoque em Excel (planilha da Microsoft) sofrem anomalias de atualização clássicas: mudar o preço de um produto exige editar dezenas de linhas, e uma linha esquecida gera dois preços diferentes para o mesmo item.</li>
+      <li><strong>PostgreSQL</strong> (banco de dados relacional livre, mantido por uma comunidade global) e <strong>MySQL</strong> (banco relacional hoje mantido pela Oracle, empresa americana) aplicam as restrições do modelo e garantem que o desenho seja respeitado em runtime.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ As três formas normais em linguagem plana</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>1FN (primeira forma normal)</strong>: nada de listas ou valores múltiplos dentro de uma célula; cada célula guarda um valor atômico e cada linha é única.</li>
+      <li><strong>2FN (segunda forma normal)</strong>: estando na 1FN, toda coluna que não é chave deve depender da chave inteira, não de parte dela; isso empurra o preço do produto para a tabela Produto.</li>
+      <li><strong>3FN (terceira forma normal)</strong>: estando na 2FN, nenhuma coluna pode depender de outra coluna que não seja a chave (dependência transitiva); isso empurra a cidade para a tabela Cliente.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: normalizando uma tabela de pedidos passo a passo</h3>
+
+    <div class="prever">
+      <strong>Antes de clicar, preveja:</strong> na tabela plana PEDIDO(Pedido, Cliente, Cidade, Produtos, Preços, Quantidades), se o preço do Mouse mudar, quantas linhas precisarão ser editadas para manter tudo coerente: 1, 2 ou 3?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, registre sua previsão de linhas a editar.<br>
+      <strong>Passo 1:</strong> observe a tabela plana do passo 0 e seus problemas marcados.<br>
+      <strong>Passo 2:</strong> clique em Próxima forma normal para ver a 1FN, depois a 2FN, depois a 3FN.<br>
+      <strong>Passo 3:</strong> a cada passo, veja quais tabelas nascem e quais colunas migram.<br>
+      <strong>Passo 4:</strong> no final, responda de novo: com o preço na tabela Produto, quantas linhas mudam quando o preço muda?
+    </div>
+
+    <div class="roteiro">
+      mostre a tabela plana e pergunte onde está o preço do Mouse: repetido em duas linhas. Avance para a 2FN e mostre o preço morando em um lugar só. Feche na 3FN com três tabelas e a chave estrangeira item_pedido ligando tudo.
+    </div>
+
+    <div class="legenda">
+      tabela plana = uma tabela só com tudo misturado · forma normal = estágio de organização (1FN, 2FN, 3FN) · chave primária = coluna que identifica a linha · chave estrangeira = coluna que aponta para a chave de outra tabela · anomalia de atualização = precisar editar várias linhas para mudar um fato só
+    </div>
+
+    <div class="demo-area" id="demo2-area">
+      <div>
+        <button class="btn" type="button" id="demo2-next">▶ Próxima forma normal</button>
+        <button class="btn btn-secundario" type="button" id="demo2-reset">🔄 Reiniciar</button>
+      </div>
+      <div id="demo2-conteudo" style="margin-top:1rem; overflow-x:auto"></div>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> a cada forma normal, um tipo de repetição some. No modelo final, o preço do Mouse mora em uma linha da tabela Produto: mudar o preço vira uma edição única, e a anomalia de atualização desaparece. É isso que torna o sistema eficiente de manter.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 2</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      entidade = coisa do mundo real virando tabela (Cliente, Produto) ·
+      cardinalidade = quantos de um lado se ligam ao outro (1:1, 1:N, N:M) ·
+      tabela associativa = tabela de junção que resolve N:M ·
+      chave estrangeira = coluna que aponta para a chave de outra tabela ·
+      3FN = terceira forma normal, sem dependência transitiva.
+    </div>
+
+    <div class="pergunta" data-pergunta="2-1">
+      <p>1. Um Pedido contém muitos Produtos e um Produto aparece em muitos Pedidos. Como esse relacionamento N:M vira tabelas?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! Guardar uma lista de produtos dentro de uma célula do Pedido viola a 1FN (células devem ser atômicas) e torna impossível consultar ou somar por produto.">Com uma coluna de lista de produtos dentro da tabela Pedido</button>
+        <button class="alt" type="button" data-fb="Correto! Relacionamentos N:M exigem uma tabela associativa (como item_pedido) com as chaves estrangeiras de Pedido e de Produto, mais os atributos do próprio relacionamento, como a quantidade comprada.">Com uma tabela associativa (de junção) contendo as chaves dos dois lados</button>
+        <button class="alt" type="button" data-fb="Errado! Duplicar o pedido para cada produto estoura a 1FN e cria anomalias: o mesmo pedido apareceria várias vezes com totais confusos.">Duplicando a linha do pedido para cada produto comprado</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="2-2">
+      <p>2. Por que normalizar um banco de dados torna o sistema mais eficiente de manter?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! Cada fato guardado uma única vez elimina a necessidade de editar várias linhas para uma mudança só, reduz espaço e evita versões contraditórias do mesmo dado convivendo no banco.">Porque cada fato fica guardado em um lugar só, eliminando repetições e anomalias de atualização</button>
+        <button class="alt" type="button" data-fb="Errado! Normalizar geralmente AUMENTA o número de tabelas e exige junções (joins) nas consultas; o ganho é de consistência e manutenção, não de menos tabelas.">Porque reduz o número de tabelas e deixa as consultas mais curtas</button>
+        <button class="alt" type="button" data-fb="Errado! Normalização não criptografa nada: é organização estrutural dos dados. Segurança é outra camada, com autenticação e criptografia.">Porque criptografa os dados sensíveis automaticamente</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="2-3">
+      <p>3. Na tabela plana, a coluna Cidade depende de Cliente, não da chave do Pedido. Levar Cidade para a tabela Cliente atende a qual forma normal?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! A 1FN cuida de valores atômicos e linhas únicas; a dependência transitiva de Cidade só é atacada na etapa seguinte às duas primeiras.">1FN</button>
+        <button class="alt" type="button" data-fb="Errado! A 2FN resolve dependência parcial de chave composta (como o preço dependendo só do Produto); a dependência de Cidade sobre Cliente é transitiva, caso da 3FN.">2FN</button>
+        <button class="alt" type="button" data-fb="Correto! Cidade dependendo de Cliente, que não é a chave do Pedido, é uma dependência transitiva. A 3FN exige que colunas não-chave dependam somente da chave, então Cidade migra para a tabela Cliente.">3FN</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 2</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=modelagem+de+dados+entidade+relacionamento+normalização" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=modelo+entidade+relacionamento+formas+normais+banco+de+dados" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=modelagem+de+dados+MER+normalização+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Entidade / atributo</strong>: coisa do mundo real / característica virando coluna.</li>
+      <li><strong>Cardinalidade</strong>: 1:1, 1:N ou N:M entre entidades.</li>
+      <li><strong>Tabela associativa</strong>: resolve N:M com duas chaves estrangeiras.</li>
+      <li><strong>Formas normais</strong>: estágios 1FN, 2FN, 3FN de organização.</li>
+      <li><strong>Anomalia de atualização</strong>: editar várias linhas para mudar um fato só.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Um banco totalmente normalizado é sempre o mais rápido para consultas.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> normalização otimiza consistência e manutenção; consultas podem precisar de várias junções. Em relatórios pesados, é comum desnormalizar de propósito (com cautela) para ganhar velocidade, aceitando redundância controlada.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 3 ============ -->
+<div class="painel" id="painel-3" role="tabpanel" aria-labelledby="tab-3">
+  <h2>Aba 3 · Integridade dos sistemas back-end</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é entender como um banco de dados se protege de dados impossíveis: as <strong>restrições de integridade</strong> (regras que o próprio banco impõe, como chave primária, chave estrangeira, UNIQUE, NOT NULL e CHECK) e as <strong>transações</strong> (pacotes de operações que valem tudo ou nada, garantidos pelas propriedades <strong>ACID</strong>: Atomicidade, Consistência, Isolamento e Durabilidade). Na demo, você vai transferir dinheiro entre contas e provocar uma falha no meio para ver o rollback (desfazer) em ação.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 As cinco restrições que barram dados impossíveis</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>PRIMARY KEY (chave primária)</strong>: identifica cada linha de forma única e não nula; impede dois clientes com o mesmo id.</li>
+      <li><strong>FOREIGN KEY (chave estrangeira)</strong>: garante a <strong>integridade referencial</strong>: um Pedido não pode apontar para um Cliente que não existe; o banco recusa a inserção.</li>
+      <li><strong>UNIQUE (único)</strong>: impede duplicatas em colunas como e-mail ou CPF.</li>
+      <li><strong>NOT NULL (não nulo)</strong>: obriga o preenchimento de colunas essenciais, como o nome do cliente.</li>
+      <li><strong>CHECK (verificação)</strong>: valida regras de negócio no próprio banco, como quantidade maior que zero ou idade maior ou igual a 18.</li>
+    </ul>
+    <p>Essas regras vivem no <strong>SGBD</strong> (Sistema Gerenciador de Banco de Dados; o software que administra o banco, como PostgreSQL, MySQL ou Oracle Database), não apenas no código da aplicação: mesmo que um bug ou um ataque passe pela aplicação, o banco continua sendo a última muralha.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Transações e o pacto ACID</h3>
+    <p>Uma <strong>transação</strong> agrupa várias operações em uma unidade indivisível: ou todas acontecem, ou nenhuma acontece. O exemplo clássico é a transferência bancária: debitar 200 reais da conta A e creditar 200 reais na conta B são duas operações que não podem ficar pela metade. As quatro garantias são:</p>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Atomicidade</strong>: tudo ou nada; se o crédito falhar, o débito é desfeito pelo rollback.</li>
+      <li><strong>Consistência</strong>: o banco sai de um estado válido para outro estado válido; o saldo total não muda do nada.</li>
+      <li><strong>Isolamento</strong>: transações concorrentes não veem os resultados parciais uma da outra.</li>
+      <li><strong>Durabilidade</strong>: depois do <strong>COMMIT</strong> (confirmação), os dados sobrevivem até a uma queda de energia.</li>
+    </ul>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Integridade salvando o dia (e evitando desastres)</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>PIX do Banco Central</strong> (sistema brasileiro de pagamentos instantâneos): cada transferência é uma transação ACID entre instituições; sem atomicidade, haveria débitos sem crédito todos os dias.</li>
+      <li><strong>Reservas da Azul</strong> (companhia aérea brasileira): dois clientes comprando a última poltrona ao mesmo tempo só funcionam bem graças ao isolamento; um deles recebe a recusa, não duas passagens para o mesmo assento.</li>
+      <li><strong>Estoque da Amazon</strong> (varejista americana): o CHECK de quantidade não negativa impede que um bug de carrinho zere o estoque de um produto para valores impossíveis.</li>
+      <li><strong>Cadastro no gov.br</strong> (portal do governo federal): a restrição UNIQUE no CPF impede duas contas públicas para a mesma pessoa.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Comandos que você verá na prática</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>BEGIN / START TRANSACTION</strong>: abre a transação.</li>
+      <li><strong>COMMIT</strong>: confirma tudo de uma vez, tornando as mudanças duráveis.</li>
+      <li><strong>ROLLBACK</strong>: desfaz tudo desde o BEGIN, voltando ao estado anterior.</li>
+      <li><strong>SAVEPOINT</strong> (ponto de salvamento): marca um ponto intermediário para desfazer só até ali, suportado por PostgreSQL e Oracle.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: transferência bancária com commit e rollback</h3>
+
+    <div class="prever">
+      <strong>Antes de simular, preveja:</strong> com A tendo 1000 e B tendo 500, se a falha acontecer DEPOIS do débito em A mas ANTES do commit, qual será o saldo final de A: 800, 1000 ou 0?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, registre sua previsão de saldo final.<br>
+      <strong>Passo 1:</strong> clique em Iniciar transação (BEGIN).<br>
+      <strong>Passo 2:</strong> execute o débito em A e o crédito em B, um por vez.<br>
+      <strong>Passo 3:</strong> escolha o desfecho: COMMIT para confirmar ou FALHA para simular queda antes do commit.<br>
+      <strong>Passo 4:</strong> observe os saldos e o log; reinicie e tente o outro desfecho.
+    </div>
+
+    <div class="roteiro">
+      rode o caminho feliz até o COMMIT e mostre a durabilidade. Depois reinicie, repita até o crédito e provoque a FALHA: o rollback devolve A para 1000, provando a atomicidade na frente da turma.
+    </div>
+
+    <div class="legenda">
+      BEGIN = abre a transação · débito / crédito = as duas operações da transferência · COMMIT = confirma tudo · ROLLBACK = desfaz tudo · falha = queda simulada antes da confirmação · ACID = Atomicidade, Consistência, Isolamento, Durabilidade
+    </div>
+
+    <div class="demo-area" id="demo3-area">
+      <div id="demo3-saldos"></div>
+      <div style="margin-top:0.75rem">
+        <button class="btn" type="button" id="demo3-begin">1️⃣ BEGIN</button>
+        <button class="btn" type="button" id="demo3-debito">2️⃣ Débito em A (−200)</button>
+        <button class="btn" type="button" id="demo3-credito">3️⃣ Crédito em B (+200)</button>
+        <button class="btn" type="button" id="demo3-commit">4️⃣ COMMIT ✅</button>
+        <button class="btn btn-secundario" type="button" id="demo3-falha">💥 FALHA antes do commit</button>
+        <button class="btn btn-secundario" type="button" id="demo3-reset">🔄 Reiniciar</button>
+      </div>
+      <div id="demo3-log" style="margin-top:1rem; font-family:monospace; font-size:0.9rem; min-height:100px; background:var(--fundo-codigo); padding:0.75rem; border-radius:8px"></div>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> entre o BEGIN e o COMMIT, os saldos mostrados são provisórios (visão da transação). Só o COMMIT os torna duráveis; qualquer falha nesse intervalo termina em rollback, com A e B exatamente como estavam. É a atomicidade protegendo o dinheiro de verdade.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 3</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      chave estrangeira = coluna que aponta para outra tabela, garantindo integridade referencial ·
+      UNIQUE = restrição que impede valores duplicados ·
+      CHECK = restrição que valida regra de negócio no banco ·
+      transação = pacote de operações tudo-ou-nada ·
+      COMMIT = confirmação durável · ROLLBACK = desfazer tudo ·
+      ACID = Atomicidade, Consistência, Isolamento, Durabilidade.
+    </div>
+
+    <div class="pergunta" data-pergunta="3-1">
+      <p>1. Um Pedido foi inserido apontando para cliente_id = 999, que não existe na tabela Cliente, e o banco recusou a operação. Qual restrição agiu?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! UNIQUE impede duplicatas na própria coluna; aqui o problema é apontar para uma linha inexistente em OUTRA tabela.">UNIQUE</button>
+        <button class="alt" type="button" data-fb="Correto! A chave estrangeira (FOREIGN KEY) garante a integridade referencial: todo valor de cliente_id precisa existir como chave primária em Cliente. Sem isso, nasceriam pedidos órfãos.">FOREIGN KEY (chave estrangeira)</button>
+        <button class="alt" type="button" data-fb="Errado! CHECK valida regras como valores positivos ou faixas; existir em outra tabela é papel da chave estrangeira.">CHECK</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="3-2">
+      <p>2. Na transferência bancária, qual propriedade ACID garante que, se o crédito falhar, o débito já feito será desfeito?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! Atomicidade é o tudo-ou-nada: a transação é indivisível, e qualquer falha no caminho leva ao rollback completo, como se nada tivesse acontecido.">Atomicidade</button>
+        <button class="alt" type="button" data-fb="Errado! Durabilidade protege o que já foi CONFIRMADO (após o commit) contra quedas de energia; ela não age sobre operações ainda não confirmadas.">Durabilidade</button>
+        <button class="alt" type="button" data-fb="Errado! Isolamento cuida da invisibilidade de resultados parciais entre transações concorrentes, não de desfazer operações da mesma transação.">Isolamento</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="3-3">
+      <p>3. Por que as restrições de integridade devem viver no SGBD, e não apenas no código da aplicação?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! Restrições no banco não eliminam a validação da aplicação: as duas camadas se complementam, cada uma com seu papel.">Porque assim a aplicação não precisa validar nada</button>
+        <button class="alt" type="button" data-fb="Errado! Restrições não criptografam dados; elas impedem estados inválidos. Criptografia é uma preocupação separada.">Porque elas criptografam as colunas automaticamente</button>
+        <button class="alt" type="button" data-fb="Correto! Vários caminhos chegam ao banco: a aplicação, scripts de manutenção, migrações e até ataques. Com as regras no SGBD, qualquer caminho que tente um estado inválido é barrado na última muralha.">Porque qualquer caminho que chegue ao banco (bugs, scripts, ataques) esbarra nas regras, que são a última muralha</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 3</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=integridade+referencial+restrições+transações+ACID" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=transações+ACID+integridade+banco+de+dados" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=transações+ACID+commit+rollback+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Integridade referencial</strong>: nenhuma linha aponta para o vazio.</li>
+      <li><strong>Restrições</strong>: PRIMARY KEY, FOREIGN KEY, UNIQUE, NOT NULL, CHECK.</li>
+      <li><strong>Transação</strong>: unidade tudo-ou-nada de trabalho.</li>
+      <li><strong>COMMIT / ROLLBACK</strong>: confirmar / desfazer.</li>
+      <li><strong>ACID</strong>: as quatro garantias das transações.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Depois do COMMIT, uma queda de energia ainda pode apagar a transação confirmada.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> essa é exatamente a Durabilidade do ACID: ao confirmar, o SGBD grava o registro da transação em armazenamento não volátil antes de responder sucesso. O que estava fora do commit, sim, se perde; o commitido, não.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 4 ============ -->
+<div class="painel" id="painel-4" role="tabpanel" aria-labelledby="tab-4">
+  <h2>Aba 4 · Frameworks e bibliotecas populares no back-end</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é distinguir <strong>framework</strong> (do inglês, estrutura; um esqueleto pronto que chama o seu código, fenômeno chamado de <strong>inversão de controle</strong>) de <strong>biblioteca</strong> (conjunto de funções que VOCÊ chama quando quer), e conhecer os grandes nomes de cada linguagem: Spring Boot (Java), Django (Python), Express (Node.js), Laravel (PHP) e ASP.NET Core (C#). Na demo, você explora o cartão de cada framework com seus casos reais.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Framework ou biblioteca? A pergunta do controle</h3>
+    <p>Com uma <strong>biblioteca</strong>, você dirige: chama a função quando precisa, como usar a <strong>Axios</strong> (biblioteca JavaScript para requisições HTTP) dentro do seu próprio fluxo. Com um <strong>framework</strong>, o volante é dele: você escreve pedaços de código (controladores, modelos) e o framework decide quando chamá-los, dentro do ciclo de vida que ele mesmo monta. Essa <strong>inversão de controle</strong> é a fronteira conceitual entre os dois.</p>
+    <p>O prêmio de usar um framework é a produtividade: roteamento (decidir qual código atende cada URL), validação, segurança básica, conexão com banco e geração de respostas já vêm prontos e testados.</p>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Quem usa o quê</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Spring Boot (Java)</strong>: extensão do Spring (ecossistema Java mantido pela VMware/Broadcom); usado em bancos e no back-end de empresas como o iFood (aplicativo brasileiro de entregas), que roda microsserviços (partes pequenas e independentes do sistema) em Java.</li>
+      <li><strong>Django (Python)</strong>: framework batteries-included (com tudo incluído) mantido pela Django Software Foundation; nasceu em redações de jornal e hoje roda o Instagram (rede social de fotos) e o Disqus (sistema de comentários).</li>
+      <li><strong>Express (Node.js)</strong>: minimalista, é a camada web por trás de incontáveis APIs em JavaScript; empresas como o Uber (aplicativo de transporte) usam Node.js em serviços que conversam com Express.</li>
+      <li><strong>Laravel (PHP)</strong>: um dos pacotes mais baixados do Packagist (repositório oficial de pacotes PHP); domina agências e e-commerces médios no Brasil.</li>
+      <li><strong>ASP.NET Core (C#)</strong>: framework multiplataforma da Microsoft; o Stack Overflow (site de perguntas e respostas de programação) roda sobre essa tecnologia desde a fundação.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Como escolher sem drama</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Ecossistema da equipe</strong>: a linguagem que o time domina pesa mais que modinha.</li>
+      <li><strong>Tamanho do projeto</strong>: Django e Spring brilham em sistemas grandes com muitas telas e regras; Express e Flask (microframework Python) dão agilidade em APIs pequenas.</li>
+      <li><strong>Mercado e vagas</strong>: no Brasil, Java com Spring e C# com .NET dominam o mercado corporativo; JavaScript e Python lideram startups.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: explorador de frameworks back-end</h3>
+
+    <div class="prever">
+      <strong>Antes de clicar, preveja:</strong> qual framework nasceu dentro de redações de jornal para publicar notícias rapidamente: Django, Spring Boot ou ASP.NET Core?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, diga sua previsão em voz alta.<br>
+      <strong>Passo 1:</strong> clique em um framework para abrir o cartão.<br>
+      <strong>Passo 2:</strong> leia linguagem, ORM padrão (mapeador objeto-relacional, tema da Aba 5) e casos reais.<br>
+      <strong>Passo 3:</strong> compare dois cartões e diga qual escolheria para uma API pequena e qual para um banco grande.<br>
+      <strong>Passo 4:</strong> confira a previsão inicial sobre a origem do Django.
+    </div>
+
+    <div class="roteiro">
+      abra o Express e destaque o minimalismo: você monta o resto. Abra o Django e mostre o admin pronto. Pergunte: para um protótipo em uma semana, qual? Para um banco com auditoria, qual? As respostas fixam o critério de escolha.
+    </div>
+
+    <div class="demo-area" id="demo4-area">
+      <div style="display:flex; flex-wrap:wrap; gap:0.4rem">
+        <button class="btn" type="button" data-fw="spring">Spring Boot</button>
+        <button class="btn" type="button" data-fw="django">Django</button>
+        <button class="btn" type="button" data-fw="express">Express</button>
+        <button class="btn" type="button" data-fw="laravel">Laravel</button>
+        <button class="btn" type="button" data-fw="net">ASP.NET Core</button>
+      </div>
+      <div id="demo4-cartao" style="margin-top:1rem; padding:1rem; background:var(--fundo-codigo); border-radius:8px; min-height:140px">
+        👆 Clique em um framework para abrir o cartão com linguagem, ORM padrão e casos reais.
+      </div>
+      <button class="btn btn-secundario" type="button" id="demo4-reset" style="margin-top:0.75rem">🔄 Reiniciar</button>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> todos os cartões entregam roteamento, validação e acesso a dados, mas com filosofias diferentes: Django e Spring trazem tudo pronto; Express deixa você escolher cada peça. Não existe o melhor absoluto, existe o melhor para o contexto da equipe e do projeto.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 4</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      framework = esqueleto pronto que chama o seu código (inversão de controle) ·
+      biblioteca = conjunto de funções que você chama quando quer ·
+      inversão de controle = o framework dirige e chama seus pedaços de código ·
+      ORM = mapeador que liga classes a tabelas (detalhe na Aba 5) ·
+      microsserviço = parte pequena e independente de um sistema grande.
+    </div>
+
+    <div class="pergunta" data-pergunta="4-1">
+      <p>1. Qual é a diferença essencial entre framework e biblioteca?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! O tamanho do código não define nada: há bibliotecas enormes e frameworks enxutos como o Express.">O framework é sempre maior em linhas de código que a biblioteca</button>
+        <button class="alt" type="button" data-fb="Correto! No framework vale a inversão de controle: ele chama o seu código dentro do ciclo de vida dele. Na biblioteca é você quem chama as funções, no momento que decidir.">No framework, ele chama o seu código (inversão de controle); na biblioteca, você chama o código dela</button>
+        <button class="alt" type="button" data-fb="Errado! Ambos podem ser gratuitos ou pagos, abertos ou fechados; licença não é o critério que separa os dois conceitos.">Framework é gratuito e biblioteca é paga</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="4-2">
+      <p>2. O Instagram (rede social de fotos) roda seu back-end principalmente em qual framework?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! O Instagram é um dos maiores casos de Django (Python) no mundo; a equipe cresceu o framework junto com o produto, mantendo o ORM Django conectado a bancos PostgreSQL.">Django, em Python</button>
+        <button class="alt" type="button" data-fb="Errado! Laravel é PHP; o Instagram construiu sua pilha em Python com Django desde os primeiros anos.">Laravel, em PHP</button>
+        <button class="alt" type="button" data-fb="Errado! Express é JavaScript/Node.js; o núcleo do Instagram é Python com Django, não Node.">Express, em Node.js</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="4-3">
+      <p>3. Para uma API pequena e rápida de prototipar em JavaScript, qual escolha é a mais típica?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! Spring Boot é excelente, mas carrega o ecossistema Java completo; para um protótipo JS pequeno, é peso desnecessário e troca de linguagem.">Spring Boot, porque traz tudo pronto em Java</button>
+        <button class="alt" type="button" data-fb="Errado! ASP.NET Core exige C#; se a equipe e o protótipo estão em JavaScript, a troca de linguagem atrasa em vez de acelerar.">ASP.NET Core, porque é da Microsoft</button>
+        <button class="alt" type="button" data-fb="Correto! O Express é minimalista: com poucas linhas você sobe rotas GET e POST e conecta um ORM ou driver de banco. É a porta de entrada clássica de APIs em Node.js.">Express, pelo minimalismo e pelo ecossistema Node.js</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 4</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=frameworks+back-end+Spring+Django+Express+Laravel+comparação" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=frameworks+web+back-end+produtividade+inversão+de+controle" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=frameworks+back+end+qual+escolher+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Framework</strong>: esqueleto que chama seu código (inversão de controle).</li>
+      <li><strong>Biblioteca</strong>: funções que você chama.</li>
+      <li><strong>Roteamento</strong>: mapear URL para o código que atende.</li>
+      <li><strong>Microframework</strong>: framework mínimo, como Express e Flask.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Usar framework é sempre melhor que escrever tudo à mão.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> frameworks aceleram o comum, mas impõem convenções e peso. Para um serviço minúsculo ou um requisito muito específico, uma biblioteca enxuta e código próprio podem ser a escolha mais simples e rápida de manter.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 5 ============ -->
+<div class="painel" id="painel-5" role="tabpanel" aria-labelledby="tab-5">
+  <h2>Aba 5 · Frameworks ORM: bancos de dados sem SQL manual</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é dominar os <strong>ORMs</strong> (do inglês <em>Object-Relational Mapping</em>; em português, Mapeamento Objeto-Relacional): frameworks que traduzem objetos do seu código (classes como Cliente) em tabelas do banco (como clientes) e transformam chamadas de método em SQL (do inglês <em>Structured Query Language</em>; em português, Linguagem de Consulta Estruturada) gerado e parametrizado. Você vai ver o SQL nascer por trás de cada chamada e conhecer a armadilha clássica do <strong>N+1</strong>.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 O que um ORM faz por você</h3>
+    <p>Sem ORM, cada operação vira SQL escrito à mão: strings concatenadas, parâmetros escapados manualmente e linhas de banco mapeadas campo a campo para objetos. Com ORM, você escreve código na sua linguagem e ele cuida da tradução:</p>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Mapeamento</strong>: a classe Cliente vira a tabela clientes; o atributo nome vira a coluna nome. Anotações (como @Entity no Hibernate) ou convenções fazem a ligação.</li>
+      <li><strong>Geração de SQL parametrizado</strong>: os valores viajam separados do comando, o que bloqueia a <strong>injeção de SQL</strong> (ataque que cola código malicioso dentro da consulta; listado há anos no OWASP Top 10, ranking de riscos da organização aberta de segurança de aplicações OWASP).</li>
+      <li><strong>Portabilidade</strong>: trocar de MySQL para PostgreSQL mexe pouco no código, porque o dialeto (sotaque do SQL de cada banco) é problema do ORM.</li>
+      <li><strong>Migrações</strong>: ferramentas como Flyway (Java) ou as migrations do Django versionam mudanças de esquema junto com o código.</li>
+    </ul>
+    <p>Os nomes por linguagem: <strong>Hibernate</strong> (Java, integrado ao Spring), <strong>Django ORM</strong> e <strong>SQLAlchemy</strong> (Python), <strong>Entity Framework Core</strong> (C#), <strong>Eloquent</strong> (Laravel/PHP), <strong>Sequelize</strong>, <strong>TypeORM</strong> e <strong>Prisma</strong> (Node.js).</p>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 ORM no mundo real</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Hibernate no iFood</strong>: os microsserviços Java usam Spring Data JPA (camada do Spring sobre a especificação JPA, Java Persistence API), que por baixo roda Hibernate contra bancos PostgreSQL.</li>
+      <li><strong>Django ORM no Instagram</strong>: as models (classes de modelo) do Django viram consultas SQL otimizadas contra o PostgreSQL da empresa.</li>
+      <li><strong>Entity Framework no Stack Overflow</strong>: o site de programação acessa o SQL Server (banco da Microsoft) via EF Core, com LINQ (consulta integrada à linguagem C#).</li>
+      <li><strong>Prisma em startups Node.js</strong>: o Prisma (ORM moderno sueco) gera um cliente tipado e virou padrão em muitas startups JavaScript pela legibilidade.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ O custo escondido: o problema N+1</h3>
+    <p>A comodidade do ORM tem uma armadilha famosa: listar 100 pedidos e, para cada um, acessar pedido.cliente pode disparar 1 consulta para os pedidos MAIS 100 consultas para os clientes: 101 viagens ao banco, o <strong>problema N+1</strong>. A cura é o <strong>eager loading</strong> (carregamento ansioso, como include no Prisma ou select_related no Django), que traz tudo em uma ou duas consultas com junção (join, operação que combina tabelas relacionadas).</p>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: tradutor ORM para SQL e caçador de N+1</h3>
+
+    <div class="prever">
+      <strong>Antes de clicar, preveja:</strong> ao listar 3 pedidos e acessar o cliente de cada um sem eager loading, quantas consultas SQL o ORM vai disparar: 1, 3 ou 4?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, registre sua previsão de consultas.<br>
+      <strong>Passo 1:</strong> no modo CRUD, clique em uma operação de repositório e veja o SQL gerado.<br>
+      <strong>Passo 2:</strong> no modo N+1, rode o jeito ingênuo e conte as consultas no log.<br>
+      <strong>Passo 3:</strong> rode o jeito com eager loading e compare o total de consultas.<br>
+      <strong>Passo 4:</strong> conclua por que o include muda tudo.
+    </div>
+
+    <div class="roteiro">
+      mostre save() virando INSERT com interrogações (parâmetros). Depois o N+1 ingênuo: 1 + 3 consultas coloridas no log. Por fim o include: 1 consulta com join. A diferença visual de 4 contra 1 fica inesquecível.
+    </div>
+
+    <div class="legenda">
+      repositório = camada que guarda os métodos de acesso a dados · ? = parâmetro enviado separado do comando (anti-injeção) · join = junção de tabelas relacionadas em uma consulta · eager loading = trazer os relacionados de uma vez · N+1 = 1 consulta da lista mais N consultas dos relacionados
+    </div>
+
+    <div class="demo-area" id="demo5-area">
+      <div>
+        <button class="btn" type="button" data-orm="save">repo.save(clienteNovo)</button>
+        <button class="btn" type="button" data-orm="find">repo.findById(5)</button>
+        <button class="btn" type="button" data-orm="update">repo.save(clienteExistente)</button>
+        <button class="btn" type="button" data-orm="delete">repo.delete(cliente)</button>
+        <button class="btn btn-secundario" type="button" data-orm="n1">🐢 Listar pedidos (ingênuo)</button>
+        <button class="btn btn-secundario" type="button" data-orm="eager">⚡ Listar pedidos (eager)</button>
+      </div>
+      <div id="demo5-saida" style="margin-top:1rem"></div>
+      <button class="btn btn-secundario" type="button" id="demo5-reset" style="margin-top:0.75rem">🔄 Reiniciar</button>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> as interrogações no SQL gerado são a proteção anti-injeção: o valor do usuário nunca é colado no comando. E no modo N+1, o log de consultas escancara o custo escondido da preguiça de carregar relacionados de uma vez.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 5</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      ORM = Mapeamento Objeto-Relacional, classes virando tabelas ·
+      SQL parametrizado = valores enviados separados do comando, bloqueando injeção ·
+      injeção de SQL = ataque que cola código malicioso na consulta ·
+      N+1 = 1 consulta da lista mais N consultas dos relacionados ·
+      eager loading = trazer os relacionados junto, com join.
+    </div>
+
+    <div class="pergunta" data-pergunta="5-1">
+      <p>1. O que um framework ORM faz, em uma frase?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! O ORM não substitui o banco: ele conversa com ele. O SGBD continua guardando e consultando os dados.">Substitui o banco de dados por arquivos locais</button>
+        <button class="alt" type="button" data-fb="Correto! ORM mapeia classes e objetos do código para tabelas e linhas do banco, traduzindo chamadas de método em SQL gerado e parametrizado. É a ponte entre o mundo de objetos e o mundo relacional.">Traduz objetos e classes do código em tabelas e SQL, e vice-versa</button>
+        <button class="alt" type="button" data-fb="Errado! Criptografar colunas é função de recursos de segurança do banco ou da aplicação, não do mapeamento objeto-relacional.">Criptografa automaticamente todas as colunas da tabela</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="5-2">
+      <p>2. Por que o SQL parametrizado gerado pelos ORMs protege contra injeção de SQL?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! Os valores do usuário viajam como parâmetros separados do texto do comando; o banco os trata sempre como dado, nunca como parte do código SQL. Um nome como aspas OU 1=1 vira apenas um texto inofensivo.">Porque os valores viajam separados do comando e o banco os trata sempre como dado, nunca como código</button>
+        <button class="alt" type="button" data-fb="Errado! Criptografia esconde o conteúdo, mas não impede que texto malicioso vire parte do comando; a defesa aqui é estrutural (parâmetros), não criptográfica.">Porque criptografa o valor antes de enviar ao banco</button>
+        <button class="alt" type="button" data-fb="Errado! Apagar caracteres estranhos seria uma lista negra frágil e cheia de falsos negativos; a parametrização resolve o problema pela raiz, sem filtrar texto.">Porque apaga todos os caracteres especiais digitados pelo usuário</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="5-3">
+      <p>3. Listar 3 pedidos e acessar pedido.cliente de cada um, sem eager loading, dispara quantas consultas no padrão N+1?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! Uma consulta só traria os pedidos; os clientes de cada pedido viriam em consultas separadas, uma por pedido.">1 consulta</button>
+        <button class="alt" type="button" data-fb="Errado! Três seriam só as consultas dos clientes; falta contar a primeira, que lista os pedidos.">3 consultas</button>
+        <button class="alt" type="button" data-fb="Correto! São 1 consulta para a lista de pedidos mais 3 consultas (uma por pedido) para buscar cada cliente: 4 no total. Com 100 pedidos seriam 101. O eager loading resolve com uma consulta com join.">4 consultas</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 5</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=frameworks+ORM+Hibernate+Prisma+Django+ORM+problema+N%2B1" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=object+relational+mapping+desempenho+N%2B1" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=ORM+Hibernate+Prisma+aula+problema+N%2B1" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>ORM</strong>: ponte entre objetos do código e tabelas do banco.</li>
+      <li><strong>Repositório</strong>: camada com os métodos de acesso a dados.</li>
+      <li><strong>SQL parametrizado</strong>: valores separados do comando; anti-injeção.</li>
+      <li><strong>N+1 / eager loading</strong>: armadilha de consultas extras / cura com join.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Com ORM não é preciso entender SQL.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> o ORM esconde o SQL no caminho feliz, mas os problemas reais (N+1, joins errados, índices, relatórios pesados) só se resolvem lendo o SQL gerado. Entender SQL continua sendo o superpoder de quem usa ORM.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 6 - REVISÃO ============ -->
+<div class="painel" id="painel-6" role="tabpanel" aria-labelledby="tab-6">
+  <h2>⭐ Revisão — Mapa completo da aula</h2>
+
+  <h3>🗺️ Mapa da aula</h3>
+  <div class="revisao-mapa">
+    <div class="no-mapa">
+      <h4>Aba 1 · Funcionalidades</h4>
+      <p>CRUD, autenticação com JWT e OAuth2, validação de entrada e APIs REST com códigos de status.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 2 · Modelagem</h4>
+      <p>Modelo entidade-relacionamento, cardinalidades 1:1, 1:N e N:M, tabela associativa e as três formas normais.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 3 · Integridade</h4>
+      <p>Restrições PRIMARY KEY, FOREIGN KEY, UNIQUE, NOT NULL e CHECK; transações ACID com COMMIT e ROLLBACK.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 4 · Frameworks</h4>
+      <p>Inversão de controle, biblioteca versus framework, e o mapa Spring, Django, Express, Laravel e ASP.NET Core.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 5 · ORM</h4>
+      <p>Classes virando tabelas, SQL parametrizado anti-injeção, Hibernate, Prisma, Django ORM e o problema N+1.</p>
+    </div>
+    <div class="no-mapa">
+      <h4> Estudo em casa</h4>
+      <p>Refaça os quizzes das cinco abas para garantir os 5 selos e enfrente o Chefão com a cola rápida ao lado.</p>
+    </div>
+  </div>
+
+  <div class="cola-rapida">
+    <h3>🧷 Cola rápida — glossário da aula</h3>
+    <dl>
+      <dt><strong>CRUD</strong></dt>
+      <dd>Criar, Ler, Atualizar e Apagar: as quatro operações básicas sobre um recurso.</dd>
+
+      <dt><strong>API REST</strong></dt>
+      <dd>Interface web com métodos HTTP (GET, POST, PUT, DELETE) e códigos de status (200, 201, 404).</dd>
+
+      <dt><strong>JWT</strong></dt>
+      <dd>Token assinado que prova o login a cada requisição, sem sessão em memória no servidor.</dd>
+
+      <dt><strong>OAuth2</strong></dt>
+      <dd>Protocolo de autorização usado por logins de terceiros, como Entrar com Google.</dd>
+
+      <dt><strong>Validação de entrada</strong></dt>
+      <dd>Conferir tipo, formato e tamanho dos dados antes de tocar no banco; no back-end, por segurança.</dd>
+
+      <dt><strong>Entidade</strong></dt>
+      <dd>Coisa do mundo real que vira tabela, como Cliente ou Pedido.</dd>
+
+      <dt><strong>Cardinalidade</strong></dt>
+      <dd>Quantos de um lado se ligam ao outro: 1:1, 1:N ou N:M.</dd>
+
+      <dt><strong>Tabela associativa</strong></dt>
+      <dd>Tabela de junção que resolve relacionamentos N:M, como item_pedido.</dd>
+
+      <dt><strong>Chave primária / estrangeira</strong></dt>
+      <dd>Coluna que identifica a linha / coluna que aponta para a chave de outra tabela.</dd>
+
+      <dt><strong>Normalização (1FN, 2FN, 3FN)</strong></dt>
+      <dd>Regras que eliminam repetições: valores atômicos, dependência da chave inteira e fim da dependência transitiva.</dd>
+
+      <dt><strong>Anomalia de atualização</strong></dt>
+      <dd>Precisar editar várias linhas para mudar um fato único, risco de inconsistência.</dd>
+
+      <dt><strong>Restrições de integridade</strong></dt>
+      <dd>PRIMARY KEY, FOREIGN KEY, UNIQUE, NOT NULL e CHECK: regras que o próprio banco impõe.</dd>
+
+      <dt><strong>Transação</strong></dt>
+      <dd>Pacote de operações tudo-ou-nada, confirmado por COMMIT ou desfeito por ROLLBACK.</dd>
+
+      <dt><strong>ACID</strong></dt>
+      <dd>Atomicidade, Consistência, Isolamento e Durabilidade: as quatro garantias das transações.</dd>
+
+      <dt><strong>Framework</strong></dt>
+      <dd>Esqueleto pronto que chama o seu código (inversão de controle).</dd>
+
+      <dt><strong>Biblioteca</strong></dt>
+      <dd>Conjunto de funções que você chama quando quer; você mantém o controle do fluxo.</dd>
+
+      <dt><strong>ORM</strong></dt>
+      <dd>Mapeamento Objeto-Relacional: classes viram tabelas e métodos viram SQL.</dd>
+
+      <dt><strong>SQL parametrizado</strong></dt>
+      <dd>Valores enviados separados do comando; bloqueia injeção de SQL.</dd>
+
+      <dt><strong>Problema N+1</strong></dt>
+      <dd>Uma consulta da lista mais N consultas dos relacionados; curado com eager loading e join.</dd>
+
+      <dt><strong>Hibernate / Prisma / Django ORM</strong></dt>
+      <dd>ORMs de Java, Node.js e Python, respectivamente.</dd>
+    </dl>
+  </div>
+
+  <div class="chefao">
+    <h3>👑 CHEFÃO — DESAFIO FINAL</h3>
+    <p><strong>Enunciado:</strong> A startup <strong>EntregaJá</strong> (aplicativo fictício de entregas locais, inspirado no modelo do iFood) contratou você para desenhar e implementar o núcleo do back-end. O produto tem Clientes, Lojas e Pedidos, e cada Pedido contém itens de uma única Loja.</p>
+
+    <p style="margin-top:1rem"><strong>Parte 1 — modelagem (Aba 2):</strong> desenhe em texto as entidades Cliente, Loja, Pedido e ItemPedido com seus atributos mínimos, indique as cardinalidades (termo na cola rápida) entre elas e diga qual relacionamento exige tabela associativa (termo na cola rápida) e por quê.</p>
+
+    <p style="margin-top:1rem"><strong>Parte 2 — integridade (Aba 3):</strong> para a tabela Pedido, liste TRÊS restrições (termo na cola rápida) que você aplicaria e o que cada uma impede de errado acontecer. Depois explique, com o exemplo de cancelar um pedido que já debitou o cliente, por que a operação precisa ser uma transação ACID (termo na cola rápida) com ROLLBACK possível.</p>
+
+    <p style="margin-top:1rem"><strong>Parte 3 — funcionalidades (Aba 1):</strong> escreva a assinatura das quatro rotas REST (termo na cola rápida) do CRUD (termo na cola rápida) de Pedidos, com método HTTP e código de status de sucesso de cada uma. Indique em qual rota a autorização (termo na cola rápida) é mais crítica e por quê.</p>
+
+    <p style="margin-top:1rem"><strong>Parte 4 — framework e ORM (Abas 4 e 5):</strong> a equipe tem três pessoas que programam em JavaScript e precisa lançar em seis semanas. Escolha um framework (termo na cola rápida) e um ORM (termo na cola rápida) e justifique. Depois, mostre como evitar o problema N+1 (termo na cola rápida) ao listar Pedidos com seus Itens, citando a técnica de carregamento (termo na cola rápida).</p>
+  </div>
+
+  <details>
+    <summary>📚 Dica para o Chefão</summary>
+    <p style="margin-top:0.75rem">Na Parte 1, Cliente 1:N Pedido, Loja 1:N Pedido, e Pedido N:M Produto resolvido por ItemPedido (a associativa). Na Parte 2, pense em PRIMARY KEY no id, FOREIGN KEY para cliente e loja, e CHECK de valor total não negativo. Na Parte 3, GET /pedidos (200), POST /pedidos (201), PUT /pedidos/id (200) e DELETE /pedidos/id (204); a autorização é crítica no DELETE e no PUT, porque mudam o estado de um recurso alheio. Na Parte 4, Express ou NestJS com Prisma ou Sequelize fazem sentido para o time JavaScript; o N+1 se resolve com include (eager loading) trazendo itens na mesma consulta.</p>
+  </details>
+</div>
+
+<!-- ============ RODAPÉ ============ -->
+<footer>
+  <div class="bloco">
+    <h4>📋 FICHA TÉCNICA DA AULA</h4>
+    <p>Desenvolvimento Back-End — Aula 5, Unidade 2, págs. 30–52 · Gerado em 05/11/2026 · 5 abas de conteúdo + Revisão · 15 perguntas · 5 demos · cor #7E22CE</p>
+  </div>
+
+  <div class="bloco">
+    <h4>🪄 SOBRE O HTMLearning · v2.17 (23/10/2026)</h4>
+    <p style="margin-bottom:0.75rem">Transformar o sumário de qualquer disciplina em uma classe interativa em HTML único e offline, com previsão antes do clique, tentativa e erro guiado e exemplos reais.</p>
+
+    <ul style="margin-left:1.5rem; margin-bottom:0.75rem">
+      <li>O que é: metodologia e arquitetura de prompts que converte sumários em aulas interativas em minutos, com IAs gratuitas.</li>
+      <li>O que entrega: 5 a 7 abas + Revisão, simulações com previsão, quiz com retry sem revelar gabarito, linguagem plana, Modos Apresentação/Leitura.</li>
+      <li>Por que é inclusivo: um único .html leve, 100% offline, roda em PC e celular e viaja em pen drive para escolas desconectadas ou áreas rurais.</li>
+    </ul>
+
+    <p style="margin-bottom:0.5rem">Idealizador do projeto: Professor Wellington Dimas da Cruz</p>
+    <p style="margin-bottom:0.75rem">Apoiadora do projeto: Prof.ª Dr.ª Mariella Berger Andrade (IFES / CEFOR)</p>
+
+    <p style="margin-top:0.75rem">Contatos e links do projeto:</p>
+    <ul>
+      <li>E-mail do idealizador: <a href="mailto:cloud.ai-generative@outlook.com">cloud.ai-generative@outlook.com</a></li>
+      <li>Repositório GitHub do idealizador: <a href="https://github.com/cloud-ai-Generative" target="_blank" rel="noopener">github.com/cloud-ai-Generative</a></li>
+      <li>Currículo Lattes do idealizador: <a href="https://lattes.cnpq.br/6801791839011321" target="_blank" rel="noopener">lattes.cnpq.br/6801791839011321</a></li>
+      <li>Currículo Lattes da apoiadora: <a href="https://lattes.cnpq.br/3929645439848570" target="_blank" rel="noopener">lattes.cnpq.br/3929645439848570</a></li>
+      <li>Site oficial do projeto: <a href="https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html" target="_blank" rel="noopener">https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html</a></li>
+    </ul>
+  </div>
+</footer>
+
+<script>
+"use strict";
+
+/* ================= ESTADO ================= */
+var estado = {
+  abaAtual: 1,
+  xp: 0,
+  selos: {},
+  totalSelos: 0,
+  respostas: {},
+  modo: "leitura",
+  tema: "claro"
+};
+
+/* ================= NAVEGAÇÃO ================= */
+function ativarAba(num) {
+  estado.abaAtual = num;
+  var tabs = document.querySelectorAll(".tab");
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].setAttribute("aria-selected", tabs[i].getAttribute("data-aba") === String(num) ? "true" : "false");
+  }
+  var paineis = document.querySelectorAll(".painel");
+  for (var j = 0; j < paineis.length; j++) {
+    paineis[j].classList.remove("active");
+  }
+  var alvo = document.getElementById("painel-" + num);
+  if (alvo) alvo.classList.add("active");
+  document.getElementById("progresso").textContent = "Aba " + num + " de 6";
+}
+
+function irParaAba(num) {
+  ativarAba(num);
+  var novo = "#aba-" + num;
+  if (window.location.hash !== novo) {
+    window.location.hash = novo;
+  }
+  window.scrollTo(0, 0);
+}
+
+function lerHash() {
+  var h = window.location.hash.replace("#aba-", "");
+  var n = parseInt(h, 10);
+  if (n >= 1 && n <= 6) return n;
+  return 0;
+}
+
+window.addEventListener("hashchange", function () {
+  var n = lerHash();
+  if (n && n !== estado.abaAtual) ativarAba(n);
+});
+
+/* ================= MODOS ================= */
+function alternarModo() {
+  if (estado.modo === "leitura") {
+    document.body.classList.add("modo-apresentacao");
+    document.getElementById("btn-modo").textContent = "📖 Leitura";
+    estado.modo = "apresentacao";
+  } else {
+    document.body.classList.remove("modo-apresentacao");
+    document.getElementById("btn-modo").textContent = "🎤 Apresentação";
+    estado.modo = "leitura";
+  }
+}
+
+function alternarTema() {
+  if (estado.tema === "claro") {
+    document.body.setAttribute("data-theme", "dark");
+    document.getElementById("btn-tema").textContent = "☀️ Claro";
+    estado.tema = "escuro";
+  } else {
+    document.body.removeAttribute("data-theme");
+    document.getElementById("btn-tema").textContent = "🌙 Escuro";
+    estado.tema = "claro";
+  }
+}
+
+/* ================= QUIZ ================= */
+function fisherYates(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function inicializarQuiz() {
+  var perguntas = document.querySelectorAll(".pergunta");
+  for (var p = 0; p < perguntas.length; p++) {
+    (function (perg) {
+      var altsDiv = perg.querySelector(".alts");
+      var certaKey = altsDiv.getAttribute("data-certa");
+      var alts = [];
+      var filhos = altsDiv.querySelectorAll(".alt");
+      for (var k = 0; k < filhos.length; k++) alts.push(filhos[k]);
+      for (var idx = 0; idx < alts.length; idx++) {
+        var letra = String.fromCharCode(97 + idx);
+        alts[idx].setAttribute("data-ehcerta", letra === certaKey ? "true" : "false");
+      }
+      var emb = fisherYates(alts);
+      altsDiv.innerHTML = "";
+      for (var e = 0; e < emb.length; e++) {
+        altsDiv.appendChild(emb[e]);
+        emb[e].addEventListener("click", function () { responderQuiz(perg, this); });
+      }
+    })(perguntas[p]);
+  }
+}
+
+function responderQuiz(perg, alt) {
+  var id = perg.getAttribute("data-pergunta");
+  var reg = estado.respostas[id];
+  if (reg && reg.acertou) return;
+
+  var acerto = alt.getAttribute("data-ehcerta") === "true";
+  var fbCerta = perg.querySelector(".fb-certa");
+  var fbErrada = perg.querySelector(".fb-errada");
+
+  if (acerto) {
+    alt.classList.add("certa");
+    alt.textContent = "✓ " + alt.textContent;
+    var todas = perg.querySelectorAll(".alt");
+    for (var i = 0; i < todas.length; i++) todas[i].disabled = true;
+    fbCerta.textContent = "✅ Por que esta está certa: " + alt.getAttribute("data-fb");
+    fbCerta.classList.add("show");
+    fbErrada.classList.remove("show");
+    var pontos = (reg && !reg.acertou) ? 5 : 10;
+    estado.xp += pontos;
+    estado.respostas[id] = { acertou: true };
+    verificarSelo(id);
+    atualizarXP();
+  } else {
+    alt.classList.add("errada");
+    alt.textContent = "✗ " + alt.textContent;
+    alt.disabled = true;
+    fbErrada.textContent = "❌ Por que esta está errada: " + alt.getAttribute("data-fb");
+    fbErrada.classList.add("show");
+    if (!reg) estado.respostas[id] = { acertou: false };
+  }
+}
+
+function verificarSelo(id) {
+  var aba = id.split("-")[0];
+  var ids = [aba + "-1", aba + "-2", aba + "-3"];
+  for (var i = 0; i < ids.length; i++) {
+    var r = estado.respostas[ids[i]];
+    if (!r || !r.acertou) return;
+  }
+  if (!estado.selos[aba]) {
+    estado.selos[aba] = true;
+    estado.totalSelos += 1;
+    document.getElementById("selos").textContent = estado.totalSelos;
+  }
+}
+
+function atualizarXP() {
+  document.getElementById("xp").textContent = estado.xp;
+}
+
+/* ================= DEMO 1: REQUISIÇÕES ================= */
+var reqData = {
+  "get": {
+    linha: "GET /clientes",
+    passos: [
+      "Rota: o servidor casa GET /clientes com o controlador listarClientes()",
+      "Autorização: token JWT válido presente, perfil permitido",
+      "Controlador: chama repo.listar() com paginação (20 por página)",
+      "Banco: SELECT id, nome, email FROM clientes LIMIT 20",
+      "Resposta: 200 OK com corpo JSON contendo a lista"
+    ],
+    status: "200 OK"
+  },
+  "post": {
+    linha: "POST /clientes  corpo: nome, email",
+    passos: [
+      "Rota: o servidor casa POST /clientes com o controlador criarCliente()",
+      "Validação de entrada: nome não vazio, email com formato válido",
+      "Banco: INSERT INTO clientes (nome, email) VALUES (?, ?) com parâmetros",
+      "Restrição UNIQUE confere se o email já existe; se existir, responde 409",
+      "Resposta: 201 Created com o id do novo cliente no corpo"
+    ],
+    status: "201 Created"
+  },
+  "put": {
+    linha: "PUT /clientes/5  corpo: endereço novo",
+    passos: [
+      "Rota: o servidor casa PUT /clientes/5 com o controlador atualizarCliente()",
+      "Autorização: o token JWT precisa ser do próprio cliente 5 ou de um admin",
+      "Validação de entrada: campos de endereço conferidos",
+      "Banco: UPDATE clientes SET endereco = ? WHERE id = 5",
+      "Resposta: 200 OK com o cliente atualizado"
+    ],
+    status: "200 OK"
+  },
+  "del-ok": {
+    linha: "DELETE /clientes/5  (com token do dono)",
+    passos: [
+      "Rota: o servidor casa DELETE /clientes/5 com o controlador removerCliente()",
+      "Autorização: token JWT do próprio cliente 5 confere",
+      "Integridade: o banco verifica pedidos vinculados antes de apagar",
+      "Banco: DELETE FROM clientes WHERE id = 5",
+      "Resposta: 204 No Content (sucesso sem corpo)"
+    ],
+    status: "204 No Content"
+  },
+  "del-bad": {
+    linha: "DELETE /clientes/5  (SEM token)",
+    passos: [
+      "Rota: o servidor casa DELETE /clientes/5 com o controlador removerCliente()",
+      "Autorização: nenhum token JWT no cabeçalho Authorization",
+      "Camada de segurança BARRA a requisição antes de qualquer acesso ao banco",
+      "Resposta: 401 Unauthorized (não autenticado)"
+    ],
+    status: "401 Unauthorized"
+  }
+};
+
+function demo1Enviar(tipo) {
+  var d = reqData[tipo];
+  var html = "<div style='font-weight:bold; color:var(--cor-destaque-escuro); margin-bottom:0.5rem'>➡ " + d.linha + "</div>";
+  for (var i = 0; i < d.passos.length; i++) {
+    html += "<div style='padding:0.15rem 0'>" + (i + 1) + ". " + d.passos[i] + "</div>";
+  }
+  var cor = d.status.charAt(0) === "2" ? "var(--sucesso)" : "var(--erro)";
+  html += "<div style='margin-top:0.5rem; font-weight:bold; color:" + cor + "'>⬅ Status: " + d.status + "</div>";
+  document.getElementById("demo1-log").innerHTML = html;
+}
+
+function demo1Reset() {
+  document.getElementById("demo1-log").innerHTML = "";
+}
+
+/* ================= DEMO 2: NORMALIZAÇÃO ================= */
+var demo2Estado = { passo: 0 };
+
+function tabHtml(titulo, cols, rows) {
+  var h = "<h4 style='color:var(--cor-destaque-escuro); margin:0.75rem 0 0.25rem'>" + titulo + "</h4>";
+  h += "<table class='tab-dados'><tr>";
+  for (var c = 0; c < cols.length; c++) h += "<th>" + cols[c] + "</th>";
+  h += "</tr>";
+  for (var r = 0; r < rows.length; r++) {
+    h += "<tr>";
+    for (var k = 0; k < rows[r].length; k++) h += "<td>" + rows[r][k] + "</td>";
+    h += "</tr>";
+  }
+  h += "</table>";
+  return h;
+}
+
+function demo2Render() {
+  var p = demo2Estado.passo;
+  var html = "";
+  if (p === 0) {
+    html += "<p><strong>Passo 0 — Tabela plana (sem modelagem):</strong> tudo em uma tabela só.</p>";
+    html += tabHtml("PEDIDO", ["Pedido", "Cliente", "Cidade", "Produtos", "Preços", "Quantidades"], [
+      ["101", "Ana", "São Paulo", "Mouse; Teclado", "50; 100", "2; 1"],
+      ["102", "Bruno", "Rio de Janeiro", "Mouse", "50", "3"]
+    ]);
+    html += "<div class='resultado-erro'>⚠️ Problemas: células com listas (viola a 1FN); o preço do Mouse repetido em 2 linhas (anomalia de atualização); a cidade de Ana repetida a cada pedido dela (dependência transitiva).</div>";
+  } else if (p === 1) {
+    html += "<p><strong>Passo 1 — 1FN:</strong> cada célula com um valor atômico; linhas repetidas para cada produto.</p>";
+    html += tabHtml("PEDIDO_ITENS (1FN)", ["Pedido", "Cliente", "Cidade", "Produto", "Preço", "Quantidade"], [
+      ["101", "Ana", "São Paulo", "Mouse", "50", "2"],
+      ["101", "Ana", "São Paulo", "Teclado", "100", "1"],
+      ["102", "Bruno", "Rio de Janeiro", "Mouse", "50", "3"]
+    ]);
+    html += "<div class='resultado-demo'>✅ Listas eliminadas. Mas o preço do Mouse ainda mora em 2 linhas, e a cidade de Ana também: faltam a 2FN e a 3FN.</div>";
+  } else if (p === 2) {
+    html += "<p><strong>Passo 2 — 2FN:</strong> o preço depende só do Produto, não da chave composta (Pedido, Produto); migra para PRODUTO.</p>";
+    html += tabHtml("PRODUTO", ["produto_id", "nome", "preço"], [
+      ["1", "Mouse", "50"],
+      ["2", "Teclado", "100"]
+    ]);
+    html += tabHtml("ITEM_PEDIDO (parcial)", ["pedido_id", "produto_id", "quantidade", "cliente", "cidade"], [
+      ["101", "1", "2", "Ana", "São Paulo"],
+      ["101", "2", "1", "Ana", "São Paulo"],
+      ["102", "1", "3", "Bruno", "Rio de Janeiro"]
+    ]);
+    html += "<div class='resultado-demo'>✅ Preço em um lugar só: mudar o preço do Mouse vira 1 edição. Resta a cidade dependendo do cliente (dependência transitiva).</div>";
+  } else {
+    html += "<p><strong>Passo 3 — 3FN (modelo final):</strong> a cidade depende do Cliente, não da chave do pedido; migra para CLIENTE.</p>";
+    html += tabHtml("CLIENTE", ["cliente_id", "nome", "cidade"], [
+      ["1", "Ana", "São Paulo"],
+      ["2", "Bruno", "Rio de Janeiro"]
+    ]);
+    html += tabHtml("PRODUTO", ["produto_id", "nome", "preço"], [
+      ["1", "Mouse", "50"],
+      ["2", "Teclado", "100"]
+    ]);
+    html += tabHtml("PEDIDO", ["pedido_id", "cliente_id (FK)"], [
+      ["101", "1"],
+      ["102", "2"]
+    ]);
+    html += tabHtml("ITEM_PEDIDO", ["pedido_id (FK)", "produto_id (FK)", "quantidade"], [
+      ["101", "1", "2"],
+      ["101", "2", "1"],
+      ["102", "1", "3"]
+    ]);
+    html += "<div class='resultado-demo'>✅ Modelo na 3FN: cada fato mora em um lugar só. Mudar o preço do Mouse = 1 linha em PRODUTO; mudar a cidade de Ana = 1 linha em CLIENTE. As chaves estrangeiras (FK) costuram tudo com integridade referencial.</div>";
+  }
+  document.getElementById("demo2-conteudo").innerHTML = html;
+}
+
+function demo2Next() {
+  if (demo2Estado.passo < 3) {
+    demo2Estado.passo += 1;
+    demo2Render();
+  }
+}
+
+function demo2Reset() {
+  demo2Estado.passo = 0;
+  demo2Render();
+}
+
+/* ================= DEMO 3: TRANSAÇÃO ================= */
+var demo3Estado = { a: 1000, b: 500, etapa: 0, debitoFeito: false, creditoFeito: false, fechada: true };
+
+function demo3RenderSaldos(provisorio) {
+  var st = demo3Estado;
+  var rot = provisorio ? " (visão provisória da transação)" : " (confirmados)";
+  var html = "<div style='margin-bottom:0.5rem; font-weight:bold'>Saldos" + rot + ":</div>";
+  html += "<div class='saldo-card" + (st.a < 0 ? " negativo" : "") + "'>Conta A: R$ " + st.a + "</div>";
+  html += "<div class='saldo-card" + (st.b < 0 ? " negativo" : "") + "'>Conta B: R$ " + st.b + "</div>";
+  document.getElementById("demo3-saldos").innerHTML = html;
+}
+
+function demo3Log(msg, tipo) {
+  var log = document.getElementById("demo3-log");
+  var cor = tipo === "erro" ? "var(--erro)" : (tipo === "ok" ? "var(--sucesso)" : "var(--texto)");
+  log.innerHTML += "<div style='color:" + cor + "'>" + msg + "</div>";
+  log.scrollTop = log.scrollHeight;
+}
+
+function demo3Reset() {
+  demo3Estado = { a: 1000, b: 500, etapa: 0, debitoFeito: false, creditoFeito: false, fechada: true };
+  document.getElementById("demo3-log").innerHTML = "";
+  demo3RenderSaldos(false);
+}
+
+function demo3Begin() {
+  var st = demo3Estado;
+  if (!st.fechada) { demo3Log("⚠️ Já existe transação aberta. Confirme, provoque falha ou reinicie.", "erro"); return; }
+  st.fechada = false;
+  st.etapa = 1;
+  demo3Log("BEGIN; — transação aberta. Saldos confirmados: A=1000, B=500.");
+}
+
+function demo3Debito() {
+  var st = demo3Estado;
+  if (st.fechada) { demo3Log("⚠️ Abra a transação com BEGIN antes de debitar.", "erro"); return; }
+  if (st.debitoFeito) { demo3Log("⚠️ Débito já executado nesta transação.", "erro"); return; }
+  st.a -= 200;
+  st.debitoFeito = true;
+  st.etapa = 2;
+  demo3Log("UPDATE contas SET saldo = 800 WHERE id = A; — débito provisório aplicado.");
+  demo3RenderSaldos(true);
+}
+
+function demo3Credito() {
+  var st = demo3Estado;
+  if (st.fechada) { demo3Log("⚠️ Abra a transação com BEGIN antes de creditar.", "erro"); return; }
+  if (!st.debitoFeito) { demo3Log("⚠️ Faça o débito antes do crédito (ordem da transferência).", "erro"); return; }
+  if (st.creditoFeito) { demo3Log("⚠️ Crédito já executado nesta transação.", "erro"); return; }
+  st.b += 200;
+  st.creditoFeito = true;
+  st.etapa = 3;
+  demo3Log("UPDATE contas SET saldo = 700 WHERE id = B; — crédito provisório aplicado.");
+  demo3RenderSaldos(true);
+}
+
+function demo3Commit() {
+  var st = demo3Estado;
+  if (st.fechada) { demo3Log("⚠️ Nenhuma transação aberta para confirmar.", "erro"); return; }
+  if (!st.debitoFeito || !st.creditoFeito) { demo3Log("⚠️ Execute débito e crédito antes do COMMIT.", "erro"); return; }
+  st.fechada = true;
+  demo3Log("COMMIT; — transação confirmada. Os saldos 800 e 700 agora são DURÁVEIS (propriedade D do ACID).", "ok");
+  demo3RenderSaldos(false);
+}
+
+function demo3Falha() {
+  var st = demo3Estado;
+  if (st.fechada) { demo3Log("⚠️ Nenhuma transação aberta para falhar.", "erro"); return; }
+  demo3Log("💥 QUEDA DE ENERGIA antes do COMMIT!", "erro");
+  demo3Log("ROLLBACK automático: o banco desfaz o que estava provisório. Saldos voltam ao estado confirmado.", "erro");
+  st.a = 1000;
+  st.b = 500;
+  st.fechada = true;
+  st.debitoFeito = false;
+  st.creditoFeito = false;
+  demo3RenderSaldos(false);
+  demo3Log("✅ Atomicidade demonstrada: nada ficou pela metade. A continua 1000 e B continua 500.", "ok");
+}
+
+/* ================= DEMO 4: FRAMEWORKS ================= */
+var fwData = {
+  spring: {
+    nome: "Spring Boot (Java)",
+    orm: "Hibernate / Spring Data JPA",
+    filosofia: "Ecossistema completo para sistemas empresariais: segurança, transações e microsserviços prontos.",
+    casos: "Bancos brasileiros e o back-end do iFood (aplicativo brasileiro de entregas) rodam microsserviços Java com Spring."
+  },
+  django: {
+    nome: "Django (Python)",
+    orm: "Django ORM",
+    filosofia: "Batteries-included: admin, autenticação e migrações já vêm prontos na caixa.",
+    casos: "Nasceu em redações de jornal e hoje roda o Instagram (rede social de fotos) e o Disqus (sistema de comentários)."
+  },
+  express: {
+    nome: "Express (Node.js)",
+    orm: "Sequelize, TypeORM ou Prisma (à escolha)",
+    filosofia: "Minimalista: só roteamento e middlewares; o resto você escolhe e monta.",
+    casos: "Base de incontáveis APIs JavaScript; serviços do Uber (aplicativo de transporte) usam Node.js nesse estilo."
+  },
+  laravel: {
+    nome: "Laravel (PHP)",
+    orm: "Eloquent",
+    filosofia: "Sintaxe elegante e produtividade alta; muito forte em agências e e-commerces.",
+    casos: "Um dos pacotes mais baixados do Packagist (repositório oficial de pacotes PHP); domina o mercado web médio brasileiro."
+  },
+  net: {
+    nome: "ASP.NET Core (C#)",
+    orm: "Entity Framework Core",
+    filosofia: "Multiplataforma e de alto desempenho, integrado ao ecossistema Microsoft e ao LINQ.",
+    casos: "O Stack Overflow (site de perguntas e respostas de programação) roda sobre ASP.NET desde a fundação."
+  }
+};
+
+function demo4Mostrar(fw) {
+  var d = fwData[fw];
+  document.getElementById("demo4-cartao").innerHTML =
+    "<div style='border-left:4px solid var(--cor-destaque); padding-left:1rem'>" +
+    "<h4 style='color:var(--cor-destaque-escuro); margin-bottom:0.5rem'>" + d.nome + "</h4>" +
+    "<p><strong>ORM padrão:</strong> " + d.orm + "</p>" +
+    "<p><strong>Filosofia:</strong> " + d.filosofia + "</p>" +
+    "<p><strong>🌎 Casos reais:</strong> " + d.casos + "</p>" +
+    "</div>";
+}
+
+function demo4Reset() {
+  document.getElementById("demo4-cartao").innerHTML = "👆 Clique em um framework para abrir o cartão com linguagem, ORM padrão e casos reais.";
+}
+
+/* ================= DEMO 5: ORM ================= */
+var ormData = {
+  save: {
+    codigo: "Cliente c = new Cliente(null, 'Ana', 'ana@mail.com');\nrepo.save(c);",
+    sql: "INSERT INTO clientes (nome, email) VALUES (?, ?);   -- parâmetros: 'Ana', 'ana@mail.com'"
+  },
+  find: {
+    codigo: "Cliente c = repo.findById(5);",
+    sql: "SELECT id, nome, email FROM clientes WHERE id = ?;   -- parâmetro: 5"
+  },
+  update: {
+    codigo: "c.setNome('Ana Souza');\nrepo.save(c);   // c já tem id",
+    sql: "UPDATE clientes SET nome = ?, email = ? WHERE id = ?;   -- parâmetros enviados separados"
+  },
+  delete: {
+    codigo: "repo.delete(c);",
+    sql: "DELETE FROM clientes WHERE id = ?;   -- parâmetro: id do objeto"
+  },
+  n1: {
+    titulo: " Jeito ingênuo (N+1)",
+    linhas: [
+      "Consulta 1: SELECT * FROM pedidos;",
+      "Consulta 2: SELECT * FROM clientes WHERE id = 1;   (cliente do pedido 1)",
+      "Consulta 3: SELECT * FROM clientes WHERE id = 1;   (cliente do pedido 2)",
+      "Consulta 4: SELECT * FROM clientes WHERE id = 2;   (cliente do pedido 3)"
+    ],
+    total: 4,
+    msg: "Para 3 pedidos: 1 + 3 = 4 consultas. Com 100 pedidos seriam 101 viagens ao banco: o problema N+1 drenando desempenho."
+  },
+  eager: {
+    titulo: "⚡ Jeito com eager loading (include / join)",
+    linhas: [
+      "Consulta 1: SELECT p.*, c.* FROM pedidos p JOIN clientes c ON c.id = p.cliente_id;"
+    ],
+    total: 1,
+    msg: "Uma única consulta com join traz pedidos e clientes juntos. O N+1 desaparece e o banco respira aliviado."
+  }
+};
+
+function demo5Mostrar(op) {
+  var d = ormData[op];
+  var html = "";
+  if (op === "n1" || op === "eager") {
+    html += "<h4 style='color:var(--cor-destaque-escuro)'>" + d.titulo + "</h4>";
+    html += "<pre>";
+    for (var i = 0; i < d.linhas.length; i++) html += d.linhas[i] + "\n";
+    html += "</pre>";
+    html += "<div class='resultado-demo'>🔢 Total de consultas: <strong>" + d.total + "</strong>. " + d.msg + "</div>";
+  } else {
+    html += "<h4 style='color:var(--cor-destaque-escuro)'>Código (camada de repositório)</h4>";
+    html += "<pre>" + d.codigo + "</pre>";
+    html += "<h4 style='color:var(--cor-destaque-escuro)'>SQL gerado pelo ORM</h4>";
+    html += "<pre>" + d.sql + "</pre>";
+    html += "<div class='resultado-demo'>🛡️ Repare nas interrogações: os valores viajam como parâmetros separados, bloqueando injeção de SQL sem esforço seu.</div>";
+  }
+  document.getElementById("demo5-saida").innerHTML = html;
+}
+
+function demo5Reset() {
+  document.getElementById("demo5-saida").innerHTML = "";
+}
+
+/* ================= LIGAÇÕES ================= */
+function ligarBotoes() {
+  var tabs = document.querySelectorAll(".tab");
+  for (var t = 0; t < tabs.length; t++) {
+    (function (tab) {
+      tab.addEventListener("click", function () {
+        irParaAba(parseInt(tab.getAttribute("data-aba"), 10));
+      });
+      tab.addEventListener("keydown", function (ev) {
+        var lista = Array.prototype.slice.call(document.querySelectorAll(".tab"));
+        var idx = lista.indexOf(tab);
+        if (ev.key === "ArrowRight" && idx < lista.length - 1) { lista[idx + 1].focus(); ev.preventDefault(); }
+        if (ev.key === "ArrowLeft" && idx > 0) { lista[idx - 1].focus(); ev.preventDefault(); }
+      });
+    })(tabs[t]);
+  }
+
+  document.getElementById("btn-modo").addEventListener("click", alternarModo);
+  document.getElementById("btn-tema").addEventListener("click", alternarTema);
+
+  var reqs = document.querySelectorAll("#demo1-area [data-req]");
+  for (var i = 0; i < reqs.length; i++) {
+    (function (b) { b.addEventListener("click", function () { demo1Enviar(b.getAttribute("data-req")); }); })(reqs[i]);
+  }
+  document.getElementById("demo1-reset").addEventListener("click", demo1Reset);
+
+  document.getElementById("demo2-next").addEventListener("click", demo2Next);
+  document.getElementById("demo2-reset").addEventListener("click", demo2Reset);
+  demo2Render();
+
+  document.getElementById("demo3-begin").addEventListener("click", demo3Begin);
+  document.getElementById("demo3-debito").addEventListener("click", demo3Debito);
+  document.getElementById("demo3-credito").addEventListener("click", demo3Credito);
+  document.getElementById("demo3-commit").addEventListener("click", demo3Commit);
+  document.getElementById("demo3-falha").addEventListener("click", demo3Falha);
+  document.getElementById("demo3-reset").addEventListener("click", demo3Reset);
+  demo3RenderSaldos(false);
+
+  var fws = document.querySelectorAll("#demo4-area [data-fw]");
+  for (var f = 0; f < fws.length; f++) {
+    (function (b) { b.addEventListener("click", function () { demo4Mostrar(b.getAttribute("data-fw")); }); })(fws[f]);
+  }
+  document.getElementById("demo4-reset").addEventListener("click", demo4Reset);
+
+  var orms = document.querySelectorAll("#demo5-area [data-orm]");
+  for (var o = 0; o < orms.length; o++) {
+    (function (b) { b.addEventListener("click", function () { demo5Mostrar(b.getAttribute("data-orm")); }); })(orms[o]);
+  }
+  document.getElementById("demo5-reset").addEventListener("click", demo5Reset);
+
+  document.addEventListener("keydown", function (ev) {
+    if (estado.modo === "apresentacao") {
+      if (ev.key === "ArrowRight" && estado.abaAtual < 6) irParaAba(estado.abaAtual + 1);
+      if (ev.key === "ArrowLeft" && estado.abaAtual > 1) irParaAba(estado.abaAtual - 1);
+    }
+  });
+}
+
+/* ================= CARGA INICIAL ================= */
+document.addEventListener("DOMContentLoaded", function () {
+  ligarBotoes();
+  inicializarQuiz();
+  var n = lerHash();
+  ativarAba(n ? n : 1);
+  atualizarXP();
+});
+</script>
+
+</body>
+</html>
