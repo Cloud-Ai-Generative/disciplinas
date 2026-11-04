@@ -276,13 +276,57 @@ EndGlobal</pre>
 &lt;/Project&gt;</pre>
 </div>
 </div></div>
+<p>A estrutura completa do ZIP — as 4 camadas viram 4 projetos, de dentro para fora: 🧠 <code>Domain</code> → ⚙️ <code>Application</code> → 🏭 <code>Infrastructure</code> → 🎯 <code>Api</code>, mais os 🧪 testes.</p>
 <div class="tree-view"><span class="folder">📁 LojaApi/</span>
-├── <span class="file">📄 LojaApi.sln</span>   ·   Dockerfile   ·   .dockerignore   ·   .gitignore
-├── <span class="folder">📁 LojaApi.Domain/</span>          <span class="comment"># 🧠 regras: Produto, Dinheiro, eventos, exceções, IProdutoRepository</span>
-├── <span class="folder">📁 LojaApi.Application/</span>     <span class="comment"># ⚙️ casos de uso: IProdutoService, ProdutoService, DTOs</span>
-├── <span class="folder">📁 LojaApi.Infrastructure/</span>  <span class="comment"># 🏭 EF Core + MySQL: AppDbContext, EfProdutoRepository</span>
-├── <span class="folder">📁 LojaApi.Api/</span>             <span class="comment"># 🎯 controllers, middleware, Program.cs, appsettings, requests.http</span>
-└── <span class="folder">📁 LojaApi.Tests/</span>           <span class="comment"># 🧪 ProdutoTests, ProdutoServiceTests</span>
+├── <span class="file">📄 LojaApi.sln</span>   <span class="comment"># 🧩 a solução: junta os 5 projetos</span>
+├── <span class="file">📄 Dockerfile</span>   <span class="comment"># 🐳 imagem da API (multi-stage)</span>
+├── <span class="file">📄 .dockerignore</span>   <span class="comment"># 🙈 não manda bin/ e obj/ para o build</span>
+├── <span class="file">📄 .gitignore</span>   <span class="comment"># 🙈 o que o Git não guarda</span>
+├── <span class="folder">📁 .github/</span>   <span class="comment"># 🔁 CI no GitHub</span>
+│   └── <span class="folder">📁 workflows/</span>
+│       └── <span class="file">📄 ci-dotnet.yml</span>   <span class="comment"># build + testes a cada push/PR</span>
+├── <span class="file">📄 .gitlab-ci.yml</span>   <span class="comment"># 🔁 CI no GitLab</span>
+├── <span class="folder">📁 LojaApi.Domain/</span>   <span class="comment"># 🧠 DOMAIN — as regras; não depende de nada</span>
+│   ├── <span class="file">📄 LojaApi.Domain.csproj</span>   <span class="comment"># projeto (sem pacotes, sem referências)</span>
+│   ├── <span class="folder">📁 Entities/</span>   <span class="comment"># entidades</span>
+│   │   └── <span class="file">📄 Produto.cs</span>   <span class="comment"># Aggregate Root: Criar, Reconstituir, Atualizar, regras</span>
+│   ├── <span class="folder">📁 ValueObjects/</span>   <span class="comment"># objetos de valor</span>
+│   │   └── <span class="file">📄 Dinheiro.cs</span>   <span class="comment"># valor imutável, comparado pelo valor</span>
+│   ├── <span class="folder">📁 Events/</span>   <span class="comment"># eventos de domínio</span>
+│   │   └── <span class="file">📄 ProdutoCriadoEvent.cs</span>   <span class="comment"># &quot;um produto foi criado&quot;</span>
+│   ├── <span class="folder">📁 Exceptions/</span>   <span class="comment"># erros de regra</span>
+│   │   └── <span class="file">📄 DomainException.cs</span>   <span class="comment"># DomainException (400) + NaoEncontradoException (404)</span>
+│   └── <span class="folder">📁 Interfaces/</span>   <span class="comment"># 🚪 portas</span>
+│       └── <span class="file">📄 IProdutoRepository.cs</span>   <span class="comment"># porta de persistência (o domínio diz O QUE precisa)</span>
+├── <span class="folder">📁 LojaApi.Application/</span>   <span class="comment"># ⚙️ APPLICATION — casos de uso; depende só do Domain</span>
+│   ├── <span class="file">📄 LojaApi.Application.csproj</span>   <span class="comment"># projeto → Domain</span>
+│   ├── <span class="folder">📁 DTOs/</span>   <span class="comment"># formatos de entrada e saída</span>
+│   │   └── <span class="file">📄 ProdutoDtos.cs</span>   <span class="comment"># ProdutoRequest, ProdutoResponse e o mapper</span>
+│   └── <span class="folder">📁 Services/</span>   <span class="comment"># casos de uso</span>
+│       ├── <span class="file">📄 IProdutoService.cs</span>   <span class="comment"># contrato dos casos de uso</span>
+│       └── <span class="file">📄 ProdutoService.cs</span>   <span class="comment"># listar, obter, criar, atualizar, excluir</span>
+├── <span class="folder">📁 LojaApi.Infrastructure/</span>   <span class="comment"># 🏭 INFRASTRUCTURE — EF Core + MySQL</span>
+│   ├── <span class="file">📄 LojaApi.Infrastructure.csproj</span>   <span class="comment"># projeto: EF Core, Pomelo → Domain, Application</span>
+│   ├── <span class="folder">📁 Data/</span>   <span class="comment"># banco</span>
+│   │   └── <span class="file">📄 AppDbContext.cs</span>   <span class="comment"># EF Core: tabela produtos do loja_db (Tab 5)</span>
+│   └── <span class="folder">📁 Repositories/</span>   <span class="comment"># adapters</span>
+│       └── <span class="file">📄 EfProdutoRepository.cs</span>   <span class="comment"># adapter MySQL da porta IProdutoRepository</span>
+├── <span class="folder">📁 LojaApi.Api/</span>   <span class="comment"># 🎯 API — HTTP, JWT, erros; o executável</span>
+│   ├── <span class="file">📄 LojaApi.Api.csproj</span>   <span class="comment"># projeto web: JwtBearer, Swashbuckle → Application, Infrastructure</span>
+│   ├── <span class="folder">📁 Controllers/</span>   <span class="comment"># rotas</span>
+│   │   ├── <span class="file">📄 AuthController.cs</span>   <span class="comment"># POST /api/auth/login → tokenAcesso</span>
+│   │   └── <span class="file">📄 ProdutosController.cs</span>   <span class="comment"># /api/produtos (GET público, escrita com token)</span>
+│   ├── <span class="folder">📁 Middleware/</span>   <span class="comment"># 🚨 erros</span>
+│   │   └── <span class="file">📄 ExceptionMiddleware.cs</span>   <span class="comment"># exceção → problem+json (RFC 7807)</span>
+│   ├── <span class="file">📄 Program.cs</span>   <span class="comment"># composição: DI (porta → adapter), JWT, Swagger, pipeline</span>
+│   ├── <span class="file">📄 appsettings.json</span>   <span class="comment"># connection string do loja_db + JWT</span>
+│   ├── <span class="folder">📁 Properties/</span>   <span class="comment"># execução local</span>
+│   │   └── <span class="file">📄 launchSettings.json</span>   <span class="comment"># porta 5000 + abre o Swagger</span>
+│   └── <span class="file">📄 requests.http</span>   <span class="comment"># 🧪 o roteiro do REST Client (o mesmo da Tab 4)</span>
+└── <span class="folder">📁 LojaApi.Tests/</span>   <span class="comment"># 🧪 TESTES — sem banco (Moq)</span>
+    ├── <span class="file">📄 LojaApi.Tests.csproj</span>   <span class="comment"># projeto: xUnit + Moq → Domain, Application</span>
+    ├── <span class="file">📄 ProdutoServiceTests.cs</span>   <span class="comment"># serviço: 9 testes</span>
+    └── <span class="file">📄 ProdutoTests.cs</span>   <span class="comment"># domínio: 6 testes, 8 casos</span>
 </div>
 <div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=c%23+dev+kit+solution+explorer+vs+code" target="_blank">Solution Explorer do C# Dev Kit</a> · <a class="ext" href="https://www.youtube.com/results?search_query=solution+e+projetos+.net+sln+csproj+explicado" target="_blank">Solução e projetos no .NET</a></div>
 </div>
