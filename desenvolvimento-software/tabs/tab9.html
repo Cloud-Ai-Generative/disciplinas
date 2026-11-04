@@ -404,16 +404,99 @@ EndGlobal</pre>
 &lt;/Project&gt;</pre>
 </div>
 </div></div>
+<p>A estrutura completa do ZIP — cada módulo tem as mesmas camadas: 🧠 <code>Domain</code> (regras) · 🚪 <code>Interfaces</code> (portas) · ⚙️ serviço · 🏭 <code>Data</code> + <code>Repositories</code> (EF Core/MySQL) · 🎯 controller (HTTP) · 🧩 <code>ModuleExtensions</code> (registro no host).</p>
 <div class="tree-view"><span class="folder">📁 LojaMulti/</span>
-├── <span class="file">📄 LojaMulti.sln</span>   ·   docker-compose.yml   ·   Dockerfile   ·   .dockerignore   ·   .gitignore
-├── <span class="folder">📁 init-sql-contextos/</span>        <span class="comment"># 🐬 4 databases + tabelas + dados de exemplo</span>
-├── <span class="folder">📁 LojaApi.Shared.Kernel/</span>     <span class="comment"># 🔌 DomainException, NaoEncontradoException, ProblemTypes</span>
-├── <span class="folder">📁 LojaApi.Modules.Auth/</span>      <span class="comment"># 🔑 Usuario, IUsuarioRepository, JwtService, AuthService, AuthController</span>
-├── <span class="folder">📁 LojaApi.Modules.Catalogo/</span>  <span class="comment"># 📦 Produto, IProdutoRepository + EfProdutoRepository, CatalogoController</span>
-├── <span class="folder">📁 LojaApi.Modules.Pedidos/</span>   <span class="comment"># 🛒 Pedido, IPedidoRepository + EfPedidoRepository, PedidoService (saga), clients HTTP</span>
-├── <span class="folder">📁 LojaApi.Modules.Clientes/</span>  <span class="comment"># 🧾 Cliente + Endereco, IClienteRepository + EfClienteRepository, ClientesController</span>
-├── <span class="folder">📁 LojaApi.Api/</span>               <span class="comment"># 🎯 host: Program.cs, middleware, appsettings, requests.http</span>
-└── <span class="folder">📁 LojaApi.Tests/</span>             <span class="comment"># 🧪 26 testes, nenhum precisa de banco</span>
+├── <span class="file">📄 LojaMulti.sln</span>   <span class="comment"># 🧩 a solução: junta os 7 projetos</span>
+├── <span class="file">📄 docker-compose.yml</span>   <span class="comment"># 🐬 MySQL desta aba (porta 3307)</span>
+├── <span class="folder">📁 init-sql-contextos/</span>   <span class="comment"># 🌱 roda 1 vez, no 1º boot do MySQL</span>
+│   └── <span class="file">📄 01-init.sql</span>   <span class="comment"># 4 databases + tabelas + dados (produto 101, cliente 7, endereço 3)</span>
+├── <span class="file">📄 Dockerfile</span>   <span class="comment"># 🐳 imagem da API (multi-stage)</span>
+├── <span class="file">📄 .dockerignore</span>   <span class="comment"># 🙈 não manda bin/ e obj/ para o build</span>
+├── <span class="file">📄 .gitignore</span>   <span class="comment"># 🙈 o que o Git não guarda</span>
+├── <span class="folder">📁 .github/</span>   <span class="comment"># 🔁 CI no GitHub</span>
+│   └── <span class="folder">📁 workflows/</span>
+│       └── <span class="file">📄 ci-multicontextos.yml</span>   <span class="comment"># build + 26 testes a cada push/PR</span>
+├── <span class="file">📄 .gitlab-ci.yml</span>   <span class="comment"># 🔁 CI no GitLab</span>
+├── <span class="folder">📁 LojaApi.Shared.Kernel/</span>   <span class="comment"># 🔌 KERNEL — o que todos os módulos compartilham (sem banco, sem HTTP)</span>
+│   ├── <span class="file">📄 LojaApi.Shared.Kernel.csproj</span>   <span class="comment"># projeto (sem pacotes)</span>
+│   ├── <span class="file">📄 ProblemTypes.cs</span>   <span class="comment"># os &quot;type&quot; de erro do contrato + status de cada um</span>
+│   ├── <span class="file">📄 DomainException.cs</span>   <span class="comment"># DomainException (400/409/503) + NaoEncontradoException (404)</span>
+│   └── <span class="file">📄 IDomainEvent.cs</span>   <span class="comment"># contrato de evento de domínio</span>
+├── <span class="folder">📁 LojaApi.Modules.Auth/</span>   <span class="comment"># 🔑 MÓDULO AUTH — login e JWT (auth_db)</span>
+│   ├── <span class="file">📄 LojaApi.Modules.Auth.csproj</span>   <span class="comment"># projeto: EF Core, Pomelo, JWT → Kernel</span>
+│   ├── <span class="folder">📁 Domain/</span>   <span class="comment"># 🧠 domínio</span>
+│   │   └── <span class="file">📄 Usuario.cs</span>   <span class="comment"># entidade: login, nome, senha, SenhaConfere, Reconstituir</span>
+│   ├── <span class="folder">📁 Interfaces/</span>   <span class="comment"># 🚪 portas</span>
+│   │   └── <span class="file">📄 IUsuarioRepository.cs</span>   <span class="comment"># porta: BuscarPorLogin, Salvar</span>
+│   ├── <span class="folder">📁 Services/</span>   <span class="comment"># ⚙️ casos de uso</span>
+│   │   ├── <span class="file">📄 AuthService.cs</span>   <span class="comment"># confere login/senha e pede o token</span>
+│   │   ├── <span class="file">📄 IAuthService.cs</span>   <span class="comment"># contrato do login + LoginResult</span>
+│   │   ├── <span class="file">📄 IJwtService.cs</span>   <span class="comment"># contrato do gerador de token</span>
+│   │   └── <span class="file">📄 JwtService.cs</span>   <span class="comment"># monta e assina o JWT (sub, name, login, exp)</span>
+│   ├── <span class="folder">📁 Data/</span>   <span class="comment"># 🏭 infraestrutura</span>
+│   │   └── <span class="file">📄 AuthDbContext.cs</span>   <span class="comment"># EF Core: tabela usuarios</span>
+│   ├── <span class="folder">📁 Repositories/</span>   <span class="comment"># 🏭 adapters</span>
+│   │   └── <span class="file">📄 EfUsuarioRepository.cs</span>   <span class="comment"># adapter MySQL da porta IUsuarioRepository</span>
+│   ├── <span class="folder">📁 Controllers/</span>   <span class="comment"># 🎯 HTTP</span>
+│   │   └── <span class="file">📄 AuthController.cs</span>   <span class="comment"># POST /api/auth/login</span>
+│   └── <span class="file">📄 ModuleExtensions.cs</span>   <span class="comment"># 🧩 registra o módulo no host (porta → adapter)</span>
+├── <span class="folder">📁 LojaApi.Modules.Catalogo/</span>   <span class="comment"># 📦 MÓDULO CATÁLOGO — produtos e estoque (catalogo_db)</span>
+│   ├── <span class="file">📄 LojaApi.Modules.Catalogo.csproj</span>   <span class="comment"># projeto: EF Core, Pomelo → Kernel</span>
+│   ├── <span class="folder">📁 Domain/</span>   <span class="comment"># 🧠 domínio</span>
+│   │   └── <span class="file">📄 Produto.cs</span>   <span class="comment"># aggregate: Criar, Atualizar, Reservar, Liberar</span>
+│   ├── <span class="folder">📁 Interfaces/</span>   <span class="comment"># 🚪 portas</span>
+│   │   └── <span class="file">📄 IProdutoRepository.cs</span>   <span class="comment"># porta + ResultadoReserva (reserva atômica)</span>
+│   ├── <span class="folder">📁 Data/</span>   <span class="comment"># 🏭 infraestrutura</span>
+│   │   └── <span class="file">📄 CatalogoDbContext.cs</span>   <span class="comment"># EF Core: tabela produtos</span>
+│   ├── <span class="folder">📁 Repositories/</span>   <span class="comment"># 🏭 adapters</span>
+│   │   └── <span class="file">📄 EfProdutoRepository.cs</span>   <span class="comment"># adapter MySQL (UPDATE condicional na reserva)</span>
+│   ├── <span class="file">📄 CatalogoController.cs</span>   <span class="comment"># 🎯 HTTP + DTOs: /api/catalogo/produtos/** (inclui reservar/liberar)</span>
+│   └── <span class="file">📄 ModuleExtensions.cs</span>   <span class="comment"># 🧩 registra o módulo no host</span>
+├── <span class="folder">📁 LojaApi.Modules.Pedidos/</span>   <span class="comment"># 🛒 MÓDULO PEDIDOS — checkout que orquestra Catálogo e Clientes (pedidos_db)</span>
+│   ├── <span class="file">📄 LojaApi.Modules.Pedidos.csproj</span>   <span class="comment"># projeto: EF Core, Pomelo → Kernel</span>
+│   ├── <span class="folder">📁 Domain/</span>   <span class="comment"># 🧠 domínio</span>
+│   │   └── <span class="file">📄 Pedido.cs</span>   <span class="comment"># aggregate + ItemPedido + PedidoStatus (máquina de estados)</span>
+│   ├── <span class="folder">📁 Interfaces/</span>   <span class="comment"># 🚪 portas</span>
+│   │   └── <span class="file">📄 IPedidoRepository.cs</span>   <span class="comment"># porta: Adicionar, Obter, ListarPorUsuario, AtualizarStatus</span>
+│   ├── <span class="folder">📁 Integration/</span>   <span class="comment"># 🔗 portas + adapters HTTP para os outros contextos</span>
+│   │   ├── <span class="file">📄 BearerTokenForwardingHandler.cs</span>   <span class="comment"># repassa o token do usuário nas chamadas</span>
+│   │   ├── <span class="file">📄 ICatalogoClient.cs</span>   <span class="comment"># ICatalogoClient + CatalogoClient (reservar/liberar, 2 s)</span>
+│   │   └── <span class="file">📄 IClientesClient.cs</span>   <span class="comment"># IClientesClient + ClientesClient (endereços, 2 s)</span>
+│   ├── <span class="file">📄 PedidoService.cs</span>   <span class="comment"># ⚙️ caso de uso: checkout com compensação, cancelar, meus pedidos</span>
+│   ├── <span class="folder">📁 Data/</span>   <span class="comment"># 🏭 infraestrutura</span>
+│   │   └── <span class="file">📄 PedidosDbContext.cs</span>   <span class="comment"># EF Core: pedidos + pedido_itens</span>
+│   ├── <span class="folder">📁 Repositories/</span>   <span class="comment"># 🏭 adapters</span>
+│   │   └── <span class="file">📄 EfPedidoRepository.cs</span>   <span class="comment"># adapter MySQL da porta IPedidoRepository</span>
+│   ├── <span class="file">📄 PedidosController.cs</span>   <span class="comment"># 🎯 HTTP + DTOs: /api/pedidos/**</span>
+│   └── <span class="file">📄 ModuleExtensions.cs</span>   <span class="comment"># 🧩 registra o módulo (repositório, clients HTTP, serviço)</span>
+├── <span class="folder">📁 LojaApi.Modules.Clientes/</span>   <span class="comment"># 🧾 MÓDULO CLIENTES — cliente e endereços (clientes_db)</span>
+│   ├── <span class="file">📄 LojaApi.Modules.Clientes.csproj</span>   <span class="comment"># projeto: EF Core, Pomelo → Kernel</span>
+│   ├── <span class="folder">📁 Domain/</span>   <span class="comment"># 🧠 domínio</span>
+│   │   └── <span class="file">📄 Endereco.cs</span>   <span class="comment"># Endereco + Cliente (aggregate: Criar, Atualizar, Desativar)</span>
+│   ├── <span class="folder">📁 Interfaces/</span>   <span class="comment"># 🚪 portas</span>
+│   │   └── <span class="file">📄 IClienteRepository.cs</span>   <span class="comment"># porta: Adicionar, Obter, AtualizarDados, Existe, ListarEnderecos</span>
+│   ├── <span class="folder">📁 Data/</span>   <span class="comment"># 🏭 infraestrutura</span>
+│   │   └── <span class="file">📄 ClientesDbContext.cs</span>   <span class="comment"># EF Core: clientes + enderecos</span>
+│   ├── <span class="folder">📁 Repositories/</span>   <span class="comment"># 🏭 adapters</span>
+│   │   └── <span class="file">📄 EfClienteRepository.cs</span>   <span class="comment"># adapter MySQL da porta IClienteRepository</span>
+│   ├── <span class="file">📄 ClientesController.cs</span>   <span class="comment"># 🎯 HTTP + DTOs: /api/clientes/**</span>
+│   └── <span class="file">📄 ModuleExtensions.cs</span>   <span class="comment"># 🧩 registra o módulo no host</span>
+├── <span class="folder">📁 LojaApi.Api/</span>   <span class="comment"># 🎯 HOST — o único executável: junta os 4 módulos</span>
+│   ├── <span class="file">📄 LojaApi.Api.csproj</span>   <span class="comment"># projeto web: JwtBearer, Swashbuckle → 4 módulos + Kernel</span>
+│   ├── <span class="file">📄 Program.cs</span>   <span class="comment"># composição: módulos, JWT, JSON do contrato, pipeline</span>
+│   ├── <span class="folder">📁 Middleware/</span>   <span class="comment"># 🚨 erros</span>
+│   │   └── <span class="file">📄 ExceptionMiddleware.cs</span>   <span class="comment"># exceção → problem+json (RFC 7807)</span>
+│   ├── <span class="file">📄 appsettings.json</span>   <span class="comment"># 4 connection strings (3307), Services, JWT</span>
+│   ├── <span class="folder">📁 Properties/</span>   <span class="comment"># ⚙️ execução local</span>
+│   │   └── <span class="file">📄 launchSettings.json</span>   <span class="comment"># porta 5000 + abre o Swagger</span>
+│   └── <span class="file">📄 requests.http</span>   <span class="comment"># 🧪 os 14 pedidos do REST Client</span>
+└── <span class="folder">📁 LojaApi.Tests/</span>   <span class="comment"># 🧪 TESTES — 26, nenhum precisa de banco</span>
+    ├── <span class="file">📄 LojaApi.Tests.csproj</span>   <span class="comment"># projeto: xUnit + Moq → Kernel + 4 módulos</span>
+    ├── <span class="file">📄 AuthServiceTests.cs</span>   <span class="comment"># 5 testes</span>
+    ├── <span class="file">📄 CatalogoProdutoTests.cs</span>   <span class="comment"># 8 testes</span>
+    ├── <span class="file">📄 ClienteEnderecoTests.cs</span>   <span class="comment"># 5 testes</span>
+    ├── <span class="file">📄 PedidoServiceTests.cs</span>   <span class="comment"># 7 testes (3 mocks)</span>
+    └── <span class="file">📄 ProblemTypesTests.cs</span>   <span class="comment"># 1 teste</span>
 </div>
 <div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=c%23+dev+kit+solution+explorer+vs+code" target="_blank">Solution Explorer do C# Dev Kit</a> · <a class="ext" href="https://www.youtube.com/results?search_query=solution+e+projetos+.net+sln+csproj+explicado" target="_blank">Solução e projetos no .NET</a></div>
 </div>
