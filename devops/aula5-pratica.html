@@ -1,0 +1,2091 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DEVOPS — Aula 5</title>
+<!-- HTMLearning v2.17 — Campos não informados: professor da disciplina (nome, e-mail, lattes, orcid, site, instituição). Nenhum conteúdo pedagógico foi inventado. -->
+<style>
+:root {
+  --cor-destaque: #D97706;
+  --cor-destaque-claro: #FEF3C7;
+  --cor-destaque-escuro: #92400E;
+  --fundo: #FFFFFF;
+  --fundo-cartao: #F8FAFC;
+  --fundo-codigo: #F1F5F9;
+  --texto: #0F172A;
+  --texto-suave: #64748B;
+  --borda: #E2E8F0;
+  --sucesso: #059669;
+  --erro: #DC2626;
+  --aviso: #F59E0B;
+}
+[data-theme="dark"] {
+  --fundo: #0F172A;
+  --fundo-cartao: #1E293B;
+  --fundo-codigo: #334155;
+  --texto: #F1F5F9;
+  --texto-suave: #94A3B8;
+  --borda: #475569;
+  --cor-destaque-claro: #78350F;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 18px;
+  line-height: 1.6;
+  background: var(--fundo);
+  color: var(--texto);
+  transition: background 0.3s, color 0.3s;
+}
+body.modo-apresentacao { font-size: 22px; }
+header {
+  background: linear-gradient(135deg, var(--cor-destaque), var(--cor-destaque-escuro));
+  color: white;
+  padding: 2rem 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+header .meta { opacity: 0.95; font-size: 0.95rem; }
+.controles-topo { position: fixed; top: 1rem; right: 1rem; z-index: 1000; display: flex; gap: 0.5rem; }
+.controles-topo button {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--cor-destaque);
+  color: var(--cor-destaque);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+.controles-topo button:hover { background: var(--cor-destaque); color: white; }
+.xp-bar {
+  position: sticky;
+  top: 0;
+  background: var(--cor-destaque-claro);
+  padding: 0.75rem 1.5rem;
+  border-bottom: 2px solid var(--cor-destaque);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  z-index: 99;
+}
+.tabs-container {
+  position: sticky;
+  top: 52px;
+  background: var(--fundo);
+  border-bottom: 2px solid var(--borda);
+  z-index: 98;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+.tabs { display: flex; padding: 0 1rem; gap: 0.25rem; }
+.tab {
+  padding: 1rem 1.5rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--texto-suave);
+  font-size: 1rem;
+  font-weight: 600;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.tab:hover { color: var(--cor-destaque); }
+.tab[aria-selected="true"] {
+  color: var(--cor-destaque);
+  border-bottom-color: var(--cor-destaque);
+  background: var(--fundo);
+}
+.painel { display: none; padding: 2rem 1.5rem; max-width: 1100px; margin: 0 auto; }
+.painel.active { display: block; animation: fade 0.3s; }
+@keyframes fade { from {opacity:0} to {opacity:1} }
+h2 {
+  color: var(--cor-destaque-escuro);
+  border-left: 5px solid var(--cor-destaque);
+  padding-left: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.6rem;
+}
+h3 { color: var(--cor-destaque-escuro); margin: 1.5rem 0 1rem; font-size: 1.3rem; }
+.cartao {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.missao {
+  background: linear-gradient(135deg, var(--cor-destaque-claro), var(--fundo-cartao));
+  border-left: 5px solid var(--cor-destaque);
+}
+.missao::before {
+  content: "🎯 MISSÃO";
+  display: block;
+  font-weight: bold;
+  color: var(--cor-destaque-escuro);
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.mundo-real { background: #E7F5FF; border-left: 5px solid #1971C2; }
+[data-theme="dark"] .mundo-real { background: #1A3A52; }
+.mundo-real::before {
+  content: "🌎 NO MUNDO REAL";
+  display: block;
+  font-weight: bold;
+  color: #1971C2;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.ferramentas { background: #D3F9D8; border-left: 5px solid #059669; }
+[data-theme="dark"] .ferramentas { background: #1B4332; }
+.ferramentas::before {
+  content: "🛠️ FERRAMENTAS";
+  display: block;
+  font-weight: bold;
+  color: #059669;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.demo-box {
+  background: var(--fundo-codigo);
+  border: 3px solid var(--cor-destaque);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+.instrucoes {
+  background: #FFF9DB;
+  border: 2px solid var(--aviso);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .instrucoes { background: #3D3518; }
+.instrucoes::before {
+  content: "📋 INSTRUÇÕES PASSO A PASSO";
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.roteiro {
+  background: #F3D9FA;
+  border-left: 4px solid #9C36B5;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+[data-theme="dark"] .roteiro { background: #3D1F47; }
+.roteiro::before { content: "🎤 Roteiro do apresentador: "; font-weight: bold; font-style: normal; }
+.prever {
+  background: #E3FAFC;
+  border: 2px dashed #0C8599;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+[data-theme="dark"] .prever { background: #0F3742; }
+.prever::before {
+  content: "🔮 PREVISÃO";
+  display: block;
+  font-weight: bold;
+  color: #0C8599;
+  margin-bottom: 0.5rem;
+}
+.legenda {
+  background: #FFF3BF;
+  border-left: 4px solid #F59F00;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+  border-radius: 6px;
+}
+[data-theme="dark"] .legenda { background: #3D3518; }
+.legenda::before { content: "🔑 Legenda: "; font-weight: bold; }
+.quiz-box {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+.termos-quiz {
+  background: #FFF3BF;
+  border: 2px solid #F59F00;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+[data-theme="dark"] .termos-quiz { background: #3D3518; }
+.termos-quiz::before {
+  content: "🔑 Termos deste quiz";
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.pergunta {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--fundo);
+  border-radius: 8px;
+  border: 2px solid var(--borda);
+}
+.pergunta p { font-weight: 600; margin-bottom: 0.75rem; }
+.alt {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+  background: white;
+  border: 2px solid var(--borda);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--texto);
+  transition: all 0.2s;
+}
+[data-theme="dark"] .alt { background: var(--fundo-cartao); }
+.alt:hover:not(:disabled) { border-color: var(--cor-destaque); background: var(--cor-destaque-claro); }
+.alt.certa { background: #D3F9D8 !important; border-color: var(--sucesso) !important; color: var(--sucesso); font-weight: bold; }
+.alt.errada { background: #FFE3E3 !important; border-color: var(--erro) !important; color: var(--erro); }
+[data-theme="dark"] .alt.certa { background: #1B4332 !important; color: #51CF66 !important; }
+[data-theme="dark"] .alt.errada { background: #3D1F24 !important; color: #FF6B6B !important; }
+.alt:disabled { cursor: not-allowed; opacity: 0.7; }
+.fb { margin-top: 0.5rem; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.95rem; display: none; }
+.fb.show { display: block; }
+.fb.fb-certa { background: #D3F9D8; border-left: 4px solid var(--sucesso); color: #087F23; }
+.fb.fb-errada { background: #FFE3E3; border-left: 4px solid var(--erro); color: #C92A2A; }
+[data-theme="dark"] .fb.fb-certa { background: #1B4332; color: #69DB7C; }
+[data-theme="dark"] .fb.fb-errada { background: #3D1F24; color: #FFA8A8; }
+details {
+  background: var(--fundo-codigo);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+  border: 1px solid var(--borda);
+}
+details[open] { background: var(--cor-destaque-claro); }
+summary { cursor: pointer; font-weight: bold; color: var(--cor-destaque-escuro); padding: 0.25rem 0; }
+.demo-area {
+  background: white;
+  border: 2px dashed var(--cor-destaque);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+  min-height: 150px;
+}
+[data-theme="dark"] .demo-area { background: var(--fundo-cartao); }
+.btn {
+  background: var(--cor-destaque);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.95rem;
+  margin: 0.25rem;
+}
+.btn:hover { background: var(--cor-destaque-escuro); }
+.btn-secundario { background: var(--texto-suave); color: white; }
+.resultado-demo {
+  background: #D3F9D8;
+  border-left: 4px solid var(--sucesso);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .resultado-demo { background: #1B4332; color: #69DB7C; }
+.resultado-erro {
+  background: #FFE3E3;
+  border-left: 4px solid var(--erro);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .resultado-erro { background: #3D1F24; color: #FFA8A8; }
+footer {
+  background: var(--fundo-cartao);
+  border-top: 3px solid var(--cor-destaque);
+  padding: 2rem 1.5rem;
+  margin-top: 3rem;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+footer h4 { color: var(--cor-destaque-escuro); margin-bottom: 0.75rem; font-size: 1rem; }
+footer .bloco { padding: 1rem 0; line-height: 1.7; }
+footer .bloco + .bloco { border-top: 2px solid var(--borda); margin-top: 1rem; padding-top: 1.5rem; }
+footer a { color: var(--cor-destaque-escuro); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+footer ul { list-style: none; padding-left: 0; }
+footer ul li { margin: 0.4rem 0; }
+.revisao-mapa {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+.no-mapa {
+  background: var(--cor-destaque-claro);
+  border: 2px solid var(--cor-destaque);
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+}
+.no-mapa h4 { color: var(--cor-destaque-escuro); margin-bottom: 0.5rem; }
+.cola-rapida {
+  background: #FFF9DB;
+  border: 2px solid var(--aviso);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin: 1rem 0;
+}
+[data-theme="dark"] .cola-rapida { background: #3D3518; }
+.cola-rapida dt { font-weight: bold; color: var(--cor-destaque-escuro); margin-top: 0.75rem; }
+.cola-rapida dd { margin-left: 1rem; margin-bottom: 0.5rem; color: var(--texto); }
+.chefao {
+  background: linear-gradient(135deg, var(--cor-destaque-claro), white);
+  border: 3px solid var(--cor-destaque);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+[data-theme="dark"] .chefao { background: linear-gradient(135deg, var(--cor-destaque-claro), var(--fundo-cartao)); }
+.chefao::before {
+  content: "👑 CHEFÃO — DESAFIO FINAL";
+  display: block;
+  font-weight: bold;
+  color: var(--cor-destaque-escuro);
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+}
+.mitoverdade {
+  background: #F3D9FA;
+  border-left: 5px solid #9C36B5;
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 8px;
+}
+[data-theme="dark"] .mitoverdade { background: #3D1F47; }
+code {
+  background: var(--fundo-codigo);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-family: "Courier New", monospace;
+  font-size: 0.95em;
+  color: var(--cor-destaque-escuro);
+}
+pre {
+  background: var(--fundo-codigo);
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  border-left: 4px solid var(--cor-destaque);
+  margin: 1rem 0;
+  font-family: "Courier New", monospace;
+  font-size: 0.9rem;
+}
+.passo-num {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  line-height: 32px;
+  text-align: center;
+  background: var(--cor-destaque);
+  color: white;
+  border-radius: 50%;
+  font-weight: bold;
+  margin-right: 0.5rem;
+}
+.carta-poker {
+  display: inline-block;
+  width: 58px;
+  height: 80px;
+  line-height: 80px;
+  text-align: center;
+  background: white;
+  border: 2px solid var(--cor-destaque);
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1.4rem;
+  margin: 0.2rem;
+  cursor: pointer;
+  transition: transform 0.2s;
+  color: var(--cor-destaque-escuro);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.carta-poker:hover { transform: translateY(-4px); }
+.carta-poker.virada { background: var(--cor-destaque); color: white; }
+.carta-poker.selecionada { background: var(--cor-destaque); color: white; transform: translateY(-8px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+.carta-poker.inativa { opacity: 0.5; cursor: not-allowed; }
+.carta-poker.cafe { background: #6F4E37; color: white; font-size: 1.1rem; }
+.membro-equipe {
+  display: inline-block;
+  padding: 0.5rem 0.75rem;
+  margin: 0.3rem;
+  border-radius: 8px;
+  background: var(--fundo-codigo);
+  border: 2px solid var(--borda);
+  font-size: 0.9rem;
+}
+.membro-equipe.jogou { border-color: var(--cor-destaque); background: var(--cor-destaque-claro); }
+.membro-equipe .nome { font-weight: bold; display: block; }
+.membro-equipe .carta-mini { display: inline-block; width: 22px; height: 30px; line-height: 30px; text-align: center; background: var(--cor-destaque); color: white; border-radius: 4px; font-weight: bold; font-size: 0.85rem; }
+.membro-equipe .carta-mini.oculta { background: var(--texto-suave); }
+@media (max-width: 600px) {
+  header h1 { font-size: 1.5rem; }
+  .tab { padding: 0.75rem 1rem; font-size: 0.9rem; }
+  .painel { padding: 1rem; }
+  .controles-topo { position: static; padding: 0.5rem; }
+  .carta-poker { width: 48px; height: 66px; line-height: 66px; font-size: 1.1rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="controles-topo">
+  <button id="btn-modo" type="button">🎤 Apresentação</button>
+  <button id="btn-tema" type="button">🌙 Escuro</button>
+</div>
+
+<header>
+  <h1>DEVOPS</h1>
+  <div class="meta">Aula 5 · Unidade 2 · Págs. 29 a 46 · Processo de Contagem de PF e Planning Poker</div>
+</header>
+
+<div class="xp-bar">
+  <div>⭐ XP: <span id="xp">0</span> · Selos: <span id="selos">0</span>/5</div>
+  <div id="progresso">Aba 1 de 6</div>
+</div>
+
+<div class="tabs-container">
+  <div class="tabs" role="tablist" aria-label="Abas da aula">
+    <button class="tab" role="tab" id="tab-1" aria-selected="true" aria-controls="painel-1" data-aba="1" type="button">1 · Contagem de PF</button>
+    <button class="tab" role="tab" id="tab-2" aria-selected="false" aria-controls="painel-2" data-aba="2" type="button">2 · Desafios FPA</button>
+    <button class="tab" role="tab" id="tab-3" aria-selected="false" aria-controls="painel-3" data-aba="3" type="button">3 · Planning Poker</button>
+    <button class="tab" role="tab" id="tab-4" aria-selected="false" aria-controls="painel-4" data-aba="4" type="button">4 · Implementação</button>
+    <button class="tab" role="tab" id="tab-5" aria-selected="false" aria-controls="painel-5" data-aba="5" type="button">5 · Desafios Poker</button>
+    <button class="tab" role="tab" id="tab-6" aria-selected="false" aria-controls="painel-6" data-aba="6" type="button">⭐ Revisão</button>
+  </div>
+</div>
+
+<!-- ============ ABA 1 ============ -->
+<div class="painel active" id="painel-1" role="tabpanel" aria-labelledby="tab-1">
+  <h2>Aba 1 · O processo de contagem de pontos de função</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é dominar os <strong>sete passos da contagem de PF</strong> (do inglês <em>Function Points</em>; em português, Pontos de Função), o método oficial do <strong>IFPUG</strong> (do inglês <em>International Function Point Users Group</em>; em português, Grupo Internacional de Usuários de Pontos de Função, organização sem fins lucrativos fundada em 1986 nos Estados Unidos). Você vai percorrer cada passo com uma <strong>user story</strong> (história de usuário, requisito expresso do ponto de vista do usuário final) e chegar ao número final de PF que serve para estimar esforço e comparar produtividade entre projetos.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Os sete passos da contagem de PF</h3>
+    <p>A contagem segue um roteiro oficial publicado no <strong>CPM</strong> (do inglês <em>Counting Practices Manual</em>; em português, Manual de Práticas de Contagem) do IFPUG, atualmente na versão 4.3.1. Os sete passos são:</p>
+
+    <p style="margin-top:1rem"><span class="passo-num">1</span><strong>Determinar o tipo de contagem</strong>: três tipos oficiais existem — <strong>contagem de projeto de desenvolvimento</strong> (para sistemas novos), <strong>contagem de projeto de melhoria</strong> (para modificações em sistemas existentes) e <strong>contagem de aplicação</strong> (para medir o tamanho atual de um sistema em produção).</p>
+
+    <p style="margin-top:0.75rem"><span class="passo-num">2</span><strong>Identificar a fronteira da aplicação</strong>: a linha que separa o sistema do ambiente externo (usuários e outros sistemas). Tudo que está dentro da fronteira é o que se conta; tudo fora é externo.</p>
+
+    <p style="margin-top:0.75rem"><span class="passo-num">3</span><strong>Contar as funções de dados</strong>: são duas — <strong>ALI</strong> (do inglês <em>Application Logical File</em>; em português, Arquivo Lógico Interno, grupo de dados mantido pela própria aplicação) e <strong>AIE</strong> (do inglês <em>Application Interface File</em>; em português, Arquivo de Interface Externa, grupo de dados mantido por outra aplicação e apenas referenciado).</p>
+
+    <p style="margin-top:0.75rem"><span class="passo-num">4</span><strong>Contar as funções transacionais</strong>: três tipos — <strong>EE</strong> (do inglês <em>External Input</em>; em português, Entrada Externa, dados que entram e modificam o estado), <strong>CE</strong> (do inglês <em>External Output</em>; em português, Consulta Externa ou Saída Externa com cálculo, dados que saem com derivação) e <strong>EO</strong> (do inglês <em>External Inquiry</em>; em português, Consulta Externa, dados que saem sem cálculo).</p>
+
+    <p style="margin-top:0.75rem"><span class="passo-num">5</span><strong>Determinar a complexidade de cada função</strong>: cada ALI, AIE, EE, CE e EO recebe uma complexidade — baixa, média ou alta — com base no número de tipos de dados (do inglês <em>Data Element Types</em>, DET) e de tipos de registro (do inglês <em>Record Element Types</em>, RET ou FTR).</p>
+
+    <p style="margin-top:0.75rem"><span class="passo-num">6</span><strong>Calcular os PF não ajustados</strong>: cada função vira um número de PF conforme sua complexidade (por exemplo, ALI de baixa complexidade vale 7 PF; EE de alta complexidade vale 6 PF).</p>
+
+    <p style="margin-top:0.75rem"><span class="passo-num">7</span><strong>Calcular o VAF e os PF ajustados</strong> (opcional na versão atual): aplica-se o <strong>Valor de Ajuste de Função</strong> (VAF, do inglês <em>Value Adjustment Factor</em>), baseado em 14 características gerais do sistema (GSC, do inglês <em>General System Characteristics</em>), cada uma valendo de 0 a 5. O VAF varia de 0,65 a 1,35.</p>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Quem usa contagem de PF no mundo</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Governo Federal do Brasil</strong>: o <strong>SISP</strong> (do inglês <em>Sistema de Administração dos Recursos de Tecnologia da Informação</em>; em português, Sistema de Administração dos Recursos de Tecnologia da Informação) usa Pontos de Função como unidade de medida em contratos de desenvolvimento desde 2010, baseado no manual do IFPUG.</li>
+      <li><strong>Banco do Brasil</strong> (instituição financeira brasileira): usa PF para dimensionar equipes de fábricas de software terceirizadas, com produtividade típica de 10 a 15 PF por pessoa-mês em projetos Java.</li>
+      <li><strong>Serpro</strong> (Serviço Federal de Processamento de Dados): empresa pública brasileira que mantém o maior repositório de contagens de PF do país, usado como referência em licitações federais.</li>
+      <li><strong>ISBSG</strong> (do inglês <em>International Software Benchmarking Standards Group</em>; em português, Grupo Internacional de Padrões de Benchmarking de Software): banco de dados com mais de 8 mil projetos de todo o mundo, usado para comparar produtividade.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Tabela de pesos por complexidade</h3>
+    <table style="width:100%; border-collapse:collapse; margin-top:0.75rem">
+      <thead>
+        <tr style="background:var(--cor-destaque-claro)">
+          <th style="padding:0.5rem; border:1px solid var(--borda); text-align:left">Função</th>
+          <th style="padding:0.5rem; border:1px solid var(--borda); text-align:center">Baixa</th>
+          <th style="padding:0.5rem; border:1px solid var(--borda); text-align:center">Média</th>
+          <th style="padding:0.5rem; border:1px solid var(--borda); text-align:center">Alta</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="padding:0.5rem; border:1px solid var(--borda)">ALI (Arquivo Lógico Interno)</td><td style="padding:0.5rem; border:1px solid var(--borda); text-align:center">7</td><td style="padding:0.5rem; border:1px solid var(--borda); text-align:center">10</td><td style="padding:0.5rem; border:1px solid var(--borda); text-align:center">15</td></tr>
+        <tr><td style="padding:0.5rem; border:1px solid var(--borda)">AIE (Arquivo de Interface Externo)</td><td style="padding:0.5rem; border:1px solid var(--borda); text-align:center">5</td><td style="padding:0.5rem; border:1px solid var(--borda); text-align:center">7</td><td style="padding:0.5rem; border:1px solid var(--borda); text-align:center">10</td></tr>
+        <tr><td style="padding:0.5rem; border:1px solid var(--borda)">EE (Entrada Externa)</td><td style="padding:0.5rem; border:1px solid var(--borda); text-align:center">3</td><td style="padding:0.5rem; border:1px solid var(--borda); text-align:center">4</td><td style="padding:0.5rem; border:1px solid var(--borda); text-align:center">6</td></tr>
+        <tr><td style="padding:0.5rem; border:1px solid var(--borda)">CE (Saída Externa com cálculo)</td><td style="padding:0.5rem; border:1px solid var(--borda); text-align:center">4</td><td style="padding:0.5rem; border:1px solid var(--borda); text-align:center">5</td><td style="padding:0.5rem; border:1px solid var(--borda); text-align:center">7</td></tr>
+        <tr><td style="padding:0.5rem; border:1px solid var(--borda)">EO (Consulta Externa)</td><td style="padding:0.5rem; border:1px solid var(--borda); text-align:center">3</td><td style="padding:0.5rem; border:1px solid var(--borda); text-align:center">4</td><td style="padding:0.5rem; border:1px solid var(--borda); text-align:center">6</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: calculadora de PF passo a passo</h3>
+
+    <div class="prever">
+      <strong>Antes de contar, preveja:</strong> uma user story simples de cadastro de cliente com um único ALI (clientes) e três operações básicas (incluir, consultar, listar) deve resultar em cerca de quantos PF: 10, 25 ou 60?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de começar, registre sua previsão.<br>
+      <strong>Passo 1:</strong> leia a user story proposta.<br>
+      <strong>Passo 2:</strong> avance pelos 7 passos da contagem clicando em Próximo passo.<br>
+      <strong>Passo 3:</strong> em cada passo, classifique a função e veja o PF atribuído.<br>
+      <strong>Passo 4:</strong> ao final, some os PF e compare com sua previsão inicial.
+    </div>
+
+    <div class="roteiro">
+      comece com a user story do cadastro de cliente. Avance devagar pelos 7 passos, destacando o passo 5 (complexidade) e o passo 6 (pesos). Feche somando os PF e mostrando o VAF = 1,0 como caso base.
+    </div>
+
+    <div class="legenda">
+      PF = Pontos de Função, unidade de tamanho funcional · ALI = Arquivo Lógico Interno · AIE = Arquivo de Interface Externo · EE = Entrada Externa · CE = Saída Externa com cálculo · EO = Consulta Externa · VAF = Valor de Ajuste de Função · RET = Tipos de Registro · DET = Tipos de Dado · FTR = Tipos de Arquivo Referenciado
+    </div>
+
+    <div class="demo-area" id="demo1-area">
+      <div style="background:var(--cor-destaque-claro); padding:1rem; border-radius:8px; margin-bottom:1rem">
+        <strong>📋 User story:</strong> Como analista de RH, quero cadastrar, consultar, listar e excluir funcionários para manter o quadro da empresa atualizado. O sistema tem uma tabela de funcionários com nome, matrícula, cargo e salário, e consulta uma tabela externa de departamentos mantida pelo sistema de patrimônio.
+      </div>
+      <div>
+        <button class="btn" type="button" id="demo1-next">▶ Próximo passo</button>
+        <button class="btn btn-secundario" type="button" id="demo1-reset">🔄 Reiniciar</button>
+      </div>
+      <div id="demo1-passos" style="margin-top:1rem"></div>
+      <div id="demo1-total" style="margin-top:0.75rem; font-weight:bold; color:var(--cor-destaque-escuro)"></div>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> cada função é classificada de forma independente, e o PF de cada uma é somado ao total. Essa independência é o que torna a contagem auditável e comparável entre empresas, diferentemente de estimativas subjetivas como horas.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 1</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      PF = Pontos de Função, unidade de tamanho funcional ·
+      IFPUG = Grupo Internacional de Usuários de Pontos de Função, órgão que mantém o método ·
+      CPM = Manual de Práticas de Contagem, o documento oficial ·
+      ALI = Arquivo Lógico Interno (dados mantidos pela aplicação) ·
+      AIE = Arquivo de Interface Externo (dados mantidos por outro sistema) ·
+      VAF = Valor de Ajuste de Função, multiplicador final.
+    </div>
+
+    <div class="pergunta" data-pergunta="1-1">
+      <p>1. Qual é o primeiro passo da contagem de PF segundo o manual do IFPUG?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! Calcular o VAF é o sétimo e último passo da contagem, não o primeiro. Antes disso há seis etapas de identificação e classificação.">Calcular o VAF (Valor de Ajuste de Função)</button>
+        <button class="alt" type="button" data-fb="Correto! O passo 1 é determinar o tipo de contagem: desenvolvimento (sistema novo), melhoria (modificação) ou aplicação (tamanho atual em produção). Essa escolha define o escopo de tudo que vem depois.">Determinar o tipo de contagem (desenvolvimento, melhoria ou aplicação)</button>
+        <button class="alt" type="button" data-fb="Errado! Contar funções transacionais (EE, CE, EO) é o passo 4, não o primeiro. Antes é preciso escolher o tipo de contagem, definir fronteira e contar as funções de dados.">Contar as funções transacionais (EE, CE, EO)</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="1-2">
+      <p>2. O sistema consulta uma tabela de CEP mantida pelos Correios. Em PF, essa tabela é classificada como:</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! ALI é usado para arquivos que o próprio sistema mantêm (inclui, altera, exclui). A tabela de CEP é externa e o sistema apenas lê.">ALI (Arquivo Lógico Interno)</button>
+        <button class="alt" type="button" data-fb="Errado! EE é Entrada Externa, ou seja, um fluxo de dados que entra e modifica o sistema. A tabela de CEP é um arquivo de referência, não uma entrada.">EE (Entrada Externa)</button>
+        <button class="alt" type="button" data-fb="Correto! AIE é o arquivo mantido por outra aplicação e apenas referenciado pela sua. A tabela de CEP dos Correios é um AIE clássico, valendo entre 5 e 10 PF conforme sua complexidade.">AIE (Arquivo de Interface Externo)</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="1-3">
+      <p>3. O VAF (Valor de Ajuste de Função) é calculado com base em quantas características gerais do sistema (GSC)?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! São 14 características gerais (como processamento de dados distribuídos, desempenho, facilidade de operação etc.), cada uma valendo de 0 a 5. A fórmula é VAF = 0,65 + 0,01 × TDI, variando de 0,65 a 1,35.">14 características gerais do sistema (GSC)</button>
+        <button class="alt" type="button" data-fb="Errado! O número oficial do IFPUG são 14 características, não 7. Cada uma tem peso de 0 a 5 e alimenta o TDI (Total Degree of Influence).">7 características gerais do sistema</button>
+        <button class="alt" type="button" data-fb="Errado! 20 é um número usado em outros métodos (como algumas variações do COSMIC, método alternativo de PF europeu), não no IFPUG clássico.">20 características gerais do sistema</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 1</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=processo+contagem+pontos+de+função+IFPUG+7+passos" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=function+points+IFPUG+CPM+contagem" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=contagem+de+pontos+de+função+IFPUG+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>PF</strong>: Pontos de Função, unidade de tamanho funcional.</li>
+      <li><strong>IFPUG</strong>: organização internacional que mantém o método.</li>
+      <li><strong>ALI / AIE</strong>: arquivos lógicos internos / externos.</li>
+      <li><strong>EE / CE / EO</strong>: entrada, saída com cálculo, consulta.</li>
+      <li><strong>VAF</strong>: multiplicador final baseado em 14 GSC.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> A contagem de PF depende da linguagem de programação usada no projeto.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> PF é uma medida independente de tecnologia. Um sistema de 500 PF vale 500 PF tanto em Java quanto em Python ou COBOL. É essa independência que permite comparar produtividade entre linguagens diferentes.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 2 ============ -->
+<div class="painel" id="painel-2" role="tabpanel" aria-labelledby="tab-2">
+  <h2>Aba 2 · Desafios e tendências na Análise de Pontos de Função</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é reconhecer as <strong>críticas e limitações</strong> do método clássico de PF (subjetividade da classificação, custo da contagem detalhada, inadequação a projetos ágeis) e conhecer as <strong>tendências modernas</strong> que tentam resolver esses problemas: <strong>NESMA simplificada</strong> (do holandês <em>Nederlandse Software Metrics Associatie</em>; em português, Associação Holandesa de Métricas de Software), <strong>COSMIC</strong> (do inglês <em>Common Software Measurement International Consortium</em>; em português, Consórcio Internacional Comum de Medição de Software) e as aproximações usadas em contratos de DevOps.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Os principais desafios do FPA clássico</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Subjetividade</strong>: contadores diferentes podem chegar a números diferentes para o mesmo sistema, especialmente em funções de complexidade limítrofe. Estudos do ISBSG mostram variações de até 20% entre contadores não certificados.</li>
+      <li><strong>Custo da contagem</strong>: contar PF de um sistema médio de 1.000 PF pode levar várias semanas de trabalho de um analista certificado (chamado <strong>CFPS</strong>, do inglês <em>Certified Function Point Specialist</em>; em português, Especialista Certificado em Pontos de Função).</li>
+      <li><strong>Inadequação a projetos ágeis</strong>: o método IFPUG foi desenhado para especificações detalhadas no estilo cascata. Em Scrum e outros métodos ágeis, os requisitos evoluem a cada sprint (iteração de duas a quatro semanas), tornando a contagem completa inviável.</li>
+      <li><strong>Não captura qualidade</strong>: dois sistemas com o mesmo número de PF podem ter manutenibilidade e usabilidade muito diferentes; o método mede tamanho funcional, não qualidade.</li>
+      <li><strong>Desconexão com esforço moderno</strong>: em projetos com forte reuso de frameworks (como Spring Boot em Java ou Django em Python), a relação entre PF e horas trabalhadas muda drasticamente, exigindo recalibração constante.</li>
+    </ul>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Tendências em uso</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>NESMA simplificada</strong>: a Associação Holandesa propõe uma contagem rápida em que ALI vale sempre 7 PF, AIE vale 5 PF, EE vale 3,5 PF, CE vale 4,5 PF e EO vale 3,5 PF, sem classificar complexidade. Usada em contratos ágeis de governo no Brasil.</li>
+      <li><strong>COSMIC</strong>: método europeu que conta movimentações de dados (Entrada, Saída, Leitura, Escrita) em vez de funções complexas. Adotado em sistemas embarcados e tempo real, onde o IFPUG tem dificuldade.</li>
+      <li><strong>Story Points</strong> (Pontos de História): alternativa usada em Scrum, relativa e não absoluta. Cada equipe calibra sua própria escala (geralmente sequência de Fibonacci: 1, 2, 3, 5, 8, 13) usando Planning Poker.</li>
+      <li><strong>Contagem por pontos de caso de uso</strong>: variação proposta por Gustav Karner (pesquisador austríaco) em 2001, que estende o conceito de PF para atores e casos de uso da UML (do inglês <em>Unified Modeling Language</em>; em português, Linguagem de Modelagem Unificada).</li>
+      <li><strong>IA na contagem</strong>: ferramentas como a brasileira <strong>APF</strong> e a americana <strong>ScopeMaster</strong> (empresa dos Estados Unidos) usam processamento de linguagem natural para extrair funções de documentos de requisitos e sugerir contagens preliminares.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Quando usar cada método</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>IFPUG completo</strong>: contratos governamentais grandes, benchmarking internacional, quando se exige auditoria formal.</li>
+      <li><strong>NESMA simplificada</strong>: contratos ágeis com entregas contínuas, quando a velocidade da contagem importa mais que a precisão milimétrica.</li>
+      <li><strong>COSMIC</strong>: sistemas embarcados, telecomunicações, aplicações com muitos fluxos de dados de baixo volume.</li>
+      <li><strong>Story Points</strong>: equipes Scrum internas, quando a unidade serve apenas para planejamento interno e não precisa ser comparável entre empresas.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: comparador de métodos de contagem</h3>
+
+    <div class="prever">
+      <strong>Antes de comparar, preveja:</strong> para um sistema médio de 1.000 PF, qual método leva mais tempo para contar: IFPUG completo, NESMA simplificada ou Story Points?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 1:</strong> clique em um método para abrir o cartão comparativo.<br>
+      <strong>Passo 2:</strong> leia tempo típico de contagem, precisão e uso recomendado.<br>
+      <strong>Passo 3:</strong> compare os três cartões lado a lado.<br>
+      <strong>Passo 4:</strong> reflita sobre qual método faria sentido para cada tipo de projeto.
+    </div>
+
+    <div class="roteiro">
+      abra IFPUG e mostre que é o mais preciso mas também o mais caro. Abra NESMA e mostre a simplificação. Abra Story Points e mostre que é relativo, não absoluto. Feche destacando que não existe método perfeito, existe método adequado ao contexto.
+    </div>
+
+    <div class="demo-area" id="demo2-area">
+      <div>
+        <button class="btn" type="button" data-met="ifpug">IFPUG completo</button>
+        <button class="btn" type="button" data-met="nesma">NESMA simplificada</button>
+        <button class="btn" type="button" data-met="cosmic">COSMIC</button>
+        <button class="btn" type="button" data-met="sp">Story Points</button>
+      </div>
+      <div id="demo2-cartao" style="margin-top:1rem; padding:1rem; background:var(--fundo-codigo); border-radius:8px; min-height:140px">
+        👆 Clique em um método para abrir o cartão comparativo.
+      </div>
+      <button class="btn btn-secundario" type="button" id="demo2-reset" style="margin-top:0.75rem">🔄 Reiniciar</button>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> cada método nasceu para um contexto específico. IFPUG para auditoria, NESMA para agilidade, COSMIC para sistemas embarcados, Story Points para planejamento de equipe. Escolher o método errado é tão prejudicial quanto escolher o método certo e aplicá-lo mal.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 2</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      NESMA = Associação Holandesa de Métricas de Software, método simplificado ·
+      COSMIC = Consórcio Internacional Comum de Medição de Software, método europeu ·
+      CFPS = Especialista Certificado em Pontos de Função ·
+      Story Points = pontos relativos usados em Scrum ·
+      subjetividade = contadores diferentes chegarem a números diferentes.
+    </div>
+
+    <div class="pergunta" data-pergunta="2-1">
+      <p>1. Qual é a principal crítica ao FPA clássico do IFPUG?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! O FPA é justamente independente de linguagem de programação — essa é uma de suas vantagens, não uma crítica.">Ele depende da linguagem de programação do projeto</button>
+        <button class="alt" type="button" data-fb="Correto! Contadores diferentes podem chegar a variações de até 20% para o mesmo sistema, especialmente em funções de complexidade limítrofe. Por isso existe a certificação CFPS para reduzir essa variabilidade.">A subjetividade: contadores diferentes podem chegar a números diferentes para o mesmo sistema</button>
+        <button class="alt" type="button" data-fb="Errado! O FPA captura requisitos funcionais (o que o sistema faz), não qualidade de código. Isso é reconhecido, mas não é o foco da crítica principal.">Ele mede a qualidade do código em vez da funcionalidade</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="2-2">
+      <p>2. O método NESMA simplificado é recomendado principalmente para:</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! A NESMA elimina a classificação detalhada de complexidade, atribuindo pesos fixos por tipo de função. Isso reduz drasticamente o tempo de contagem, ideal para contratos ágeis onde a velocidade importa.">Contratos ágeis com entregas contínuas, quando a velocidade importa mais que precisão milimétrica</button>
+        <button class="alt" type="button" data-fb="Errado! Sistemas embarcados são o domínio do COSMIC, não da NESMA. O COSMIC foi desenhado especificamente para sistemas com muitos fluxos de dados pequenos.">Sistemas embarcados e de telecomunicações</button>
+        <button class="alt" type="button" data-fb="Errado! Para auditorias formais internacionais o método usado é o IFPUG completo, que permite a certificação oficial da contagem.">Auditorias formais internacionais que exigem certificação oficial</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="2-3">
+      <p>3. Por que Story Points são chamados de medida relativa e não absoluta?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! A unidade de tempo não é o ponto: o ponto mede esforço relativo, não duração. Uma tarefa de 5 pontos pode levar 1 dia para uma equipe e 3 dias para outra.">Porque cada ponto equivale a um número fixo de horas</button>
+        <button class="alt" type="button" data-fb="Errado! Story Points não são contados por contadores certificados; cada equipe calibra a própria escala, muitas vezes divergente de outras equipes da mesma empresa.">Porque são contados por analistas certificados internacionalmente</button>
+        <button class="alt" type="button" data-fb="Correto! O número só faz sentido dentro da equipe que o criou: um 5 na equipe A não equivale a um 5 na equipe B. A equipe compara tarefas entre si, não com o mundo externo. Por isso não servem para benchmarking entre empresas.">Porque cada equipe calibra sua própria escala e os números só fazem sentido dentro dela</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 2</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=NESMA+simplificada+vs+IFPUG+comparação" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=function+points+limitations+criticism+alternatives" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=COSMIC+function+points+vs+IFPUG+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>NESMA</strong>: método holandês simplificado de PF.</li>
+      <li><strong>COSMIC</strong>: método europeu baseado em movimentações de dados.</li>
+      <li><strong>Story Points</strong>: medida relativa usada em Scrum.</li>
+      <li><strong>Subjetividade</strong>: variação entre contadores.</li>
+      <li><strong>Benchmarking</strong>: comparação de produtividade entre empresas.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Story Points de uma equipe podem ser somados aos Story Points de outra equipe para medir o tamanho total do projeto.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> Story Points são relativos a cada equipe. Um 5 na equipe A pode equivaler a um 8 ou a um 3 na equipe B. Somá-los seria como somar dólares e euros sem converter: o número resultante não significa nada.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 3 ============ -->
+<div class="painel" id="painel-3" role="tabpanel" aria-labelledby="tab-3">
+  <h2>Aba 3 · Planning Poker: estimativa ágil em grupo</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é dominar o <strong>Planning Poker</strong> (do inglês, pôquer de planejamento), técnica de estimativa ágil criada por <strong>James Grenning</strong> (engenheiro de software americano) em 2002 e popularizada por <strong>Mike Cohn</strong> (consultor americano de Scrum) no livro <em>Agile Estimating and Planning</em> de 2005. Você vai estimar uma user story usando o baralho de Fibonacci (1, 2, 3, 5, 8, 13, 21) e entender por que essa técnica produz estimativas mais precisas do que um especialista trabalhando sozinho.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Como funciona o Planning Poker</h3>
+    <p>O Planning Poker é uma técnica de estimativa em grupo que combina três princípios psicológicos poderosos:</p>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Estimativa relativa</strong>: em vez de adivinhar quantas horas uma tarefa leva (estimativa absoluta), a equipe compara a tarefa com outras já conhecidas (referências). Uma tarefa é o dobro de complexa que a referência? Então o dobro dos pontos.</li>
+      <li><strong>Estimativa anônima inicial</strong>: cada membro escolhe sua carta sem ver a dos outros, evitando <strong>ancoragem</strong> (viés de se deixar levar pela primeira opinião emitida) e <strong>efeito halo</strong> (tendência de concordar com a pessoa mais experiente ou hierarquicamente superior).</li>
+      <li><strong>Discussão após revelação</strong>: quando as cartas são viradas, quem escolheu o valor mais alto e quem escolheu o mais baixo explicam suas razões. A discordância é o gatilho da aprendizagem: o pessimista aponta riscos que o otimista não viu, e vice-versa.</li>
+    </ul>
+    <p>A sequência usada é a de <strong>Fibonacci modificada</strong>: 0, 1, 2, 3, 5, 8, 13, 20, 40, 100 e a carta ☕ (café, indicando necessidade de mais informações ou quebra da história). A sequência cresce de forma não linear para refletir que, quanto maior a tarefa, maior a incerteza.</p>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Planning Poker no dia a dia das equipes</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Spotify</strong> (empresa sueca de streaming de música): popularizou o uso de Planning Poker em suas squads (equipes ágeis), que estimam em pontos relativos a cada sprint.</li>
+      <li><strong>Times de software brasileiros</strong>: empresas como ThoughtWorks (consultoria global de tecnologia com forte presença no Brasil), DTI Digital (consultoria brasileira de ágil) e Knowledge21 (método ágil japonês adaptado ao Brasil) ensinam Planning Poker em seus treinamentos.</li>
+      <li><strong>Apps de Planning Poker online</strong>: o <strong>PlanningPoker.com</strong> (site mantido por Mike Cohn) e o <strong>Firepoker</strong> (aplicativo web gratuito) permitem jogar remotamente, útil para equipes distribuídas em home office.</li>
+      <li><strong>Integração com Jira</strong> (ferramenta de gestão ágil da Atlassian, empresa australiana): plugins como o Planning Poker for Jira conectam as estimativas diretamente ao backlog da equipe.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ O roteiro da rodada</h3>
+    <ol style="margin-left:1.5rem">
+      <li>O <strong>Product Owner</strong> (PO, em português, Dono do Produto, o papel que representa o cliente no Scrum) lê a user story em voz alta.</li>
+      <li>A equipe tira dúvidas técnicas com o PO (tempo limitado, geralmente 2 a 5 minutos).</li>
+      <li>Cada membro escolhe uma carta mentalmente, sem mostrar aos outros.</li>
+      <li>Todos viram as cartas ao mesmo tempo.</li>
+      <li>Quem escolheu o maior e quem escolheu o menor valor explicam suas razões (1 a 2 minutos cada).</li>
+      <li>Nova votação até que a equipe chegue a um consenso ou a uma faixa aceitável (por exemplo, 5 ou 8).</li>
+    </ol>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: jogando Planning Poker sozinho</h3>
+
+    <div class="prever">
+      <strong>Antes de estimar, preveja:</strong> uma user story que pede "login do usuário com e-mail e senha, incluindo recuperação de senha por e-mail" deveria receber quantos pontos na sequência de Fibonacci: 3, 5, 8 ou 13?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de jogar, registre sua previsão.<br>
+      <strong>Passo 1:</strong> leia a user story proposta e o contexto.<br>
+      <strong>Passo 2:</strong> escolha uma carta do baralho de Fibonacci.<br>
+      <strong>Passo 3:</strong> leia a justificativa de cada carta possível e reflita se sua escolha faz sentido.<br>
+      <strong>Passo 4:</strong> reinicie e teste com outra previsão para treinar o olhar.
+    </div>
+
+    <div class="roteiro">
+      leia a user story e pergunte à turma: o que vocês acham que pesa mais aqui, a tela de login ou o fluxo de recuperação por e-mail? Depois peça votos e revele as justificativas. A divergência vai gerar debate natural.
+    </div>
+
+    <div class="legenda">
+      user story = requisito expresso do ponto de vista do usuário · sequência de Fibonacci = 0, 1, 2, 3, 5, 8, 13, 20, 40, 100 · carta ☕ = café, indica quebra ou mais informações · âncora = viés de se deixar levar pela primeira opinião · PO = Product Owner, representante do cliente
+    </div>
+
+    <div class="demo-area" id="demo3-area">
+      <div style="background:var(--cor-destaque-claro); padding:1rem; border-radius:8px; margin-bottom:1rem">
+        <strong>📋 User story:</strong> Como cliente da loja virtual, quero fazer login com e-mail e senha e, se esquecer a senha, receber um link de recuperação por e-mail, para poder finalizar minhas compras.<br>
+        <strong>Referência:</strong> a equipe tem como padrão que uma tela simples (cadastro básico) vale 2 pontos.
+      </div>
+      <div id="demo3-baralho" style="margin-bottom:1rem"></div>
+      <div id="demo3-feedback" style="margin-top:1rem"></div>
+      <button class="btn btn-secundario" type="button" id="demo3-reset" style="margin-top:0.75rem">🔄 Reiniciar</button>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> não existe resposta única — cada carta tem uma justificativa válida. A força do Planning Poker está em expor as diferentes visões da equipe, não em eleger uma "verdade". Em uma equipe real, as justificativas de quem votou 13 e de quem votou 3 vão gerar uma conversa que refina o entendimento de todos.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 3</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      Planning Poker = técnica de estimativa ágil em grupo com cartas ·
+      sequência de Fibonacci = 0, 1, 2, 3, 5, 8, 13, 20, 40, 100 ·
+      estimativa relativa = comparar com tarefas de referência ·
+      âncora = viés de se deixar levar pela primeira opinião ·
+      carta ☕ = café, pedindo mais informações ou quebra da história.
+    </div>
+
+    <div class="pergunta" data-pergunta="3-1">
+      <p>1. Por que o Planning Poker usa cartas viradas para baixo e reveladas ao mesmo tempo?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! O elemento lúdico é um bônus, não o motivo. O cerne é combater vieses cognitivos de grupo.">Para tornar a reunião mais divertida</button>
+        <button class="alt" type="button" data-fb="Correto! Evita a ancoragem (se deixar levar pela primeira opinião) e o efeito halo (concordar com a pessoa hierarquicamente superior ou mais experiente). Cada um pensa sozinho antes de ouvir os outros.">Para evitar vieses de grupo como ancoragem e efeito halo</button>
+        <button class="alt" type="button" data-fb="Errado! O PO vê tudo ao final da rodada, quando as cartas são reveladas. O sigilo é entre os membros da equipe, não contra o PO.">Para manter a estimativa secreta do Product Owner</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="3-2">
+      <p>2. Por que a sequência usada no Planning Poker é a de Fibonacci (1, 2, 3, 5, 8, 13...) em vez de uma sequência linear (1, 2, 3, 4, 5...)?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! A sequência de Fibonacci cresce de forma não linear, refletindo que quanto maior a tarefa, maior a incerteza. Discutir se uma tarefa vale 13 ou 14 é perda de tempo; melhor escolher 13 ou 20.">Porque a incerteza cresce com o tamanho, e valores muito próximos geram discussões inúteis</button>
+        <button class="alt" type="button" data-fb="Errado! O motivo não é estético nem histórico: é técnico. A sequência linear permitiria diferenças pequenas demais entre estimativas, gerando discussões improdutivas.">Porque Fibonacci é a sequência historicamente usada em métricas de software</button>
+        <button class="alt" type="button" data-fb="Errado! Story Points são relativos, não absolutos. Uma tarefa de 13 pontos não leva 13 horas: pode levar 1 dia ou 1 semana, dependendo da equipe.">Porque cada ponto equivale a 1 hora de trabalho</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="3-3">
+      <p>3. Quando um membro da equipe escolhe a carta ☕ (café) no Planning Poker, o que isso significa?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! A pausa de café é uma metáfora, não um pedido literal de intervalo físico. A carta tem significado técnico dentro da técnica.">Que a equipe deve fazer uma pausa para tomar café</button>
+        <button class="alt" type="button" data-fb="Errado! Recusar a estimativa não é papel da carta café. Quem não quer estimar pode simplesmente não participar da rodada.">Que o membro não quer participar da estimativa</button>
+        <button class="alt" type="button" data-fb="Correto! A carta ☕ sinaliza que a história está mal definida, que faltam informações ou que ela é grande demais e precisa ser quebrada em histórias menores antes de ser estimada.">Que faltam informações ou que a história precisa ser quebrada em histórias menores</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 3</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=planning+poker+como+jogar+passo+a+passo+Scrum" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=planning+poker+agile+estimating+James+Grenning+Mike+Cohn" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=planning+poker+como+jogar+tutorial" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Planning Poker</strong>: técnica de estimativa ágil em grupo.</li>
+      <li><strong>Fibonacci</strong>: 0, 1, 2, 3, 5, 8, 13, 20, 40, 100.</li>
+      <li><strong>Ancoragem</strong>: viés de seguir a primeira opinião.</li>
+      <li><strong>Efeito halo</strong>: viés de concordar com o mais experiente.</li>
+      <li><strong>Carta ☕</strong>: pedido de mais informações ou quebra da história.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> O Planning Poker elimina completamente a subjetividade das estimativas.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> o Planning Poker reduz a subjetividade individual ao misturar várias visões, mas não a elimina. Equipes diferentes ainda chegarão a estimativas diferentes para a mesma história. A vantagem é que, dentro de cada equipe, a estimativa é consistente ao longo do tempo.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 4 ============ -->
+<div class="painel" id="painel-4" role="tabpanel" aria-labelledby="tab-4">
+  <h2>Aba 4 · Implementação do Planning Poker em equipes ágeis</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é aprender a <strong>colocar o Planning Poker em prática</strong> em uma equipe Scrum: quem participa, quando acontece (no <strong>Sprint Planning</strong>, reunião de planejamento da sprint), como calibrar o primeiro <strong>triângulo de referência</strong> (três histórias de complexidade conhecida para servir de régua) e como transformar pontos em <strong>velocity</strong> (velocidade da equipe, quantos pontos ela entrega por sprint em média).</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Quem joga e quando</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Participantes ativos</strong> (jogam cartas): desenvolvedores, testadores, designers e qualquer papel técnico que vá executar a história. Quem executa é quem estima.</li>
+      <li><strong>Participantes passivos</strong> (observam e respondem dúvidas): o PO esclarece o que a história deve fazer; o <strong>Scrum Master</strong> (facilitador do Scrum) garante que a técnica seja respeitada e o tempo não estoure.</li>
+      <li><strong>Momento</strong>: o Planning Poker acontece principalmente no <strong>Sprint Planning</strong>, reunião de até 8 horas para sprints de 4 semanas que abre cada sprint. Também pode ser usado em <strong>Product Backlog Refinement</strong> (sessões semanais de 1 a 2 horas para pré-estimar histórias antes do planning).</li>
+    </ul>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Calibrando o triângulo de referência</h3>
+    <p>A primeira vez que uma equipe joga Planning Poker, ela não tem régua. A solução é construir um <strong>triângulo de referência</strong>: três histórias do backlog com complexidade claramente diferente que todos concordem em estimar como 2, 5 e 13 pontos. A partir daí, cada nova história é comparada com essas três. Exemplos comuns:</p>
+    <ul style="margin-left:1.5rem">
+      <li><strong>2 pontos</strong>: uma tela simples de consulta sem regras de negócio complexas.</li>
+      <li><strong>5 pontos</strong>: uma tela com formulário, validações e integração com uma tabela.</li>
+      <li><strong>13 pontos</strong>: uma funcionalidade completa com várias telas, integrações externas e regras de negócio.</li>
+    </ul>
+    <p>Com o tempo, a equipe acumula histórico e pode recalibrar o triângulo com histórias realmente entregues, não apenas estimadas.</p>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 De pontos a velocity: prevendo entregas</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Velocity</strong> é a média de pontos que a equipe entrega por sprint, calculada após três ou quatro sprints. Se uma equipe entrega 28, 32 e 30 pontos nas três primeiras sprints, sua velocity é 30.</li>
+      <li><strong>Previsão de release</strong>: se o backlog tem 180 pontos e a velocity é 30, a equipe prevê 6 sprints para concluir tudo (chamado de <strong>release burndown</strong>, em português, gráfico de queima da release).</li>
+      <li><strong>Compromisso da sprint</strong>: no Sprint Planning, a equipe se compromete a entregar aproximadamente a sua velocity em pontos — nem mais (para não gerar dívida técnica) nem menos (para não desperdiçar capacidade).</li>
+      <li><strong>Empresas brasileiras usando</strong>: bancos como Itaú e Bradesco, varejistas como Magalu e startups como a Hotmart (plataforma brasileira de cursos online) usam velocity para planejar roadmaps trimestrais.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Ferramentas online para equipes distribuídas</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>PlanningPoker.com</strong> (site oficial de Mike Cohn): gratuito para equipes pequenas, integra com Jira.</li>
+      <li><strong>Parabol</strong> (plataforma de reuniões ágeis americana): combina Planning Poker com retrospectivas e check-ins.</li>
+      <li><strong>Pointing Poker</strong> (ferramenta gratuita de código aberto): permite criar salas privadas e personalizar o baralho.</li>
+      <li><strong>Firepoker</strong> (aplicativo web gratuito): interface simples, sem necessidade de cadastro.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: simulando uma rodada com 5 membros</h3>
+
+    <div class="prever">
+      <strong>Antes de simular, preveja:</strong> em uma rodada de Planning Poker com 5 membros onde dois votam 5, dois votam 8 e um vota 13, qual deve ser o próximo passo: aceitar a média (6,2), revotar até consenso ou adotar a moda (5 ou 8)?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, registre sua previsão.<br>
+      <strong>Passo 1:</strong> leia a user story proposta.<br>
+      <strong>Passo 2:</strong> clique em Revelar votos e veja as 5 cartas dos membros.<br>
+      <strong>Passo 3:</strong> leia as justificativas de quem votou mais alto e de quem votou mais baixo.<br>
+      <strong>Passo 4:</strong> clique em Próxima rodada e observe se o consenso aparece.<br>
+      <strong>Passo 5:</strong> veja a velocity sendo calculada ao final das rodadas.
+    </div>
+
+    <div class="roteiro">
+      mostre a primeira rodada com divergência (5, 5, 8, 8, 13). Peça à turma: o que fazer agora? Depois mostre que o voto 13 explica um risco que ninguém viu. A revotação naturalmente converge para 8 ou 13.
+    </div>
+
+    <div class="legenda">
+      rodada = uma votação completa da equipe · consenso = todos escolhem o mesmo valor ou uma faixa aceitável · velocity = média de pontos entregues por sprint · release burndown = gráfico de previsão de entrega · triângulo de referência = três histórias de complexidade conhecida
+    </div>
+
+    <div class="demo-area" id="demo4-area">
+      <div style="background:var(--cor-destaque-claro); padding:1rem; border-radius:8px; margin-bottom:1rem">
+        <strong>📋 User story:</strong> Como administrador do sistema, quero exportar relatórios de vendas em PDF e CSV para enviar à diretoria mensalmente.
+      </div>
+      <div id="demo4-membros" style="margin-bottom:1rem"></div>
+      <div id="demo4-justificativas" style="margin-bottom:1rem"></div>
+      <div>
+        <button class="btn" type="button" id="demo4-reveal">👁️ Revelar votos</button>
+        <button class="btn" type="button" id="demo4-next">▶ Próxima rodada (nova história)</button>
+        <button class="btn btn-secundario" type="button" id="demo4-reset">🔄 Reiniciar</button>
+      </div>
+      <div id="demo4-velocity" style="margin-top:1rem; font-weight:bold; color:var(--cor-destaque-escuro)"></div>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> a divergência inicial é normal e saudável: ela sinaliza que há conhecimento diferente na equipe. O consenso aparece depois que as justificativas são ouvidas. A velocity só se estabiliza após algumas sprints; estimar uma sprint baseada em uma velocity recém-calculada é arriscado.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 4</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      Sprint Planning = reunião que abre a sprint e define o que será entregue ·
+      Product Owner = representante do cliente no Scrum ·
+      Scrum Master = facilitador das cerimônias ágeis ·
+      velocity = média de pontos entregues por sprint ·
+      triângulo de referência = três histórias de complexidade conhecida (2, 5, 13).
+    </div>
+
+    <div class="pergunta" data-pergunta="4-1">
+      <p>1. Quem deve jogar as cartas no Planning Poker de uma equipe Scrum?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! O PO esclarece o que precisa ser feito mas não executa; estimar é papel de quem vai colocar a mão na massa.">Apenas o Product Owner, porque ele conhece as prioridades</button>
+        <button class="alt" type="button" data-fb="Correto! Quem executa a história é quem melhor estima o esforço. Desenvolvedores, testadores e designers jogam; PO e Scrum Master observam e facilitam.">Todos os membros técnicos que vão executar a história (devs, testadores, designers)</button>
+        <button class="alt" type="button" data-fb="Errado! A técnica é colaborativa; só o líder técnico decidir elimina os benefícios de múltiplas visões que tornam o Planning Poker eficaz.">Apenas o líder técnico da equipe</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="4-2">
+      <p>2. Uma equipe entregou 28, 32 e 30 pontos nas três primeiras sprints. Qual é a velocity dela e para que serve?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! Velocity = (28 + 32 + 30) / 3 = 30 pontos por sprint. Serve para prever quando um backlog será concluído (release burndown) e para dimensionar quanto trabalho cabe em cada sprint futura.">Velocity de 30 pontos por sprint, usada para prever entregas e dimensionar sprints futuras</button>
+        <button class="alt" type="button" data-fb="Errado! Velocity é média de pontos por sprint, não velocidade de código nem métrica de performance individual. Confundir os conceitos leva a cobranças inadequadas.">Velocity de 90 pontos no total, usada para cobrar performance individual dos desenvolvedores</button>
+        <button class="alt" type="button" data-fb="Errado! Velocity não mede qualidade de código; métricas como cobertura de testes e débito técnico fazem isso. Velocity mede capacidade de entrega.">Velocity de 30 pontos por sprint, usada como métrica de qualidade do código</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="4-3">
+      <p>3. Por que o triângulo de referência (histórias de 2, 5 e 13 pontos) é importante para equipes novas?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! Story Points não se convertem diretamente em horas; a régua é relativa, não absoluta. Criar triângulo em horas desvirtua a técnica.">Porque converte pontos em horas e permite cronogramas exatos</button>
+        <button class="alt" type="button" data-fb="Errado! A equipe precisa estimar suas próprias histórias, não terceirizar a estimativa para o Scrum Master. O triângulo é construído em conjunto, não imposto.">Porque elimina a necessidade de estimar, já que o Scrum Master decide os pontos</button>
+        <button class="alt" type="button" data-fb="Correto! Sem uma régua inicial, a equipe não tem base de comparação e as estimativas ficam inconsistentes. O triângulo dá três âncoras concretas que a equipe constrói em conjunto, permitindo que novas histórias sejam comparadas de forma coerente.">Porque dá à equipe três âncoras concretas para comparar novas histórias de forma coerente</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 4</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=sprint+planning+velocity+Scrum+como+calcular" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=agile+velocity+release+burndown+forecasting" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=sprint+planning+velocity+planejamento+ágil+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Sprint Planning</strong>: reunião que abre a sprint.</li>
+      <li><strong>Velocity</strong>: pontos entregues por sprint em média.</li>
+      <li><strong>Triângulo de referência</strong>: três histórias-calibre.</li>
+      <li><strong>Release burndown</strong>: gráfico de previsão de entrega.</li>
+      <li><strong>Refinement</strong>: sessões semanais de pré-estimativa.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> A velocity de uma equipe deve aumentar a cada sprint para mostrar melhoria.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> velocity é uma medida de capacidade, não de desempenho. Uma equipe madura tem velocity estável; forçar aumento gera inflação de pontos (a equipe passa a estimar mais alto para "entregar mais") ou sacrifício da qualidade. Melhoras reais aparecem como aumento sustentável após algumas sprints, não como meta forçada.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 5 ============ -->
+<div class="painel" id="painel-5" role="tabpanel" aria-labelledby="tab-5">
+  <h2>Aba 5 · Desafios e soluções na utilização do Planning Poker</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é reconhecer os <strong>problemas mais comuns</strong> que fazem o Planning Poker falhar em equipes reais (dominação por um membro, pressa para terminar, ancoragem persistente, estimativas que viram promessa) e conhecer as <strong>soluções práticas</strong> propostas por especialistas como Mike Cohn e <strong>Ron Jeffries</strong> (co-criador americano do Extreme Programming, método ágil). Você vai atuar como consultor diagnosticando cenários reais e propondo soluções.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Os sete problemas mais comuns</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>1. Dominação do sênior</strong>: o desenvolvedor mais experiente fala primeiro e os demais seguem a opinião dele. <em>Solução:</em> reforçar o voto secreto e o Scrum Master intervir se alguém monopolizar a conversa.</li>
+      <li><strong>2. Pressa para terminar</strong>: a equipe vota sem discutir para "encerrar logo" a reunião. <em>Solução:</em> limitar o tempo por história (máximo de 5 minutos) e exigir pelo menos duas justificativas antes de revotar.</li>
+      <li><strong>3. Ancoragem no PO</strong>: o PO sugere um valor ("acho que isso é fácil, uns 3 pontos") e a equipe tende a concordar. <em>Solução:</em> o PO não deve opinar sobre esforço; sua voz é sobre o que precisa ser feito, não sobre quanto tempo leva.</li>
+      <li><strong>4. Estimativa virando promessa</strong>: a gerência usa os pontos estimados como prazo fixo para cobrar. <em>Solução:</em> reforçar que pontos são estimativas, não promessas; a velocity é que serve para prever.</li>
+      <li><strong>5. Inflação de pontos</strong>: a equipe começa a estimar mais alto para parecer produtiva. <em>Solução:</em> recalibrar o triângulo periodicamente com histórias realmente entregues, não apenas estimadas.</li>
+      <li><strong>6. História muito grande</strong>: a equipe recebe histórias de 40 ou 100 pontos que ninguém sabe estimar. <em>Solução:</em> exigir que histórias acima de 13 pontos sejam quebradas em histórias menores durante o Product Backlog Refinement.</li>
+      <li><strong>7. Comparação entre equipes</strong>: a gerência compara velocity de equipes diferentes e cobra a "mais lenta". <em>Solução:</em> educar que velocity é interna e relativa; cada equipe tem seu próprio histórico.</li>
+    </ul>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Casos reais de mau uso</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Crise da Nokia em 2010</strong>: relatos de ex-funcionários (como no livro <em>Operation Elop</em>, dos jornalistas finlandeses Pekka Nykänen e Merina Salminen) indicam que a empresa usava pontos de história como metas de desempenho individual, o que gerou medo de estimar com sinceridade e contribuiu para a perda do mercado de smartphones.</li>
+      <li><strong>Falha do healthcare.gov</strong> (site americano de saúde lançado em 2013): a equipe usou Planning Poker, mas a pressão política transformou as estimativas em prazos rígidos, e a equipe não pôde recalibrar quando dificuldades técnicas surgiram.</li>
+      <li><strong>Soluções brasileiras</strong>: a ThoughtWorks Brasil e a DTI Digital publicam guias recomendando <strong>Planning Poker com timeboxing</strong> (limitação de tempo por história) e <strong>retrospectivas sobre o processo de estimativa</strong>, não apenas sobre o produto.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Checklist de saúde do Planning Poker</h3>
+    <ul style="margin-left:1.5rem">
+      <li>As cartas são viradas ao mesmo tempo, sem revelação antecipada?</li>
+      <li>Os extremos (maior e menor votos) sempre justificam antes de revotar?</li>
+      <li>O PO se abstém de opinar sobre esforço?</li>
+      <li>Há um timebox claro por história (até 5 minutos)?</li>
+      <li>Histórias maiores que 13 pontos são quebradas antes do Planning?</li>
+      <li>A velocity é usada para prever, nunca para cobrar?</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: consultor de desafios do Planning Poker</h3>
+
+    <div class="prever">
+      <strong>Antes de diagnosticar, preveja:</strong> em uma equipe onde o desenvolvedor sênior sempre fala primeiro e os demais concordam, qual é o problema mais provável: ancoragem, pressa ou inflação de pontos?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, diga sua previsão.<br>
+      <strong>Passo 1:</strong> clique em Novo cenário e leia a situação da equipe.<br>
+      <strong>Passo 2:</strong> escolha o problema mais provável entre os cinco apresentados.<br>
+      <strong>Passo 3:</strong> leia a solução recomendada com base em Mike Cohn e Ron Jeffries.<br>
+      <strong>Passo 4:</strong> acompanhe o placar de diagnósticos corretos.
+    </div>
+
+    <div class="roteiro">
+      projete o cenário do sênior dominador e pergunte à turma: o que está acontecendo aqui? Depois mostre a solução: reforçar o voto secreto e exigir justificativas dos extremos. Cada cenário tem um padrão diferente de causa e solução.
+    </div>
+
+    <div class="demo-area" id="demo5-area">
+      <div id="demo5-cenario" style="background:var(--cor-destaque-claro); padding:1rem; border-radius:8px; margin-bottom:1rem; font-weight:600">
+        📋 O cenário aparecerá aqui. Clique em Novo cenário para começar.
+      </div>
+      <div id="demo5-opcoes" style="display:none"></div>
+      <div id="demo5-feedback" style="margin-top:1rem"></div>
+      <div style="margin-top:1rem">
+        <button class="btn" type="button" id="demo5-novo">🎲 Novo cenário</button>
+        <button class="btn btn-secundario" type="button" id="demo5-reset">🔄 Reiniciar</button>
+      </div>
+      <div id="demo5-placar" style="margin-top:1rem; font-weight:bold; color:var(--cor-destaque-escuro)"></div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 5</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      dominação = um membro monopoliza a opinião ·
+      ancoragem = viés de seguir a primeira opinião ·
+      timebox = limite máximo de tempo por atividade ·
+      inflação de pontos = estimar mais alto para parecer produtivo ·
+      velocity relativa = medida interna de cada equipe, não comparável entre equipes.
+    </div>
+
+    <div class="pergunta" data-pergunta="5-1">
+      <p>1. O Product Owner sugere "acho que isso vale 3 pontos" antes da votação. Qual problema isso pode gerar?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! A inflação é o contrário: a equipe estimar mais alto. O que o PO faz aqui é ancorar para baixo, não para cima.">Inflação de pontos</button>
+        <button class="alt" type="button" data-fb="Correto! A sugestão do PO cria uma âncora: mesmo com voto secreto, os membros tendem a se aproximar do valor sugerido. O PO deve esclarecer o que precisa ser feito, não opinar sobre esforço.">Ancoragem: a equipe tende a seguir a sugestão mesmo com voto secreto</button>
+        <button class="alt" type="button" data-fb="Errado! A pressa seria terminar sem discutir; aqui o PO está opinando, não apressando. São problemas diferentes com soluções diferentes.">Pressa para terminar a reunião</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="5-2">
+      <p>2. A gerência começa a cobrar a equipe porque "prometeram 30 pontos e entregaram 24". Qual é o problema conceitual aqui?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! Estimativa é previsão probabilística, não promessa. Velocity serve para prever entregas futuras, não para cobrar entregas passadas. Essa confusão leva a equipes com medo de estimar com sinceridade.">Tratar estimativa como promessa, quando ela é previsão probabilística</button>
+        <button class="alt" type="button" data-fb="Errado! Velocity não pode ser inflada de propósito sem distorcer a técnica; o problema aqui é o uso errado da métrica, não sua magnitude.">A velocity foi subestimada de propósito pela equipe</button>
+        <button class="alt" type="button" data-fb="Errado! Scrum não prevê bônus por velocity; isso desvirtuaria a técnica transformando-a em métrica de remuneração, o que seria uma prática anti-ágil.">A equipe deveria ter recebido bônus por bater a velocity</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="5-3">
+      <p>3. Uma equipe recebe uma user story estimada em 100 pontos. Qual é a melhor solução?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! Forçar a equipe a entregar 100 pontos em uma sprint é irrealista e gera dívida técnica. Histórias desse tamanho são sinal de que a decomposição não foi feita.">Forçar a equipe a entregar tudo em uma única sprint</button>
+        <button class="alt" type="button" data-fb="Errado! Recusar a história não resolve o problema de negócio; a funcionalidade ainda precisa ser entregue, só que decomposta em pedaços menores.">Recusar a história e não trabalhar nela</button>
+        <button class="alt" type="button" data-fb="Correto! Histórias acima de 13 pontos são grandes demais para estimar com confiança. Devem ser quebradas em histórias menores durante o Product Backlog Refinement, antes do Sprint Planning.">Quebrar a história em histórias menores durante o Product Backlog Refinement</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 5</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=planning+poker+problemas+comuns+soluções+Mike+Cohn" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=planning+poker+pitfalls+anti-patterns+agile" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=planning+poker+erros+comuns+antipatterns+Scrum" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Dominação</strong>: um membro monopoliza a opinião.</li>
+      <li><strong>Ancoragem</strong>: seguir a primeira opinião emitida.</li>
+      <li><strong>Inflação de pontos</strong>: estimar mais alto sem razão real.</li>
+      <li><strong>Timebox</strong>: limite máximo de tempo por atividade.</li>
+      <li><strong>Refinement</strong>: quebra de histórias grandes antes do planning.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Uma velocity maior significa que a equipe está ficando mais rápida e melhor.<br>
+      <strong>Veredito:</strong> 🎯 MEIA VERDADE.<br>
+      <strong>Explicação:</strong> velocity maior pode indicar melhoria genuína (menos impedimentos, mais experiência), mas também pode sinalizar inflação de pontos (a equipe passa a estimar mais alto para parecer produtiva) ou sacrifício de qualidade. Olhar velocity isolada engana; é preciso analisar junto cobertura de testes, débito técnico e satisfação da equipe.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 6 - REVISÃO ============ -->
+<div class="painel" id="painel-6" role="tabpanel" aria-labelledby="tab-6">
+  <h2>⭐ Revisão — Mapa completo da aula</h2>
+
+  <h3>🗺️ Mapa da aula</h3>
+  <div class="revisao-mapa">
+    <div class="no-mapa">
+      <h4>Aba 1 · Contagem de PF</h4>
+      <p>Os 7 passos do IFPUG, as 5 funções (ALI, AIE, EE, CE, EO) e a tabela de pesos por complexidade.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 2 · Desafios FPA</h4>
+      <p>Subjetividade, custo, inadequação a ágil; alternativas NESMA, COSMIC e Story Points.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 3 · Planning Poker</h4>
+      <p>Técnica de James Grenning e Mike Cohn; baralho de Fibonacci; combate à ancoragem e ao efeito halo.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 4 · Implementação</h4>
+      <p>Quem joga, Sprint Planning, triângulo de referência (2, 5, 13) e cálculo da velocity.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 5 · Desafios Poker</h4>
+      <p>Dominação, ancoragem, pressa, inflação, estimativa como promessa; soluções de Mike Cohn e Ron Jeffries.</p>
+    </div>
+    <div class="no-mapa">
+      <h4> Estudo em casa</h4>
+      <p>Refaça os quizzes das cinco abas para garantir os 5 selos e enfrente o Chefão com a cola rápida ao lado.</p>
+    </div>
+  </div>
+
+  <div class="cola-rapida">
+    <h3>🧷 Cola rápida — glossário da aula</h3>
+    <dl>
+      <dt><strong>PF (Pontos de Função)</strong></dt>
+      <dd>Unidade de tamanho funcional independente de linguagem, mantida pelo IFPUG.</dd>
+
+      <dt><strong>IFPUG</strong></dt>
+      <dd>Grupo Internacional de Usuários de Pontos de Função, fundado em 1986.</dd>
+
+      <dt><strong>CPM</strong></dt>
+      <dd>Manual de Práticas de Contagem, documento oficial do IFPUG (versão 4.3.1).</dd>
+
+      <dt><strong>ALI (Arquivo Lógico Interno)</strong></dt>
+      <dd>Grupo de dados mantido pela própria aplicação; vale 7, 10 ou 15 PF.</dd>
+
+      <dt><strong>AIE (Arquivo de Interface Externo)</strong></dt>
+      <dd>Grupo de dados mantido por outro sistema, apenas referenciado; vale 5, 7 ou 10 PF.</dd>
+
+      <dt><strong>EE (Entrada Externa)</strong></dt>
+      <dd>Dados que entram e modificam o estado; vale 3, 4 ou 6 PF.</dd>
+
+      <dt><strong>CE (Saída Externa com cálculo)</strong></dt>
+      <dd>Dados que saem com derivação ou cálculo; vale 4, 5 ou 7 PF.</dd>
+
+      <dt><strong>EO (Consulta Externa)</strong></dt>
+      <dd>Dados que saem sem cálculo; vale 3, 4 ou 6 PF.</dd>
+
+      <dt><strong>VAF (Valor de Ajuste de Função)</strong></dt>
+      <dd>Multiplicador baseado em 14 características gerais (GSC), variando de 0,65 a 1,35.</dd>
+
+      <dt><strong>NESMA</strong></dt>
+      <dd>Método holandês simplificado, com pesos fixos por tipo de função.</dd>
+
+      <dt><strong>COSMIC</strong></dt>
+      <dd>Método europeu que conta movimentações de dados (Entrada, Saída, Leitura, Escrita).</dd>
+
+      <dt><strong>Story Points</strong></dt>
+      <dd>Medida relativa usada em Scrum, não comparável entre equipes.</dd>
+
+      <dt><strong>Planning Poker</strong></dt>
+      <dd>Técnica de estimativa ágil em grupo criada por James Grenning em 2002.</dd>
+
+      <dt><strong>Sequência de Fibonacci</strong></dt>
+      <dd>0, 1, 2, 3, 5, 8, 13, 20, 40, 100 usada no Planning Poker.</dd>
+
+      <dt><strong>Carta ☕ (café)</strong></dt>
+      <dd>Pedido de mais informações ou de quebra da história em partes menores.</dd>
+
+      <dt><strong>Ancoragem</strong></dt>
+      <dd>Viés de se deixar levar pela primeira opinião emitida.</dd>
+
+      <dt><strong>Efeito halo</strong></dt>
+      <dd>Viés de concordar com a pessoa hierarquicamente superior ou mais experiente.</dd>
+
+      <dt><strong>Sprint Planning</strong></dt>
+      <dd>Reunião que abre a sprint e define o trabalho a ser entregue.</dd>
+
+      <dt><strong>Product Owner (PO)</strong></dt>
+      <dd>Representante do cliente no Scrum, esclarece o que precisa ser feito.</dd>
+
+      <dt><strong>Scrum Master</strong></dt>
+      <dd>Facilitador das cerimônias ágeis, remove impedimentos.</dd>
+
+      <dt><strong>Triângulo de referência</strong></dt>
+      <dd>Três histórias-calibre (tipicamente 2, 5, 13) usadas como régua pela equipe.</dd>
+
+      <dt><strong>Velocity</strong></dt>
+      <dd>Média de pontos entregues por sprint após 3 ou 4 sprints.</dd>
+
+      <dt><strong>Release burndown</strong></dt>
+      <dd>Gráfico de previsão de entrega de uma release inteira.</dd>
+
+      <dt><strong>Inflação de pontos</strong></dt>
+      <dd>Estimar mais alto sem razão real, para parecer produtivo.</dd>
+
+      <dt><strong>Timebox</strong></dt>
+      <dd>Limite máximo de tempo por história ou cerimônia.</dd>
+    </dl>
+  </div>
+
+  <div class="chefao">
+    <h3>👑 CHEFÃO — DESAFIO FINAL</h3>
+    <p><strong>Enunciado:</strong> Você é consultor de métricas e agilidade na <strong>MétricaJá Consultoria</strong> (empresa fictícia brasileira de consultoria em métricas de software) e recebeu dois clientes no mesmo dia para resolver problemas opostos.</p>
+
+    <p style="margin-top:1rem"><strong>Cliente 1 — Banco Regional Sul (BRS):</strong> banco médio do sul do Brasil, com contratos de fábrica de software terceirizada cobrados por PF usando o método IFPUG completo. O diretor de TI reclama que as contagens demoram 6 semanas e custam caro, atrasando o fechamento de contratos.</p>
+
+    <p style="margin-top:0.75rem"><strong>Cliente 2 — Startup DeliveryJá:</strong> startup brasileira de entregas com 12 desenvolvedores divididos em duas squads Scrum. O CTO quer introduzir Planning Poker, mas uma squad tem velocity de 40 pontos e a outra de 22 pontos, e a gerência já começou a cobrar a squad "mais lenta".</p>
+
+    <p style="margin-top:1rem"><strong>Parte 1 — BRS (Abas 1 e 2):</strong> proponha uma mudança no método de contagem para acelerar o processo. Cite UM método alternativo da cola rápida (NESMA ou COSMIC), explique em uma frase como ele difere do IFPUG completo e indique UM benefício e UM risco da mudança para contratos governamentais.</p>
+
+    <p style="margin-top:1rem"><strong>Parte 2 — BRS (Aba 1):</strong> para uma user story simples "cadastrar cliente" contada com o método IFPUG, a equipe identificou 1 ALI de complexidade baixa e 3 funções transacionais (EE, EO, EO) todas de complexidade baixa. Calcule o total de PF não ajustados usando a tabela de pesos (termo na cola rápida). Se o VAF (termo na cola rápida) for 1,0, qual é o total final?</p>
+
+    <p style="margin-top:1rem"><strong>Parte 3 — DeliveryJá (Abas 3 e 4):</strong> explique em duas frases por que a comparação de velocity entre as duas squads é um erro conceitual. Depois proponha um <strong>triângulo de referência</strong> (termo na cola rápida) para a squad nova começar a jogar Planning Poker com coerência.</p>
+
+    <p style="margin-top:1rem"><strong>Parte 4 — DeliveryJá (Aba 5):</strong> em uma rodada de Planning Poker, o desenvolvedor sênior sempre fala primeiro e os demais concordam. Cite o nome do viés envolvido (termo na cola rápida) e proponha DUAS soluções práticas: uma técnica (relacionada ao voto secreto) e uma de facilitação (papel do Scrum Master).</p>
+  </div>
+
+  <details>
+    <summary>📚 Dica para o Chefão</summary>
+    <p style="margin-top:0.75rem">Na Parte 1, NESMA simplificada acelera a contagem mas perde precisão — cuidado em contratos governamentais que exigem auditoria formal. Na Parte 2, ALI baixa = 7 PF + EE baixa = 3 + EO baixa = 3 + EO baixa = 3 → total de 16 PF; com VAF = 1,0 o final continua 16 PF. Na Parte 3, velocity é relativa à equipe; proponha triângulo com histórias que a squad nova já entregou. Na Parte 4, o viés é ancoragem (e também efeito halo); soluções: reforçar que cartas são viradas simultaneamente e o Scrum Master deve garantir que os extremos falem antes de revotar.</p>
+  </details>
+</div>
+
+<!-- ============ RODAPÉ ============ -->
+<footer>
+  <div class="bloco">
+    <h4>📋 FICHA TÉCNICA DA AULA</h4>
+    <p>DEVOPS — Aula 5, Unidade 2, págs. 29–46 · Gerado em 05/11/2026 · 5 abas de conteúdo + Revisão · 15 perguntas · 5 demos · cor #D97706</p>
+  </div>
+
+  <div class="bloco">
+    <h4>🪄 SOBRE O HTMLearning · v2.17 (23/10/2026)</h4>
+    <p style="margin-bottom:0.75rem">Transformar o sumário de qualquer disciplina em uma classe interativa em HTML único e offline, com previsão antes do clique, tentativa e erro guiado e exemplos reais.</p>
+
+    <ul style="margin-left:1.5rem; margin-bottom:0.75rem">
+      <li>O que é: metodologia e arquitetura de prompts que converte sumários em aulas interativas em minutos, com IAs gratuitas.</li>
+      <li>O que entrega: 5 a 7 abas + Revisão, simulações com previsão, quiz com retry sem revelar gabarito, linguagem plana, Modos Apresentação/Leitura.</li>
+      <li>Por que é inclusivo: um único .html leve, 100% offline, roda em PC e celular e viaja em pen drive para escolas desconectadas ou áreas rurais.</li>
+    </ul>
+
+    <p style="margin-bottom:0.5rem">Idealizador do projeto: Professor Wellington Dimas da Cruz</p>
+    <p style="margin-bottom:0.75rem">Apoiadora do projeto: Prof.ª Dr.ª Mariella Berger Andrade (IFES / CEFOR)</p>
+
+    <p style="margin-top:0.75rem">Contatos e links do projeto:</p>
+    <ul>
+      <li>E-mail do idealizador: <a href="mailto:cloud.ai-generative@outlook.com">cloud.ai-generative@outlook.com</a></li>
+      <li>Repositório GitHub do idealizador: <a href="https://github.com/cloud-ai-Generative" target="_blank" rel="noopener">github.com/cloud-ai-Generative</a></li>
+      <li>Currículo Lattes do idealizador: <a href="https://lattes.cnpq.br/6801791839011321" target="_blank" rel="noopener">lattes.cnpq.br/6801791839011321</a></li>
+      <li>Currículo Lattes da apoiadora: <a href="https://lattes.cnpq.br/3929645439848570" target="_blank" rel="noopener">lattes.cnpq.br/3929645439848570</a></li>
+      <li>Site oficial do projeto: <a href="https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html" target="_blank" rel="noopener">https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html</a></li>
+    </ul>
+  </div>
+</footer>
+
+<script>
+"use strict";
+
+/* ================= ESTADO ================= */
+var estado = {
+  abaAtual: 1,
+  xp: 0,
+  selos: {},
+  totalSelos: 0,
+  respostas: {},
+  modo: "leitura",
+  tema: "claro"
+};
+
+/* ================= NAVEGAÇÃO ================= */
+function ativarAba(num) {
+  estado.abaAtual = num;
+  var tabs = document.querySelectorAll(".tab");
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].setAttribute("aria-selected", tabs[i].getAttribute("data-aba") === String(num) ? "true" : "false");
+  }
+  var paineis = document.querySelectorAll(".painel");
+  for (var j = 0; j < paineis.length; j++) {
+    paineis[j].classList.remove("active");
+  }
+  var alvo = document.getElementById("painel-" + num);
+  if (alvo) alvo.classList.add("active");
+  document.getElementById("progresso").textContent = "Aba " + num + " de 6";
+}
+
+function irParaAba(num) {
+  ativarAba(num);
+  var novo = "#aba-" + num;
+  if (window.location.hash !== novo) {
+    window.location.hash = novo;
+  }
+  window.scrollTo(0, 0);
+}
+
+function lerHash() {
+  var h = window.location.hash.replace("#aba-", "");
+  var n = parseInt(h, 10);
+  if (n >= 1 && n <= 6) return n;
+  return 0;
+}
+
+window.addEventListener("hashchange", function () {
+  var n = lerHash();
+  if (n && n !== estado.abaAtual) ativarAba(n);
+});
+
+/* ================= MODOS ================= */
+function alternarModo() {
+  if (estado.modo === "leitura") {
+    document.body.classList.add("modo-apresentacao");
+    document.getElementById("btn-modo").textContent = "📖 Leitura";
+    estado.modo = "apresentacao";
+  } else {
+    document.body.classList.remove("modo-apresentacao");
+    document.getElementById("btn-modo").textContent = "🎤 Apresentação";
+    estado.modo = "leitura";
+  }
+}
+
+function alternarTema() {
+  if (estado.tema === "claro") {
+    document.body.setAttribute("data-theme", "dark");
+    document.getElementById("btn-tema").textContent = "☀️ Claro";
+    estado.tema = "escuro";
+  } else {
+    document.body.removeAttribute("data-theme");
+    document.getElementById("btn-tema").textContent = "🌙 Escuro";
+    estado.tema = "claro";
+  }
+}
+
+/* ================= QUIZ ================= */
+function fisherYates(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function inicializarQuiz() {
+  var perguntas = document.querySelectorAll(".pergunta");
+  for (var p = 0; p < perguntas.length; p++) {
+    (function (perg) {
+      var altsDiv = perg.querySelector(".alts");
+      var certaKey = altsDiv.getAttribute("data-certa");
+      var alts = [];
+      var filhos = altsDiv.querySelectorAll(".alt");
+      for (var k = 0; k < filhos.length; k++) alts.push(filhos[k]);
+      for (var idx = 0; idx < alts.length; idx++) {
+        var letra = String.fromCharCode(97 + idx);
+        alts[idx].setAttribute("data-ehcerta", letra === certaKey ? "true" : "false");
+      }
+      var emb = fisherYates(alts);
+      altsDiv.innerHTML = "";
+      for (var e = 0; e < emb.length; e++) {
+        altsDiv.appendChild(emb[e]);
+        emb[e].addEventListener("click", function () { responderQuiz(perg, this); });
+      }
+    })(perguntas[p]);
+  }
+}
+
+function responderQuiz(perg, alt) {
+  var id = perg.getAttribute("data-pergunta");
+  var reg = estado.respostas[id];
+  if (reg && reg.acertou) return;
+
+  var acerto = alt.getAttribute("data-ehcerta") === "true";
+  var fbCerta = perg.querySelector(".fb-certa");
+  var fbErrada = perg.querySelector(".fb-errada");
+
+  if (acerto) {
+    alt.classList.add("certa");
+    alt.textContent = "✓ " + alt.textContent;
+    var todas = perg.querySelectorAll(".alt");
+    for (var i = 0; i < todas.length; i++) todas[i].disabled = true;
+    fbCerta.textContent = "✅ Por que esta está certa: " + alt.getAttribute("data-fb");
+    fbCerta.classList.add("show");
+    fbErrada.classList.remove("show");
+    var pontos = (reg && !reg.acertou) ? 5 : 10;
+    estado.xp += pontos;
+    estado.respostas[id] = { acertou: true };
+    verificarSelo(id);
+    atualizarXP();
+  } else {
+    alt.classList.add("errada");
+    alt.textContent = "✗ " + alt.textContent;
+    alt.disabled = true;
+    fbErrada.textContent = "❌ Por que esta está errada: " + alt.getAttribute("data-fb");
+    fbErrada.classList.add("show");
+    if (!reg) estado.respostas[id] = { acertou: false };
+  }
+}
+
+function verificarSelo(id) {
+  var aba = id.split("-")[0];
+  var ids = [aba + "-1", aba + "-2", aba + "-3"];
+  for (var i = 0; i < ids.length; i++) {
+    var r = estado.respostas[ids[i]];
+    if (!r || !r.acertou) return;
+  }
+  if (!estado.selos[aba]) {
+    estado.selos[aba] = true;
+    estado.totalSelos += 1;
+    document.getElementById("selos").textContent = estado.totalSelos;
+  }
+}
+
+function atualizarXP() {
+  document.getElementById("xp").textContent = estado.xp;
+}
+
+/* ================= DEMO 1: CALCULADORA PF ================= */
+var demo1Estado = { passo: 0 };
+var passosPF = [
+  {
+    titulo: "Passo 1 — Tipo de contagem",
+    texto: "Trata-se de uma <strong>contagem de projeto de desenvolvimento</strong>: o sistema está sendo construído do zero, com novas funcionalidades sendo entregues.",
+    pf: 0
+  },
+  {
+    titulo: "Passo 2 — Fronteira da aplicação",
+    texto: "A fronteira separa o sistema de RH do mundo externo. Dentro: as funções de funcionários. Fora: o usuário (analista de RH) e o sistema de patrimônio que mantém a tabela de departamentos.",
+    pf: 0
+  },
+  {
+    titulo: "Passo 3 — Funções de dados",
+    texto: "<strong>1 ALI (baixa complexidade):</strong> tabela de funcionários mantida pelo sistema → <strong>7 PF</strong>.<br><strong>1 AIE (baixa complexidade):</strong> tabela de departamentos mantida pelo sistema de patrimônio, apenas consultada → <strong>5 PF</strong>.",
+    pf: 12
+  },
+  {
+    titulo: "Passo 4 — Funções transacionais",
+    texto: "<strong>1 EE (baixa):</strong> cadastrar funcionário → <strong>3 PF</strong>.<br><strong>1 EE (baixa):</strong> excluir funcionário → <strong>3 PF</strong>.<br><strong>1 EO (baixa):</strong> consultar funcionário individual → <strong>3 PF</strong>.<br><strong>1 EO (baixa):</strong> listar todos os funcionários → <strong>3 PF</strong>.",
+    pf: 12
+  },
+  {
+    titulo: "Passo 5 — Complexidade já atribuída nos passos 3 e 4",
+    texto: "Todas as funções foram consideradas de <strong>baixa complexidade</strong>, já que os arquivos têm poucos campos e poucos tipos de registro. Os pesos foram aplicados diretamente.",
+    pf: 0
+  },
+  {
+    titulo: "Passo 6 — PF não ajustados",
+    texto: "Somando: ALI(7) + AIE(5) + EE(3) + EE(3) + EO(3) + EO(3) = <strong>24 PF não ajustados</strong>.",
+    pf: 24
+  },
+  {
+    titulo: "Passo 7 — VAF e PF ajustados",
+    texto: "Considerando um sistema simples sem características especiais, o VAF = 1,0 (sem ajuste). <strong>PF ajustados = 24 × 1,0 = 24 PF</strong>. Se o sistema tivesse alta complexidade de performance ou processamento distribuído, o VAF poderia chegar a 1,35, resultando em 32,4 PF.",
+    pf: 24
+  }
+];
+
+function demo1Render() {
+  var st = demo1Estado;
+  var html = "";
+  for (var i = 0; i < st.passo; i++) {
+    html += "<div style='background:var(--fundo-codigo); padding:0.75rem 1rem; margin:0.5rem 0; border-left:4px solid var(--cor-destaque); border-radius:4px'>";
+    html += "<div style='font-weight:bold; color:var(--cor-destaque-escuro)'>" + passosPF[i].titulo + "</div>";
+    html += "<div style='margin-top:0.3rem'>" + passosPF[i].texto + "</div>";
+    if (passosPF[i].pf > 0) {
+      html += "<div style='margin-top:0.3rem; font-weight:bold; color:var(--sucesso)'>PF acumulado: " + passosPF[i].pf + "</div>";
+    }
+    html += "</div>";
+  }
+  document.getElementById("demo1-passos").innerHTML = html;
+  if (st.passo >= passosPF.length) {
+    document.getElementById("demo1-total").textContent = "✅ Contagem concluída: 24 PF ajustados para a user story de cadastro de funcionários.";
+  } else {
+    document.getElementById("demo1-total").textContent = "Passo " + st.passo + " de " + passosPF.length;
+  }
+}
+
+function demo1Next() {
+  if (demo1Estado.passo < passosPF.length) {
+    demo1Estado.passo += 1;
+    demo1Render();
+  }
+}
+
+function demo1Reset() {
+  demo1Estado.passo = 0;
+  demo1Render();
+}
+
+/* ================= DEMO 2: COMPARADOR DE MÉTODOS ================= */
+var metodosData = {
+  ifpug: {
+    nome: "IFPUG completo",
+    tempo: "1 a 3 semanas para 1.000 PF",
+    precisao: "Alta (variação de 10-20% entre contadores certificados)",
+    custo: "Alto: exige contador certificado (CFPS)",
+    uso: "Contratos governamentais grandes, auditorias formais, benchmarking internacional",
+    exemplo: "Banco do Brasil e Serpro usam IFPUG em contratos de fábrica de software"
+  },
+  nesma: {
+    nome: "NESMA simplificada",
+    tempo: "1 a 3 dias para 1.000 PF",
+    precisao: "Média (variação de 20-30%); pesos fixos",
+    custo: "Médio: pode ser feito por analista não certificado",
+    uso: "Contratos ágeis com entregas contínuas, quando a velocidade importa",
+    exemplo: "Contratos de governo federal brasileiro em modalidade ágil usam NESMA"
+  },
+  cosmic: {
+    nome: "COSMIC",
+    tempo: "1 a 2 semanas para sistemas complexos",
+    precisao: "Alta para sistemas com muitos fluxos pequenos",
+    custo: "Médio: treinamento específico necessário",
+    uso: "Sistemas embarcados, telecomunicações, tempo real",
+    exemplo: "Empresas de telecomunicações europeias usam COSMIC para medir firmware"
+  },
+  sp: {
+    nome: "Story Points (Scrum)",
+    tempo: "Minutos por história; algumas horas para o backlog",
+    precisao: "Relativa à equipe, não absoluta",
+    custo: "Baixo: qualquer equipe pode usar",
+    uso: "Planejamento interno de equipes Scrum",
+    exemplo: "Spotify e times ágeis brasileiros usam em sprint planning"
+  }
+};
+
+function demo2Mostrar(met) {
+  var d = metodosData[met];
+  document.getElementById("demo2-cartao").innerHTML =
+    "<div style='border-left:4px solid var(--cor-destaque); padding-left:1rem'>" +
+    "<h4 style='color:var(--cor-destaque-escuro); margin-bottom:0.5rem'>" + d.nome + "</h4>" +
+    "<p><strong>⏱️ Tempo típico:</strong> " + d.tempo + "</p>" +
+    "<p><strong>🎯 Precisão:</strong> " + d.precisao + "</p>" +
+    "<p><strong>💰 Custo:</strong> " + d.custo + "</p>" +
+    "<p><strong>📍 Uso recomendado:</strong> " + d.uso + "</p>" +
+    "<p><strong>🌎 Exemplo real:</strong> " + d.exemplo + "</p>" +
+    "</div>";
+}
+
+function demo2Reset() {
+  document.getElementById("demo2-cartao").innerHTML = "👆 Clique em um método para abrir o cartão comparativo.";
+}
+
+/* ================= DEMO 3: BARALHO POKER ================= */
+var demo3Estado = { escolhida: null };
+var justificativas = {
+  "2": "<strong>Por que 2:</strong> se a equipe já tem um componente de login pronto em outro projeto e só precisa adaptar, e o fluxo de recuperação de senha for apenas acionar um serviço existente, pode ser uma história simples de adaptação.",
+  "3": "<strong>Por que 3:</strong> se a tela de login já existe em outros produtos da empresa e só precisa ser configurada, e a recuperação de senha usa um provedor externo (como Auth0 ou Firebase) que faz o trabalho pesado.",
+  "5": "<strong>Por que 5:</strong> cenário mais comum — tela de login simples com validações padrão, integração com o banco de usuários já existente, e envio de e-mail de recuperação via serviço SMTP configurado.",
+  "8": "<strong>Por que 8:</strong> se a equipe precisa implementar rate limiting (limite de tentativas), proteção contra força bruta, captcha, além do fluxo completo de recuperação com token seguro, expiração e validação.",
+  "13": "<strong>Por que 13:</strong> se há requisitos avançados como autenticação de dois fatores, integração com SSO (Single Sign-On, login único corporativo), logs de auditoria, notificação em tempo real ao usuário sobre tentativas suspeitas, e política de senhas fortes.",
+  "20": "<strong>Por que 20:</strong> se a história está mal definida ou grande demais — deveria ser quebrada em 'login simples' (5) + 'recuperação de senha' (5) + 'segurança extra' (8) pelo menos.",
+  "☕": "<strong>Por que café ☕:</strong> se faltam informações essenciais como: qual provedor de e-mail usar? Há integração com SSO? Há requisitos de LGPD sobre armazenamento de senhas? A história precisa ser refinada antes de ser estimada."
+};
+
+function demo3RenderBaralho() {
+  var cartas = ["2", "3", "5", "8", "13", "20", "☕"];
+  var html = "";
+  for (var i = 0; i < cartas.length; i++) {
+    var classe = "carta-poker";
+    if (cartas[i] === "☕") classe += " cafe";
+    if (demo3Estado.escolhida === cartas[i]) classe += " selecionada";
+    html += "<div class='" + classe + "' data-carta='" + cartas[i] + "'>" + cartas[i] + "</div>";
+  }
+  document.getElementById("demo3-baralho").innerHTML = html;
+  var cartasDom = document.querySelectorAll("#demo3-baralho .carta-poker");
+  for (var j = 0; j < cartasDom.length; j++) {
+    (function (c) {
+      c.addEventListener("click", function () {
+        demo3Estado.escolhida = c.getAttribute("data-carta");
+        demo3RenderBaralho();
+        demo3MostrarJustificativas();
+      });
+    })(cartasDom[j]);
+  }
+}
+
+function demo3MostrarJustificativas() {
+  var html = "<h4 style='color:var(--cor-destaque-escuro)'>📋 Justificativas possíveis para esta história:</h4>";
+  html += "<div style='font-style:italic; margin:0.5rem 0; color:var(--texto-suave)'>Você escolheu: <strong>" + demo3Estado.escolhida + "</strong>. Veja abaixo quando cada valor faria sentido.</div>";
+  var chaves = ["2", "3", "5", "8", "13", "20", "☕"];
+  for (var i = 0; i < chaves.length; i++) {
+    var destaque = chaves[i] === demo3Estado.escolhida ? "background:var(--cor-destaque-claro); " : "";
+    html += "<div style='padding:0.5rem 0.75rem; margin:0.4rem 0; border-left:3px solid var(--borda); " + destaque + "border-radius:4px'>" + justificativas[chaves[i]] + "</div>";
+  }
+  document.getElementById("demo3-feedback").innerHTML = html;
+}
+
+function demo3Reset() {
+  demo3Estado.escolhida = null;
+  demo3RenderBaralho();
+  document.getElementById("demo3-feedback").innerHTML = "";
+}
+
+/* ================= DEMO 4: SIMULADOR DE EQUIPE ================= */
+var demo4Estado = { historia: 0, revelado: false, historico: [] };
+var historias = [
+  {
+    story: "Como administrador do sistema, quero exportar relatórios de vendas em PDF e CSV para enviar à diretoria mensalmente.",
+    votos: [5, 5, 8, 8, 13],
+    membros: ["Ana (dev)", "Bruno (dev)", "Carla (QA)", "Diego (dev)", "Eduarda (tech lead)"],
+    alta: { nome: "Eduarda", voto: 13, motivo: "O CSV é simples, mas gerar PDF com gráficos embutidos exige biblioteca extra e testes de renderização. Também precisamos pensar em paginação para relatórios grandes e timeout no servidor." },
+    baixa: { nome: "Ana e Bruno", voto: 5, motivo: "Já temos um serviço de geração de PDF em outro módulo e o CSV é trivial. Podemos reutilizar." },
+    consenso: 8,
+    explicacao: "Após a discussão, Eduarda convence a equipe sobre a complexidade do PDF. A equipe revota e converge para 8 pontos, reconhecendo que o PDF exige esforço adicional."
+  },
+  {
+    story: "Como usuário, quero receber notificações por push no celular quando meu pedido mudar de status.",
+    votos: [8, 13, 8, 13, 13],
+    membros: ["Ana (dev)", "Bruno (dev)", "Carla (QA)", "Diego (dev)", "Eduarda (tech lead)"],
+    alta: { nome: "Bruno, Carla e Eduarda", voto: 13, motivo: "Push notification exige configuração no Firebase (Android) e APNS (iOS), certificados diferentes, tratamento de usuário que desinstalou o app, histórico de notificações no banco e retry em caso de falha." },
+    baixa: { nome: "Ana e Diego", voto: 8, motivo: "Temos um wrapper de notificação em outro app que podemos adaptar." },
+    consenso: 13,
+    explicacao: "A equipe percebe que reutilizar o wrapper não cobre o histórico e retry. Revota e fecha em 13 pontos, reconhecendo a complexidade multiplataforma."
+  },
+  {
+    story: "Como cliente, quero filtrar produtos por faixa de preço na busca.",
+    votos: [3, 3, 5, 3, 5],
+    membros: ["Ana (dev)", "Bruno (dev)", "Carla (QA)", "Diego (dev)", "Eduarda (tech lead)"],
+    alta: { nome: "Carla e Eduarda", voto: 5, motivo: "Precisamos pensar em como filtrar com índices no banco para não degradar a busca quando o catálogo crescer." },
+    baixa: { nome: "Ana, Bruno e Diego", voto: 3, motivo: "É só adicionar dois campos no formulário e um where no SQL." },
+    consenso: 3,
+    explicacao: "Eduarda concorda que o risco de performance só aparece com catálogo grande, coisa que ainda não temos. A equipe fecha em 3 pontos com observação de monitorar depois."
+  }
+];
+
+function demo4RenderMembros(revelado) {
+  var st = demo4Estado;
+  var h = historias[st.historia];
+  var html = "<h4 style='color:var(--cor-destaque-escuro); margin-bottom:0.5rem'>👥 Membros da equipe:</h4>";
+  for (var i = 0; i < h.membros.length; i++) {
+    var classe = "membro-equipe";
+    if (revelado) classe += " jogou";
+    html += "<div class='" + classe + "'>";
+    html += "<span class='nome'>" + h.membros[i] + "</span>";
+    if (revelado) {
+      html += "<span class='carta-mini'>" + h.votos[i] + "</span>";
+    } else {
+      html += "<span class='carta-mini oculta'>?</span>";
+    }
+    html += "</div>";
+  }
+  document.getElementById("demo4-membros").innerHTML = html;
+}
+
+function demo4RenderJustificativas() {
+  var h = historias[demo4Estado.historia];
+  var html = "<div style='background:var(--fundo-codigo); padding:1rem; border-radius:8px; margin-top:0.75rem'>";
+  html += "<h4 style='color:var(--cor-destaque-escuro); margin-bottom:0.5rem'>🗣️ Justificativas dos extremos:</h4>";
+  html += "<div style='margin:0.5rem 0; padding:0.5rem; background:var(--cor-destaque-claro); border-left:4px solid var(--cor-destaque); border-radius:4px'><strong>Voto " + h.baixa.voto + " (" + h.baixa.nome + "):</strong> " + h.baixa.motivo + "</div>";
+  html += "<div style='margin:0.5rem 0; padding:0.5rem; background:#FFE3E3; border-left:4px solid var(--erro); border-radius:4px'><strong>Voto " + h.alta.voto + " (" + h.alta.nome + "):</strong> " + h.alta.motivo + "</div>";
+  html += "<div class='resultado-demo' style='margin-top:0.75rem'><strong>💬 Revotação:</strong> " + h.explicacao + " Consenso final: <strong>" + h.consenso + " pontos</strong>.</div>";
+  html += "</div>";
+  document.getElementById("demo4-justificativas").innerHTML = html;
+}
+
+function demo4Reveal() {
+  demo4Estado.revelado = true;
+  demo4RenderMembros(true);
+  demo4RenderJustificativas();
+  demo4AtualizarVelocity();
+}
+
+function demo4Next() {
+  var st = demo4Estado;
+  if (!st.revelado) {
+    alert("Revele os votos da história atual antes de avançar!");
+    return;
+  }
+  st.historico.push(historias[st.historia].consenso);
+  if (st.historia < historias.length - 1) {
+    st.historia += 1;
+    st.revelado = false;
+    demo4RenderMembros(false);
+    document.getElementById("demo4-justificativas").innerHTML = "";
+    demo4AtualizarVelocity();
+  } else {
+    document.getElementById("demo4-justificativas").innerHTML = "<div class='resultado-demo'>🎯 Sessão de Planning Poker concluída! A equipe estimou " + historias.length + " histórias. Veja a velocity abaixo.</div>";
+    demo4AtualizarVelocity();
+  }
+}
+
+function demo4AtualizarVelocity() {
+  var st = demo4Estado;
+  var html = "";
+  if (st.historico.length > 0) {
+    var soma = 0;
+    for (var i = 0; i < st.historico.length; i++) soma += st.historico[i];
+    var media = (soma / st.historico.length).toFixed(1);
+    html += "Histórico de estimativas: " + st.historico.join(", ") + " pontos. ";
+    html += "Velocity preliminar: " + media + " pontos por sprint. ";
+    if (st.historico.length < 3) {
+      html += "(Mínimo de 3 sprints para estabilizar a velocity.)";
+    } else {
+      html += "(Velocity estabilizada: use este valor para prever entregas futuras.)";
+    }
+  } else {
+    html = "A velocity será calculada após a primeira rodada ser concluída.";
+  }
+  document.getElementById("demo4-velocity").textContent = html;
+}
+
+function demo4Reset() {
+  demo4Estado = { historia: 0, revelado: false, historico: [] };
+  demo4RenderMembros(false);
+  document.getElementById("demo4-justificativas").innerHTML = "";
+  demo4AtualizarVelocity();
+}
+
+/* ================= DEMO 5: CONSULTOR DE DESAFIOS ================= */
+var cenarios = [
+  {
+    desc: "Na equipe do Banco Regional, durante o Planning Poker, o desenvolvedor sênior de 15 anos de casa sempre fala primeiro dando sua opinião, e os dois desenvolvedores juniores sistematicamente escolhem cartas próximas à dele.",
+    certa: "dominacao",
+    opcoes: [
+      { id: "dominacao", nome: "Dominação do sênior" },
+      { id: "ancoragem", nome: "Ancoragem" },
+      { id: "pressa", nome: "Pressa para terminar" },
+      { id: "inflacao", nome: "Inflação de pontos" },
+      { id: "promessa", nome: "Estimativa como promessa" }
+    ],
+    fbCerta: "Isso mesmo! A dominação é o problema. Solução: reforçar o voto secreto (cartas viradas simultaneamente) e o Scrum Master deve intervir pedindo que os juniores falem primeiro, ou que os extremos sejam justificados antes de revotar.",
+    fbOutros: "Não é esse o problema. O cenário descreve dominação do sênior: ele fala primeiro e os juniores seguem. A solução é reforçar voto secreto e exigir justificativas dos extremos."
+  },
+  {
+    desc: "A equipe da Startup DeliveryJá estima 15 histórias em 45 minutos, passando menos de 3 minutos por história. Ninguém justifica os votos, e todos apenas concordam com o primeiro valor anunciado.",
+    certa: "pressa",
+    opcoes: [
+      { id: "dominacao", nome: "Dominação do sênior" },
+      { id: "ancoragem", nome: "Ancoragem" },
+      { id: "pressa", nome: "Pressa para terminar" },
+      { id: "inflacao", nome: "Inflação de pontos" },
+      { id: "promessa", nome: "Estimativa como promessa" }
+    ],
+    fbCerta: "Isso mesmo! Pressa é o problema: menos de 3 minutos por história e nenhuma justificativa. Solução: timebox de 5 minutos por história e exigir pelo menos duas justificativas (do maior e do menor voto) antes de revotar.",
+    fbOutros: "Não é esse o problema. O cenário descreve pressa: histórias estimadas rápido demais sem justificativas. Solução: timebox e justificativas obrigatórias dos extremos."
+  },
+  {
+    desc: "O Product Owner diz 'acho que essa história é fácil, uns 3 pontos' antes da votação. A equipe, mesmo com cartas viradas, tende a escolher valores entre 2 e 5.",
+    certa: "ancoragem",
+    opcoes: [
+      { id: "dominacao", nome: "Dominação do sênior" },
+      { id: "ancoragem", nome: "Ancoragem" },
+      { id: "pressa", nome: "Pressa para terminar" },
+      { id: "inflacao", nome: "Inflação de pontos" },
+      { id: "promessa", nome: "Estimativa como promessa" }
+    ],
+    fbCerta: "Isso mesmo! Ancoragem é o viés. Solução: o PO deve se abster de opinar sobre esforço, e o Scrum Master deve reforçar essa regra. O PO esclarece o QUE precisa ser feito, não QUANTO tempo leva.",
+    fbOutros: "Não é esse o problema. O cenário descreve ancoragem causada pelo PO sugerindo valor. Solução: PO não opina sobre esforço; Scrum Master reforça a regra."
+  },
+  {
+    desc: "Após três sprints entregando 30 pontos em média, a equipe começa a estimar histórias que antes valiam 5 pontos como 8 pontos, sem mudança real na complexidade. A velocity 'sobe' para 45.",
+    certa: "inflacao",
+    opcoes: [
+      { id: "dominacao", nome: "Dominação do sênior" },
+      { id: "ancoragem", nome: "Ancoragem" },
+      { id: "pressa", nome: "Pressa para terminar" },
+      { id: "inflacao", nome: "Inflação de pontos" },
+      { id: "promessa", nome: "Estimativa como promessa" }
+    ],
+    fbCerta: "Isso mesmo! Inflação de pontos: a equipe estima mais alto sem razão técnica. Solução: recalibrar o triângulo de referência periodicamente usando histórias REALMENTE entregues, não apenas estimadas. Também revisar a cultura: velocity maior não significa equipe melhor.",
+    fbOutros: "Não é esse o problema. O cenário descreve inflação de pontos: estimar mais alto para parecer produtivo. Solução: recalibrar triângulo com histórias entregues e mudar a cultura sobre velocity."
+  },
+  {
+    desc: "A gerência começa a cobrar a equipe dizendo 'vocês prometeram 30 pontos e entregaram 24, isso é inaceitável'. A equipe passa a ter medo de estimar com sinceridade nas próximas sprints.",
+    certa: "promessa",
+    opcoes: [
+      { id: "dominacao", nome: "Dominação do sênior" },
+      { id: "ancoragem", nome: "Ancoragem" },
+      { id: "pressa", nome: "Pressa para terminar" },
+      { id: "inflacao", nome: "Inflação de pontos" },
+      { id: "promessa", nome: "Estimativa como promessa" }
+    ],
+    fbCerta: "Isso mesmo! A gerência trata estimativa como promessa. Solução: educar que pontos são previsão probabilística, não compromisso. Velocity serve para prever entregas futuras, não para cobrar entregas passadas. Estimativas erradas são informações, não falhas.",
+    fbOutros: "Não é esse o problema. O cenário descreve estimativa tratada como promessa. Solução: educar que pontos são previsão, não compromisso; velocity prevê o futuro, não cobra o passado."
+  },
+  {
+    desc: "A equipe recebe uma user story de 100 pontos e tenta estimá-la em uma única rodada. Ninguém consegue chegar a um consenso, e a reunião trava.",
+    certa: "pressa",
+    opcoes: [
+      { id: "dominacao", nome: "Dominação do sênior" },
+      { id: "ancoragem", nome: "Ancoragem" },
+      { id: "pressa", nome: "História grande demais (quebra necessária)" },
+      { id: "inflacao", nome: "Inflação de pontos" },
+      { id: "promessa", nome: "Estimativa como promessa" }
+    ],
+    fbCerta: "Isso mesmo! História de 100 pontos é grande demais para estimar com confiança. Solução: usar a carta ☕ (café) e exigir que a história seja quebrada em partes menores (máximo 13 pontos) durante o Product Backlog Refinement, antes do Sprint Planning.",
+    fbOutros: "Não é esse o problema. História de 100 pontos é grande demais. Solução: usar carta ☕ e quebrar a história em partes menores durante o Refinement."
+  }
+];
+
+var demo5Estado = { atual: null, resolvidos: 0, acertos: 0 };
+
+function demo5Novo() {
+  var i = Math.floor(Math.random() * cenarios.length);
+  demo5Estado.atual = cenarios[i];
+  document.getElementById("demo5-cenario").innerHTML = "📋 " + demo5Estado.atual.desc;
+  var opcoesDiv = document.getElementById("demo5-opcoes");
+  opcoesDiv.style.display = "block";
+  opcoesDiv.innerHTML = "";
+  for (var k = 0; k < demo5Estado.atual.opcoes.length; k++) {
+    (function (op) {
+      var b = document.createElement("button");
+      b.className = "btn";
+      b.type = "button";
+      b.textContent = op.nome;
+      b.addEventListener("click", function () { demo5Responder(op.id); });
+      opcoesDiv.appendChild(b);
+    })(demo5Estado.atual.opcoes[k]);
+  }
+  document.getElementById("demo5-feedback").innerHTML = "";
+}
+
+function demo5Responder(resp) {
+  if (!demo5Estado.atual) return;
+  var certa = resp === demo5Estado.atual.certa;
+  var fb = document.getElementById("demo5-feedback");
+  demo5Estado.resolvidos += 1;
+  if (certa) {
+    demo5Estado.acertos += 1;
+    fb.innerHTML = '<div class="resultado-demo">✅ <strong>Diagnóstico correto!</strong> ' + demo5Estado.atual.fbCerta + '</div>';
+  } else {
+    fb.innerHTML = '<div class="resultado-erro">❌ <strong>Diagnóstico incorreto.</strong> ' + demo5Estado.atual.fbOutros + '</div>';
+  }
+  document.getElementById("demo5-opcoes").style.display = "none";
+  document.getElementById("demo5-placar").textContent = "Placar: " + demo5Estado.acertos + " acertos em " + demo5Estado.resolvidos + " cenários";
+}
+
+function demo5Reset() {
+  demo5Estado.atual = null;
+  demo5Estado.resolvidos = 0;
+  demo5Estado.acertos = 0;
+  document.getElementById("demo5-cenario").innerHTML = "📋 O cenário aparecerá aqui. Clique em Novo cenário para começar.";
+  document.getElementById("demo5-opcoes").style.display = "none";
+  document.getElementById("demo5-opcoes").innerHTML = "";
+  document.getElementById("demo5-feedback").innerHTML = "";
+  document.getElementById("demo5-placar").textContent = "";
+}
+
+/* ================= LIGAÇÕES ================= */
+function ligarBotoes() {
+  var tabs = document.querySelectorAll(".tab");
+  for (var t = 0; t < tabs.length; t++) {
+    (function (tab) {
+      tab.addEventListener("click", function () {
+        irParaAba(parseInt(tab.getAttribute("data-aba"), 10));
+      });
+      tab.addEventListener("keydown", function (ev) {
+        var lista = Array.prototype.slice.call(document.querySelectorAll(".tab"));
+        var idx = lista.indexOf(tab);
+        if (ev.key === "ArrowRight" && idx < lista.length - 1) { lista[idx + 1].focus(); ev.preventDefault(); }
+        if (ev.key === "ArrowLeft" && idx > 0) { lista[idx - 1].focus(); ev.preventDefault(); }
+      });
+    })(tabs[t]);
+  }
+
+  document.getElementById("btn-modo").addEventListener("click", alternarModo);
+  document.getElementById("btn-tema").addEventListener("click", alternarTema);
+
+  // Demo 1
+  document.getElementById("demo1-next").addEventListener("click", demo1Next);
+  document.getElementById("demo1-reset").addEventListener("click", demo1Reset);
+  demo1Render();
+
+  // Demo 2
+  var metodos = document.querySelectorAll("#demo2-area [data-met]");
+  for (var m = 0; m < metodos.length; m++) {
+    (function (b) { b.addEventListener("click", function () { demo2Mostrar(b.getAttribute("data-met")); }); })(metodos[m]);
+  }
+  document.getElementById("demo2-reset").addEventListener("click", demo2Reset);
+
+  // Demo 3
+  document.getElementById("demo3-reset").addEventListener("click", demo3Reset);
+  demo3RenderBaralho();
+
+  // Demo 4
+  document.getElementById("demo4-reveal").addEventListener("click", demo4Reveal);
+  document.getElementById("demo4-next").addEventListener("click", demo4Next);
+  document.getElementById("demo4-reset").addEventListener("click", demo4Reset);
+  demo4RenderMembros(false);
+  demo4AtualizarVelocity();
+
+  // Demo 5
+  document.getElementById("demo5-novo").addEventListener("click", demo5Novo);
+  document.getElementById("demo5-reset").addEventListener("click", demo5Reset);
+
+  // Teclado
+  document.addEventListener("keydown", function (ev) {
+    if (estado.modo === "apresentacao") {
+      if (ev.key === "ArrowRight" && estado.abaAtual < 6) irParaAba(estado.abaAtual + 1);
+      if (ev.key === "ArrowLeft" && estado.abaAtual > 1) irParaAba(estado.abaAtual - 1);
+    }
+  });
+}
+
+/* ================= CARGA INICIAL ================= */
+document.addEventListener("DOMContentLoaded", function () {
+  ligarBotoes();
+  inicializarQuiz();
+  var n = lerHash();
+  ativarAba(n ? n : 1);
+  atualizarXP();
+});
+</script>
+
+</body>
+</html>
