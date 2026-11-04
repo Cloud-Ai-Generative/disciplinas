@@ -47,7 +47,7 @@
 <div class="table-wrap"><table>
 <thead><tr><th>Módulo</th><th>Porta (interface)</th><th>Adapter nesta aba</th><th>Quem usa</th></tr></thead>
 <tbody>
-<tr><td>🔑 Auth</td><td><code>IUsuarioRepository</code></td><td><code>UsuarioRepository</code></td><td><code>AuthService</code></td></tr>
+<tr><td>🔑 Auth</td><td><code>IUsuarioRepository</code></td><td><code>EfUsuarioRepository</code></td><td><code>AuthService</code></td></tr>
 <tr><td>📦 Catálogo</td><td><code>IProdutoRepository</code></td><td><code>EfProdutoRepository</code></td><td><code>CatalogoController</code></td></tr>
 <tr><td>🧾 Clientes</td><td><code>IClienteRepository</code></td><td><code>EfClienteRepository</code></td><td><code>ClientesController</code></td></tr>
 <tr><td>🛒 Pedidos</td><td><code>IPedidoRepository</code></td><td><code>EfPedidoRepository</code></td><td><code>PedidoService</code></td></tr>
@@ -598,7 +598,10 @@ CREATE TABLE IF NOT EXISTS pedidos (
   EnderecoId INT NOT NULL,
 
   -- Status do pedido (CRIADO, RESERVADO, CONFIRMADO, ENVIADO, CANCELADO)
-  status VARCHAR(20) NOT NULL DEFAULT 'CRIADO'
+  status VARCHAR(20) NOT NULL DEFAULT 'CRIADO',
+
+  -- Índice para "os meus pedidos" (WHERE usuario = ...): sem ele, o MySQL lê a tabela inteira
+  INDEX ix_pedidos_usuario (usuario)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=5001;
 -- AUTO_INCREMENT=5001: o 1º pedido recebe o id 5001, o mesmo do exemplo do contrato
 
@@ -862,6 +865,10 @@ public class Usuario
         CriadoEm = DateTime.UtcNow;
     }
 
+    /// &lt;summary&gt;Usuário que JÁ existe (banco ou documento da Tab 9-B): sem validação, mantém a data original.&lt;/summary&gt;
+    public static Usuario Reconstituir(Guid id, string login, string nome, string senha, DateTime criadoEm)
+        =&gt; new() { Id = id, Login = login, Nome = nome, Senha = senha, CriadoEm = criadoEm };
+
     /// &lt;summary&gt;
     /// Compara a senha recebida com a senha armazenada.
     /// Didático: comparação direta em texto puro.
@@ -881,28 +888,20 @@ public class Usuario
 <span class="code-filepath">LojaApi.Modules.Auth/Interfaces/IUsuarioRepository.cs (a porta)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="LojaApi.Modules.Auth/Interfaces/IUsuarioRepository.cs">using LojaApi.Modules.Auth.Domain;
-using System.Threading.Tasks;
 
 namespace LojaApi.Modules.Auth.Interfaces;
 
 /// &lt;summary&gt;
-/// Porta de saída do módulo Auth.
-/// Hoje implementada com MySQL/EF Core.
-/// No futuro pode ser trocada por MongoDB sem alterar o AuthService.
+/// 🚪 PORTA de saída do módulo Auth. O AuthService só conhece esta interface:
+/// aqui ela é atendida por EF Core + MySQL; na Tab 9-B, por MongoDB.
 /// &lt;/summary&gt;
 public interface IUsuarioRepository
 {
-    /// &lt;summary&gt;
-    /// Busca um usuário pelo login.
-    /// Retorna null quando o usuário não existe.
-    /// &lt;/summary&gt;
-    Task&lt;Usuario?&gt; BuscarPorLoginAsync(string login);
+    /// &lt;summary&gt;Busca pelo login (sem diferenciar maiúsculas). null = não existe.&lt;/summary&gt;
+    Task&lt;Usuario?&gt; BuscarPorLoginAsync(string login, CancellationToken ct = default);
 
-    /// &lt;summary&gt;
-    /// Salva um usuário.
-    /// Usado principalmente em seed, testes ou futuro cadastro.
-    /// &lt;/summary&gt;
-    Task&lt;Usuario&gt; SalvarAsync(Usuario usuario);
+    /// &lt;summary&gt;Insere ou atualiza (seed, testes ou um cadastro futuro).&lt;/summary&gt;
+    Task&lt;Usuario&gt; SalvarAsync(Usuario usuario, CancellationToken ct = default);
 }</pre>
 </div>
 <div class="code-editor-wrap">
@@ -973,71 +972,37 @@ public class AuthDbContext : DbContext
 }</pre>
 </div>
 <div class="code-editor-wrap">
-<span class="code-filepath">LojaApi.Modules.Auth/Repositories/UsuarioRepository.cs (o adapter MySQL)</span>
+<span class="code-filepath">LojaApi.Modules.Auth/Repositories/EfUsuarioRepository.cs (o adapter MySQL)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor" data-zip-path="LojaApi.Modules.Auth/Repositories/UsuarioRepository.cs">using LojaApi.Modules.Auth.Data;
+<pre class="code-editor" data-zip-path="LojaApi.Modules.Auth/Repositories/EfUsuarioRepository.cs">using LojaApi.Modules.Auth.Data;
 using LojaApi.Modules.Auth.Domain;
 using LojaApi.Modules.Auth.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Threading.Tasks;
 
 namespace LojaApi.Modules.Auth.Repositories;
 
-/// &lt;summary&gt;
-/// Implementação MySQL/EF Core da porta IUsuarioRepository.
-/// Para migrar para MongoDB no futuro, basta criar MongoUsuarioRepository
-/// implementando a mesma interface e trocar o registro no DI.
-/// &lt;/summary&gt;
-public class UsuarioRepository : IUsuarioRepository
+/// &lt;summary&gt;🔌 ADAPTER EF Core + MySQL da porta IUsuarioRepository (tabela usuarios).&lt;/summary&gt;
+public class EfUsuarioRepository : IUsuarioRepository
 {
-    // DbContext do contexto Auth
     private readonly AuthDbContext _db;
 
-    /// &lt;summary&gt;
-    /// Injeção de dependência via construtor.
-    /// &lt;/summary&gt;
-    public UsuarioRepository(AuthDbContext db)
+    public EfUsuarioRepository(AuthDbContext db) { _db = db; }
+
+    /// &lt;summary&gt;SELECT … WHERE login = @login (o login é guardado em minúsculas)&lt;/summary&gt;
+    public Task&lt;Usuario?&gt; BuscarPorLoginAsync(string login, CancellationToken ct = default)
     {
-        _db = db;
+        var normalizado = login.Trim().ToLower();   // mesma regra do construtor de Usuario
+        return _db.Usuarios.AsNoTracking().FirstOrDefaultAsync(u =&gt; u.Login == normalizado, ct);
     }
 
-    /// &lt;summary&gt;
-    /// Busca usuário pelo login.
-    /// &lt;/summary&gt;
-    public async Task&lt;Usuario?&gt; BuscarPorLoginAsync(string login)
+    /// &lt;summary&gt;INSERT se o id é novo; UPDATE se já existe.&lt;/summary&gt;
+    public async Task&lt;Usuario&gt; SalvarAsync(Usuario usuario, CancellationToken ct = default)
     {
-        // Normaliza o login para minúsculas, igual ao construtor da entidade
-        var loginNormalizado = login.Trim().ToLower();
-
-        // Busca no banco usando AsNoTracking porque é somente leitura
-        return await _db.Usuarios
-            .AsNoTracking()
-            .FirstOrDefaultAsync(u =&gt; u.Login == loginNormalizado);
-    }
-
-    /// &lt;summary&gt;
-    /// Salva usuário no banco.
-    /// &lt;/summary&gt;
-    public async Task&lt;Usuario&gt; SalvarAsync(Usuario usuario)
-    {
-        // Se o Id ainda não existe no banco, trata como novo registro
-        // (o construtor de Usuario já recebe um Guid, então Guid.Empty não serve de critério)
-        var existe = await _db.Usuarios.AnyAsync(u =&gt; u.Id == usuario.Id);
-        if (!existe)
-        {
-            await _db.Usuarios.AddAsync(usuario);
-        }
-        else
-        {
-            // Caso contrário, atualiza o registro existente
+        if (await _db.Usuarios.AnyAsync(u =&gt; u.Id == usuario.Id, ct))
             _db.Usuarios.Update(usuario);
-        }
-
-        // Persiste no banco
-        await _db.SaveChangesAsync();
-
-        // Retorna a entidade salva
+        else
+            _db.Usuarios.Add(usuario);
+        await _db.SaveChangesAsync(ct);
         return usuario;
     }
 }</pre>
@@ -1367,8 +1332,8 @@ public static class ModuleExtensions
         );
 
         // Registra a porta de usuários com implementação MySQL/EF Core
-        // Futuramente pode ser trocado por MongoUsuarioRepository
-        services.AddScoped&lt;IUsuarioRepository, UsuarioRepository&gt;();
+        // Na Tab 9-B, esta linha escolhe entre EF e Mongo
+        services.AddScoped&lt;IUsuarioRepository, EfUsuarioRepository&gt;();
 
         // Registra o serviço de JWT como singleton
         services.AddSingleton&lt;IJwtService&gt;(
@@ -3299,7 +3264,7 @@ public class AuthServiceTests
         // ── ARRANGE ──
         var usuario = UsuarioValido();
         _repoMock
-            .Setup(r =&gt; r.BuscarPorLoginAsync("admin"))
+            .Setup(r =&gt; r.BuscarPorLoginAsync("admin", It.IsAny&lt;CancellationToken&gt;()))
             .ReturnsAsync(usuario);
         _jwtMock
             .Setup(j =&gt; j.GerarToken(usuario))
@@ -3312,7 +3277,7 @@ public class AuthServiceTests
         Assert.NotNull(result);
         Assert.Equal("token-jwt-falso", result.Token);
         Assert.Equal("admin", result.Usuario.Login);
-        _repoMock.Verify(r =&gt; r.BuscarPorLoginAsync("admin"), Times.Once);
+        _repoMock.Verify(r =&gt; r.BuscarPorLoginAsync("admin", It.IsAny&lt;CancellationToken&gt;()), Times.Once);
         _jwtMock.Verify(j =&gt; j.GerarToken(usuario), Times.Once);
     }
 
@@ -3323,7 +3288,7 @@ public class AuthServiceTests
         // ── ARRANGE ──
         var usuario = UsuarioValido();
         _repoMock
-            .Setup(r =&gt; r.BuscarPorLoginAsync("admin"))
+            .Setup(r =&gt; r.BuscarPorLoginAsync("admin", It.IsAny&lt;CancellationToken&gt;()))
             .ReturnsAsync(usuario);
 
         // ── ACT ──
@@ -3341,7 +3306,7 @@ public class AuthServiceTests
     {
         // ── ARRANGE ──
         _repoMock
-            .Setup(r =&gt; r.BuscarPorLoginAsync("nao_existe"))
+            .Setup(r =&gt; r.BuscarPorLoginAsync("nao_existe", It.IsAny&lt;CancellationToken&gt;()))
             .ReturnsAsync((Usuario?)null);
 
         // ── ACT ──
@@ -3385,7 +3350,7 @@ public class AuthServiceTests
         Assert.Null(result);
         // Repositório nunca deve ser chamado com campos vazios
         _repoMock.Verify(
-            r =&gt; r.BuscarPorLoginAsync(It.IsAny&lt;string&gt;()),
+            r =&gt; r.BuscarPorLoginAsync(It.IsAny&lt;string&gt;(), It.IsAny&lt;CancellationToken&gt;()),
             Times.Never);
     }
 }</pre>
