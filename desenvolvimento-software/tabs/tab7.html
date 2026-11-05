@@ -337,6 +337,7 @@ EndGlobal</pre>
 <div class="lab-header"><h3>③ 📖 O código, camada por camada</h3></div>
 <p>Leia de dentro para fora — a mesma ordem da cebola. Todo arquivo é comentado.</p>
 <h4 style="color:var(--accent);margin:16px 0 8px">🧠 Domain — as regras</h4>
+<p class="text-sm" style="margin:12px 0 4px">👉 O <strong>Value Object</strong> do preço: um <code>record</code> que nunca aceita valor negativo e é comparado pelo valor. Se um <code>Dinheiro</code> existe, ele está certo.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Domain/ValueObjects/Dinheiro.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -358,6 +359,7 @@ public sealed record Dinheiro(decimal Valor, string Moeda = "BRL")
     public Dinheiro Add(Dinheiro outro) =&gt; new(Valor + outro.Valor, Moeda);
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 O <strong>evento de domínio</strong> "um produto foi criado". Nesta aba ele só é registrado na entidade; quem o publica numa fila é a Tab 7-B.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Domain/Events/ProdutoCriadoEvent.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -378,6 +380,7 @@ public record ProdutoCriadoEvent(long ProdutoId, string Nome) : IDomainEvent
     public DateTime OcorreuEm { get; } = DateTime.UtcNow;
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 Os erros do domínio: <code>DomainException</code> (regra quebrada → 400) e <code>NaoEncontradoException</code> (não existe → 404). O middleware decide o status pelo tipo do erro.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Domain/Exceptions/DomainException.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -401,6 +404,7 @@ public class NaoEncontradoException : DomainException
     public NaoEncontradoException(string message) : base(message) { }
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 O <strong>Aggregate Root</strong>: os setters são privados, então ninguém muda o preço sem passar pela validação. Repare nas duas fábricas — <code>Criar</code> (produto novo, sem id) e <code>Reconstituir</code> (produto que já existe no banco) — e no <code>ConfirmarCriacao</code>, que registra o evento depois de salvar.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Domain/Entities/Produto.cs (Aggregate Root)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -493,6 +497,7 @@ public class Produto
     }
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 A <strong>porta</strong>: o que o domínio precisa do banco, sem dizer qual banco. O <code>EfProdutoRepository</code> a implementa; nos testes, o Moq faz o papel dela.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Domain/Interfaces/IProdutoRepository.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -515,6 +520,7 @@ public interface IProdutoRepository
 }</pre>
 </div>
 <h4 style="color:var(--accent);margin:16px 0 8px">⚙️ Application — os casos de uso</h4>
+<p class="text-sm" style="margin:12px 0 4px">👉 Os <strong>DTOs</strong> (o formato do JSON de entrada e de saída) e o mapeamento entre eles e a entidade, juntos num arquivo porque são pequenos. A entidade nunca sai direto pela API.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Application/DTOs/ProdutoDtos.cs (Request, Response, Mapper)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -537,6 +543,7 @@ public static class ProdutoMapper
     public static ProdutoResponse ToResponse(Produto p) =&gt; new(p.Id, p.Nome, p.Preco.Valor, p.Estoque);
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 O contrato dos casos de uso que o controller pode chamar.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Application/Services/IProdutoService.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -554,6 +561,7 @@ public interface IProdutoService
     Task ExcluirAsync(long id);                                      // DELETE /api/produtos/{id}
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 Os casos de uso: chama o domínio para validar, grava pela porta e confirma a criação. Repare no construtor: ele recebe a <strong>interface</strong> <code>IProdutoRepository</code>, nunca a classe do EF.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Application/Services/ProdutoService.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -618,6 +626,7 @@ public class ProdutoService : IProdutoService
 </div>
 <h4 style="color:var(--accent);margin:16px 0 8px">🏭 Infrastructure — EF Core + MySQL</h4>
 <div class="info-banner"><strong>🐬 A tabela já existe:</strong> o EF Core aqui <strong>não cria</strong> tabela — usa a <code>produtos</code> que o <code>init-sql</code> da <a href="javascript:switchTab('tab5')" style="color:var(--primary);text-decoration:underline">Tab 5</a> criou no <code>loja_db</code> (<code>id BIGINT</code>, <code>nome</code>, <code>preco DECIMAL(10,2)</code>, <code>estoque</code>). Por isso o <code>Id</code> é <code>long</code> e o mapeamento diz o nome de cada coluna.</div>
+<p class="text-sm" style="margin:12px 0 4px">👉 O mapa do EF Core entre a classe <code>Produto</code> e a tabela <code>produtos</code> da Tab 5. Repare no <code>OwnsOne</code>: é ele que guarda o Value Object <code>Dinheiro</code> na coluna <code>preco</code>.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Infrastructure/Data/AppDbContext.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -660,6 +669,7 @@ public class AppDbContext : DbContext
     }
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 O <strong>adapter</strong> EF Core + MySQL da porta <code>IProdutoRepository</code>. Repare na paginação: o <code>Skip/Take</code> vem antes do <code>ToListAsync</code>, então vira <code>LIMIT/OFFSET</code> no SQL.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Infrastructure/Repositories/EfProdutoRepository.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -704,6 +714,7 @@ public class EfProdutoRepository : IProdutoRepository
 }</pre>
 </div>
 <h4 style="color:var(--accent);margin:16px 0 8px">🎯 Api — HTTP, JWT e erros</h4>
+<p class="text-sm" style="margin:12px 0 4px">👉 As rotas <code>/api/produtos</code>: só traduz HTTP ↔ caso de uso. O <code>[Authorize]</code> fica só nas rotas de escrita; os GETs são públicos.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Api/Controllers/ProdutosController.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -755,6 +766,7 @@ public class ProdutosController : ControllerBase
     }
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 A rota de login: confere e-mail e senha (fixos no código, só para estudar) e devolve o JWT assinado.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Api/Controllers/AuthController.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -808,6 +820,7 @@ public class AuthController : ControllerBase
     }
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 Tratamento de erros num lugar só: <code>NaoEncontradoException</code> → 404, <code>DomainException</code> → 400, qualquer outro erro → 500, sempre em <code>problem+json</code>. No 500, o detalhe vai para o log, nunca para o cliente.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Api/Middleware/ExceptionMiddleware.cs (RFC 7807)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -855,6 +868,7 @@ public class ExceptionMiddleware
     }
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 A configuração: a conexão com o MySQL da Tab 5 e a chave e a validade do JWT.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Api/appsettings.json</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -870,6 +884,7 @@ public class ExceptionMiddleware
   }
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 Como a API roda no seu PC: na porta 5000, abrindo o Swagger sozinho.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Api/Properties/launchSettings.json (porta 5000 e abre o Swagger)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -885,6 +900,7 @@ public class ExceptionMiddleware
   }
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 Onde tudo se junta: registra o <code>DbContext</code>, liga cada interface à sua classe (injeção de dependência), configura o JWT e monta o pipeline. A ordem do pipeline importa: o tratamento de erros vem primeiro, para pegar exceções de tudo o que vem depois.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Api/Program.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>

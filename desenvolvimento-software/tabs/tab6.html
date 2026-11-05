@@ -412,6 +412,7 @@
 <div class="lab-header"><h3>☕ Código completo — todos os arquivos Java</h3></div>
 
 <h4 style="color:var(--accent);margin:16px 0 8px">🧠 Camada Domain (zero frameworks)</h4>
+<p class="text-sm" style="margin:12px 0 4px">👉 A entidade do domínio: só os dados do produto (id, nome, preço, estoque). Repare que não há nenhuma anotação de Spring ou JPA — é Java puro (POJO). As regras ficam no service, porque esta aba usa o domínio anêmico (ADR-006).</p>
 <div class="code-editor-wrap"><span class="code-filepath">domain/Produto.java</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-core-domain/src/main/java/com/loja/domain/Produto.java">package com.loja.domain;
 
@@ -458,6 +459,7 @@ public class Produto {
     public void setEstoque(Integer estoque) { this.estoque = estoque; }
 }</pre></div>
 
+<p class="text-sm" style="margin:12px 0 4px">👉 O erro de "regra quebrada" (nome curto, preço negativo…). O <code>GlobalExceptionHandler</code> transforma este erro num <code>400</code> do contrato.</p>
 <div class="code-editor-wrap"><span class="code-filepath">domain/exception/DomainException.java</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-core-domain/src/main/java/com/loja/domain/exception/DomainException.java">package com.loja.domain.exception;
 
@@ -468,6 +470,7 @@ public class Produto {
 public class DomainException extends RuntimeException {
     public DomainException(String message) { super(message); }
 }</pre></div>
+<p class="text-sm" style="margin:12px 0 4px">👉 O erro de "não existe". É uma exceção separada para o tratamento de erros poder responder <code>404</code> sem ler o texto da mensagem.</p>
 <div class="code-editor-wrap"><span class="code-filepath">domain/exception/RecursoNaoEncontradoException.java (→ 404)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-core-domain/src/main/java/com/loja/domain/exception/RecursoNaoEncontradoException.java">package com.loja.domain.exception;
 
@@ -486,6 +489,7 @@ public class RecursoNaoEncontradoException extends DomainException {
 }</pre></div>
 
 
+<p class="text-sm" style="margin:12px 0 4px">👉 A <strong>porta</strong>: a interface que diz o que o domínio precisa do banco (salvar, buscar, listar…), sem dizer qual banco. Quem a implementa é o adapter da infraestrutura.</p>
 <div class="code-editor-wrap"><span class="code-filepath">domain/ProdutoRepository.java (porta de saída — DIP)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-core-domain/src/main/java/com/loja/domain/ProdutoRepository.java">package com.loja.domain;
 
@@ -527,6 +531,7 @@ public interface ProdutoRepository {
     void deletarPorId(Long id);
 }</pre></div>
 
+<p class="text-sm" style="margin:12px 0 4px">👉 O contrato dos casos de uso: os 5 métodos que o controller pode chamar. O controller conhece esta interface, nunca a classe que a implementa.</p>
 <div class="code-editor-wrap"><span class="code-filepath">domain/ProdutoService.java (interface do caso de uso)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-core-domain/src/main/java/com/loja/domain/ProdutoService.java">package com.loja.domain;
 
@@ -545,6 +550,7 @@ public interface ProdutoService {
 }</pre></div>
 
 <h4 style="color:var(--accent);margin:16px 0 8px">⚙️ Camada Application (Use Cases + DTOs + Mapper)</h4>
+<p class="text-sm" style="margin:12px 0 4px">👉 Os casos de uso de verdade: valida as regras e chama a porta <code>ProdutoRepository</code>. Repare no construtor: ele recebe a <strong>interface</strong> do repositório (inversão de dependência), por isso os testes conseguem passar um mock.</p>
 <div class="code-editor-wrap"><span class="code-filepath">application/ProdutoServiceImpl.java</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-core-application/src/main/java/com/loja/application/ProdutoServiceImpl.java">package com.loja.application;
 
@@ -633,6 +639,7 @@ public class ProdutoServiceImpl implements ProdutoService {
     }
 }</pre></div>
 
+<p class="text-sm" style="margin:12px 0 4px">👉 O <strong>DTO de entrada</strong>: o formato exato do JSON que o cliente envia (sem <code>id</code>, porque quem cria o id é o banco). As anotações <code>@NotBlank</code>, <code>@Positive</code>… validam antes de chegar ao service.</p>
 <div class="code-editor-wrap"><span class="code-filepath">application/dto/CriarProdutoRequest.java</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-core-application/src/main/java/com/loja/application/dto/CriarProdutoRequest.java">package com.loja.application.dto;
 
@@ -655,6 +662,7 @@ public record CriarProdutoRequest(
     @NotNull(message = "Estoque é obrigatório") @PositiveOrZero(message = "Estoque &gt;= 0") Integer estoque
 ) {}</pre></div>
 
+<p class="text-sm" style="margin:12px 0 4px">👉 O <strong>DTO de saída</strong>: o JSON que a API devolve. Separar entrada e saída deixa a entidade livre para mudar sem quebrar o contrato.</p>
 <div class="code-editor-wrap"><span class="code-filepath">application/dto/ProdutoResponse.java</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-core-application/src/main/java/com/loja/application/dto/ProdutoResponse.java">package com.loja.application.dto;
 
@@ -666,6 +674,7 @@ import java.math.BigDecimal;
  */
 public record ProdutoResponse(Long id, String nome, BigDecimal preco, Integer estoque) {}</pre></div>
 
+<p class="text-sm" style="margin:12px 0 4px">👉 Converte DTO ↔ domínio num lugar só. Sem ele, essa conversão ficaria espalhada pelo controller.</p>
 <div class="code-editor-wrap"><span class="code-filepath">application/mapper/ProdutoMapper.java</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-core-application/src/main/java/com/loja/application/mapper/ProdutoMapper.java">package com.loja.application.mapper;
 
@@ -687,6 +696,7 @@ public final class ProdutoMapper {
 }</pre></div>
 
 <h4 style="color:var(--accent);margin:16px 0 8px">🏭 Camada Infrastructure (JPA + Config)</h4>
+<p class="text-sm" style="margin:12px 0 4px">👉 O <strong>modelo de persistência</strong>: a mesma ideia do <code>Produto</code>, mas com as anotações do JPA (<code>@Entity</code>, <code>@Table</code>, <code>@Column</code>) que dizem em que tabela e coluna cada campo mora. É ele que o Hibernate lê e grava.</p>
 <div class="code-editor-wrap"><span class="code-filepath">infrastructure/persistence/ProdutoJpaEntity.java</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-infrastructure/src/main/java/com/loja/infrastructure/persistence/ProdutoJpaEntity.java">package com.loja.infrastructure.persistence;
 
@@ -722,6 +732,7 @@ public class ProdutoJpaEntity {
     public Integer getEstoque() { return estoque; } public void setEstoque(Integer v) { estoque = v; }
 }</pre></div>
 
+<p class="text-sm" style="margin:12px 0 4px">👉 Uma interface vazia que o <strong>Spring Data</strong> implementa sozinho: só de estender <code>JpaRepository</code>, ganha <code>save</code>, <code>findById</code>, <code>findAll</code>… É detalhe da infraestrutura: o domínio nem sabe que ela existe.</p>
 <div class="code-editor-wrap"><span class="code-filepath">infrastructure/persistence/SpringDataProdutoRepository.java</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-infrastructure/src/main/java/com/loja/infrastructure/persistence/SpringDataProdutoRepository.java">package com.loja.infrastructure.persistence;
 
@@ -733,6 +744,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
  */
 public interface SpringDataProdutoRepository extends JpaRepository&lt;ProdutoJpaEntity, Long&gt; {}</pre></div>
 
+<p class="text-sm" style="margin:12px 0 4px">👉 O <strong>adapter</strong>: implementa a porta <code>ProdutoRepository</code> usando o Spring Data. Converte <code>Produto</code> ↔ <code>ProdutoJpaEntity</code> e transforma a paginação num <code>LIMIT/OFFSET</code> no banco. Por que existem dois repositórios? O de cima é ferramenta do Spring; este é a tomada entre ele e o domínio.</p>
 <div class="code-editor-wrap"><span class="code-filepath">infrastructure/persistence/ProdutoRepositoryAdapter.java (🔌 Adapter JPA)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-infrastructure/src/main/java/com/loja/infrastructure/persistence/ProdutoRepositoryAdapter.java">package com.loja.infrastructure.persistence;
 
@@ -848,6 +860,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @EntityScan(basePackages = "com.loja.infrastructure.persistence")
 public class JpaConfig {}</pre></div>
 
+<p class="text-sm" style="margin:12px 0 4px">👉 Cria o <code>ProdutoServiceImpl</code> como um bean do Spring sem pôr <code>@Service</code> nele: assim a camada de aplicação continua sem nenhuma dependência do framework.</p>
 <div class="code-editor-wrap"><span class="code-filepath">infrastructure/config/CoreBeansConfig.java</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-infrastructure/src/main/java/com/loja/infrastructure/config/CoreBeansConfig.java">package com.loja.infrastructure.config;
 
@@ -871,6 +884,7 @@ public class CoreBeansConfig {
 }</pre></div>
 
 <h4 style="color:var(--accent);margin:16px 0 8px">🎯 Camada Presentation (REST + JWT + Exception Handler)</h4>
+<p class="text-sm" style="margin:12px 0 4px">👉 O ponto de entrada da API. O <code>scanBasePackages = "com.loja"</code> faz o Spring enxergar as classes dos 4 módulos, e não só as deste.</p>
 <div class="code-editor-wrap"><span class="code-filepath">presentation/Main.java</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-presentation/src/main/java/com/loja/presentation/Main.java">package com.loja.presentation;
 
@@ -888,6 +902,7 @@ public class Main {
     public static void main(String[] args) { SpringApplication.run(Main.class, args); }
 }</pre></div>
 
+<p class="text-sm" style="margin:12px 0 4px">👉 As rotas <code>/api/produtos</code>: recebe o HTTP, chama o service e devolve o status do contrato (<code>201</code> com <code>Location</code>, <code>204</code>…). Nenhuma regra de negócio aqui.</p>
 <div class="code-editor-wrap"><span class="code-filepath">presentation/controller/ProdutoController.java</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-presentation/src/main/java/com/loja/presentation/controller/ProdutoController.java">package com.loja.presentation.controller;
 
@@ -954,6 +969,7 @@ public class ProdutoController {
     }
 }</pre></div>
 
+<p class="text-sm" style="margin:12px 0 4px">👉 A rota de login: confere e-mail e senha e devolve o <code>tokenAcesso</code>. O login é fixo no código, só para estudar (na Tab 9 ele consulta uma tabela de verdade).</p>
 <div class="code-editor-wrap"><span class="code-filepath">presentation/controller/AuthController.java</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-presentation/src/main/java/com/loja/presentation/controller/AuthController.java">package com.loja.presentation.controller;
 
@@ -1000,6 +1016,7 @@ public class AuthController {
     }
 }</pre></div>
 
+<p class="text-sm" style="margin:12px 0 4px">👉 Monta e assina o token (com <code>sub</code>, <code>iat</code> e <code>exp</code>) e confere a assinatura quando o token volta.</p>
 <div class="code-editor-wrap"><span class="code-filepath">presentation/security/JwtService.java</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-presentation/src/main/java/com/loja/presentation/security/JwtService.java">package com.loja.presentation.security;
 
@@ -1063,6 +1080,7 @@ public class JwtService {
     public long getExpiracaoSegundos() { return expirationMs / 1000; }
 }</pre></div>
 
+<p class="text-sm" style="margin:12px 0 4px">👉 Roda em toda requisição: lê o header <code>Authorization: Bearer …</code>, confere o token e marca o usuário como logado. Se o token faltar, ele não responde nada — quem decide se a rota é pública é o <code>SecurityConfig</code>.</p>
 <div class="code-editor-wrap"><span class="code-filepath">presentation/security/JwtTokenFilter.java</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-presentation/src/main/java/com/loja/presentation/security/JwtTokenFilter.java">package com.loja.presentation.security;
 
@@ -1110,6 +1128,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     }
 }</pre></div>
 
+<p class="text-sm" style="margin:12px 0 4px">👉 A regra de quem pode o quê: leitura pública, escrita só com token, sem sessão no servidor. Também troca o 403 padrão do Spring pelo <code>401 problem+json</code> do contrato.</p>
 <div class="code-editor-wrap"><span class="code-filepath">presentation/security/SecurityConfig.java</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-presentation/src/main/java/com/loja/presentation/security/SecurityConfig.java">package com.loja.presentation.security;
 
@@ -1169,6 +1188,7 @@ public class SecurityConfig {
     }
 }</pre></div>
 
+<p class="text-sm" style="margin:12px 0 4px">👉 Tratamento de erros num lugar só: cada exceção vira um <code>problem+json</code> (RFC 7807) com o <code>type</code> do contrato — <code>400</code>, <code>401</code> ou <code>404</code>.</p>
 <div class="code-editor-wrap"><span class="code-filepath">presentation/exception/GlobalExceptionHandler.java (RFC 7807)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-presentation/src/main/java/com/loja/presentation/exception/GlobalExceptionHandler.java">package com.loja.presentation.exception;
 
@@ -1251,6 +1271,7 @@ public class GlobalExceptionHandler {
 <div class="term-help"><strong>🔍 Veja por dentro:</strong> cole o <code>tokenAcesso</code> no decodificador de JWT da <a href="javascript:switchTab('tab4')" style="color:var(--primary);text-decoration:underline">Tab 4</a> (ou em <a class="ext" href="https://jwt.io" target="_blank">jwt.io</a>): o payload tem só <code>sub</code>, <code>iat</code> e <code>exp</code>.</div>
 <div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=spring+security+jwt+spring+boot+tutorial" target="_blank">JWT com Spring Security</a> · <a class="ext" href="https://www.youtube.com/results?search_query=o+que+%C3%A9+jwt+token+explicado" target="_blank">O que é JWT</a></div>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 A configuração: porta 8080, conexão com o MySQL da Tab 5 e a chave do JWT. Repare no <code>ddl-auto: validate</code>: o Hibernate só confere se as tabelas existem; quem cria é o script da Tab 5.</p>
 <div class="code-editor-wrap"><span class="code-filepath">presentation/src/main/resources/application.yml</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="produtos-presentation/src/main/resources/application.yml">server:
   port: 8080

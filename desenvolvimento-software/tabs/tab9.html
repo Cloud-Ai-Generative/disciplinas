@@ -905,6 +905,7 @@ docker exec dev_mysql_multicontextos mysql -udevuser -pdevpass -e "SHOW DATABASE
 
 <h4 style="color:var(--accent);margin:16px 0 8px">🔌 Shared.Kernel — blocos que todos os módulos usam</h4>
 <p>Os <code>type</code> de erro são parte do contrato: o front-end decide o que mostrar olhando para eles. Por isso ficam numa classe só (<code>ProblemTypes</code>), com o status HTTP de cada um. Um módulo lança <code>DomainException</code> com o type certo; o middleware do host transforma em <code>problem+json</code>. Aqui também ficam os blocos de DDD que mais de um módulo usa: o Value Object <code>Dinheiro</code> e a base <code>AggregateRoot</code>, que guarda os eventos de domínio.</p>
+<p class="text-sm" style="margin:12px 0 4px">👉 Os <code>type</code> de erro do contrato da Tab 8, cada um com o seu status HTTP, num lugar só.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Shared.Kernel/ProblemTypes.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -948,6 +949,7 @@ public static class ProblemTypes
     };
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 Os erros do domínio, cada um carregando o <code>type</code> do contrato. O módulo só lança; quem transforma em <code>problem+json</code> é o middleware do host.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Shared.Kernel/DomainException.cs (DomainException + NaoEncontradoException)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -979,6 +981,7 @@ public class NaoEncontradoException : DomainException
         : base(message, ProblemTypes.NaoEncontrado) { }
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 O <strong>Value Object</strong> de dinheiro, usado por Catálogo e Pedidos: nunca negativo, sempre com 2 casas, comparado pelo valor e com os operadores <code>+</code> e <code>×</code>.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Shared.Kernel/Dinheiro.cs (Value Object)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -1013,6 +1016,7 @@ public sealed record Dinheiro
     public override string ToString() =&gt; Valor.ToString("F2", CultureInfo.InvariantCulture);
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 A base dos agregados: guarda a lista de eventos de domínio que a entidade registrou (<code>Registrar</code>) até alguém consumi-los.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Shared.Kernel/AggregateRoot.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -1036,6 +1040,7 @@ public abstract class AggregateRoot
     public void LimparEventos() =&gt; _eventos.Clear();
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 O contrato mínimo de um evento de domínio: quando ele aconteceu.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Shared.Kernel/IDomainEvent.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -1052,6 +1057,7 @@ public interface IDomainEvent
 <div class="warning-banner"><strong>⚠️ Só para estudar:</strong> a senha está em <strong>texto puro</strong> na tabela. De verdade, guarde só o <em>hash</em> (BCrypt, Argon2 ou ASP.NET Identity).</div>
 <p>Repare que gerar o token também é uma <strong>porta</strong> (<code>IJwtService</code>, em Application) com um adapter (<code>JwtService</code>, em Infrastructure): o caso de uso de login não sabe que a biblioteca de JWT existe.</p>
 <p class="text-sm text-muted" style="margin:12px 0 4px"><strong>🧠 Domain</strong></p>
+<p class="text-sm" style="margin:12px 0 4px">👉 A entidade do usuário: login, nome e senha, com <code>SenhaConfere</code>. O <code>Reconstituir</code> é a fábrica para quem lê do banco (a Tab 9-B usa no MongoDB).</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Auth/Domain/Usuario.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -1132,6 +1138,7 @@ public class Usuario
     }
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 A porta do banco de usuários: buscar pelo login e salvar.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Auth/Domain/IUsuarioRepository.cs (a porta)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -1151,6 +1158,7 @@ public interface IUsuarioRepository
 }</pre>
 </div>
 <p class="text-sm text-muted" style="margin:12px 0 4px"><strong>⚙️ Application</strong></p>
+<p class="text-sm" style="margin:12px 0 4px">👉 O formato do JSON do login: o que chega (<code>login</code>, <code>password</code>) e o que volta (<code>token</code> + <code>user</code>), como manda o contrato.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Auth/Application/LoginDtos.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -1171,6 +1179,7 @@ public record LoginResponse(string Token, UsuarioResponse User)
         new(r.Token, new UsuarioResponse(r.Usuario.Id, r.Usuario.Nome, r.Usuario.Login));
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 O contrato do caso de uso de login.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Auth/Application/IAuthService.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -1201,6 +1210,7 @@ public interface IAuthService
     Task&lt;LoginResult?&gt; AutenticarAsync(string login, string senha);
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 O caso de uso: busca o usuário pela porta, confere a senha e pede o token. Não conhece nem o MySQL nem a biblioteca de JWT — só as duas interfaces.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Auth/Application/AuthService.cs (o caso de uso)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -1262,6 +1272,7 @@ public class AuthService : IAuthService
     }
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 A porta do token: "gere um token para este usuário". Quem decide <em>como</em> é o adapter da Infrastructure.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Auth/Application/IJwtService.cs (a porta do token)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -1283,6 +1294,7 @@ public interface IJwtService
 }</pre>
 </div>
 <p class="text-sm text-muted" style="margin:12px 0 4px"><strong>🏭 Infrastructure</strong></p>
+<p class="text-sm" style="margin:12px 0 4px">👉 O mapa do EF Core para a tabela <code>usuarios</code> do <code>auth_db</code>.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Auth/Infrastructure/AuthDbContext.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -1350,6 +1362,7 @@ public class AuthDbContext : DbContext
     }
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 O adapter MySQL da porta <code>IUsuarioRepository</code>.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Auth/Infrastructure/EfUsuarioRepository.cs (o adapter MySQL)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -1384,6 +1397,7 @@ public class EfUsuarioRepository : IUsuarioRepository
     }
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 O adapter do token: monta as claims (<code>sub</code>, <code>name</code>, <code>login</code>, <code>exp</code>) e assina com a chave secreta.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Auth/Infrastructure/JwtService.cs (o adapter do token)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -1474,6 +1488,7 @@ public class JwtService : IJwtService
 }</pre>
 </div>
 <p class="text-sm text-muted" style="margin:12px 0 4px"><strong>🌐 Api</strong></p>
+<p class="text-sm" style="margin:12px 0 4px">👉 A rota <code>POST /api/auth/login</code>: confere os campos, chama o caso de uso e responde <code>200</code> ou <code>401 problem+json</code>.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Auth/Api/AuthController.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -1552,6 +1567,7 @@ public class AuthController : ControllerBase
     }
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 A "tomada" do módulo: um método que o host chama para registrar tudo do Auth — o <code>DbContext</code> e qual classe implementa cada porta.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Auth/ModuleExtensions.cs (como o módulo se registra no host)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -1608,6 +1624,7 @@ public static class ModuleExtensions
 <h4 style="color:var(--accent);margin:16px 0 8px">📦 Módulo Catálogo</h4>
 <p>O <code>Produto</code> guarda <code>estoque</code> e <code>reservado</code>; o <code>disponivel</code> é a conta entre os dois, e o preço é um <code>Dinheiro</code>. Reservar é o "segura para mim"; liberar é o "pode devolver". O <code>ProdutoService</code> recebe um <code>ProdutoRequest</code> (sem <code>id</code>: quem cria o id é o banco), aplica as regras do domínio e grava pela porta. O controller só repassa.</p>
 <p class="text-sm text-muted" style="margin:12px 0 4px"><strong>🧠 Domain</strong></p>
+<p class="text-sm" style="margin:12px 0 4px">👉 O <strong>Aggregate Root</strong> do Catálogo: estoque, reservado e preço (<code>Dinheiro</code>). Repare em <code>Reservar</code> e <code>Liberar</code>: as regras de estoque moram aqui, não no serviço.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Catalogo/Domain/Produto.cs (Aggregate Root)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -1700,6 +1717,7 @@ public class Produto : AggregateRoot
     }
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 A porta do Catálogo. Repare no <code>TentarReservarAsync</code>: a reserva é uma operação só (atômica), para dois pedidos não levarem a mesma última unidade.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Catalogo/Domain/IProdutoRepository.cs (a porta)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -1739,6 +1757,7 @@ public interface IProdutoRepository
 }</pre>
 </div>
 <p class="text-sm text-muted" style="margin:12px 0 4px"><strong>⚙️ Application</strong></p>
+<p class="text-sm" style="margin:12px 0 4px">👉 O formato do JSON do Catálogo: produto, reserva e resposta da reserva (com o preço do dia).</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Catalogo/Application/ProdutoDtos.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -1760,6 +1779,7 @@ public record ProdutoResponse(int Id, string Nome, decimal Preco, int Estoque, i
 public record ReservarRequest(int Quantidade, string PedidoOrigem);
 public record ReservaResponse(string ReservaId, string Status, decimal PrecoUnitario);</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 O contrato dos casos de uso do Catálogo.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Catalogo/Application/IProdutoService.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -1777,6 +1797,7 @@ public interface IProdutoService
     Task LiberarAsync(int id, ReservarRequest req, CancellationToken ct = default);
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 Os casos de uso: listar com paginação, criar, atualizar, excluir, reservar e liberar. Repare que o resultado da reserva vira o erro certo do contrato (404 ou 409).</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Catalogo/Application/ProdutoService.cs (os casos de uso)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -1852,6 +1873,7 @@ public class ProdutoService : IProdutoService
 }</pre>
 </div>
 <p class="text-sm text-muted" style="margin:12px 0 4px"><strong>🏭 Infrastructure</strong></p>
+<p class="text-sm" style="margin:12px 0 4px">👉 O mapa do EF Core para a tabela <code>produtos</code>. O <code>HasConversion</code> grava o <code>Dinheiro</code> como <code>decimal(10,2)</code>, e o <code>Ignore</code> deixa de fora o que é calculado (<code>disponivel</code>) e os eventos.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Catalogo/Infrastructure/CatalogoDbContext.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -1887,6 +1909,7 @@ public class CatalogoDbContext : DbContext
     }
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 O adapter MySQL. O ponto alto é a reserva: um <code>UPDATE … WHERE estoque - reservado &gt;= q</code> só, e o banco garante que apenas um pedido vence.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Catalogo/Infrastructure/EfProdutoRepository.cs (o adapter MySQL — reserva atômica)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -1961,6 +1984,7 @@ public class EfProdutoRepository : IProdutoRepository
 }</pre>
 </div>
 <p class="text-sm text-muted" style="margin:12px 0 4px"><strong>🌐 Api</strong></p>
+<p class="text-sm" style="margin:12px 0 4px">👉 As rotas <code>/api/catalogo/produtos/**</code>: GET público, escrita com token. Só repassa para o caso de uso.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Catalogo/Api/CatalogoController.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -2021,6 +2045,7 @@ public class CatalogoController : ControllerBase
     }
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 A "tomada" do Catálogo: registra o <code>DbContext</code>, o adapter da porta e o caso de uso.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Catalogo/ModuleExtensions.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -2057,6 +2082,7 @@ public static class ModuleExtensions
 <h4 style="color:var(--accent);margin:16px 0 8px">🛒 Módulo Pedidos</h4>
 <p>O coração da aba. O <code>PedidoService</code> só conhece <strong>interfaces</strong>: <code>ICatalogoClient</code> e <code>IClientesClient</code> (os outros contextos, em Application) e <code>IPedidoRepository</code> (o seu banco, em Domain). Nos testes, as três viram mocks; na API, viram chamadas HTTP de verdade (limite de 2 s, token repassado) e o MySQL. Depois de salvo, o pedido registra o evento <code>PedidoCriadoEvent</code>.</p>
 <p class="text-sm text-muted" style="margin:12px 0 4px"><strong>🧠 Domain</strong></p>
+<p class="text-sm" style="margin:12px 0 4px">👉 O <strong>Aggregate Root</strong> do pedido: itens, total (<code>Dinheiro</code>) e a máquina de estados (<code>CRIADO</code> → <code>RESERVADO</code> → <code>CANCELADO</code>…). O <code>ConfirmarCriacao</code> registra o evento só quando o pedido já tem id.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Pedidos/Domain/Pedido.cs (Aggregate Root + máquina de estados)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -2157,6 +2183,7 @@ public class Pedido : AggregateRoot
     }
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 O evento "um pedido nasceu". Nesta aba ele é registrado e testado; publicá-lo numa fila é o assunto da Tab 7-B.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Pedidos/Domain/PedidoCriadoEvent.cs (evento de domínio)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -2171,6 +2198,7 @@ namespace LojaApi.Modules.Pedidos.Domain;
 /// &lt;/summary&gt;
 public record PedidoCriadoEvent(int PedidoId, string Usuario, decimal Total, DateTime OcorreuEm) : IDomainEvent;</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 A porta do banco de pedidos.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Pedidos/Domain/IPedidoRepository.cs (a porta)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -2195,6 +2223,7 @@ public interface IPedidoRepository
 }</pre>
 </div>
 <p class="text-sm text-muted" style="margin:12px 0 4px"><strong>⚙️ Application</strong></p>
+<p class="text-sm" style="margin:12px 0 4px">👉 O formato do JSON de pedidos: o que o cliente envia (itens, cliente, endereço) e o que volta.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Pedidos/Application/PedidoDtos.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -2216,6 +2245,7 @@ public record PedidoResponse(int Id, string Usuario, int ClienteId, int Endereco
         p.Total.Valor);
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 A porta para <strong>outro módulo</strong>: o que Pedidos precisa do Catálogo (reservar e liberar). Fica em Application porque é o caso de uso que precisa dela.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Pedidos/Application/ICatalogoClient.cs (a porta para o Catálogo)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -2235,6 +2265,7 @@ public interface ICatalogoClient
     Task LiberarAsync(int produtoId, ReservarDto dto, CancellationToken ct = default);
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 A porta para o módulo Clientes: buscar os endereços do cliente.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Pedidos/Application/IClientesClient.cs (a porta para Clientes)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -2248,6 +2279,7 @@ public interface IClientesClient
     Task&lt;List&lt;EnderecoDto&gt;&gt; ObterEnderecosAsync(int clienteId, CancellationToken ct = default);
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 O contrato dos casos de uso de pedidos.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Pedidos/Application/IPedidoService.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -2261,6 +2293,7 @@ public interface IPedidoService
     Task CancelarAsync(int pedidoId, string usuario, CancellationToken ct = default);
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 O coração da aba: reserva cada item no Catálogo, confere o endereço em Clientes e salva. Repare no <code>catch</code>: se algo falhar no meio, ele <strong>devolve</strong> as reservas já feitas — a compensação.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Pedidos/Application/PedidoService.cs (orquestração + compensação)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -2357,6 +2390,7 @@ public class PedidoService : IPedidoService
 }</pre>
 </div>
 <p class="text-sm text-muted" style="margin:12px 0 4px"><strong>🏭 Infrastructure</strong></p>
+<p class="text-sm" style="margin:12px 0 4px">👉 O mapa do EF Core para <code>pedidos</code> e <code>itens_pedido</code>; o preço de cada item vira <code>decimal</code>, e o que é calculado fica de fora.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Pedidos/Infrastructure/PedidosDbContext.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -2399,6 +2433,7 @@ public class PedidosDbContext : DbContext
     }
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 O adapter MySQL da porta <code>IPedidoRepository</code>.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Pedidos/Infrastructure/EfPedidoRepository.cs (o adapter MySQL)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -2434,6 +2469,7 @@ public class EfPedidoRepository : IPedidoRepository
         =&gt; await _db.Pedidos.Where(p =&gt; p.Id == id).ExecuteUpdateAsync(s =&gt; s.SetProperty(p =&gt; p.Status, status), ct) &gt; 0;
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 O adapter HTTP da porta <code>ICatalogoClient</code>: chama as rotas do Catálogo, espera no máximo 2 s e traduz a resposta para o erro do contrato: sem estoque → 409; produto que não existe → 400 (para quem faz o pedido, é um dado inválido); sem resposta → 503.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Pedidos/Infrastructure/CatalogoClient.cs (o adapter HTTP)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -2540,6 +2576,7 @@ public class CatalogoClient : ICatalogoClient
     }
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 O adapter HTTP da porta <code>IClientesClient</code>, com o mesmo limite de 2 s.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Pedidos/Infrastructure/ClientesClient.cs (o adapter HTTP)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -2604,6 +2641,7 @@ public class ClientesClient : IClientesClient
     }
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 Pega o token do usuário que fez o pedido e o repassa nas chamadas para Catálogo e Clientes — assim as rotas internas também exigem login.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Pedidos/Infrastructure/BearerTokenForwardingHandler.cs (repassa o token)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -2645,6 +2683,7 @@ public class BearerTokenForwardingHandler : DelegatingHandler
 }</pre>
 </div>
 <p class="text-sm text-muted" style="margin:12px 0 4px"><strong>🌐 Api</strong></p>
+<p class="text-sm" style="margin:12px 0 4px">👉 As rotas <code>/api/pedidos/**</code>. O dono do pedido vem da claim <code>login</code> do token: cada um vê e cancela só os seus.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Pedidos/Api/PedidosController.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -2684,6 +2723,7 @@ public class PedidosController : ControllerBase
     }
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 A "tomada" de Pedidos: registra o <code>DbContext</code>, o repositório, os dois clients HTTP (com o handler do token) e o caso de uso.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Pedidos/ModuleExtensions.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -2727,6 +2767,7 @@ public static class ModuleExtensions
 <h4 style="color:var(--accent);margin:16px 0 8px">🧾 Módulo Clientes</h4>
 <p>O cliente e os seus endereços formam <strong>um agregado</strong>: os endereços chegam junto no POST e só existem dentro do cliente. <code>Email</code> e <code>Cep</code> são Value Objects: um CEP inválido nem chega a existir. Desativar é <strong>lógico</strong> (o cadastro fica, marcado inativo), porque pedidos antigos continuam apontando para ele.</p>
 <p class="text-sm text-muted" style="margin:12px 0 4px"><strong>🧠 Domain</strong></p>
+<p class="text-sm" style="margin:12px 0 4px">👉 Dois <strong>Value Objects</strong>: <code>Email</code> (sempre em minúsculas e com formato válido) e <code>Cep</code> (sempre <code>00000-000</code>). Um CEP inválido nem chega a existir.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Clientes/Domain/ValueObjects.cs (Email e Cep)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -2772,6 +2813,7 @@ public sealed record Cep
     public override string ToString() =&gt; Valor;
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 O <strong>Aggregate Root</strong> <code>Cliente</code> e a entidade <code>Endereco</code>, que só existe dentro dele. Repare no <code>Desativar</code>: desativar duas vezes é erro (409).</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Clientes/Domain/Cliente.cs (Aggregate Root Cliente + Endereco)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -2855,6 +2897,7 @@ public class Cliente : AggregateRoot
     }
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 A porta do banco de clientes.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Clientes/Domain/IClienteRepository.cs (a porta)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -2881,6 +2924,7 @@ public interface IClienteRepository
 }</pre>
 </div>
 <p class="text-sm text-muted" style="margin:12px 0 4px"><strong>⚙️ Application</strong></p>
+<p class="text-sm" style="margin:12px 0 4px">👉 O formato do JSON de clientes e endereços. Os Value Objects viram texto aqui (<code>.Valor</code>).</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Clientes/Application/ClienteDtos.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -2904,6 +2948,7 @@ public record ClienteResponse(int Id, string Nome, string Email, bool Ativo, Lis
         new(c.Id, c.Nome, c.Email.Valor, c.Ativo, c.Enderecos.Select(EnderecoResponse.De).ToList());
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 O contrato dos casos de uso de clientes.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Clientes/Application/IClienteService.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -2919,6 +2964,7 @@ public interface IClienteService
     Task&lt;IReadOnlyList&lt;EnderecoResponse&gt;&gt; EnderecosAsync(int id, CancellationToken ct = default);
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 Os casos de uso: criar (com os endereços juntos), obter, atualizar, desativar e listar os endereços.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Clientes/Application/ClienteService.cs (os casos de uso)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -2975,6 +3021,7 @@ public class ClienteService : IClienteService
 }</pre>
 </div>
 <p class="text-sm text-muted" style="margin:12px 0 4px"><strong>🏭 Infrastructure</strong></p>
+<p class="text-sm" style="margin:12px 0 4px">👉 O mapa do EF Core para <code>clientes</code> e <code>enderecos</code>. Os conversores gravam <code>Email</code> e <code>Cep</code> como texto e leem de volta como Value Object.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Clientes/Infrastructure/ClientesDbContext.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -3010,6 +3057,7 @@ public class ClientesDbContext : DbContext
     }
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 O adapter MySQL da porta <code>IClienteRepository</code>.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Clientes/Infrastructure/EfClienteRepository.cs (o adapter MySQL)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -3057,6 +3105,7 @@ public class EfClienteRepository : IClienteRepository
 }</pre>
 </div>
 <p class="text-sm text-muted" style="margin:12px 0 4px"><strong>🌐 Api</strong></p>
+<p class="text-sm" style="margin:12px 0 4px">👉 As rotas <code>/api/clientes/**</code>, incluindo a rota interna de endereços que Pedidos usa.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Clientes/Api/ClientesController.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -3098,6 +3147,7 @@ public class ClientesController : ControllerBase
     public Task&lt;IReadOnlyList&lt;EnderecoResponse&gt;&gt; Enderecos(int id) =&gt; _svc.EnderecosAsync(id);
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 A "tomada" de Clientes: registra o <code>DbContext</code>, o adapter e o caso de uso.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Modules.Clientes/ModuleExtensions.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -3128,6 +3178,7 @@ public static class ModuleExtensions
 
 <h4 style="color:var(--accent);margin:16px 0 8px">🎯 Host (LojaApi.Api) — junta tudo</h4>
 <p>O <code>Program.cs</code> registra os 4 módulos, configura o JWT (sem roles) e faz o JSON sair no formato do contrato. Repare em <code>Services:Catalogo</code> e <code>Services:Clientes</code> no <code>appsettings.json</code>: num monolito modular eles apontam para o <strong>próprio</strong> host — Pedidos chama <code>localhost:5000</code>. No dia em que o Catálogo virar um serviço separado, muda só essa linha.</p>
+<p class="text-sm" style="margin:12px 0 4px">👉 O host junta tudo. Repare em três trechos: o <code>AddApplicationPart</code> (diz ao ASP.NET em que projetos procurar controllers), as 4 chamadas <code>Add…Module</code> e a ordem do pipeline (erros primeiro, depois autenticação, depois autorização). A última linha, <code>public partial class Program { }</code>, existe para os testes HTTP enxergarem a API.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Api/Program.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -3232,6 +3283,7 @@ app.Run();
 /// &lt;summary&gt;Visível para os testes HTTP (WebApplicationFactory&amp;lt;Program&amp;gt;) do LojaApi.Tests.&lt;/summary&gt;
 public partial class Program { }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 Pega qualquer erro de qualquer módulo e responde <code>problem+json</code> com o <code>type</code> e o status do contrato.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Api/Middleware/ExceptionMiddleware.cs (RFC 7807)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -3277,6 +3329,7 @@ public class ExceptionMiddleware
     }
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 A configuração: as 4 connection strings (porta 3307), o endereço de Catálogo e Clientes (<code>Services</code>) e o JWT.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Api/appsettings.json (4 bancos na porta 3307 + JWT)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -3304,6 +3357,7 @@ public class ExceptionMiddleware
   }
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 Como a API roda no seu PC: porta 5000, abrindo o Swagger.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Api/Properties/launchSettings.json (porta 5000 e abre o Swagger)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
