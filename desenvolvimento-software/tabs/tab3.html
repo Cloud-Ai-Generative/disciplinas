@@ -769,7 +769,7 @@ public static class Handlers
 <li>Agora teste as outras rotas — clique em cada link (com a API ligada) ou digite o endereço na barra do navegador:
 <ul>
 <li><a class="ext" href="http://localhost:5078/hello/Ana" target="_blank"><code>http://localhost:5078/hello/Ana</code></a> — troque Ana pelo seu nome na barra do navegador;</li>
-<li><a class="ext" href="http://localhost:5078/" target="_blank"><code>http://localhost:5078/</code></a> — a página inicial, com a lista de rotas;</li>
+<li><a class="ext" href="http://localhost:5078/" target="_blank"><code>http://localhost:5078/</code></a> — a página inicial, com a lista de rotas. Quem responde é o método <code>Handlers.Raiz</code>, ligado a <code>/</code> pelo <code>app.MapGet("/", …)</code>;</li>
 <li><a class="ext" href="http://localhost:5078/hello/um-nome-muito-muito-muito-muito-comprido" target="_blank"><code>http://localhost:5078/hello/um-nome-muito-muito-muito-muito-comprido</code></a> — um <strong>erro de propósito</strong> (nome com mais de 30 letras). O navegador mostra <code>{"erro":"Nome deve ter no máximo 30 caracteres"}</code>, e o status da resposta é <strong>400</strong> (<em>Bad Request</em>, "pedido inválido"). Para ver o 400, use o curl com <code>-i</code> (bloco ⌨️ abaixo) ou o REST Client.</li>
 </ul></li>
 <li>Para <strong>desligar</strong> a API: clique no botão ⏹ vermelho que aparece no topo do VS Code, ou <kbd>Shift+F5</kbd>.</li>
@@ -872,6 +872,19 @@ GET {{base}}/hello/um-nome-muito-muito-muito-muito-muito-comprido</pre>
 <div class="deep-concept-box">
 <h3>④ 🧱 O que você acabou de usar</h3>
 <p>Agora que você já criou e rodou dois programas, os nomes técnicos ficam fáceis de entender — você já usou todos:</p>
+<h4>A API por dentro: o que cada linha do Program.cs fez</h4>
+<p>Este estilo de API, com as rotas escritas direto no <code>Program.cs</code>, se chama <strong>Minimal API</strong>: pouco código, ideal para APIs pequenas. Na <a href="javascript:switchTab('tab7')" style="color:var(--primary);text-decoration:underline">Tab 7</a> você vai usar o outro estilo, com <strong>controllers</strong> (uma classe por assunto), que organiza melhor uma API grande.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Você escreveu</th><th>O .NET entendeu</th></tr></thead>
+<tbody>
+<tr><td><code>WebApplication.CreateBuilder(args)</code></td><td>"Prepare uma aplicação web e leia a configuração (<code>appsettings.json</code>, <code>launchSettings.json</code>)"</td></tr>
+<tr><td><code>builder.Build()</code></td><td>"Feche a preparação e me entregue a aplicação pronta para receber rotas"</td></tr>
+<tr><td><code>app.MapGet("/hello", Handlers.Hello)</code></td><td>"Quando chegar um <code>GET /hello</code>, chame este método"</td></tr>
+<tr><td><code>"/hello/{nome}"</code></td><td>"O pedaço entre chaves é um valor: entregue-o no parâmetro <code>nome</code> do método"</td></tr>
+<tr><td><code>Results.Ok(new { … })</code></td><td>"Responda <strong>200</strong> e transforme este objeto em JSON"</td></tr>
+<tr><td><code>Results.BadRequest(new { … })</code></td><td>"Responda <strong>400</strong> (pedido inválido), com este JSON explicando o erro"</td></tr>
+<tr><td><code>app.Run()</code></td><td>"Ligue o servidor (o Kestrel) e fique esperando pedidos até alguém mandar parar"</td></tr>
+</tbody></table></div>
 <h4>SDK × Runtime</h4>
 <p>O <strong>Runtime</strong> só <strong>executa</strong> um programa .NET já pronto — é o que vai no computador de quem só <em>usa</em> o programa, ou no servidor. O <strong>SDK</strong> é o kit de quem <strong>escreve</strong> o programa: traz o Runtime e mais as ferramentas para criar projetos e compilar. Você instalou o SDK. Analogia: o Runtime é o <em>toca-discos</em>; o SDK é o <em>estúdio de gravação</em> (que também tem um toca-discos dentro).</p>
 <h4>Por que o .NET 10?</h4>
@@ -937,8 +950,14 @@ appsettings.*.local.json</pre>
 <!-- ══════════════════════════ ⑥ PARA IR ALÉM ══════════════════════════ -->
 <div class="deep-concept-box">
 <h3>⑥ 📌 Para ir além: o que há de novo no C# 14</h3>
-<p class="text-sm text-muted"><em>Opcional — volte aqui depois das Tabs 6 e 7, quando "classe" e "propriedade" já forem palavras familiares.</em></p>
+<p class="text-sm text-muted"><em>Opcional — volte aqui depois da <a href="javascript:switchTab('tab7')" style="color:var(--primary);text-decoration:underline">Tab 7</a>, quando "classe" e "propriedade" já forem palavras familiares.</em></p>
 <p>O <strong>.NET</strong> é a plataforma (as ferramentas e bibliotecas); o <strong>C#</strong> é a linguagem. Cada .NET traz uma versão nova do C#: o .NET 10 traz o <strong>C# 14</strong>, sem configuração nenhuma — você já usou ele nos dois laboratórios. Duas novidades:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Novidade</th><th>O que é</th><th>Para que serve</th></tr></thead>
+<tbody>
+<tr><td><code>field</code></td><td>Uma palavra que, dentro do <code>get</code>/<code>set</code> de uma propriedade, quer dizer "o valor guardado desta propriedade"</td><td>Validar ou ajustar o valor (ex.: aparar espaços) sem precisar declarar uma variável privada à parte</td></tr>
+<tr><td><em>extension members</em></td><td>Um bloco <code>extension</code> que acrescenta métodos e propriedades a um tipo que já existe (até de outra biblioteca)</td><td>Escrever <code>texto.EstaVazio</code> em vez de uma função solta <code>Util.EstaVazio(texto)</code>, sem mexer no tipo original</td></tr>
+</tbody></table></div>
 <div class="code-editor-wrap">
 <span class="code-filepath">C# 14 — palavra-chave field e extension members (exemplo para ler)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>

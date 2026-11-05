@@ -553,6 +553,7 @@ Application startup complete.</pre>
 <div class="warning-banner"><strong>⚠️ Erros comuns:</strong>
 <ul>
 <li><strong><code>fastapi: command not found</code> / "não é reconhecido"</strong> → o terminal não está no ambiente virtual (falta o <code>(.venv)</code> no começo da linha). Abra um terminal novo no VS Code — ele entra sozinho — ou ative pelo comando do bloco "⌨️" acima.</li>
+<li><strong>Apareceu uma pasta <code>__pycache__</code></strong> → é normal: ela surge quando um arquivo <code>.py</code> é importado por outro (aqui, o <code>main.py</code>, que o servidor importa). É onde o Python guarda o <em>bytecode</em> (a tradução rápida da parte ⓪) para o arquivo abrir mais rápido na próxima vez. Pode ignorar; o <code>.gitignore</code> impede que ela vá para o GitHub.</li>
 <li><strong><code>ModuleNotFoundError: No module named 'fastapi'</code></strong> → os pacotes não foram instalados neste ambiente: <code>pip install -r requirements.txt</code>, com o <code>(.venv)</code> ativo.</li>
 <li><strong>A instalação falhou com erro de "Rust", "compiler" ou "wheel"</strong> → você está num Python novo demais (ex.: 3.15 recém-lançado) e falta pacote pronto para ele. Instale o <strong>3.14</strong>, apague a pasta <code>.venv</code> e crie o ambiente de novo.</li>
 <li><strong><code>address already in use</code></strong> → a API já está ligada em outro terminal. Desligue a outra (<kbd>Ctrl+C</kbd>).</li>
@@ -612,6 +613,18 @@ GET {{base}}/hello/um-nome-muito-muito-muito-muito-muito-comprido</pre>
 <h3>④ 🧱 O que você acabou de usar</h3>
 <h4>Interpretado × compilado</h4>
 <p>No Java e no C#, existe um passo de <strong>compilar</strong> (traduzir o programa inteiro antes de rodar). O Python é <strong>interpretado</strong>: o interpretador lê e executa o arquivo direto. Resultado: começar é mais rápido e o código é mais curto; em troca, alguns erros só aparecem quando aquela linha roda — no Java e no C#, o compilador avisaria antes.</p>
+<h4>A API por dentro: o que cada linha do main.py fez</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>Você escreveu</th><th>O FastAPI entendeu</th></tr></thead>
+<tbody>
+<tr><td><code>app = FastAPI(title=…)</code></td><td>"Crie uma aplicação web" — o <code>title</code> aparece no topo do <code>/docs</code></td></tr>
+<tr><td><code>@app.get("/hello")</code></td><td>"Quando chegar um <code>GET /hello</code>, chame a função logo abaixo" (o <code>@</code> é um <em>decorator</em>: uma etiqueta que dá um papel à função)</td></tr>
+<tr><td><code>"/hello/{nome}"</code> + <code>def hello_nome(nome: str)</code></td><td>"O pedaço entre chaves é um valor: entregue-o no parâmetro <code>nome</code>, e ele tem que ser texto"</td></tr>
+<tr><td><code>return {"mensagem": …}</code></td><td>"Responda <strong>200</strong> e transforme este dicionário em JSON"</td></tr>
+<tr><td><code>raise HTTPException(status_code=400, detail=…)</code></td><td>"Pare aqui e responda <strong>400</strong>, com <code>{"detail": …}</code> no corpo"</td></tr>
+<tr><td><code>fastapi dev main.py</code></td><td>"Ligue o servidor (o Uvicorn) com a <code>app</code> deste arquivo, e reinicie sozinho quando eu salvar"</td></tr>
+</tbody></table></div>
+<p>Compare com a tabela de anotações da <a href="javascript:switchTab('tab2')" style="color:var(--primary);text-decoration:underline">Tab 2</a> (<code>@GetMapping</code>, <code>ResponseEntity</code>) e com a da <a href="javascript:switchTab('tab3')" style="color:var(--primary);text-decoration:underline">Tab 3</a> (<code>MapGet</code>, <code>Results.Ok</code>): três linguagens, a mesma ideia.</p>
 <h4>Tipos: o Python descobre, mas você pode dizer</h4>
 <p>Em Python, <code>nome = "Ana"</code> já basta (<strong>tipagem dinâmica</strong>). No Lab 2 você viu <code>def hello_nome(nome: str)</code>: o <code>: str</code> é uma <strong>dica de tipo</strong>, opcional para o Python, mas que o FastAPI usa para validar o pedido e montar o <code>/docs</code>. Projetos grandes usam dicas em todo lugar.</p>
 <h4>As peças, lado a lado com as outras abas</h4>
