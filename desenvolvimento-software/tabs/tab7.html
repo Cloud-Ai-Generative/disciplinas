@@ -1116,6 +1116,21 @@ Invoke-RestMethod -Method Post "$H/api/produtos" -Headers $auth -ContentType "ap
 <div class="lab-container">
 <div class="lab-header"><h3>⑤ 🧪 Testes automáticos (TDD): 15 testes, 17 casos</h3></div>
 <p><strong>TDD</strong> (Test-Driven Development) é escrever o teste <strong>antes</strong> do código: o teste falha (🔴), você escreve o mínimo para passar (🟢) e depois melhora (🔵). Aqui há dois tipos de teste: os de <strong>domínio</strong> (a entidade sozinha) e os de <strong>serviço</strong> (o caso de uso com um repositório falso, feito com <strong>Moq</strong>) — nenhum precisa de banco.</p>
+<div class="deep-concept-box">
+<h3>🧰 As ferramentas de teste desta aba</h3>
+<p>Os testes desta aba usam duas peças: o xUnit, que roda os testes, e o Moq, que cria os dublês. Nenhum teste precisa de banco.</p>
+<div class="analogy-highlight"><span class="icon">🎬</span><div><strong>Analogia do dublê de cinema:</strong> numa cena perigosa, o ator principal não pula do prédio: entra um <strong>dublê</strong>, que faz exatamente o que o diretor mandou. No teste, o código que você quer provar é o ator principal; o banco, a rede e as outras APIs são trocados por <strong>mocks</strong> (dublês), que respondem só o que o teste mandar. Assim o teste roda em milissegundos, sem Docker, e falha só quando a <em>sua</em> regra está errada.</div></div>
+<div class="table-wrap"><table>
+<thead><tr><th>Ferramenta</th><th>O que faz</th><th>Como aparece no código</th><th>Neste projeto</th></tr></thead>
+<tbody>
+<tr><td><strong>xUnit</strong></td><td>O "motor" dos testes em C#: acha os métodos de teste, roda cada um e diz quem passou</td><td><code>[Fact] public void CriaQuandoValido()</code></td><td>todos os arquivos <code>*Tests.cs</code></td></tr>
+<tr><td><strong>[Fact] × [Theory]</strong></td><td><code>[Fact]</code> = um teste, um caso. <code>[Theory]</code> = o mesmo teste rodando com vários dados; cada <code>[InlineData]</code> (ou cada linha do <code>[MemberData]</code>) vira um caso separado no Test Explorer</td><td><code>[Theory] [InlineData(0)] [InlineData(-1)]</code></td><td>é por isso que o total de <em>casos</em> pode ser maior que o de métodos</td></tr>
+<tr><td><strong>Assert</strong></td><td>A conferência: se o valor não for o esperado, o teste fica vermelho</td><td><code>Assert.Equal(7, resp.Id)</code></td><td><code>Assert.Throws</code> confere que uma regra lança o erro certo</td></tr>
+<tr><td><strong>Moq</strong></td><td>Cria o dublê (mock) de uma interface. <code>Setup</code> diz o que ele responde; <code>Verify</code> confere se foi chamado</td><td><code>_repo.Setup(r =&gt; r.SalvarAsync(It.IsAny&lt;Produto&gt;())).ReturnsAsync(...)</code></td><td>troca o repositório (e, na Tab 9, os clients HTTP) nos testes de caso de uso</td></tr>
+<tr><td><strong>Verify / Times</strong></td><td>Confere a <em>conversa</em>: o código chamou o banco? Quantas vezes? Nenhuma?</td><td><code>_repo.Verify(r =&gt; r.SalvarAsync(It.IsAny&lt;Produto&gt;()), Times.Never)</code></td><td>prova que um dado inválido <strong>não</strong> chega ao banco</td></tr>
+</tbody></table></div>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=xunit+fact+theory+c%23" target="_blank">xUnit: Fact e Theory</a> · <a class="ext" href="https://www.youtube.com/results?search_query=moq+c%23+mock+tutorial" target="_blank">Moq: mocks em C#</a> · <a class="ext" href="https://www.youtube.com/results?search_query=o+que+%C3%A9+mock+em+testes+unit%C3%A1rios" target="_blank">O que é mock</a></div>
+</div>
 <h4 class="diag-title">📐 D-14 <span class="dt-type">Fluxo</span> — Ciclo Red-Green-Refactor</h4>
 <p class="text-sm text-muted" style="margin:4px 0 8px"><strong>👀 Como ler:</strong> é um <strong>ciclo</strong>: siga as setas e volte ao começo. Cada volta acrescenta uma regra nova: um teste que falha, o mínimo de código para ele passar e uma melhoria sem quebrar nada.</p>
 <div class="mermaid-box er-small" data-code='flowchart LR

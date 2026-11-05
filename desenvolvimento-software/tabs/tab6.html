@@ -1850,6 +1850,24 @@ Thumbs.db</pre></div>
 <!-- ══════════ SEÇÃO 5: TDD ══════════ -->
 <div class="lab-container">
 <div class="lab-header"><h3>🧪 TDD: 19 testes (12 de service + 7 de HTTP)</h3></div>
+<div class="deep-concept-box">
+<h3>🧰 As ferramentas de teste desta aba</h3>
+<p>São duas famílias de teste: os de service (JUnit + Mockito, sem Spring) e os HTTP (o Spring sobe só a camada web). Nenhum precisa de banco.</p>
+<div class="analogy-highlight"><span class="icon">🎬</span><div><strong>Analogia do dublê de cinema:</strong> numa cena perigosa, o ator principal não pula do prédio: entra um <strong>dublê</strong>, que faz exatamente o que o diretor mandou. No teste, o código que você quer provar é o ator principal; o banco, a rede e as outras APIs são trocados por <strong>mocks</strong> (dublês), que respondem só o que o teste mandar. Assim o teste roda em milissegundos, sem Docker, e falha só quando a <em>sua</em> regra está errada.</div></div>
+<div class="table-wrap"><table>
+<thead><tr><th>Ferramenta</th><th>O que faz</th><th>Como aparece no código</th><th>Neste projeto</th></tr></thead>
+<tbody>
+<tr><td><strong>JUnit 5</strong></td><td>O "motor" dos testes em Java: acha os métodos com <code>@Test</code>, roda cada um e diz quem passou</td><td><code>@Test @DisplayName("🟢 cria quando válido") void criaQuandoValido()</code></td><td><code>ProdutoServiceTest.java</code> e <code>ApiHttpTest.java</code></td></tr>
+<tr><td><strong>@BeforeEach</strong></td><td>Roda antes de <strong>cada</strong> teste: cada um começa do zero, sem herdar sujeira do anterior</td><td><code>@BeforeEach void setUp() { repoMock = mock(ProdutoRepository.class); }</code></td><td>cria um mock novo por teste</td></tr>
+<tr><td><strong>AAA</strong></td><td>O jeito de organizar cada teste em 3 blocos: <strong>Arrange</strong> (preparar os dados e o mock), <strong>Act</strong> (chamar o método), <strong>Assert</strong> (conferir o resultado)</td><td><code>// Arrange … // Act … // Assert …</code></td><td>os comentários dos testes marcam os 3 blocos</td></tr>
+<tr><td><strong>assert…</strong></td><td>A conferência: se o valor não for o esperado, o teste fica vermelho</td><td><code>assertEquals(1L, p.getId())</code></td><td><code>assertThrows</code> confere que uma regra lança o erro certo</td></tr>
+<tr><td><strong>Mockito</strong></td><td>Cria o dublê (mock) de uma interface. <code>when(...).thenReturn(...)</code> diz o que ele responde; <code>verify</code> confere se foi chamado</td><td><code>when(repoMock.salvar(any())).thenAnswer(...)</code></td><td>troca o <code>ProdutoRepository</code> nos testes de service</td></tr>
+<tr><td><strong>verify / never()</strong></td><td>Confere a <em>conversa</em>: o código chamou o banco? Nenhuma vez?</td><td><code>verify(repoMock, never()).salvar(any())</code></td><td>prova que um dado inválido <strong>não</strong> chega ao banco</td></tr>
+<tr><td><strong>@WebMvcTest + MockMvc</strong></td><td>Sobe só a camada web (controllers, segurança, erros) e faz pedidos HTTP "de mentira", sem abrir porta nenhuma</td><td><code>mvc.perform(post("/api/produtos")).andExpect(status().isUnauthorized())</code></td><td><code>ApiHttpTest.java</code>: confere status, <code>Location</code> e os <code>type</code> do contrato</td></tr>
+<tr><td><strong>@MockitoBean</strong></td><td>Põe um mock no lugar de uma peça do Spring durante o teste HTTP</td><td><code>@MockitoBean ProdutoService service;</code></td><td>o service vira dublê: o teste diz o que ele responde</td></tr>
+</tbody></table></div>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=junit+5+mockito+iniciantes" target="_blank">JUnit 5 e Mockito</a> · <a class="ext" href="https://www.youtube.com/results?search_query=o+que+%C3%A9+mock+em+testes+unit%C3%A1rios" target="_blank">O que é mock</a> · <a class="ext" href="https://www.youtube.com/results?search_query=webmvctest+mockmvc+spring+boot" target="_blank">@WebMvcTest e MockMvc</a></div>
+</div>
 <h4 class="diag-title">📐 D-13 <span class="dt-type">Fluxo</span> — Ciclo TDD Red-Green-Refactor</h4>
 <p class="text-sm text-muted" style="margin:4px 0 8px"><strong>👀 Como ler:</strong> é um <strong>ciclo</strong>: siga as setas e volte ao começo. Cada volta acrescenta uma regra nova: um teste que falha, o mínimo de código para ele passar e uma melhoria sem quebrar nada.</p>
 <div class="mermaid-box er-small" data-code='flowchart LR

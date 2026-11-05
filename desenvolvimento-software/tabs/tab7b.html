@@ -4554,6 +4554,22 @@ SELECT LEFT(ultimo_erro, 80) AS erro, COUNT(*) AS n
 <!-- ══════════════════════ TESTES ══════════════════════ -->
 <div class="lab-container">
 <div class="lab-header"><h3>🧪 TDD: 34 testes (38 casos) — e o que eles NÃO provam</h3></div>
+<div class="deep-concept-box">
+<h3>🧰 As ferramentas de teste desta aba</h3>
+<p>Os testes desta aba usam o xUnit e o Moq, como na Tab 7, e mais um banco em memória para rodar as classes de produção do outbox.</p>
+<div class="analogy-highlight"><span class="icon">🎬</span><div><strong>Analogia do dublê de cinema:</strong> numa cena perigosa, o ator principal não pula do prédio: entra um <strong>dublê</strong>, que faz exatamente o que o diretor mandou. No teste, o código que você quer provar é o ator principal; o banco, a rede e as outras APIs são trocados por <strong>mocks</strong> (dublês), que respondem só o que o teste mandar. Assim o teste roda em milissegundos, sem Docker, e falha só quando a <em>sua</em> regra está errada.</div></div>
+<div class="table-wrap"><table>
+<thead><tr><th>Ferramenta</th><th>O que faz</th><th>Como aparece no código</th><th>Neste projeto</th></tr></thead>
+<tbody>
+<tr><td><strong>xUnit</strong></td><td>O "motor" dos testes em C#: acha os métodos de teste, roda cada um e diz quem passou</td><td><code>[Fact] public void CriaQuandoValido()</code></td><td>todos os arquivos <code>*Tests.cs</code></td></tr>
+<tr><td><strong>[Fact] × [Theory]</strong></td><td><code>[Fact]</code> = um teste, um caso. <code>[Theory]</code> = o mesmo teste rodando com vários dados; cada <code>[InlineData]</code> (ou cada linha do <code>[MemberData]</code>) vira um caso separado no Test Explorer</td><td><code>[Theory] [InlineData(0)] [InlineData(-1)]</code></td><td>é por isso que o total de <em>casos</em> pode ser maior que o de métodos</td></tr>
+<tr><td><strong>Assert</strong></td><td>A conferência: se o valor não for o esperado, o teste fica vermelho</td><td><code>Assert.Equal(7, resp.Id)</code></td><td><code>Assert.Throws</code> confere que uma regra lança o erro certo</td></tr>
+<tr><td><strong>Moq</strong></td><td>Cria o dublê (mock) de uma interface. <code>Setup</code> diz o que ele responde; <code>Verify</code> confere se foi chamado</td><td><code>_repo.Setup(r =&gt; r.SalvarAsync(It.IsAny&lt;Produto&gt;())).ReturnsAsync(...)</code></td><td>troca o repositório (e, na Tab 9, os clients HTTP) nos testes de caso de uso</td></tr>
+<tr><td><strong>Verify / Times</strong></td><td>Confere a <em>conversa</em>: o código chamou o banco? Quantas vezes? Nenhuma?</td><td><code>_repo.Verify(r =&gt; r.SalvarAsync(It.IsAny&lt;Produto&gt;()), Times.Never)</code></td><td>prova que um dado inválido <strong>não</strong> chega ao banco</td></tr>
+<tr><td><strong>EF Core InMemory</strong></td><td>Um "banco" que vive só na memória do teste. Aqui as classes de produção (repositórios, outbox, idempotência) rodam de verdade sobre ele</td><td><code>new DbContextOptionsBuilder&lt;AppDbContext&gt;().UseInMemoryDatabase(nome)</code></td><td><code>OutboxEIdempotenciaTests.cs</code>. Limite: não tem transação nem chave única de verdade (veja o aviso abaixo)</td></tr>
+</tbody></table></div>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=xunit+fact+theory+c%23" target="_blank">xUnit: Fact e Theory</a> · <a class="ext" href="https://www.youtube.com/results?search_query=moq+c%23+mock+tutorial" target="_blank">Moq: mocks em C#</a> · <a class="ext" href="https://www.youtube.com/results?search_query=o+que+%C3%A9+mock+em+testes+unit%C3%A1rios" target="_blank">O que é mock</a></div>
+</div>
 <div class="table-wrap" style="margin:0 0 14px">
 <table>
 <thead><tr><th>Arquivo</th><th>Testes</th><th>O que trava</th></tr></thead>
