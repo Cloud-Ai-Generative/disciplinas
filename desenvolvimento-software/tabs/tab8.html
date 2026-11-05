@@ -3,7 +3,7 @@
 <div class="card">
 <h2 class="card-title">🧩 Contrato Multi-Contextos: Catálogo, Pedidos e Clientes num só contrato</h2>
 <p class="section-intro">Na <a href="javascript:switchTab('tab4')" style="color:var(--primary);text-decoration:underline">Tab 4</a> o contrato tinha um assunto só: produtos. Agora a loja vende de verdade: tem <strong>pedidos</strong> e <strong>clientes</strong>. Nesta aba você aprende a <strong>dividir a API por assunto</strong> (os <em>contextos</em>), decide com o time as <strong>fronteiras</strong> entre eles e testa tudo num mock — antes de a <a href="javascript:switchTab('tab9')" style="color:var(--primary);text-decoration:underline">Tab 9</a> transformar o contrato em código C#. <span class="ide-tag cs">Implementação: Tab 9</span></p>
-<div class="info-banner"><strong>🗺️ O caminho desta aba:</strong> ① o que é um contexto → ② <strong>mapa clicável</strong> dos 4 contextos → ③ <strong>Sala de Contrato v2</strong> (você decide as fronteiras) → ④ ler o contrato → ⑤ ligar o mock na porta <code>4011</code> → ⑥ testar o checkout → ⑦ as decisões (ADRs). <strong>Tempo total: ~1h30.</strong></div>
+<div class="info-banner"><strong>🗺️ O caminho desta aba:</strong> ① o que é um contexto → ② <strong>mapa clicável</strong> dos 4 contextos → ③ <strong>Sala de Contrato v2</strong> (você decide as fronteiras) → ④ ler o contrato → ⑤ ligar o mock na porta <code>4011</code> → ⑥ testar o checkout → ⑦ as decisões (ADRs) → ⑧ <strong>um contrato quebrado entre times</strong>. <strong>Tempo total: ~2h.</strong></div>
 <div class="info-banner"><strong>🧭 Pré-requisito:</strong> ter feito a <a href="javascript:switchTab('tab4')" style="color:var(--primary);text-decoration:underline">Tab 4</a> (Prism, REST Client e JWT). Esta aba usa a mesma pasta <code>loja-contrato</code> e as mesmas ferramentas. Os passos com 🖱️ são com o mouse; <strong>⌨️ Prefere o terminal?</strong> é opcional.</div>
 
 <!-- ══════════════════════════ ① CONTEXTOS ══════════════════════════ -->
@@ -522,6 +522,70 @@ Remove-Item produto.json, cliente.json, reserva.json, pedido.json, vazio.json</p
 <li><strong>Login dá <code>400</code></strong> → aqui os campos são <code>login</code> e <code>password</code> (não <code>email</code>/<code>senha</code> da Tab 4).</li>
 <li><strong>Editei o YAML e nada mudou</strong> → Docker Desktop → ⟳ Restart no <code>dev_prism_contextos</code>.</li>
 </ul></div>
+<!-- ══════════════════════════ ⑧ CONTRATO QUEBRADO ══════════════════════════ -->
+<h4 id="contrato-quebrado" style="color:var(--accent);margin-top:22px">⑧ 💥 Contrato quebrado entre times</h4>
+<p>Até aqui o contrato foi decidido <strong>junto</strong>, numa sala. Na vida real, cada contexto tem o seu time, e cada time mexe na sua parte do contrato quando precisa. O que acontece quando um time muda algo de que <strong>outro</strong> time depende? Assista à cena com o elenco da Sala e decida.</p>
+<div class="analogy-highlight"><span class="icon">🔌</span><div><strong>Analogia da tomada:</strong> o contrato é o formato da tomada. Se o fabricante muda o formato "só um pouquinho", todo aparelho que já estava ligado deixa de funcionar — e ninguém mexeu nos aparelhos.</div></div>
+<div class="siga" id="quebra-sala"><button class="btn btn-primary" onclick="quebraIr(1)">▶ Começar a cena</button></div>
+<h4 style="margin-top:16px">🔎 Por que essa quebra é tão perigosa?</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>Tipo de mudança</th><th>Exemplo</th><th>Quebra quem usa?</th></tr></thead>
+<tbody>
+<tr><td><strong>Aditiva</strong> (soma)</td><td>rota nova; campo novo <strong>opcional</strong> na resposta</td><td>❌ não — quem não conhece o campo simplesmente o ignora</td></tr>
+<tr><td><strong>Que quebra</strong> (<em>breaking change</em>)</td><td>renomear ou remover um campo; trocar o tipo; tornar obrigatório um campo da requisição</td><td>✅ sim — e às vezes <strong>em silêncio</strong>, como aqui (o campo sumido vira 0)</td></tr>
+</tbody></table></div>
+<p>É exatamente essa linha que a <a href="javascript:switchTab('tab8','adr-011')" style="color:var(--primary);text-decoration:underline">ADR-011</a> traça: o que <strong>soma</strong> entra sem versão; o que <strong>quebra</strong> precisa de <code>/v2</code>. A saída mais barata, quando dá, é transformar a quebra numa soma.</p>
+<div class="step-box">
+<h4><span class="step-num">1</span>🖱️ Faça a quebra no seu mock (e desfaça)</h4>
+<ol class="step-number-list">
+<li>No VS Code, abra <code>contracts/openapi-multicontexto.yaml</code> e use <kbd>Ctrl+F</kbd> para achar <code>Reserva:</code> (dentro de <code>components → schemas</code>).</li>
+<li>Troque <code>precoUnitario</code> por <code>valorUnitario</code> nos <strong>dois</strong> lugares do schema <code>Reserva</code>: na lista <code>required</code> e em <code>properties</code>. Salve.</li>
+<li>Docker Desktop → <strong>Containers</strong> → ⟳ <strong>Restart</strong> no <code>dev_prism_contextos</code> (o Prism só relê o contrato ao reiniciar).</li>
+<li>Em <code>testes-contextos.http</code>, rode o teste <strong>7</strong> (reservar).</li>
+</ol>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> continua <code>200</code>, mas o corpo agora traz <code>"valorUnitario"</code> e <strong>não</strong> traz mais <code>"precoUnitario"</code>. Nada ficou vermelho — é isso que torna a quebra silenciosa.</div>
+<p><strong>Agora a saída (b):</strong> deixe o schema <code>Reserva</code> com os <strong>dois</strong> campos — o antigo de volta no <code>required</code> e marcado como <code>deprecated</code>, o novo opcional ao lado — assim:</p>
+<div class="code-editor-wrap"><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">    Reserva:
+      type: object
+      required: [reservaId, status, precoUnitario]
+      properties:
+        reservaId:
+          type: string
+          example: a1b2c3d4
+        status:
+          type: string
+          enum: [RESERVADO]
+          example: RESERVADO
+        precoUnitario:
+          type: number
+          minimum: 0.01
+          deprecated: true          # 👈 avisa: vai sair (ADR-026)
+          description: Use valorUnitario. Sai depois de 90 dias.
+          example: 249.9
+        valorUnitario:              # 👈 o nome novo, somado
+          type: number
+          minimum: 0.01
+          description: Preço no momento da reserva (o pedido guarda essa cópia)
+          example: 249.9</pre></div>
+<p>Reinicie o Prism e rode o teste 7 de novo.</p>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> o corpo traz os dois campos. Cole o YAML no <a class="ext" href="https://editor.swagger.io/" target="_blank">Swagger Editor</a>: o <code>precoUnitario</code> aparece marcado como <em>deprecated</em>.</div>
+<div class="warning-banner"><strong>✋ Errou?</strong>
+<ul>
+<li><strong>O Prism não sobe depois da edição</strong> → o YAML ficou inválido (quase sempre, indentação). Veja os logs do container no Docker Desktop; o Swagger Editor aponta a linha.</li>
+<li><strong>O teste 7 responde igual a antes</strong> → faltou o ⟳ Restart do <code>dev_prism_contextos</code>.</li>
+<li><strong>No fim, quer o contrato original de volta?</strong> → <kbd>Ctrl+Z</kbd> até desfazer tudo, ou gere de novo pela Sala v2 (parte ③).</li>
+</ul></div>
+</div>
+<div class="adr" id="adr-026"><h5>ADR-026 · Renomear campo do contrato = somar, depois aposentar<span class="status">Proposta</span></h5>
+<p><b>Contexto:</b> o time do Catálogo quis renomear <code>precoUnitario</code> para <code>valorUnitario</code> na resposta do <code>/reservar</code>. O time de Pedidos lê esse campo; a troca faria o preço chegar como 0, sem erro.</p>
+<p><b>Decisão:</b> renomes viram <strong>mudança aditiva</strong>: o campo novo entra ao lado do antigo, o antigo ganha <code>deprecated: true</code> e só sai depois de 90 dias e de os consumidores confirmarem que migraram (ADR-011). Cada consumidor mantém um <strong>teste de contrato</strong> com os campos que usa, rodando nos Pull Requests de quem publica o contrato.</p>
+<p><b>Alternativas consideradas:</b> <code>/v2</code> já (rejeitada para renome: duas versões no ar por um nome); renomear direto e avisar no chat (rejeitada: foi o que causou a quebra).</p>
+<p><b>Consequências:</b> (+) nenhuma quebra silenciosa; quem publica vê na hora quem vai afetar; (−) o JSON carrega um campo repetido por um tempo; cada consumidor mantém mais um teste.</p>
+<p><b>Status:</b> Proposta · <b>Stakeholders:</b> Catálogo, Pedidos, QA.</p></div>
+<div class="info-banner"><strong>✍️ Exercício:</strong> se você escolheu outra saída na cena, reescreva esta ADR com a sua decisão, usando o <a href="javascript:switchTab('tab4','o-que-e-adr')" style="color:var(--primary);text-decoration:underline">modelo da Tab 4</a>, e salve como <code>docs/adr/0026-renomear-campo-do-contrato.md</code>. Ela está como <strong>Proposta</strong> de propósito: no time, quem aprova é o Pull Request (veja a <a href="javascript:switchTab('tab3g')" style="color:var(--primary);text-decoration:underline">Tab 3-G</a>).</div>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=breaking+change+api+versionamento" target="_blank">Breaking change e versionamento de API</a> · <a class="ext" href="https://www.youtube.com/results?search_query=contract+testing+pact+explicado" target="_blank">Teste de contrato (Pact)</a></div>
+<p><strong>Aprofundar:</strong> <a class="ext" href="https://spec.openapis.org/oas/v3.1.0#fixed-fields-19" target="_blank"><code>deprecated</code> na especificação OpenAPI</a> · <a class="ext" href="https://martinfowler.com/articles/consumerDrivenContracts.html" target="_blank">Consumer-Driven Contracts (Fowler)</a> · <a class="ext" href="https://docs.pact.io/" target="_blank">Pact</a></p>
+
 <h4 style="color:var(--accent);margin:16px 0 8px">✅ Checklist da aba</h4>
 <div class="table-wrap"><table>
 <thead><tr><th>#</th><th>Item</th><th>Onde</th><th>Status</th></tr></thead>
@@ -531,6 +595,7 @@ Remove-Item produto.json, cliente.json, reserva.json, pedido.json, vazio.json</p
 <tr><td>3</td><td><code>openapi-multicontexto.yaml</code> salvo em <code>contracts</code></td><td>④ ⑤</td><td>⬜</td></tr>
 <tr><td>4</td><td><code>dev_prism_contextos</code> verde na porta 4011</td><td>⑤</td><td>⬜</td></tr>
 <tr><td>5</td><td>Os 13 testes de <code>testes-contextos.http</code> com o status esperado</td><td>⑥</td><td>⬜</td></tr>
+<tr><td>6</td><td>Assisti à cena do contrato quebrado, fiz a quebra no mock, a saída aditiva com <code>deprecated</code> e sei explicar a ADR-026</td><td>⑧</td><td>⬜</td></tr>
 </tbody></table></div>
 
 </div>
