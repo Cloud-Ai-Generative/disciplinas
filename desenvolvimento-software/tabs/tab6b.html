@@ -43,6 +43,24 @@
 <p><strong>Aprofundar:</strong> <a class="ext" href="https://martinfowler.com/bliki/StranglerFigApplication.html" target="_blank">Strangler Fig (Martin Fowler)</a> · <a class="ext" href="https://martinfowler.com/bliki/ParallelChange.html" target="_blank">Parallel Change</a> · <a class="ext" href="https://docs.spring.io/spring-data/mongodb/reference/" target="_blank">Spring Data MongoDB (docs)</a> · <a class="ext" href="https://www.mongodb.com/docs/manual/core/document/" target="_blank">Documentos no MongoDB</a>.</p>
 </div>
 
+<div class="deep-concept-box">
+<h3>📖 Palavras da migração</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Palavra</th><th>O que é, em uma frase</th></tr></thead>
+<tbody>
+<tr><td><strong>Dual-write</strong></td><td>Gravar a mesma coisa nos dois bancos: no MySQL (a verdade) e no MongoDB (a cópia).</td></tr>
+<tr><td><strong>Backfill</strong></td><td>Copiar para o banco novo os dados que já existiam antes do dual-write começar.</td></tr>
+<tr><td><strong>Reconciliação</strong></td><td>Comparar os dois bancos registro por registro e, se mandado, corrigir as diferenças.</td></tr>
+<tr><td><strong>Cut-over</strong> ("virada")</td><td>O momento em que o banco novo passa a ser o único usado.</td></tr>
+<tr><td><strong>Consistência eventual</strong></td><td>Os dois bancos podem ficar diferentes por um instante (ex.: o Mongo fora do ar), mas chegam ao mesmo estado depois — aqui, com a reconciliação.</td></tr>
+<tr><td><strong>Idempotente</strong></td><td>Rodar de novo dá o mesmo resultado: o backfill pode rodar duas vezes sem duplicar nada.</td></tr>
+<tr><td><strong>Decorator / Composite</strong></td><td>Dois padrões de projeto. <strong>Decorator</strong>: uma classe que "embrulha" outra com a mesma interface e acrescenta comportamento. <strong>Composite</strong>: uma classe que junta várias com a mesma interface. O <code>DualWriteProdutoRepository</code> é os dois: embrulha o adapter MySQL e junta o do Mongo.</td></tr>
+<tr><td><strong>Balanceador</strong> e <strong>rolling restart</strong></td><td>O <strong>balanceador</strong> divide os pedidos entre várias cópias da API. Com ele, dá para reiniciar uma cópia de cada vez (<strong>rolling restart</strong>) sem que o cliente perceba.</td></tr>
+<tr><td><strong>CDC + ETL</strong></td><td><strong>CDC</strong> (<em>Change Data Capture</em>): ler as mudanças direto do log do banco. <strong>ETL</strong> (<em>Extract, Transform, Load</em>): ferramenta que copia e transforma dados entre bancos. A alternativa "de infraestrutura" ao dual-write feito no código.</td></tr>
+<tr><td><strong>Parallel Change</strong></td><td>O jeito de mudar algo sem quebrar quem usa: primeiro o novo convive com o velho, depois todos migram, por último o velho sai — exatamente as 4 fases desta aba.</td></tr>
+<tr><td><strong>IDHACK</strong></td><td>O nome que o <code>explain()</code> do MongoDB dá para a busca pelo <code>_id</code>: o caminho mais rápido que existe, direto no índice principal.</td></tr>
+</tbody></table></div>
+</div>
 <h4 class="diag-title">📐 D-6B.1 <span class="dt-type">Fluxo</span> — As 4 fases e o que o toggle faz em cada uma</h4>
 <p class="text-sm text-muted" style="margin:4px 0 8px"><strong>👀 Como ler:</strong> cada caixa é uma <strong>etapa</strong> e cada seta mostra a <strong>ordem</strong>: comece pela primeira caixa e siga as setas. As molduras agrupam etapas que acontecem no mesmo lugar ou momento, e o texto em cima de uma seta diz o que passa por ali.</p>
 <div class="mermaid-box" data-code='flowchart LR
@@ -660,6 +678,32 @@ public class DualWriteProdutoRepository implements ProdutoRepository {
 }</pre>
 </div>
 <p>Na Tab 6, o <code>PersistenceConfig</code> só entregava o adapter JPA. Aqui ele vira um <strong>interruptor de 3 posições</strong>, lido da chave <code>persistence.provider</code>: um só lugar decide qual adapter atende a porta, e trocar de fase é trocar <strong>um valor</strong> — sem recompilar. <strong>É a única classe de configuração da Tab 6 que muda.</strong></p>
+<h4 class="diag-title">📐 D-6B.3 <span class="dt-type">UML · Classes</span> — Uma porta, três adapters, um interruptor</h4>
+<p class="text-sm text-muted" style="margin:4px 0 8px"><strong>👀 Como ler:</strong> cada caixa é uma <strong>classe</strong> ou <strong>interface</strong> (marcada «interface»), com os campos em cima e os métodos embaixo. A seta tracejada com triângulo vazado quer dizer "<strong>implementa</strong>"; a seta cheia quer dizer "<strong>usa</strong>" (tem uma referência para a outra).</p>
+<div class="mermaid-box" data-code='classDiagram
+class ProdutoRepository {
+  <<interface>>
+  +salvar()
+  +buscarPorId()
+  +listarPagina(page, size)
+  +listarTodos()
+  +existePorId()
+  +deletarPorId()
+}
+class ProdutoRepositoryAdapter
+class MongoProdutoRepository
+class DualWriteProdutoRepository
+class PersistenceConfig
+class ProdutoServiceImpl
+ProdutoRepository <|.. ProdutoRepositoryAdapter : MySQL
+ProdutoRepository <|.. MongoProdutoRepository : MongoDB
+ProdutoRepository <|.. DualWriteProdutoRepository : os dois
+DualWriteProdutoRepository o-- ProdutoRepositoryAdapter
+DualWriteProdutoRepository o-- MongoProdutoRepository
+PersistenceConfig ..> ProdutoRepository : relational | dual | nosql
+ProdutoServiceImpl --> ProdutoRepository'>
+<div class="mermaid"></div>
+</div>
 <div class="code-editor-wrap">
 <span class="code-filepath">infrastructure/config/PersistenceConfig.java (🔀 interruptor de 3 posições — substitui o da Tab 6)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -1476,6 +1520,7 @@ java -jar produtos-presentation/target/produtos-presentation-1.0.0.jar \
 
 <h4 style="color:var(--accent);margin:16px 0 8px">🔀 Passo 11 — Fase 3: cut-over para o MongoDB</h4>
 <p>Com a reconciliação <code>🟢 EQUIVALENTES</code>, o Mongo assume leituras e escritas. A troca é uma <strong>reinicialização com outro valor de toggle</strong> — com duas instâncias atrás de um balanceador, seria uma troca sem nenhum segundo fora do ar (<em>rolling restart</em>).</p>
+<div class="info-banner"><strong>🐬 O MySQL continua ligado — e isso é parte do plano.</strong> No modo <code>nosql</code>, a API lê e grava só no MongoDB, mas o MySQL fica no ar por dois motivos: (1) ele é o <strong>plano de volta</strong> até a fase 4; (2) o JPA ainda está no projeto e confere as tabelas quando a API sobe — por isso, se o MySQL estiver desligado, a API não sobe. Os dois somem juntos, na fase 4 (Passo 12).</div>
 <div class="code-editor-wrap">
 <span class="code-filepath">perf/carga.js</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -1568,6 +1613,15 @@ docker run -d --name loja-java -p 8080:8080 --network loja_dev_network \
 <div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=k6+teste+de+carga+tutorial" target="_blank">Teste de carga com k6</a> · <a class="ext" href="https://www.youtube.com/results?search_query=estrat%C3%A9gia+de+rollback+deploy+migra%C3%A7%C3%A3o" target="_blank">Cut-over e rollback</a></div>
 
 <h4 style="color:var(--accent);margin:16px 0 8px">↩️ Passo 12 — Fase 4, rollback e checklist final</h4>
+<p>Toda migração precisa de um caminho de volta. Aqui ele depende de <strong>em que fase você está</strong>, porque é isso que decide onde os dados novos foram gravados:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Quero voltar para o MySQL…</th><th>Onde estão os dados novos</th><th>O que fazer</th><th>O que se perde</th></tr></thead>
+<tbody>
+<tr><td>durante o <strong>dual-write</strong> (fases 1 e 2)</td><td>Nos dois bancos — o MySQL sempre foi a verdade</td><td>Rodar a API com <code>--persistence.provider=relational</code></td><td><strong>Nada.</strong> O Mongo só deixa de ser usado</td></tr>
+<tr><td>depois do <strong>cut-over</strong> (fase 3, <code>nosql</code>)</td><td><strong>Só no MongoDB</strong>: o que foi criado ou mudado depois da virada não existe no MySQL</td><td>Antes de voltar, copiar esses dados de volta (um <em>backfill reverso</em>, Mongo → MySQL — fora do escopo desta aba) e só então rodar em <code>relational</code></td><td>Sem o backfill reverso: <strong>tudo o que foi gravado depois da virada</strong></td></tr>
+<tr><td>depois da <strong>fase 4</strong> (MySQL desligado)</td><td>Só no MongoDB, e o JPA já saiu do código</td><td>Não há volta rápida: é uma nova migração, no sentido contrário</td><td>—</td></tr>
+</tbody></table></div>
+<p><strong>A fase 4</strong> é o fim da migração: tirar do projeto o que só existia por causa do MySQL (o adapter JPA, a entidade, o <code>spring-boot-starter-data-jpa</code> e os modos <code>relational</code>/<code>dual</code> do <code>PersistenceConfig</code>), fazer um último backup e desligar o container. Só faça depois de um <strong>período de observação</strong> em <code>nosql</code> (ex.: 7 dias sem erro), porque a partir dela a volta deixa de ser simples.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">terminal - rollback e desligamento</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -1584,6 +1638,13 @@ java -jar produtos-presentation/target/produtos-presentation-1.0.0.jar --persist
 #  - remover os casos relational/dual do PersistenceConfig
 #  - backup final do MySQL e desligamento do container</pre>
 </div>
+<div class="success-banner"><strong>✅ Resultado esperado (teste o rollback agora, ainda na fase 3):</strong> pare a API <strong>API nosql</strong> (■) e rode <strong>API dual</strong> (ou <code>--persistence.provider=relational</code>): ela sobe, o smoke do Passo 8 passa de novo, e os produtos criados <em>antes</em> da virada continuam lá. Os criados <em>depois</em> da virada não aparecem — é exatamente a perda que a tabela acima avisa. Volte para <strong>API nosql</strong> ao terminar.</div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">✋ Errou? Problemas no rollback</div>
+<div class="faq-a"><ul>
+<li><strong>Voltei para <code>relational</code> e sumiram produtos</strong> → são os criados depois do cut-over: eles existem só no Mongo. É o motivo de observar antes da fase 4.</li>
+<li><strong>A API não sobe em <code>relational</code></strong> → o MySQL foi desligado (ou a fase 4 já removeu o JPA). Ligue o <code>dev_mysql_server</code> no Docker Desktop.</li>
+<li><strong>E11000 depois de voltar para <code>nosql</code></strong> → o contador ficou atrás do maior id: rode o <strong>Backfill</strong> de novo, que ele ajusta a sequência.</li>
+</ul></div></div>
 <div class="table-wrap" style="margin:12px 0">
 <table>
 <thead><tr><th>#</th><th>Requisito</th><th>Evidência para entregar</th><th>Passo</th><th>Status</th></tr></thead>
@@ -1615,32 +1676,7 @@ java -jar produtos-presentation/target/produtos-presentation-1.0.0.jar --persist
 </table>
 </div>
 <div class="success-banner"><strong>✅ Tab 6-B completa:</strong> MongoDB no lugar do MySQL ✓ · mesma API e contrato ✓ · 19 testes da Tab 6 sem alteração + 5 da migração ✓ · <strong>zero downtime</strong> (dual-write + backfill online) ✓ · precisão provada pela reconciliação ✓ · desempenho medido ✓ · rollback e seus limites documentados ✓. A lição central: <strong>como na Tab 6 o banco ficou atrás de uma porta, migrar virou acrescentar adapters e um interruptor — e não reescrever a aplicação.</strong></div>
-<h4 class="diag-title">📐 D-6B.3 <span class="dt-type">UML · Classes</span> — Uma porta, três adapters, um interruptor</h4>
-<p class="text-sm text-muted" style="margin:4px 0 8px"><strong>👀 Como ler:</strong> cada caixa é uma <strong>classe</strong> ou <strong>interface</strong> (marcada «interface»), com os campos em cima e os métodos embaixo. A seta tracejada com triângulo vazado quer dizer "<strong>implementa</strong>"; a seta cheia quer dizer "<strong>usa</strong>" (tem uma referência para a outra).</p>
-<div class="mermaid-box" data-code='classDiagram
-class ProdutoRepository {
-  <<interface>>
-  +salvar()
-  +buscarPorId()
-  +listarPagina(page, size)
-  +listarTodos()
-  +existePorId()
-  +deletarPorId()
-}
-class ProdutoRepositoryAdapter
-class MongoProdutoRepository
-class DualWriteProdutoRepository
-class PersistenceConfig
-class ProdutoServiceImpl
-ProdutoRepository <|.. ProdutoRepositoryAdapter : MySQL
-ProdutoRepository <|.. MongoProdutoRepository : MongoDB
-ProdutoRepository <|.. DualWriteProdutoRepository : os dois
-DualWriteProdutoRepository o-- ProdutoRepositoryAdapter
-DualWriteProdutoRepository o-- MongoProdutoRepository
-PersistenceConfig ..> ProdutoRepository : relational | dual | nosql
-ProdutoServiceImpl --> ProdutoRepository'>
-<div class="mermaid"></div>
-</div>
+
 <div class="info-banner"><strong>📑 O que é uma ADR?</strong> Uma <strong>ADR</strong> (<em>Architecture Decision Record</em>) é a "ata" de uma decisão técnica: o problema (<b>Contexto</b>), o que foi decidido (<b>Decisão</b>), as outras opções (<b>Alternativas</b>), o que melhora e o preço aceito (<b>Consequências</b>) e em que ponto ela está (<b>Status</b>). Para que serve, quando escrever e um modelo para copiar: <a href="javascript:switchTab('tab4')" style="color:var(--primary);text-decoration:underline">Tab 4, parte ⑦</a>. Os números pulam porque a numeração é única no guia inteiro — a lista completa está na <a href="javascript:switchTab('tab10')" style="color:var(--primary);text-decoration:underline">Tab 10</a>.</div>
 <div class="adr"><h5>ADR-004 · Migração Strangler Fig com interruptor <span class="stack-tag">☕ Java</span><span class="status">Aceita</span></h5>
 <p><b>Contexto:</b> o catálogo vai para o MongoDB, mas a loja não pode parar (e-commerce 24×7) e os dados precisam chegar com precisão comprovada.</p>

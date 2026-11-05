@@ -2,10 +2,12 @@
 <div class="card">
 <h2 class="card-title">☕ API Java Completa — Clean Arch + SOLID + TDD + Docker + CI/CD</h2>
 <p class="section-intro">Aba <strong>100% auto-contida para Java/IntelliJ</strong>: conceitos detalhados (Clean Arch, SOLID, padrões, DI, ORM, JPA) com links, todos os arquivos do projeto, TDD com 19 testes (service + HTTP), Docker, CI/CD e diagramas. A API usa o MySQL da Tab 5 e cumpre o contrato da Tab 4 (porta <strong>8080</strong>). A troca do banco por MongoDB fica para a <a href="javascript:switchTab('tab6b')" style="color:var(--primary);text-decoration:underline">Tab 6-B</a>. <span class="ide-tag java">IDE: IntelliJ</span></p>
+<div class="info-banner"><strong>🗺️ O caminho desta aba:</strong> ① entender a arquitetura (Clean Architecture, SOLID, padrões, ORM) → ② abrir o projeto no IntelliJ → ③ ler o código, camada por camada → ④ rodar e testar com o roteiro do mock da Tab 4 → ⑤ testes automáticos (TDD) → ⑥ Docker → ⑦ CI/CD → ⑧ diagramas e decisões (ADRs). <strong>Tempo total: ~2h30.</strong></div>
+<div class="info-banner"><strong>🧭 Pré-requisitos:</strong> <a href="javascript:switchTab('tab2')" style="color:var(--primary);text-decoration:underline">Tab 2</a> (IntelliJ + JDK 21) · <a href="javascript:switchTab('tab5')" style="color:var(--primary);text-decoration:underline">Tab 5</a> (MySQL ligado no Docker, com o <code>loja_db</code>) · <a href="javascript:switchTab('tab4')" style="color:var(--primary);text-decoration:underline">Tab 4</a> (o contrato que esta API cumpre) · VS Code com REST Client para o passo de testes. Os passos com 🖱️ são com o mouse; ⌨️ <em>Prefere o terminal?</em> é opcional.</div>
 <div class="doc-banner"><strong>🧔 Rafael Souza · ☕ Backend (Java):</strong> esta API é a <strong>implementação backend do contrato</strong> definido na Sala de Contrato (Tab 4). Mini-fluxo: <em>Sala de Contrato → <code>openapi.yaml</code> → implementação (esta aba) → validação (testes + Prism)</em>. <a href="javascript:switchTab('tab4')" style="color:var(--primary);text-decoration:underline">Ir p/ Sala/Contrato (Tab 4) →</a></div>
 <!-- ══════════ SEÇÃO 1: CONCEITOS ══════════ -->
 <div class="deep-concept-box">
-<h3>🏛️ Clean Architecture (Robert C. Martin, 2012)</h3>
+<h3>① 🏛️ Clean Architecture (Robert C. Martin, 2012)</h3>
 <p><strong>Origem:</strong> consolidou ideias de <strong>Hexagonal</strong> (Alistair Cockburn, 2005) e <strong>Onion Architecture</strong> (Jeffrey Palermo, 2008). O princípio central: <em>o que é negócio fica no centro; o que é tecnologia fica na borda</em>.</p>
 <h4>As 4 camadas (de dentro para fora)</h4>
 <ol>
@@ -72,6 +74,84 @@
 <div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=inje%C3%A7%C3%A3o+de+depend%C3%AAncia+spring+boot" target="_blank">Injeção de dependência no Spring</a> · <a class="ext" href="https://www.youtube.com/results?search_query=spring+data+jpa+hibernate+mysql+spring+boot" target="_blank">JPA e Hibernate com Spring Boot</a> · <a class="ext" href="https://www.youtube.com/results?search_query=bean+validation+spring+boot+valid" target="_blank">Bean Validation</a></div>
 </div>
 
+<div class="deep-concept-box">
+<h3>🔄 O que é um ORM — e o que o JPA + Hibernate faz por você</h3>
+<p>O banco guarda <strong>tabelas</strong> (linhas e colunas); o seu código trabalha com <strong>objetos</strong> (classes com campos). Alguém precisa traduzir um para o outro a cada leitura e a cada gravação. <strong>ORM</strong> (<em>Object-Relational Mapping</em>, "mapeamento objeto-relacional") é a biblioteca que faz essa tradução: você descreve uma vez qual classe é qual tabela, e ela escreve o SQL e copia os valores sozinha.</p>
+<div class="analogy-highlight"><span class="icon">🗣️</span><div><strong>Analogia do intérprete:</strong> o seu código fala "objeto", o banco fala "SQL". Sem ORM, você fala os dois idiomas e traduz cada frase à mão. Com ORM, você contrata um intérprete: diz "salve este produto" e ele traduz para <code>INSERT INTO produtos …</code>. Ótimo no dia a dia — mas vale saber o que ele está dizendo por você, porque às vezes traduz de um jeito lento.</div></div>
+<p>Em Java há duas peças: o <strong>JPA</strong> (<em>Jakarta Persistence</em>) é a <strong>especificação</strong> — as regras e as anotações; o <strong>Hibernate</strong> é a <strong>implementação</strong> — o programa que faz o trabalho. O <strong>Spring Data JPA</strong> fica por cima e ainda escreve os repositórios para você.</p>
+<h4 style="color:var(--accent);margin:16px 0 8px">⚖️ O mesmo trabalho, sem e com ORM</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">sem ORM — JDBC puro: você escreve o SQL e copia cada coluna à mão</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">// Buscar UM produto pelo id, sem ORM
+String sql = "SELECT id, nome, preco, estoque FROM produtos WHERE id = ?";
+try (Connection con = dataSource.getConnection();
+     PreparedStatement ps = con.prepareStatement(sql)) {
+    ps.setLong(1, id);                          // o ? vira o id (evita SQL injection)
+    try (ResultSet rs = ps.executeQuery()) {
+        if (!rs.next()) return Optional.empty();
+        return Optional.of(new Produto(          // coluna por coluna, à mão
+            rs.getLong("id"), rs.getString("nome"),
+            rs.getBigDecimal("preco"), rs.getInt("estoque")));
+    }
+}</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">com ORM — JPA: você descreve a classe uma vez; o SQL sai sozinho</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">@Entity @Table(name = "produtos")              // "esta classe é a tabela produtos"
+public class ProdutoJpaEntity {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY) private Long id;
+    @Column(nullable = false, length = 100) private String nome;
+    // ...
+}
+
+// Buscar UM produto pelo id, com ORM: uma linha
+Optional&lt;ProdutoJpaEntity&gt; p = jpaRepo.findById(id);
+// O Hibernate gera e roda:  select ... from produtos where id=?</pre>
+</div>
+<h4 style="color:var(--accent);margin:16px 0 8px">⚙️ O que o ORM faz por baixo</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>Tarefa</th><th>O que acontece</th></tr></thead>
+<tbody>
+<tr><td><strong>Mapear</strong></td><td>Lê a descrição (anotações ou configuração) e sabe que o campo <code>preco</code> é a coluna <code>preco</code>, de que tipo, e qual é a chave</td></tr>
+<tr><td><strong>Gerar o SQL</strong></td><td>Transforma cada chamada (buscar, salvar, apagar, paginar) no <code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code> ou <code>DELETE</code> certo — já com parâmetros, o que evita <em>SQL injection</em></td></tr>
+<tr><td><strong>Copiar os valores</strong></td><td>Monta o objeto a partir de cada linha que volta, e o contrário na hora de gravar</td></tr>
+<tr><td><strong>Rastrear mudanças</strong></td><td>Lembra como o objeto estava quando foi lido; ao salvar, grava só o que mudou</td></tr>
+<tr><td><strong>Transação</strong></td><td>Agrupa as gravações num pacote só: ou vale tudo, ou nada (o "A" do ACID, <a href="javascript:switchTab('tab5')" style="color:var(--primary);text-decoration:underline">Tab 5</a>)</td></tr>
+</tbody></table></div>
+<div class="info-banner"><strong>👀 Veja o intérprete trabalhando:</strong> Quer ver o SQL que o Hibernate gera? No <code>application.yml</code>, acrescente <code>spring.jpa.show-sql: true</code>, rode a API e olhe o painel Run: cada <code>findById</code>, <code>save</code> e <code>findAll</code> aparece como o SQL de verdade.</div>
+<h4 style="color:var(--accent);margin:16px 0 8px">⚠️ Os cuidados que todo mundo aprende do jeito difícil</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>Armadilha</th><th>O que acontece</th><th>Como evitar</th></tr></thead>
+<tbody>
+<tr><td><strong>N+1</strong></td><td>Você lista 100 pedidos e, para cada um, lê os itens: o ORM faz <strong>1</strong> consulta para os pedidos + <strong>100</strong> para os itens. Rápido com 3 registros, lento com 10 mil</td><td>Pedir tudo de uma vez: <code>JOIN FETCH</code> numa consulta JPQL (ou <code>@EntityGraph</code>)</td></tr>
+<tr><td><strong>Carregamento sob demanda</strong> (<em>lazy loading</em>)</td><td>As listas ligadas à entidade (<code>@OneToMany</code> e <code>@ManyToOne</code> com <code>FetchType.LAZY</code>) só são buscadas quando você as usa — e cada uso é uma ida ao banco. É ele que causa o N+1 sem você perceber</td><td>Saber o que cada tela precisa e carregar só isso, de propósito</td></tr>
+<tr><td><strong>Paginar na memória</strong></td><td>Ler a tabela inteira e só depois pegar 20 linhas</td><td>Paginar antes de buscar, para virar <code>LIMIT/OFFSET</code> no SQL (é o que o <code>SpringDataProdutoRepository</code> faz)</td></tr>
+<tr><td><strong>Esquecer que existe SQL</strong></td><td>Uma linha bonita no código pode virar uma consulta pesada</td><td>Ligar o log do SQL (quadro acima) e olhar de vez em quando</td></tr>
+</tbody></table></div>
+<p><strong>Quando não usar:</strong> relatórios pesados, consultas muito específicas do banco ou cargas de milhares de linhas por segundo costumam ficar melhores com SQL escrito à mão — em geral com JDBC puro, o <code>JdbcTemplate</code> do Spring ou o jOOQ. Não é "ORM ou SQL": muitos projetos usam o ORM no dia a dia e SQL à mão nos poucos lugares que precisam.</p>
+<p><strong>Nesta aba:</strong> o mapeamento está em <code>ProdutoJpaEntity</code>, e quem usa o ORM é o <code>SpringDataProdutoRepository</code>. O domínio nunca vê o ORM: se um dia o banco mudar, só esses arquivos mudam.</p>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=o+que+%C3%A9+orm+jpa+hibernate" target="_blank">O que é ORM (JPA e Hibernate)</a> · <a class="ext" href="https://www.youtube.com/results?search_query=problema+n%2B1+hibernate" target="_blank">O problema N+1 no Hibernate</a> · <a class="ext" href="https://www.youtube.com/results?search_query=spring+data+jpa+iniciantes" target="_blank">Spring Data JPA para iniciantes</a></div>
+<p><strong>Aprofundar:</strong> <a class="ext" href="https://jakarta.ee/specifications/persistence/3.1/" target="_blank">Jakarta Persistence 3.1 (a especificação)</a> · <a class="ext" href="https://hibernate.org/orm/documentation/" target="_blank">Documentação do Hibernate ORM</a> · <a class="ext" href="https://martinfowler.com/bliki/OrmHate.html" target="_blank">OrmHate (Martin Fowler)</a></p>
+</div>
+<div class="deep-concept-box">
+<h3>📖 Palavras desta aba</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Palavra</th><th>O que é, em uma frase</th></tr></thead>
+<tbody>
+<tr><td><strong>POJO</strong></td><td><em>Plain Old Java Object</em>: uma classe Java comum, sem anotações de framework. O <code>Produto</code> do domínio é um POJO.</td></tr>
+<tr><td><strong>IoC</strong> (inversão de controle)</td><td>Não é o seu código que cria e chama as peças: o Spring cria cada uma e chama o seu código na hora certa.</td></tr>
+<tr><td><strong>Bean</strong></td><td>Um objeto que o Spring cria e guarda para entregar a quem precisar (ex.: o <code>ProdutoService</code>).</td></tr>
+<tr><td><strong>Injeção de dependência</strong></td><td>Em vez de a classe criar o que usa (<code>new ProdutoRepositoryAdapter()</code>), ela <em>recebe</em> pronto, pelo construtor. É o que permite trocar a peça real por um mock nos testes.</td></tr>
+<tr><td><strong>Módulo Maven</strong></td><td>Um projeto Maven dentro de outro. Aqui são 4 (domain, application, infrastructure, presentation), e o <code>pom.xml</code> de cada um diz de quem ele pode depender.</td></tr>
+<tr><td><strong>Starter</strong></td><td>Um pacote do Spring Boot que já traz tudo para um assunto: <code>spring-boot-starter-web</code> (API), <code>…-data-jpa</code> (banco), <code>…-security</code> (login).</td></tr>
+<tr><td><strong>Reactor Summary</strong></td><td>O resumo que o Maven mostra no fim do <code>install</code>: um <code>SUCCESS</code> ou <code>FAILURE</code> por módulo, na ordem em que foram construídos.</td></tr>
+<tr><td><strong>Claims</strong></td><td>As informações que vão dentro do JWT: <code>sub</code> (quem é), <code>iat</code> (quando foi emitido), <code>exp</code> (quando vence).</td></tr>
+<tr><td><strong>SecurityContext</strong></td><td>O lugar onde o Spring Security guarda "quem está fazendo esta requisição". O <code>JwtTokenFilter</code> o preenche quando o token é válido.</td></tr>
+<tr><td><strong>authenticationEntryPoint</strong></td><td>O que o Spring Security responde quando uma rota protegida chega sem login. Aqui ele devolve o <code>401 problem+json</code> do contrato (sem ele, o Spring responderia 403).</td></tr>
+</tbody></table></div>
+</div>
 <h4 class="diag-title">📐 D-06 <span class="dt-type">Arquitetura</span> — Clean Arch Java (camadas + dependências + testes)</h4>
 <p class="text-sm text-muted" style="margin:4px 0 8px"><strong>👀 Como ler:</strong> cada caixa é uma <strong>camada</strong> (ou um projeto); a seta vai de quem <strong>usa</strong> para quem <strong>é usado</strong>. Repare que todas as setas apontam para dentro, na direção do domínio: ele não depende de ninguém.</p>
 <div class="mermaid-box" data-code='flowchart TD
@@ -109,7 +189,7 @@
 <!-- ══════════ SEÇÃO 2: SETUP ══════════ -->
 <div class="lab-container">
 <div class="lab-header">
-<h3>☕ Setup — Spring Boot do zero (alvo=Projeto) + 4 módulos</h3>
+<h3>② 🖱️ Abrir o projeto no IntelliJ (4 módulos Maven)</h3>
 <div class="lab-actions">
 <a href="https://start.spring.io/" target="_blank" class="btn btn-primary">🌐 Spring Initializr ↗</a>
 <button class="btn btn-zip" onclick="openDlModal('tab6')">📦 Baixar ZIP</button>
@@ -133,7 +213,7 @@
 </ul></div></div>
 </div>
 <div class="step-box">
-<h4><span class="step-num">▶</span>Simulador guiado (preset projeto)</h4>
+<h4><span class="step-num">▶</span>Simulador: como este projeto nasceria no Spring Initializr (opcional)</h4>
 <div id="sim-proj"></div>
 </div>
 <div class="step-box">
@@ -409,7 +489,7 @@
 
 <!-- ══════════ SEÇÃO 4: CÓDIGO COMPLETO ══════════ -->
 <div class="lab-container">
-<div class="lab-header"><h3>☕ Código completo — todos os arquivos Java</h3></div>
+<div class="lab-header"><h3>③ 📖 O código, camada por camada</h3></div>
 
 <h4 style="color:var(--accent);margin:16px 0 8px">🧠 Camada Domain (zero frameworks)</h4>
 <p class="text-sm" style="margin:12px 0 4px">👉 A entidade do domínio: só os dados do produto (id, nome, preço, estoque). Repare que não há nenhuma anotação de Spring ou JPA — é Java puro (POJO). As regras ficam no service, porque esta aba usa o domínio anêmico (ADR-006).</p>
@@ -1291,7 +1371,7 @@ jwt:
   # Dev apenas! Produção: variável de ambiente JWT_SECRET (nunca commitar)
   secret: MinhaChaveSecretaSuperSeguraLojaAPI2026DeveTerMin32Caracteres
   expiration: 3600000       # 1 hora, em milissegundos</pre></div>
-<h4 style="color:var(--accent);margin:20px 0 8px">▶️ Rodar e testar a API</h4>
+<h3 style="color:var(--primary);margin:24px 0 8px">④ ▶️ Rodar e testar a API</h3>
 <div class="step-box">
 <h4><span class="step-num">1</span>🖱️ Ligar o MySQL da Tab 5</h4>
 <p>Abra o <strong>Docker Desktop → Containers</strong> e clique ▶ em <code>dev_mysql_server</code> (ou no grupo do compose da Tab 5).</p>
@@ -1870,7 +1950,7 @@ Thumbs.db</pre></div>
 
 <!-- ══════════ SEÇÃO 5: TDD ══════════ -->
 <div class="lab-container">
-<div class="lab-header"><h3>🧪 TDD: 19 testes (12 de service + 7 de HTTP)</h3></div>
+<div class="lab-header"><h3>⑤ 🧪 TDD: 19 testes (12 de service + 7 de HTTP)</h3></div>
 <div class="deep-concept-box">
 <h3>🧰 As ferramentas de teste desta aba</h3>
 <p>São duas famílias de teste: os de service (JUnit + Mockito, sem Spring) e os HTTP (o Spring sobe só a camada web). Nenhum precisa de banco.</p>
@@ -2182,7 +2262,7 @@ class ApiHttpTest {
 
 <!-- ══════════ SEÇÃO 7: DOCKER ══════════ -->
 <div class="lab-container">
-<div class="lab-header"><h3>🐳 Docker: build, run e teste (IntelliJ)</h3></div>
+<div class="lab-header"><h3>⑥ 🐳 Docker: build, run e teste (IntelliJ)</h3></div>
 <div class="deep-concept-box" style="margin-bottom:14px"><p><strong>Dockerfile multi-stage:</strong> separa build (Maven/JDK) de runtime (JRE), gerando imagem pequena. <a class="ext" href="https://docs.docker.com/build/building/multi-stage/" target="_blank">Multi-stage docs</a>.</p></div>
 <div class="code-editor-wrap"><span class="code-filepath">Dockerfile (Java multi-stage — na raiz do projeto)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="Dockerfile"># ══════════════════════════════════════════════════════════
@@ -2245,7 +2325,7 @@ docker ps</pre></div>
 
 <!-- ══════════ SEÇÃO 8: CI/CD ══════════ -->
 <div class="lab-container">
-<div class="lab-header"><h3>🔁 CI/CD: GitHub Actions + GitLab CI (Java)</h3></div>
+<div class="lab-header"><h3>⑦ 🔁 CI/CD: GitHub Actions + GitLab CI (Java)</h3></div>
 
 <p>A cada push ou Pull Request, um robô <strong>compila e roda os 19 testes</strong>; se algo quebrar, o PR fica vermelho. O que é CI/CD, pipeline e runner — e onde clicar no GitHub e no GitLab — está na <a href="javascript:switchTab('tab3g')" style="color:var(--primary);text-decoration:underline">Tab 3-G, parte ⑧</a>. Aqui estão os arquivos de verdade deste projeto (já vêm no ZIP):</p>
 <div class="split-view">
@@ -2282,7 +2362,7 @@ test:java:                              # job "test:java"
 
 <!-- ══════════ SEÇÃO 9: DIAGRAMAS ══════════ -->
 <div class="lab-container">
-<div class="lab-header"><h3>📐 Diagramas Java (D-06, D-08…D-11, D-13)</h3></div>
+<div class="lab-header"><h3>⑧ 📐 Diagramas e 📑 decisões (ADRs)</h3></div>
 <h4 class="diag-title">📐 D-08 <span class="dt-type">C4 · Nível 2 (Container)</span> — Loja API + bancos</h4>
 <p class="text-sm text-muted" style="margin:4px 0 8px"><strong>👀 Como ler:</strong> é um <strong>zoom</strong> dentro do sistema: cada caixa é algo que roda sozinho (uma API, um banco, um container) e cada seta diz quem chama quem, e como (HTTP, SQL…). (O que é C4: <a href="javascript:switchTab('tab4')" style="color:var(--primary);text-decoration:underline">Tab 4</a>.)</p>
 <div class="mermaid-box er-small" data-code='flowchart LR
@@ -2374,7 +2454,7 @@ test:java:                              # job "test:java"
 
 <!-- ══════════ SEÇÃO 10: ADRs ══════════ -->
 <div class="lab-container">
-<div class="lab-header"><h3>📑 ADRs (Java / IntelliJ)</h3></div>
+<div class="lab-header"><h3>📑 ADRs desta aba</h3></div>
 <div class="info-banner"><strong>📑 O que é uma ADR?</strong> Uma <strong>ADR</strong> (<em>Architecture Decision Record</em>) é a "ata" de uma decisão técnica: o problema (<b>Contexto</b>), o que foi decidido (<b>Decisão</b>), as outras opções (<b>Alternativas</b>), o que melhora e o preço aceito (<b>Consequências</b>) e em que ponto ela está (<b>Status</b>). Para que serve, quando escrever e um modelo para copiar: <a href="javascript:switchTab('tab4')" style="color:var(--primary);text-decoration:underline">Tab 4, parte ⑦</a>. Os números pulam porque a numeração é única no guia inteiro — a lista completa está na <a href="javascript:switchTab('tab10')" style="color:var(--primary);text-decoration:underline">Tab 10</a>.</div>
 <div class="adr"><h5>ADR-002 · Clean Architecture em 4 módulos <span class="stack-tag">☕ Java</span><span class="status">Aceita</span></h5>
 <p><b>Contexto:</b> acoplamento domínio↔infra dificultava troca de banco.</p>
@@ -2405,14 +2485,14 @@ test:java:                              # job "test:java"
 <div class="table-wrap"><table>
 <thead><tr><th>#</th><th>Item</th><th>Onde</th><th>Status</th></tr></thead>
 <tbody>
-<tr><td>1</td><td>Projeto <code>loja-api</code> aberto no IntelliJ, SDK 21 e os 4 módulos na janela do Maven</td><td>Setup</td><td>⬜</td></tr>
-<tr><td>2</td><td><code>dev_mysql_server</code> verde (Tab 5)</td><td>Rodar · passo 1</td><td>⬜</td></tr>
-<tr><td>3</td><td>Maven → <code>install</code> com <code>BUILD SUCCESS</code></td><td>Rodar · passo 2</td><td>⬜</td></tr>
-<tr><td>4</td><td>API no ar: <code>Tomcat started on port 8080</code> e os 3 produtos em <code>/api/produtos</code></td><td>Rodar · passo 3</td><td>⬜</td></tr>
-<tr><td>5</td><td><code>requests.http</code>: os 10 pedidos com o status esperado</td><td>Rodar · passo 4</td><td>⬜</td></tr>
-<tr><td>6</td><td><code>Tests passed: 19</code> (12 de service + 7 HTTP)</td><td>TDD</td><td>⬜</td></tr>
-<tr><td>7</td><td>Container <code>loja-java</code> respondendo em <code>localhost:8080</code></td><td>Docker</td><td>⬜</td></tr>
-<tr><td>8</td><td>Pipeline verde no GitHub ou no GitLab</td><td>CI/CD</td><td>⬜</td></tr>
+<tr><td>1</td><td>Projeto <code>loja-api</code> aberto no IntelliJ, SDK 21 e os 4 módulos na janela do Maven</td><td>②</td><td>⬜</td></tr>
+<tr><td>2</td><td><code>dev_mysql_server</code> verde (Tab 5)</td><td>④ · passo 1</td><td>⬜</td></tr>
+<tr><td>3</td><td>Maven → <code>install</code> com <code>BUILD SUCCESS</code></td><td>④ · passo 2</td><td>⬜</td></tr>
+<tr><td>4</td><td>API no ar: <code>Tomcat started on port 8080</code> e os 3 produtos em <code>/api/produtos</code></td><td>④ · passo 3</td><td>⬜</td></tr>
+<tr><td>5</td><td><code>requests.http</code>: os 10 pedidos com o status esperado</td><td>④ · passo 4</td><td>⬜</td></tr>
+<tr><td>6</td><td><code>Tests passed: 19</code> (12 de service + 7 HTTP)</td><td>⑤</td><td>⬜</td></tr>
+<tr><td>7</td><td>Container <code>loja-java</code> respondendo em <code>localhost:8080</code></td><td>⑥</td><td>⬜</td></tr>
+<tr><td>8</td><td>Pipeline verde no GitHub ou no GitLab</td><td>⑦</td><td>⬜</td></tr>
 </tbody></table></div>
 <div class="info-banner"><strong>📚 O que esta aba cobre:</strong> Clean Architecture em 4 módulos · os 5 princípios SOLID no código · porta e adapter (o banco trocável pelo <code>PersistenceConfig</code>) · DTOs e mapper · injeção de dependência do Spring · JPA/Hibernate com MySQL · validação (Bean Validation + regras do domínio) · erros centralizados no padrão RFC 7807, com os <code>type</code> do contrato · paginação feita no banco · JWT sem roles · 19 testes (service + HTTP) · Maven Wrapper · Docker · CI/CD · diagramas e ADRs.</div>
 </div>

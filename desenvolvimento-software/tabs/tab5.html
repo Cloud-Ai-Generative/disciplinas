@@ -15,7 +15,7 @@
 <table>
 <thead><tr><th>Palavra</th><th>O que é</th><th>Nesta aba</th></tr></thead>
 <tbody>
-<tr><td><strong>Imagem</strong></td><td>O "molde" pronto, baixado da internet (do <em>Docker Hub</em>)</td><td><code>mysql:8.4</code> e <code>mongo:7.0</code></td></tr>
+<tr><td><strong>Imagem</strong></td><td>O "molde" pronto, baixado da internet, do <a class="ext" href="https://hub.docker.com/" target="_blank">Docker Hub</a> — a "loja" de imagens do Docker, como o NuGet do C# ou o PyPI do Python</td><td><code>mysql:8.4</code> e <code>mongo:7.0</code></td></tr>
 <tr><td><strong>Container</strong></td><td>Um programa rodando, feito a partir da imagem</td><td><code>dev_mysql_server</code> e <code>dev_mongo_server</code></td></tr>
 <tr><td><strong>Volume</strong></td><td>Onde os dados ficam guardados; sobrevive se o container for apagado</td><td><code>mysql_dev_data</code> e <code>mongo_dev_data</code></td></tr>
 <tr><td><strong>Porta</strong></td><td>A "janela" entre o seu computador e o container</td><td><code>3306</code> (MySQL) e <code>27017</code> (MongoDB)</td></tr>
@@ -641,6 +641,7 @@ db.produtos.countDocuments()</pre>
 </tbody>
 </table>
 </div>
+<p class="text-sm text-muted">🔗 Vai encontrar isso de novo na <a href="javascript:switchTab('tab6')" style="color:var(--primary);text-decoration:underline">Tab 6</a>: a API Java <strong>não</strong> roda DDL. Com <code>ddl-auto: validate</code>, o Hibernate só <em>confere</em> se as tabelas criadas pelo DDL deste script existem e têm as colunas certas — e usa DML (<code>SELECT</code>, <code>INSERT</code>…) no dia a dia.</p>
 <div class="split-view">
 <div class="split-col">
 <h4 style="color:var(--primary);margin-bottom:8px">🐬 MySQL: tabelas + dados</h4>
@@ -778,6 +779,48 @@ print("✅ loja_nosql.produtos: 3 documentos criados");</pre>
 <tr><td>Próximas abas</td><td>Tabs 6, 7 e 9</td><td>Tabs 6-B e 9-B (migração para o MongoDB)</td></tr>
 </tbody>
 </table>
+</div>
+<div class="deep-concept-box">
+<h3>🧠 SQL × NoSQL em detalhes: o que muda por baixo — e como escolher</h3>
+<p>A tabela acima mostra a diferença de longe. Aqui vai o que está por trás dela: as garantias que cada tipo dá, os quatro tipos de NoSQL, como cada um cresce quando o sistema cresce, e um guia para escolher.</p>
+<div class="analogy-highlight"><span class="icon">📒</span><div><strong>Analogia do livro-caixa × caderno de anotações:</strong> o banco <strong>SQL</strong> é o livro-caixa da contabilidade: colunas fixas, toda linha preenchida do mesmo jeito, e uma regra de ouro — se o dinheiro saiu de uma conta, <em>tem</em> que entrar na outra, senão nada vale. O <strong>NoSQL</strong> (de documentos) é o caderno de anotações: cada página pode ter um formato, você anota tudo o que é de um assunto junto e acha rápido — mas é você quem cuida de manter as páginas coerentes.</div></div>
+<h4 style="color:var(--accent);margin:16px 0 8px">🔒 ACID: as 4 garantias de um banco SQL</h4>
+<p>Quando a loja vende o último fone, duas coisas precisam acontecer juntas: criar o pedido e tirar 1 do estoque. Uma <strong>transação</strong> é esse "pacote" de comandos. Os bancos relacionais garantem quatro coisas sobre ela — as iniciais formam <strong>ACID</strong>:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Letra</th><th>Garantia</th><th>Na loja</th></tr></thead>
+<tbody>
+<tr><td><strong>A</strong> — Atomicidade</td><td>Ou acontece tudo, ou nada</td><td>Nunca existe pedido sem baixa de estoque (nem o contrário), mesmo se a luz cair no meio</td></tr>
+<tr><td><strong>C</strong> — Consistência</td><td>O banco sai de um estado válido para outro válido: as regras (<code>CHECK</code>, FK, <code>NOT NULL</code>) nunca são quebradas</td><td>O <code>chk_preco</code> da etapa 7 recusa preço negativo, venha de onde vier</td></tr>
+<tr><td><strong>I</strong> — Isolamento</td><td>Duas transações ao mesmo tempo não enxergam o "meio do caminho" uma da outra</td><td>Dois clientes comprando o último fone: só um leva</td></tr>
+<tr><td><strong>D</strong> — Durabilidade</td><td>Depois do "ok" (commit), o dado está gravado de vez</td><td>O pedido confirmado sobrevive a um reinício do servidor</td></tr>
+</tbody></table></div>
+<p>E o MongoDB? Ele também tem transações (desde a versão 4.0), mas foi desenhado para que <strong>um documento sozinho já seja atômico</strong>: se o pedido e os itens estão no mesmo documento, gravá-lo é uma operação só. Muitos bancos NoSQL, porém, abrem mão de parte do ACID para crescer mais fácil — aceitando a <strong>consistência eventual</strong>: o dado chega a todas as cópias, mas não no mesmo instante (você vê isso de perto na <a href="javascript:switchTab('tab6b')" style="color:var(--primary);text-decoration:underline">Tab 6-B</a>).</p>
+<h4 style="color:var(--accent);margin:16px 0 8px">📐 Esquema fixo × esquema flexível</h4>
+<p>No SQL, a <strong>estrutura vem antes dos dados</strong>: para guardar a cor do produto, primeiro você muda a tabela (<code>ALTER TABLE produtos ADD cor …</code>), e toda linha passa a ter essa coluna. No MongoDB, a estrutura vem <strong>com cada documento</strong>: um produto pode ter <code>cores</code> e outro não — como as <code>tags</code> da parte ⑤. É mais rápido para mudar; o preço é que o banco não avisa se alguém gravar <code>preço</code> num documento e <code>preco</code> em outro. Quem garante o formato passa a ser o seu código (é para isso que existem os <code>*Document</code> das Tabs 6-B e 9-B).</p>
+<h4 style="color:var(--accent);margin:16px 0 8px">🗂️ NoSQL não é um tipo só: são quatro famílias</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>Família</th><th>Como guarda</th><th>Exemplos</th><th>Bom para</th></tr></thead>
+<tbody>
+<tr><td><strong>Documentos</strong></td><td>Fichas em JSON, cada uma com tudo de um assunto</td><td>MongoDB (este guia), Firestore</td><td>Catálogos, perfis, pedidos com itens dentro</td></tr>
+<tr><td><strong>Chave-valor</strong></td><td>Um "dicionário" gigante: uma chave, um valor</td><td>Redis, DynamoDB</td><td>Cache, sessão, carrinho, contadores — leitura em microssegundos</td></tr>
+<tr><td><strong>Colunar</strong> (famílias de colunas)</td><td>Linhas enormes, agrupadas por colunas, espalhadas por muitas máquinas</td><td>Cassandra, HBase</td><td>Muitos dados escritos o tempo todo: sensores, logs, histórico de cliques</td></tr>
+<tr><td><strong>Grafo</strong></td><td>Pontos (nós) e ligações entre eles</td><td>Neo4j</td><td>Relações em cadeia: "amigos de amigos", recomendação, rotas, fraude</td></tr>
+</tbody></table></div>
+<h4 style="color:var(--accent);margin:16px 0 8px">📈 Quando o sistema cresce: escala vertical × horizontal</h4>
+<p><strong>Escala vertical</strong> é trocar por uma máquina maior (mais memória, mais processador): simples, mas tem teto e custa caro. <strong>Escala horizontal</strong> é usar <strong>mais máquinas</strong>, dividindo os dados entre elas (<em>sharding</em>: os clientes de A a M num servidor, de N a Z em outro). Bancos SQL tradicionais crescem melhor na vertical; muitos NoSQL nasceram para crescer na horizontal. Para uma loja do tamanho deste guia, um MySQL bem indexado aguenta muito mais do que parece.</p>
+<h4 style="color:var(--accent);margin:16px 0 8px">🤔 Como escolher</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>Se o dado é…</th><th>Prefira</th><th>Exemplo na loja</th></tr></thead>
+<tbody>
+<tr><td>dinheiro, estoque, qualquer coisa que <strong>não pode ficar errada</strong> nem por um segundo</td><td>🐬 SQL</td><td>pedidos, pagamentos, baixa de estoque</td></tr>
+<tr><td>cheio de <strong>relações</strong> que você consulta juntas (relatórios, <code>JOIN</code>)</td><td>🐬 SQL</td><td>"faturamento por categoria no mês"</td></tr>
+<tr><td>lido quase sempre <strong>inteiro</strong>, e com formato que varia</td><td>🍃 Documentos</td><td>a página do produto, com cores, tamanhos e fotos diferentes por tipo</td></tr>
+<tr><td>muito lido, pode ser refeito a qualquer hora</td><td>⚡ Chave-valor</td><td>cache da vitrine, carrinho, sessão</td></tr>
+<tr><td>uma rede de ligações</td><td>🕸️ Grafo</td><td>"quem comprou isto também comprou…"</td></tr>
+</tbody></table></div>
+<div class="info-banner"><strong>💡 Não precisa ser um só.</strong> Sistemas grandes usam vários bancos, cada um onde é melhor — isso se chama <strong>persistência poliglota</strong>. E trocar de banco depois é possível quando o código fala com o banco por uma porta: é exatamente o que as <a href="javascript:switchTab('tab6b')" style="color:var(--primary);text-decoration:underline">Tabs 6-B</a> e <a href="javascript:switchTab('tab9b')" style="color:var(--primary);text-decoration:underline">9-B</a> fazem.</div>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=sql+vs+nosql+quando+usar" target="_blank">SQL × NoSQL: quando usar</a> · <a class="ext" href="https://www.youtube.com/results?search_query=acid+banco+de+dados+transa%C3%A7%C3%B5es" target="_blank">ACID e transações</a> · <a class="ext" href="https://www.youtube.com/results?search_query=tipos+de+banco+nosql+documento+chave+valor+grafo" target="_blank">Os tipos de NoSQL</a> · <a class="ext" href="https://www.youtube.com/results?search_query=escalabilidade+vertical+horizontal+sharding" target="_blank">Escala vertical × horizontal</a></div>
+<p><strong>Aprofundar:</strong> <a class="ext" href="https://www.mongodb.com/docs/manual/core/transactions/" target="_blank">Transações no MongoDB (documentação)</a> · <a class="ext" href="https://martinfowler.com/bliki/PolyglotPersistence.html" target="_blank">Polyglot Persistence (Martin Fowler)</a> · <a class="ext" href="https://dev.mysql.com/doc/refman/8.4/en/mysql-acid.html" target="_blank">MySQL e o modelo ACID (documentação)</a></p>
 </div>
 <div class="info-banner"><strong>ℹ️ Versões:</strong> <strong>MySQL 8.4</strong> é a versão LTS atual. <strong>MongoDB 7.0</strong> ainda recebe suporte; a mais nova é a 8.0. Mantemos a 7.0 aqui porque é este MongoDB que a <a href="javascript:switchTab('tab6b')" style="color:var(--primary);text-decoration:underline">Tab 6-B</a> usa. A <a href="javascript:switchTab('tab9b')" style="color:var(--primary);text-decoration:underline">Tab 9-B</a> sobe um MongoDB 8 próprio, na porta 27018 — para o que o guia faz, as duas versões se comportam igual.</div>
 </div>
