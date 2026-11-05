@@ -40,7 +40,7 @@
 
 <h4 class="diag-title">📐 D-20 <span class="dt-type">Fluxo</span> — Ingênuo vs. Outbox (onde cada um quebra)</h4>
 <div class="mermaid-box" data-code='flowchart TB
-  subgraph RUIM["❌ Dual-write (Tab 7)"]
+  subgraph RUIM["❌ Dual-write (salvar e publicar)"]
     direction TB
     A1["POST /pedidos"] --> A2["commit no MySQL ✅"]
     A2 --> A3["publicar no broker"]
@@ -80,7 +80,7 @@
 <h3>🆚 O que muda em relação à Tab 7 e à Tab 9</h3>
 <div class="table-wrap" style="margin:12px 0">
 <table>
-<thead><tr><th>Aspecto</th><th>Tab 7 / Tab 9 (síncrono)</th><th>Tab 7-B (eventos)</th><th>Por que importa</th></tr></thead>
+<thead><tr><th>Aspecto</th><th>Tab 9 (síncrono, HTTP entre módulos)</th><th>Tab 7-B (eventos)</th><th>Por que importa</th></tr></thead>
 <tbody>
 <tr><td>Avisar outro módulo</td><td><code>await _http.PostAsync(...)</code> no caminho do POST</td><td>evento no outbox; worker publica</td><td>O POST deixa de esperar por terceiros.</td></tr>
 <tr><td>Latência do POST</td><td>soma a latência de <em>cada</em> chamada</td><td>só o commit no MySQL</td><td>Previsível e baixa, independente de quantos interessados existam.</td></tr>
@@ -392,7 +392,7 @@ docker exec -it loja-eventos-mysql mysql -u devuser -pdevpass loja_eventos -e "S
 <div class="step-box">
 <h4><span class="step-num">2</span>O domínio: <code>Pedido</code> como Aggregate Root</h4>
 <p>Mesmo DDD da Tab 7, com <strong>uma decisão nova que muda tudo</strong>: o id do pedido é um <strong>GUID gerado no domínio</strong>, não um <code>AUTO_INCREMENT</code> do MySQL.</p>
-<p><strong>Por quê?</strong> Na Tab 7 o evento era criado dentro de <code>Produto.Criar()</code>, antes de o banco gerar o id — e saía sempre com <code>Id = 0</code>. Com GUID, a entidade <strong>já nasce identificada</strong>: o evento sai correto, o cliente recebe o id antes do commit e o consumidor tem uma chave estável. O custo (GUID aleatório fragmenta índice) é pago com <code>CHAR(36)</code> e ordenação por <code>criado_em</code>, nunca por id.</p>
+<p><strong>Por quê?</strong> Na Tab 7 o <code>ProdutoCriadoEvent</code> só é criado <em>depois</em> de salvar, quando o <code>AUTO_INCREMENT</code> já deu o id — lá funciona, porque o evento não sai do processo. Aqui não dá para esperar: o evento vai para o <strong>outbox dentro da mesma transação</strong> do pedido, ou seja, <strong>antes</strong> do commit, quando um id gerado pelo banco ainda não existe. Com GUID, a entidade <strong>já nasce identificada</strong>: o evento sai correto, o cliente recebe o id antes do commit e o consumidor tem uma chave estável. O custo (GUID aleatório fragmenta índice) é pago com <code>CHAR(36)</code> e ordenação por <code>criado_em</code>, nunca por id.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaEventos.Domain/ValueObjects/Dinheiro.cs</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -506,7 +506,9 @@ public enum StatusPedido
 //
 //  Decisão que vale ouro em arquitetura de eventos: o Id é um **GUID gerado no
 //  domínio**, não um auto-increment do banco.
-//    • Na Tab 7 o id vinha do MySQL, então o evento era publicado com Id = 0.
+//    • Na Tab 7 o id vem do MySQL, e por isso o evento só é criado DEPOIS de
+//      salvar. Aqui o evento entra no outbox na MESMA transação, antes do
+//      commit — e nesse momento um id do banco ainda não existe.
 //    • Com GUID, a entidade já nasce identificada → o evento sai correto, o
 //      cliente pode receber o id antes do commit, e o consumidor tem uma chave
 //      estável para deduplicar.
@@ -701,10 +703,10 @@ public class Produto
 <pre class="code-editor" data-zip-path="LojaEventos.Domain/Exceptions/DomainException.cs">namespace LojaEventos.Domain.Exceptions;
 
 // ════════════════════════════════════════════════════════════════════════════
-//  Três exceções, três status HTTP. Na Tab 7 havia só DomainException e o
-//  middleware devolvia 400 para TUDO — inclusive para "não encontrado", que
-//  deveria ser 404. Separar as exceções é o que permite ao middleware acertar
-//  o status sem ficar lendo a mensagem de erro com 'if (msg.Contains(...))'.
+//  Três exceções, três status HTTP. A Tab 7 já separa DomainException (400) e
+//  NaoEncontradoException (404); aqui entra a terceira, ConflitoException (409).
+//  Separar as exceções é o que permite ao middleware acertar o status sem
+//  ficar lendo a mensagem de erro com 'if (msg.Contains(...))'.
 // ════════════════════════════════════════════════════════════════════════════
 
 /// &lt;summary&gt;Regra de negócio violada → HTTP 400.&lt;/summary&gt;
@@ -802,10 +804,11 @@ public interface IDomainEvent
 //  quantidade), mande isso. Não mande a entidade inteira — o dia em que você
 //  renomear uma coluna, três serviços alheios quebram.
 //
-//  ⚠️ ARMADILHA que a Tab 7 tinha: lá o evento era criado DENTRO de
-//  'Produto.Criar()', antes de o banco gerar o id — então o evento saía sempre
-//  com Id = 0. Aqui o id do Pedido é um GUID gerado NO DOMÍNIO (ver Pedido.cs),
-//  justamente para o evento já nascer com a identidade correta.
+//  ⚠️ ARMADILHA CLÁSSICA: criar o evento antes de existir o id. Com id do banco
+//  (AUTO_INCREMENT), o evento sairia com Id = 0 — por isso a Tab 7 só o cria
+//  depois de salvar. Aqui o evento é gravado no outbox ANTES do commit, então o
+//  id do Pedido é um GUID gerado NO DOMÍNIO (ver Pedido.cs): o evento já nasce
+//  com a identidade correta.
 // ════════════════════════════════════════════════════════════════════════════
 public sealed record PedidoCriadoEvent(
     Guid PedidoId,
@@ -1170,10 +1173,10 @@ public class AppDbContext : DbContext
              .HasConversion&lt;string&gt;().IsRequired();
 
             // VALUE OBJECT: as DUAS propriedades são mapeadas.
-            // (Na Tab 7 havia 'Ignore(p =&gt; p.Preco)' logo antes de 'OwnsOne' —
-            //  o EF lança InvalidOperationException nessa combinação — e um
-            //  'Ignore(x =&gt; x.Moeda)' que impedia o EF de bindar o construtor
-            //  posicional do record. Aqui nada é ignorado.)
+            // (Nunca use 'Ignore(p =&gt; p.Total)' junto com 'OwnsOne' — o EF lança
+            //  InvalidOperationException nessa combinação. E, ao contrário da
+            //  Tab 7, cuja tabela não tem coluna de moeda, aqui a Moeda também é
+            //  gravada: nada do Value Object é ignorado.)
             e.OwnsOne(p =&gt; p.Total, d =&gt;
             {
                 d.Property(x =&gt; x.Valor).HasColumnName("total").HasColumnType("decimal(12,2)").IsRequired();
@@ -1357,7 +1360,7 @@ public class UnitOfWork : IUnitOfWork
     }
 }</pre>
 </div>
-<div class="success-banner"><strong>✅ Dois bugs da Tab 7 corrigidos aqui, de propósito:</strong> (1) lá havia <code>e.Ignore(p =&gt; p.Preco)</code> <em>e</em> <code>e.OwnsOne(p =&gt; p.Preco, …)</code> — o EF lança <code>InvalidOperationException</code> nessa combinação, a aplicação não sobe; (2) lá havia <code>d.Ignore(x =&gt; x.Moeda)</code>, e o EF não conseguia bindar o construtor posicional do <code>record Dinheiro</code>. Aqui <strong>as duas propriedades do Value Object são mapeadas</strong> (<code>total</code> e <code>total_moeda</code>).</div>
+<div class="success-banner"><strong>✅ Dois cuidados com o Value Object no EF (a Tab 7 já avisa do primeiro):</strong> (1) nunca use <code>e.Ignore(p =&gt; p.Total)</code> <em>junto</em> com <code>e.OwnsOne(p =&gt; p.Total, …)</code> — o <code>Ignore</code> apaga a propriedade e o EF lança <code>InvalidOperationException</code> ao montar o modelo, a aplicação não sobe; (2) na Tab 7 a <code>Moeda</code> fica de fora (<code>d.Ignore(x =&gt; x.Moeda)</code>) porque a tabela da Tab 5 não tem essa coluna e tudo é BRL. Aqui o banco é desta aba, então <strong>as duas propriedades do Value Object são mapeadas</strong> (<code>total</code> e <code>total_moeda</code>): o <code>record Dinheiro</code> volta do banco inteiro.</div>
 <div class="info-banner"><strong>🔑 <code>ValueGeneratedNever()</code> no id do pedido:</strong> sem isso o EF assume que o <code>Guid</code> é gerado no insert e <strong>ignora o valor que o agregado já definiu</strong> — e o evento publicado passaria a apontar para um id que não existe na tabela. É uma linha, e é a diferença entre funcionar e corromper.</div>
 </div>
 
@@ -1651,7 +1654,7 @@ namespace LojaEventos.Application.Services;
 //  arquivo fala com o broker. Essa ausência é a decisão de arquitetura.
 //
 //  ┌─ O PROBLEMA QUE ISSO RESOLVE ────────────────────────────────────────────┐
-//  │ Jeito ingênuo (o que a Tab 7 faz com o dual-write):                     │
+//  │ Jeito ingênuo (o dual-write: salvar e publicar em sequência):           │
 //  │     await _repo.SalvarAsync(pedido);      // commit no MySQL  ✅         │
 //  │     await _bus.PublicarAsync(evento);     // publica no broker ❌ caiu   │
 //  │ Resultado: pedido existe, mundo não sabe. Estoque nunca baixa.          │
@@ -1806,8 +1809,8 @@ public class PedidoService : IPedidoService
     public async Task&lt;PaginaResponse&lt;PedidoResponse&gt;&gt; ListarAsync(int pagina, int tamanho, CancellationToken ct = default)
     {
         // Paginação de verdade: page/size descem até o SQL (LIMIT/OFFSET).
-        // Na Tab 7 isso era feito com Skip/Take sobre uma List já materializada
-        // — ou seja, lia a tabela inteira para devolver 20 linhas.
+        // (Erro comum: Skip/Take sobre uma List já materializada — o EF leria
+        // a tabela inteira para devolver 20 linhas.)
         if (pagina &lt; 0) pagina = 0;
         tamanho = Math.Clamp(tamanho, 1, 100);
 
@@ -1836,7 +1839,7 @@ public class PedidoService : IPedidoService
 }</pre>
 </div>
 <div class="warning-banner"><strong>⚠️ Por que o caso de uso NÃO verifica estoque?</strong> Porque checar agora seria <strong>leitura suja</strong>: entre o <code>if (estoque &gt;= 1)</code> e a reserva, outro pedido leva a última peça. Quem reserva é o consumidor, com um <code>UPDATE … WHERE estoque &gt;= @q</code> atômico (ver <code>EfProdutoRepository</code>). O POST só fixa <strong>nome e preço do momento da compra</strong> — preço é dado histórico do pedido: se o produto encarecer amanhã, o pedido de hoje não muda de valor.</div>
-<p><strong>Paginação de verdade:</strong> repare em <code>ListarAsync(pagina, tamanho)</code> — <code>page</code>/<code>size</code> descem até o SQL (<code>LIMIT</code>/<code>OFFSET</code>). Na Tab 7 isso era <code>Skip/Take</code> sobre uma <code>List</code> já materializada, ou seja: lia a tabela inteira para devolver 20 linhas.</p>
+<p><strong>Paginação de verdade:</strong> repare em <code>ListarAsync(pagina, tamanho)</code> — <code>page</code>/<code>size</code> descem até o SQL (<code>LIMIT</code>/<code>OFFSET</code>). É o mesmo cuidado da Tab 7. O erro comum é fazer o <code>Skip/Take</code> sobre uma <code>List</code> já materializada: aí o EF lê a tabela inteira para devolver 20 linhas.</p>
 </div>
 
 <div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=unit+of+work+entity+framework+core+transa%C3%A7%C3%A3o+aula" target="_blank">unit of work e transação</a> · <a class="ext" href="https://www.youtube.com/results?search_query=entity+framework+core+owned+entity+value+object+aula" target="_blank">entity framework core owned types</a> · <a class="ext" href="https://www.youtube.com/results?search_query=arquitetura+hexagonal+ports+and+adapters+aula" target="_blank">ports and adapters</a></div>
@@ -3549,10 +3552,9 @@ namespace LojaEventos.Api.Middleware;
 // ════════════════════════════════════════════════════════════════════════════
 //  TRATAMENTO CENTRALIZADO DE ERRO — RFC 9457 (ex-7807), application/problem+json.
 //
-//  Três correções em relação à Tab 7:
-//   1. mapeia CADA exceção para o status certo (404 era devolvido como 400);
-//   2. tem um catch genérico — na Tab 7 qualquer exceção fora de
-//      DomainException vazava sem problem+json;
+//  O que muda em relação ao da Tab 7:
+//   1. status novos desta aba: 409 (conflito) e 422 (Idempotency-Key reutilizada);
+//   2. 499 quando o cliente cancela a requisição (não é erro do servidor);
 //   3. checa 'Response.HasStarted'. Sem essa checagem, se a exceção acontecer
 //      DEPOIS do primeiro byte ter saído, tentar escrever o corpo de erro
 //      lança OUTRA exceção e você perde o log do erro original.
@@ -3618,7 +3620,7 @@ public class ExceptionMiddleware
     }
 }</pre>
 </div>
-<div class="success-banner"><strong>✅ Três correções em relação ao <code>ExceptionMiddleware</code> da Tab 7:</strong> (1) mapeia <strong>cada</strong> exceção para o status certo — lá <code>404</code> era devolvido como <code>400</code>; (2) tem <code>catch</code> genérico — lá qualquer exceção fora de <code>DomainException</code> vazava sem <code>problem+json</code>; (3) checa <code>Response.HasStarted</code> — sem isso, se a exceção acontecer <em>depois</em> do primeiro byte, tentar escrever o corpo de erro lança <strong>outra</strong> exceção e você perde o log do erro original. E em <code>500</code> o <code>detail</code> <strong>não</strong> devolve <code>ex.Message</code>: pode conter connection string, nome de tabela, caminho de arquivo.</div>
+<div class="success-banner"><strong>✅ O que este <code>ExceptionMiddleware</code> acrescenta ao da Tab 7</strong> (que já mapeia 400, 404 e 500 e tem <code>catch</code> genérico): (1) os status novos desta aba — <code>409</code> (conflito) e <code>422</code> (Idempotency-Key reutilizada); (2) <code>499</code> quando o próprio cliente cancela a requisição; (3) checa <code>Response.HasStarted</code> — sem isso, se a exceção acontecer <em>depois</em> do primeiro byte, tentar escrever o corpo de erro lança <strong>outra</strong> exceção e você perde o log do erro original. E em <code>500</code> o <code>detail</code> <strong>não</strong> devolve <code>ex.Message</code>: pode conter connection string, nome de tabela, caminho de arquivo.</div>
 <p>Os endpoints de diagnóstico <strong>não são enfeite</strong>: "a API respondeu 201" não quer dizer que o trabalho terminou — o efeito acontece depois, em outro processo. Você precisa poder responder, a qualquer momento: quantos eventos estão esperando? qual o atraso do mais antigo? alguma mensagem está presa?</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaEventos.Api/Controllers/DiagnosticoController.cs</span>
@@ -3793,14 +3795,13 @@ if (app.Environment.IsDevelopment())
 // NÃO usamos UseHttpsRedirection.
 // Dentro do container a API escuta só HTTP:8080; com o redirect ligado, todo
 // curl leva 307 para uma porta HTTPS que não existe, e o aluno passa meia
-// hora achando que a API está quebrada. (Esse era o caso na Tab 7.)
+// hora achando que a API está quebrada. (A Tab 7 também não usa o redirect.)
 // Em produção o TLS termina no ingress/reverse proxy, não aqui.
 
 app.MapControllers();
 app.MapHealthChecks("/health");
 
-// Endpoint de cortesia para o primeiro teste — a Tab 7 documentava um
-// /hello que não existia no código.
+// Endpoint de cortesia para o primeiro teste: responde sem banco nem broker.
 app.MapGet("/hello", () =&gt; Results.Ok(new { servico = "loja-eventos-api", versao = "1.0", agora = DateTime.UtcNow }));
 
 // ── MIGRAÇÃO AUTOMÁTICA NO BOOT (só em dev) ────────────────────────────────
@@ -3844,13 +3845,13 @@ app.Run();</pre>
 }</pre>
 </div>
 <div class="info-banner"><strong>📊 <code>lagSegundos</code> é a métrica de ouro desta arquitetura.</strong> É a idade do evento pendente mais antigo. Se ela só sobe, o despachante parou ou o broker está fora — e você descobre <strong>antes</strong> do cliente ligar reclamando. Alarme sugerido: <code>lag &gt; 60s</code> ou <code>presas &gt; 0</code>.</div>
-<div class="warning-banner"><strong>⚠️ <code>UseHttpsRedirection()</code> foi removido de propósito.</strong> Dentro do container a API escuta só HTTP:8080; com o redirect ligado, todo <code>curl</code> leva <strong>307</strong> para uma porta HTTPS que não existe — e o aluno passa meia hora achando que a API está quebrada (era o caso na Tab 7). Em produção o TLS termina no ingress/reverse proxy, não aqui. Também adicionamos o <code>/hello</code> que a Tab 7 <em>documentava mas não tinha</em>.</div>
+<div class="warning-banner"><strong>⚠️ <code>UseHttpsRedirection()</code> foi removido de propósito.</strong> Dentro do container a API escuta só HTTP:8080; com o redirect ligado, todo <code>curl</code> leva <strong>307</strong> para uma porta HTTPS que não existe — e o aluno passa meia hora achando que a API está quebrada (a Tab 7 também não usa o redirect, pelo mesmo motivo). Em produção o TLS termina no ingress/reverse proxy, não aqui. O <code>/hello</code> é só um endpoint de cortesia para o primeiro teste: responde sem precisar de banco nem de broker.</div>
 <div class="warning-banner"><strong>⚠️ <code>EnsureCreatedAsync()</code> no boot é conveniência de LABORATÓRIO.</strong> Em produção é proibido: duas réplicas subindo juntas rodariam a criação ao mesmo tempo. Lá, migração é um <strong>passo separado do deploy</strong> (<code>dotnet ef migrations</code> + <code>dotnet ef database update</code> num job que roda sozinho, antes das réplicas subirem).</div>
 </div>
 
 <div class="step-box">
 <h4><span class="step-num">12</span>Docker: um Dockerfile, duas imagens, quatro containers</h4>
-<p>O Dockerfile fica na <strong>raiz da solução</strong>, junto do <code>.sln</code>. (Na Tab 7 ele estava documentado numa subpasta mas o comando era <code>docker build .</code> na raiz — e o Docker não achava o arquivo.) O argumento <code>PROJETO</code> escolhe se a imagem é a API ou o Worker, reaproveitando o cache de restore.</p>
+<p>O Dockerfile fica na <strong>raiz da solução</strong>, junto do <code>.sln</code>. (Como na Tab 7: o <code>docker build .</code> roda na raiz, e o Dockerfile precisa estar ali para enxergar todos os projetos.) O argumento <code>PROJETO</code> escolhe se a imagem é a API ou o Worker, reaproveitando o cache de restore.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">Dockerfile</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -3861,9 +3862,9 @@ app.Run();</pre>
 #  Porque o estágio de restore/build é idêntico — com um arquivo só, o cache de
 #  camadas é compartilhado e o segundo build sai praticamente instantâneo.
 #
-#  ⚠️ Este arquivo fica na RAIZ da solução, junto do .sln. Na Tab 7 o Dockerfile
-#  estava documentado dentro de uma subpasta mas o comando era
-#  'docker build .' na raiz — e aí o Docker não achava o arquivo.
+#  ⚠️ Este arquivo fica na RAIZ da solução, junto do .sln (como na Tab 7):
+#  'docker build .' roda na raiz, e o Dockerfile precisa enxergar todos os
+#  projetos. Numa subpasta, o Docker não acharia o .sln.
 # ══════════════════════════════════════════════════════════════════════════════
 
 # ── ESTÁGIO 1: BUILD (imagem do SDK, ~800 MB — fica só aqui) ──────────────────
@@ -4310,7 +4311,7 @@ curl -fsS "$API/api/diagnostico/inbox"; echo
 printf '\n\033[1;32m✅ Nenhum evento perdido com o broker fora do ar.\033[0m\n'
 printf 'Isso é o outbox. Nada mais no sistema precisou saber que o RabbitMQ caiu.\n'</pre>
 </div>
-<div class="success-banner"><strong>✅ O experimento que vale a aula inteira.</strong> Derrube o RabbitMQ, crie um pedido, e a API responde <strong>201 normalmente</strong>. Olhe <code>/api/diagnostico/outbox</code>: o evento está <em>pendente</em>, não perdido, e o <code>lagSegundos</code> sobe. Suba o RabbitMQ de volta e, <strong>sem ninguém fazer nada</strong>, o worker publica, o estoque baixa e o pedido é confirmado. No desenho ingênuo da Tab 7, esse pedido teria ficado com o estoque errado para sempre — e sem nenhum registro de que algo deu errado.</div>
+<div class="success-banner"><strong>✅ O experimento que vale a aula inteira.</strong> Derrube o RabbitMQ, crie um pedido, e a API responde <strong>201 normalmente</strong>. Olhe <code>/api/diagnostico/outbox</code>: o evento está <em>pendente</em>, não perdido, e o <code>lagSegundos</code> sobe. Suba o RabbitMQ de volta e, <strong>sem ninguém fazer nada</strong>, o worker publica, o estoque baixa e o pedido é confirmado. No desenho ingênuo (salvar e depois publicar direto no broker), esse pedido teria ficado com o estoque errado para sempre — e sem nenhum registro de que algo deu errado.</div>
 
 <h4 style="color:var(--accent);margin:16px 0 8px">🧪 Ver a DLQ e o retry com os próprios olhos</h4>
 <div class="code-editor-wrap">
@@ -4554,7 +4555,7 @@ SELECT LEFT(ultimo_erro, 80) AS erro, COUNT(*) AS n
 <table>
 <thead><tr><th>Arquivo</th><th>Testes</th><th>O que trava</th></tr></thead>
 <tbody>
-<tr><td><code>PedidoTests.cs</code></td><td>15 (19 casos)</td><td>Invariantes do agregado, total calculado, <strong>evento com id e total corretos</strong> (o bug da Tab 7), idempotência de <code>Confirmar/Rejeitar</code>, <code>Reconstituir</code> não republica.</td></tr>
+<tr><td><code>PedidoTests.cs</code></td><td>15 (19 casos)</td><td>Invariantes do agregado, total calculado, <strong>evento com id e total corretos</strong> (o id existe antes do commit), idempotência de <code>Confirmar/Rejeitar</code>, <code>Reconstituir</code> não republica.</td></tr>
 <tr><td><code>IdempotenciaHashTests.cs</code></td><td>6</td><td>O hash canônico: ordem dos itens e caixa do e-mail não contam; quantidade, produto e cliente contam.</td></tr>
 <tr><td><code>OutboxEIdempotenciaTests.cs</code></td><td>13</td><td>Pedido + outbox + chave no mesmo commit; replay devolve o mesmo id; 10 repetições = 1 pedido e 1 evento; corpo diferente → 422; produto inexistente não deixa rastro; <strong>inbox dedup e chave composta</strong>; o <strong><code>OutboxDispatcher</code> de produção</strong> só marca o que o broker confirmou, agenda nova tentativa quando falha e não deixa uma linha ruim travar o lote.</td></tr>
 </tbody>
@@ -4880,7 +4881,7 @@ public class OutboxEIdempotenciaTests
         Assert.Contains(resp.Id.ToString(), evento.Payload);   // payload aponta para o pedido
     }
 
-    // ── 2. O EVENTO SAI COM O ID CERTO (o bug da Tab 7) ─────────────────────
+    // ── 2. O EVENTO SAI COM O ID CERTO (id criado antes do commit) ──────────
     [Fact]
     public async Task EventoCarregaOIdRealDoPedido()
     {
@@ -5214,43 +5215,43 @@ public class OutboxEIdempotenciaTests
 <div class="lab-container">
 <div class="lab-header"><h3>📑 ADRs da Tab 7-B</h3></div>
 
-<div class="adr"><h5>ADR-013 · Outbox transacional em vez de publicação direta <span class="stack-tag">🔷 C#</span><span class="status">Aceita</span></h5>
+<div class="adr"><h5>ADR-020 · Outbox transacional em vez de publicação direta <span class="stack-tag">🔷 C#</span><span class="status">Aceita</span></h5>
 <p><b>Contexto:</b> criar um pedido exige gravar no MySQL e publicar no RabbitMQ. São dois sistemas sem transação em comum; qualquer ordem de execução tem um ponto de falha que deixa os dois lados divergentes.</p>
 <p><b>Decisão:</b> gravar o evento numa tabela <code>outbox_messages</code> no <strong>mesmo commit</strong> do agregado. Um processo separado (<code>OutboxPublisherService</code>) lê a tabela e publica, marcando a linha só após a confirmação do broker.</p>
 <p><b>Alternativas consideradas:</b> 2PC/XA (rejeitada: lento, frágil, pouco suportado); publicar antes de salvar (rejeitada: estoque baixa de pedido inexistente); publicar depois de salvar sem outbox (rejeitada: perde o evento); CDC/Debezium (adiada: resolve bem e com menor latência, mas exige Kafka Connect e acesso ao binlog — complexidade desproporcional para o escopo).</p>
 <p><b>Consequências:</b> (+) nenhum evento se perde, broker fora não derruba o checkout, rollback é trivial; (−) consistência eventual (~0,5s), entrega at-least-once (exige dedup), uma tabela a mais para operar e arquivar.</p>
 <p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend C#, SRE, Produto.</p></div>
 
-<div class="adr"><h5>ADR-014 · <code>Idempotency-Key</code> obrigatória no POST <span class="stack-tag">🔷 C#</span><span class="status">Aceita</span></h5>
+<div class="adr"><h5>ADR-021 · <code>Idempotency-Key</code> obrigatória no POST <span class="stack-tag">🔷 C#</span><span class="status">Aceita</span></h5>
 <p><b>Contexto:</b> a rede cai antes da resposta chegar e o cliente tenta de novo; o usuário clica duas vezes em "Finalizar". Sem proteção, nascem dois pedidos e o cliente é cobrado duas vezes.</p>
 <p><b>Decisão:</b> exigir o cabeçalho <code>Idempotency-Key</code> (400 se faltar) e guardar chave + hash canônico do corpo + resposta em <code>idempotency_keys</code>, gravado na <strong>mesma transação</strong> do pedido. Replay devolve 200 com a resposta original e <code>Idempotent-Replay: true</code>; chave reutilizada com corpo diferente devolve 422 (recomendação do draft da IETF); a corrida entre duas requisições com a mesma chave vira replay (a perdedora leva 1062 e devolve a resposta da vencedora), com 409 só como rede de segurança.</p>
 <p><b>Alternativas consideradas:</b> gerar a chave no servidor (rejeitada: muda a cada tentativa, não protege de nada); deduplicar por hash do corpo sem chave (rejeitada: duas compras legítimas e idênticas seriam recusadas); filtro/middleware isolado (rejeitada como solução única: roda fora da transação, abre janela de inconsistência); estado EM_ANDAMENTO em duas gravações (rejeitada: deixa chaves travadas se o processo cai).</p>
 <p><b>Consequências:</b> (+) POST seguro para retry, cliente distingue "criei" de "já existia"; (−) contrato mais exigente para o cliente, tabela que precisa de expiração e limpeza, corrida resolvida via erro 1062 traduzido em replay.</p>
 <p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend C#, Mobile, QA.</p></div>
 
-<div class="adr"><h5>ADR-015 · Inbox (consumidor idempotente) com chave composta <span class="stack-tag">🔷 C#</span><span class="status">Aceita</span></h5>
+<div class="adr"><h5>ADR-022 · Inbox (consumidor idempotente) com chave composta <span class="stack-tag">🔷 C#</span><span class="status">Aceita</span></h5>
 <p><b>Contexto:</b> o RabbitMQ entrega at-least-once. Exactly-once na entrega não existe: o broker não sabe se o consumidor morreu antes ou depois de processar.</p>
 <p><b>Decisão:</b> cada consumidor grava <code>(message_id, consumidor)</code> em <code>inbox_messages</code> na mesma transação do efeito. Duplicidade na chave = já processado → ACK e ignora. Além disso, os métodos de transição do agregado (<code>Confirmar</code>, <code>Rejeitar</code>) são no-op quando o estado já é o esperado.</p>
 <p><b>Alternativas consideradas:</b> chave simples por <code>message_id</code> (rejeitada: um consumidor bloquearia os outros); dedup em cache distribuído (rejeitada: não é transacional com o efeito); confiar em exactly-once do broker (rejeitada: não existe).</p>
 <p><b>Consequências:</b> (+) efeito exactly-once, réplicas do worker podem escalar livremente; (−) uma tabela a mais, que cresce e precisa de expurgo; efeitos externos (e-mail) continuam fora da transação e exigem decisão explícita de ordem.</p>
 <p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend C#, SRE.</p></div>
 
-<div class="adr"><h5>ADR-016 · RabbitMQ (topic) em vez de Kafka <span class="stack-tag">🔷 C#</span><span class="status">Aceita</span></h5>
+<div class="adr"><h5>ADR-023 · RabbitMQ (topic) em vez de Kafka <span class="stack-tag">🔷 C#</span><span class="status">Aceita</span></h5>
 <p><b>Contexto:</b> precisamos de pub/sub com múltiplos consumidores do mesmo evento, retry com backoff, DLQ e observabilidade acessível em ambiente de aprendizado e de produção pequena.</p>
 <p><b>Decisão:</b> RabbitMQ com exchange <em>topic</em>, filas duráveis por consumidor, três filas de TTL para backoff escalonado (10s/1m/10m) e uma DLQ por consumidor. Topologia declarada em código no boot.</p>
 <p><b>Alternativas consideradas:</b> Kafka/Redpanda (rejeitada <em>para este escopo</em>: log particionado e replay são superiores em escala alta, mas custa mais infra, não tem DLQ nativa e a UI é menos didática); Azure Service Bus / SQS (rejeitadas: amarram a um provedor de nuvem); banco como fila sem broker (rejeitada: não dá fan-out nem push).</p>
 <p><b>Consequências:</b> (+) UI web excelente para depurar, DLQ e TTL nativos, leve no compose; (−) sem replay histórico (mensagem consumida sai da fila), ordenação só por fila, retry escalonado exige uma fila por degrau. A porta <code>IEventPublisher</code> mantém a troca por Kafka como mudança de um adapter.</p>
 <p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend C#, SRE, Arquitetura.</p></div>
 
-<div class="adr"><h5>ADR-017 · API e Worker em processos separados <span class="stack-tag">🔷 C#</span><span class="status">Aceita</span></h5>
+<div class="adr"><h5>ADR-024 · API e Worker em processos separados <span class="stack-tag">🔷 C#</span><span class="status">Aceita</span></h5>
 <p><b>Contexto:</b> o despachante do outbox e os consumidores poderiam rodar como <code>BackgroundService</code> dentro da própria API, economizando um deploy.</p>
 <p><b>Decisão:</b> dois executáveis — <code>LojaEventos.Api</code> (só HTTP) e <code>LojaEventos.Worker</code> (outbox + consumidores) — compartilhando <code>DependencyInjection.AddInfraestrutura</code> para não divergirem.</p>
 <p><b>Alternativas consideradas:</b> tudo na API (rejeitada: 10 réplicas de API seriam 10 despachantes brigando pelas mesmas linhas, e um consumidor travado afetaria o checkout); um processo por consumidor (adiada: granularidade útil em escala, excesso de operação agora).</p>
 <p><b>Consequências:</b> (+) escala e falha independentes, deploy do worker sem derrubar a API; (−) duas imagens, duas configurações, e a disciplina de manter o registro de DI em um lugar só.</p>
 <p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend C#, SRE, DevOps.</p></div>
 
-<div class="adr"><h5>ADR-018 · Id do pedido como GUID gerado no domínio <span class="stack-tag">🔷 C#</span><span class="status">Aceita</span></h5>
-<p><b>Contexto:</b> com <code>AUTO_INCREMENT</code>, a identidade só existe após o insert — e o evento de domínio, criado antes, saía com <code>Id = 0</code> (bug observado na Tab 7).</p>
+<div class="adr"><h5>ADR-025 · Id do pedido como GUID gerado no domínio <span class="stack-tag">🔷 C#</span><span class="status">Aceita</span></h5>
+<p><b>Contexto:</b> com <code>AUTO_INCREMENT</code>, a identidade só existe após o insert — e o evento de domínio, criado antes, saía com <code>Id = 0</code> . A Tab 7 resolve isso criando o evento depois de salvar; aqui não dá, porque o evento entra no outbox na mesma transação, antes do commit.</p>
 <p><b>Decisão:</b> <code>Guid</code> gerado em <code>Pedido.Criar()</code>, mapeado como <code>CHAR(36)</code> com <code>ValueGeneratedNever()</code>.</p>
 <p><b>Alternativas consideradas:</b> auto-increment + publicar o evento após o commit (rejeitada: o evento sairia de fora da transação, reabrindo o dual-write); sequência via tabela <code>counters</code> (rejeitada aqui: solução da Tab 9-B para o MongoDB, desnecessária tendo GUID); ULID/UUIDv7 (recomendada como evolução: mantém a vantagem e recupera a ordenação do índice).</p>
 <p><b>Consequências:</b> (+) evento nasce com a identidade correta, cliente recebe o id antes do commit, consumidor tem chave estável; (−) GUID aleatório fragmenta índice (mitigado com <code>CHAR(36)</code> e ordenação por <code>criado_em</code>), 36 bytes por chave.</p>
