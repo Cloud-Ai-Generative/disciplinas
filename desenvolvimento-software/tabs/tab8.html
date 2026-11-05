@@ -141,6 +141,17 @@
 <tr><td>Erros</td><td>400 · 401 · 404</td><td>+ <code>409</code> (sem estoque, estado inválido) e <code>503</code> (outro contexto fora do ar)</td></tr>
 <tr><td>Excluir</td><td><code>DELETE</code></td><td>Produto: <code>DELETE</code>. Pedido: <code>/cancelar</code>. Cliente: <code>/desativar</code> (ADR-013).</td></tr>
 </tbody></table></div>
+<div class="deep-concept-box">
+<h4>🔑 Por que o formato do login mudou?</h4>
+<p>Na Tab 4 o login recebia <code>{ "email", "senha" }</code> e devolvia <code>{ "tokenAcesso" }</code>. Aqui ele recebe <code>{ "login", "password" }</code> e devolve <code>{ "token", "user" }</code>. Três motivos:</p>
+<ul>
+<li><strong><code>login</code> em vez de <code>email</code></strong> — com mais contextos, nem todo usuário entra com e-mail: um serviço interno, por exemplo, entra com um nome de usuário. <code>login</code> aceita os dois.</li>
+<li><strong>nomes em inglês nos campos técnicos</strong> (<code>password</code>, <code>token</code>) — são os nomes que bibliotecas e ferramentas de autenticação já usam; o time decidiu não traduzir o que é "padrão de mercado". Os nomes do <em>domínio</em> (produto, pedido, cliente) continuam em português.</li>
+<li><strong><code>user</code> na resposta</strong> — o front-end precisa mostrar "Olá, Fulano" logo depois do login; mandar os dados do usuário junto evita uma segunda chamada.</li>
+</ul>
+<p><strong>Isso não quebraria quem usa o contrato da Tab 4?</strong> Quebraria — renomear campo é exatamente o caso que a <strong>ADR-011</strong> (logo abaixo) manda tratar com <code>/v2</code>. Aqui não foi preciso porque o contrato da Tab 4 <strong>ainda não tinha nenhum consumidor real</strong>: só o mock. Num sistema em produção, essa mudança viraria <code>/v2/auth/login</code>, com o caminho antigo no ar por 90 dias.</p>
+<div class="info-banner">👉 Se o login der <code>400</code> nos testes desta aba, quase sempre é o corpo antigo (<code>email</code>/<code>senha</code>) sendo enviado.</div>
+</div>
 <h4 class="diag-title">📐 D-27 <span class="dt-type">UML · Sequência</span> — O checkout, passo a passo (opção síncrona)</h4>
 <p class="text-sm text-muted" style="margin:4px 0 8px"><strong>👀 Como ler:</strong> cada coluna é um <strong>participante</strong> (quem manda ou recebe a mensagem). Leia <strong>de cima para baixo</strong>, que é a ordem do tempo: a seta cheia é um pedido, a seta tracejada é a resposta, e as notas explicam aquele momento.</p>
 <div class="mermaid-box" data-code='sequenceDiagram
@@ -464,6 +475,20 @@ Remove-Item produto.json, cliente.json, reserva.json, pedido.json, vazio.json</p
 <p><b>Alternativas consideradas:</b> roles por contexto (adiada); scopes por operação (adiada).</p>
 <p><b>Consequências:</b> (+) simples de implementar e testar (Tab 9); (−) qualquer usuário logado pode, por exemplo, criar produto ou chamar <code>/reservar</code> — aceitável no estudo, a revisar antes de produção.</p>
 <p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend, Segurança.</p></div>
+<div class="deep-concept-box">
+<h4>🧭 Autenticação, perfis (roles) e escopos (scopes) — qual a diferença?</h4>
+<p>A ADR-010 adiou duas ideias. Para entender o que ficou de fora, separe três perguntas:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Conceito</th><th>Pergunta que responde</th><th>Exemplo na loja</th><th>Nesta aba?</th></tr></thead>
+<tbody>
+<tr><td><strong>Autenticação</strong></td><td>"Quem é você?" (está logado?)</td><td>o token JWT prova que é o usuário <code>admin</code></td><td>✅ sim</td></tr>
+<tr><td><strong>Perfil</strong> (<em>role</em>)</td><td>"Que tipo de usuário você é?"</td><td>só quem tem o perfil <code>gestor-catalogo</code> cria produto</td><td>⏸️ adiado</td></tr>
+<tr><td><strong>Escopo</strong> (<em>scope</em>)</td><td>"O que este token pode fazer?"</td><td>um token com <code>pedidos:ler</code> consulta pedidos, mas não cria</td><td>⏸️ adiado</td></tr>
+</tbody></table></div>
+<p>A diferença sutil: o <strong>perfil</strong> é da <em>pessoa</em> (ela é gestora); o <strong>escopo</strong> é do <em>token</em> (este token, emitido para este aplicativo, só pode ler). Os dois decidem a <strong>autorização</strong> — "você pode fazer isto?" — e viajam dentro do JWT como <em>claims</em> (campos do payload, por exemplo <code>"role": "gestor"</code> ou <code>"scope": "pedidos:ler"</code>).</p>
+<p><strong>Por que adiar?</strong> Cada perfil ou escopo multiplica os testes (cada rota × cada perfil). Para aprender contextos, bastava "logado ou não". O custo está nas consequências da ADR: hoje qualquer usuário logado pode criar produto — algo a resolver antes de produção, com uma nova ADR.</p>
+<p>📚 Para ir além: <a class="ext" href="https://oauth.net/2/scope/" target="_blank">OAuth 2.0 — Scopes</a> · <a class="ext" href="https://learn.microsoft.com/pt-br/aspnet/core/security/authorization/roles" target="_blank">Autorização por perfis no ASP.NET Core</a> · <a class="ext" href="https://www.youtube.com/results?search_query=autentica%C3%A7%C3%A3o+vs+autoriza%C3%A7%C3%A3o+roles+scopes+jwt" target="_blank">🎬 Vídeos-aula no YouTube (busca em português)</a></p>
+</div>
 <div class="adr"><h5>ADR-011 · Versionamento só quando quebrar<span class="status">Aceita</span></h5>
 <p><b>Contexto:</b> o contrato vai evoluir com vários times usando.</p>
 <p><b>Decisão:</b> mudanças que <strong>somam</strong> (rota nova, campo opcional novo) entram sem versão. Mudança que <strong>quebra</strong> (renomear ou remover campo, trocar tipo) cria <code>/v2</code>, e o caminho antigo fica no ar por pelo menos 90 dias.</p>
