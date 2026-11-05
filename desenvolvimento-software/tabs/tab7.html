@@ -51,6 +51,67 @@
 <p><strong>Aprofundar:</strong> <a class="ext" href="https://martinfowler.com/bliki/DDD_Aggregate.html" target="_blank">Aggregate (Fowler)</a> · <a class="ext" href="https://martinfowler.com/bliki/ValueObject.html" target="_blank">Value Object (Fowler)</a> · <a class="ext" href="https://martinfowler.com/eaaDev/DomainEvent.html" target="_blank">Domain Event (Fowler)</a></p>
 </div>
 
+<div class="deep-concept-box">
+<h3>🔄 O que é um ORM — e o que o EF Core faz por você</h3>
+<p>O banco guarda <strong>tabelas</strong> (linhas e colunas); o seu código trabalha com <strong>objetos</strong> (classes com campos). Alguém precisa traduzir um para o outro a cada leitura e a cada gravação. <strong>ORM</strong> (<em>Object-Relational Mapping</em>, "mapeamento objeto-relacional") é a biblioteca que faz essa tradução: você descreve uma vez qual classe é qual tabela, e ela escreve o SQL e copia os valores sozinha.</p>
+<div class="analogy-highlight"><span class="icon">🗣️</span><div><strong>Analogia do intérprete:</strong> o seu código fala "objeto", o banco fala "SQL". Sem ORM, você fala os dois idiomas e traduz cada frase à mão. Com ORM, você contrata um intérprete: diz "salve este produto" e ele traduz para <code>INSERT INTO produtos …</code>. Ótimo no dia a dia — mas vale saber o que ele está dizendo por você, porque às vezes traduz de um jeito lento.</div></div>
+<p>Em C#, o ORM oficial é o <strong>Entity Framework Core</strong> (EF Core). Ele conversa com cada banco por um <strong>provider</strong>: aqui, o <strong>Pomelo</strong>, que ensina o EF a falar MySQL. O <code>DbContext</code> é a "sessão" com o banco: sabe quais classes são tabelas e guarda as mudanças até o <code>SaveChanges</code>.</p>
+<h4 style="color:var(--accent);margin:16px 0 8px">⚖️ O mesmo trabalho, sem e com ORM</h4>
+<div class="code-editor-wrap">
+<span class="code-filepath">sem ORM — ADO.NET puro: você escreve o SQL e copia cada coluna à mão</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">// Buscar UM produto pelo id, sem ORM
+const string sql = "SELECT id, nome, preco, estoque FROM produtos WHERE id = @id";
+await using var con = new MySqlConnection(connectionString);
+await con.OpenAsync();
+await using var cmd = new MySqlCommand(sql, con);
+cmd.Parameters.AddWithValue("@id", id);         // o @id vira o valor (evita SQL injection)
+await using var r = await cmd.ExecuteReaderAsync();
+if (!await r.ReadAsync()) return null;
+return Produto.Reconstituir(                     // coluna por coluna, à mão
+    r.GetInt64("id"), r.GetString("nome"),
+    new Dinheiro(r.GetDecimal("preco")), r.GetInt32("estoque"));</pre>
+</div>
+<div class="code-editor-wrap">
+<span class="code-filepath">com ORM — EF Core: você descreve o mapeamento uma vez; o SQL sai sozinho</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor">// No AppDbContext: "a classe Produto é a tabela produtos"
+modelBuilder.Entity&lt;Produto&gt;(e =&gt;
+{
+    e.ToTable("produtos");
+    e.Property(p =&gt; p.Nome).HasColumnName("nome");
+    // ...
+});
+
+// Buscar UM produto pelo id, com ORM: uma linha
+var p = await _ctx.Produtos.FirstOrDefaultAsync(x =&gt; x.Id == id);
+// O EF Core gera e roda:  SELECT ... FROM produtos WHERE id = @p0 LIMIT 1</pre>
+</div>
+<h4 style="color:var(--accent);margin:16px 0 8px">⚙️ O que o ORM faz por baixo</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>Tarefa</th><th>O que acontece</th></tr></thead>
+<tbody>
+<tr><td><strong>Mapear</strong></td><td>Lê a descrição (anotações ou configuração) e sabe que o campo <code>preco</code> é a coluna <code>preco</code>, de que tipo, e qual é a chave</td></tr>
+<tr><td><strong>Gerar o SQL</strong></td><td>Transforma cada chamada (buscar, salvar, apagar, paginar) no <code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code> ou <code>DELETE</code> certo — já com parâmetros, o que evita <em>SQL injection</em></td></tr>
+<tr><td><strong>Copiar os valores</strong></td><td>Monta o objeto a partir de cada linha que volta, e o contrário na hora de gravar</td></tr>
+<tr><td><strong>Rastrear mudanças</strong></td><td>Lembra como o objeto estava quando foi lido; ao salvar, grava só o que mudou</td></tr>
+<tr><td><strong>Transação</strong></td><td>Agrupa as gravações num pacote só: ou vale tudo, ou nada (o "A" do ACID, <a href="javascript:switchTab('tab5')" style="color:var(--primary);text-decoration:underline">Tab 5</a>)</td></tr>
+</tbody></table></div>
+<div class="info-banner"><strong>👀 Veja o intérprete trabalhando:</strong> Quer ver o SQL que o EF Core gera? No <code>appsettings.json</code>, em <code>Logging → LogLevel</code>, acrescente <code>"Microsoft.EntityFrameworkCore.Database.Command": "Information"</code>, rode a API e olhe o terminal: cada consulta aparece como o SQL de verdade.</div>
+<h4 style="color:var(--accent);margin:16px 0 8px">⚠️ Os cuidados que todo mundo aprende do jeito difícil</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>Armadilha</th><th>O que acontece</th><th>Como evitar</th></tr></thead>
+<tbody>
+<tr><td><strong>N+1</strong></td><td>Você lista 100 pedidos e, para cada um, lê os itens: o ORM faz <strong>1</strong> consulta para os pedidos + <strong>100</strong> para os itens. Rápido com 3 registros, lento com 10 mil</td><td>Pedir tudo de uma vez: <code>.Include(p =&gt; p.Itens)</code>, que traz tudo num <code>JOIN</code> só</td></tr>
+<tr><td><strong>Carregamento sob demanda</strong> (<em>lazy loading</em>)</td><td>As listas ligadas à entidade (propriedades de navegação (uma lista de itens dentro do pedido) carregadas sob demanda) só são buscadas quando você as usa — e cada uso é uma ida ao banco. É ele que causa o N+1 sem você perceber</td><td>Saber o que cada tela precisa e carregar só isso, de propósito</td></tr>
+<tr><td><strong>Paginar na memória</strong></td><td>Ler a tabela inteira e só depois pegar 20 linhas</td><td>Paginar antes de buscar, para virar <code>LIMIT/OFFSET</code> no SQL (é o que o <code>EfProdutoRepository</code> faz)</td></tr>
+<tr><td><strong>Esquecer que existe SQL</strong></td><td>Uma linha bonita no código pode virar uma consulta pesada</td><td>Ligar o log do SQL (quadro acima) e olhar de vez em quando</td></tr>
+</tbody></table></div>
+<p><strong>Quando não usar:</strong> relatórios pesados, consultas muito específicas do banco ou cargas de milhares de linhas por segundo costumam ficar melhores com SQL escrito à mão — em geral com ADO.NET puro ou o Dapper (um "micro-ORM": você escreve o SQL e ele só copia as colunas para a classe). Não é "ORM ou SQL": muitos projetos usam o ORM no dia a dia e SQL à mão nos poucos lugares que precisam.</p>
+<p><strong>Nesta aba:</strong> o mapeamento está em <code>AppDbContext</code> + a classe <code>Produto</code>, e quem usa o ORM é o <code>EfProdutoRepository</code>. O domínio nunca vê o ORM: se um dia o banco mudar, só esses arquivos mudam.</p>
+<div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=o+que+%C3%A9+orm+entity+framework+core" target="_blank">O que é ORM (Entity Framework Core)</a> · <a class="ext" href="https://www.youtube.com/results?search_query=ef+core+include+problema+n%2B1" target="_blank">EF Core: Include e o problema N+1</a> · <a class="ext" href="https://www.youtube.com/results?search_query=ef+core+para+iniciantes" target="_blank">EF Core para iniciantes</a></div>
+<p><strong>Aprofundar:</strong> <a class="ext" href="https://learn.microsoft.com/ef/core/" target="_blank">Documentação do EF Core (Microsoft)</a> · <a class="ext" href="https://learn.microsoft.com/ef/core/performance/" target="_blank">Desempenho no EF Core</a> · <a class="ext" href="https://martinfowler.com/bliki/OrmHate.html" target="_blank">OrmHate (Martin Fowler)</a></p>
+</div>
 <h4 class="diag-title">📐 D-07 <span class="dt-type">Arquitetura</span> — As camadas e quem depende de quem</h4>
 <p class="text-sm text-muted" style="margin:4px 0 8px"><strong>👀 Como ler:</strong> cada caixa é uma <strong>camada</strong> (ou um projeto); a seta vai de quem <strong>usa</strong> para quem <strong>é usado</strong>. Repare que todas as setas apontam para dentro, na direção do domínio: ele não depende de ninguém.</p>
 <div class="mermaid-box" data-code='flowchart TD
@@ -255,7 +316,8 @@ EndGlobal</pre>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Tests/LojaApi.Tests.csproj</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
-<pre class="code-editor" data-zip-path="LojaApi.Tests/LojaApi.Tests.csproj">&lt;!-- Tests: xUnit + Moq. Testa Domain e Application sem banco. --&gt;
+<pre class="code-editor" data-zip-path="LojaApi.Tests/LojaApi.Tests.csproj">&lt;!-- Tests: xUnit + Moq (domínio e casos de uso), NetArchTest (regras da arquitetura) e
+     WebApplicationFactory (a API inteira em memória). Nenhum teste precisa de MySQL. --&gt;
 &lt;Project Sdk="Microsoft.NET.Sdk"&gt;
   &lt;PropertyGroup&gt;
     &lt;TargetFramework&gt;net10.0&lt;/TargetFramework&gt;
@@ -269,10 +331,14 @@ EndGlobal</pre>
     &lt;PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" /&gt;
     &lt;PackageReference Include="Moq" Version="4.20.72" /&gt;
     &lt;PackageReference Include="coverlet.collector" Version="6.0.2" /&gt;
+    &lt;PackageReference Include="NetArchTest.Rules" Version="1.3.2" /&gt;
+    &lt;PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.0" /&gt;
   &lt;/ItemGroup&gt;
   &lt;ItemGroup&gt;
     &lt;ProjectReference Include="..\LojaApi.Domain\LojaApi.Domain.csproj" /&gt;
     &lt;ProjectReference Include="..\LojaApi.Application\LojaApi.Application.csproj" /&gt;
+    &lt;ProjectReference Include="..\LojaApi.Infrastructure\LojaApi.Infrastructure.csproj" /&gt;
+    &lt;ProjectReference Include="..\LojaApi.Api\LojaApi.Api.csproj" /&gt;
   &lt;/ItemGroup&gt;
 &lt;/Project&gt;</pre>
 </div>
@@ -324,10 +390,13 @@ EndGlobal</pre>
 │   ├── <span class="folder">📁 Properties/</span>   <span class="comment"># execução local</span>
 │   │   └── <span class="file">📄 launchSettings.json</span>   <span class="comment"># porta 5000 + abre o Swagger</span>
 │   └── <span class="file">📄 requests.http</span>   <span class="comment"># 🧪 o roteiro do REST Client (o mesmo da Tab 4)</span>
-└── <span class="folder">📁 LojaApi.Tests/</span>   <span class="comment"># 🧪 TESTES — sem banco (Moq)</span>
-    ├── <span class="file">📄 LojaApi.Tests.csproj</span>   <span class="comment"># projeto: xUnit + Moq → Domain, Application</span>
-    ├── <span class="file">📄 ProdutoServiceTests.cs</span>   <span class="comment"># serviço: 9 testes</span>
-    └── <span class="file">📄 ProdutoTests.cs</span>   <span class="comment"># domínio: 6 testes, 8 casos</span>
+└── <span class="folder">📁 LojaApi.Tests/</span>   <span class="comment"># 🧪 TESTES — 29 casos, nenhum precisa de banco</span>
+    ├── <span class="file">📄 LojaApi.Tests.csproj</span>   <span class="comment"># projeto: xUnit, Moq, NetArchTest, Mvc.Testing → as 4 camadas</span>
+    ├── <span class="file">📄 ProdutoTests.cs</span>   <span class="comment"># domínio: 6 testes, 8 casos</span>
+    ├── <span class="file">📄 DinheiroTests.cs</span>   <span class="comment"># Value Object: 3 testes</span>
+    ├── <span class="file">📄 ProdutoServiceTests.cs</span>   <span class="comment"># caso de uso (Moq): 9 testes</span>
+    ├── <span class="file">📄 ArquiteturaTests.cs</span>   <span class="comment"># arquitetura (NetArchTest): 3 testes</span>
+    └── <span class="file">📄 ApiHttpTests.cs</span>   <span class="comment"># HTTP em memória (WebApplicationFactory): 6 testes</span>
 </div>
 <div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=c%23+dev+kit+solution+explorer+vs+code" target="_blank">Solution Explorer do C# Dev Kit</a> · <a class="ext" href="https://www.youtube.com/results?search_query=solution+e+projetos+.net+sln+csproj+explicado" target="_blank">Solução e projetos no .NET</a></div>
 </div>
@@ -727,7 +796,7 @@ namespace LojaApi.Api.Controllers;
 
 /// &lt;summary&gt;
 /// Controller REST (Single Responsibility: só HTTP). Implementa as rotas do contrato da Tab 4.
-/// Segurança = só autenticação (decisão B): ler é público; escrever exige um token válido.
+/// Segurança = só autenticação (ADR-005 da Tab 4): ler é público; escrever exige um token válido.
 /// &lt;/summary&gt;
 [ApiController]
 [Route("api/produtos")]
@@ -974,7 +1043,10 @@ app.UseSwaggerUI();
 app.UseAuthentication();                    // quem é você? (lê o token)
 app.UseAuthorization();                     // você pode? ([Authorize])
 app.MapControllers();
-app.Run();</pre>
+app.Run();
+
+/// &lt;summary&gt;Visível para os testes HTTP (WebApplicationFactory&amp;lt;Program&amp;gt;) do LojaApi.Tests.&lt;/summary&gt;
+public partial class Program { }</pre>
 </div>
 <h4>🔑 O JWT nesta API, em 3 peças</h4>
 <ol class="step-number-list">
@@ -1130,11 +1202,20 @@ Invoke-RestMethod -Method Post "$H/api/produtos" -Headers $auth -ContentType "ap
 
 <!-- ══════════════════════════ ⑤ TDD ══════════════════════════ -->
 <div class="lab-container">
-<div class="lab-header"><h3>⑤ 🧪 Testes automáticos (TDD): 15 testes, 17 casos</h3></div>
-<p><strong>TDD</strong> (Test-Driven Development) é escrever o teste <strong>antes</strong> do código: o teste falha (🔴), você escreve o mínimo para passar (🟢) e depois melhora (🔵). Aqui há dois tipos de teste: os de <strong>domínio</strong> (a entidade sozinha) e os de <strong>serviço</strong> (o caso de uso com um repositório falso, feito com <strong>Moq</strong>) — nenhum precisa de banco.</p>
+<div class="lab-header"><h3>⑤ 🧪 Testes automáticos (TDD): 27 testes, 29 casos</h3></div>
+<p><strong>TDD</strong> (Test-Driven Development) é escrever o teste <strong>antes</strong> do código: o teste falha (🔴), você escreve o mínimo para passar (🟢) e depois melhora (🔵). Aqui há quatro tipos de teste, um para cada camada — e nenhum precisa de banco:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Tipo</th><th>Arquivo</th><th>Qtd</th><th>O que prova</th></tr></thead>
+<tbody>
+<tr><td>🧠 Domínio</td><td><code>ProdutoTests.cs</code></td><td>6 (8 casos)</td><td>As regras do <code>Produto</code>: nome, preço, estoque e o evento com o id real</td></tr>
+<tr><td>🧠 Domínio</td><td><code>DinheiroTests.cs</code></td><td>3</td><td>O Value Object: igualdade pelo valor e imutabilidade</td></tr>
+<tr><td>⚙️ Caso de uso</td><td><code>ProdutoServiceTests.cs</code></td><td>9</td><td>O <code>ProdutoService</code> com o repositório falso (Moq): o que chega ao banco e o que não chega</td></tr>
+<tr><td>🏛️ Arquitetura</td><td><code>ArquiteturaTests.cs</code></td><td>3</td><td>As setas da Clean Architecture: o Domain não conhece ninguém, a Application não conhece a Infrastructure</td></tr>
+<tr><td>🌐 HTTP</td><td><code>ApiHttpTests.cs</code></td><td>6</td><td>A API inteira em memória cumpre o contrato: 200, 401, 201 + <code>Location</code>, 400 e 404</td></tr>
+</tbody></table></div>
 <div class="deep-concept-box">
 <h3>🧰 As ferramentas de teste desta aba</h3>
-<p>Os testes desta aba usam duas peças: o xUnit, que roda os testes, e o Moq, que cria os dublês. Nenhum teste precisa de banco.</p>
+<p>São quatro ferramentas, uma para cada tipo de teste. Nenhuma precisa de banco, de Docker ou de internet.</p>
 <div class="analogy-highlight"><span class="icon">🎬</span><div><strong>Analogia do dublê de cinema:</strong> numa cena perigosa, o ator principal não pula do prédio: entra um <strong>dublê</strong>, que faz exatamente o que o diretor mandou. No teste, o código que você quer provar é o ator principal; o banco, a rede e as outras APIs são trocados por <strong>mocks</strong> (dublês), que respondem só o que o teste mandar. Assim o teste roda em milissegundos, sem Docker, e falha só quando a <em>sua</em> regra está errada.</div></div>
 <div class="table-wrap"><table>
 <thead><tr><th>Ferramenta</th><th>O que faz</th><th>Como aparece no código</th><th>Neste projeto</th></tr></thead>
@@ -1142,8 +1223,10 @@ Invoke-RestMethod -Method Post "$H/api/produtos" -Headers $auth -ContentType "ap
 <tr><td><strong>xUnit</strong></td><td>O "motor" dos testes em C#: acha os métodos de teste, roda cada um e diz quem passou</td><td><code>[Fact] public void CriaQuandoValido()</code></td><td>todos os arquivos <code>*Tests.cs</code></td></tr>
 <tr><td><strong>[Fact] × [Theory]</strong></td><td><code>[Fact]</code> = um teste, um caso. <code>[Theory]</code> = o mesmo teste rodando com vários dados; cada <code>[InlineData]</code> (ou cada linha do <code>[MemberData]</code>) vira um caso separado no Test Explorer</td><td><code>[Theory] [InlineData(0)] [InlineData(-1)]</code></td><td>é por isso que o total de <em>casos</em> pode ser maior que o de métodos</td></tr>
 <tr><td><strong>Assert</strong></td><td>A conferência: se o valor não for o esperado, o teste fica vermelho</td><td><code>Assert.Equal(7, resp.Id)</code></td><td><code>Assert.Throws</code> confere que uma regra lança o erro certo</td></tr>
-<tr><td><strong>Moq</strong></td><td>Cria o dublê (mock) de uma interface. <code>Setup</code> diz o que ele responde; <code>Verify</code> confere se foi chamado</td><td><code>_repo.Setup(r =&gt; r.SalvarAsync(It.IsAny&lt;Produto&gt;())).ReturnsAsync(...)</code></td><td>troca o repositório (e, na Tab 9, os clients HTTP) nos testes de caso de uso</td></tr>
+<tr><td><strong>Moq</strong></td><td>Cria o dublê (mock) de uma interface. <code>Setup</code> diz o que ele responde; <code>Verify</code> confere se foi chamado</td><td><code>_repo.Setup(r =&gt; r.SalvarAsync(It.IsAny&lt;Produto&gt;())).ReturnsAsync(...)</code></td><td>troca o repositório nos testes de caso de uso (e nos testes HTTP)</td></tr>
 <tr><td><strong>Verify / Times</strong></td><td>Confere a <em>conversa</em>: o código chamou o banco? Quantas vezes? Nenhuma?</td><td><code>_repo.Verify(r =&gt; r.SalvarAsync(It.IsAny&lt;Produto&gt;()), Times.Never)</code></td><td>prova que um dado inválido <strong>não</strong> chega ao banco</td></tr>
+<tr><td><strong>NetArchTest</strong></td><td>Lê as DLLs compiladas e confere as regras da arquitetura: quem pode depender de quem</td><td><code>Types.InAssembly(...).ShouldNot().HaveDependencyOnAny("Microsoft.EntityFrameworkCore", …)</code></td><td><code>ArquiteturaTests.cs</code>: o build fica vermelho se o Domain usar o EF Core</td></tr>
+<tr><td><strong>WebApplicationFactory</strong></td><td>Sobe a API inteira <strong>em memória</strong> (sem porta, sem MySQL) e deixa o teste fazer pedidos HTTP de verdade; antes, troca só a porta por um mock</td><td><code>factory.WithWebHostBuilder(…).CreateClient()</code></td><td><code>ApiHttpTests.cs</code>: confere status, <code>Location</code> e <code>problem+json</code> do contrato. Precisa da linha <code>public partial class Program { }</code> no fim do <code>Program.cs</code></td></tr>
 </tbody></table></div>
 <div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=xunit+fact+theory+c%23" target="_blank">xUnit: Fact e Theory</a> · <a class="ext" href="https://www.youtube.com/results?search_query=moq+c%23+mock+tutorial" target="_blank">Moq: mocks em C#</a> · <a class="ext" href="https://www.youtube.com/results?search_query=o+que+%C3%A9+mock+em+testes+unit%C3%A1rios" target="_blank">O que é mock</a></div>
 </div>
@@ -1324,13 +1407,231 @@ public class ProdutoServiceTests
     }
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 Os testes do <strong>Value Object</strong> <code>Dinheiro</code>: dois valores iguais são o mesmo dinheiro, moedas diferentes não, e o <code>Add</code> nunca altera os originais (imutável).</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Tests/DinheiroTests.cs (Value Object — 3 testes)</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Tests/DinheiroTests.cs">using LojaApi.Domain.ValueObjects;
+using Xunit;
+
+namespace LojaApi.Tests;
+
+/// &lt;summary&gt;Testes do VALUE OBJECT Dinheiro: comparado pelo valor e imutável.&lt;/summary&gt;
+public class DinheiroTests
+{
+    [Fact(DisplayName = "💰 Dois Dinheiro com o mesmo valor e a mesma moeda são iguais")]
+    public void IgualdadePorValor()
+    {
+        Assert.Equal(new Dinheiro(10m), new Dinheiro(10.00m));   // record: compara o VALOR, não a referência
+        Assert.Equal("BRL", new Dinheiro(10m).Moeda);             // moeda padrão
+    }
+
+    [Fact(DisplayName = "💰 Mesmo valor em moedas diferentes não é o mesmo dinheiro")]
+    public void MoedasDiferentes_SaoDiferentes()
+        =&gt; Assert.NotEqual(new Dinheiro(10m, "BRL"), new Dinheiro(10m, "USD"));
+
+    [Fact(DisplayName = "💰 Add devolve um Dinheiro novo e não altera os originais")]
+    public void Add_NaoAlteraOsOriginais()
+    {
+        var a = new Dinheiro(10m);
+        var b = new Dinheiro(2.50m);
+
+        var soma = a.Add(b);
+
+        Assert.Equal(12.50m, soma.Valor);
+        Assert.Equal(10m, a.Valor);     // imutável: o original continua igual
+        Assert.Equal(2.50m, b.Valor);
+    }
+}</pre>
+</div>
+<p class="text-sm" style="margin:12px 0 4px">👉 Os testes de <strong>arquitetura</strong>: o NetArchTest lê as DLLs e confere as setas do diagrama D-07. Se o Domain passar a usar o EF Core, ou a Application a Infrastructure, o build fica vermelho.</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Tests/ArquiteturaTests.cs (arquitetura — 3 testes, NetArchTest)</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Tests/ArquiteturaTests.cs">using LojaApi.Application.Services;
+using LojaApi.Domain.Entities;
+using LojaApi.Infrastructure.Data;
+using NetArchTest.Rules;
+using Xunit;
+
+namespace LojaApi.Tests;
+
+/// &lt;summary&gt;
+/// Testes de ARQUITETURA: as regras da Clean Architecture viram teste.
+/// O NetArchTest lê as DLLs compiladas e confere quem depende de quem.
+/// Se alguém fizer o Domain usar o EF Core, o build fica vermelho.
+/// &lt;/summary&gt;
+public class ArquiteturaTests
+{
+    private static string Falhas(TestResult r) =&gt;
+        "Viola a regra: " + string.Join(", ", r.FailingTypeNames ?? []);
+
+    [Fact(DisplayName = "🏛️ Domain não conhece EF Core, ASP.NET nem as outras camadas")]
+    public void Domain_NaoDependeDeNinguem()
+    {
+        var r = Types.InAssembly(typeof(Produto).Assembly)
+            .ShouldNot().HaveDependencyOnAny(
+                "Microsoft.EntityFrameworkCore", "Microsoft.AspNetCore",
+                "LojaApi.Application", "LojaApi.Infrastructure", "LojaApi.Api")
+            .GetResult();
+        Assert.True(r.IsSuccessful, Falhas(r));
+    }
+
+    [Fact(DisplayName = "🏛️ Application não conhece EF Core, Infrastructure nem Api")]
+    public void Application_NaoDependeDeInfraNemApi()
+    {
+        var r = Types.InAssembly(typeof(ProdutoService).Assembly)
+            .ShouldNot().HaveDependencyOnAny(
+                "Microsoft.EntityFrameworkCore", "LojaApi.Infrastructure", "LojaApi.Api")
+            .GetResult();
+        Assert.True(r.IsSuccessful, Falhas(r));
+    }
+
+    [Fact(DisplayName = "🏛️ Infrastructure não conhece a Api")]
+    public void Infrastructure_NaoDependeDaApi()
+    {
+        var r = Types.InAssembly(typeof(AppDbContext).Assembly)
+            .ShouldNot().HaveDependencyOn("LojaApi.Api")
+            .GetResult();
+        Assert.True(r.IsSuccessful, Falhas(r));
+    }
+}</pre>
+</div>
+<p class="text-sm" style="margin:12px 0 4px">👉 Os testes <strong>HTTP</strong>: a API inteira sobe em memória, com o login, o JWT e o middleware de erros de verdade; só o repositório vira mock. Eles conferem o que o contrato da Tab 4 promete: 200, 401, 201 + <code>Location</code>, 400 e 404, com os <code>type</code> certos.</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaApi.Tests/ApiHttpTests.cs (HTTP — 6 testes, WebApplicationFactory)</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaApi.Tests/ApiHttpTests.cs">using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using LojaApi.Domain.Entities;
+using LojaApi.Domain.Interfaces;
+using LojaApi.Domain.ValueObjects;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Moq;
+using Xunit;
+
+namespace LojaApi.Tests;
+
+/// &lt;summary&gt;
+/// Testes HTTP: a API cumpre o CONTRATO da Tab 4?
+/// O WebApplicationFactory sobe a API inteira EM MEMÓRIA (sem porta, sem MySQL):
+/// controllers, JWT, middleware de erros — tudo de verdade. Só a PORTA
+/// IProdutoRepository vira um mock, para não precisar do banco.
+/// &lt;/summary&gt;
+public class ApiHttpTests : IClassFixture&lt;WebApplicationFactory&lt;Program&gt;&gt;
+{
+    private readonly WebApplicationFactory&lt;Program&gt; _factory;
+    private readonly Mock&lt;IProdutoRepository&gt; _repo = new();
+
+    public ApiHttpTests(WebApplicationFactory&lt;Program&gt; factory)
+    {
+        _factory = factory.WithWebHostBuilder(b =&gt; b.ConfigureServices(s =&gt;
+        {
+            s.RemoveAll&lt;IProdutoRepository&gt;();   // tira o EfProdutoRepository (MySQL)…
+            s.AddSingleton(_repo.Object);       // …e põe o dublê no lugar
+        }));
+    }
+
+    /// &lt;summary&gt;Faz o login de verdade (POST /api/auth/login) e devolve um cliente com o token.&lt;/summary&gt;
+    private async Task&lt;HttpClient&gt; ClienteLogado()
+    {
+        var http = _factory.CreateClient();
+        var login = await http.PostAsJsonAsync("/api/auth/login",
+            new { email = "dev@loja.com.br", senha = "SenhaForte#2026" });
+        var corpo = await login.Content.ReadFromJsonAsync&lt;Dictionary&lt;string, object&gt;&gt;();
+        http.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", corpo!["tokenAcesso"].ToString());
+        return http;
+    }
+
+    /// &lt;summary&gt;Confere que a resposta é problem+json e devolve o "type" do erro.&lt;/summary&gt;
+    private static async Task&lt;string?&gt; TypeDoErro(HttpResponseMessage r)
+    {
+        Assert.Equal("application/problem+json", r.Content.Headers.ContentType?.MediaType);
+        var corpo = await r.Content.ReadFromJsonAsync&lt;Dictionary&lt;string, object&gt;&gt;();
+        return corpo?["type"]?.ToString();
+    }
+
+    [Fact(DisplayName = "🌐 GET /api/produtos é público → 200")]
+    public async Task Listar_SemToken_200()
+    {
+        _repo.Setup(r =&gt; r.ListarAsync(0, 20))
+             .ReturnsAsync([Produto.Reconstituir(1, "Teclado", new Dinheiro(349.90m), 15)]);
+
+        var r = await _factory.CreateClient().GetAsync("/api/produtos?page=0&amp;size=20");
+
+        Assert.Equal(HttpStatusCode.OK, r.StatusCode);
+        Assert.Contains("Teclado", await r.Content.ReadAsStringAsync());
+    }
+
+    [Fact(DisplayName = "🌐 POST sem token → 401 naoautenticado")]
+    public async Task Criar_SemToken_401()
+    {
+        var r = await _factory.CreateClient().PostAsJsonAsync("/api/produtos",
+            new { nome = "Mouse", preco = 10, estoque = 1 });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, r.StatusCode);
+        Assert.EndsWith("/naoautenticado", await TypeDoErro(r));
+        _repo.Verify(x =&gt; x.SalvarAsync(It.IsAny&lt;Produto&gt;()), Times.Never);   // nem chegou ao banco
+    }
+
+    [Fact(DisplayName = "🌐 Login com senha errada → 401")]
+    public async Task Login_SenhaErrada_401()
+    {
+        var r = await _factory.CreateClient().PostAsJsonAsync("/api/auth/login",
+            new { email = "dev@loja.com.br", senha = "errada" });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, r.StatusCode);
+        Assert.EndsWith("/naoautenticado", await TypeDoErro(r));
+    }
+
+    [Fact(DisplayName = "🌐 POST válido com token → 201 + Location")]
+    public async Task Criar_ComToken_201()
+    {
+        _repo.Setup(x =&gt; x.SalvarAsync(It.IsAny&lt;Produto&gt;()))
+             .ReturnsAsync((Produto p) =&gt; Produto.Reconstituir(7, p.Nome, p.Preco, p.Estoque));
+        var http = await ClienteLogado();
+
+        var r = await http.PostAsJsonAsync("/api/produtos", new { nome = "Mouse", preco = 89.90, estoque = 3 });
+
+        Assert.Equal(HttpStatusCode.Created, r.StatusCode);
+        Assert.EndsWith("/api/produtos/7", r.Headers.Location?.ToString());
+    }
+
+    [Fact(DisplayName = "🌐 POST com nome de 1 letra → 400 validacao")]
+    public async Task Criar_NomeInvalido_400()
+    {
+        var http = await ClienteLogado();
+
+        var r = await http.PostAsJsonAsync("/api/produtos", new { nome = "M", preco = 10, estoque = 1 });
+
+        Assert.Equal(HttpStatusCode.BadRequest, r.StatusCode);
+        Assert.EndsWith("/validacao", await TypeDoErro(r));
+    }
+
+    [Fact(DisplayName = "🌐 GET /api/produtos/999 → 404 naoencontrado")]
+    public async Task Obter_Inexistente_404()
+    {
+        _repo.Setup(x =&gt; x.BuscarPorIdAsync(999)).ReturnsAsync((Produto?)null);
+
+        var r = await _factory.CreateClient().GetAsync("/api/produtos/999");
+
+        Assert.Equal(HttpStatusCode.NotFound, r.StatusCode);
+        Assert.EndsWith("/naoencontrado", await TypeDoErro(r));
+    }
+}</pre>
+</div>
 <div class="step-box">
 <h4><span class="step-num-big">▶</span> 🖱️ Rodar os testes pelo Test Explorer</h4>
 <ol class="step-number-list">
 <li>Na barra da esquerda, clique no ícone do <strong>tubo de ensaio</strong> 🧪 (<em>Testing</em>).</li>
 <li>Clique no <strong>▶▶ Run Tests</strong> no topo do painel.</li>
 </ol>
-<div class="success-banner"><strong>✅ Resultado esperado:</strong> todos os 17 casos com ✔ verde. No terminal (<code>dotnet test</code>): <code>Passed! - Failed: 0, Passed: 17, Skipped: 0, Total: 17</code>.</div>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> todos os 29 casos com ✔ verde — com o Docker desligado, inclusive. No terminal (<code>dotnet test</code>): <code>Passed! - Failed: 0, Passed: 29, Skipped: 0, Total: 29</code>.</div>
+<div class="info-banner"><strong>🏛️ Experimente furar a arquitetura:</strong> em <code>LojaApi.Domain/Entities/Produto.cs</code>, acrescente <code>using Microsoft.EntityFrameworkCore;</code> e use algo dele — por exemplo, o atributo <code>[Index(nameof(Nome))]</code> em cima da classe — e, para compilar, acrescente ao <code>LojaApi.Domain.csproj</code> a linha <code>&lt;PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" /&gt;</code>. Rode os testes: <strong>"Domain não conhece EF Core…"</strong> fica 🔴. Repare na lição: o <strong>compilador deixou</strong> (o <code>.csproj</code> permitia); quem barrou foi o <strong>teste</strong>. É para isso que ele existe. Desfaça as duas mudanças e ele volta a 🟢.</div>
 <div class="info-banner"><strong>🧪 Experimente o 🔴:</strong> em <code>Produto.cs</code>, troque <code>preco.Valor &lt;= 0</code> por <code>preco.Valor &lt; 0</code> e rode de novo: o teste "Recusa preço zero" fica vermelho. Desfaça e ele volta a ficar verde.</div>
 </div>
 <div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=xunit+testes+unit%C3%A1rios+c%23+iniciantes" target="_blank">xUnit para iniciantes</a> · <a class="ext" href="https://www.youtube.com/results?search_query=moq+c%23+mock+testes" target="_blank">Moq: mocks em C#</a> · <a class="ext" href="https://www.youtube.com/results?search_query=tdd+test+driven+development+explicado" target="_blank">O que é TDD</a></div>
@@ -1399,7 +1700,7 @@ ENTRYPOINT ["dotnet", "LojaApi.Api.dll"]</pre>
 <!-- ══════════════════════════ ⑦ CI/CD ══════════════════════════ -->
 <div class="lab-container">
 <div class="lab-header"><h3>⑦ 🔁 CI/CD: testes a cada push (GitHub Actions + GitLab CI)</h3></div>
-<p>A cada push ou Pull Request, um robô <strong>compila e roda os 17 testes</strong>; se algo quebrar, o PR fica vermelho. O que é CI/CD, pipeline e runner está explicado na <a href="javascript:switchTab('tab3g')" style="color:var(--primary);text-decoration:underline">Tab 3-G, parte ⑧</a>. Aqui estão os arquivos de verdade deste projeto:</p><div class="split-view">
+<p>A cada push ou Pull Request, um robô <strong>compila e roda os 29 testes</strong>; se algo quebrar, o PR fica vermelho. O que é CI/CD, pipeline e runner está explicado na <a href="javascript:switchTab('tab3g')" style="color:var(--primary);text-decoration:underline">Tab 3-G, parte ⑧</a>. Aqui estão os arquivos de verdade deste projeto:</p><div class="split-view">
 <div class="split-col"><h4 style="color:var(--primary)">🐙 GitHub Actions</h4>
 <div class="code-editor-wrap">
 <span class="code-filepath">.github/workflows/ci-dotnet.yml</span>
@@ -1519,10 +1820,10 @@ obj/
 <div class="adr"><h5>ADR-019 · Só autenticação e erros RFC 7807, como no contrato <span class="stack-tag">🔷 C#</span><span class="status">Aceita</span></h5>
 <p><b>Contexto:</b> o contrato da Tab 4 só pergunta "está logado?" e define os erros em <code>problem+json</code>.</p>
 <p><b>Decisão:</b> <code>[Authorize]</code> sem roles nas escritas; <code>ExceptionMiddleware</code> com 400/404/500 e <code>OnChallenge</code> para o 401 — todos com os <code>type</code> do contrato.</p>
-<p><b>Alternativas consideradas:</b> roles (<code>[Authorize(Roles="ADMIN")]</code>, rejeitada pela decisão B); erros em formato próprio (rejeitada).</p>
+<p><b>Alternativas consideradas:</b> roles (<code>[Authorize(Roles="ADMIN")]</code>, rejeitada: o contrato da <a href="javascript:switchTab('tab4')" style="color:var(--primary);text-decoration:underline">Tab 4</a> só pergunta "está logado?" — ADR-005); erros em formato próprio (rejeitada).</p>
 <p><b>Consequências:</b> (+) o mesmo <code>.http</code> serve para o mock e para a API real; (−) qualquer usuário logado pode escrever (aceitável no estudo).</p>
 <p><b>Status:</b> Aceita · <b>Stakeholders:</b> Backend, QA, Segurança.</p></div>
-<div class="info-banner"><strong>🔄 E a migração para o MongoDB?</strong> Ficou na <a href="javascript:switchTab('tab9b')" style="color:var(--primary);text-decoration:underline">Tab 9-B</a>, que faz a migração completa em C#. Esta aba prepara o terreno: como o <code>ProdutoService</code> só conhece a interface, um <code>MongoProdutoRepository</code> entra sem mudar nenhuma regra.</div>
+<div class="info-banner"><strong>🔄 E a migração para o MongoDB?</strong> Em C#, ela está na <a href="javascript:switchTab('tab9b')" style="color:var(--primary);text-decoration:underline">Tab 9-B</a>, feita sobre a API multi-contextos da <a href="javascript:switchTab('tab9')" style="color:var(--primary);text-decoration:underline">Tab 9</a> — não sobre esta. Mas a ideia caberia aqui do mesmo jeito: como o <code>ProdutoService</code> só conhece a interface <code>IProdutoRepository</code>, um <code>MongoProdutoRepository</code> que implemente a mesma porta entraria sem mudar nenhuma regra nem nenhum teste. (Em Java, a <a href="javascript:switchTab('tab6b')" style="color:var(--primary);text-decoration:underline">Tab 6-B</a> faz exatamente isso com a API da Tab 6.)</div>
 </div>
 
 <h4 style="color:var(--accent);margin:16px 0 8px">✅ Checklist da aba</h4>
@@ -1533,7 +1834,7 @@ obj/
 <tr><td>2</td><td><code>dev_mysql_server</code> verde (Tab 5)</td><td>④</td><td>⬜</td></tr>
 <tr><td>3</td><td>Swagger em <code>localhost:5000/swagger</code> com os 3 produtos</td><td>④</td><td>⬜</td></tr>
 <tr><td>4</td><td><code>requests.http</code>: 200, 401, token, 201, 400, 200, 200, 204, 404</td><td>④</td><td>⬜</td></tr>
-<tr><td>5</td><td>17 testes verdes — e viu o teste "Recusa preço zero" ficar 🔴 ao mudar a regra</td><td>⑤</td><td>⬜</td></tr>
+<tr><td>5</td><td>29 casos verdes — e viu um teste ficar 🔴 ao mudar uma regra e ao furar a arquitetura</td><td>⑤</td><td>⬜</td></tr>
 <tr><td>6</td><td>Imagem <code>loja-api-dotnet</code> construída e o container respondendo em <code>localhost:8081</code></td><td>⑥</td><td>⬜</td></tr>
 <tr><td>7</td><td>Pipeline verde no GitHub ou no GitLab</td><td>⑦</td><td>⬜</td></tr>
 </tbody></table></div>
