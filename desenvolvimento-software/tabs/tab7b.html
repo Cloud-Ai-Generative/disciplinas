@@ -6,6 +6,9 @@
 
 <div class="doc-banner"><strong>🧔 Rafael Souza · 🔷 Backend (C#):</strong> na <a href="javascript:switchTab('tab7')" style="color:var(--primary);text-decoration:underline">Tab 7</a> o <code>ProdutoCriadoEvent</code> existia mas <strong>nunca saía do processo</strong> — ninguém despachava a lista <code>DomainEvents</code>. Aqui esse evento ganha destino, garantia de entrega e consumidores de verdade. Projeto novo (<code>LojaEventos/</code>), arquitetura idêntica.</div>
 
+<div class="info-banner"><strong>🗺️ O caminho desta aba:</strong> Parte 0 — o problema (por que eventos e outbox) → Parte 1 — a solução, o domínio e o contrato do evento → Parte 2 — o outbox → Parte 3 — as três camadas de idempotência → Parte 4 — consumidores, retry e DLQ → Parte 5 — subir no Docker, provar e medir. <strong>Tempo total: ~4h.</strong> Quer só ver funcionando? O <strong>✅ Roteiro de execução</strong>, no fim da aba, roda tudo em 10 passos.</div>
+<div class="info-banner"><strong>🧭 Pré-requisitos:</strong> <a href="javascript:switchTab('tab7')" style="color:var(--primary);text-decoration:underline">Tab 7</a> (a mesma arquitetura: Clean Architecture, DDD, EF Core) · <a href="javascript:switchTab('tab5')" style="color:var(--primary);text-decoration:underline">Tab 5</a> (Docker Desktop instalado) · VS Code com o C# Dev Kit e a extensão Container Tools. Esta aba é um <strong>projeto novo</strong> (<code>LojaEventos/</code>), com MySQL e RabbitMQ próprios: não precisa dos bancos da Tab 5 ligados. Os passos com 🖱️ são com o mouse; o terminal fica nos blocos ⌨️.</div>
+
 <!-- ══════════════════════ PARTE 0 ══════════════════════ -->
 <div class="lab-container">
 <div class="lab-header">
@@ -97,6 +100,37 @@
 </div>
 </div>
 
+<div class="deep-concept-box">
+<h3>📖 Palavras desta aba</h3>
+<p>Esta é a aba com mais vocabulário novo do guia. Volte aqui sempre que uma palavra travar a leitura.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Palavra</th><th>O que é, em uma frase</th></tr></thead>
+<tbody>
+<tr><td><strong>Evento</strong></td><td>Um aviso de algo que já aconteceu ("pedido criado"), mandado para quem quiser saber.</td></tr>
+<tr><td><strong>Broker</strong> (RabbitMQ)</td><td>O "correio" das mensagens: recebe de quem publica e entrega a quem assina.</td></tr>
+<tr><td><strong>Exchange · fila · routing key</strong></td><td>O <strong>exchange</strong> é a agência que recebe a carta; a <strong>routing key</strong> é o endereço escrito nela; a <strong>fila</strong> é a caixa postal de cada destinatário.</td></tr>
+<tr><td><strong>Fan-out</strong></td><td>Uma mensagem só, entregue a vários destinatários ao mesmo tempo (aqui: estoque <em>e</em> notificação).</td></tr>
+<tr><td><strong>Outbox · Inbox</strong></td><td><strong>Outbox</strong>: a "caixa de saída" no seu banco, gravada no mesmo commit do pedido. <strong>Inbox</strong>: o "registro de recebidos" de cada consumidor, para não processar duas vezes.</td></tr>
+<tr><td><strong>At-least-once</strong></td><td>"Pelo menos uma vez": a mensagem nunca se perde, mas pode chegar repetida.</td></tr>
+<tr><td><strong>Idempotente</strong></td><td>Fazer de novo dá o mesmo resultado: repetir o POST não cria outro pedido.</td></tr>
+<tr><td><strong>Consistência eventual</strong></td><td>As partes do sistema ficam iguais <em>logo depois</em>, não no mesmo instante (o estoque baixa ~0,5 s depois do 201).</td></tr>
+<tr><td><strong>2PC / XA</strong></td><td>"Commit em duas fases": um coordenador pede a dois sistemas que gravem juntos. Existe, mas é lento e frágil — por isso o outbox.</td></tr>
+<tr><td><strong>Teorema CAP</strong></td><td>Num sistema espalhado em várias máquinas, quando a rede falha você precisa escolher entre responder sempre (<em>disponibilidade</em>) e responder sempre o dado mais novo (<em>consistência</em>). Eventos escolhem responder.</td></tr>
+<tr><td><strong>DLQ</strong> (<em>dead letter queue</em>)</td><td>A fila das mensagens que falharam todas as tentativas — esperando um humano olhar.</td></tr>
+<tr><td><strong>Poison message</strong></td><td>Uma mensagem que nunca vai dar certo (JSON quebrado): vai direto para a DLQ, sem tentar de novo.</td></tr>
+<tr><td><strong>Backoff · jitter</strong></td><td><strong>Backoff</strong>: esperar cada vez mais entre as tentativas (10 s → 1 min → 10 min). <strong>Jitter</strong>: somar um tempo aleatório, para mil mensagens que falharam juntas não voltarem juntas.</td></tr>
+<tr><td><strong>Thundering herd</strong> ("estouro da boiada")</td><td>Muitos clientes tentando ao mesmo tempo e derrubando o servidor de novo. O jitter evita.</td></tr>
+<tr><td><strong>Head-of-line blocking</strong></td><td>Uma mensagem lenta na frente da fila segura todas as que estão atrás.</td></tr>
+<tr><td><strong>Prefetch</strong></td><td>Quantas mensagens cada consumidor pega de uma vez antes de confirmar: é o que divide o trabalho entre as réplicas.</td></tr>
+<tr><td><strong>Saga · coreografia × orquestração</strong></td><td><strong>Saga</strong>: um processo de vários passos em serviços diferentes, com desfazer (compensação) se um falhar. Na <strong>coreografia</strong>, cada serviço reage a eventos sozinho (esta aba); na <strong>orquestração</strong>, um "maestro" manda cada um agir.</td></tr>
+<tr><td><strong>Correlation id</strong></td><td>Um número que acompanha a requisição em todos os lugares (API, outbox, fila, consumidores), para achar tudo o que aconteceu com ela.</td></tr>
+<tr><td><strong>Ingress / reverse proxy</strong></td><td>O "porteiro" na frente da API em produção: recebe o HTTPS e repassa para a API por dentro.</td></tr>
+<tr><td><strong>GUID · ULID / UUIDv7</strong></td><td><strong>GUID</strong>: um id de 128 bits gerado sem consultar o banco. <strong>ULID</strong> e <strong>UUIDv7</strong> são variações que começam pela data, e por isso ficam em ordem no índice.</td></tr>
+<tr><td><strong>CQRS · Event Sourcing</strong></td><td>Próximos passos (fora desta aba). <strong>CQRS</strong>: modelos separados para gravar e para ler. <strong>Event Sourcing</strong>: guardar a lista de eventos em vez do estado atual.</td></tr>
+</tbody></table></div>
+<div class="info-banner"><strong>ℹ️ RFC 7807 ou RFC 9457?</strong> As outras abas falam em <strong>RFC 7807</strong> (<em>Problem Details</em>); esta fala em <strong>RFC 9457</strong>. É o mesmo padrão: a 9457, de 2023, <strong>substituiu</strong> a 7807 com pequenos ajustes. O formato <code>application/problem+json</code>, com <code>type</code>, <code>title</code>, <code>status</code> e <code>detail</code>, não mudou — o que você aprendeu na <a href="javascript:switchTab('tab4')" style="color:var(--primary);text-decoration:underline">Tab 4</a> vale igual.</div>
+</div>
+
 <!-- ══════════════════════ PARTE 1 ══════════════════════ -->
 <div class="lab-container">
 <div class="lab-header"><h3>🧱 Parte 1 — Montar a solução, o domínio e o contrato do evento</h3></div>
@@ -112,6 +146,17 @@
 <div class="step-box">
 <h4><span class="step-num">0</span>Criar a solução (6 projetos)</h4>
 <p>A arquitetura é a <strong>mesma da Tab 7</strong>, com um projeto novo: <code>Worker</code>. A API atende HTTP; o Worker publica o outbox e consome as filas. Dois processos, duas escalas, duas falhas independentes.</p>
+<div class="step-box" style="margin:8px 0">
+<h4><span class="step-num-big">🖱️</span> O caminho mais curto: abrir o ZIP no VS Code</h4>
+<ol class="step-number-list">
+<li>Clique em <strong>📦 Baixar ZIP</strong> (no topo da Parte 0) e descompacte numa pasta <strong>nova</strong>, <code>Documentos\Projetos\LojaEventos</code>.</li>
+<li>No VS Code: <strong>File → Open Folder…</strong> → <code>LojaEventos</code> → <strong>Yes, I trust the authors</strong>.</li>
+<li>Espere o C# Dev Kit ler a solução: no Explorer aparece <strong>SOLUTION EXPLORER</strong> com os 6 projetos.</li>
+<li>Botão direito em <strong>LojaEventos</strong> (a solução) → <strong>Build</strong>.</li>
+</ol>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> <code>Build succeeded</code> e <code>0 Error(s)</code>, com os 6 projetos (Domain, Application, Infrastructure, Api, Worker e Tests) no Solution Explorer.</div>
+</div>
+<p class="text-sm text-muted">⌨️ <strong>Prefere criar do zero pelo terminal?</strong> Os comandos abaixo montam a mesma estrutura do ZIP (depois, copie os arquivos de código desta página por cima).</p>
 <div class="term-help"><strong>🖥️ Terminal:</strong> <span class="ide-tag cs">VS Code</span> <kbd>Ctrl+`</kbd>. Rode na pasta onde quer criar a solução.</div>
 <div class="code-editor-wrap">
 <span class="code-filepath">terminal do VS Code — solução, projetos, referências e pacotes</span>
@@ -360,14 +405,15 @@ EndGlobal</pre>
 │   ├── Program.cs · appsettings.json
 │   ├── OutboxPublisherService.cs                          <span class="comment"># produtor</span>
 │   └── Consumers/ConsumidorBase.cs · EstoqueConsumer.cs · NotificacaoConsumer.cs
-└── <span class="folder">📁 LojaEventos.Tests/</span>                             <span class="comment"># 🧪 34 testes (38 casos)</span>
-    └── PedidoTests.cs · IdempotenciaHashTests.cs · OutboxEIdempotenciaTests.cs
+└── <span class="folder">📁 LojaEventos.Tests/</span>                             <span class="comment"># 🧪 48 testes (52 casos)</span>
+    ├── PedidoTests.cs · DinheiroTests.cs · IdempotenciaHashTests.cs
+    └── OutboxEIdempotenciaTests.cs · ArquiteturaTests.cs · ApiHttpTests.cs
 </div>
 
 <div class="step-box">
 <h4><span class="step-num">1</span>Subir a infraestrutura (MySQL + RabbitMQ) e olhar a UI</h4>
 <p>Antes de escrever código, suba os dois serviços e <strong>abra a interface do RabbitMQ</strong>. Metade do aprendizado desta aba é <em>ver</em> a mensagem andando: fila, mensagem presa, DLQ enchendo.</p>
-<div class="term-help"><strong>🖥️ Terminal:</strong> o compose completo (com <code>api</code> e <code>worker</code>) está no Passo 11. Por agora só os dois serviços de infra.</div>
+<div class="term-help"><strong>🖥️ Terminal:</strong> o compose completo (com <code>api</code> e <code>worker</code>) está no Passo 12. Por agora só os dois serviços de infra.</div>
 <div class="code-editor-wrap">
 <span class="code-filepath">terminal — só a infra, para explorar</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -386,6 +432,24 @@ docker compose ps
 docker exec -it loja-eventos-mysql mysql -u devuser -pdevpass loja_eventos -e "SHOW TABLES;"
 # Só 'produtos' existe: as tabelas da aplicação são criadas pela API no boot.</pre>
 </div>
+<div class="step-box" style="margin:8px 0">
+<h4><span class="step-num-big">🖱️</span> Pelo VS Code</h4>
+<ol class="step-number-list">
+<li>Abra o <strong>Docker Desktop</strong> e espere o <strong>Engine running</strong> 🟢.</li>
+<li>No Explorer do VS Code, botão direito em <code>docker-compose.yml</code> → <strong>Compose Up - Select Services</strong> → marque só <strong>mysql</strong> e <strong>rabbitmq</strong> → OK (extensão Container Tools).</li>
+<li>No Docker Desktop → <strong>Containers</strong>, espere os dois ficarem verdes (~30 s na primeira vez).</li>
+<li>Abra <a class="ext" href="http://localhost:15672" target="_blank"><code>http://localhost:15672</code></a> e entre com <code>guest</code> / <code>guest</code>.</li>
+</ol>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> <code>loja-eventos-mysql</code> e <code>loja-eventos-rabbit</code> verdes, com <em>(healthy)</em>; a UI do RabbitMQ abre, e as abas <strong>Exchanges</strong> e <strong>Queues</strong> ainda não têm nada da loja — quem cria é a aplicação, no Passo 12.</div>
+</div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">✋ Errou? A infraestrutura não sobe</div>
+<div class="faq-a"><ul>
+<li><strong><code>Bind for 0.0.0.0:3307 failed: port is already allocated</code></strong> → outro container usa a 3307 (o MySQL da Tab 9, por exemplo): pare-o no Docker Desktop, ou troque o lado esquerdo no compose (ex.: <code>"3308:3306"</code>) e a <code>Port=</code> do <code>appsettings.json</code>.</li>
+<li><strong>A porta 5672 ou a 15672 está ocupada</strong> → outro RabbitMQ está ligado: pare-o no Docker Desktop.</li>
+<li><strong>O MySQL fica reiniciando</strong> → veja a aba <strong>Logs</strong> do container. <code>unknown variable … default-authentication-plugin</code> é a armadilha nº 16: apague essa linha do compose.</li>
+<li><strong>A UI do RabbitMQ não abre</strong> → espere o container ficar <em>healthy</em>; o RabbitMQ leva alguns segundos a mais que o MySQL.</li>
+</ul></div></div>
+<p class="text-sm text-muted">⌨️ <strong>Prefere o terminal?</strong> O mesmo passo, por comando:</p>
 <div class="info-banner"><strong>💡 Por que a porta 3307?</strong> A Tab 5 já ocupa a 3306 no seu computador. Expor este MySQL em <code>3307:3306</code> deixa os dois conviverem — <em>dentro</em> da rede do compose os containers continuam conversando pela 3306 (<code>Server=mysql;Port=3306</code>).</div>
 </div>
 
@@ -3821,7 +3885,10 @@ if (app.Environment.IsDevelopment())
     await CatalogoSeed.SemearAsync(ctx);
 }
 
-app.Run();</pre>
+app.Run();
+
+/// &lt;summary&gt;Visível para os testes HTTP (WebApplicationFactory&amp;lt;Program&amp;gt;) do LojaEventos.Tests.&lt;/summary&gt;
+public partial class Program { }</pre>
 </div>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaEventos.Api/appsettings.json</span>
@@ -4086,7 +4153,23 @@ public static class CatalogoSeed
 }</pre>
 </div>
 <div class="warning-banner"><strong>⚠️ Por que o catálogo não vem de um <code>.sql</code> no <code>docker-entrypoint-initdb.d</code>.</strong> Parece o jeito natural, mas quebra a API em silêncio: <code>EnsureCreatedAsync()</code> só cria o schema se o banco <strong>não tiver nenhuma tabela</strong>. Achando <code>produtos</code> lá (criada pelo script), ele conclui "já está pronto" e <strong>não cria</strong> <code>pedidos</code>, <code>outbox_messages</code>, <code>inbox_messages</code> nem <code>idempotency_keys</code> — e o primeiro POST estoura com <em>Table 'loja_eventos.pedidos' doesn't exist</em>. Regra: <strong>quem cria o schema também faz o seed.</strong> Aqui é o EF no boot; em produção, as migrations.</div>
-<div class="term-help"><strong>🖥️ Subir tudo:</strong> <span class="ide-tag cs">VS Code</span> <kbd>Ctrl+`</kbd></div>
+<div class="step-box" style="margin:8px 0">
+<h4><span class="step-num-big">🖱️</span> Subir tudo pelo VS Code</h4>
+<ol class="step-number-list">
+<li>Botão direito em <code>docker-compose.yml</code> → <strong>Compose Up</strong> (agora sem escolher: sobem os 4 serviços). A primeira vez demora alguns minutos: o Docker compila a API e o Worker.</li>
+<li>No Docker Desktop → <strong>Containers</strong>, clique em <code>loja-eventos-worker</code> → aba <strong>Logs</strong>.</li>
+<li>Abra <a class="ext" href="http://localhost:8080/swagger" target="_blank"><code>http://localhost:8080/swagger</code></a> e, na UI do RabbitMQ, a aba <strong>Queues</strong>.</li>
+</ol>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> os 4 containers verdes; no log do Worker, as 3 linhas de boot (<em>OutboxPublisher iniciado…</em> e os 2 consumidores <em>ouvindo a fila…</em>); o Swagger abre; na UI do RabbitMQ aparecem o exchange <code>loja.eventos</code> e as filas (2 principais, 6 de retry e 2 DLQs).</div>
+</div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">✋ Errou? Os containers não ficam verdes</div>
+<div class="faq-a"><ul>
+<li><strong>A <code>api</code> fica reiniciando</strong> → veja os Logs dela. Quase sempre o MySQL ainda não estava pronto: espere o <em>healthy</em> do <code>mysql</code> e clique em ▶ na <code>api</code>.</li>
+<li><strong><code>Table 'loja_eventos.pedidos' doesn't exist</code></strong> → é a armadilha nº 14: o volume foi criado por outro script. Derrube apagando os dados (<code>docker compose down -v</code>) e suba de novo.</li>
+<li><strong>O Worker não mostra as linhas de boot</strong> → o RabbitMQ ainda estava subindo; o consumidor tenta reconectar 30 vezes. Espere um pouco e olhe os Logs de novo.</li>
+<li><strong>A porta 8080 está ocupada</strong> → a API da Tab 6 (ou o container <code>loja-java</code>) está ligada: pare-a.</li>
+</ul></div></div>
+<div class="term-help"><strong>⌨️ Prefere o terminal?</strong> <span class="ide-tag cs">VS Code</span> <kbd>Ctrl+`</kbd></div>
 <div class="code-editor-wrap">
 <span class="code-filepath">terminal — subir, acompanhar, derrubar</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -4232,7 +4315,15 @@ STATUS=$(curl -fsS "$API/api/pedidos/$P" | grep -o '"status":"[^"]*"' | cut -d'"
 azul "✅ Smoke concluído."
 echo "Agora rode 'bash scripts/prova-outbox.sh' para ver o outbox segurando o evento com o RabbitMQ FORA."</pre>
 </div>
-<div class="term-help"><strong>🖥️ Rodar:</strong> <code>bash scripts/smoke.sh</code> (depois que <code>docker compose ps</code> mostrar a api <em>healthy</em>)</div>
+<div class="term-help"><strong>🖥️ Rodar:</strong> <code>bash scripts/smoke.sh</code> (depois que <code>docker compose ps</code> mostrar a api <em>healthy</em>). No Windows, rode no <strong>Git Bash</strong> (terminal do VS Code → ⌄ ao lado do + → <em>Git Bash</em>): o script é Bash.</div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">✋ Errou? O smoke falha</div>
+<div class="faq-a"><ul>
+<li><strong><code>jq: command not found</code></strong> → instale o jq: <code>winget install jqlang.jq</code> (Windows) e reabra o terminal.</li>
+<li><strong><code>curl: (7) Failed to connect to localhost port 8080</code></strong> → a <code>api</code> não está no ar: veja o Passo 12.</li>
+<li><strong>O passo 8 diz que o estoque não baixou 50 → 48</strong> → você já rodou o smoke antes (o teste avisa). Para recomeçar: <code>docker compose down -v</code> e suba de novo.</li>
+<li><strong><code>pendentes</code> não chega a 0</strong> → o Worker não está publicando: olhe os Logs dele e o <code>lagSegundos</code> em <code>/api/diagnostico/outbox</code>.</li>
+</ul></div></div>
+
 <div class="table-wrap" style="margin:12px 0">
 <table>
 <thead><tr><th>#</th><th>O que o smoke prova</th><th>Como</th></tr></thead>
@@ -4553,10 +4644,10 @@ SELECT LEFT(ultimo_erro, 80) AS erro, COUNT(*) AS n
 <div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=teste+de+carga+k6+api+rest+aula" target="_blank">teste de carga k6</a> · <a class="ext" href="https://www.youtube.com/results?search_query=observabilidade+logs+correlation+id+distributed+tracing+aula" target="_blank">observabilidade e correlation id</a> · <a class="ext" href="https://www.youtube.com/results?search_query=monitoramento+filas+lag+consumer+aula" target="_blank">monitoramento de filas</a></div>
 <!-- ══════════════════════ TESTES ══════════════════════ -->
 <div class="lab-container">
-<div class="lab-header"><h3>🧪 TDD: 34 testes (38 casos) — e o que eles NÃO provam</h3></div>
+<div class="lab-header"><h3>🧪 TDD: 48 testes (52 casos) — e o que eles NÃO provam</h3></div>
 <div class="deep-concept-box">
 <h3>🧰 As ferramentas de teste desta aba</h3>
-<p>Os testes desta aba usam o xUnit e o Moq, como na Tab 7, e mais um banco em memória para rodar as classes de produção do outbox.</p>
+<p>Os testes desta aba usam as mesmas ferramentas da Tab 7 (xUnit, Moq, NetArchTest, WebApplicationFactory) e mais um banco em memória, para rodar as classes de produção do outbox.</p>
 <div class="analogy-highlight"><span class="icon">🎬</span><div><strong>Analogia do dublê de cinema:</strong> numa cena perigosa, o ator principal não pula do prédio: entra um <strong>dublê</strong>, que faz exatamente o que o diretor mandou. No teste, o código que você quer provar é o ator principal; o banco, a rede e as outras APIs são trocados por <strong>mocks</strong> (dublês), que respondem só o que o teste mandar. Assim o teste roda em milissegundos, sem Docker, e falha só quando a <em>sua</em> regra está errada.</div></div>
 <div class="table-wrap"><table>
 <thead><tr><th>Ferramenta</th><th>O que faz</th><th>Como aparece no código</th><th>Neste projeto</th></tr></thead>
@@ -4567,6 +4658,8 @@ SELECT LEFT(ultimo_erro, 80) AS erro, COUNT(*) AS n
 <tr><td><strong>Moq</strong></td><td>Cria o dublê (mock) de uma interface. <code>Setup</code> diz o que ele responde; <code>Verify</code> confere se foi chamado</td><td><code>_repo.Setup(r =&gt; r.SalvarAsync(It.IsAny&lt;Produto&gt;())).ReturnsAsync(...)</code></td><td>troca o repositório (e, na Tab 9, os clients HTTP) nos testes de caso de uso</td></tr>
 <tr><td><strong>Verify / Times</strong></td><td>Confere a <em>conversa</em>: o código chamou o banco? Quantas vezes? Nenhuma?</td><td><code>_repo.Verify(r =&gt; r.SalvarAsync(It.IsAny&lt;Produto&gt;()), Times.Never)</code></td><td>prova que um dado inválido <strong>não</strong> chega ao banco</td></tr>
 <tr><td><strong>EF Core InMemory</strong></td><td>Um "banco" que vive só na memória do teste. Aqui as classes de produção (repositórios, outbox, idempotência) rodam de verdade sobre ele</td><td><code>new DbContextOptionsBuilder&lt;AppDbContext&gt;().UseInMemoryDatabase(nome)</code></td><td><code>OutboxEIdempotenciaTests.cs</code>. Limite: não tem transação nem chave única de verdade (veja o aviso abaixo)</td></tr>
+<tr><td><strong>NetArchTest</strong></td><td>Lê as DLLs compiladas e confere as regras da arquitetura: quem pode depender de quem</td><td><code>Types.InAssembly(...).ShouldNot().HaveDependencyOnAny("RabbitMQ", …)</code></td><td><code>ArquiteturaTests.cs</code></td></tr>
+<tr><td><strong>WebApplicationFactory</strong></td><td>Sobe a API inteira <strong>em memória</strong> (sem porta, sem MySQL, sem RabbitMQ) e deixa o teste fazer pedidos HTTP de verdade</td><td><code>new WebApplicationFactory&lt;Program&gt;().WithWebHostBuilder(…)</code></td><td><code>ApiHttpTests.cs</code>: troca o MySQL pelo InMemory e o repositório de produtos por um mock</td></tr>
 </tbody></table></div>
 <div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=xunit+fact+theory+c%23" target="_blank">xUnit: Fact e Theory</a> · <a class="ext" href="https://www.youtube.com/results?search_query=moq+c%23+mock+tutorial" target="_blank">Moq: mocks em C#</a> · <a class="ext" href="https://www.youtube.com/results?search_query=o+que+%C3%A9+mock+em+testes+unit%C3%A1rios" target="_blank">O que é mock</a></div>
 </div>
@@ -4577,6 +4670,9 @@ SELECT LEFT(ultimo_erro, 80) AS erro, COUNT(*) AS n
 <tr><td><code>PedidoTests.cs</code></td><td>15 (19 casos)</td><td>Invariantes do agregado, total calculado, <strong>evento com id e total corretos</strong> (o id existe antes do commit), idempotência de <code>Confirmar/Rejeitar</code>, <code>Reconstituir</code> não republica.</td></tr>
 <tr><td><code>IdempotenciaHashTests.cs</code></td><td>6</td><td>O hash canônico: ordem dos itens e caixa do e-mail não contam; quantidade, produto e cliente contam.</td></tr>
 <tr><td><code>OutboxEIdempotenciaTests.cs</code></td><td>13</td><td>Pedido + outbox + chave no mesmo commit; replay devolve o mesmo id; 10 repetições = 1 pedido e 1 evento; corpo diferente → 422; produto inexistente não deixa rastro; <strong>inbox dedup e chave composta</strong>; o <strong><code>OutboxDispatcher</code> de produção</strong> só marca o que o broker confirmou, agenda nova tentativa quando falha e não deixa uma linha ruim travar o lote.</td></tr>
+<tr><td><code>DinheiroTests.cs</code></td><td>4</td><td>O Value Object: arredonda em centavos, recusa valor negativo, não soma moedas diferentes, é imutável.</td></tr>
+<tr><td><code>ArquiteturaTests.cs</code></td><td>4</td><td>As setas da arquitetura (NetArchTest): Domain sem EF/RabbitMQ/ASP.NET, Application só com as portas, Infrastructure sem os executáveis — e a <strong>Api sem acesso ao RabbitMQ</strong>.</td></tr>
+<tr><td><code>ApiHttpTests.cs</code></td><td>6</td><td>A API em memória (WebApplicationFactory): <code>/hello</code>, 400 sem <code>Idempotency-Key</code>, 201 + <code>Idempotent-Replay: false</code>, replay 200 com o mesmo id, 422 com outro corpo, 404.</td></tr>
 </tbody>
 </table>
 </div>
@@ -5112,6 +5208,252 @@ public class OutboxEIdempotenciaTests
     }
 }</pre>
 </div>
+<p class="text-sm" style="margin:12px 0 4px">👉 O <strong>Value Object</strong> <code>Dinheiro</code>: nasce arredondado em centavos, nunca negativo, não soma moedas diferentes e nunca é alterado (cada operação devolve um novo).</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaEventos.Tests/DinheiroTests.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaEventos.Tests/DinheiroTests.cs">using LojaEventos.Domain.ValueObjects;
+using Xunit;
+
+namespace LojaEventos.Tests;
+
+/// &lt;summary&gt;Testes do VALUE OBJECT Dinheiro: nasce válido, é comparado pelo valor e é imutável.&lt;/summary&gt;
+public class DinheiroTests
+{
+    [Fact(DisplayName = "💰 Dinheiro.De arredonda para centavos e compara pelo valor")]
+    public void De_ArredondaEComparaPeloValor()
+    {
+        Assert.Equal(10.02m, Dinheiro.De(10.015m).Valor);            // 2 casas, arredondamento "bancário" (ToEven): o 5 vai para o par
+        Assert.Equal(10.00m, Dinheiro.De(10.005m).Valor);            // …por isso 10,005 vira 10,00 (e não 10,01)
+        Assert.Equal(Dinheiro.De(10m), Dinheiro.De(10.00m));         // record: dois "R$ 10" são iguais
+    }
+
+    [Fact(DisplayName = "💰 Dinheiro negativo não existe")]
+    public void De_Negativo_Lanca()
+        =&gt; Assert.Throws&lt;ArgumentOutOfRangeException&gt;(() =&gt; Dinheiro.De(-1m));
+
+    [Fact(DisplayName = "💰 Somar moedas diferentes é erro")]
+    public void Somar_MoedasDiferentes_Lanca()
+        =&gt; Assert.Throws&lt;InvalidOperationException&gt;(() =&gt; Dinheiro.De(10m, "BRL").Somar(Dinheiro.De(10m, "USD")));
+
+    [Fact(DisplayName = "💰 Somar e Multiplicar devolvem um Dinheiro novo e não alteram o original")]
+    public void Operacoes_NaoAlteramOOriginal()
+    {
+        var preco = Dinheiro.De(249.90m);
+
+        Assert.Equal(499.80m, preco.Multiplicar(2).Valor);
+        Assert.Equal(259.90m, preco.Somar(Dinheiro.De(10m)).Valor);
+        Assert.Equal(249.90m, preco.Valor);   // imutável: o original continua igual
+    }
+}</pre>
+</div>
+<p class="text-sm" style="margin:12px 0 4px">👉 As regras das camadas viram teste (NetArchTest). Repare no último: ele barra a <strong>armadilha nº 1</strong> desta aba — a Api usando o <code>IEventPublisher</code> direto, o que traria o dual-write de volta.</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaEventos.Tests/ArquiteturaTests.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaEventos.Tests/ArquiteturaTests.cs">using LojaEventos.Api.Controllers;
+using LojaEventos.Application.Services;
+using LojaEventos.Domain.Entities;
+using LojaEventos.Infrastructure.Data;
+using NetArchTest.Rules;
+using Xunit;
+
+namespace LojaEventos.Tests;
+
+/// &lt;summary&gt;
+/// Testes de ARQUITETURA: as setas do diagrama D-24 viram teste.
+/// O NetArchTest lê as DLLs compiladas e confere quem depende de quem.
+/// (O Worker fica de fora só porque, como a Api, é um executável com o seu
+///  próprio Program — referenciar os dois aqui deixaria o "Program" ambíguo.)
+/// &lt;/summary&gt;
+public class ArquiteturaTests
+{
+    private static string Falhas(TestResult r) =&gt;
+        "Viola a regra: " + string.Join(", ", r.FailingTypeNames ?? []);
+
+    [Fact(DisplayName = "🏛️ Domain não conhece EF Core, RabbitMQ, ASP.NET nem as outras camadas")]
+    public void Domain_NaoDependeDeNinguem()
+    {
+        var r = Types.InAssembly(typeof(Pedido).Assembly)
+            .ShouldNot().HaveDependencyOnAny(
+                "Microsoft.EntityFrameworkCore", "RabbitMQ", "Microsoft.AspNetCore",
+                "LojaEventos.Application", "LojaEventos.Infrastructure", "LojaEventos.Api", "LojaEventos.Worker")
+            .GetResult();
+        Assert.True(r.IsSuccessful, Falhas(r));
+    }
+
+    [Fact(DisplayName = "🏛️ Application não conhece EF Core, RabbitMQ, Infrastructure nem Api")]
+    public void Application_SoConheceAsPortas()
+    {
+        var r = Types.InAssembly(typeof(PedidoService).Assembly)
+            .ShouldNot().HaveDependencyOnAny(
+                "Microsoft.EntityFrameworkCore", "RabbitMQ",
+                "LojaEventos.Infrastructure", "LojaEventos.Api", "LojaEventos.Worker")
+            .GetResult();
+        Assert.True(r.IsSuccessful, Falhas(r));
+    }
+
+    [Fact(DisplayName = "🏛️ Infrastructure não conhece a Api nem o Worker")]
+    public void Infrastructure_NaoDependeDosExecutaveis()
+    {
+        var r = Types.InAssembly(typeof(AppDbContext).Assembly)
+            .ShouldNot().HaveDependencyOnAny("LojaEventos.Api", "LojaEventos.Worker")
+            .GetResult();
+        Assert.True(r.IsSuccessful, Falhas(r));
+    }
+
+    [Fact(DisplayName = "📮 A Api nunca fala com o RabbitMQ: quem publica é o Worker, pelo outbox")]
+    public void Api_NaoPublicaDireto()
+    {
+        // Se alguém injetar o IEventPublisher num controller "para simplificar",
+        // o dual-write volta (armadilha nº 1). Este teste barra isso.
+        var r = Types.InAssembly(typeof(PedidosController).Assembly)
+            .ShouldNot().HaveDependencyOnAny("RabbitMQ", "LojaEventos.Application.Ports.IEventPublisher")
+            .GetResult();
+        Assert.True(r.IsSuccessful, Falhas(r));
+    }
+}</pre>
+</div>
+<p class="text-sm" style="margin:12px 0 4px">👉 O POST idempotente <strong>pelo HTTP</strong>: a API inteira sobe em memória, com o banco InMemory no lugar do MySQL e o repositório de produtos como mock. Confere o contrato da Parte 3: 400 sem chave, 201 na 1ª vez, 200 + mesmo id no replay, 422 com outro corpo, 404 para pedido inexistente.</p>
+<div class="code-editor-wrap">
+<span class="code-filepath">LojaEventos.Tests/ApiHttpTests.cs</span>
+<button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
+<pre class="code-editor" data-zip-path="LojaEventos.Tests/ApiHttpTests.cs">using System.Net;
+using System.Net.Http.Json;
+using LojaEventos.Domain.Entities;
+using LojaEventos.Domain.Interfaces;
+using LojaEventos.Domain.ValueObjects;
+using LojaEventos.Infrastructure.Data;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Moq;
+using Xunit;
+
+namespace LojaEventos.Tests;
+
+/// &lt;summary&gt;
+/// Testes HTTP: o POST idempotente cumpre o contrato da Parte 3?
+/// O WebApplicationFactory sobe a API inteira EM MEMÓRIA (sem porta, sem
+/// MySQL, sem RabbitMQ). Trocamos só duas coisas:
+///  • o MySQL por um banco InMemory (com o mesmo limite honesto dos outros testes);
+///  • o IProdutoRepository por um mock (ele usa SQL cru, que o InMemory não roda).
+/// Todo o resto — controller, caso de uso, outbox, idempotência, middleware de
+/// erros — é o código de produção.
+/// &lt;/summary&gt;
+public class ApiHttpTests
+{
+    private static HttpClient NovoCliente()
+    {
+        var produtos = new Mock&lt;IProdutoRepository&gt;();
+        produtos.Setup(r =&gt; r.BuscarPorIdAsync(It.IsAny&lt;long&gt;(), It.IsAny&lt;CancellationToken&gt;()))
+                .ReturnsAsync((long id, CancellationToken _) =&gt;
+                    Produto.Reconstituir(id, $"Produto {id}", Dinheiro.De(100m), 50, 0));
+
+        var banco = "http-" + Guid.NewGuid();      // um banco novo por teste: nenhum vaza para o outro
+        var factory = new WebApplicationFactory&lt;Program&gt;().WithWebHostBuilder(b =&gt;
+        {
+            // "Testing" (e não "Development"): o Program não roda o EnsureCreated no MySQL
+            b.UseEnvironment("Testing");
+            b.ConfigureServices(s =&gt;
+            {
+                // tira a configuração do MySQL (no EF 9 são estes dois registros)…
+                s.RemoveAll&lt;DbContextOptions&lt;AppDbContext&gt;&gt;();
+                s.RemoveAll&lt;IDbContextOptionsConfiguration&lt;AppDbContext&gt;&gt;();
+                // …e põe o banco em memória no lugar
+                s.AddDbContext&lt;AppDbContext&gt;(o =&gt; o
+                    .UseInMemoryDatabase(banco)
+                    .ConfigureWarnings(w =&gt; w.Ignore(InMemoryEventId.TransactionIgnoredWarning)));
+                s.RemoveAll&lt;IProdutoRepository&gt;();
+                s.AddSingleton(produtos.Object);
+            });
+        });
+        return factory.CreateClient();
+    }
+
+    private static object Pedido(long produtoId = 1, int quantidade = 2) =&gt;
+        new { clienteEmail = "ana@exemplo.com", itens = new[] { new { produtoId, quantidade } } };
+
+    private static HttpRequestMessage Post(object corpo, string? chave)
+    {
+        var req = new HttpRequestMessage(HttpMethod.Post, "/api/pedidos") { Content = JsonContent.Create(corpo) };
+        if (chave is not null) req.Headers.Add("Idempotency-Key", chave);
+        return req;
+    }
+
+    private static async Task&lt;string?&gt; TypeDoErro(HttpResponseMessage r)
+    {
+        Assert.Equal("application/problem+json", r.Content.Headers.ContentType?.MediaType);
+        var corpo = await r.Content.ReadFromJsonAsync&lt;Dictionary&lt;string, object&gt;&gt;();
+        return corpo?["type"]?.ToString();
+    }
+
+    private static async Task&lt;string&gt; IdDoPedido(HttpResponseMessage r)
+        =&gt; (await r.Content.ReadFromJsonAsync&lt;Dictionary&lt;string, object&gt;&gt;())!["id"].ToString()!;
+
+    [Fact(DisplayName = "🌐 GET /hello responde sem banco e sem broker → 200")]
+    public async Task Hello_200()
+    {
+        var r = await NovoCliente().GetAsync("/hello");
+        Assert.Equal(HttpStatusCode.OK, r.StatusCode);
+    }
+
+    [Fact(DisplayName = "🌐 POST sem Idempotency-Key → 400 problem+json")]
+    public async Task SemChave_400()
+    {
+        var r = await NovoCliente().SendAsync(Post(Pedido(), chave: null));
+
+        Assert.Equal(HttpStatusCode.BadRequest, r.StatusCode);
+        Assert.EndsWith("/dominio", await TypeDoErro(r));
+    }
+
+    [Fact(DisplayName = "🌐 1º POST → 201 + Location + Idempotent-Replay: false")]
+    public async Task PrimeiroPost_201()
+    {
+        var r = await NovoCliente().SendAsync(Post(Pedido(), "chave-a"));
+
+        Assert.Equal(HttpStatusCode.Created, r.StatusCode);
+        Assert.Equal("false", r.Headers.GetValues("Idempotent-Replay").Single());
+        Assert.Contains("/api/pedidos/", r.Headers.Location?.ToString());
+    }
+
+    [Fact(DisplayName = "🌐 Repetir a mesma chave e o mesmo corpo → 200, mesmo id, Idempotent-Replay: true")]
+    public async Task MesmaChave_Replay200()
+    {
+        var http = NovoCliente();
+        var primeira = await http.SendAsync(Post(Pedido(), "chave-b"));
+        var segunda  = await http.SendAsync(Post(Pedido(), "chave-b"));
+
+        Assert.Equal(HttpStatusCode.OK, segunda.StatusCode);
+        Assert.Equal("true", segunda.Headers.GetValues("Idempotent-Replay").Single());
+        Assert.Equal(await IdDoPedido(primeira), await IdDoPedido(segunda));   // não nasceu outro pedido
+    }
+
+    [Fact(DisplayName = "🌐 Mesma chave com outro corpo → 422 chave-reutilizada")]
+    public async Task MesmaChaveOutroCorpo_422()
+    {
+        var http = NovoCliente();
+        await http.SendAsync(Post(Pedido(quantidade: 2), "chave-c"));
+        var r = await http.SendAsync(Post(Pedido(quantidade: 5), "chave-c"));
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, r.StatusCode);
+        Assert.EndsWith("/chave-reutilizada", await TypeDoErro(r));
+    }
+
+    [Fact(DisplayName = "🌐 GET de um pedido que não existe → 404")]
+    public async Task PedidoInexistente_404()
+    {
+        var r = await NovoCliente().GetAsync($"/api/pedidos/{Guid.NewGuid()}");
+
+        Assert.Equal(HttpStatusCode.NotFound, r.StatusCode);
+        Assert.EndsWith("/nao-encontrado", await TypeDoErro(r));
+    }
+}</pre>
+</div>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaEventos.Tests/LojaEventos.Tests.csproj</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -5126,12 +5468,18 @@ public class OutboxEIdempotenciaTests
     &lt;ProjectReference Include="..\LojaEventos.Domain\LojaEventos.Domain.csproj" /&gt;
     &lt;ProjectReference Include="..\LojaEventos.Application\LojaEventos.Application.csproj" /&gt;
     &lt;ProjectReference Include="..\LojaEventos.Infrastructure\LojaEventos.Infrastructure.csproj" /&gt;
+    &lt;!-- A Api entra para os testes HTTP (WebApplicationFactory) e de arquitetura --&gt;
+    &lt;ProjectReference Include="..\LojaEventos.Api\LojaEventos.Api.csproj" /&gt;
   &lt;/ItemGroup&gt;
   &lt;ItemGroup&gt;
     &lt;PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" /&gt;
     &lt;PackageReference Include="xunit" Version="2.9.2" /&gt;
     &lt;PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" /&gt;
     &lt;PackageReference Include="Moq" Version="4.20.72" /&gt;
+    &lt;!-- Regras da arquitetura viram teste (ArquiteturaTests) --&gt;
+    &lt;PackageReference Include="NetArchTest.Rules" Version="1.3.2" /&gt;
+    &lt;!-- A API inteira em memória, sem porta (ApiHttpTests) --&gt;
+    &lt;PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.0" /&gt;
     &lt;!-- Banco em memória: permite testar a UNIÃO "agregado + outbox +
          idempotência no mesmo commit" sem subir MySQL no CI.
          ⚠️ Limite honesto: o provider InMemory NÃO tem transação de verdade
@@ -5142,7 +5490,22 @@ public class OutboxEIdempotenciaTests
   &lt;/ItemGroup&gt;
 &lt;/Project&gt;</pre>
 </div>
-<div class="term-help"><strong>🖥️ Rodar:</strong> <code>dotnet test</code> — ou Test Explorer (C# Dev Kit). Nenhum teste precisa de Docker.</div>
+<div class="step-box" style="margin:8px 0">
+<h4><span class="step-num-big">▶</span> 🖱️ Rodar os testes pelo Test Explorer</h4>
+<ol class="step-number-list">
+<li>Na barra da esquerda, clique no <strong>tubo de ensaio</strong> 🧪 (<em>Testing</em>).</li>
+<li>Clique em <strong>▶▶ Run Tests</strong>, no topo do painel.</li>
+</ol>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> os 52 casos com ✔ verde — com o Docker desligado, inclusive. No terminal (<code>dotnet test</code>): <code>Passed! - Failed: 0, Passed: 52, Skipped: 0, Total: 52</code>.</div>
+<div class="info-banner"><strong>🏛️ Experimente a armadilha nº 1:</strong> no <code>PedidosController</code>, acrescente <code>IEventPublisher publisher</code> ao construtor (com o <code>using LojaEventos.Application.Ports;</code>). Compila — e o teste <strong>"A Api nunca fala com o RabbitMQ…"</strong> fica 🔴. É ele que impede o dual-write de voltar em silêncio. Desfaça e ele volta a 🟢.</div>
+</div>
+<div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">✋ Errou? Os testes não aparecem ou falham</div>
+<div class="faq-a"><ul>
+<li><strong>O painel fica vazio</strong> → rode o <strong>Build</strong> da solução antes: o Test Explorer só enxerga projetos compilados.</li>
+<li><strong>Um teste HTTP falha com erro de conexão ao MySQL</strong> → o teste precisa rodar no ambiente <code>Testing</code> (o <code>UseEnvironment("Testing")</code> do <code>ApiHttpTests</code>): em <code>Development</code>, o <code>Program.cs</code> tenta criar as tabelas no MySQL.</li>
+<li><strong>Clique no teste vermelho</strong>: a mensagem mostra <em>Expected</em> (o que o teste esperava) e <em>Actual</em> (o que veio).</li>
+</ul></div></div>
+<div class="term-help"><strong>⌨️ Prefere o terminal?</strong> <code>dotnet test</code>, na pasta <code>LojaEventos</code>. Nenhum teste precisa de Docker.</div>
 <div class="warning-banner"><strong>⚠️ O limite HONESTO destes testes.</strong> O provider <code>InMemory</code> do EF <strong>não tem transação de verdade</strong> (<code>BeginTransaction</code> é ignorado — por isso o <code>ConfigureWarnings</code>) e não valida chave única como o MySQL. Logo eles provam a <strong>lógica</strong> (o evento é registrado? o replay devolve o mesmo id? nada é criado duas vezes?), mas <strong>não provam a atomicidade</strong>. Essa só o teste de integração contra MySQL comprova — e é para isso que existe o <code>prova-outbox.sh</code>. <em>Um teste que você acha que prova mais do que prova é pior do que nenhum teste.</em></div>
 <div class="info-banner"><strong>💡 Repare no que NÃO foi mockado:</strong> o <code>AppDbContext</code> é real (InMemory) e <code>EfPedidoRepository</code>, <code>EfOutbox</code>, <code>EfIdempotencyStore</code> e <code>UnitOfWork</code> são as classes de produção. Só <code>IProdutoRepository</code> virou mock, porque ele usa SQL cru (<code>ExecuteSqlRaw</code>), que o InMemory não suporta. Mockar tudo testaria o mock, não o sistema.</div>
 </div>
@@ -5402,7 +5765,7 @@ public class OutboxEIdempotenciaTests
 <h3>🗺️ Roteiro de execução (a ordem importa)</h3>
 <ol class="step-number-list">
 <li><strong>Baixe o ZIP</strong> e descompacte numa pasta <strong>nova</strong> (<code>LojaEventos/</code>). Ao contrário da Tab 9-B, aqui <strong>não</strong> se descompacta por cima de nada: é um projeto independente, e o ZIP já traz o <code>.sln</code> e todos os <code>.csproj</code> — <code>dotnet build</code> funciona na hora.</li>
-<li><code>dotnet build</code> e <code>dotnet test</code> — 38 casos verdes (34 métodos de teste), <strong>sem Docker</strong>. Se algo falhar aqui, resolva antes de subir container.</li>
+<li><code>dotnet build</code> e <code>dotnet test</code> — 52 casos verdes (48 métodos de teste), <strong>sem Docker</strong>. Se algo falhar aqui, resolva antes de subir container.</li>
 <li><code>docker compose up -d --build</code> — espere <code>docker compose ps</code> mostrar <code>mysql</code> e <code>api</code> como <em>healthy</em>.</li>
 <li><code>docker compose logs -f worker</code> — confirme as três linhas de boot (OutboxPublisher + 2 consumidores).</li>
 <li><strong>Abra a UI do RabbitMQ</strong> (<code>:15672</code>) e deixe na aba <em>Queues</em>. Você vai querer ver isso enquanto os scripts rodam.</li>
@@ -5421,7 +5784,7 @@ public class OutboxEIdempotenciaTests
 <thead><tr><th>#</th><th>Item</th><th>Onde</th><th>Status</th></tr></thead>
 <tbody>
 <tr><td>1</td><td>Solução <code>LojaEventos</code> aberta, <code>dotnet build</code> sem erros</td><td>Parte 1 · passo 0</td><td>⬜</td></tr>
-<tr><td>2</td><td><code>dotnet test</code>: 38 casos verdes, sem Docker</td><td>Parte 5 · TDD</td><td>⬜</td></tr>
+<tr><td>2</td><td><code>dotnet test</code>: 52 casos verdes, sem Docker</td><td>Parte 5 · TDD</td><td>⬜</td></tr>
 <tr><td>3</td><td><code>docker compose up -d --build</code>: <code>mysql</code> e <code>api</code> healthy</td><td>Parte 5 · passo 12</td><td>⬜</td></tr>
 <tr><td>4</td><td>Worker no ar: as 3 linhas de boot no log (OutboxPublisher + 2 consumidores)</td><td>Parte 5 · passo 12</td><td>⬜</td></tr>
 <tr><td>5</td><td>UI do RabbitMQ aberta em <code>localhost:15672</code>, aba Queues</td><td>Parte 1 · passo 1</td><td>⬜</td></tr>
@@ -5430,7 +5793,7 @@ public class OutboxEIdempotenciaTests
 <tr><td>8</td><td>Os 3 experimentos: veneno → DLQ, falha técnica → retry, <code>--scale worker=3</code> sem duplicar</td><td>Parte 5 · passo 13</td><td>⬜</td></tr>
 <tr><td>9</td><td>Teste de carga k6: latência do POST e drenagem do outbox anotadas</td><td>Parte 5 · passo 13</td><td>⬜</td></tr>
 </tbody></table></div>
-<div class="success-banner"><strong>📚 O que esta aba cobre:</strong> Clean Architecture ✓ · Ports &amp; Adapters ✓ · SOLID ✓ · DDD (AR + VO + Domain Events) ✓ · Domain Event <strong>despachado</strong> ✓ · Integration Event versionado (<code>.v1</code>) ✓ · Envelope com MessageId/Correlation/Causation ✓ · <strong>Outbox transacional</strong> ✓ · <code>FOR UPDATE SKIP LOCKED</code> ✓ · publisher confirms ✓ · backoff exponencial com teto ✓ · <strong>POST idempotente</strong> (<code>Idempotency-Key</code> + hash canônico + replay 200 + 422 para chave reutilizada) ✓ · <strong>Inbox</strong> com chave composta ✓ · idempotência no domínio (no-op) ✓ · reserva atômica (<code>UPDATE … WHERE estoque &gt;= q</code>) ✓ · concorrência otimista ✓ · compensação (saga) ✓ · retry escalonado 10s/1m/10m ✓ · DLQ por consumidor ✓ · poison message isolada ✓ · prefetch/QoS ✓ · filas duráveis + mensagens persistentes ✓ · <code>mandatory: true</code> ✓ · reconexão automática ✓ · API e Worker separados ✓ · escala horizontal do worker sem duplicação ✓ · RFC 9457 (problem+json) com 400/404/409/422/500 corretos ✓ · correlation id ponta a ponta ✓ · paginação real (LIMIT/OFFSET) ✓ · health check ✓ · observabilidade (pendentes/lag/presas) ✓ · 34 testes (38 casos) ✓ · Docker multi-stage + compose com healthcheck ✓ · smoke + prova de resiliência + carga k6 ✓ · manutenção/expurgo ✓ · 6 ADRs ✓ · 6 diagramas ✓ · 16 armadilhas documentadas ✓.</div>
+<div class="success-banner"><strong>📚 O que esta aba cobre:</strong> Clean Architecture ✓ · Ports &amp; Adapters ✓ · SOLID ✓ · DDD (AR + VO + Domain Events) ✓ · Domain Event <strong>despachado</strong> ✓ · Integration Event versionado (<code>.v1</code>) ✓ · Envelope com MessageId/Correlation/Causation ✓ · <strong>Outbox transacional</strong> ✓ · <code>FOR UPDATE SKIP LOCKED</code> ✓ · publisher confirms ✓ · backoff exponencial com teto ✓ · <strong>POST idempotente</strong> (<code>Idempotency-Key</code> + hash canônico + replay 200 + 422 para chave reutilizada) ✓ · <strong>Inbox</strong> com chave composta ✓ · idempotência no domínio (no-op) ✓ · reserva atômica (<code>UPDATE … WHERE estoque &gt;= q</code>) ✓ · concorrência otimista ✓ · compensação (saga) ✓ · retry escalonado 10s/1m/10m ✓ · DLQ por consumidor ✓ · poison message isolada ✓ · prefetch/QoS ✓ · filas duráveis + mensagens persistentes ✓ · <code>mandatory: true</code> ✓ · reconexão automática ✓ · API e Worker separados ✓ · escala horizontal do worker sem duplicação ✓ · RFC 9457 (problem+json) com 400/404/409/422/500 corretos ✓ · correlation id ponta a ponta ✓ · paginação real (LIMIT/OFFSET) ✓ · health check ✓ · observabilidade (pendentes/lag/presas) ✓ · 48 testes (52 casos) ✓ · Docker multi-stage + compose com healthcheck ✓ · smoke + prova de resiliência + carga k6 ✓ · manutenção/expurgo ✓ · 6 ADRs ✓ · 6 diagramas ✓ · 16 armadilhas documentadas ✓.</div>
 
 <div class="info-banner"><strong>🔭 Próximos passos naturais (fora do escopo desta aba):</strong> <strong>Saga orquestrada</strong> quando o fluxo passar de 3 passos (hoje é coreografia simples); <strong>CQRS</strong> com projeção de leitura alimentada pelos mesmos eventos; <strong>Event Sourcing</strong> se o histórico de mudanças virar requisito de negócio (é um salto grande — exige store de eventos e <em>snapshots</em>); <strong>Kafka</strong> se você precisar de <em>replay</em> histórico ou de ordenação por chave em escala; <strong>OpenTelemetry</strong> para propagar o trace dentro do envelope (hoje propagamos o <code>correlationId</code> na mão); <strong>Schema Registry</strong> para validar o contrato do evento em tempo de publicação.</div>
 </div>
