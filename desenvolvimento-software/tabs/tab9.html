@@ -130,6 +130,27 @@ INF --> DOM'>
 <tr><td>🛒 Pedidos</td><td><code>IPedidoRepository</code> · <code>ICatalogoClient</code> · <code>IClientesClient</code></td><td><code>EfPedidoRepository</code> · <code>CatalogoClient</code> · <code>ClientesClient</code> (HTTP)</td><td><code>PedidoService</code></td></tr>
 </tbody></table></div>
 <p><strong>E o TDD?</strong> Como o domínio e os casos de uso não dependem de nada externo, cada regra tem um teste que roda em milissegundos, sem banco (parte ⑥). E as próprias regras de camadas viram teste: se o <code>Domain</code> usar o EF Core, o build fica vermelho.</p>
+<div class="deep-concept-box">
+<h4>🧩 Três ideias que aparecem em todo módulo: DTO, Shared Kernel e Criar × Reconstituir</h4>
+<p><strong>1. DTO (<em>Data Transfer Object</em>) — o "formulário" da API.</strong> É uma classe só com dados, sem regra, no formato exato do contrato da Tab 8. O <code>ProdutoRequest</code> é o que chega no POST; o <code>ProdutoResponse</code> é o que sai no JSON. A entidade <code>Produto</code> <strong>nunca</strong> sai direto pela API. Por quê?</p>
+<ul>
+<li>a entidade tem coisas que o cliente não deve ver nem mandar (a lista de eventos, o <code>Reservado</code> escrito à mão);</li>
+<li>se você renomear uma propriedade da entidade, o JSON — e o contrato — não muda sem querer;</li>
+<li>o DTO pode juntar ou calcular campos (o <code>Disponivel</code> do response).</li>
+</ul>
+<p>A conversão fica num lugar só: <code>ProdutoResponse.De(produto)</code>.</p>
+<p><strong>2. Shared Kernel — o "dicionário comum" dos módulos.</strong> Em DDD, cada contexto tem o seu modelo e não usa o dos outros. Mas algumas peças pequenas e estáveis valem para todos: o Value Object <code>Dinheiro</code> (preço no Catálogo, total no Pedido), a <code>DomainException</code>, os <code>ProblemTypes</code> do contrato, a base <code>AggregateRoot</code>. Elas ficam no projeto <code>LojaApi.Shared.Kernel</code>, o <strong>único</strong> que todos os módulos podem referenciar. A regra de ouro: o kernel é <strong>pequeno</strong> e só muda com acordo de todos os times — se começar a crescer, é sinal de que um contexto está vazando para dentro dele.</p>
+<p><strong>3. <code>Criar</code> × <code>Reconstituir</code> — nascer ou voltar do banco.</strong> Toda entidade tem duas fábricas estáticas (no lugar de um <code>new</code> público):</p>
+<div class="table-wrap"><table>
+<thead><tr><th></th><th><code>Produto.Criar(nome, preco, estoque)</code></th><th><code>Produto.Reconstituir(id, nome, preco, estoque, reservado)</code></th></tr></thead>
+<tbody>
+<tr><td>Quando</td><td>o produto <strong>nasce</strong> (POST)</td><td>o produto <strong>já existe</strong> (lido do banco, do MongoDB na Tab 9-B, ou montado num teste)</td></tr>
+<tr><td>Valida?</td><td>✅ sim: nome 2–100, preço &gt; 0, estoque ≥ 0</td><td>❌ não: o dado já foi validado quando nasceu</td></tr>
+<tr><td>Id</td><td>não tem — quem dá é o banco</td><td>recebe o id que já existe</td></tr>
+</tbody></table></div>
+<p>Por que não validar sempre? Porque a regra pode <strong>mudar</strong>: se amanhã o nome mínimo passar a 3 letras, um produto antigo chamado "TV" ainda precisa ser lido do banco — senão a API quebra ao listar. E nos testes, o <code>Reconstituir</code> monta um produto em qualquer estado ("5 em estoque, 3 reservados") numa linha.</p>
+<p>📚 <a class="ext" href="https://martinfowler.com/eaaCatalog/dataTransferObject.html" target="_blank">DTO (Fowler)</a> · <a class="ext" href="https://learn.microsoft.com/pt-br/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/seedwork-domain-model-base-classes-interfaces" target="_blank">Classes base compartilhadas no DDD (Microsoft)</a> · <a class="ext" href="https://www.youtube.com/results?search_query=dto+c%23+o+que+%C3%A9" target="_blank">🎬 Vídeos-aula no YouTube (busca em português)</a></p>
+</div>
 <div class="info-banner"><strong>⚛️ Um detalhe que só aparece com dois clientes ao mesmo tempo:</strong> a porta do Catálogo tem <code>TentarReservarAsync</code>, e não "ler o produto → conferir → salvar". Se dois pedidos disputam a última unidade, os dois leriam "disponível = 1" e os dois reservariam. O adapter faz a reserva num <strong>comando só</strong> — <code>UPDATE … SET reservado = reservado + 2 WHERE id = 101 AND estoque - reservado &gt;= 2</code> — e o banco garante que só um vence.</div>
 <div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=clean+architecture+.net+explicado" target="_blank">Clean Architecture em .NET</a> · <a class="ext" href="https://www.youtube.com/results?search_query=solid+c%23+explicado" target="_blank">SOLID em C#</a> · <a class="ext" href="https://www.youtube.com/results?search_query=ddd+value+object+aggregate+c%23" target="_blank">DDD: Value Object e Aggregate</a> · <a class="ext" href="https://www.youtube.com/results?search_query=repository+pattern+c%23+ef+core" target="_blank">Repository Pattern com EF Core</a> · <a class="ext" href="https://www.youtube.com/results?search_query=arquitetura+hexagonal+portas+e+adaptadores" target="_blank">Portas e adaptadores (hexagonal)</a> · <a class="ext" href="https://www.youtube.com/results?search_query=concorr%C3%AAncia+banco+de+dados+race+condition+estoque" target="_blank">Concorrência no banco (race condition)</a></div>
 <p><strong>Aprofundar:</strong> <a class="ext" href="https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html" target="_blank">The Clean Architecture (Robert C. Martin)</a> · <a class="ext" href="https://martinfowler.com/bliki/ValueObject.html" target="_blank">Value Object (Fowler)</a> · <a class="ext" href="https://martinfowler.com/bliki/DDD_Aggregate.html" target="_blank">DDD Aggregate (Fowler)</a> · <a class="ext" href="https://learn.microsoft.com/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/ddd-oriented-microservice" target="_blank">Camadas DDD em .NET (Microsoft)</a></p>
@@ -3615,6 +3636,32 @@ Invoke-RestMethod "$H/pedidos" -Headers $auth                          # os meus
 <tr><td>🌐 HTTP</td><td><code>ApiHttpTests.cs</code></td><td>6</td><td>GET público 200 · sem token 401 · nome com 101 letras 400 · produto 999 404 · login errado 401 · pedidos com token 200 e status em texto</td></tr>
 </tbody></table></div>
 <p class="text-sm text-muted">Os 12 de arquitetura são 3 métodos <code>[Theory]</code>, cada um rodando uma vez por módulo — o Test Explorer mostra os 4 casos de cada um.</p>
+<div class="deep-concept-box">
+<h4>🔴🟢🔵 TDD na prática: uma regra nova, do zero</h4>
+<p>Os testes desta aba já vêm prontos — mas foram escritos <strong>antes</strong> do código. Faça você mesmo um ciclo completo com uma regra nova: <em>"não é permitido reservar mais de 10 unidades de uma vez"</em>.</p>
+<p><strong>🔴 1. RED — escreva o teste primeiro.</strong> No fim da classe <code>CatalogoProdutoTests</code>, cole:</p>
+<pre class="code-editor">[Fact(DisplayName = "📦 Reservar mais de 10 de uma vez lança 400")]
+public void Reservar_MaisDe10_Lanca400()
+{
+    var produto = Produto.Reconstituir(101, "Teclado", 349.90m, estoque: 50, reservado: 0);
+
+    var ex = Assert.Throws&lt;DomainException&gt;(() =&gt; produto.Reservar(11));
+    Assert.Equal(ProblemTypes.Validacao, ex.Type);
+}</pre>
+<p>Rode só este teste (▶ ao lado do nome no Test Explorer).</p>
+<div class="success-banner"><strong>✅ Resultado esperado:</strong> 🔴 vermelho, com <em>"Assert.Throws() Failure: No exception was thrown"</em>. Isso é <strong>bom</strong>: prova que o teste enxerga a falta da regra. Um teste que nasce verde não prova nada.</div>
+<p><strong>🟢 2. GREEN — o código mínimo.</strong> Em <code>Produto.Reservar</code>, logo depois de <code>ValidarQuantidade(qtd);</code>, acrescente:</p>
+<pre class="code-editor">if (qtd &gt; 10)
+    throw new DomainException("No máximo 10 unidades por reserva", ProblemTypes.Validacao);</pre>
+<p>Rode de novo: 🟢. Agora rode <strong>todos</strong> os testes, para garantir que nada antigo quebrou.</p>
+<p><strong>🔵 3. REFACTOR — melhore sem mudar o comportamento.</strong> O "10" solto no código é um <em>número mágico</em>. Troque por uma constante com nome: <code>public const int MaximoPorReserva = 10;</code> e use <code>qtd &gt; MaximoPorReserva</code>. Rode tudo: continua 🟢 — o teste é a rede de proteção que deixa você mexer sem medo.</p>
+<div class="warning-banner"><strong>✋ Errou?</strong>
+<ul>
+<li><strong>Não compila: <code>ProblemTypes.Validacao</code> não existe</strong> → abra <code>LojaApi.Shared.Kernel/ProblemTypes.cs</code> e use o nome da constante de validação que está lá.</li>
+<li><strong>Outro teste ficou vermelho</strong> → algum teste reserva mais de 10. É exatamente o tipo de descoberta que o TDD traz: decida se a regra está certa (e ajuste o teste antigo) ou se ela é dura demais.</li>
+</ul></div>
+<p class="text-sm">Terminou? Desfaça a regra (<kbd>Ctrl+Z</kbd> ou apague as linhas): ela não está no contrato da Tab 8 e quebraria os testes HTTP. 👉 Uma regra nova de verdade começaria por uma mudança no contrato (e uma ADR).</p>
+</div>
 <div class="code-editor-wrap">
 <span class="code-filepath">LojaApi.Tests/ValueObjectTests.cs (4 testes)</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
@@ -4727,9 +4774,17 @@ obj/
 <tr><td>7</td><td>57 testes verdes — e viu a compensação ficar 🔴 ao comentá-la</td><td>⑥</td><td>⬜</td></tr>
 <tr><td>8</td><td>Container <code>loja-multi</code> respondendo em <code>localhost:8082</code></td><td>⑦</td><td>⬜</td></tr>
 <tr><td>9</td><td>Pipeline verde no GitHub ou no GitLab</td><td>⑧</td><td>⬜</td></tr>
+<tr><td>10</td><td>Sabe explicar DTO, Shared Kernel e <code>Criar</code> × <code>Reconstituir</code> com um exemplo da loja</td><td>①</td><td>⬜</td></tr>
+<tr><td>11</td><td>Fez o ciclo 🔴 → 🟢 → 🔵 da regra "máximo 10 por reserva" (e desfez no fim)</td><td>⑥</td><td>⬜</td></tr>
+<tr><td>12</td><td>Furou uma regra de arquitetura de propósito e viu o <code>ArquiteturaTests</code> ficar 🔴</td><td>⑥</td><td>⬜</td></tr>
 </tbody></table></div>
 <div class="success-banner"><strong>✅ Aba completa:</strong> 4 contextos com fronteira de código e de dados · Clean Architecture + DDD em todos os módulos (com teste de arquitetura) · reserva atômica · login real com JWT, sem roles · pedido orquestrando Catálogo e Clientes por HTTP, com compensação · erros iguais aos do contrato · os mesmos testes no mock e na API real · 57 testes · Docker · CI.</div>
-<div class="info-banner"><strong>➡️ Próximo passo:</strong> a <a href="javascript:switchTab('tab9b')" style="color:var(--primary);text-decoration:underline">Tab 9-B</a> troca estes bancos por MongoDB — e o <code>IUsuarioRepository</code> mostra por que isso não mexe nos serviços.</div>
+<div class="info-banner"><strong>➡️ Próximo passo:</strong> escolha um caminho (ou os dois):
+<ul>
+<li><a href="javascript:switchTab('tab9b')" style="color:var(--primary);text-decoration:underline">Tab 9-B</a> — troca estes bancos por <strong>MongoDB</strong>, com migração offline. É a prova prática da Clean Architecture: o <code>IUsuarioRepository</code> ganha outro adapter e os serviços e testes não mudam uma linha.</li>
+<li><a href="javascript:switchTab('tab7b')" style="color:var(--primary);text-decoration:underline">Tab 7-B</a> — se ainda não fez: o checkout daqui é <strong>síncrono</strong> (HTTP + compensação); lá você vê a alternativa com <strong>eventos</strong>, outbox e idempotência.</li>
+</ul>
+Antes de seguir, garanta os 12 itens acima ✅ — a 9-B parte exatamente desta solução.</div>
 </div>
 </div>
 </section>
