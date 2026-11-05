@@ -1,0 +1,2109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Segurança e Auditoria de Sistemas — Aula 5</title>
+<!-- HTMLearning v2.17 — Campos não informados: professor da disciplina (nome, e-mail, lattes, orcid, site, instituição). Nenhum conteúdo pedagógico foi inventado. -->
+<style>
+:root {
+  --cor-destaque: #1E40AF;
+  --cor-destaque-claro: #DBEAFE;
+  --cor-destaque-escuro: #1E3A8A;
+  --fundo: #FFFFFF;
+  --fundo-cartao: #F8FAFC;
+  --fundo-codigo: #F1F5F9;
+  --texto: #0F172A;
+  --texto-suave: #64748B;
+  --borda: #E2E8F0;
+  --sucesso: #059669;
+  --erro: #DC2626;
+  --aviso: #F59E0B;
+}
+[data-theme="dark"] {
+  --fundo: #0F172A;
+  --fundo-cartao: #1E293B;
+  --fundo-codigo: #334155;
+  --texto: #F1F5F9;
+  --texto-suave: #94A3B8;
+  --borda: #475569;
+  --cor-destaque-claro: #1E3A8A;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 18px;
+  line-height: 1.6;
+  background: var(--fundo);
+  color: var(--texto);
+  transition: background 0.3s, color 0.3s;
+}
+body.modo-apresentacao { font-size: 22px; }
+header {
+  background: linear-gradient(135deg, var(--cor-destaque), var(--cor-destaque-escuro));
+  color: white;
+  padding: 2rem 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+header .meta { opacity: 0.95; font-size: 0.95rem; }
+.controles-topo { position: fixed; top: 1rem; right: 1rem; z-index: 1000; display: flex; gap: 0.5rem; }
+.controles-topo button {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--cor-destaque);
+  color: var(--cor-destaque);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+.controles-topo button:hover { background: var(--cor-destaque); color: white; }
+.xp-bar {
+  position: sticky;
+  top: 0;
+  background: var(--cor-destaque-claro);
+  padding: 0.75rem 1.5rem;
+  border-bottom: 2px solid var(--cor-destaque);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  z-index: 99;
+}
+.tabs-container {
+  position: sticky;
+  top: 52px;
+  background: var(--fundo);
+  border-bottom: 2px solid var(--borda);
+  z-index: 98;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+.tabs { display: flex; padding: 0 1rem; gap: 0.25rem; }
+.tab {
+  padding: 1rem 1.5rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--texto-suave);
+  font-size: 1rem;
+  font-weight: 600;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.tab:hover { color: var(--cor-destaque); }
+.tab[aria-selected="true"] {
+  color: var(--cor-destaque);
+  border-bottom-color: var(--cor-destaque);
+  background: var(--fundo);
+}
+.painel { display: none; padding: 2rem 1.5rem; max-width: 1100px; margin: 0 auto; }
+.painel.active { display: block; animation: fade 0.3s; }
+@keyframes fade { from {opacity:0} to {opacity:1} }
+h2 {
+  color: var(--cor-destaque-escuro);
+  border-left: 5px solid var(--cor-destaque);
+  padding-left: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.6rem;
+}
+h3 { color: var(--cor-destaque-escuro); margin: 1.5rem 0 1rem; font-size: 1.3rem; }
+.cartao {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.missao {
+  background: linear-gradient(135deg, var(--cor-destaque-claro), var(--fundo-cartao));
+  border-left: 5px solid var(--cor-destaque);
+}
+.missao::before {
+  content: "🎯 MISSÃO";
+  display: block;
+  font-weight: bold;
+  color: var(--cor-destaque-escuro);
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.mundo-real { background: #E7F5FF; border-left: 5px solid #1971C2; }
+[data-theme="dark"] .mundo-real { background: #1A3A52; }
+.mundo-real::before {
+  content: "🌎 NO MUNDO REAL";
+  display: block;
+  font-weight: bold;
+  color: #1971C2;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.ferramentas { background: #D3F9D8; border-left: 5px solid #059669; }
+[data-theme="dark"] .ferramentas { background: #1B4332; }
+.ferramentas::before {
+  content: "🛠️ FERRAMENTAS";
+  display: block;
+  font-weight: bold;
+  color: #059669;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.demo-box {
+  background: var(--fundo-codigo);
+  border: 3px solid var(--cor-destaque);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+.instrucoes {
+  background: #FFF9DB;
+  border: 2px solid var(--aviso);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .instrucoes { background: #3D3518; }
+.instrucoes::before {
+  content: "📋 INSTRUÇÕES PASSO A PASSO";
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.roteiro {
+  background: #F3D9FA;
+  border-left: 4px solid #9C36B5;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+[data-theme="dark"] .roteiro { background: #3D1F47; }
+.roteiro::before { content: "🎤 Roteiro do apresentador: "; font-weight: bold; font-style: normal; }
+.prever {
+  background: #E3FAFC;
+  border: 2px dashed #0C8599;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+[data-theme="dark"] .prever { background: #0F3742; }
+.prever::before {
+  content: "🔮 PREVISÃO";
+  display: block;
+  font-weight: bold;
+  color: #0C8599;
+  margin-bottom: 0.5rem;
+}
+.legenda {
+  background: #FFF3BF;
+  border-left: 4px solid #F59F00;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+  border-radius: 6px;
+}
+[data-theme="dark"] .legenda { background: #3D3518; }
+.legenda::before { content: "🔑 Legenda: "; font-weight: bold; }
+.quiz-box {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+.termos-quiz {
+  background: #FFF3BF;
+  border: 2px solid #F59F00;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+[data-theme="dark"] .termos-quiz { background: #3D3518; }
+.termos-quiz::before {
+  content: "🔑 Termos deste quiz";
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.pergunta {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--fundo);
+  border-radius: 8px;
+  border: 2px solid var(--borda);
+}
+.pergunta p { font-weight: 600; margin-bottom: 0.75rem; }
+.alt {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+  background: white;
+  border: 2px solid var(--borda);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--texto);
+  transition: all 0.2s;
+}
+[data-theme="dark"] .alt { background: var(--fundo-cartao); }
+.alt:hover:not(:disabled) { border-color: var(--cor-destaque); background: var(--cor-destaque-claro); }
+.alt.certa { background: #D3F9D8 !important; border-color: var(--sucesso) !important; color: var(--sucesso); font-weight: bold; }
+.alt.errada { background: #FFE3E3 !important; border-color: var(--erro) !important; color: var(--erro); }
+[data-theme="dark"] .alt.certa { background: #1B4332 !important; color: #51CF66 !important; }
+[data-theme="dark"] .alt.errada { background: #3D1F24 !important; color: #FF6B6B !important; }
+.alt:disabled { cursor: not-allowed; opacity: 0.7; }
+.fb { margin-top: 0.5rem; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.95rem; display: none; }
+.fb.show { display: block; }
+.fb.fb-certa { background: #D3F9D8; border-left: 4px solid var(--sucesso); color: #087F23; }
+.fb.fb-errada { background: #FFE3E3; border-left: 4px solid var(--erro); color: #C92A2A; }
+[data-theme="dark"] .fb.fb-certa { background: #1B4332; color: #69DB7C; }
+[data-theme="dark"] .fb.fb-errada { background: #3D1F24; color: #FFA8A8; }
+details {
+  background: var(--fundo-codigo);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+  border: 1px solid var(--borda);
+}
+details[open] { background: var(--cor-destaque-claro); }
+summary { cursor: pointer; font-weight: bold; color: var(--cor-destaque-escuro); padding: 0.25rem 0; }
+.demo-area {
+  background: white;
+  border: 2px dashed var(--cor-destaque);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+  min-height: 150px;
+}
+[data-theme="dark"] .demo-area { background: var(--fundo-cartao); }
+.btn {
+  background: var(--cor-destaque);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.95rem;
+  margin: 0.25rem;
+}
+.btn:hover { background: var(--cor-destaque-escuro); }
+.btn-secundario { background: var(--texto-suave); color: white; }
+.resultado-demo {
+  background: #D3F9D8;
+  border-left: 4px solid var(--sucesso);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .resultado-demo { background: #1B4332; color: #69DB7C; }
+.resultado-erro {
+  background: #FFE3E3;
+  border-left: 4px solid var(--erro);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .resultado-erro { background: #3D1F24; color: #FFA8A8; }
+footer {
+  background: var(--fundo-cartao);
+  border-top: 3px solid var(--cor-destaque);
+  padding: 2rem 1.5rem;
+  margin-top: 3rem;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+footer h4 { color: var(--cor-destaque-escuro); margin-bottom: 0.75rem; font-size: 1rem; }
+footer .bloco { padding: 1rem 0; line-height: 1.7; }
+footer .bloco + .bloco { border-top: 2px solid var(--borda); margin-top: 1rem; padding-top: 1.5rem; }
+footer a { color: var(--cor-destaque-escuro); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+footer ul { list-style: none; padding-left: 0; }
+footer ul li { margin: 0.4rem 0; }
+.revisao-mapa {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+.no-mapa {
+  background: var(--cor-destaque-claro);
+  border: 2px solid var(--cor-destaque);
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+}
+.no-mapa h4 { color: var(--cor-destaque-escuro); margin-bottom: 0.5rem; }
+.cola-rapida {
+  background: #FFF9DB;
+  border: 2px solid var(--aviso);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin: 1rem 0;
+}
+[data-theme="dark"] .cola-rapida { background: #3D3518; }
+.cola-rapida dt { font-weight: bold; color: var(--cor-destaque-escuro); margin-top: 0.75rem; }
+.cola-rapida dd { margin-left: 1rem; margin-bottom: 0.5rem; color: var(--texto); }
+.chefao {
+  background: linear-gradient(135deg, var(--cor-destaque-claro), white);
+  border: 3px solid var(--cor-destaque);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+[data-theme="dark"] .chefao { background: linear-gradient(135deg, var(--cor-destaque-claro), var(--fundo-cartao)); }
+.chefao::before {
+  content: "👑 CHEFÃO — DESAFIO FINAL";
+  display: block;
+  font-weight: bold;
+  color: var(--cor-destaque-escuro);
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+}
+.mitoverdade {
+  background: #F3D9FA;
+  border-left: 5px solid #9C36B5;
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 8px;
+}
+[data-theme="dark"] .mitoverdade { background: #3D1F47; }
+code {
+  background: var(--fundo-codigo);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-family: "Courier New", monospace;
+  font-size: 0.95em;
+  color: var(--cor-destaque-escuro);
+}
+pre {
+  background: var(--fundo-codigo);
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  border-left: 4px solid var(--cor-destaque);
+  margin: 1rem 0;
+  font-family: "Courier New", monospace;
+  font-size: 0.9rem;
+}
+.hash-saida {
+  font-family: "Courier New", monospace;
+  background: var(--fundo-codigo);
+  padding: 0.5rem 0.8rem;
+  border-radius: 6px;
+  word-break: break-all;
+  margin: 0.4rem 0;
+  font-size: 0.85rem;
+}
+.cadeia-card {
+  border: 2px solid var(--cor-destaque);
+  border-radius: 10px;
+  padding: 1rem;
+  margin: 0.5rem 0;
+  background: var(--cor-destaque-claro);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.cadeia-card:hover { transform: translateX(6px); }
+.cadeia-card.revogado { border-color: var(--erro); background: #FFE3E3; }
+.selos-status {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  margin-left: 0.4rem;
+}
+.selos-status.ok { background: #D3F9D8; color: #087F23; }
+.selos-status.bad { background: #FFE3E3; color: #C92A2A; }
+@media (max-width: 600px) {
+  header h1 { font-size: 1.5rem; }
+  .tab { padding: 0.75rem 1rem; font-size: 0.9rem; }
+  .painel { padding: 1rem; }
+  .controles-topo { position: static; padding: 0.5rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="controles-topo">
+  <button id="btn-modo" type="button">🎤 Apresentação</button>
+  <button id="btn-tema" type="button">🌙 Escuro</button>
+</div>
+
+<header>
+  <h1>Segurança e Auditoria de Sistemas</h1>
+  <div class="meta">Aula 5 · Unidade 2 · Págs. 38 a 65 · Algoritmos, Assinaturas e Certificados Digitais</div>
+</header>
+
+<div class="xp-bar">
+  <div>⭐ XP: <span id="xp">0</span> · Selos: <span id="selos">0</span>/5</div>
+  <div id="progresso">Aba 1 de 6</div>
+</div>
+
+<div class="tabs-container">
+  <div class="tabs" role="tablist" aria-label="Abas da aula">
+    <button class="tab" role="tab" id="tab-1" aria-selected="true" aria-controls="painel-1" data-aba="1" type="button">1 · Uso seguro</button>
+    <button class="tab" role="tab" id="tab-2" aria-selected="false" aria-controls="painel-2" data-aba="2" type="button">2 · Assinaturas</button>
+    <button class="tab" role="tab" id="tab-3" aria-selected="false" aria-controls="painel-3" data-aba="3" type="button">3 · PKI</button>
+    <button class="tab" role="tab" id="tab-4" aria-selected="false" aria-controls="painel-4" data-aba="4" type="button">4 · Certificados</button>
+    <button class="tab" role="tab" id="tab-5" aria-selected="false" aria-controls="painel-5" data-aba="5" type="button">5 · Na prática</button>
+    <button class="tab" role="tab" id="tab-6" aria-selected="false" aria-controls="painel-6" data-aba="6" type="button">⭐ Revisão</button>
+  </div>
+</div>
+
+<!-- ============ ABA 1 ============ -->
+<div class="painel active" id="painel-1" role="tabpanel" aria-labelledby="tab-1">
+  <h2>Aba 1 · Implementação e uso seguro de algoritmos criptográficos</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é entender que ter um algoritmo forte (como o AES-256, padrão mundial de criptografia simétrica com chave de 256 bits) não basta: a <strong>implementação</strong> e o <strong>uso</strong> é que decidem se o sistema é seguro ou não. Você vai conhecer os erros clássicos (chave fixa no código, modo ECB que revela padrões, nonce repetido, senha usada como chave sem derivação) e as boas práticas (geração com CSPRNG, armazenamento em HSM ou KMS, rotação de chaves).</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 O ciclo de vida de uma chave</h3>
+    <p>Toda chave criptográfica passa por cinco fases, e cada uma exige cuidado:</p>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Geração</strong>: a chave deve nascer de um <strong>CSPRNG</strong> (do inglês <em>Cryptographically Secure Pseudorandom Number Generator</em>; em português, Gerador Pseudoaleatório Criptograficamente Seguro), que produz números imprevisíveis. Geradores comuns (como a função rand de muitas linguagens) são previsíveis e já causaram desastres.</li>
+      <li><strong>Armazenamento</strong>: chaves não ficam escritas no código-fonte nem em arquivos de configuração. Elas vivem em <strong>HSM</strong> (do inglês <em>Hardware Security Module</em>; em português, Módulo de Segurança de Hardware, um cofre físico dedicado) ou em <strong>KMS</strong> (do inglês <em>Key Management Service</em>; em português, Serviço de Gerenciamento de Chaves, como o AWS KMS da Amazon ou o Azure Key Vault da Microsoft).</li>
+      <li><strong>Uso</strong>: escolher o modo de operação certo (GCM, que cifra e autentica) e nunca reaproveitar <strong>nonce</strong> (do inglês <em>number used once</em>; em português, número usado uma única vez, valor que deve ser diferente a cada cifragem).</li>
+      <li><strong>Rotação</strong>: trocar a chave periodicamente limita o estrago de um vazamento: só os dados cifrados com a chave velha ficam expostos.</li>
+      <li><strong>Destruição</strong>: apagar a chave de forma irreversível quando ela aposenta, técnica chamada de <strong>crypto-shredding</strong> (em português, trituração criptográfica: sem a chave, o dado cifrado vira lixo inútil).</li>
+    </ul>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Falhas reais de implementação</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>WEP quebrado</strong> (protocolo de Wi-Fi de 1997): o <strong>IV</strong> (do inglês <em>Initialization Vector</em>; em português, Vetor de Inicialização) tinha só 24 bits e se repetia; em 2001, pesquisadores mostraram que bastava capturar alguns milhões de pacotes para recuperar a chave. O substituto WPA2 corrigiu isso.</li>
+      <li><strong>PlayStation 3</strong> (console da Sony, empresa japonesa): em 2010, o grupo fail0verflow descobriu que a Sony usava o mesmo nonce em todas as assinaturas ECDSA (algoritmo de assinatura por curva elíptica) do sistema; com dois documentos assinados com o mesmo nonce, a chave privada foi calculada com álgebra de escola.</li>
+      <li><strong>Debian OpenSSL 2008</strong>: um maintainer (mantenedor de pacote) removeu linhas do gerador aleatório do OpenSSL (biblioteca criptográfica aberta) achando que eram inúteis; o resultado foram chaves SSH (protocolo de acesso remoto seguro) previsíveis entre milhares de servidores por dois anos.</li>
+      <li><strong>Chaves hardcoded em IoT</strong> (do inglês <em>Internet of Things</em>; em português, Internet das Coisas): câmeras e roteadores baratos já foram flagrados com a mesma chave AES gravada no firmware (software embutido no aparelho), permitindo invadir qualquer unidade do modelo.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Boas práticas que viraram regra de mercado</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Não invente criptografia própria</strong>: use bibliotecas auditadas (OpenSSL, libsodium, Bouncy Castle).</li>
+      <li><strong>Criptografia autenticada</strong>: prefira AES-GCM ou ChaCha20-Poly1305, que detectam adulteração junto com a cifragem.</li>
+      <li><strong>Senhas viram chave só com KDF</strong> (do inglês <em>Key Derivation Function</em>; em português, Função de Derivação de Chave): Argon2, bcrypt ou PBKDF2 com sal (valor aleatório único por usuário) e muitas iterações.</li>
+      <li><strong>TLS 1.2 ou 1.3</strong> para tudo que trafega em rede; desligue versões antigas (SSL 3.0, TLS 1.0).</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: simulador de configuração criptográfica</h3>
+
+    <div class="prever">
+      <strong>Antes de configurar, preveja:</strong> uma aplicação que cifra dados com AES-256 (chave forte) mas em modo ECB (modo que cifra cada bloco isolado) e com IV fixo merece qual nota de segurança: alta, média ou baixa?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, registre sua previsão de nota.<br>
+      <strong>Passo 1:</strong> escolha o modo de operação, o tamanho da chave, o comportamento do nonce e a origem da chave.<br>
+      <strong>Passo 2:</strong> clique em Avaliar configuração.<br>
+      <strong>Passo 3:</strong> leia cada problema apontado e o exemplo real associado.<br>
+      <strong>Passo 4:</strong> troque as escolhas ruins pelas boas e veja a nota subir.
+    </div>
+
+    <div class="roteiro">
+      comece com a configuração toda errada (ECB, chave de 56 bits, nonce fixo, senha sem KDF) e mostre a nota zero. Depois corrija item por item e mostre como cada escolha tem um caso real de falha por trás.
+    </div>
+
+    <div class="legenda">
+      modo de operação = receita de como os blocos são cifrados (ECB, CBC, GCM) · nonce/IV = valor que deve mudar a cada cifragem · KDF = função que transforma senha em chave forte · CSPRNG = gerador aleatório criptograficamente seguro · HSM/KMS = cofre físico ou serviço de chaves
+    </div>
+
+    <div class="demo-area" id="demo1-area">
+      <div style="display:grid; gap:0.6rem; max-width:640px">
+        <label>Modo de operação:
+          <select id="demo1-modo" style="padding:0.4rem; border-radius:6px; border:1px solid var(--borda); background:var(--fundo); color:var(--texto)">
+            <option value="ecb">ECB (blocos independentes)</option>
+            <option value="cbc">CBC sem autenticação</option>
+            <option value="gcm" selected>GCM (cifra e autentica)</option>
+          </select>
+        </label>
+        <label>Tamanho da chave:
+          <select id="demo1-chave" style="padding:0.4rem; border-radius:6px; border:1px solid var(--borda); background:var(--fundo); color:var(--texto)">
+            <option value="56">56 bits (DES antigo)</option>
+            <option value="128">128 bits</option>
+            <option value="256" selected>256 bits</option>
+          </select>
+        </label>
+        <label>Nonce / IV:
+          <select id="demo1-nonce" style="padding:0.4rem; border-radius:6px; border:1px solid var(--borda); background:var(--fundo); color:var(--texto)">
+            <option value="fixo">Fixo, reaproveitado</option>
+            <option value="aleatorio" selected>Aleatório novo a cada mensagem</option>
+          </select>
+        </label>
+        <label>Origem da chave:
+          <select id="demo1-origem" style="padding:0.4rem; border-radius:6px; border:1px solid var(--borda); background:var(--fundo); color:var(--texto)">
+            <option value="hardcoded">Escrita no código-fonte</option>
+            <option value="senha">Senha do usuário sem KDF</option>
+            <option value="kms" selected>Gerada por KMS/HSM com CSPRNG</option>
+          </select>
+        </label>
+        <div>
+          <button class="btn" type="button" id="demo1-go">🛡️ Avaliar configuração</button>
+          <button class="btn btn-secundario" type="button" id="demo1-reset">🔄 Reiniciar</button>
+        </div>
+      </div>
+      <div id="demo1-resultado" style="margin-top:1rem"></div>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> esta demo não tem certo ou errado único: ela mostra consequências. Uma configuração só é forte quando TODAS as escolhas são boas; um único elo fraco (como o nonce fixo do PlayStation 3) derruba o conjunto inteiro.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 1</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      nonce/IV = valor que deve ser diferente a cada cifragem ·
+      CSPRNG = gerador aleatório criptograficamente seguro ·
+      KDF = função que deriva chave forte a partir de senha (Argon2, bcrypt, PBKDF2) ·
+      HSM/KMS = cofre físico de chaves / serviço gerenciado de chaves ·
+      modo GCM = modo que cifra e autentica ao mesmo tempo.
+    </div>
+
+    <div class="pergunta" data-pergunta="1-1">
+      <p>1. O protocolo WEP de Wi-Fi foi quebrado principalmente por qual erro de implementação?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! O algoritmo do WEP (RC4) tinha problemas, mas o golpe fatal veio do vetor de inicialização curto e repetido, que permitia recuperar a chave observando pacotes.">Uso de um algoritmo de cifragem desconhecido e secreto</button>
+        <button class="alt" type="button" data-fb="Correto! O IV do WEP tinha apenas 24 bits e se repetia com frequência em redes movimentadas. Capturando alguns milhões de pacotes, o atacante reconstruía a chave inteira. Por isso o WPA2 nasceu com IV maior e gerenciamento de chaves.">IV (vetor de inicialização) curto e repetido, permitindo recuperar a chave a partir do tráfego capturado</button>
+        <button class="alt" type="button" data-fb="Errado! Senhas fracas eram um problema do usuário, não do protocolo. A quebra do WEP funcionava mesmo com a chave configurada corretamente, explorando o IV repetido.">Senhas fracas escolhidas pelos usuários da rede</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="1-2">
+      <p>2. No caso do PlayStation 3 (2010), o que permitiu calcular a chave privada da Sony?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! A Sony usou o mesmo nonce em todas as assinaturas ECDSA do sistema. Com duas assinaturas de nonce igual, a matemática da curva elíptica entrega a chave privada em poucas contas. É o exemplo clássico de por que nonce significa número usado uma única vez.">A reutilização do mesmo nonce em todas as assinaturas ECDSA do sistema</button>
+        <button class="alt" type="button" data-fb="Errado! A chave não estava gravada em texto claro acessível; o ataque foi matemático, explorando o nonce repetido nas assinaturas, não a leitura direta da chave.">A chave privada estava gravada em texto claro no disco do console</button>
+        <button class="alt" type="button" data-fb="Errado! O ataque não usou força bruta (testar todas as chaves): usou álgebra sobre duas assinaturas com nonce repetido, um caminho muito mais curto.">Força bruta com supercomputadores testando todas as chaves possíveis</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="1-3">
+      <p>3. Por que uma senha de usuário não deve virar chave criptográfica diretamente?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! O tamanho do texto não é o problema central: o problema é a baixa entropia (poucas variações possíveis), que torna a busca de senhas viável para o atacante.">Porque senhas são longas demais para caber em uma chave de 256 bits</button>
+        <button class="alt" type="button" data-fb="Errado! Não há incompatibilidade técnica: qualquer byte pode virar chave. O problema é que senhas humanas são previsíveis e poucas em número de combinações.">Porque os algoritmos só aceitam chaves em formato hexadecimal</button>
+        <button class="alt" type="button" data-fb="Correto! Senhas humanas têm pouca entropia (as pessoas escolhem entre poucas combinações). Um KDF como Argon2 ou PBKDF2 aplica sal e milhares de iterações para tornar a busca cara; sem isso, o atacante testa dicionários inteiros em segundos.">Porque senhas têm pouca entropia; um KDF com sal e muitas iterações torna a busca de senhas cara para o atacante</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 1</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=uso+seguro+de+algoritmos+criptográficos+gerenciamento+de+chaves" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=key+management+cryptographic+implementation+failures" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=gerenciamento+de+chaves+criptográficas+HSM+KMS+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>CSPRNG</strong>: gerador aleatório criptograficamente seguro.</li>
+      <li><strong>HSM / KMS</strong>: cofre físico de chaves / serviço gerenciado de chaves.</li>
+      <li><strong>Nonce / IV</strong>: valor que deve mudar a cada cifragem.</li>
+      <li><strong>KDF</strong>: deriva chave forte a partir de senha.</li>
+      <li><strong>Rotação e crypto-shredding</strong>: trocar chaves / destruir chaves para aposentar dados.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Se o algoritmo é forte (AES-256), o sistema está seguro.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> a segurança real mora na implementação e no uso: chave hardcoded, nonce repetido ou modo errado anulam qualquer algoritmo. WEP, PlayStation 3 e Debian mostram que o elo fraco quase nunca é a matemática.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 2 ============ -->
+<div class="painel" id="painel-2" role="tabpanel" aria-labelledby="tab-2">
+  <h2>Aba 2 · Fundamentos das assinaturas digitais e sua aplicabilidade</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é entender a <strong>assinatura digital</strong> (mecanismo que prova autoria e integridade de um documento eletrônico usando a chave privada de quem assina) e por que ela é a base jurídica e técnica do comércio eletrônico, do código assinado e dos processos digitais. Você vai assinar e verificar uma mensagem na demo, e depois adulterá-la para ver a verificação falhar.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Como uma assinatura digital nasce</h3>
+    <p>O processo tem três passos do lado de quem assina e dois do lado de quem confere:</p>
+    <ol style="margin-left:1.5rem">
+      <li><strong>Resumo</strong>: o documento inteiro passa por uma função de hash (como SHA-256, algoritmo de resumo de 256 bits) e vira um resumo fixo de 32 bytes, a impressão digital do conteúdo.</li>
+      <li><strong>Assinatura</strong>: o resumo é cifrado com a <strong>chave privada</strong> do assinante. O resultado é a assinatura digital, que acompanha o documento.</li>
+      <li><strong>Envio</strong>: documento e assinatura viajam juntos; a chave pública do assinante pode ser obtida por qualquer pessoa.</li>
+      <li><strong>Verificação (lado de quem recebe)</strong>: o receptor recalcula o hash do documento recebido e, com a chave pública do assinante, abre a assinatura para obter o hash original.</li>
+      <li><strong>Comparação</strong>: se os dois hashes batem, o documento é íntegro e foi assinado por quem detém a chave privada. Se um único bit mudou, os hashes divergem e a verificação falha.</li>
+    </ol>
+    <p>Os esquemas mais usados são <strong>RSA-PSS</strong> (variante segura do RSA para assinatura), <strong>ECDSA</strong> (assinatura por curva elíptica, usada em Bitcoin e certificados) e <strong>Ed25519</strong> (curva moderna, rápida e usada no OpenSSH, protocolo de acesso remoto).</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 O que a assinatura garante (e o que não garante)</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Integridade</strong>: qualquer alteração posterior invalida a assinatura.</li>
+      <li><strong>Autenticidade</strong>: só o detentor da chave privada poderia ter produzido aquela assinatura.</li>
+      <li><strong>Não-repúdio</strong>: o assinante não consegue negar a autoria diante de um terceiro, como um juiz.</li>
+      <li><strong>O que NÃO garante</strong>: sigilo! Uma assinatura não cifra nada; o documento assinado pode ser lido por qualquer pessoa. Sigilo exige criptografia adicional.</li>
+    </ul>
+    <p>Compare com o <strong>MAC</strong> (do inglês <em>Message Authentication Code</em>; em português, Código de Autenticação de Mensagem, como o HMAC): o MAC usa uma chave secreta compartilhada entre as duas partes, garante integridade e autenticidade, mas não oferece não-repúdio, pois ambos poderiam ter gerado o mesmo código.</p>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Onde a assinatura digital trabalha por você</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Atualizações do Windows</strong> (sistema da Microsoft): cada pacote é assinado com Authenticode (esquema de assinatura de código da Microsoft); o sistema recusa pacotes com assinatura inválida.</li>
+      <li><strong>Aplicativos de celular</strong>: o Gatekeeper do macOS (verificador da Apple) e o Play Protect do Google (verificador do Android) conferem a assinatura do desenvolvedor antes de instalar.</li>
+      <li><strong>Commits no GitHub</strong> (site de código da Microsoft): desenvolvedores assinam commits com GPG (implementação livre do padrão PGP) para provar que o código veio deles.</li>
+      <li><strong>Contratos e procurações no Brasil</strong>: assinados com certificado ICP-Brasil (infraestrutura pública brasileira de chaves), têm validade jurídica pela MP 2.200-2/2001 (Medida Provisória que criou a infraestrutura).</li>
+      <li><strong>Pacotes Linux</strong>: repositórios como o do Ubuntu (distribuição Linux da Canonical) assinam cada pacote com GPG; o gerenciador confere antes de instalar.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Aplicabilidade: quando assinar</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Software distribuído</strong>: executáveis, bibliotecas, atualizações e imagens de contêiner.</li>
+      <li><strong>Documentos com valor jurídico</strong>: contratos, laudos, procurações, notas fiscais eletrônicas.</li>
+      <li><strong>Mensagens e e-mails</strong>: S/MIME (padrão de e-mail seguro com certificado) e PGP para correspondência sensível.</li>
+      <li><strong>Registros de auditoria</strong>: logs assinados impedem que um invasor apague seus rastros sem deixar marca.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: assinando e verificando uma mensagem</h3>
+
+    <div class="prever">
+      <strong>Antes de assinar, preveja:</strong> se alguém trocar UMA letra do documento depois de assinado, o hash recalculado pelo receptor será igual ou diferente do hash aberto pela chave pública?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, registre sua previsão.<br>
+      <strong>Passo 1:</strong> escreva a mensagem e clique em Calcular hash (SHA-256 simulado).<br>
+      <strong>Passo 2:</strong> clique em Assinar com chave privada e veja a assinatura nascer.<br>
+      <strong>Passo 3:</strong> clique em Verificar com chave pública: tudo íntegro, verificação passa.<br>
+      <strong>Passo 4:</strong> clique em Adulterar mensagem (muda uma letra) e verifique de novo: agora falha.
+    </div>
+
+    <div class="roteiro">
+      mostre o hash antes e depois da adulteração: uma letra muda tudo (efeito avalanche). Destaque que a assinatura em si não mudou: quem mudou foi o documento, e é exatamente isso que a verificação detecta.
+    </div>
+
+    <div class="legenda">
+      hash = resumo fixo do documento (impressão digital) · chave privada = segredo que assina · chave pública = chave aberta que confere a assinatura · verificação = recalcular o hash e comparar com o hash aberto pela pública · adulteração = mudança de qualquer bit do documento
+    </div>
+
+    <div class="demo-area" id="demo2-area">
+      <label>📄 Mensagem do documento:
+        <input type="text" id="demo2-msg" value="Contrato de prestacao de servicos no valor de R$ 5.000" style="width:100%; padding:0.5rem; border:1px solid var(--borda); border-radius:6px; font-family:monospace; background:var(--fundo); color:var(--texto)">
+      </label>
+      <div style="margin-top:0.75rem">
+        <button class="btn" type="button" id="demo2-hash">1️⃣ Calcular hash</button>
+        <button class="btn" type="button" id="demo2-sign">2️⃣ Assinar com chave privada</button>
+        <button class="btn" type="button" id="demo2-verify">3️⃣ Verificar com chave pública</button>
+        <button class="btn btn-secundario" type="button" id="demo2-tamper">💥 Adulterar mensagem</button>
+        <button class="btn btn-secundario" type="button" id="demo2-reset">🔄 Reiniciar</button>
+      </div>
+      <div style="margin-top:1rem">
+        <div style="font-weight:bold">Hash do documento:</div>
+        <div class="hash-saida" id="demo2-hashout">—</div>
+        <div style="font-weight-bold; font-weight:bold">Assinatura (hash cifrado com a chave privada):</div>
+        <div class="hash-saida" id="demo2-signout">—</div>
+      </div>
+      <div id="demo2-feedback" style="margin-top:0.75rem"></div>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> a verificação só passa quando o hash recalculado coincide com o hash recuperado da assinatura. Após a adulteração, a assinatura continua válida para o documento ORIGINAL, mas não para o adulterado: integridade e autenticidade detectadas em um clique.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 2</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      hash = resumo fixo do documento (SHA-256) ·
+      chave privada = segredo que assina ·
+      chave pública = chave aberta que confere ·
+      não-repúdio = impossibilidade de negar autoria ·
+      MAC/HMAC = código de autenticação com chave compartilhada, sem não-repúdio.
+    </div>
+
+    <div class="pergunta" data-pergunta="2-1">
+      <p>1. Para produzir uma assinatura digital, o assinante cifra o hash do documento com qual chave?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! Cifrar com a chave pública do destinatário serve para SIGILO (só ele abre), não para assinatura. Qualquer um poderia ter feito isso.">Com a chave pública do destinatário</button>
+        <button class="alt" type="button" data-fb="Correto! A assinatura é o hash do documento cifrado com a chave privada do assinante. Como só ele possui essa chave, a assinatura prova autoria; e qualquer pessoa confere com a chave pública correspondente.">Com a própria chave privada</button>
+        <button class="alt" type="button" data-fb="Errado! Uma chave secreta compartilhada produz um MAC, que até garante integridade, mas não oferece não-repúdio: ambos os lados poderiam ter gerado o código.">Com uma chave secreta compartilhada com o destinatário</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="2-2">
+      <p>2. Qual conjunto de propriedades a assinatura digital garante?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! Integridade (qualquer mudança invalida), autenticidade (só o dono da privada assina) e não-repúdio (não dá para negar perante terceiros). Sigilo não entra: o documento assinado permanece legível.">Integridade, autenticidade e não-repúdio</button>
+        <button class="alt" type="button" data-fb="Errado! Sigilo e confidencialidade não são garantidos pela assinatura: ela não cifra o conteúdo. Para sigilo, é preciso criptografar o documento além de assiná-lo.">Sigilo, confidencialidade e disponibilidade</button>
+        <button class="alt" type="button" data-fb="Errado! Disponibilidade (o sistema estar no ar) não tem relação com assinatura; e integridade sozinha deixaria de fora a autoria e o não-repúdio.">Somente integridade e disponibilidade</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="2-3">
+      <p>3. Qual é a diferença essencial entre um MAC (como HMAC) e uma assinatura digital?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! É o contrário: o MAC é muito mais rápido que a assinatura assimétrica; por isso protocolos usam assinatura só no início e MAC para autenticar cada mensagem.">O MAC é mais lento e por isso só é usado em documentos pequenos</button>
+        <button class="alt" type="button" data-fb="Errado! O MAC não usa hash puro: combina hash com uma chave secreta. E a assinatura também usa hash, como primeiro passo do processo.">O MAC não usa hash, enquanto a assinatura usa</button>
+        <button class="alt" type="button" data-fb="Correto! O MAC usa chave secreta compartilhada: ambos os lados podem gerá-lo, então nenhum pode provar perante um juiz que foi o outro. A assinatura, com chave privada exclusiva, oferece não-repúdio.">O MAC usa chave compartilhada e não oferece não-repúdio; a assinatura usa chave privada exclusiva e oferece</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 2</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=fundamentos+de+assinatura+digital+hash+chave+privada" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=digital+signature+non-repudiation+ECDSA+RSA-PSS" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=assinatura+digital+como+funciona+hash+chave+privada+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Assinatura digital</strong>: hash do documento cifrado com a chave privada.</li>
+      <li><strong>Verificação</strong>: recalcular hash e comparar com o aberto pela pública.</li>
+      <li><strong>Não-repúdio</strong>: autoria inegável perante terceiros.</li>
+      <li><strong>MAC/HMAC</strong>: autenticação com chave compartilhada, sem não-repúdio.</li>
+      <li><strong>Esquemas</strong>: RSA-PSS, ECDSA, Ed25519.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Um documento assinado digitalmente está também criptografado e ninguém mais consegue lê-lo.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> assinatura não é cifragem: o conteúdo segue legível. Se o contrato precisa de sigilo além da assinatura, aplica-se criptografia por cima. São mecanismos complementares com papéis diferentes.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 3 ============ -->
+<div class="painel" id="painel-3" role="tabpanel" aria-labelledby="tab-3">
+  <h2>Aba 3 · Infraestrutura de Chaves Públicas (PKI) e certificados digitais</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é entender a <strong>PKI</strong> (do inglês <em>Public Key Infrastructure</em>; em português, Infraestrutura de Chaves Públicas): o conjunto de entidades, políticas e sistemas que responde à pergunta crucial — como saber que uma chave pública realmente pertence a quem diz ser dono dela? Você vai percorrer a <strong>cadeia de confiança</strong> (raiz, intermediária e folha) e ver o que acontece quando um certificado é <strong>revogado</strong>.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Os componentes da PKI</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>AC (Autoridade Certificadora)</strong> (do inglês <em>Certificate Authority</em>, CA): entidade que emite e assina certificados, atestando que uma chave pública pertence a um dono. Exemplos globais: DigiCert, Sectigo, GlobalSign (empresas americanas e europeias) e Let's Encrypt (autoridade gratuita e automatizada). No Brasil: ACs da ICP-Brasil como Certisign, Serasa Experian e Soluti.</li>
+      <li><strong>AR (Autoridade de Registro)</strong> (do inglês <em>Registration Authority</em>, RA): faz a conferência de identidade do solicitante (documentos, presença física ou videoconferência) antes de pedir a emissão à AC. É o balcão de atendimento da PKI.</li>
+      <li><strong>Repositório de certificados</strong>: diretório público (como LDAP ou HTTPS) onde os certificados emitidos ficam disponíveis para consulta.</li>
+      <li><strong>CRL (Lista de Certificados Revogados)</strong> (do inglês <em>Certificate Revocation List</em>): lista assinada pela AC com os certificados cancelados antes do vencimento; publicada periodicamente.</li>
+      <li><strong>OCSP</strong> (do inglês <em>Online Certificate Status Protocol</em>; em português, Protocolo de Status de Certificado Online): consulta em tempo real ao servidor da AC: este certificado está válido, revogado ou desconhecido?</li>
+    </ul>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 A cadeia de confiança</h3>
+    <p>Nenhum navegador confia em certificados isolados: ele confia em <strong>raízes</strong> (certificados autoassinados das ACs principais, embutidos no sistema operacional ou no navegador). A partir daí, a confiança desce em cascata:</p>
+    <ol style="margin-left:1.5rem">
+      <li><strong>Raiz</strong>: autoassinada, distribuída com o sistema (a loja de raízes do Windows, do Android ou do Firefox).</li>
+      <li><strong>Intermediária</strong>: assinada pela raiz; assina os certificados finais. Protege a raiz, que fica offline em cofre.</li>
+      <li><strong>Folha (certificado final)</strong>: assinada pela intermediária; pertence ao servidor, à pessoa ou à empresa.</li>
+    </ol>
+    <p>Validar um certificado é subir essa escada: a assinatura da folha confere com a intermediária? A da intermediária confere com a raiz? A raiz está na minha loja de confiança? Se todas as respostas forem sim, o cadeado fecha.</p>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 PKI no mundo e no Brasil</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>ICP-Brasil</strong>: criada pela MP 2.200-2/2001, tem como raiz o ITI (Instituto Nacional de Tecnologia da Informação, órgão federal brasileiro). Dá validade jurídica às assinaturas com certificado ICP-Brasil.</li>
+      <li><strong>Let's Encrypt</strong>: emite certificados TLS gratuitos e automatizados pelo protocolo ACME (protocolo de automação de emissão); responde por boa parte dos cadeados da web desde 2015.</li>
+      <li><strong>Caso DigiNotar (2011)</strong>: a AC holandesa foi invadida e emitiu certificados falsos para google.com e outros; navegadores removeram a raiz da DigiNotar de suas lojas e a empresa faliu. Mostra por que a revogação e a auditoria das ACs importam.</li>
+      <li><strong>Lojas de raízes</strong>: Microsoft, Apple, Google e Mozilla (fundação do Firefox) mantêm programas de auditoria para aceitar uma raiz em suas lojas; entrar nessas lojas é o selo de qualidade de uma AC.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Revogação: quando o certificado morre antes do prazo</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Motivos típicos</strong>: chave privada vazada, funcionário desligado com certificado corporativo, domínio vendido, AC comprometida.</li>
+      <li><strong>CRL</strong>: simples e offline, mas desatualizada entre publicações.</li>
+      <li><strong>OCSP</strong>: resposta imediata, mas revela à AC quais sites você visita (privacidade) e depende de o servidor estar no ar.</li>
+      <li><strong>OCSP stapling</strong> (grampeamento): o próprio servidor apresenta junto um carimbo OCSP recente assinado, resolvendo privacidade e disponibilidade.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: explorador da cadeia de confiança com revogação</h3>
+
+    <div class="prever">
+      <strong>Antes de explorar, preveja:</strong> se o certificado folha de um banco for revogado hoje (chave vazada), mas ainda estiver dentro da validade, o navegador vai aceitar ou recusar a conexão?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, registre sua previsão.<br>
+      <strong>Passo 1:</strong> clique em cada nível da cadeia (raiz, intermediária, folha) para ver os campos.<br>
+      <strong>Passo 2:</strong> clique em Validar cadeia e veja as três verificações.<br>
+      <strong>Passo 3:</strong> clique em Revogar folha e valide de novo: observe o status OCSP mudar.<br>
+      <strong>Passo 4:</strong> restaure e conclua o que protege o usuário em cada caso.
+    </div>
+
+    <div class="roteiro">
+      valide a cadeia saudável primeiro e mostre os três SIM. Depois revogue a folha e mostre que a assinatura ainda confere, mas o status OCSP diz revogado: é a revogação, não a assinatura, que pega o certificado vazado.
+    </div>
+
+    <div class="legenda">
+      raiz = certificado autoassinado da loja de confiança · intermediária = elo que assina as folhas · folha = certificado do servidor ou pessoa · revogação = cancelamento antes do vencimento · OCSP = consulta online de status · cadeia = caminho folha até raiz
+    </div>
+
+    <div class="demo-area" id="demo3-area">
+      <div class="cadeia-card" id="demo3-raiz" data-nivel="raiz">
+        🏛️ <strong>AC Raiz ICP-Brasil (v10)</strong> — autoassinada, na loja de confiança do sistema <span class="selos-status ok" id="demo3-st-raiz">confiável</span>
+      </div>
+      <div class="cadeia-card" id="demo3-inter" data-nivel="inter">
+        🏢 <strong>AC Intermediária Certisign RFB</strong> — assinada pela raiz <span class="selos-status ok" id="demo3-st-inter">assinatura OK</span>
+      </div>
+      <div class="cadeia-card" id="demo3-folha" data-nivel="folha">
+        🌿 <strong>Certificado folha: banco.com.br (TLS)</strong> — assinado pela intermediária <span class="selos-status ok" id="demo3-st-folha">válido</span>
+      </div>
+      <div style="margin-top:0.75rem">
+        <button class="btn" type="button" id="demo3-valida">✅ Validar cadeia</button>
+        <button class="btn btn-secundario" type="button" id="demo3-revoga">🚫 Revogar folha</button>
+        <button class="btn btn-secundario" type="button" id="demo3-restaura">♻️ Restaurar</button>
+        <button class="btn btn-secundario" type="button" id="demo3-reset">🔄 Reiniciar</button>
+      </div>
+      <div id="demo3-detalhe" style="margin-top:1rem"></div>
+      <div id="demo3-resultado" style="margin-top:0.75rem"></div>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> uma cadeia pode ter assinaturas perfeitas e ainda assim ser recusada: basta o status de revogação dizer que a chave vazou. Por isso os navegadores consultam CRL ou OCSP a cada conexão importante.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 3</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      PKI = Infraestrutura de Chaves Públicas, o ecossistema que gerencia certificados ·
+      AC/CA = Autoridade Certificadora, quem emite e assina certificados ·
+      AR/RA = Autoridade de Registro, quem confere a identidade do solicitante ·
+      CRL = lista de certificados revogados ·
+      OCSP = consulta online de status de certificado ·
+      cadeia de confiança = caminho folha, intermediária, raiz.
+    </div>
+
+    <div class="pergunta" data-pergunta="3-1">
+      <p>1. Qual é o papel da Autoridade Certificadora (AC) em uma PKI?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! Conferir documentos e identidade do solicitante é papel da AR (Autoridade de Registro); a AC recebe o pedido já conferido e emite o certificado.">Conferir presencialmente os documentos de quem pede o certificado</button>
+        <button class="alt" type="button" data-fb="Correto! A AC emite e assina o certificado, atestando publicamente que aquela chave pública pertence àquele dono. É a assinatura da AC que torna o certificado confiável para terceiros.">Emitir e assinar certificados, atestando o vínculo entre uma identidade e uma chave pública</button>
+        <button class="alt" type="button" data-fb="Errado! Guardar chaves privadas dos usuários é papel de cofres pessoais ou HSM; a AC nunca deve conhecer a chave privada do assinante.">Guardar as chaves privadas de todos os usuários da infraestrutura</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="3-2">
+      <p>2. Ao validar o certificado de um site, o navegador percorre a cadeia de confiança. Qual é a ordem correta?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! Sobe-se da folha para a raiz: confere-se a assinatura da folha contra a intermediária, a da intermediária contra a raiz, e verifica-se se a raiz está na loja de confiança do sistema.">Folha, intermediária, raiz (e a raiz precisa estar na loja de confiança)</button>
+        <button class="alt" type="button" data-fb="Errado! A validação não começa pela raiz baixada da internet: a raiz já vem embutida no sistema; o caminho verificado parte do certificado apresentado pelo site.">Raiz baixada da internet, depois folha, depois intermediária</button>
+        <button class="alt" type="button" data-fb="Errado! Intermediárias não validam a raiz; é o contrário: a raiz (ou sua presença na loja) é que ancora a confiança das intermediárias e folhas.">Intermediária, folha, raiz, e qualquer raiz serve</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="3-3">
+      <p>3. Para que servem CRL e OCSP em uma PKI?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! Renovar certificado é processo de emissão novo; CRL e OCSP não renovam nada, apenas informam o status do certificado existente.">Renovar automaticamente certificados que estão perto do vencimento</button>
+        <button class="alt" type="button" data-fb="Errado! CRL e OCSP não cifram nada: são mecanismos de status. A cifragem da conexão é papel do TLS com as chaves do certificado.">Cifrar a conexão entre navegador e servidor</button>
+        <button class="alt" type="button" data-fb="Correto! Ambos respondem se um certificado ainda confiável foi cancelado antes do prazo (chave vazada, por exemplo): CRL por lista publicada, OCSP por consulta online em tempo real.">Verificar se um certificado foi revogado antes do vencimento</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 3</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=infraestrutura+de+chaves+públicas+PKI+AC+AR+CRL+OCSP" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=PKI+certificate+authority+chain+of+trust+revocation" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=PKI+cadeia+de+confiança+certificados+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>PKI</strong>: infraestrutura que emite, publica e revoga certificados.</li>
+      <li><strong>AC / AR</strong>: quem assina certificados / quem confere identidade.</li>
+      <li><strong>Cadeia de confiança</strong>: folha, intermediária, raiz.</li>
+      <li><strong>CRL / OCSP</strong>: lista de revogados / consulta online de status.</li>
+      <li><strong>Loja de raízes</strong>: raízes confiáveis embutidas no sistema.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Se a assinatura da cadeia confere, o certificado é necessariamente confiável.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> além das assinaturas, é preciso verificar validade de datas, domínio correto e status de revogação. Um certificado perfeitamente assinado mas revogado (chave vazada) deve ser recusado, como mostra a demo.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 4 ============ -->
+<div class="painel" id="painel-4" role="tabpanel" aria-labelledby="tab-4">
+  <h2>Aba 4 · Certificados digitais: o padrão X.509 e os tipos em uso</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é abrir um certificado digital por dentro: entender o formato <strong>X.509</strong> (padrão internacional que define os campos de um certificado, mantido pela ITU-T, setor de padronização da União Internacional de Telecomunicações), ler seus campos (subject, issuer, validade, SAN, usos de chave) e distinguir os tipos em uso no Brasil e no mundo: TLS de servidor, cliente, assinatura de código, S/MIME e os certificados ICP-Brasil (e-CPF e e-CNPJ).</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Anatomia de um certificado X.509</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Versão e número de série</strong>: identificam o padrão (v3 é a atual) e o número único que a AC deu àquele certificado.</li>
+      <li><strong>Subject (titular)</strong>: a quem o certificado pertence: nome comum (CN), organização (O), país (C). Em certificados de pessoa física da ICP-Brasil, traz nome e CPF do titular.</li>
+      <li><strong>Issuer (emissor)</strong>: qual AC assinou este certificado; é o elo da cadeia.</li>
+      <li><strong>Validade</strong>: duas datas, notBefore e notAfter; fora delas o certificado é recusado.</li>
+      <li><strong>Chave pública</strong>: a chave do titular, com algoritmo (RSA 2048, ECDSA P-256 etc.).</li>
+      <li><strong>Extensões</strong>: <strong>SAN</strong> (do inglês <em>Subject Alternative Name</em>; em português, Nome Alternativo do Titular, lista de domínios cobertos), <strong>Key Usage</strong> (para que a chave serve: assinar, cifrar), <strong>Extended Key Usage</strong> (finalidades: TLS de servidor, TLS de cliente, assinatura de código), e <strong>Basic Constraints</strong> (se é AC ou folha).</li>
+      <li><strong>Assinatura da AC</strong>: o carimbo criptográfico que amarra tudo isso.</li>
+    </ul>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Tipos de certificado no dia a dia</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>TLS de servidor</strong>: o cadeado do navegador; cobre domínios listados no SAN. Um certificado só para www.banco.com.br não serve para app.banco.com.br sem o SAN adequado.</li>
+      <li><strong>TLS de cliente</strong>: autentica a pessoa ou máquina perante o servidor; usado em bancos para acessar áreas de empresas e em VPNs corporativas.</li>
+      <li><strong>Assinatura de código</strong>: Authenticode (Microsoft) e assinaturas de aplicativos Apple e Android; o SmartScreen (filtro de reputação da Microsoft) deixa de alertar para binários assinados por editor conhecido.</li>
+      <li><strong>S/MIME</strong>: assina e cifra e-mails corporativos; Outlook e Thunderbird (clientes de e-mail) suportam nativamente.</li>
+      <li><strong>ICP-Brasil</strong>: e-CPF e e-CNPJ (certificados de pessoa física e jurídica) nas versões A1 (arquivo no computador, validade de 1 ano) e A3 (cartão ou token com hardware, validade de até 3 anos); usados em notas fiscais eletrônicas, e-CAC (centro virtual de atendimento da Receita Federal) e processos judiciais eletrônicos (PJe, sistema do Conselho Nacional de Justiça).</li>
+    </ul>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Quando um certificado é recusado</h3>
+    <p>O navegador (ou o sistema) recusa o certificado se qualquer verificação falhar:</p>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Datas</strong>: hoje está fora de notBefore/notAfter (certificado vencido ou ainda não vigente).</li>
+      <li><strong>Domínio</strong>: o endereço acessado não está no SAN (erro comum ao acessar por IP ou por outro nome).</li>
+      <li><strong>Cadeia</strong>: falta uma intermediária no servidor, ou a raiz não está na loja (comum em aparelhos antigos).</li>
+      <li><strong>Revogação</strong>: CRL ou OCSP dizem revogado.</li>
+      <li><strong>Assinatura</strong>: a assinatura da AC não confere (certificado adulterado ou autofabricado).</li>
+    </ul>
+    <p>Em setembro de 2021, o vencimento da raiz <strong>DST Root CA X3</strong> (raiz antiga usada em cadeia cruzada pelo Let's Encrypt) quebrou o HTTPS para aparelhos Android anteriores ao 7.1.1: a loja daqueles aparelhos não tinha a raiz nova ISRG Root X1. Milhões de dispositivos pararam de abrir sites seguros até receberem atualização.</p>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Como inspecionar um certificado você mesmo</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Navegador</strong>: clique no cadeado e em Conexão segura para ver emissor, validade e SAN.</li>
+      <li><strong>OpenSSL</strong> (ferramenta de linha de comando aberta): o comando openssl x509 -in certificado.pem -text -noout despeja todos os campos.</li>
+      <li><strong>Windows</strong>: duplo clique no arquivo .cer abre o visualizador de certificados.</li>
+      <li><strong>macOS</strong>: Acesso às Chaves (Keychain Access) mostra certificados e suas cadeias.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: inspetor de certificados X.509</h3>
+
+    <div class="prever">
+      <strong>Antes de inspecionar, preveja:</strong> um certificado emitido para www.loja.com.br, acessado pelo endereço app.loja.com.br, será aceito ou recusado pelo navegador, estando tudo o mais válido?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, registre sua previsão.<br>
+      <strong>Passo 1:</strong> escolha um dos três certificados de exemplo.<br>
+      <strong>Passo 2:</strong> leia os campos X.509 exibidos (titular, emissor, validade, SAN, usos).<br>
+      <strong>Passo 3:</strong> clique em Executar verificações e veja o resultado de cada teste.<br>
+      <strong>Passo 4:</strong> compare os três casos e identifique qual verificação derrubou cada um.
+    </div>
+
+    <div class="roteiro">
+      comece pelo certificado saudável e mostre os cinco SIM. Depois o vencido (datas) e o de domínio errado (SAN). Pergunte: qual erro o usuário vê em cada caso? Isso conecta o campo técnico à mensagem do navegador.
+    </div>
+
+    <div class="legenda">
+      subject = titular do certificado · issuer = AC emissora · SAN = lista de domínios cobertos · notBefore/notAfter = janela de validade · Key Usage / EKU = para que a chave pode ser usada · verificação = teste de datas, domínio, cadeia, revogação e assinatura
+    </div>
+
+    <div class="demo-area" id="demo4-area">
+      <div>
+        <button class="btn" type="button" data-cert="ok">🔒 banco.com.br (saudável)</button>
+        <button class="btn" type="button" data-cert="vencido">⏰ loja.com.br (vencido)</button>
+        <button class="btn" type="button" data-cert="dominio">🌐 www.loja.com.br (SAN errado)</button>
+      </div>
+      <div id="demo4-campos" style="margin-top:1rem"></div>
+      <div style="margin-top:0.75rem">
+        <button class="btn" type="button" id="demo4-verifica">🔎 Executar verificações</button>
+        <button class="btn btn-secundario" type="button" id="demo4-reset">🔄 Reiniciar</button>
+      </div>
+      <div id="demo4-resultado" style="margin-top:0.75rem"></div>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> cada recusa do navegador corresponde a um campo específico do X.509. Saber ler esses campos transforma o cadeado vermelho de mistério em diagnóstico: datas, SAN, cadeia, revogação ou assinatura.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 4</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      X.509 = padrão internacional que define os campos do certificado ·
+      subject / issuer = titular / AC emissora ·
+      SAN = lista de domínios cobertos pelo certificado ·
+      notBefore / notAfter = janela de validade ·
+      e-CPF / e-CNPJ = certificados de pessoa física e jurídica da ICP-Brasil ·
+      A1 / A3 = certificado em arquivo / em cartão ou token com hardware.
+    </div>
+
+    <div class="pergunta" data-pergunta="4-1">
+      <p>1. Qual campo do certificado X.509 informa quais domínios ele protege?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! O issuer identifica a AC emissora, não os domínios protegidos.">Issuer</button>
+        <button class="alt" type="button" data-fb="Errado! Key Usage diz para que a chave serve (assinar, cifrar), não quais domínios são cobertos.">Key Usage</button>
+        <button class="alt" type="button" data-fb="Correto! O SAN (Subject Alternative Name) lista todos os domínios e subdomínios válidos para aquele certificado. Sem o domínio acessado no SAN, o navegador acusa erro de nome, mesmo com o resto perfeito.">SAN (Subject Alternative Name)</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="4-2">
+      <p>2. Em setembro de 2021, aparelhos Android antigos perderam acesso a sites com certificado Let's Encrypt. Qual foi a causa?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! A cadeia cruzada dependia da raiz DST Root CA X3, que expirou em 30/09/2021. Aparelhos antigos não tinham a raiz nova ISRG Root X1 em sua loja, então a cadeia não fechava e o HTTPS falhava.">O vencimento da raiz DST Root CA X3, ausente da loja de raízes dos aparelhos antigos</button>
+        <button class="alt" type="button" data-fb="Errado! Não houve invasão do Let's Encrypt; o evento foi um vencimento planejado de raiz que expôs a defasagem das lojas antigas.">Uma invasão aos servidores do Let's Encrypt que vazou chaves</button>
+        <button class="alt" type="button" data-fb="Errado! O algoritmo não mudou; o problema foi de confiança na cadeia (raiz expirada), não de força criptográfica.">Uma falha no algoritmo RSA usado nos certificados</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="4-3">
+      <p>3. No Brasil, qual é a diferença prática entre um certificado ICP-Brasil A1 e um A3?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! A1 e A3 não diferem pelo algoritmo (ambos usam RSA ou ECDSA conforme o padrão), e sim pelo meio de guarda da chave e pela validade.">O A1 usa RSA e o A3 usa ECDSA</button>
+        <button class="alt" type="button" data-fb="Correto! O A1 é um arquivo instalado no computador (validade típica de 1 ano), prático para automação como emissão de notas fiscais. O A3 guarda a chave em cartão ou token com hardware criptográfico (validade de até 3 anos), mais resistente a cópia da chave.">O A1 é arquivo no computador com validade de 1 ano; o A3 fica em cartão ou token com hardware, com validade maior</button>
+        <button class="alt" type="button" data-fb="Errado! Ambos têm validade jurídica pela MP 2.200-2/2001; a diferença é operacional (meio de guarda e prazo), não jurídica.">O A1 tem validade jurídica e o A3 não</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 4</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=certificado+digital+X.509+campos+SAN+validade+tipos" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=X.509+certificate+fields+validation+browser+errors" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=certificado+digital+X.509+como+ler+campos+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>X.509</strong>: padrão que define os campos do certificado.</li>
+      <li><strong>SAN</strong>: domínios cobertos pelo certificado.</li>
+      <li><strong>A1 / A3</strong>: arquivo no computador / hardware em cartão ou token.</li>
+      <li><strong>e-CPF / e-CNPJ</strong>: identidade digital de pessoa física e jurídica.</li>
+      <li><strong>Recusas típicas</strong>: datas, domínio, cadeia, revogação, assinatura.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Um certificado vale para todos os subdomínios de um site automaticamente.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> só valem os nomes listados no SAN. Um certificado para www.loja.com.br não cobre app.loja.com.br; para cobrir todos os subdomínios é preciso um certificado curinga (*.loja.com.br) ou listar cada nome no SAN.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 5 ============ -->
+<div class="painel" id="painel-5" role="tabpanel" aria-labelledby="tab-5">
+  <h2>Aba 5 · Implementação prática de assinaturas e certificados digitais</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é colocar a mão na massa: conhecer as ferramentas reais que implementam assinatura e certificados — <strong>OpenSSL</strong> (suíte criptográfica de linha de comando aberta), <strong>GnuPG/GPG</strong> (implementação livre do padrão OpenPGP), <strong>Certbot</strong> (cliente que automatiza certificados Let's Encrypt) e os verificadores de código assinado — e saber qual comando resolve cada tarefa do dia a dia de um auditor ou desenvolvedor.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 As tarefas práticas e suas ferramentas</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Gerar par de chaves</strong>: OpenSSL (genpkey) ou GPG (gen-key). O par nasce no seu cofre local; a privada nunca sai.</li>
+      <li><strong>Assinar e verificar documentos</strong>: OpenSSL dgst com -sign e -verify, ou GPG com -sign e -verify; em PDFs com ICP-Brasil, assinadores como o gov.br ou aplicativos das ACs.</li>
+      <li><strong>Pedir um certificado TLS</strong>: gerar CSR (do inglês <em>Certificate Signing Request</em>; em português, Requisição de Assinatura de Certificado) e enviá-lo à AC; com Let's Encrypt, o Certbot faz tudo sozinho pelo protocolo ACME.</li>
+      <li><strong>Inspecionar e testar</strong>: openssl x509 para ler campos; openssl s_client para conectar num servidor e ver a cadeia apresentada.</li>
+      <li><strong>Assinar código</strong>: signtool (Windows), jarsigner (Java), cosign (contêineres); o sistema operacional verifica na instalação.</li>
+    </ul>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Fluxos reais de implementação</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>HTTPS automático</strong>: o Certbot (ferramenta da Electronic Frontier Foundation, organização americana de direitos digitais) conversa com o Let's Encrypt via ACME, prova que você controla o domínio, baixa o certificado e configura a renovação automática a cada 90 dias.</li>
+      <li><strong>Nota fiscal eletrônica</strong>: o sistema de gestão da empresa assina o XML da NF-e (Nota Fiscal eletrônica, padrão da Receita Federal) com o e-CNPJ A1 antes de transmitir; sem assinatura válida, a nota é rejeitada.</li>
+      <li><strong>Assinatura de commits</strong>: times de software exigem commits assinados com GPG no GitHub; a interface mostra o selo verified (verificado) ao lado do commit.</li>
+      <li><strong>Auditoria de cadeia</strong>: o auditor roda openssl s_client -connect dominio:443 e confere emissor, datas, SAN e se a intermediária está sendo enviada pelo servidor.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Receitas de linha de comando que todo auditor conhece</h3>
+    <pre># Gerar chave privada RSA 2048
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out privada.pem
+
+# Extrair a chave pública
+openssl pkey -in privada.pem -pubout -out publica.pem
+
+# Assinar um arquivo (hash SHA-256 + chave privada)
+openssl dgst -sha256 -sign privada.pem -out contrato.sig contrato.pdf
+
+# Verificar a assinatura com a chave pública
+openssl dgst -sha256 -verify publica.pem -signature contrato.sig contrato.pdf
+
+# Ler os campos de um certificado
+openssl x509 -in servidor.crt -text -noout
+
+# Testar a cadeia HTTPS de um servidor
+openssl s_client -connect www.gov.br:443 -servername www.gov.br</pre>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: laboratório de comandos (OpenSSL e GPG)</h3>
+
+    <div class="prever">
+      <strong>Antes de executar, preveja:</strong> para VERIFICAR a assinatura de um contrato, qual chave o auditor precisa ter em mãos: a chave privada do assinante, a chave pública do assinante ou a chave privada da AC?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, registre sua previsão.<br>
+      <strong>Passo 1:</strong> escolha a tarefa no laboratório.<br>
+      <strong>Passo 2:</strong> leia o comando equivalente e a saída simulada.<br>
+      <strong>Passo 3:</strong> leia a explicação do que cada parte do comando faz.<br>
+      <strong>Passo 4:</strong> percorra as cinco tarefas e monte seu caderno de receitas.
+    </div>
+
+    <div class="roteiro">
+      execute Assinar e depois Verificar, e mostre que a verificação usa a pública. Provocação final: e se o arquivo mudar um bit? A verificação responde Verification Failure, igualzinho à demo da Aba 2.
+    </div>
+
+    <div class="legenda">
+      pem = formato de arquivo de chaves e certificados em texto · csr = requisição de assinatura de certificado · dgst = comando de resumo e assinatura do OpenSSL · s_client = cliente de teste TLS · ACME = protocolo de automação do Let's Encrypt
+    </div>
+
+    <div class="demo-area" id="demo5-area">
+      <div>
+        <button class="btn" type="button" data-tarefa="gerar">🔑 Gerar par de chaves</button>
+        <button class="btn" type="button" data-tarefa="assinar">✍️ Assinar documento</button>
+        <button class="btn" type="button" data-tarefa="verificar">🔎 Verificar assinatura</button>
+        <button class="btn" type="button" data-tarefa="cert">📜 Pedir certificado (CSR)</button>
+        <button class="btn" type="button" data-tarefa="tls">🌐 Testar cadeia HTTPS</button>
+      </div>
+      <div id="demo5-saida" style="margin-top:1rem"></div>
+      <button class="btn btn-secundario" type="button" id="demo5-reset" style="margin-top:0.75rem">🔄 Reiniciar</button>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> as mesmas cinco tarefas cobrem 90% do trabalho prático com assinaturas e certificados: gerar chaves, assinar, verificar, pedir certificado e auditar a cadeia. Dominar essas receitas é o que separa quem lê sobre criptografia de quem a opera.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 5</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      OpenSSL = suíte criptográfica de linha de comando ·
+      GPG = implementação livre do padrão OpenPGP para assinar e cifrar ·
+      CSR = requisição de assinatura de certificado enviada à AC ·
+      Certbot = cliente que automatiza certificados Let's Encrypt via ACME ·
+      s_client = comando que testa a cadeia TLS de um servidor.
+    </div>
+
+    <div class="pergunta" data-pergunta="5-1">
+      <p>1. No OpenSSL, qual comando verifica a assinatura de um arquivo usando a chave pública do assinante?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! A opção -sign produz a assinatura com a chave privada; verificar usa o caminho oposto, com -verify e a chave pública.">openssl dgst -sha256 -sign publica.pem -signature ass.bin arquivo</button>
+        <button class="alt" type="button" data-fb="Correto! O parâmetro -verify indica a chave pública usada para abrir a assinatura; -signature aponta o arquivo da assinatura; se o hash recalculado bater, a saída é Verified OK.">openssl dgst -sha256 -verify publica.pem -signature ass.bin arquivo</button>
+        <button class="alt" type="button" data-fb="Errado! s_client testa conexões TLS de servidores; não verifica assinaturas de arquivos locais.">openssl s_client -verify arquivo</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="5-2">
+      <p>2. Qual ferramenta automatiza a emissão e a renovação de certificados gratuitos do Let's Encrypt?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! O GPG serve para assinar e cifrar dados e e-mails, não para emitir certificados TLS de servidor.">GPG</button>
+        <button class="alt" type="button" data-fb="Errado! O signtool assina binários Windows; não conversa com ACs de TLS para emitir certificados de site.">signtool</button>
+        <button class="alt" type="button" data-fb="Correto! O Certbot executa o protocolo ACME: prova o controle do domínio, baixa o certificado, instala no servidor e agenda a renovação automática antes dos 90 dias de validade.">Certbot</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="5-3">
+      <p>3. Na Lei 14.063/2020 brasileira, a assinatura feita com certificado ICP-Brasil é classificada como:</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! A lei divide assinaturas eletrônicas em simples, avançada e qualificada; a qualificada é a feita com certificado ICP-Brasil, com equivalência à assinatura manuscrita e presunção de veracidade.">Assinatura eletrônica qualificada</button>
+        <button class="alt" type="button" data-fb="Errado! A simples é a de menor rigor (um clique de aceite, por exemplo); a qualificada exige certificado ICP-Brasil.">Assinatura eletrônica simples</button>
+        <button class="alt" type="button" data-fb="Errado! A avançada usa meios que comprovam autoria e integridade sem certificado ICP-Brasil (como plataformas de assinatura com evidências); fica abaixo da qualificada.">Assinatura eletrônica avançada</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 5</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=implementação+prática+assinatura+digital+OpenSSL+GPG+Certbot" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=practical+digital+signature+implementation+openssl+acme" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=OpenSSL+assinatura+digital+certificados+prática+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>OpenSSL / GPG</strong>: suítes de linha de comando para criptografia e assinatura.</li>
+      <li><strong>CSR</strong>: requisição enviada à AC para emitir certificado.</li>
+      <li><strong>Certbot / ACME</strong>: automação de emissão e renovação.</li>
+      <li><strong>signtool / jarsigner / cosign</strong>: assinatura de código Windows, Java e contêineres.</li>
+      <li><strong>Lei 14.063/2020</strong>: classifica assinaturas em simples, avançada e qualificada.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Para verificar uma assinatura digital é necessário ter acesso à chave privada do assinante.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> a verificação usa apenas a chave pública, que pode ser distribuída livremente (ou obtida no certificado). A privada fica só com o assinante; se ela vazar, o certificado deve ser revogado.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 6 - REVISÃO ============ -->
+<div class="painel" id="painel-6" role="tabpanel" aria-labelledby="tab-6">
+  <h2>⭐ Revisão — Mapa completo da aula</h2>
+
+  <h3>🗺️ Mapa da aula</h3>
+  <div class="revisao-mapa">
+    <div class="no-mapa">
+      <h4>Aba 1 · Uso seguro</h4>
+      <p>Ciclo de vida da chave, CSPRNG, HSM/KMS, nonce, KDF e os desastres reais: WEP, PS3, Debian.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 2 · Assinaturas</h4>
+      <p>Hash + chave privada; integridade, autenticidade e não-repúdio; diferença para MAC.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 3 · PKI</h4>
+      <p>AC, AR, repositório, CRL e OCSP; cadeia raiz-intermediária-folha; caso DigiNotar.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 4 · Certificados</h4>
+      <p>Campos X.509, SAN, validade, tipos TLS/código/S/MIME, e-CPF e e-CNPJ, A1 e A3.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 5 · Na prática</h4>
+      <p>OpenSSL, GPG, Certbot/ACME, signtool; receitas de gerar, assinar, verificar e auditar.</p>
+    </div>
+    <div class="no-mapa">
+      <h4> Estudo em casa</h4>
+      <p>Refaça os quizzes das cinco abas para garantir os 5 selos e enfrente o Chefão com a cola rápida ao lado.</p>
+    </div>
+  </div>
+
+  <div class="cola-rapida">
+    <h3>🧷 Cola rápida — glossário da aula</h3>
+    <dl>
+      <dt><strong>CSPRNG</strong></dt>
+      <dd>Gerador pseudoaleatório criptograficamente seguro; imprevisível de verdade.</dd>
+
+      <dt><strong>HSM / KMS</strong></dt>
+      <dd>Cofre físico dedicado de chaves / serviço gerenciado de chaves na nuvem.</dd>
+
+      <dt><strong>Nonce / IV</strong></dt>
+      <dd>Valor que deve ser único a cada cifragem; repeti-lo quebra esquemas inteiros.</dd>
+
+      <dt><strong>KDF</strong></dt>
+      <dd>Função que transforma senha fraca em chave forte (Argon2, bcrypt, PBKDF2).</dd>
+
+      <dt><strong>Modo GCM</strong></dt>
+      <dd>Modo de operação que cifra e autentica ao mesmo tempo; preferido hoje.</dd>
+
+      <dt><strong>Assinatura digital</strong></dt>
+      <dd>Hash do documento cifrado com a chave privada do assinante.</dd>
+
+      <dt><strong>Verificação</strong></dt>
+      <dd>Recalcular o hash e comparar com o hash aberto pela chave pública.</dd>
+
+      <dt><strong>Não-repúdio</strong></dt>
+      <dd>Impossibilidade jurídica de negar a autoria do que foi assinado.</dd>
+
+      <dt><strong>MAC / HMAC</strong></dt>
+      <dd>Código de autenticação com chave compartilhada; sem não-repúdio.</dd>
+
+      <dt><strong>PKI</strong></dt>
+      <dd>Infraestrutura de Chaves Públicas: entidades e regras que gerenciam certificados.</dd>
+
+      <dt><strong>AC (CA)</strong></dt>
+      <dd>Autoridade Certificadora: emite e assina certificados.</dd>
+
+      <dt><strong>AR (RA)</strong></dt>
+      <dd>Autoridade de Registro: confere a identidade do solicitante.</dd>
+
+      <dt><strong>CRL</strong></dt>
+      <dd>Lista publicada de certificados revogados antes do vencimento.</dd>
+
+      <dt><strong>OCSP</strong></dt>
+      <dd>Consulta online e imediata do status de um certificado.</dd>
+
+      <dt><strong>Cadeia de confiança</strong></dt>
+      <dd>Caminho folha, intermediária, raiz; a raiz vive na loja de confiança.</dd>
+
+      <dt><strong>X.509</strong></dt>
+      <dd>Padrão internacional dos campos do certificado.</dd>
+
+      <dt><strong>SAN</strong></dt>
+      <dd>Lista de domínios que o certificado protege.</dd>
+
+      <dt><strong>ICP-Brasil</strong></dt>
+      <dd>Infraestrutura pública brasileira, raiz no ITI, validade jurídica pela MP 2.200-2/2001.</dd>
+
+      <dt><strong>e-CPF / e-CNPJ, A1 / A3</strong></dt>
+      <dd>Certificados de pessoa física e jurídica; em arquivo ou em hardware.</dd>
+
+      <dt><strong>CSR</strong></dt>
+      <dd>Requisição de Assinatura de Certificado enviada à AC.</dd>
+
+      <dt><strong>Certbot / ACME</strong></dt>
+      <dd>Cliente e protocolo que automatizam certificados Let's Encrypt.</dd>
+
+      <dt><strong>OpenSSL / GPG</strong></dt>
+      <dd>Ferramentas de linha de comando para chaves, assinaturas e certificados.</dd>
+
+      <dt><strong>Lei 14.063/2020</strong></dt>
+      <dd>Classifica assinaturas eletrônicas em simples, avançada e qualificada.</dd>
+    </dl>
+  </div>
+
+  <div class="chefao">
+    <h3>👑 CHEFÃO — DESAFIO FINAL</h3>
+    <p><strong>Enunciado:</strong> Você foi contratado como auditor de segurança pela <strong>CoopSaúde</strong> (cooperativa médica fictícia, inspirada no modelo da Unimed, sistema de cooperativas de saúde brasileiras). A cooperativa troca laudos eletrônicos assinados entre hospitais e precisa passar por uma auditoria externa em 30 dias. Seu relatório deve responder quatro frentes.</p>
+
+    <p style="margin-top:1rem"><strong>Frente 1 — uso seguro de algoritmos (Aba 1):</strong> o código legado cifra laudos com AES em modo ECB, chave de 128 bits derivada da senha fixa laudos2015 sem KDF, e IV constante. Liste os TRÊS problemas (termos na cola rápida), cite UM caso real análogo para cada um e proponha a configuração correta (modo, origem da chave e comportamento do nonce).</p>
+
+    <p style="margin-top:1rem"><strong>Frente 2 — assinaturas (Aba 2):</strong> desenhe o fluxo de assinatura de um laudo em PDF: qual hash, qual chave assina, o que acompanha o documento e como o hospital receptor verifica. Indique as TRÊS propriedades garantidas (termos na cola rápida) e explique por que o sigilo do laudo NÃO está coberto pela assinatura, propondo o mecanismo complementar.</p>
+
+    <p style="margin-top:1rem"><strong>Frente 3 — PKI e certificados (Abas 3 e 4):</strong> a cooperativa quer emitir certificados para 400 médicos. Proponha a arquitetura: quem será AR, quem será AC, que tipo de certificado ICP-Brasil (termo na cola rápida) cada médico deve ter e onde as chaves privadas ficarão guardadas (A1 ou A3, justificando). Descreva como um hospital externo valida a cadeia de um laudo assinado, incluindo a consulta de revogação (termo na cola rápida).</p>
+
+    <p style="margin-top:1rem"><strong>Frente 4 — auditoria prática (Aba 5):</strong> escreva as QUATRO receitas de linha de comando (ferramenta e parâmetros, termos na cola rápida) que você executaria para: (a) gerar o par de chaves de um médico; (b) assinar um laudo; (c) verificar a assinatura recebida; (d) testar a cadeia HTTPS do portal da cooperativa. Para cada uma, diga qual saída indica sucesso e qual indica falha.</p>
+  </div>
+
+  <details>
+    <summary>📚 Dica para o Chefão</summary>
+    <p style="margin-top:0.75rem">Na Frente 1, os problemas são: modo ECB (padrões visíveis), chave derivada de senha fraca sem KDF (busca por dicionário) e IV constante (quebra de nonce); os análogos reais são imagens cifradas em ECB, o Debian 2008 e o WEP/PS3. Na Frente 2, SHA-256 + chave privada do médico; o receptor recalcula o hash e abre a assinatura com a pública do certificado; sigilo exige criptografia adicional (por exemplo, cifrar com a chave pública do destinatário). Na Frente 3, uma AC da ICP-Brasil emite, a cooperativa atua como AR conferindo registros do CRM (Conselho Regional de Medicina); e-CPF A3 em token para uso humano e A1 em HSM para automação de sistemas. Na Frente 4, sucesso em verificação é a saída Verified OK e falha é Verification Failure; no s_client, cadeia completa aparece com Verify return code: 0 (ok).</p>
+  </details>
+</div>
+
+<!-- ============ RODAPÉ ============ -->
+<footer>
+  <div class="bloco">
+    <h4>📋 FICHA TÉCNICA DA AULA</h4>
+    <p>Segurança e Auditoria de Sistemas — Aula 5, Unidade 2, págs. 38–65 · Gerado em 06/11/2026 · 5 abas de conteúdo + Revisão · 15 perguntas · 5 demos · cor #1E40AF</p>
+  </div>
+
+  <div class="bloco">
+    <h4>🪄 SOBRE O HTMLearning · v2.17 (23/10/2026)</h4>
+    <p style="margin-bottom:0.75rem">Transformar o sumário de qualquer disciplina em uma classe interativa em HTML único e offline, com previsão antes do clique, tentativa e erro guiado e exemplos reais.</p>
+
+    <ul style="margin-left:1.5rem; margin-bottom:0.75rem">
+      <li>O que é: metodologia e arquitetura de prompts que converte sumários em aulas interativas em minutos, com IAs gratuitas.</li>
+      <li>O que entrega: 5 a 7 abas + Revisão, simulações com previsão, quiz com retry sem revelar gabarito, linguagem plana, Modos Apresentação/Leitura.</li>
+      <li>Por que é inclusivo: um único .html leve, 100% offline, roda em PC e celular e viaja em pen drive para escolas desconectadas ou áreas rurais.</li>
+    </ul>
+
+    <p style="margin-bottom:0.5rem">Idealizador do projeto: Professor Wellington Dimas da Cruz</p>
+    <p style="margin-bottom:0.75rem">Apoiadora do projeto: Prof.ª Dr.ª Mariella Berger Andrade (IFES / CEFOR)</p>
+
+    <p style="margin-top:0.75rem">Contatos e links do projeto:</p>
+    <ul>
+      <li>E-mail do idealizador: <a href="mailto:cloud.ai-generative@outlook.com">cloud.ai-generative@outlook.com</a></li>
+      <li>Repositório GitHub do idealizador: <a href="https://github.com/cloud-ai-Generative" target="_blank" rel="noopener">github.com/cloud-ai-Generative</a></li>
+      <li>Currículo Lattes do idealizador: <a href="https://lattes.cnpq.br/6801791839011321" target="_blank" rel="noopener">lattes.cnpq.br/6801791839011321</a></li>
+      <li>Currículo Lattes da apoiadora: <a href="https://lattes.cnpq.br/3929645439848570" target="_blank" rel="noopener">lattes.cnpq.br/3929645439848570</a></li>
+      <li>Site oficial do projeto: <a href="https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html" target="_blank" rel="noopener">https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html</a></li>
+    </ul>
+  </div>
+</footer>
+
+<script>
+"use strict";
+
+/* ================= ESTADO ================= */
+var estado = {
+  abaAtual: 1,
+  xp: 0,
+  selos: {},
+  totalSelos: 0,
+  respostas: {},
+  modo: "leitura",
+  tema: "claro"
+};
+
+/* ================= NAVEGAÇÃO ================= */
+function ativarAba(num) {
+  estado.abaAtual = num;
+  var tabs = document.querySelectorAll(".tab");
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].setAttribute("aria-selected", tabs[i].getAttribute("data-aba") === String(num) ? "true" : "false");
+  }
+  var paineis = document.querySelectorAll(".painel");
+  for (var j = 0; j < paineis.length; j++) {
+    paineis[j].classList.remove("active");
+  }
+  var alvo = document.getElementById("painel-" + num);
+  if (alvo) alvo.classList.add("active");
+  document.getElementById("progresso").textContent = "Aba " + num + " de 6";
+}
+
+function irParaAba(num) {
+  ativarAba(num);
+  var novo = "#aba-" + num;
+  if (window.location.hash !== novo) {
+    window.location.hash = novo;
+  }
+  window.scrollTo(0, 0);
+}
+
+function lerHash() {
+  var h = window.location.hash.replace("#aba-", "");
+  var n = parseInt(h, 10);
+  if (n >= 1 && n <= 6) return n;
+  return 0;
+}
+
+window.addEventListener("hashchange", function () {
+  var n = lerHash();
+  if (n && n !== estado.abaAtual) ativarAba(n);
+});
+
+/* ================= MODOS ================= */
+function alternarModo() {
+  if (estado.modo === "leitura") {
+    document.body.classList.add("modo-apresentacao");
+    document.getElementById("btn-modo").textContent = "📖 Leitura";
+    estado.modo = "apresentacao";
+  } else {
+    document.body.classList.remove("modo-apresentacao");
+    document.getElementById("btn-modo").textContent = "🎤 Apresentação";
+    estado.modo = "leitura";
+  }
+}
+
+function alternarTema() {
+  if (estado.tema === "claro") {
+    document.body.setAttribute("data-theme", "dark");
+    document.getElementById("btn-tema").textContent = "☀️ Claro";
+    estado.tema = "escuro";
+  } else {
+    document.body.removeAttribute("data-theme");
+    document.getElementById("btn-tema").textContent = "🌙 Escuro";
+    estado.tema = "claro";
+  }
+}
+
+/* ================= QUIZ ================= */
+function fisherYates(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function inicializarQuiz() {
+  var perguntas = document.querySelectorAll(".pergunta");
+  for (var p = 0; p < perguntas.length; p++) {
+    (function (perg) {
+      var altsDiv = perg.querySelector(".alts");
+      var certaKey = altsDiv.getAttribute("data-certa");
+      var alts = [];
+      var filhos = altsDiv.querySelectorAll(".alt");
+      for (var k = 0; k < filhos.length; k++) alts.push(filhos[k]);
+      for (var idx = 0; idx < alts.length; idx++) {
+        var letra = String.fromCharCode(97 + idx);
+        alts[idx].setAttribute("data-ehcerta", letra === certaKey ? "true" : "false");
+      }
+      var emb = fisherYates(alts);
+      altsDiv.innerHTML = "";
+      for (var e = 0; e < emb.length; e++) {
+        altsDiv.appendChild(emb[e]);
+        emb[e].addEventListener("click", function () { responderQuiz(perg, this); });
+      }
+    })(perguntas[p]);
+  }
+}
+
+function responderQuiz(perg, alt) {
+  var id = perg.getAttribute("data-pergunta");
+  var reg = estado.respostas[id];
+  if (reg && reg.acertou) return;
+
+  var acerto = alt.getAttribute("data-ehcerta") === "true";
+  var fbCerta = perg.querySelector(".fb-certa");
+  var fbErrada = perg.querySelector(".fb-errada");
+
+  if (acerto) {
+    alt.classList.add("certa");
+    alt.textContent = "✓ " + alt.textContent;
+    var todas = perg.querySelectorAll(".alt");
+    for (var i = 0; i < todas.length; i++) todas[i].disabled = true;
+    fbCerta.textContent = "✅ Por que esta está certa: " + alt.getAttribute("data-fb");
+    fbCerta.classList.add("show");
+    fbErrada.classList.remove("show");
+    var pontos = (reg && !reg.acertou) ? 5 : 10;
+    estado.xp += pontos;
+    estado.respostas[id] = { acertou: true };
+    verificarSelo(id);
+    atualizarXP();
+  } else {
+    alt.classList.add("errada");
+    alt.textContent = "✗ " + alt.textContent;
+    alt.disabled = true;
+    fbErrada.textContent = "❌ Por que esta está errada: " + alt.getAttribute("data-fb");
+    fbErrada.classList.add("show");
+    if (!reg) estado.respostas[id] = { acertou: false };
+  }
+}
+
+function verificarSelo(id) {
+  var aba = id.split("-")[0];
+  var ids = [aba + "-1", aba + "-2", aba + "-3"];
+  for (var i = 0; i < ids.length; i++) {
+    var r = estado.respostas[ids[i]];
+    if (!r || !r.acertou) return;
+  }
+  if (!estado.selos[aba]) {
+    estado.selos[aba] = true;
+    estado.totalSelos += 1;
+    document.getElementById("selos").textContent = estado.totalSelos;
+  }
+}
+
+function atualizarXP() {
+  document.getElementById("xp").textContent = estado.xp;
+}
+
+/* ================= HASH SIMULADO (didático) ================= */
+function hashSimulado(str) {
+  var h1 = 0x6a09e667, h2 = 0xbb67ae85, h3 = 0x3c6ef372, h4 = 0xa54ff53a;
+  var h5 = 0x510e527f, h6 = 0x9b05688c, h7 = 0x1f83d9ab, h8 = 0x5be0cd19;
+  for (var i = 0; i < str.length; i++) {
+    var c = str.charCodeAt(i);
+    h1 = (h1 ^ (c * 31 + i)) >>> 0;
+    h2 = (h2 ^ (c * 37 + i * 3)) >>> 0;
+    h3 = (h3 ^ (c * 41 + i * 7)) >>> 0;
+    h4 = (h4 ^ (c * 43 + i * 11)) >>> 0;
+    h5 = (h5 ^ (c * 47 + i * 13)) >>> 0;
+    h6 = (h6 ^ (c * 53 + i * 17)) >>> 0;
+    h7 = (h7 ^ (c * 59 + i * 19)) >>> 0;
+    h8 = (h8 ^ (c * 61 + i * 23)) >>> 0;
+  }
+  return (
+    ("00000000" + h1.toString(16)).slice(-8) +
+    ("00000000" + h2.toString(16)).slice(-8) +
+    ("00000000" + h3.toString(16)).slice(-8) +
+    ("00000000" + h4.toString(16)).slice(-8) +
+    ("00000000" + h5.toString(16)).slice(-8) +
+    ("00000000" + h6.toString(16)).slice(-8) +
+    ("00000000" + h7.toString(16)).slice(-8) +
+    ("00000000" + h8.toString(16)).slice(-8)
+  );
+}
+
+/* ================= DEMO 1: CONFIGURAÇÃO SEGURA ================= */
+function demo1Avaliar() {
+  var modo = document.getElementById("demo1-modo").value;
+  var chave = document.getElementById("demo1-chave").value;
+  var nonce = document.getElementById("demo1-nonce").value;
+  var origem = document.getElementById("demo1-origem").value;
+
+  var problemas = [];
+  var pontos = 0;
+
+  if (modo === "gcm") pontos += 3;
+  else if (modo === "cbc") { pontos += 1; problemas.push("CBC sem autenticação não detecta adulteração: um atacante pode alterar o texto cifrado sem ser notado. Prefira GCM ou ChaCha20-Poly1305, que autenticam junto."); }
+  else { problemas.push("ECB cifra blocos isolados e revela padrões: a famosa imagem do pinguim Tux continua visível depois de cifrada. Nunca use ECB para dados reais."); }
+
+  if (chave === "256") pontos += 3;
+  else if (chave === "128") pontos += 2;
+  else { problemas.push("Chave de 56 bits (DES antigo) é quebrável por força bruta: a máquina Deep Crack da EFF (Fundação Fronteira Eletrônica, organização americana) quebrou uma chave dessas em 56 horas já em 1998."); }
+
+  if (nonce === "aleatorio") pontos += 3;
+  else { problemas.push("Nonce ou IV fixo repete o fluxo de cifragem: foi exatamente isso que derrubou o WEP e as assinaturas do PlayStation 3. O nonce deve ser novo e imprevisível a cada mensagem."); }
+
+  if (origem === "kms") pontos += 3;
+  else if (origem === "senha") { pontos += 1; problemas.push("Senha sem KDF vira chave fraca: um atacante testa dicionários inteiros. Use Argon2, bcrypt ou PBKDF2 com sal e muitas iterações."); }
+  else { problemas.push("Chave escrita no código-fonte vaza com o repositório: qualquer pessoa com acesso ao código (ou ao binário) obtém a chave. Chaves vivem em KMS ou HSM."); }
+
+  var nota;
+  if (pontos >= 11) nota = "ALTA";
+  else if (pontos >= 7) nota = "MÉDIA";
+  else nota = "BAIXA";
+
+  var html = "<div style='background:var(--fundo-codigo); padding:1rem; border-radius:8px'>";
+  html += "<h4 style='color:var(--cor-destaque-escuro)'>Nota de segurança: " + nota + " (" + pontos + "/12)</h4>";
+  if (problemas.length === 0) {
+    html += "<div class='resultado-demo'>🛡️ Configuração exemplar: modo autenticado, chave forte, nonce único e chave gerenciada em KMS/HSM com CSPRNG. É o padrão que auditorias esperam encontrar.</div>";
+  } else {
+    html += "<div class='resultado-erro'>⚠️ Problemas encontrados (" + problemas.length + "):</div>";
+    for (var i = 0; i < problemas.length; i++) {
+      html += "<div style='margin:0.4rem 0; padding:0.5rem 0.75rem; background:#FFF3BF; border-left:4px solid var(--aviso); border-radius:4px; font-size:0.92rem'>" + (i + 1) + ". " + problemas[i] + "</div>";
+    }
+  }
+  html += "</div>";
+  document.getElementById("demo1-resultado").innerHTML = html;
+}
+
+function demo1Reset() {
+  document.getElementById("demo1-modo").value = "gcm";
+  document.getElementById("demo1-chave").value = "256";
+  document.getElementById("demo1-nonce").value = "aleatorio";
+  document.getElementById("demo1-origem").value = "kms";
+  document.getElementById("demo1-resultado").innerHTML = "";
+}
+
+/* ================= DEMO 2: ASSINATURA ================= */
+var demo2Estado = { hashAtual: null, assinatura: null, msgAssinada: null };
+var CHAVE_PRIV_SIM = "priv-7f3a";
+
+function demo2Hash() {
+  var msg = document.getElementById("demo2-msg").value;
+  demo2Estado.hashAtual = hashSimulado(msg);
+  document.getElementById("demo2-hashout").textContent = demo2Estado.hashAtual;
+  document.getElementById("demo2-feedback").innerHTML = "<div class='resultado-demo'>1️⃣ Hash SHA-256 (simulado) calculado: a impressão digital do documento está pronta para ser assinada.</div>";
+}
+
+function demo2Sign() {
+  if (!demo2Estado.hashAtual) {
+    document.getElementById("demo2-feedback").innerHTML = "<div class='resultado-erro'>❌ Calcule o hash primeiro (passo 1).</div>";
+    return;
+  }
+  var msg = document.getElementById("demo2-msg").value;
+  demo2Estado.assinatura = hashSimulado(demo2Estado.hashAtual + CHAVE_PRIV_SIM);
+  demo2Estado.msgAssinada = msg;
+  document.getElementById("demo2-signout").textContent = demo2Estado.assinatura;
+  document.getElementById("demo2-feedback").innerHTML = "<div class='resultado-demo'>2️⃣ Assinatura gerada: o hash foi cifrado com a chave privada do assinante. Documento e assinatura seguem juntos para o receptor.</div>";
+}
+
+function demo2Verify() {
+  if (!demo2Estado.assinatura) {
+    document.getElementById("demo2-feedback").innerHTML = "<div class='resultado-erro'>❌ Assine o documento primeiro (passo 2).</div>";
+    return;
+  }
+  var msgAtual = document.getElementById("demo2-msg").value;
+  var hashRecalc = hashSimulado(msgAtual);
+  var hashAberto = hashSimulado(demo2Estado.assinatura + CHAVE_PRIV_SIM + "-pub");
+  var esperado = hashSimulado(hashSimulado(demo2Estado.msgAssinada) + CHAVE_PRIV_SIM);
+  var assinaturaOk = esperado === demo2Estado.assinatura;
+  var integro = hashRecalc === demo2Estado.hashAtual && msgAtual === demo2Estado.msgAssinada;
+
+  if (integro && assinaturaOk) {
+    document.getElementById("demo2-feedback").innerHTML = "<div class='resultado-demo'>✅ 3️⃣ Verificação OK: o hash recalculado do documento recebido coincide com o hash aberto pela chave pública. Integridade e autenticidade confirmadas (simulação: Verified OK).</div>";
+  } else {
+    document.getElementById("demo2-feedback").innerHTML = "<div class='resultado-erro'>❌ 3️⃣ Verificação FALHOU: o hash recalculado do documento atual (" + hashRecalc.slice(0, 16) + "...) difere do hash assinado (" + demo2Estado.hashAtual.slice(0, 16) + "...). O documento foi alterado depois da assinatura (simulação: Verification Failure).</div>";
+  }
+}
+
+function demo2Tamper() {
+  var msg = document.getElementById("demo2-msg").value;
+  if (msg.length < 2) return;
+  var pos = Math.floor(msg.length / 2);
+  var letra = msg.charAt(pos);
+  var nova = letra === "X" ? "Y" : "X";
+  var adulterada = msg.substring(0, pos) + nova + msg.substring(pos + 1);
+  document.getElementById("demo2-msg").value = adulterada;
+  document.getElementById("demo2-hashout").textContent = hashSimulado(adulterada) + "  (hash do documento ADULTERADO)";
+  document.getElementById("demo2-feedback").innerHTML = "<div class='resultado-erro'>💥 Adulteração aplicada: uma letra no meio do documento foi trocada. O hash mudou completamente (efeito avalanche). Verifique de novo para ver a assinatura falhar.</div>";
+}
+
+function demo2Reset() {
+  demo2Estado = { hashAtual: null, assinatura: null, msgAssinada: null };
+  document.getElementById("demo2-msg").value = "Contrato de prestacao de servicos no valor de R$ 5.000";
+  document.getElementById("demo2-hashout").textContent = "—";
+  document.getElementById("demo2-signout").textContent = "—";
+  document.getElementById("demo2-feedback").innerHTML = "";
+}
+
+/* ================= DEMO 3: CADEIA PKI ================= */
+var demo3Estado = { revogada: false };
+
+var cadeiaInfo = {
+  raiz: {
+    titulo: "AC Raiz ICP-Brasil (v10)",
+    campos: "Tipo: raiz autoassinada · Titular: ICP-Brasil / ITI (Instituto Nacional de Tecnologia da Informação) · Validade: 2029 · Chave: RSA 4096 · Basic Constraints: CA verdadeira · Onde vive: loja de raízes do sistema operacional e dos navegadores."
+  },
+  inter: {
+    titulo: "AC Intermediária Certisign RFB",
+    campos: "Tipo: intermediária · Emitida por: AC Raiz ICP-Brasil · Titular: AC Certisign RFB (Autoridade Certificadora habilitada) · Validade: 2027 · Chave: RSA 4096 · Basic Constraints: CA verdadeira · Papel: assinar certificados finais sem expor a raiz, que fica offline em cofre."
+  },
+  folha: {
+    titulo: "Certificado folha: banco.com.br (TLS de servidor)",
+    campos: "Tipo: folha · Emitida por: AC Intermediária Certisign RFB · Titular (subject): CN = banco.com.br, O = Banco Exemplo S.A., C = BR · SAN: banco.com.br, www.banco.com.br · Validade: 12 meses · Chave: ECDSA P-256 · EKU: TLS de servidor · Status OCSP: consulte abaixo."
+  }
+};
+
+function demo3Mostrar(nivel) {
+  var d = cadeiaInfo[nivel];
+  var extra = "";
+  if (nivel === "folha") {
+    extra = demo3Estado.revogada
+      ? "<div class='resultado-erro'>🚫 Status OCSP: REVOGADO em 05/11/2026 (motivo: comprometimento de chave). Navegadores devem recusar a conexão mesmo com a assinatura válida.</div>"
+      : "<div class='resultado-demo'>✅ Status OCSP: BOM (válido). A cadeia está apta para uso em TLS.</div>";
+  }
+  document.getElementById("demo3-detalhe").innerHTML =
+    "<div style='background:var(--fundo-codigo); padding:1rem; border-radius:8px'><h4 style='color:var(--cor-destaque-escuro)'>" + d.titulo + "</h4><p style='font-size:0.92rem'>" + d.campos + "</p>" + extra + "</div>";
+}
+
+function demo3AtualizarStatus() {
+  var stFolha = document.getElementById("demo3-st-folha");
+  var cardFolha = document.getElementById("demo3-folha");
+  if (demo3Estado.revogada) {
+    stFolha.textContent = "REVOGADO";
+    stFolha.className = "selos-status bad";
+    cardFolha.classList.add("revogado");
+  } else {
+    stFolha.textContent = "válido";
+    stFolha.className = "selos-status ok";
+    cardFolha.classList.remove("revogado");
+  }
+}
+
+function demo3Validar() {
+  var html = "<div style='background:var(--fundo-codigo); padding:1rem; border-radius:8px'>";
+  html += "<h4 style='color:var(--cor-destaque-escuro)'>Validação da cadeia</h4>";
+  html += "<p>1. Assinatura da folha confere com a intermediária? <span class='selos-status ok'>SIM</span></p>";
+  html += "<p>2. Assinatura da intermediária confere com a raiz? <span class='selos-status ok'>SIM</span></p>";
+  html += "<p>3. Raiz presente na loja de confiança? <span class='selos-status ok'>SIM</span></p>";
+  if (demo3Estado.revogada) {
+    html += "<p>4. Status de revogação (OCSP)? <span class='selos-status bad'>REVOGADO</span></p>";
+    html += "<div class='resultado-erro'>🚫 Conexão RECUSADA: a cadeia assina perfeitamente, mas o certificado folha foi revogado antes do vencimento. É assim que um certificado vazado é barrado no mundo real.</div>";
+  } else {
+    html += "<p>4. Status de revogação (OCSP)? <span class='selos-status ok'>BOM</span></p>";
+    html += "<div class='resultado-demo'>✅ Conexão ACEITA: cadeia completa, raiz confiável e nenhum certificado revogado. O cadeado fecha.</div>";
+  }
+  html += "</div>";
+  document.getElementById("demo3-resultado").innerHTML = html;
+}
+
+function demo3Revogar() {
+  demo3Estado.revogada = true;
+  demo3AtualizarStatus();
+  demo3Mostrar("folha");
+  document.getElementById("demo3-resultado").innerHTML = "<div class='resultado-erro'>🚫 Folha revogada: a AC publicou o serial na CRL e o OCSP responde REVOGADO. Valide de novo para ver o efeito na conexão.</div>";
+}
+
+function demo3Restaurar() {
+  demo3Estado.revogada = false;
+  demo3AtualizarStatus();
+  demo3Mostrar("folha");
+  document.getElementById("demo3-resultado").innerHTML = "<div class='resultado-demo'>♻️ Estado restaurado (simulação de reemissão com nova chave). Valide de novo.</div>";
+}
+
+function demo3Reset() {
+  demo3Estado.revogada = false;
+  demo3AtualizarStatus();
+  document.getElementById("demo3-detalhe").innerHTML = "";
+  document.getElementById("demo3-resultado").innerHTML = "";
+}
+
+/* ================= DEMO 4: INSPETOR X.509 ================= */
+var certsData = {
+  ok: {
+    titulo: "Certificado de banco.com.br",
+    campos: [
+      ["Versão / Serial", "v3 / 0x4A7F2C91"],
+      ["Subject (titular)", "CN = banco.com.br, O = Banco Exemplo S.A., C = BR"],
+      ["Issuer (emissor)", "AC Intermediária Certisign RFB"],
+      ["Validade", "notBefore 01/02/2026 · notAfter 01/02/2027"],
+      ["Chave pública", "ECDSA P-256"],
+      ["SAN", "banco.com.br, www.banco.com.br"],
+      ["EKU", "TLS de servidor"],
+      ["Assinatura da AC", "SHA-256 com RSA, confere"]
+    ],
+    endereco: "https://banco.com.br",
+    hoje: "06/11/2026",
+    verificacoes: [
+      ["Datas dentro da validade", true],
+      ["Domínio acessado presente no SAN", true],
+      ["Cadeia completa até raiz confiável", true],
+      ["Status OCSP: bom", true],
+      ["Assinatura da AC confere", true]
+    ]
+  },
+  vencido: {
+    titulo: "Certificado de loja.com.br",
+    campos: [
+      ["Versão / Serial", "v3 / 0x1B3E88AA"],
+      ["Subject (titular)", "CN = loja.com.br, O = Loja Exemplo Ltda., C = BR"],
+      ["Issuer (emissor)", "AC Intermediária Soluti SSL"],
+      ["Validade", "notBefore 10/08/2024 · notAfter 10/08/2025"],
+      ["Chave pública", "RSA 2048"],
+      ["SAN", "loja.com.br, www.loja.com.br"],
+      ["EKU", "TLS de servidor"],
+      ["Assinatura da AC", "SHA-256 com RSA, confere"]
+    ],
+    endereco: "https://loja.com.br",
+    hoje: "06/11/2026",
+    verificacoes: [
+      ["Datas dentro da validade", false],
+      ["Domínio acessado presente no SAN", true],
+      ["Cadeia completa até raiz confiável", true],
+      ["Status OCSP: bom", true],
+      ["Assinatura da AC confere", true]
+    ]
+  },
+  dominio: {
+    titulo: "Certificado de www.loja.com.br",
+    campos: [
+      ["Versão / Serial", "v3 / 0x9C02D417"],
+      ["Subject (titular)", "CN = www.loja.com.br, O = Loja Exemplo Ltda., C = BR"],
+      ["Issuer (emissor)", "AC Intermediária Soluti SSL"],
+      ["Validade", "notBefore 05/01/2026 · notAfter 05/01/2027"],
+      ["Chave pública", "RSA 2048"],
+      ["SAN", "www.loja.com.br"],
+      ["EKU", "TLS de servidor"],
+      ["Assinatura da AC", "SHA-256 com RSA, confere"]
+    ],
+    endereco: "https://app.loja.com.br",
+    hoje: "06/11/2026",
+    verificacoes: [
+      ["Datas dentro da validade", true],
+      ["Domínio acessado presente no SAN", false],
+      ["Cadeia completa até raiz confiável", true],
+      ["Status OCSP: bom", true],
+      ["Assinatura da AC confere", true]
+    ]
+  }
+};
+
+var demo4Estado = { atual: null };
+
+function demo4Mostrar(cert) {
+  demo4Estado.atual = cert;
+  var d = certsData[cert];
+  var html = "<div style='background:var(--fundo-codigo); padding:1rem; border-radius:8px'>";
+  html += "<h4 style='color:var(--cor-destaque-escuro)'>📜 " + d.titulo + "</h4>";
+  html += "<p style='font-size:0.9rem; color:var(--texto-suave)'>Endereço acessado nesta simulação: " + d.endereco + " · Data de hoje: " + d.hoje + "</p>";
+  html += "<table style='width:100%; border-collapse:collapse; margin-top:0.5rem; font-size:0.9rem'>";
+  for (var i = 0; i < d.campos.length; i++) {
+    html += "<tr><td style='padding:0.3rem 0.5rem; border:1px solid var(--borda); font-weight:bold; width:38%'>" + d.campos[i][0] + "</td><td style='padding:0.3rem 0.5rem; border:1px solid var(--borda); font-family:monospace'>" + d.campos[i][1] + "</td></tr>";
+  }
+  html += "</table></div>";
+  document.getElementById("demo4-campos").innerHTML = html;
+  document.getElementById("demo4-resultado").innerHTML = "";
+}
+
+function demo4Verificar() {
+  if (!demo4Estado.atual) {
+    document.getElementById("demo4-resultado").innerHTML = "<div class='resultado-erro'>❌ Escolha primeiro um certificado para inspecionar.</div>";
+    return;
+  }
+  var d = certsData[demo4Estado.atual];
+  var html = "<div style='background:var(--fundo-codigo); padding:1rem; border-radius:8px'>";
+  html += "<h4 style='color:var(--cor-destaque-escuro)'>🔎 Verificações do navegador</h4>";
+  var tudoOk = true;
+  for (var i = 0; i < d.verificacoes.length; i++) {
+    var ok = d.verificacoes[i][1];
+    if (!ok) tudoOk = false;
+    html += "<p>" + d.verificacoes[i][0] + "? <span class='selos-status " + (ok ? "ok'>SIM" : "bad'>NÃO") + "</span></p>";
+  }
+  if (tudoOk) {
+    html += "<div class='resultado-demo'>✅ Certificado ACEITO: cadeado fechado. Todas as verificações passaram.</div>";
+  } else if (demo4Estado.atual === "vencido") {
+    html += "<div class='resultado-erro'>🚫 Certificado RECUSADO por data: o navegador mostra o aviso de conexão não segura com mensagem de certificado expirado. Solução: renovar o certificado.</div>";
+  } else {
+    html += "<div class='resultado-erro'>🚫 Certificado RECUSADO por nome: app.loja.com.br não está no SAN (só www.loja.com.br). Solução: reemitir com todos os nomes no SAN ou usar curinga adequado.</div>";
+  }
+  html += "</div>";
+  document.getElementById("demo4-resultado").innerHTML = html;
+}
+
+function demo4Reset() {
+  demo4Estado.atual = null;
+  document.getElementById("demo4-campos").innerHTML = "";
+  document.getElementById("demo4-resultado").innerHTML = "";
+}
+
+/* ================= DEMO 5: LABORATÓRIO DE COMANDOS ================= */
+var tarefasData = {
+  gerar: {
+    titulo: "Gerar par de chaves RSA 2048",
+    cmd: "openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out privada.pem\nopenssl pkey -in privada.pem -pubout -out publica.pem",
+    saida: ".....+++++  (geração concluída)\narquivos criados: privada.pem (0600) e publica.pem",
+    explicacao: "genpkey cria a chave privada com 2048 bits usando o CSPRNG do sistema; o arquivo nasce com permissão 0600 (só o dono lê). pkey com -pubout extrai a pública, que pode ser distribuída. A privada nunca sai do cofre local."
+  },
+  assinar: {
+    titulo: "Assinar um documento (hash + chave privada)",
+    cmd: "openssl dgst -sha256 -sign privada.pem -out laudo.sig laudo.pdf",
+    saida: "arquivo laudo.sig criado (256 bytes de assinatura RSA-2048)",
+    explicacao: "dgst calcula o hash SHA-256 do PDF e cifra esse hash com a chave privada: nasce a assinatura. O PDF em si não é cifrado: assinatura não dá sigilo, apenas autoria e integridade."
+  },
+  verificar: {
+    titulo: "Verificar assinatura com a chave pública",
+    cmd: "openssl dgst -sha256 -verify publica.pem -signature laudo.sig laudo.pdf",
+    saida: "Verified OK   (ou, se o arquivo mudou: Verification Failure)",
+    explicacao: "O verificador recalcula o hash do PDF recebido e abre a assinatura com a chave pública do médico. Hashes iguais: Verified OK, com integridade e autoria confirmadas. Um bit diferente: Verification Failure. Note que só a PÚBLICA é necessária aqui."
+  },
+  cert: {
+    titulo: "Pedir um certificado: gerar CSR",
+    cmd: "openssl req -new -key privada.pem -out requisicao.csr -subj /CN=medico.coopsaude.br/O=CoopSaude/C=BR",
+    saida: "requisicao.csr criado; envie-o à AC (ou use certbot certonly --webroot para Let's Encrypt)",
+    explicacao: "O CSR empacota a chave pública e os dados do titular, assinados com a privada para provar posse da chave. A AR confere a identidade, a AC emite o X.509. Com Let's Encrypt, o Certbot automatiza CSR, prova de domínio e renovação via ACME."
+  },
+  tls: {
+    titulo: "Auditar a cadeia HTTPS de um servidor",
+    cmd: "openssl s_client -connect portal.coopsaude.br:443 -servername portal.coopsaude.br",
+    saida: "Certificate chain:\n 0 s:CN = portal.coopsaude.br\n   i:AC Intermediária Certisign RFB\n 1 s:AC Intermediária Certisign RFB\n   i:AC Raiz ICP-Brasil\nVerify return code: 0 (ok)",
+    explicacao: "s_client conecta de verdade e mostra a cadeia apresentada pelo servidor (folha e intermediárias). Verify return code 0 significa cadeia válida; códigos como 10 (expired) ou 20 (unable to get issuer) apontam o problema exato, útil no relatório de auditoria."
+  }
+};
+
+function demo5Mostrar(tarefa) {
+  var d = tarefasData[tarefa];
+  var html = "<div style='background:var(--fundo-codigo); padding:1rem; border-radius:8px'>";
+  html += "<h4 style='color:var(--cor-destaque-escuro)'>💻 " + d.titulo + "</h4>";
+  html += "<pre style='margin:0.5rem 0'>" + d.cmd + "</pre>";
+  html += "<p style='font-size:0.9rem'><strong>Saída simulada:</strong></p>";
+  html += "<pre style='margin:0.5rem 0'>" + d.saida + "</pre>";
+  html += "<p style='font-size:0.92rem'><strong>📚 O que acontece:</strong> " + d.explicacao + "</p>";
+  html += "</div>";
+  document.getElementById("demo5-saida").innerHTML = html;
+}
+
+function demo5Reset() {
+  document.getElementById("demo5-saida").innerHTML = "";
+}
+
+/* ================= LIGAÇÕES ================= */
+function ligarBotoes() {
+  var tabs = document.querySelectorAll(".tab");
+  for (var t = 0; t < tabs.length; t++) {
+    (function (tab) {
+      tab.addEventListener("click", function () {
+        irParaAba(parseInt(tab.getAttribute("data-aba"), 10));
+      });
+      tab.addEventListener("keydown", function (ev) {
+        var lista = Array.prototype.slice.call(document.querySelectorAll(".tab"));
+        var idx = lista.indexOf(tab);
+        if (ev.key === "ArrowRight" && idx < lista.length - 1) { lista[idx + 1].focus(); ev.preventDefault(); }
+        if (ev.key === "ArrowLeft" && idx > 0) { lista[idx - 1].focus(); ev.preventDefault(); }
+      });
+    })(tabs[t]);
+  }
+
+  document.getElementById("btn-modo").addEventListener("click", alternarModo);
+  document.getElementById("btn-tema").addEventListener("click", alternarTema);
+
+  document.getElementById("demo1-go").addEventListener("click", demo1Avaliar);
+  document.getElementById("demo1-reset").addEventListener("click", demo1Reset);
+
+  document.getElementById("demo2-hash").addEventListener("click", demo2Hash);
+  document.getElementById("demo2-sign").addEventListener("click", demo2Sign);
+  document.getElementById("demo2-verify").addEventListener("click", demo2Verify);
+  document.getElementById("demo2-tamper").addEventListener("click", demo2Tamper);
+  document.getElementById("demo2-reset").addEventListener("click", demo2Reset);
+
+  var niveis = document.querySelectorAll("#demo3-area [data-nivel]");
+  for (var n = 0; n < niveis.length; n++) {
+    (function (c) { c.addEventListener("click", function () { demo3Mostrar(c.getAttribute("data-nivel")); }); })(niveis[n]);
+  }
+  document.getElementById("demo3-valida").addEventListener("click", demo3Validar);
+  document.getElementById("demo3-revoga").addEventListener("click", demo3Revogar);
+  document.getElementById("demo3-restaura").addEventListener("click", demo3Restaurar);
+  document.getElementById("demo3-reset").addEventListener("click", demo3Reset);
+
+  var certs = document.querySelectorAll("#demo4-area [data-cert]");
+  for (var c2 = 0; c2 < certs.length; c2++) {
+    (function (b) { b.addEventListener("click", function () { demo4Mostrar(b.getAttribute("data-cert")); }); })(certs[c2]);
+  }
+  document.getElementById("demo4-verifica").addEventListener("click", demo4Verificar);
+  document.getElementById("demo4-reset").addEventListener("click", demo4Reset);
+
+  var tarefas = document.querySelectorAll("#demo5-area [data-tarefa]");
+  for (var k = 0; k < tarefas.length; k++) {
+    (function (b) { b.addEventListener("click", function () { demo5Mostrar(b.getAttribute("data-tarefa")); }); })(tarefas[k]);
+  }
+  document.getElementById("demo5-reset").addEventListener("click", demo5Reset);
+
+  document.addEventListener("keydown", function (ev) {
+    if (estado.modo === "apresentacao") {
+      if (ev.key === "ArrowRight" && estado.abaAtual < 6) irParaAba(estado.abaAtual + 1);
+      if (ev.key === "ArrowLeft" && estado.abaAtual > 1) irParaAba(estado.abaAtual - 1);
+    }
+  });
+}
+
+/* ================= CARGA INICIAL ================= */
+document.addEventListener("DOMContentLoaded", function () {
+  ligarBotoes();
+  inicializarQuiz();
+  var n = lerHash();
+  ativarAba(n ? n : 1);
+  atualizarXP();
+});
+</script>
+
+</body>
+</html>
