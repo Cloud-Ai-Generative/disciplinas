@@ -423,6 +423,20 @@ docker exec -it dev_mongo_multicontextos mongosh -u root -p root123 --authentica
 
 <h4 style="color:var(--accent);margin:16px 0 8px">📦 Passo 3 — Projeto de infraestrutura Mongo, pacote e configuração</h4>
 <p>Criamos o projeto <code>LojaApi.Shared.Mongo</code>: código Mongo <strong>compartilhado</strong> pelos módulos (cliente, contadores, índices). Ele <strong>não</strong> vai no <code>Shared.Kernel</code>, porque o Kernel é vocabulário de domínio e não deve depender de banco nenhum.</p>
+<div class="deep-concept-box">
+<h4>🧰 ORM, ODM ou driver? O que o <code>MongoDB.Driver</code> é</h4>
+<p>Na Tab 9 o banco era MySQL e quem fazia a ponte objeto ↔ tabela era um <strong>ORM</strong> (o EF Core — reveja o quadro da <a href="javascript:switchTab('tab7')" style="color:var(--primary);text-decoration:underline">Tab 7</a>). No MongoDB não há tabelas: os dados já são documentos parecidos com objetos. A ferramenta equivalente se chama <strong>ODM</strong> (<em>Object-Document Mapper</em>): ela transforma uma classe C# em documento BSON e de volta.</p>
+<div class="table-wrap"><table>
+<thead><tr><th></th><th>ORM (EF Core + MySQL)</th><th>Driver oficial (<code>MongoDB.Driver</code>)</th></tr></thead>
+<tbody>
+<tr><td>Converte</td><td>objeto ↔ linhas de várias tabelas (com JOIN)</td><td>objeto ↔ <strong>um</strong> documento BSON (sem JOIN)</td></tr>
+<tr><td>Como configura</td><td><code>OnModelCreating</code> (Fluent API)</td><td>atributos <code>[BsonElement]</code>, <code>[BsonId]</code>… (Passo 4)</td></tr>
+<tr><td>Rastreia mudanças?</td><td>sim (<code>SaveChanges</code> descobre o que mudou)</td><td><strong>não</strong>: você diz o que gravar (<code>InsertOne</code>, <code>UpdateOne</code> com <code>$set</code>)</td></tr>
+<tr><td>Migrations</td><td>sim (<code>dotnet ef</code>)</td><td>não existem: o "esquema" é a classe <code>*Document</code> + os índices (Passo 5)</td></tr>
+</tbody></table></div>
+<p>O <code>MongoDB.Driver</code> faz o papel de um ODM leve: mapeia as classes, mas deixa cada comando explícito. É por isso que nos repositórios Mongo você vai ver filtros e updates escritos à mão. Existe também um <a class="ext" href="https://www.mongodb.com/docs/entity-framework/current/" target="_blank">provedor EF Core para MongoDB</a>, mas ele esconde justamente os comandos que a reserva atômica do Passo 7 precisa escrever à mão — por isso, para aprender, ficamos com o driver.</p>
+<p>📚 <a class="ext" href="https://www.mongodb.com/docs/drivers/csharp/current/" target="_blank">Documentação do driver C#</a> · <a class="ext" href="https://www.youtube.com/results?search_query=orm+vs+odm+mongodb" target="_blank">🎬 Vídeos-aula no YouTube (busca em português)</a></p>
+</div>
 <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">⌨️ Quer criar o projeto do zero pelo terminal? (o ZIP já traz pronto)</div>
 <div class="faq-a">
 <div class="code-editor-wrap">
@@ -880,6 +894,7 @@ app.Run();
 /// &lt;summary&gt;Visível para os testes HTTP (WebApplicationFactory&amp;lt;Program&amp;gt;) do LojaApi.Tests.&lt;/summary&gt;
 public partial class Program { }</pre>
 </div>
+<p class="text-sm">👉 Por que a última linha <code>public partial class Program { }</code>? Com <em>top-level statements</em> (o <code>Program.cs</code> sem classe), o C# gera uma classe <code>Program</code> escondida e <strong>interna</strong>. Os testes HTTP usam <code>WebApplicationFactory&lt;Program&gt;</code> e precisam enxergá-la: essa linha a torna <strong>pública</strong> sem mudar nada no funcionamento (<code>partial</code> = "esta classe continua em outro lugar"). Por isso também o Migrador do Passo 11 <strong>não</strong> usa top-level statements — veja o ✋ Errou? de lá.</p>
 <div class="code-editor-wrap"><span class="code-filepath">LojaApi.Api/Properties/launchSettings.json (os 2 perfis: o interruptor com o mouse)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
 <pre class="code-editor" data-zip-path="LojaApi.Api/Properties/launchSettings.json">{
   "profiles": {
@@ -913,7 +928,7 @@ public partial class Program { }</pre>
 <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">✋ Errou? Erros comuns de compilação</div>
 <div class="faq-a"><ul>
 <li><strong><code>CS0246: AddMongoInfra</code> não encontrado</strong> → faltou a referência ao <code>LojaApi.Shared.Mongo</code> no <code>.csproj</code> do módulo.</li>
-<li><strong><code>CS0246: EfProdutoRepository</code> (ou <code>IProdutoRepository</code>) não encontrado</strong> → a Tab 9 que está na pasta não tem as portas de repositório: baixe o ZIP atual da Tab 9 e extraia antes deste.</li>
+<li><strong><code>CS0246: EfProdutoRepository</code> (ou <code>IProdutoRepository</code>) não encontrado</strong> → cada módulo da Tab 9 atual tem as pastas <code>Domain/</code> (entidades e portas, como <code>Domain/IProdutoRepository.cs</code>), <code>Application/</code> (serviços e DTOs), <code>Infrastructure/</code> (<code>EfProdutoRepository.cs</code>, o <code>DbContext</code>) e <code>Api/</code> (controllers), com o <code>ModuleExtensions.cs</code> na raiz do módulo. Se a sua pasta não tem essas 4 pastas, ela é de uma versão antiga da Tab 9: baixe o ZIP atual da Tab 9, extraia, e só então extraia o desta aba por cima.</li>
 <li><strong><code>NU1605</code> (downgrade de pacote)</strong> → mantenha as versões fixas dos <code>.csproj</code>.</li>
 <li><strong><code>dotnet sln add</code> criou uma pasta de solução</strong> → use <code>--in-root</code>.</li>
 </ul></div></div>
@@ -931,9 +946,11 @@ public partial class Program { }</pre>
 <tr><td><code>[BsonRepresentation(BsonType.String)]</code> no enum</td><td>Status gravado como <code>"RESERVADO"</code></td><td>Gravaria <code>1</code> — reordenar o enum corromperia os dados</td></tr>
 <tr><td><code>[BsonDateTimeOptions(Kind = Utc)]</code></td><td>Datas sempre em UTC</td><td>Conversões de fuso indesejadas na leitura</td></tr>
 <tr><td><code>[BsonIgnoreExtraElements]</code></td><td>Campos desconhecidos no documento são ignorados</td><td>Adicionar um campo no futuro quebraria a leitura dos documentos antigos</td></tr>
+<tr><td><code>FromDomain</code> / <code>ToDomain</code></td><td>Converte entre a entidade e o documento: <code>Preco = p.Preco.Valor</code> na ida, <code>Produto.Reconstituir(...)</code> na volta</td><td>O driver tentaria gravar o objeto <code>Dinheiro</code> inteiro (um subdocumento <code>{ valor: ... }</code>) — ou o domínio teria de conhecer os atributos <code>[Bson…]</code></td></tr>
 </tbody>
 </table>
 </div>
+<p><strong>Por que um <code>*Document</code> separado da entidade?</strong> A entidade de domínio (<code>Produto</code>) tem Value Objects — <code>Dinheiro</code>, <code>Email</code>, <code>Cep</code> — e construtores protegidos que garantem as regras. O banco só entende tipos simples (<code>decimal</code>, texto). Então cada documento tem duas pontes: <code>FromDomain</code> "desmonta" o Value Object no tipo simples (<code>p.Preco.Valor</code> → <code>decimal</code>, <code>c.Email.Valor</code> → texto), e <code>ToDomain</code> "remonta" chamando o <code>Reconstituir</code> da entidade — a fábrica de quem <strong>já existe</strong>, que não revalida (reveja <em>Criar × Reconstituir</em> na <a href="javascript:switchTab('tab9')" style="color:var(--primary);text-decoration:underline">Tab 9</a>). Assim o domínio não sabe que o MongoDB existe, e o formato do banco pode mudar sem mexer nas regras.</p>
 <div class="info-banner"><strong>🔬 Precisão de datas (perda conhecida):</strong> o MySQL <code>DATETIME(6)</code> guarda <strong>micro</strong>ssegundos; o BSON Date guarda <strong>mili</strong>ssegundos. Na migração, <code>12:00:00.123456</code> vira <code>12:00:00.123</code>. É uma perda <strong>conhecida, pequena e documentada</strong>: o validador (Passo 12) compara datas truncadas em milissegundos — esconder essa diferença seria pior do que explicá-la.</div>
 
 <h4 style="color:var(--accent);margin:16px 0 8px">🔢 Passo 5 — Ids inteiros e índices</h4>
@@ -2895,6 +2912,7 @@ dotnet run --project LojaApi.Migrator --launch-profile "Migrador: migrar"</pre>
 </div></div>
 <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this.parentElement)">✋ Errou? Erros comuns do migrador</div>
 <div class="faq-a"><ul>
+<li><strong><code>CS0433: o tipo 'Program' existe em 'LojaApi.Api' e em 'LojaApi.Migrator'</code></strong> → alguém trocou o <code>Main</code> explícito do <code>MigradorApp</code> por <em>top-level statements</em>. Cada programa com top-level statements gera uma classe chamada <code>Program</code>; o <code>LojaApi.Tests</code> referencia os dois projetos e não sabe qual é o <code>Program</code> do <code>WebApplicationFactory&lt;Program&gt;</code>. Volte ao <code>public static class MigradorApp { public static async Task&lt;int&gt; Main(...) }</code> do ZIP.</li>
 <li><strong><code>Unable to connect to any of the specified MySQL hosts</code></strong> → o MySQL da Tab 9 está desligado, ou o <code>appsettings.json</code> do <strong>Migrator</strong> não está com <code>Port=3307</code>.</li>
 <li><strong><code>Access denied for user 'devuser'</code></strong> → o volume do MySQL foi criado com outra senha: recrie o banco da Tab 9 (<code>docker compose down -v</code> — <strong>só se puder perder os dados</strong>).</li>
 <li><strong><code>appsettings.json not found</code></strong> → confira o <code>CopyToOutputDirectory</code> no <code>.csproj</code> do Migrator.</li>
@@ -3621,7 +3639,7 @@ bash scripts/smoke.sh http://localhost:8082</pre>
 <div class="info-banner"><strong>🎬 Vídeos-aula no YouTube (busca em português):</strong> <a class="ext" href="https://www.youtube.com/results?search_query=smoke+test+o+que+%C3%A9" target="_blank">Smoke test explicado</a> · <a class="ext" href="https://www.youtube.com/results?search_query=powershell+invoke-restmethod+api+rest" target="_blank">Testes de API com PowerShell</a></div>
 
 <h4 style="color:var(--accent);margin:16px 0 8px">⚡ Passo 14 — Desempenho: medir, comparar, explicar</h4>
-<p>"Manter o desempenho adequado" se prova com <strong>números</strong>. Rodamos a mesma carga (k6) contra os dois bancos e comparamos o <strong>p95</strong> — o tempo em que 95% das requisições foram respondidas. Depois, conferimos com <code>explain()</code> que as consultas usam os índices.</p>
+<p>"Manter o desempenho adequado" se prova com <strong>números</strong>. Rodamos a mesma carga com o <a class="ext" href="https://grafana.com/docs/k6/latest/" target="_blank"><strong>k6</strong></a> — uma ferramenta gratuita de teste de carga que dispara muitas requisições ao mesmo tempo, a partir de um script em JavaScript (<code>perf/carga.js</code>). <strong>Não precisa instalar nada:</strong> ele roda como container Docker (<code>grafana/k6</code>), que é baixado sozinho no primeiro <code>docker run</code>. Usamos o k6 contra os dois bancos e comparamos o <strong>p95</strong> — o tempo em que 95% das requisições foram respondidas. Depois, conferimos com <code>explain()</code> que as consultas usam os índices.</p>
 <div class="code-editor-wrap">
 <span class="code-filepath">perf/carga.js</span>
 <button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button>
