@@ -1,0 +1,51 @@
+<section class="tab-panel" id="problemas">
+
+<div class="card">
+  <div class="card-title">🛠️ Problemas comuns</div>
+  <p class="section-intro">Todos os erros já encontrados nos laboratórios, organizados por tema. Cada sprint também tem o seu quadro "✋ Errou?". Antes de qualquer coisa, rode o diagnóstico rápido abaixo.</p>
+  <div class="code-editor-wrap"><span class="code-filepath">diagnóstico rápido, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose ps
+docker compose logs api --tail 40
+curl -i http://localhost:8080/health</pre></div>
+</div>
+
+<div class="card">
+  <div class="card-title">🐳 Docker e Docker Compose</div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Sintoma</th><th>Causa</th><th>Solução</th></tr></thead>
+    <tbody>
+      <tr><td><code>Bind for 0.0.0.0:8080 failed: port is already allocated</code></td><td>Outro programa ou contêiner usa a porta (por exemplo, um Adminer em 8080)</td><td>Descubra quem é: <code>sudo ss -ltnp | grep :8080</code> (Linux), <code>lsof -i :8080</code> (macOS), <code>netstat -ano | findstr :8080</code> (Windows), <code>docker ps</code>. Pare o processo ou use outra porta: <code>PAGUAI_API_PORT=8081 docker compose up -d</code></td></tr>
+      <tr><td>A API não acha o banco: <code>Resource temporarily unavailable</code> nos logs</td><td>O contêiner da API ficou com a rede incompleta depois de uma falha anterior</td><td><code>docker compose down</code> e depois <code>docker compose up -d</code>. Não basta religar o contêiner</td></tr>
+      <tr><td><code>Cannot connect to the Docker daemon</code></td><td>Docker instalado, mas parado</td><td>Abra o Docker Desktop (Windows e macOS) ou <code>sudo systemctl start docker</code> (Linux)</td></tr>
+      <tr><td><code>WARN buildx Docker CLI plugin not found</code></td><td>Docker sem o plugin buildx</td><td>Só um aviso. Para eliminá-lo no Linux: <code>sudo apt install docker-buildx-plugin</code></td></tr>
+      <tr><td>Mudei o código, mas nada mudou</td><td>A imagem não foi reconstruída</td><td><code>docker compose up -d --build</code></td></tr>
+      <tr><td>Quero o banco zerado, com os dados iniciais</td><td>O volume guarda os dados entre execuções</td><td><code>docker compose down -v</code> e depois <code>docker compose up -d</code></td></tr>
+    </tbody>
+  </table></div>
+  <p class="text-sm text-muted mt-2">Portas configuráveis: <code>PAGUAI_API_PORT</code> (8080), <code>PAGUAI_DB_PORT</code> (5432), <code>PAGUAI_MAIL_UI_PORT</code> (8025) e <code>PAGUAI_SMTP_PORT</code> (1025).</p>
+</div>
+
+<div class="card">
+  <div class="card-title">🔀 Git e GitHub</div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Sintoma</th><th>Causa</th><th>Solução</th></tr></thead>
+    <tbody>
+      <tr><td><code>fatal: detected dubious ownership in repository</code></td><td>Terminal como root numa pasta do seu usuário</td><td>Saia do root (<code>exit</code>) e use o seu usuário</td></tr>
+      <tr><td>Não encontro o código de uma sprint</td><td>Você está na branch principal, que tem a versão mais recente</td><td><code>git fetch --tags</code> e <code>git checkout sprint-00</code> (troque pelo número da sprint)</td></tr>
+    </tbody>
+  </table></div>
+</div>
+
+<div class="card">
+  <div class="card-title">🔷 API e banco de dados</div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Sintoma</th><th>Causa</th><th>Solução</th></tr></thead>
+    <tbody>
+      <tr><td><code>curl</code> sem resposta em <code>/health</code></td><td>A API ainda está subindo ou caiu</td><td><code>docker compose logs api --tail 40</code> e espere <code>Application started</code></td></tr>
+      <tr><td><code>fail: Failed executing DbCommand ... __EFMigrationsHistory</code> na primeira execução</td><td>A tabela de controle das migrations ainda não existe</td><td>Normal na primeira vez: o EF Core cria a tabela em seguida. Confira se aparece <code>Dados fictícios iniciais inseridos.</code></td></tr>
+      <tr><td>Transferência retorna <code>500</code> com "Falha simulada no serviço de notificações."</td><td><code>Notificacoes__SimularFalha</code> está <code>"true"</code></td><td>É a dor proposital da Sprint 0. Volte para <code>"false"</code> e rode <code>docker compose up -d</code></td></tr>
+      <tr><td>Transferência retorna <code>404</code></td><td>Id da conta de origem ou chave PIX de destino errados</td><td>Copie de novo o id em <code>GET /contas</code>; a chave da loja é <code>loja.geraldo@paguai.local</code></td></tr>
+    </tbody>
+  </table></div>
+</div>
+
+</section>

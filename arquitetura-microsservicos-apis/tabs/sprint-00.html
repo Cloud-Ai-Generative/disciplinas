@@ -1,0 +1,325 @@
+<section class="tab-panel" id="sprint-00">
+
+<!-- ═══════════ 1. CENA DE ABERTURA ═══════════ -->
+<div class="card">
+  <div class="card-title">🧀 Sprint 0 · O monólito PagUai: vantagens e custos</div>
+  <div class="cena">
+    <div class="msg"><span class="av">🚨</span><div><div class="who">Monitoramento · sexta, 14h07</div><div class="txt alerta">Checkout fora do ar. Tempo de resposta: 9 s (meta: 0,8 s).</div></div></div>
+    <div class="msg"><span class="av">🧀</span><div><div class="who">Seu Geraldo (lojista)</div><div class="txt">Uai, meu cliente tentou pagar o queijo e não foi! Tô com fila no balcão!</div></div></div>
+    <div class="msg"><span class="av">🧑‍💻</span><div><div class="who">Rafa (dev)</div><div class="txt">Foi o deploy de uma linha no Extrato... mas como o sistema é um só, o checkout caiu junto. Já estou revertendo.</div></div></div>
+    <div class="msg"><span class="av">👩‍💼</span><div><div class="who">Helena (CTO)</div><div class="txt">Antes de sair quebrando tudo em microsserviços, quero que o time entenda o sistema que temos. Bem-vindo(a) ao time: sua primeira missão é colocar a PagUai para rodar na sua máquina e mapear o que ela faz bem e o que está doendo.</div></div></div>
+  </div>
+  <div class="grid-3">
+    <div class="grid-card"><h5>🎯 Objetivo da sprint</h5><p class="text-sm">Identificar as vantagens e os custos de uma arquitetura monolítica.</p></div>
+    <div class="grid-card"><h5>🛠️ O que você vai fazer</h5><p class="text-sm">Subir o monólito com Docker, usar a API, ver as notificações e provocar uma falha de propósito.</p></div>
+    <div class="grid-card"><h5>⏱️ Tempo estimado</h5><p class="text-sm">Laboratório <span class="camada essencial">Essencial</span>: 60 a 90 min. <span class="camada aprofundamento">Aprofundamento</span>: opcional.</p></div>
+  </div>
+</div>
+
+<!-- ═══════════ 2. VÍDEOS (assistidos no Canvas) ═══════════ -->
+<div class="card">
+  <div class="card-title">🎬 Videoaulas desta sprint</div>
+  <p class="section-intro">Assista na página da <strong>Sprint 0 no Canvas</strong>. A lista abaixo é só para você se orientar.</p>
+  <ul class="video-list">
+    <li><span>0.1 Bem-vindo à PagUai: a história, o time e o desafio</span><span class="dur">8 min</span></li>
+    <li><span>0.2 Preparando o ambiente: Docker, .NET 10, VS Code e GitHub</span><span class="dur">12 min</span></li>
+    <li><span>0.3 Executando o monólito PagUai com Docker Compose</span><span class="dur">10 min</span></li>
+    <li><span>0.4 Monólito: vantagens, custos e quando ele é a escolha certa</span><span class="dur">10 min</span></li>
+  </ul>
+</div>
+
+<!-- ═══════════ 3. DIAGRAMAS ═══════════ -->
+<div class="card">
+  <div class="card-title">📐 A arquitetura de hoje</div>
+  <h4 class="diag-title" id="d-01">📐 D-01 <span class="dt-type">C4 · Contêineres</span> O monólito PagUai</h4>
+  <p class="text-sm text-muted" style="margin:4px 0 8px"><strong>👀 Como ler:</strong> cada caixa é algo que roda separado (um contêiner). Repare que os seis módulos estão <strong>dentro da mesma caixa</strong>: um processo, um deploy, um banco.</p>
+  <div class="mermaid-box" data-code='flowchart TB
+  cliente(["👤 Cliente e lojista<br/>app, site, Scalar"])
+  subgraph compose["🐳 docker compose"]
+    direction LR
+    api["<b>PagUai.Api</b> · ASP.NET Core .NET 10<br/><i>UM processo, UM deploy</i><br/><br/>Contas · Transferências (PIX simulado) · Cobranças<br/>Antifraude · Extrato · Notificações"]
+    db[("PostgreSQL 17<br/>UM banco")]
+    mail["📧 Mailpit<br/>caixa de e-mails"]
+  end
+  cliente -->|"HTTP/JSON"| api
+  api -->|"EF Core<br/>um DbContext"| db
+  api -->|"SMTP<br/>notificações"| mail'>
+  <div class="mermaid"></div>
+  </div>
+
+  <h4 class="diag-title" id="d-02">📐 D-02 <span class="dt-type">UML · Sequência</span> Um PIX dentro do monólito</h4>
+  <p class="text-sm text-muted" style="margin:4px 0 8px"><strong>👀 Como ler:</strong> de cima para baixo é a ordem do tempo. Tudo acontece dentro de <strong>uma única transação</strong> de banco: se qualquer passo falhar, tudo é desfeito.</p>
+  <div class="mermaid-box" data-code='sequenceDiagram
+  autonumber
+  actor A as Ana (cliente)
+  participant T as Transferências
+  participant F as Antifraude
+  participant E as Extrato
+  participant N as Notificações
+  participant DB as PostgreSQL
+  A->>T: POST /transferencias (R$ 150)
+  T->>DB: BEGIN TRANSACTION
+  T->>F: analisar (em processo, espera)
+  F-->>T: Aprovada
+  T->>DB: debita Ana, credita Seu Geraldo
+  T->>E: grava lançamentos (direto na tabela)
+  T->>N: envia e-mails (ainda dentro da transação)
+  N-->>T: ok
+  T->>DB: COMMIT
+  T-->>A: 201 Created'>
+  <div class="mermaid"></div>
+  </div>
+</div>
+
+<!-- ═══════════ 4. CONCEITO ═══════════ -->
+<div class="card">
+  <div class="card-title">💡 Conceito: o que é um monólito</div>
+  <div class="deep-concept-box">
+    <h3>🧱 Monólito</h3>
+    <p>Um <strong>monólito</strong> é um sistema publicado como <strong>uma única unidade</strong>: um processo, um deploy e, normalmente, um banco de dados compartilhado por todas as partes. Ele pode ser bem organizado por dentro (em módulos), mas tudo sobe, escala e cai junto.</p>
+    <p>Monólito <strong>não é sinônimo de código ruim</strong>. Grandes produtos começaram assim, e muitos continuam assim, com sucesso. O problema aparece quando o contexto muda: time maior, partes com ritmos de mudança diferentes, partes que precisam escalar sozinhas.</p>
+  </div>
+
+  <div class="split-view">
+    <div class="split-col">
+      <h4 style="color:var(--success);margin-bottom:8px">✅ Vantagens</h4>
+      <ul style="margin-left:20px;line-height:1.8">
+        <li><strong>Simples de desenvolver e depurar:</strong> uma chamada de método, não uma chamada de rede.</li>
+        <li><strong>Transação única:</strong> o banco garante consistência entre os módulos.</li>
+        <li><strong>Um deploy, um lugar para monitorar.</strong></li>
+        <li><strong>Desempenho:</strong> sem latência de rede entre as partes.</li>
+        <li><strong>Ótimo para começar:</strong> domínio ainda instável, time pequeno.</li>
+      </ul>
+    </div>
+    <div class="split-col">
+      <h4 style="color:var(--danger);margin-bottom:8px">⚠️ Custos (que crescem com o tempo)</h4>
+      <ul style="margin-left:20px;line-height:1.8">
+        <li><strong>Deploy acoplado:</strong> mudar uma linha do Extrato exige publicar tudo.</li>
+        <li><strong>Escala tudo ou nada:</strong> para escalar o Extrato, escala o sistema inteiro.</li>
+        <li><strong>Falha em cascata:</strong> uma parte lenta ou quebrada derruba o fluxo inteiro.</li>
+        <li><strong>Acoplamento silencioso:</strong> módulos mexem nas tabelas uns dos outros.</li>
+        <li><strong>Times esbarrando:</strong> muitos times no mesmo código e no mesmo ciclo de release.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="analogy-highlight"><span class="icon">🏠</span><div><strong>Analogia:</strong> o monólito é uma casa com um único quadro de luz. É simples de instalar e de entender, e um único disjuntor desarma tudo quando algo dá curto. <strong>A analogia vale até aqui:</strong> ela explica o acoplamento de falhas. <strong>A partir daqui ela engana:</strong> uma casa não precisa "escalar um cômodo", e trocar um quadro de luz não exige mudar o jeito como os cômodos conversam; em software, dividir o sistema muda a comunicação entre as partes.</div></div>
+
+  <div class="warning-banner"><strong>🛑 Quando NÃO migrar para microsserviços:</strong> time pequeno; domínio ainda mudando toda semana; sem automação de deploy, monitoramento e testes; ou quando a dor real é código desorganizado (isso se resolve com um monólito modular, tema da Sprint 1). Microsserviços não são a evolução obrigatória: são uma <strong>troca de problemas</strong>.</div>
+</div>
+
+<!-- ═══════════ 5. ADR ═══════════ -->
+<div class="card">
+  <div class="card-title">📝 A decisão de 2019: ADR 0001</div>
+  <p class="section-intro">Um <strong>ADR</strong> (Architecture Decision Record) registra uma decisão de arquitetura: o contexto, o que foi decidido, as alternativas e as consequências. O arquivo completo está em <code>docs/adr/0001-comecar-com-monolito.md</code> no repositório.</p>
+  <div class="adr">
+    <h5>ADR 0001 · Começar a PagUai como um monólito <span class="status">aceita · 2019</span></h5>
+    <p><b>Contexto:</b> 4 pessoas desenvolvedoras, nenhum cliente, hipótese de negócio ainda não validada.</p>
+    <p><b>Decisão:</b> uma aplicação ASP.NET Core, um banco PostgreSQL, um deploy, com pastas por módulo.</p>
+    <p><b>Alternativa rejeitada:</b> microsserviços desde o início. Com o domínio instável, as fronteiras entre serviços quase certamente estariam erradas, e mudar fronteira entre serviços é caro.</p>
+    <p><b>Consequências:</b> MVP em 3 meses e operação simples; com o crescimento, deploy acoplado, escala tudo ou nada e falhas em cascata.</p>
+  </div>
+  <div class="info-banner"><strong>💡 Repare:</strong> a decisão foi <strong>correta para 2019</strong>. Uma decisão de arquitetura se avalia pelo contexto em que foi tomada, não pelo que sabemos hoje.</div>
+</div>
+
+<!-- ═══════════ 6. LABORATÓRIO ═══════════ -->
+<div class="card" id="lab-sprint-00">
+  <div class="card-title">🧪 Laboratório <span class="camada essencial">Essencial</span></div>
+  <div class="phase-bar">
+    <span class="phase on">0 · Preparar</span>
+    <span class="phase on">1 · Subir</span>
+    <span class="phase on">2 · Explorar a API</span>
+    <span class="phase on">3 · Ver e-mails e extrato</span>
+    <span class="phase on">4 · Sentir a dor</span>
+  </div>
+
+  <div class="step-box" id="fase-0">
+    <h4><span class="step-num">0</span> Preparar o ambiente</h4>
+    <p>Você precisa de <strong>Git</strong> e <strong>Docker</strong> (com Docker Compose). O .NET 10 SDK é opcional, só para rodar fora do Docker. Com menos de 8 GB de RAM, prefira o <strong>GitHub Codespaces</strong>.</p>
+    <ol class="step-number-list mt-2">
+      <li>Faça um <strong>fork</strong> de <a class="ext" href="https://github.com/Cloud-Ai-Generative/paguai" target="_blank" rel="noopener">Cloud-Ai-Generative/paguai</a> (botão <code>Fork</code> no GitHub).</li>
+      <li>Clone o seu fork e entre na pasta:
+        <div class="code-editor-wrap"><span class="code-filepath">terminal</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">git clone https://github.com/SEU-USUARIO/paguai.git
+cd paguai
+git checkout sprint-00</pre></div>
+      </li>
+      <li>Verifique a sua máquina:
+        <div class="code-editor-wrap"><span class="code-filepath">Linux ou macOS</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">./scripts/check-env.sh</pre></div>
+        <div class="code-editor-wrap"><span class="code-filepath">Windows (PowerShell)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">pwsh ./scripts/check-env.ps1</pre></div>
+      </li>
+    </ol>
+    <div class="esperado"><strong>✅ Resultado esperado:</strong> todos os itens com <code>[OK]</code> e a mensagem "Tudo pronto!".</div>
+    <div class="info-banner"><strong>☁️ Sem Docker na máquina?</strong> No seu fork, clique em <code>Code</code> → <code>Codespaces</code> → <code>Create codespace on main</code>. O ambiente já vem com Docker e .NET 10.</div>
+  </div>
+
+  <div class="step-box" id="fase-1">
+    <h4><span class="step-num">1</span> Subir a PagUai</h4>
+    <div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose up -d --build
+docker compose ps</pre></div>
+    <div class="esperado"><strong>✅ Resultado esperado:</strong> três contêineres em execução: <code>paguai-api</code>, <code>paguai-postgres</code> (healthy) e <code>paguai-mailpit</code>.</div>
+    <p>Confira se a API e o banco estão no ar:</p>
+    <div class="code-editor-wrap"><span class="code-filepath">terminal</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">curl -i http://localhost:8080/health</pre></div>
+    <div class="esperado"><strong>✅ Resultado esperado:</strong> <code>HTTP/1.1 200 OK</code> e <code>{"status":"saudavel","banco":"ok"}</code>. Se não responder, veja o <a class="ext" href="#errou-sprint-00" onclick="irAncora('errou-sprint-00');return false;">✋ Errou?</a> abaixo.</div>
+  </div>
+
+  <div class="step-box" id="fase-2">
+    <h4><span class="step-num">2</span> Explorar a API no Scalar</h4>
+    <p>Abra <a class="ext" href="http://localhost:8080" target="_blank" rel="noopener">http://localhost:8080</a>. Você cai no <strong>Scalar</strong>, a documentação interativa gerada a partir do contrato OpenAPI da API.</p>
+    <ol class="step-number-list">
+      <li>Execute <code>GET /contas</code> e copie o <code>id</code> da <strong>Ana Clara Mendes</strong>.</li>
+      <li>Execute <code>POST /transferencias</code> com o corpo abaixo (troque o id):
+        <div class="code-editor-wrap"><span class="code-filepath">corpo da requisição (JSON)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">{
+  "contaOrigemId": "COLE_AQUI_O_ID_DA_ANA",
+  "chavePixDestino": "loja.geraldo@paguai.local",
+  "valor": 150.00
+}</pre></div>
+        <div class="esperado"><strong>✅ Resultado esperado:</strong> <code>201 Created</code> com <code>"status": "Concluida"</code>.</div>
+      </li>
+      <li>Repita com <code>"valor": 6000.00</code>.
+        <div class="esperado"><strong>✅ Resultado esperado:</strong> <code>201 Created</code>, mas com <code>"status": "ReprovadaAntifraude"</code>: o antifraude reprova valores acima de R$ 5.000. O saldo da Ana não muda.</div>
+      </li>
+    </ol>
+    <div class="info-banner"><strong>💡 Prefere o VS Code?</strong> O arquivo <code>requests/paguai.http</code> tem as mesmas requisições prontas para a extensão REST Client.</div>
+  </div>
+
+  <div class="step-box" id="fase-3">
+    <h4><span class="step-num">3</span> Ver os e-mails e o extrato</h4>
+    <ol class="step-number-list">
+      <li>Abra o <strong>Mailpit</strong> em <a class="ext" href="http://localhost:8025" target="_blank" rel="noopener">http://localhost:8025</a>.
+        <div class="esperado"><strong>✅ Resultado esperado:</strong> dois e-mails do PIX de R$ 150: "Você enviou R$ 150,00..." para a Ana e "Você recebeu R$ 150,00..." para a loja do Seu Geraldo.</div>
+      </li>
+      <li>No Scalar, copie o id da <strong>Loja do Seu Geraldo</strong> e execute <code>GET /contas/{id}/extrato</code>.
+        <div class="esperado"><strong>✅ Resultado esperado:</strong> um lançamento de crédito de 150,00 e o saldo atual da loja.</div>
+      </li>
+    </ol>
+  </div>
+
+  <div class="step-box" id="fase-4">
+    <h4><span class="step-num">4</span> Sentir a dor: a notificação derruba o PIX</h4>
+    <p>No diagrama D-02, a notificação roda <strong>dentro da transação</strong>. Vamos ver o que isso significa quando o serviço de e-mail falha.</p>
+    <ol class="step-number-list">
+      <li>No <code>docker-compose.yml</code>, troque <code>Notificacoes__SimularFalha: "false"</code> por <code>"true"</code> e aplique:
+        <div class="code-editor-wrap"><span class="code-filepath">terminal</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose up -d</pre></div>
+      </li>
+      <li>Repita o PIX de R$ 150 da Ana e, em seguida, consulte <code>GET /contas/{id}</code> da Ana.
+        <div class="esperado"><strong>✅ Resultado esperado:</strong> a transferência responde <code>500</code> ("Falha simulada no serviço de notificações.") e o <strong>saldo da Ana não muda</strong>. Um problema no e-mail impediu o pagamento.</div>
+      </li>
+      <li>Volte o valor para <code>"false"</code> e rode <code>docker compose up -d</code> de novo.</li>
+    </ol>
+    <div class="warning-banner"><strong>🤔 Para pensar:</strong> faz sentido o Seu Geraldo deixar de receber porque o e-mail de aviso falhou? Guarde essa pergunta: a Sprint 3 resolve exatamente isso com mensageria.</div>
+  </div>
+</div>
+
+<!-- ═══════════ 7. APROFUNDAMENTO ═══════════ -->
+<div class="card">
+  <div class="card-title">🔬 Aprofundamento <span class="camada aprofundamento">opcional</span></div>
+  <details class="aprofundamento">
+    <summary>1. Encontrar o acoplamento no código</summary>
+    <p class="mt-2">Abra no VS Code e observe:</p>
+    <ul style="margin-left:22px;line-height:1.8">
+      <li><code>src/PagUai.Api/Infra/PagUaiDbContext.cs</code>: um único <code>DbContext</code> com as tabelas de todos os módulos.</li>
+      <li><code>src/PagUai.Api/Modulos/Transferencias/TransferenciaService.cs</code>: o serviço chama o antifraude, grava as tabelas do Extrato e envia as notificações, tudo na mesma transação.</li>
+      <li><code>src/PagUai.Api/Modulos/Cobrancas/CobrancasEndpoints.cs</code>: o módulo de Cobranças usa por dentro o serviço de Transferências.</li>
+    </ul>
+  </details>
+  <details class="aprofundamento">
+    <summary>2. Antifraude lento, sistema lento</summary>
+    <p class="mt-2">No <code>docker-compose.yml</code>, mude <code>Antifraude__LatenciaMs</code> de <code>"300"</code> para <code>"3000"</code>, rode <code>docker compose up -d</code> e repita um PIX. Toda transferência passa a levar mais de 3 segundos. Imagine isso numa Black Friday: é o gancho das Sprints 6 e 9.</p>
+  </details>
+  <details class="aprofundamento">
+    <summary>3. Rodar os testes automatizados</summary>
+    <p class="mt-2">Com o .NET 10 SDK e o Docker em execução:</p>
+    <div class="code-editor-wrap"><span class="code-filepath">terminal</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">dotnet test</pre></div>
+    <p>São 8 testes: 4 de unidade (regras do antifraude) e 4 de integração, que sobem um PostgreSQL de verdade com Testcontainers. Um deles, <code>Falha_na_notificacao_desfaz_a_transferencia</code>, documenta a dor da fase 4.</p>
+  </details>
+  <details class="aprofundamento">
+    <summary>4. O fluxo de trabalho no GitHub</summary>
+    <p class="mt-2">Cada sprint vira uma branch (<code>sprint/NN-nome</code>), um Pull Request e uma tag (<code>sprint-NN</code>). O GitHub Actions compila, testa e sobe o Docker Compose a cada envio: abra a aba <strong>Actions</strong> do repositório e veja o pipeline da Sprint 0.</p>
+  </details>
+</div>
+
+<!-- ═══════════ 8. ERROU? ═══════════ -->
+<div class="card" id="errou-sprint-00">
+  <div class="card-title">✋ Errou? Casos comuns desta sprint</div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">port is already allocated (porta 8080, 5432 ou 8025 ocupada)</div><div class="faq-a"><p>Outro programa ou contêiner usa a porta. Descubra qual: <code>sudo ss -ltnp | grep :8080</code> (Linux), <code>lsof -i :8080</code> (macOS), <code>netstat -ano | findstr :8080</code> (Windows) e <code>docker ps</code>. Pare o processo ou suba a PagUai em outra porta: <code>PAGUAI_API_PORT=8081 docker compose up -d</code>.</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">Depois de liberar a porta, a API não acha o banco (Resource temporarily unavailable)</div><div class="faq-a"><p>O contêiner da API ficou com a rede incompleta depois da primeira falha. Recrie tudo: <code>docker compose down</code> e depois <code>docker compose up -d</code>. Só religar o contêiner não resolve.</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">fatal: detected dubious ownership in repository</div><div class="faq-a"><p>Você está no terminal como <strong>root</strong>, mas a pasta pertence ao seu usuário. Saia do root (<code>exit</code>) e rode os comandos com o seu usuário. Trabalhar como root no dia a dia causa esse e outros problemas de permissão.</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">curl /health não responde nada</div><div class="faq-a"><p>A API ainda está subindo ou caiu. Rode <code>docker compose ps</code> e <code>docker compose logs api --tail 40</code>. Espere aparecer <code>Application started</code>.</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">Aparece "fail: Failed executing DbCommand ... __EFMigrationsHistory" na primeira vez</div><div class="faq-a"><p>Normal. Na primeira execução a tabela de controle das migrations ainda não existe; o EF Core registra como erro e cria a tabela logo em seguida. Confira se depois aparece <code>Dados fictícios iniciais inseridos.</code></p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">WARN buildx Docker CLI plugin not found</div><div class="faq-a"><p>Só um aviso: o build funciona. Para eliminá-lo no Linux: <code>sudo apt install docker-buildx-plugin</code>.</p></div></div>
+  <div class="info-banner"><strong>🛠️ Mais casos:</strong> veja a aba <a class="ext" href="#problemas" onclick="switchTab('problemas');return false;">Problemas comuns</a>.</div>
+</div>
+
+<!-- ═══════════ 9. CHECKPOINT ═══════════ -->
+<div class="card" id="quiz-sprint-00">
+  <div class="card-title">✅ Checkpoint</div>
+  <p class="section-intro">Responda depois de fazer o laboratório. As questões marcadas com <span class="quiz-q" style="display:inline;padding:0;border:none;background:none"><span class="tag-lab">depende do lab</span></span> só podem ser respondidas executando o sistema.</p>
+
+  <div class="quiz-q">
+    <div class="enunciado">1. Qual afirmação descreve melhor um monólito?</div>
+    <button class="quiz-opt" onclick="responder(this)">Um sistema com código desorganizado, que precisa ser reescrito.</button>
+    <button class="quiz-opt" data-correct="1" onclick="responder(this)">Um sistema publicado como uma única unidade: um processo, um deploy e, em geral, um banco compartilhado.</button>
+    <button class="quiz-opt" onclick="responder(this)">Um sistema que não pode ser dividido em módulos.</button>
+    <button class="quiz-opt" onclick="responder(this)">Um sistema que não usa banco de dados relacional.</button>
+    <div class="quiz-fb" data-exp="Monólito se define pela forma de implantação, não pela qualidade do código. Ele pode, inclusive, ser bem organizado em módulos (Sprint 1)."></div>
+  </div>
+
+  <div class="quiz-q">
+    <div class="enunciado">2. <span class="tag-lab">depende do lab</span> Na fase 4, com <code>SimularFalha</code> ligado, o que acontece com o PIX de R$ 150 e com o saldo da Ana?</div>
+    <button class="quiz-opt" onclick="responder(this)">201 Created; o saldo diminui, mas o e-mail não é enviado.</button>
+    <button class="quiz-opt" onclick="responder(this)">201 Created com status "ReprovadaAntifraude".</button>
+    <button class="quiz-opt" data-correct="1" onclick="responder(this)">500; o saldo da Ana não muda, porque a falha na notificação desfaz a transação inteira.</button>
+    <button class="quiz-opt" onclick="responder(this)">422; o valor é inválido.</button>
+    <div class="quiz-fb" data-exp="Como a notificação roda dentro da mesma transação de banco, a exceção no e-mail provoca rollback de tudo. É uma falha em cascata: um problema secundário impede a operação principal."></div>
+  </div>
+
+  <div class="quiz-q">
+    <div class="enunciado">3. <span class="tag-lab">depende do lab</span> Qual status a transferência de R$ 6.000 da Ana recebe?</div>
+    <button class="quiz-opt" onclick="responder(this)">Concluida</button>
+    <button class="quiz-opt" data-correct="1" onclick="responder(this)">ReprovadaAntifraude</button>
+    <button class="quiz-opt" onclick="responder(this)">SaldoInsuficiente</button>
+    <button class="quiz-opt" onclick="responder(this)">Pendente</button>
+    <div class="quiz-fb" data-exp="A Ana tem saldo, mas o antifraude reprova valores acima de R$ 5.000. A transferência é registrada como reprovada e nenhum saldo é movimentado."></div>
+  </div>
+
+  <div class="quiz-q">
+    <div class="enunciado">4. A PagUai tem 4 pessoas no time e o produto muda toda semana. Qual decisão de arquitetura é a mais adequada?</div>
+    <button class="quiz-opt" onclick="responder(this)">Microsserviços desde o início, para já nascer escalável.</button>
+    <button class="quiz-opt" data-correct="1" onclick="responder(this)">Um monólito, organizado por módulos, revisando a decisão quando o contexto mudar.</button>
+    <button class="quiz-opt" onclick="responder(this)">Um microsserviço por tabela do banco.</button>
+    <button class="quiz-opt" onclick="responder(this)">Tanto faz: arquitetura não depende do tamanho do time.</button>
+    <div class="quiz-fb" data-exp="Com time pequeno e domínio instável, as fronteiras entre serviços provavelmente estariam erradas, e corrigi-las entre serviços é caro. É a mesma lógica do ADR 0001."></div>
+  </div>
+  <button class="btn" onclick="refazerQuiz('quiz-sprint-00')">↺ Refazer</button>
+</div>
+
+<!-- ═══════════ 10. PALAVRAS E RECAP ═══════════ -->
+<div class="card">
+  <div class="card-title">📖 Palavras desta sprint</div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Termo</th><th>Em uma frase</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Monólito</strong></td><td>Sistema publicado como uma única unidade (um processo, um deploy).</td></tr>
+      <tr><td><strong>Deploy</strong></td><td>Publicação de uma nova versão do sistema em um ambiente.</td></tr>
+      <tr><td><strong>Acoplamento</strong></td><td>Quanto uma parte depende de detalhes de outra; alto acoplamento espalha mudanças e falhas.</td></tr>
+      <tr><td><strong>Transação</strong></td><td>Conjunto de operações no banco que acontece por inteiro ou é desfeito por inteiro (commit ou rollback).</td></tr>
+      <tr><td><strong>Falha em cascata</strong></td><td>Quando o problema de uma parte derruba outras que dependem dela.</td></tr>
+      <tr><td><strong>ADR</strong></td><td>Registro de uma decisão de arquitetura: contexto, decisão, alternativas e consequências.</td></tr>
+      <tr><td><strong>C4</strong></td><td>Modelo de diagramas de arquitetura em níveis: contexto, contêineres, componentes e código.</td></tr>
+      <tr><td><strong>Docker Compose</strong></td><td>Ferramenta que sobe vários contêineres juntos a partir de um arquivo YAML.</td></tr>
+    </tbody>
+  </table></div>
+</div>
+
+<div class="card">
+  <div class="card-title">🔁 Recapitulando</div>
+  <ul style="margin-left:22px;line-height:1.9">
+    <li>Você subiu a PagUai inteira com <strong>um comando</strong> e viu que ela é <strong>um processo com seis módulos</strong> e um banco.</li>
+    <li>O monólito tem vantagens reais: simplicidade, transação única, depuração fácil.</li>
+    <li>Você provocou uma <strong>falha em cascata</strong>: um problema no e-mail impediu o pagamento.</li>
+    <li>A decisão de começar com monólito foi correta em 2019; o que mudou foi o contexto.</li>
+  </ul>
+  <div class="success-banner"><strong>➡️ Próxima sprint:</strong> a Joana pergunta "por onde começamos a quebrar?". Antes de criar qualquer serviço, vamos entender o domínio da PagUai e organizar as fronteiras dentro do próprio monólito.</div>
+</div>
+
+</section>
