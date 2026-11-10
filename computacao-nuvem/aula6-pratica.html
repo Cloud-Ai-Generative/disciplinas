@@ -1,0 +1,2262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Computação em Nuvem — Aula 06</title>
+<!-- HTMLearning v2.17 — Campos não informados: professor da disciplina (nome, e-mail, lattes, orcid, site, instituição). Nenhum conteúdo pedagógico foi inventado. -->
+<style>
+:root {
+  --cor-destaque: #EA580C;
+  --cor-destaque-claro: #FFEDD5;
+  --cor-destaque-escuro: #9A3412;
+  --fundo: #FFFFFF;
+  --fundo-cartao: #F8FAFC;
+  --fundo-codigo: #F1F5F9;
+  --texto: #0F172A;
+  --texto-suave: #64748B;
+  --borda: #E2E8F0;
+  --sucesso: #059669;
+  --erro: #DC2626;
+  --aviso: #F59E0B;
+}
+[data-theme="dark"] {
+  --fundo: #0F172A;
+  --fundo-cartao: #1E293B;
+  --fundo-codigo: #334155;
+  --texto: #F1F5F9;
+  --texto-suave: #94A3B8;
+  --borda: #475569;
+  --cor-destaque-claro: #7C2D12;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 18px;
+  line-height: 1.6;
+  background: var(--fundo);
+  color: var(--texto);
+  transition: background 0.3s, color 0.3s;
+}
+body.modo-apresentacao { font-size: 22px; }
+header {
+  background: linear-gradient(135deg, var(--cor-destaque), var(--cor-destaque-escuro));
+  color: white;
+  padding: 2rem 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+header .meta { opacity: 0.95; font-size: 0.95rem; }
+.controles-topo { position: fixed; top: 1rem; right: 1rem; z-index: 1000; display: flex; gap: 0.5rem; }
+.controles-topo button {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--cor-destaque);
+  color: var(--cor-destaque);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+.controles-topo button:hover { background: var(--cor-destaque); color: white; }
+.xp-bar {
+  position: sticky;
+  top: 0;
+  background: var(--cor-destaque-claro);
+  padding: 0.75rem 1.5rem;
+  border-bottom: 2px solid var(--cor-destaque);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  z-index: 99;
+}
+.tabs-container {
+  position: sticky;
+  top: 52px;
+  background: var(--fundo);
+  border-bottom: 2px solid var(--borda);
+  z-index: 98;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+.tabs { display: flex; padding: 0 1rem; gap: 0.25rem; }
+.tab {
+  padding: 1rem 1.5rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--texto-suave);
+  font-size: 1rem;
+  font-weight: 600;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.tab:hover { color: var(--cor-destaque); }
+.tab[aria-selected="true"] {
+  color: var(--cor-destaque);
+  border-bottom-color: var(--cor-destaque);
+  background: var(--fundo);
+}
+.painel { display: none; padding: 2rem 1.5rem; max-width: 1100px; margin: 0 auto; }
+.painel.active { display: block; animation: fade 0.3s; }
+@keyframes fade { from {opacity:0} to {opacity:1} }
+h2 {
+  color: var(--cor-destaque-escuro);
+  border-left: 5px solid var(--cor-destaque);
+  padding-left: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.6rem;
+}
+h3 { color: var(--cor-destaque-escuro); margin: 1.5rem 0 1rem; font-size: 1.3rem; }
+.cartao {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.missao {
+  background: linear-gradient(135deg, var(--cor-destaque-claro), var(--fundo-cartao));
+  border-left: 5px solid var(--cor-destaque);
+}
+.missao::before {
+  content: "🎯 MISSÃO";
+  display: block;
+  font-weight: bold;
+  color: var(--cor-destaque-escuro);
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.mundo-real { background: #E7F5FF; border-left: 5px solid #1971C2; }
+[data-theme="dark"] .mundo-real { background: #1A3A52; }
+.mundo-real::before {
+  content: "🌎 NO MUNDO REAL";
+  display: block;
+  font-weight: bold;
+  color: #1971C2;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.ferramentas { background: #D3F9D8; border-left: 5px solid #059669; }
+[data-theme="dark"] .ferramentas { background: #1B4332; }
+.ferramentas::before {
+  content: "🛠️ FERRAMENTAS";
+  display: block;
+  font-weight: bold;
+  color: #059669;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.demo-box {
+  background: var(--fundo-codigo);
+  border: 3px solid var(--cor-destaque);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+.instrucoes {
+  background: #FFF9DB;
+  border: 2px solid var(--aviso);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .instrucoes { background: #3D3518; }
+.instrucoes::before {
+  content: "📋 INSTRUÇÕES PASSO A PASSO";
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.roteiro {
+  background: #F3D9FA;
+  border-left: 4px solid #9C36B5;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+[data-theme="dark"] .roteiro { background: #3D1F47; }
+.roteiro::before { content: "🎤 Roteiro do apresentador: "; font-weight: bold; font-style: normal; }
+.prever {
+  background: #E3FAFC;
+  border: 2px dashed #0C8599;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+[data-theme="dark"] .prever { background: #0F3742; }
+.prever::before {
+  content: "🔮 PREVISÃO";
+  display: block;
+  font-weight: bold;
+  color: #0C8599;
+  margin-bottom: 0.5rem;
+}
+.legenda {
+  background: #FFF3BF;
+  border-left: 4px solid #F59F00;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+  border-radius: 6px;
+}
+[data-theme="dark"] .legenda { background: #3D3518; }
+.legenda::before { content: "🔑 Legenda: "; font-weight: bold; }
+.quiz-box {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+.termos-quiz {
+  background: #FFF3BF;
+  border: 2px solid #F59F00;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+[data-theme="dark"] .termos-quiz { background: #3D3518; }
+.termos-quiz::before {
+  content: "🔑 Termos deste quiz";
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.pergunta {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--fundo);
+  border-radius: 8px;
+  border: 2px solid var(--borda);
+}
+.pergunta p { font-weight: 600; margin-bottom: 0.75rem; }
+.alt {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+  background: white;
+  border: 2px solid var(--borda);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--texto);
+  transition: all 0.2s;
+}
+[data-theme="dark"] .alt { background: var(--fundo-cartao); }
+.alt:hover:not(:disabled) { border-color: var(--cor-destaque); background: var(--cor-destaque-claro); }
+.alt.certa { background: #D3F9D8 !important; border-color: var(--sucesso) !important; color: var(--sucesso); font-weight: bold; }
+.alt.errada { background: #FFE3E3 !important; border-color: var(--erro) !important; color: var(--erro); }
+[data-theme="dark"] .alt.certa { background: #1B4332 !important; color: #51CF66 !important; }
+[data-theme="dark"] .alt.errada { background: #3D1F24 !important; color: #FF6B6B !important; }
+.alt:disabled { cursor: not-allowed; opacity: 0.7; }
+.fb { margin-top: 0.5rem; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.95rem; display: none; }
+.fb.show { display: block; }
+.fb.fb-certa { background: #D3F9D8; border-left: 4px solid var(--sucesso); color: #087F23; }
+.fb.fb-errada { background: #FFE3E3; border-left: 4px solid var(--erro); color: #C92A2A; }
+[data-theme="dark"] .fb.fb-certa { background: #1B4332; color: #69DB7C; }
+[data-theme="dark"] .fb.fb-errada { background: #3D1F24; color: #FFA8A8; }
+details {
+  background: var(--fundo-codigo);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+  border: 1px solid var(--borda);
+}
+details[open] { background: var(--cor-destaque-claro); }
+summary { cursor: pointer; font-weight: bold; color: var(--cor-destaque-escuro); padding: 0.25rem 0; }
+.demo-area {
+  background: white;
+  border: 2px dashed var(--cor-destaque);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+  min-height: 150px;
+}
+[data-theme="dark"] .demo-area { background: var(--fundo-cartao); }
+.btn {
+  background: var(--cor-destaque);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.95rem;
+  margin: 0.25rem;
+}
+.btn:hover { background: var(--cor-destaque-escuro); }
+.btn-secundario { background: var(--texto-suave); color: white; }
+.resultado-demo {
+  background: #D3F9D8;
+  border-left: 4px solid var(--sucesso);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .resultado-demo { background: #1B4332; color: #69DB7C; }
+.resultado-erro {
+  background: #FFE3E3;
+  border-left: 4px solid var(--erro);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .resultado-erro { background: #3D1F24; color: #FFA8A8; }
+footer {
+  background: var(--fundo-cartao);
+  border-top: 3px solid var(--cor-destaque);
+  padding: 2rem 1.5rem;
+  margin-top: 3rem;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+footer h4 { color: var(--cor-destaque-escuro); margin-bottom: 0.75rem; font-size: 1rem; }
+footer .bloco { padding: 1rem 0; line-height: 1.7; }
+footer .bloco + .bloco { border-top: 2px solid var(--borda); margin-top: 1rem; padding-top: 1.5rem; }
+footer a { color: var(--cor-destaque-escuro); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+footer ul { list-style: none; padding-left: 0; }
+footer ul li { margin: 0.4rem 0; }
+.revisao-mapa {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+.no-mapa {
+  background: var(--cor-destaque-claro);
+  border: 2px solid var(--cor-destaque);
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+}
+.no-mapa h4 { color: var(--cor-destaque-escuro); margin-bottom: 0.5rem; }
+.cola-rapida {
+  background: #FFF9DB;
+  border: 2px solid var(--aviso);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin: 1rem 0;
+}
+[data-theme="dark"] .cola-rapida { background: #3D3518; }
+.cola-rapida dt { font-weight: bold; color: var(--cor-destaque-escuro); margin-top: 0.75rem; }
+.cola-rapida dd { margin-left: 1rem; margin-bottom: 0.5rem; color: var(--texto); }
+.chefao {
+  background: linear-gradient(135deg, var(--cor-destaque-claro), white);
+  border: 3px solid var(--cor-destaque);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+[data-theme="dark"] .chefao { background: linear-gradient(135deg, var(--cor-destaque-claro), var(--fundo-cartao)); }
+.chefao::before {
+  content: "👑 CHEFÃO — DESAFIO FINAL";
+  display: block;
+  font-weight: bold;
+  color: var(--cor-destaque-escuro);
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+}
+.mitoverdade {
+  background: #F3D9FA;
+  border-left: 5px solid #9C36B5;
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 8px;
+}
+[data-theme="dark"] .mitoverdade { background: #3D1F47; }
+code {
+  background: var(--fundo-codigo);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-family: "Courier New", monospace;
+  font-size: 0.95em;
+  color: var(--cor-destaque-escuro);
+}
+.srv-card {
+  display: inline-block;
+  padding: 0.75rem 1rem;
+  margin: 0.3rem;
+  background: var(--cor-destaque-claro);
+  border: 2px solid var(--cor-destaque);
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.srv-card:hover { background: var(--cor-destaque); color: white; }
+.etapa-badge {
+  display: inline-block;
+  width: 36px;
+  height: 36px;
+  line-height: 36px;
+  text-align: center;
+  background: var(--cor-destaque);
+  color: white;
+  border-radius: 50%;
+  font-weight: bold;
+  margin-right: 0.5rem;
+  font-size: 1rem;
+}
+.estrategia-pill {
+  display: inline-block;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 0.2rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid var(--borda);
+  background: var(--fundo);
+  color: var(--texto);
+}
+.estrategia-pill:hover { border-color: var(--cor-destaque); }
+.estrategia-pill.ativa { background: var(--cor-destaque); color: white; border-color: var(--cor-destaque); }
+.caso-card {
+  padding: 1rem;
+  margin: 0.5rem 0;
+  border-radius: 8px;
+  border-left: 5px solid;
+}
+.caso-card.sucesso { background: #D3F9D8; border-color: var(--sucesso); }
+.caso-card.falha { background: #FFE3E3; border-color: var(--erro); }
+[data-theme="dark"] .caso-card.sucesso { background: #1B4332; }
+[data-theme="dark"] .caso-card.falha { background: #3D1F24; }
+.progresso-etapa {
+  height: 8px;
+  background: var(--borda);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+.progresso-etapa .barra {
+  height: 100%;
+  background: var(--cor-destaque);
+  transition: width 0.3s;
+}
+@media (max-width: 600px) {
+  header h1 { font-size: 1.5rem; }
+  .tab { padding: 0.75rem 1rem; font-size: 0.9rem; }
+  .painel { padding: 1rem; }
+  .controles-topo { position: static; padding: 0.5rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="controles-topo">
+  <button id="btn-modo" type="button">🎤 Apresentação</button>
+  <button id="btn-tema" type="button">🌙 Escuro</button>
+</div>
+
+<header>
+  <h1>Computação em Nuvem</h1>
+  <div class="meta">Aula 06 · Unidade 2 · Págs. 45 a 95 · Aplicações, Servidores e Migração</div>
+</header>
+
+<div class="xp-bar">
+  <div>⭐ XP: <span id="xp">0</span> · Selos: <span id="selos">0</span>/5</div>
+  <div id="progresso">Aba 1 de 6</div>
+</div>
+
+<div class="tabs-container">
+  <div class="tabs" role="tablist" aria-label="Abas da aula">
+    <button class="tab" role="tab" id="tab-1" aria-selected="true" aria-controls="painel-1" data-aba="1" type="button">1 · Servidores</button>
+    <button class="tab" role="tab" id="tab-2" aria-selected="false" aria-controls="painel-2" data-aba="2" type="button">2 · Especializações</button>
+    <button class="tab" role="tab" id="tab-3" aria-selected="false" aria-controls="painel-3" data-aba="3" type="button">3 · Planejamento</button>
+    <button class="tab" role="tab" id="tab-4" aria-selected="false" aria-controls="painel-4" data-aba="4" type="button">4 · Estratégias</button>
+    <button class="tab" role="tab" id="tab-5" aria-selected="false" aria-controls="painel-5" data-aba="5" type="button">5 · Falhas</button>
+    <button class="tab" role="tab" id="tab-6" aria-selected="false" aria-controls="painel-6" data-aba="6" type="button">⭐ Revisão</button>
+  </div>
+</div>
+
+<!-- ============ ABA 1 ============ -->
+<div class="painel active" id="painel-1" role="tabpanel" aria-labelledby="tab-1">
+  <h2>Aba 1 · O que é um servidor de rede e como surgiu?</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é entender o <strong>servidor de rede</strong> (do inglês <em>network server</em>; computador dedicado a oferecer serviços a outros computadores na rede, chamados de <strong>clientes</strong>) como a coluna vertebral da internet e de toda a computação em nuvem. Você vai conhecer a origem histórica (dos mainframes da IBM aos servidores x86 da Dell e HPE), as características marcantes (alta disponibilidade, redundância, desempenho) e as funções gerais que todo servidor desempenha.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Como os servidores nasceram</h3>
+    <p>A ideia de servidor vem do modelo <strong>cliente-servidor</strong> (arquitetura em que máquinas pedidoras, os clientes, e máquinas provedoras, os servidores, dividem o trabalho). A história atravessa quatro marcos:</p>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Mainframes (anos 1960)</strong>: computadores gigantes da IBM (empresa americana), como o System/360, que atendiam vários terminais burros (teclado e tela sem processamento) ao mesmo tempo. Eram os "servidores" originais.</li>
+      <li><strong>Minicomputadores (anos 1970-80)</strong>: DEC (Digital Equipment Corporation, empresa americana) e HP (Hewlett-Packard, americana) produziram máquinas menores, que departamentos inteiros podiam comprar.</li>
+      <li><strong>Servidores x86 (anos 1990)</strong>: com o Linux (sistema operacional livre criado por Linus Torvalds em 1991) e o Windows NT (versão de servidor da Microsoft, de 1993), servidores em hardware padrão Intel/AMD (empresas americanas) dominaram o mercado.</li>
+      <li><strong>Virtualização e nuvem (anos 2000 em diante)</strong>: a VMware (empresa americana) popularizou em 1999 a técnica de rodar vários servidores virtuais em um só físico, pavimentando o caminho para a nuvem da AWS (Amazon Web Services, lançada em 2006).</li>
+    </ul>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Características marcantes de um servidor</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Alta disponibilidade</strong>: projetado para ficar no ar 24 horas por dia, 7 dias por semana. Métricas como <strong>99,99%</strong> (quatro noves, em inglês <em>four nines</em>) significam menos de 53 minutos de queda por ano.</li>
+      <li><strong>Redundância</strong>: fontes de alimentação, discos e placas de rede duplicados. Se um componente falha, o outro assume sem derrubar o serviço.</li>
+      <li><strong>Desempenho especializado</strong>: muita RAM (centenas de GB), discos rápidos (SSDs NVMe), muitas CPUs (dois ou quatro processadores por máquina) e rede de 10 a 100 Gbps.</li>
+      <li><strong>Confiabilidade</strong>: componentes ECC (do inglês <em>Error Correcting Code</em>; em português, Código de Correção de Erros, memória que corrige falhas de bit) e firmware (software embarcado no hardware) testado por meses.</li>
+      <li><strong>Gerenciabilidade</strong>: interface <strong>IPMI</strong> (do inglês <em>Intelligent Platform Management Interface</em>; em português, Interface Inteligente de Gerenciamento de Plataforma) que permite ligar, desligar e reinstalar o sistema remotamente, mesmo com o SO travado.</li>
+      <li><strong>Segurança física e lógica</strong>: ficam em datacenters com controle de acesso biométrico, câmeras e vigilância; o SO recebe patches (atualizações de segurança) rapidamente.</li>
+    </ul>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Servidores no mundo e no Brasil</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Dell PowerEdge</strong>: linha de servidores da Dell (empresa americana), muito usada em empresas brasileiras como bancos e varejistas.</li>
+      <li><strong>HPE ProLiant</strong>: linha da Hewlett Packard Enterprise (americana), forte em datacenters corporativos.</li>
+      <li><strong>IBM Power Systems</strong>: mainframes e servidores de alto desempenho ainda usados por grandes bancos brasileiros como Itaú e Bradesco para processar transações críticas.</li>
+      <li><strong>Lenovo ThinkSystem</strong>: linha da Lenovo (empresa chinesa com forte presença no Brasil) que atende o mercado corporativo.</li>
+      <li><strong>Equinix, Odata e Ascenty</strong>: empresas de datacenters no Brasil que hospedam servidores de clientes em São Paulo, Rio de Janeiro e outras capitais.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Funções gerais de todo servidor</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Ouvir requisições</strong>: ficar atento a pedidos vindos pela rede (como um garçom atento às mesas).</li>
+      <li><strong>Processar</strong>: executar a lógica de negócio (calcular, consultar o banco, aplicar regras).</li>
+      <li><strong>Responder</strong>: devolver o resultado (página HTML, JSON, arquivo, stream de vídeo).</li>
+      <li><strong>Registrar</strong>: gravar em <strong>logs</strong> (do inglês, troncos; em português, registros) tudo o que acontece, para auditoria e diagnóstico.</li>
+      <li><strong>Autenticar e autorizar</strong>: confirmar quem é o cliente e se ele tem permissão para o pedido.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: explorador da evolução dos servidores</h3>
+
+    <div class="prever">
+      <strong>Antes de explorar, preveja:</strong> em que década surgiram os servidores x86 com Linux, que dominaram a internet: anos 1970, anos 1980 ou anos 1990?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, registre sua previsão.<br>
+      <strong>Passo 1:</strong> clique em cada era histórica.<br>
+      <strong>Passo 2:</strong> leia o marco tecnológico, a empresa símbolo e o caso de uso típico.<br>
+      <strong>Passo 3:</strong> observe a evolução: cada era não substitui a anterior, mas acrescenta uma camada.<br>
+      <strong>Passo 4:</strong> confira sua previsão inicial.
+    </div>
+
+    <div class="roteiro">
+      comece pelos mainframes dos anos 1960 e mostre como o modelo cliente-servidor já existia. Avance até a nuvem dos anos 2000 e mostre que a AWS nasceu em 2006, há menos de 20 anos. Essa perspectiva temporal ajuda a turma a situar a idade da nuvem.
+    </div>
+
+    <div class="legenda">
+      mainframe = computador gigante centralizado · cliente-servidor = arquitetura em que alguns pedem e outros servem · virtualização = rodar vários servidores virtuais em um físico · datacenter = sala que abriga servidores · log = registro de eventos
+    </div>
+
+    <div class="demo-area" id="demo1-area">
+      <div style="display:flex; flex-wrap:wrap; gap:0.4rem">
+        <button class="btn" type="button" data-era="mainframe">1960s · Mainframes</button>
+        <button class="btn" type="button" data-era="mini">1970-80s · Minis</button>
+        <button class="btn" type="button" data-era="x86">1990s · x86/Linux</button>
+        <button class="btn" type="button" data-era="virtual">2000s · Virtualização</button>
+        <button class="btn" type="button" data-era="nuvem">2006+ · Nuvem</button>
+      </div>
+      <div id="demo1-cartao" style="margin-top:1rem; padding:1rem; background:var(--fundo-codigo); border-radius:8px; min-height:140px">
+        👆 Clique em uma era para abrir o cartão histórico.
+      </div>
+      <button class="btn btn-secundario" type="button" id="demo1-reset" style="margin-top:0.75rem">🔄 Reiniciar</button>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> os servidores evoluíram em camadas, não em substituição. Mainframes ainda rodam sistemas bancários críticos; a nuvem não os matou, apenas ofereceu uma alternativa para a maioria das cargas de trabalho.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 1</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      servidor = computador que oferece serviços a clientes na rede ·
+      cliente-servidor = arquitetura em que máquinas pedem e outras respondem ·
+      mainframe = computador gigante centralizado dos anos 1960 ·
+      alta disponibilidade = ficar no ar 24/7 com mínimo de queda ·
+      redundância = componentes duplicados para tolerar falhas ·
+      IPMI = interface de gerenciamento remoto do servidor.
+    </div>
+
+    <div class="pergunta" data-pergunta="1-1">
+      <p>1. O que significa alta disponibilidade "quatro noves" (99,99%)?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! Quatro noves equivalem a menos de 53 minutos de queda por ano, não horas. É um padrão muito rigoroso.">Menos de 1 hora de queda por mês</button>
+        <button class="alt" type="button" data-fb="Correto! 99,99% permite cerca de 52,6 minutos de queda acumulada em um ano inteiro. É o padrão esperado de serviços críticos como bancos e e-commerces de grande porte.">Menos de 53 minutos de queda por ano</button>
+        <button class="alt" type="button" data-fb="Errado! Esse seria um SLA de três noves (99,9%), não de quatro noves. Três noves permitem cerca de 8,7 horas de queda por ano.">Menos de 8 horas de queda por ano</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="1-2">
+      <p>2. Qual empresa popularizou a virtualização em 1999, pavimentando o caminho para a nuvem?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! A VMware lançou o VMware Workstation em 1999, permitindo rodar vários sistemas operacionais em um único hardware. Mais tarde seu hypervisor ESX virou base de datacenters inteiros.">VMware</button>
+        <button class="alt" type="button" data-fb="Errado! A AWS popularizou a nuvem pública em 2006, mas a virtualização como técnica já vinha da VMware desde 1999.">AWS</button>
+        <button class="alt" type="button" data-fb="Errado! A Microsoft entrou na virtualização mais tarde, com o Hyper-V em 2008. O pioneirismo foi da VMware.">Microsoft</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="1-3">
+      <p>3. Para que serve o IPMI em um servidor físico?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! IPMI não é protocolo de transferência de arquivos; ele gerencia o servidor em si, não os dados que trafegam por ele.">Transferir arquivos entre servidores da rede</button>
+        <button class="alt" type="button" data-fb="Errado! Criptografia de disco é feita por software como LUKS (no Linux) ou BitLocker (no Windows), não pelo IPMI.">Criptografar o disco rígido do servidor</button>
+        <button class="alt" type="button" data-fb="Correto! O IPMI permite ligar, desligar, reinstalar o sistema e ler sensores (temperatura, ventoinhas) remotamente, mesmo com o SO travado ou desligado. É o controle remoto do hardware.">Gerenciar o servidor remotamente, mesmo com o SO travado ou desligado</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 1</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=servidor+de+rede+história+mainframe+cliente+servidor" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=history+of+servers+client+server+architecture+mainframe" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=história+dos+servidores+mainframe+cliente+servidor+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Servidor</strong>: computador que oferece serviços a clientes.</li>
+      <li><strong>Cliente-servidor</strong>: arquitetura com pedidores e respondedores.</li>
+      <li><strong>Alta disponibilidade</strong>: 24/7 com downtime mínimo.</li>
+      <li><strong>Redundância</strong>: componentes duplicados.</li>
+      <li><strong>IPMI</strong>: gerenciamento remoto do hardware.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> A nuvem matou os servidores físicos; hoje só existe nuvem.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> a nuvem roda sobre servidores físicos em datacenters, que alguém precisa comprar e manter. Além disso, muitas empresas mantêm servidores próprios por questões de regulação, latência ou custo. Nuvem e servidores físicos coexistem.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 2 ============ -->
+<div class="painel" id="painel-2" role="tabpanel" aria-labelledby="tab-2">
+  <h2>Aba 2 · Especializações de servidores</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é dominar as <strong>dez principais especializações</strong> de servidores usadas hoje em datacenters e na nuvem: web, aplicações, banco de dados, cache, arquivos, e-mail, streaming de mídia, jogos, DNS e backup. Você vai aprender o que cada um faz, que software típico roda nele e em que contexto ele é indispensável.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 As dez especializações em uma olhada</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Servidor web</strong>: entrega páginas HTML, imagens e arquivos estáticos ao navegador. Exemplos: Apache HTTP Server (software livre), Nginx (software livre da F5, empresa americana) e Microsoft IIS. Usado em praticamente todo site da internet.</li>
+      <li><strong>Servidor de aplicações</strong>: roda a lógica de negócio (regras do sistema). Exemplos: Apache Tomcat (para Java), Node.js (JavaScript), .NET (Microsoft), WildFly (Java, mantido pela Red Hat, hoje parte da IBM). É o cérebro do sistema.</li>
+      <li><strong>Servidor de banco de dados</strong>: guarda e consulta dados estruturados. Exemplos: MySQL (da Oracle), PostgreSQL (livre), SQL Server (Microsoft), Oracle Database, MongoDB (NoSQL, não relacional).</li>
+      <li><strong>Servidor de cache</strong>: guarda dados frequentemente usados em memória para responder rápido. Exemplo clássico: <strong>Redis</strong> (do inglês <em>Remote Dictionary Server</em>; em português, Servidor Remoto de Dicionário) e Memcached (software livre).</li>
+      <li><strong>Servidor de arquivos</strong>: centraliza arquivos para usuários ou aplicações. Exemplos: NAS (do inglês <em>Network Attached Storage</em>; em português, Armazenamento Conectado à Rede, da Synology, QNAP) e SMB/CIFS (protocolo de compartilhamento do Windows).</li>
+      <li><strong>Servidor de e-mail</strong>: envia, recebe e armazena e-mails. Exemplos: Microsoft Exchange, Postfix (livre), Sendmail. Usa protocolos SMTP, IMAP e POP3.</li>
+      <li><strong>Servidor de streaming de mídia</strong>: entrega áudio e vídeo em tempo real. Exemplos: Wowza, nginx-rtmp, serviços da AWS como MediaLive.</li>
+      <li><strong>Servidor de jogos</strong>: hospeda partidas multiplayer online. Precisa de baixa latência; usado por estúdios como a Riot Games (americana, criadora de League of Legends).</li>
+      <li><strong>Servidor de DNS</strong> (do inglês <em>Domain Name System</em>; em português, Sistema de Nomes de Domínio): traduz nomes como www.banco.com.br em endereços IP. Exemplos: BIND (software livre), PowerDNS, Route 53 (serviço DNS da AWS).</li>
+      <li><strong>Servidor de backup</strong>: armazena cópias de segurança de dados. Exemplos: Veeam (empresa americana), Commvault (americana), Bacula (livre).</li>
+    </ul>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Casos reais de especializações</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>iFood</strong> (aplicativo brasileiro de entregas): usa servidores web Nginx para receber pedidos, servidores de aplicação Node.js para a lógica e Redis como cache para listar restaurantes rapidamente.</li>
+      <li><strong>Nubank</strong> (banco digital brasileiro): servidores de banco de dados PostgreSQL e Cassandra (NoSQL da Apache, fundação de software livre) para milhões de transações diárias.</li>
+      <li><strong>GloboPlay</strong> (streaming da Globo): servidores de streaming especializados, com CDN (do inglês <em>Content Delivery Network</em>; em português, Rede de Distribuição de Conteúdo) para entregar vídeo no Brasil inteiro sem travar.</li>
+      <li><strong>Registro.br</strong> (órgão que gerencia domínios .br): servidores DNS que respondem a bilhões de consultas por dia, traduzindo endereços como gov.br em IPs.</li>
+      <li><strong>Totvs</strong> (empresa brasileira de software): servidores de arquivos com NAS Synology em muitos de seus clientes para centralizar documentos contábeis.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Como escolher a especialização certa</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Um servidor só ou vários?</strong> Em sistemas pequenos, web, aplicação e banco podem rodar no mesmo servidor. Em sistemas grandes, separam-se em máquinas dedicadas para escalar.</li>
+      <li><strong>Estado ou sem estado?</strong> Servidores sem estado (stateless) não guardam dados entre requisições (como servidores web); com estado (como banco de dados) precisam de cuidado extra com backup.</li>
+      <li><strong>Na nuvem ou físico?</strong> Bancos de dados críticos muitas vezes ficam em servidores físicos dedicados por questões de IOPS (do inglês <em>Input/Output Operations Per Second</em>; em português, Operações de Entrada/Saída por Segundo, velocidade do disco); servidores web ficam bem em VMs ou contêineres.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: qual servidor usar em cada cenário?</h3>
+
+    <div class="prever">
+      <strong>Antes de jogar, preveja:</strong> um e-commerce precisa responder em milissegundos a consulta "quantos produtos há no carrinho?". Qual servidor acelera mais essa resposta: web, banco de dados ou cache?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, registre sua previsão.<br>
+      <strong>Passo 1:</strong> leia o cenário proposto.<br>
+      <strong>Passo 2:</strong> escolha o servidor mais adequado entre as opções.<br>
+      <strong>Passo 3:</strong> leia o feedback com explicação e software típico.<br>
+      <strong>Passo 4:</strong> acompanhe o placar de acertos.
+    </div>
+
+    <div class="roteiro">
+      comece com o carrinho de compras e mostre que o cache (Redis) é o acelerador. Depois mostre cenários como "traduzir nome em IP" (DNS) e "armazenar contratos" (arquivos). A variedade fixa as dez especializações.
+    </div>
+
+    <div class="legenda">
+      web = entrega páginas · aplicações = roda a lógica de negócio · BD = guarda dados · cache = memória rápida para dados frequentes · arquivos = centraliza documentos · e-mail = SMTP/IMAP · streaming = áudio/vídeo · jogos = multiplayer · DNS = traduz nome em IP · backup = cópia de segurança
+    </div>
+
+    <div class="demo-area" id="demo2-area">
+      <div id="demo2-caso" style="background:var(--cor-destaque-claro); padding:1rem; border-radius:8px; margin-bottom:1rem; font-weight:600; min-height:80px">
+        📋 O cenário aparecerá aqui. Clique em Novo cenário para começar.
+      </div>
+      <div id="demo2-opcoes" style="display:none"></div>
+      <div id="demo2-feedback" style="margin-top:1rem"></div>
+      <div style="margin-top:1rem">
+        <button class="btn" type="button" id="demo2-novo">🎲 Novo cenário</button>
+        <button class="btn btn-secundario" type="button" id="demo2-reset">🔄 Reiniciar</button>
+      </div>
+      <div id="demo2-placar" style="margin-top:1rem; font-weight:bold; color:var(--cor-destaque-escuro)"></div>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> cada tipo de dado e cada tipo de uso combinam com uma especialização diferente. Um arquiteto de sistemas experiente sabe combinar essas peças como um maestro orquestra instrumentos.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 2</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      servidor web = entrega páginas HTML e arquivos ·
+      servidor de aplicações = roda a lógica de negócio ·
+      servidor de BD = guarda e consulta dados estruturados ·
+      servidor de cache = guarda dados em memória para resposta rápida ·
+      DNS = traduz nomes de domínio em endereços IP ·
+      Redis = servidor de cache em memória muito usado.
+    </div>
+
+    <div class="pergunta" data-pergunta="2-1">
+      <p>1. Qual servidor é o exemplo clássico de armazenamento em memória para acelerar respostas de alta frequência?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! O servidor web entrega arquivos estáticos e páginas, mas não é especializado em cache em memória.">Servidor web (Nginx, Apache)</button>
+        <button class="alt" type="button" data-fb="Errado! O banco de dados é feito para persistência em disco, não para velocidade extrema de leitura em memória.">Servidor de banco de dados (PostgreSQL)</button>
+        <button class="alt" type="button" data-fb="Correto! Redis e Memcached são servidores de cache em memória. Redis, por exemplo, responde em microssegundos e é usado por empresas como Twitter e GitHub para dados quentes.">Servidor de cache (Redis, Memcached)</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="2-2">
+      <p>2. O servidor de DNS tem qual função específica na internet?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! Criptografia de tráfego é papel do TLS (usado no HTTPS), não do DNS.">Criptografar o tráfego entre o navegador e o site</button>
+        <button class="alt" type="button" data-fb="Correto! DNS traduz nomes humanos (como www.banco.com.br) em endereços IP (como 187.33.22.11) que os computadores usam para se conectar. Sem DNS, teríamos que decorar números.">Traduzir nomes de domínio em endereços IP numéricos</button>
+        <button class="alt" type="button" data-fb="Errado! Armazenar páginas é papel do servidor web; o DNS apenas informa onde a página mora.">Armazenar as páginas HTML dos sites</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="2-3">
+      <p>3. Em um e-commerce de grande porte, o servidor de aplicações é o que faz:</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! O servidor de aplicações é o cérebro: calcula preços, aplica descontos, verifica estoque, valida pagamentos. É onde mora a lógica de negócio do sistema.">Executa a lógica de negócio (cálculos, regras, validações) do sistema</button>
+        <button class="alt" type="button" data-fb="Errado! Entregar páginas HTML estáticas é papel do servidor web, não do servidor de aplicações. O de aplicações gera páginas dinâmicas sob demanda.">Apenas entrega páginas HTML estáticas ao navegador</button>
+        <button class="alt" type="button" data-fb="Errado! Armazenar produtos em tabelas é papel do servidor de banco de dados. O servidor de aplicações consulta o BD, mas não guarda os dados.">Armazenar produtos e preços em tabelas</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 2</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=tipos+de+servidores+web+aplicações+banco+de+dados+cache+DNS" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=server+specializations+web+application+database+cache" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=tipos+de+servidores+web+aplicação+banco+DNS+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Web</strong>: Apache, Nginx, IIS — entrega páginas.</li>
+      <li><strong>Aplicações</strong>: Tomcat, Node.js, WildFly — roda a lógica.</li>
+      <li><strong>BD</strong>: MySQL, PostgreSQL, SQL Server — guarda dados.</li>
+      <li><strong>Cache</strong>: Redis, Memcached — memória rápida.</li>
+      <li><strong>Arquivos / e-mail / streaming / jogos / DNS / backup</strong>: cada qual com seu papel.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Um servidor físico só pode desempenhar uma especialização por vez.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> com virtualização e contêineres, um mesmo servidor físico pode rodar web, aplicação e banco ao mesmo tempo, isolados. Em produção grande, porém, separá-los em máquinas dedicadas melhora desempenho e segurança.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 3 ============ -->
+<div class="painel" id="painel-3" role="tabpanel" aria-labelledby="tab-3">
+  <h2>Aba 3 · Planejamento de migração para a nuvem</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é dominar o processo estruturado de <strong>migração para a nuvem</strong> (ato de transferir sistemas, dados e infraestrutura de um ambiente local, o on-premise, para a nuvem, ou de uma nuvem para outra). Você vai conhecer os três tipos de migração (local para nuvem, nuvem para nuvem e nuvem para local) e as seis etapas do planejamento detalhado recomendadas pelos três grandes provedores (AWS, Azure, Google Cloud).</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Tipos de migração</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>On-premise para nuvem</strong>: o mais comum. Uma empresa fecha seu datacenter próprio e leva tudo para AWS, Azure ou GCP. Exemplo: a Netflix fechou seus últimos datacenters em 2016, migrando tudo para a AWS.</li>
+      <li><strong>Nuvem para nuvem</strong> (do inglês <em>cloud-to-cloud</em>): mudança de um provedor para outro. Motivos típicos: preço melhor, recursos específicos, evitar <strong>vendor lock-in</strong> (do inglês, em português, aprisionamento ao fornecedor; dependência excessiva de um único provedor).</li>
+      <li><strong>Nuvem para local</strong> (do inglês <em>cloud repatriation</em>; em português, repatriação para a nuvem): o contrário. Empresas como a Dropbox (serviço americano de arquivos) repatriaram parte da carga para servidores próprios para reduzir custos em escala.</li>
+    </ul>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 As seis etapas do planejamento</h3>
+    <ol style="margin-left:1.5rem">
+      <li><strong>Avaliação e planejamento inicial</strong>: inventariar o que existe (servidores, aplicações, dados), medir custos atuais e definir objetivos (reduzir custo, aumentar agilidade, cumprir regulação). Ferramentas: AWS Migration Evaluator, Azure Migrate.</li>
+      <li><strong>Seleção do provedor e modelagem de serviços</strong>: escolher entre AWS, Azure e GCP (ou multicloud) e definir quais serviços usar (IaaS, PaaS, SaaS). Considerar presença geográfica, conformidade (LGPD no Brasil) e integração com sistemas existentes.</li>
+      <li><strong>Planejamento detalhado</strong>: definir cronograma, equipe, orçamento, matriz de riscos e estratégia de migração para cada aplicação (tema da Aba 4). Criar um plano de rollback (volta em caso de falha).</li>
+      <li><strong>Preparação e testes</strong>: treinar a equipe, configurar a rede (VPN, do inglês <em>Virtual Private Network</em>; em português, Rede Privada Virtual), fazer <strong>prova de conceito</strong> (do inglês <em>Proof of Concept</em>, PoC; em português, Prova de Conceito) com uma aplicação piloto.</li>
+      <li><strong>Execução da migração</strong>: migrar por ondas (em inglês <em>waves</em>), começando por sistemas menos críticos. Monitorar em tempo real e ter rollback pronto.</li>
+      <li><strong>Pós-migração e gestão de mudanças</strong>: otimizar custos (desligar recursos ociosos), treinar usuários finais, documentar o novo ambiente e criar processos de operação contínua.</li>
+    </ol>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Casos reais de planejamento</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Banco do Brasil</strong>: migrou parte da infraestrutura para Azure da Microsoft entre 2019 e 2023, com planejamento de vários anos e equipes dedicadas.</li>
+      <li><strong>Magazine Luiza (Magalu)</strong>: migrou seu e-commerce para Azure em 2020 para aguentar picos da Black Friday, depois de meses de planejamento.</li>
+      <li><strong>Petrobras</strong>: usa AWS para análises de dados de prospecção de petróleo, com migração planejada em fases ao longo de anos.</li>
+      <li><strong>Governo Federal</strong>: o Programa Gov.br usa nuvem da AWS e Azure para serviços digitais ao cidadão, seguindo a Estratégia de Nuvem do Governo Federal (decreto de 2021).</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Ferramentas de migração dos três grandes</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>AWS</strong>: Migration Hub (centro unificado), Application Discovery Service (descobre servidores), Database Migration Service (DMS, migra bancos), Server Migration Service (SMS).</li>
+      <li><strong>Azure</strong>: Azure Migrate (descobre e avalia), Azure Database Migration Service, Azure Data Box (aparelho físico para migrar dados em escala).</li>
+      <li><strong>Google Cloud</strong>: Migrate for Compute Engine, BigQuery Data Transfer Service, Transfer Appliance (aparelho físico para petabytes).</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: simulador das seis etapas de planejamento</h3>
+
+    <div class="prever">
+      <strong>Antes de simular, preveja:</strong> qual etapa deve vir PRIMEIRO no planejamento de migração: escolher o provedor (AWS, Azure, GCP) ou inventariar o que existe hoje?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, registre sua previsão.<br>
+      <strong>Passo 1:</strong> leia cada etapa na sequência proposta.<br>
+      <strong>Passo 2:</strong> veja as ferramentas, entregas e armadilhas de cada etapa.<br>
+      <strong>Passo 3:</strong> ao final, veja o resumo e compare com sua previsão.<br>
+      <strong>Passo 4:</strong> repita para fixar a ordem correta.
+    </div>
+
+    <div class="roteiro">
+      comece pela etapa 1 (inventário) e mostre que sem saber o que se tem, não dá para escolher provedor nem estratégia. Avance até a etapa 6 (pós-migração) e destaque que o trabalho não acaba quando a migração termina.
+    </div>
+
+    <div class="legenda">
+      on-premise = infraestrutura própria, local · migração = transferência entre ambientes · rollback = plano de voltar em caso de falha · PoC = prova de conceito, teste em pequena escala · ondas = grupos de sistemas migrados juntos
+    </div>
+
+    <div class="demo-area" id="demo3-area">
+      <div>
+        <button class="btn" type="button" id="demo3-next">▶ Próxima etapa</button>
+        <button class="btn btn-secundario" type="button" id="demo3-reset">🔄 Reiniciar</button>
+      </div>
+      <div id="demo3-conteudo" style="margin-top:1rem"></div>
+      <div class="progresso-etapa">
+        <div class="barra" id="demo3-barra" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> a ordem das etapas importa. Inventário antes de provedor; testes antes da execução; otimização depois da migração. Pular etapas é a causa número um de migrações caras e frustrantes.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 3</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      migração = transferência de sistemas entre ambientes ·
+      on-premise = infraestrutura local própria ·
+      vendor lock-in = aprisionamento ao fornecedor ·
+      PoC = prova de conceito, teste piloto ·
+      rollback = plano de voltar em caso de falha ·
+      ondas = grupos de sistemas migrados juntos.
+    </div>
+
+    <div class="pergunta" data-pergunta="3-1">
+      <p>1. Qual é a PRIMEIRA etapa do planejamento de migração para a nuvem?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! Antes de escolher provedor ou estratégia, é preciso inventariar o que existe: quantos servidores, quais aplicações, quantos dados, quanto custa hoje. Sem isso, qualquer decisão é um palpite.">Avaliação e planejamento inicial (inventário do que existe)</button>
+        <button class="alt" type="button" data-fb="Errado! Escolher o provedor sem saber o que se tem leva a decisões ruins. O inventário vem antes.">Seleção do provedor de nuvem</button>
+        <button class="alt" type="button" data-fb="Errado! Executar sem inventário e sem testes é receita para desastre. A execução é a etapa 5, não a 1.">Execução da migração</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="3-2">
+      <p>2. O que significa "vendor lock-in" no contexto de nuvem?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! Vendor lock-in não é sobre travar contas por senha; é sobre dependência técnica e econômica de um fornecedor.">Travar a conta de usuário com senha forte</button>
+        <button class="alt" type="button" data-fb="Errado! Criptografar dados não é lock-in, é segurança. Lock-in é a dificuldade de mudar de fornecedor depois de adotá-lo.">Criptografar os dados para o fornecedor não acessá-los</button>
+        <button class="alt" type="button" data-fb="Correto! É a dependência excessiva de um provedor específico, de modo que mudar para outro sai caro ou é tecnicamente difícil. Multicloud (usar vários provedores) é uma forma de reduzir lock-in.">Dependência excessiva de um provedor, que dificulta a migração para outro</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="3-3">
+      <p>3. Migrar da nuvem de volta para datacenters próprios é chamado de:</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! Refatoração é reescrever a aplicação, não mudar de ambiente.">Refatoração</button>
+        <button class="alt" type="button" data-fb="Correto! Repatriação (cloud repatriation) é o movimento de volta ao local. A Dropbox é caso famoso: em 2016 anunciou que deixaria a AWS e montaria infraestrutura própria, economizando cerca de 75 milhões de dólares por ano.">Repatriação (cloud repatriation)</button>
+        <button class="alt" type="button" data-fb="Errado! Lift and shift é o oposto: levar para a nuvem sem mudar nada, não trazer de volta.">Lift and shift</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 3</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=planejamento+de+migração+para+nuvem+6+etapas+AWS+Azure" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=cloud+migration+planning+steps+assessment+execution" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=planejamento+de+migração+para+nuvem+etapas+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Migração</strong>: transferência de sistemas entre ambientes.</li>
+      <li><strong>On-premise → nuvem / nuvem → nuvem / nuvem → local</strong>.</li>
+      <li><strong>Vendor lock-in</strong>: dependência excessiva de um fornecedor.</li>
+      <li><strong>PoC / rollback / ondas</strong>: teste, volta, grupos.</li>
+      <li><strong>Seis etapas</strong>: inventário, provedor, plano, testes, execução, pós.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Migração para a nuvem é só "subir os servidores" e pronto.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> migração bem-sucedida exige meses (às vezes anos) de planejamento: inventário, escolha de estratégia, testes, rollback. Migrar sem planejar é a principal causa de projetos estourados em custo e prazo.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 4 ============ -->
+<div class="painel" id="painel-4" role="tabpanel" aria-labelledby="tab-4">
+  <h2>Aba 4 · Estratégias de migração e casos de sucesso</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é dominar as <strong>quatro estratégias principais</strong> de migração (chamadas de "4 Rs" nos modelos clássicos dos provedores de nuvem): <strong>Lift and Shift</strong> (Rehospedagem), <strong>Refatoração</strong>, <strong>Replataformização</strong> e <strong>Reconstrução</strong>. E depois estudar três casos de sucesso mundial: Netflix, Spotify e Thomson Reuters.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 As quatro estratégias de migração</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Lift and Shift (Rehospedagem)</strong>: mover o servidor para a nuvem tal como está, sem mudar o código. É rápido e barato no curto prazo, mas não aproveita os benefícios da nuvem. Ideal para migrar rápido sistemas legados. Analogia: mudar de casa levando todos os móveis como estão.</li>
+      <li><strong>Refatoração</strong> (do inglês <em>Refactor</em>): ajustar o código para usar recursos nativos da nuvem, como auto-scaling (escala automática) e serviços gerenciados. Exige mais trabalho, mas aproveita a nuvem de verdade. Analogia: reformar os móveis para caber na casa nova.</li>
+      <li><strong>Replataformização</strong> (do inglês <em>Replatform</em>): pequenos ajustes para ganhar algum benefício. Exemplo: trocar o banco MySQL próprio pelo Amazon RDS (MySQL gerenciado pela AWS), sem reescrever a aplicação. É o meio-termo. Analogia: trocar alguns móveis e adaptar outros.</li>
+      <li><strong>Reconstrução</strong> (do inglês <em>Rewrite</em>): reescrever a aplicação do zero, já pensada para a nuvem (cloud-native). É o caminho mais caro e demorado, mas o que aproveita ao máximo os benefícios. Analogia: construir móveis novos sob medida para a casa.</li>
+    </ul>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Casos de sucesso na migração</h3>
+
+    <div class="caso-card sucesso">
+      <h4>🎬 Netflix</h4>
+      <p><strong>Contexto:</strong> em 2008, um grande apagão no próprio datacenter da Netflix tirou o serviço do ar por três dias. Foi o empurrão para migrar para a AWS.</p>
+      <p><strong>Migração:</strong> de 2008 a 2016, a Netflix migrou tudo para a AWS, usando a estratégia de <strong>reconstrução</strong>. Reescreveu o sistema do zero como um conjunto de microsserviços (serviços pequenos e independentes) rodando em milhares de instâncias EC2.</p>
+      <p><strong>Resultado:</strong> hoje atende mais de 260 milhões de assinantes em 190 países, com escalabilidade quase ilimitada. A Netflix também criou e open-sourou (disponibilizou como software livre) ferramentas como o Chaos Monkey (software que desliga servidores aleatoriamente para testar resiliência), hoje usado pelo mercado inteiro.</p>
+    </div>
+
+    <div class="caso-card sucesso">
+      <h4>🎵 Spotify</h4>
+      <p><strong>Contexto:</strong> o serviço sueco de streaming de música cresceu rápido e começou a enfrentar gargalos em seu datacenter próprio.</p>
+      <p><strong>Migração:</strong> em 2018, anunciou migração do armazenamento para o Google Cloud Platform (GCP), usando <strong>refatoração</strong>. Transferiu petabytes de dados usando o Transfer Appliance (aparelho físico do Google para mover grandes volumes).</p>
+      <p><strong>Resultado:</strong> reduziu custos de infraestrutura e ganhou escalabilidade. Hoje serve mais de 600 milhões de usuários com latência baixa no mundo todo.</p>
+    </div>
+
+    <div class="caso-card sucesso">
+      <h4>📰 Thomson Reuters</h4>
+      <p><strong>Contexto:</strong> a multinacional de informação e notícias tinha centenas de datacenters espalhados pelo mundo após fusões e aquisições.</p>
+      <p><strong>Migração:</strong> migrou para a AWS combinando <strong>lift and shift</strong> (para sistemas que precisavam migrar rápido) com <strong>refatoração</strong> (para sistemas prioritários).</p>
+      <p><strong>Resultado:</strong> fechou dezenas de datacenters, reduziu custos de infraestrutura em mais de 50% e ganhou agilidade para lançar novos produtos de informação jurídica e financeira.</p>
+    </div>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Como escolher a estratégia certa</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Prazo curto, pouco dinheiro</strong>: Lift and Shift é o caminho mais rápido.</li>
+      <li><strong>Sistema crítico e longo prazo</strong>: Refatoração aproveita melhor a nuvem.</li>
+      <li><strong>Ganhos rápidos com pouco esforço</strong>: Replataformização troca componentes-chave por serviços gerenciados.</li>
+      <li><strong>Sistema legado sem futuro</strong>: Reconstrução pode valer a pena; senão, considera-se até aposentar (em inglês <em>Retire</em>; em português, Aposentar).</li>
+    </ul>
+    <p>Empresas reais raramente usam uma só estratégia: aplicam as quatro no mesmo projeto, conforme o perfil de cada aplicação.</p>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: jogo de estratégia de migração</h3>
+
+    <div class="prever">
+      <strong>Antes de jogar, preveja:</strong> uma aplicação legada em COBOL (linguagem antiga usada em bancos), que precisa sair do datacenter em 30 dias por fechamento do prédio, qual estratégia faz mais sentido: Lift and Shift, Refatoração, Replataformização ou Reconstrução?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, registre sua previsão.<br>
+      <strong>Passo 1:</strong> leia o cenário proposto com prazo, orçamento e objetivo.<br>
+      <strong>Passo 2:</strong> escolha a estratégia mais adequada.<br>
+      <strong>Passo 3:</strong> leia o feedback com justificativa e exemplo real similar.<br>
+      <strong>Passo 4:</strong> acompanhe o placar de acertos.
+    </div>
+
+    <div class="roteiro">
+      comece com o cenário do prédio a fechar (prazo curtíssimo) e mostre que Lift and Shift é a resposta. Depois apresente um cenário de sistema crítico de longo prazo (refatoração) e um de ganhos rápidos (replataformização).
+    </div>
+
+    <div class="legenda">
+      Lift and Shift = mover sem mudar · Refatoração = ajustar para usar recursos nativos · Replataformização = pequenos ajustes para ganhar algo · Reconstrução = reescrever do zero · microsserviço = serviço pequeno e independente · cloud-native = feito para a nuvem
+    </div>
+
+    <div class="demo-area" id="demo4-area">
+      <div id="demo4-caso" style="background:var(--cor-destaque-claro); padding:1rem; border-radius:8px; margin-bottom:1rem; font-weight:600; min-height:80px">
+        📋 O cenário aparecerá aqui. Clique em Novo cenário para começar.
+      </div>
+      <div id="demo4-opcoes" style="display:none"></div>
+      <div id="demo4-feedback" style="margin-top:1rem"></div>
+      <div style="margin-top:1rem">
+        <button class="btn" type="button" id="demo4-novo">🎲 Novo cenário</button>
+        <button class="btn btn-secundario" type="button" id="demo4-reset">🔄 Reiniciar</button>
+      </div>
+      <div id="demo4-placar" style="margin-top:1rem; font-weight:bold; color:var(--cor-destaque-escuro)"></div>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> não existe estratégia "melhor": cada contexto pede uma escolha. O arquiteto experiente é quem sabe combinar Lift and Shift para velocidade, Refatoração para ganho de longo prazo, e Reconstrução quando o legado não tem mais salvação.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 4</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      Lift and Shift = Rehospedagem, mover sem mudar ·
+      Refatoração = ajustar o código para aproveitar a nuvem ·
+      Replataformização = pequenos ajustes, trocar componentes-chave ·
+      Reconstrução = reescrever do zero, cloud-native ·
+      microsserviço = serviço pequeno e independente ·
+      cloud-native = aplicação feita para a nuvem.
+    </div>
+
+    <div class="pergunta" data-pergunta="4-1">
+      <p>1. Qual estratégia de migração é a mais rápida e barata no curto prazo, mas aproveita pouco os benefícios da nuvem?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! Lift and Shift (Rehospedagem) move o servidor para a nuvem sem mudar o código. É rápida e exige pouco investimento inicial, mas a aplicação continua "pensada" para datacenter, desperdiçando auto-scaling e serviços gerenciados.">Lift and Shift (Rehospedagem)</button>
+        <button class="alt" type="button" data-fb="Errado! Refatoração exige mais tempo e dinheiro no curto prazo, ainda que traga mais benefícios no longo prazo.">Refatoração</button>
+        <button class="alt" type="button" data-fb="Errado! Reconstrução é a mais demorada e cara: reescrever do zero leva meses ou anos.">Reconstrução</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="4-2">
+      <p>2. A Netflix migrou para a AWS usando principalmente qual estratégia?</p>
+      <div class="alts" data-certa="d">
+        <button class="alt" type="button" data-fb="Errado! A Netflix não apenas moveu o que tinha; reescreveu o sistema do zero, pensando em nuvem desde o começo.">Lift and Shift</button>
+        <button class="alt" type="button" data-fb="Errado! Refatoração é ajuste, não reescrita. A Netflix reescreveu o sistema inteiro.">Refatoração</button>
+        <button class="alt" type="button" data-fb="Errado! Replataformização são pequenos ajustes; a Netflix fez uma transformação completa.">Replataformização</button>
+        <button class="alt" type="button" data-fb="Correto! A Netflix reescreveu seu sistema como um conjunto de microsserviços cloud-native, aproveitando ao máximo os recursos da AWS. Foi uma reconstrução de 8 anos (2008 a 2016).">Reconstrução</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="4-3">
+      <p>3. Uma empresa quer trocar seu banco MySQL próprio pelo Amazon RDS (MySQL gerenciado pela AWS), sem mudar o código da aplicação. Isso é exemplo de:</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! Lift and Shift seria mover o MySQL tal como está para uma VM na nuvem, ainda administrando tudo.">Lift and Shift</button>
+        <button class="alt" type="button" data-fb="Errado! Refatoração exigiria mudar o código para usar recursos nativos; trocar o banco sem mudar o código é mais modesto.">Refatoração</button>
+        <button class="alt" type="button" data-fb="Correto! Replataformização é isso: pequeno ajuste (trocar o banco por um serviço gerenciado) que traz ganhos (backup automático, alta disponibilidade) sem reescrever o código.">Replataformização</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 4</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=estratégias+de+migração+lift+and+shift+refatoração+replataformização" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=cloud+migration+strategies+lift+shift+refactor+replatform" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=Netflix+migração+AWS+caso+de+sucesso+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Lift and Shift</strong>: mover sem mudar.</li>
+      <li><strong>Refatoração</strong>: ajustar para a nuvem.</li>
+      <li><strong>Replataformização</strong>: pequenos ajustes com ganhos.</li>
+      <li><strong>Reconstrução</strong>: reescrever do zero, cloud-native.</li>
+      <li><strong>Casos de sucesso</strong>: Netflix, Spotify, Thomson Reuters.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Toda migração deve usar uma única estratégia do começo ao fim.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> empresas reais combinam estratégias no mesmo projeto: Lift and Shift para sistemas que precisam migrar urgente, Refatoração para sistemas críticos e Reconstrução para legados sem futuro. A escolha é por aplicação, não por projeto.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 5 ============ -->
+<div class="painel" id="painel-5" role="tabpanel" aria-labelledby="tab-5">
+  <h2>Aba 5 · Por que as migrações falham?</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é aprender com os erros alheios. Estudos da consultoria Gartner (empresa americana de pesquisa) estimam que <strong>até 70% dos projetos de migração para a nuvem</strong> não atingem os objetivos iniciais de custo ou prazo. Você vai conhecer as cinco causas principais de falha e estudar três casos emblemáticos: <strong>Betabrand</strong>, <strong>Weston</strong> e <strong>HealthCare.gov</strong>.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 As cinco causas principais de falha</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>1. Falta de planejamento</strong>: migrar sem inventário, sem estimativa de custos e sem matriz de riscos. Resultado: surpresas no meio do caminho.</li>
+      <li><strong>2. Subestimação de custos</strong>: a nuvem pode ser mais cara que o on-premise se não for bem dimensionada. Custos "escondidos" como transferência de dados entre regiões e egresso (dados que saem da nuvem) somam rápido.</li>
+      <li><strong>3. Equipe sem treinamento</strong>: operar nuvem exige habilidades diferentes de operar datacenter. Contratar ou treinar pessoas é essencial.</li>
+      <li><strong>4. Arquitetura inadequada</strong>: levar aplicações monolíticas (grandes e acopladas) para a nuvem sem adaptá-las desperdiça os benefícios e pode piorar o desempenho.</li>
+      <li><strong>5. Falta de estratégia de segurança e governança</strong>: sem políticas claras de acesso, criptografia e monitoramento, a nuvem vira um ambiente exposto a vazamentos e ataques.</li>
+    </ul>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Três casos emblemáticos de falha</h3>
+
+    <div class="caso-card falha">
+      <h4>👕 Betabrand</h4>
+      <p><strong>Contexto:</strong> loja americana de roupas que migrou seu e-commerce para a nuvem.</p>
+      <p><strong>O que deu errado:</strong> a conta da AWS subiu muito além do esperado porque a arquitetura foi dimensionada para picos máximos, desperdiçando recursos na maior parte do tempo. Além disso, a equipe não tinha experiência em otimização de custos na nuvem.</p>
+      <p><strong>Resultado:</strong> a empresa fechou as operações em 2021, em parte por causa dos custos insustentáveis de nuvem. O caso virou referência sobre a importância do <strong>FinOps</strong> (do inglês <em>Financial Operations</em>; em português, Operações Financeiras da nuvem; disciplina de gestão financeira da nuvem).</p>
+    </div>
+
+    <div class="caso-card falha">
+      <h4>🛒 Weston</h4>
+      <p><strong>Contexto:</strong> rede canadense de supermercados (Loblaw) que migrou sistemas para a nuvem.</p>
+      <p><strong>O que deu errado:</strong> migração apressada, sem planejamento adequado de testes e sem rollback pronto. Problemas de integração entre sistemas novos e legados causaram falhas operacionais nas lojas.</p>
+      <p><strong>Resultado:</strong> prejuízos milionários e impacto no atendimento ao cliente, com manchetes negativas durante meses.</p>
+    </div>
+
+    <div class="caso-card falha">
+      <h4>🏥 HealthCare.gov</h4>
+      <p><strong>Contexto:</strong> portal do governo americano para cidadãos contratarem planos de saúde, lançado em 2013 como parte do Affordable Care Act (lei de saúde do governo Obama).</p>
+      <p><strong>O que deu errado:</strong> no dia do lançamento, apenas 6 pessoas conseguiram se cadastrar em um sistema previsto para atender milhões. Problemas de arquitetura (microsserviços mal integrados), falta de testes de carga e governança fragmentada entre dezenas de fornecedores.</p>
+      <p><strong>Resultado:</strong> o site ficou instável por meses. Uma força-tarefa de engenheiros do Google, Oracle e outras empresas foi chamada para salvar o projeto. O custo final ultrapassou 1 bilhão de dólares, muito acima do previsto.</p>
+    </div>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Como evitar ser o próximo caso de falha</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Comece pequeno</strong>: PoC (prova de conceito) com uma aplicação não crítica antes de migrar o resto.</li>
+      <li><strong>Use FinOps desde o dia 1</strong>: discipline a equipe a olhar custos semanalmente, não só no fim do mês.</li>
+      <li><strong>Planeje o rollback</strong>: antes de cada onda de migração, tenha um plano testado de voltar atrás.</li>
+      <li><strong>Treine a equipe</strong>: invista em certificações (AWS Certified, Azure Fundamentals, Google Cloud Digital Leader).</li>
+      <li><strong>Monitore tudo</strong>: dashboards de desempenho, custo e segurança visíveis para todos.</li>
+      <li><strong>Contrate parceiros experientes</strong>: consultorias como Accenture, Deloitte e ThoughtWorks (empresa americana com forte presença no Brasil) fazem migrações complexas há décadas.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: analista de causas de falha em migração</h3>
+
+    <div class="prever">
+      <strong>Antes de analisar, preveja:</strong> uma empresa migra para a nuvem e a conta mensal chega ao dobro do previsto. Qual é a causa mais provável: falta de planejamento de custos, equipe destreinada ou falta de rollback?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, registre sua previsão.<br>
+      <strong>Passo 1:</strong> leia o cenário de falha proposto.<br>
+      <strong>Passo 2:</strong> identifique a causa raiz entre as opções.<br>
+      <strong>Passo 3:</strong> leia o feedback com caso real similar e recomendação.<br>
+      <strong>Passo 4:</strong> acompanhe o placar de análises corretas.
+    </div>
+
+    <div class="roteiro">
+      comece com o cenário de conta dobrada e mostre que a causa raiz é falta de planejamento de custos (subestimação). Depois mostre cenários de falhas operacionais (equipe destreinada) e de lançamento desastroso (testes insuficientes).
+    </div>
+
+    <div class="legenda">
+      FinOps = gestão financeira da nuvem · governança = políticas de uso da nuvem · PoC = prova de conceito · rollback = plano de voltar · parceiro = consultoria especializada
+    </div>
+
+    <div class="demo-area" id="demo5-area">
+      <div id="demo5-caso" style="background:var(--cor-destaque-claro); padding:1rem; border-radius:8px; margin-bottom:1rem; font-weight:600; min-height:80px">
+        📋 O caso aparecerá aqui. Clique em Novo caso para começar.
+      </div>
+      <div id="demo5-opcoes" style="display:none"></div>
+      <div id="demo5-feedback" style="margin-top:1rem"></div>
+      <div style="margin-top:1rem">
+        <button class="btn" type="button" id="demo5-novo">🎲 Novo caso</button>
+        <button class="btn btn-secundario" type="button" id="demo5-reset">🔄 Reiniciar</button>
+      </div>
+      <div id="demo5-placar" style="margin-top:1rem; font-weight:bold; color:var(--cor-destaque-escuro)"></div>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> em quase todo caso de falha há mais de uma causa agindo. O importante é identificar a raiz e atacar. Betabrand foi custo, Weston foi pressa, HealthCare.gov foi arquitetura + governança + testes. Cada um ensina uma lição diferente.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 5</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      falha de migração = não atingir objetivos de custo, prazo ou qualidade ·
+      FinOps = disciplina de gestão financeira da nuvem ·
+      governança = políticas de uso da nuvem ·
+      subestimação de custos = orçar menos do que a conta real ·
+      HealthCare.gov = caso de falha famoso do governo dos EUA ·
+      rollback = plano de voltar em caso de problema.
+    </div>
+
+    <div class="pergunta" data-pergunta="5-1">
+      <p>1. Segundo estudos da Gartner, qual percentual de migrações para a nuvem não atinge os objetivos iniciais?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! 20% seria um número otimista demais; a realidade é bem mais dura.">Cerca de 20%</button>
+        <button class="alt" type="button" data-fb="Errado! 50% seria a metade, mas estudos apontam número maior ainda.">Cerca de 50%</button>
+        <button class="alt" type="button" data-fb="Correto! Até 70% dos projetos de migração não atingem objetivos de custo ou prazo, segundo a Gartner. A maioria das falhas vem de planejamento insuficiente, não de tecnologia.">Cerca de 70%</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="5-2">
+      <p>2. O caso HealthCare.gov (2013) é emblemático porque:</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! O site não foi invadido; o problema foi de arquitetura, testes e governança, não de ataque.">Foi invadido por hackers no lançamento</button>
+        <button class="alt" type="button" data-fb="Correto! No dia do lançamento, apenas 6 pessoas conseguiram se cadastrar em um sistema previsto para milhões. Problemas de arquitetura de microsserviços mal integrados, falta de testes de carga e governança fragmentada entre dezenas de fornecedores causaram o desastre.">No lançamento, só 6 pessoas conseguiram se cadastrar, devido a falhas de arquitetura, testes e governança</button>
+        <button class="alt" type="button" data-fb="Errado! O caso foi de fracasso, não de sucesso. O site ficou instável por meses e custou muito mais que o previsto.">É um exemplo de migração bem-sucedida e rápida</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="5-3">
+      <p>3. FinOps (Financial Operations da nuvem) serve principalmente para:</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! FinOps é a disciplina de gestão financeira da nuvem: discipline a equipe a olhar custos, otimizar recursos e evitar surpresas na fatura mensal. Empresas como Betabrand falharam justamente por falta de FinOps.">Gerenciar e otimizar os custos da nuvem de forma contínua</button>
+        <button class="alt" type="button" data-fb="Errado! Segurança é papel de frameworks como CIS Benchmarks e de equipes de SecOps (do inglês Security Operations), não de FinOps.">Garantir a segurança dos dados em trânsito</button>
+        <button class="alt" type="button" data-fb="Errado! Desenvolvimento ágil é Scrum, Kanban e similares; FinOps foca em finanças, não em metodologia de desenvolvimento.">Gerenciar equipes de desenvolvimento ágil</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 5</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=falhas+de+migração+para+nuvem+HealthCare.gov+Betabrand" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=cloud+migration+failure+reasons+Gartner+studies" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=HealthCare.gov+falha+lançamento+análise+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Falha de migração</strong>: não atingir objetivos.</li>
+      <li><strong>FinOps</strong>: gestão financeira da nuvem.</li>
+      <li><strong>Governança</strong>: políticas de uso da nuvem.</li>
+      <li><strong>Casos famosos</strong>: Betabrand, Weston, HealthCare.gov.</li>
+      <li><strong>Prevenção</strong>: PoC, rollback, treinamento, FinOps.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Migrar para a nuvem sempre reduz custos.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> a nuvem pode ser mais cara que o on-premise se mal dimensionada, mal governada ou mal arquitetada. Casos como o da Betabrand mostram que, sem FinOps e planejamento, a conta mensal pode superar o antigo datacenter. A nuvem é econômica quando bem usada, não por mágica.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 6 - REVISÃO ============ -->
+<div class="painel" id="painel-6" role="tabpanel" aria-labelledby="tab-6">
+  <h2>⭐ Revisão — Mapa completo da aula</h2>
+
+  <h3>🗺️ Mapa da aula</h3>
+  <div class="revisao-mapa">
+    <div class="no-mapa">
+      <h4>Aba 1 · Servidores</h4>
+      <p>História: mainframes, minis, x86, virtualização, nuvem. Características: disponibilidade, redundância, IPMI.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 2 · Especializações</h4>
+      <p>Web, aplicações, BD, cache, arquivos, e-mail, streaming, jogos, DNS, backup. Nginx, Tomcat, PostgreSQL, Redis.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 3 · Planejamento</h4>
+      <p>Seis etapas: inventário, provedor, plano, testes, execução, pós-migração. Tipos de migração.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 4 · Estratégias</h4>
+      <p>Lift and Shift, Refatoração, Replataformização, Reconstrução. Casos: Netflix, Spotify, Thomson Reuters.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 5 · Falhas</h4>
+      <p>5 causas principais. Casos: Betabrand, Weston, HealthCare.gov. Prevenção: FinOps, PoC, rollback.</p>
+    </div>
+    <div class="no-mapa">
+      <h4> Estudo em casa</h4>
+      <p>Refaça os quizzes das cinco abas para garantir os 5 selos e enfrente o Chefão com a cola rápida ao lado.</p>
+    </div>
+  </div>
+
+  <div class="cola-rapida">
+    <h3>🧷 Cola rápida — glossário da aula</h3>
+    <dl>
+      <dt><strong>Servidor de rede</strong></dt>
+      <dd>Computador dedicado a oferecer serviços a clientes na rede.</dd>
+
+      <dt><strong>Cliente-servidor</strong></dt>
+      <dd>Arquitetura com máquinas pedidoras (clientes) e máquinas provedoras (servidores).</dd>
+
+      <dt><strong>Mainframe</strong></dt>
+      <dd>Computador gigante dos anos 1960, antepassado dos servidores modernos.</dd>
+
+      <dt><strong>Alta disponibilidade</strong></dt>
+      <dd>Ficar no ar 24/7; quatro noves = 99,99% = menos de 53 min de queda por ano.</dd>
+
+      <dt><strong>Redundância</strong></dt>
+      <dd>Componentes duplicados (fontes, discos, rede) para tolerar falhas.</dd>
+
+      <dt><strong>IPMI</strong></dt>
+      <dd>Interface de gerenciamento remoto do servidor, mesmo com SO travado.</dd>
+
+      <dt><strong>Servidor web</strong></dt>
+      <dd>Apache, Nginx, IIS; entrega páginas HTML e arquivos.</dd>
+
+      <dt><strong>Servidor de aplicações</strong></dt>
+      <dd>Tomcat, Node.js, WildFly; roda a lógica de negócio.</dd>
+
+      <dt><strong>Servidor de banco de dados</strong></dt>
+      <dd>MySQL, PostgreSQL, SQL Server, Oracle; guarda e consulta dados.</dd>
+
+      <dt><strong>Servidor de cache</strong></dt>
+      <dd>Redis, Memcached; memória rápida para dados quentes.</dd>
+
+      <dt><strong>Servidor de arquivos</strong></dt>
+      <dd>NAS, SMB; centraliza documentos.</dd>
+
+      <dt><strong>Servidor de e-mail</strong></dt>
+      <dd>Exchange, Postfix; SMTP/IMAP/POP3.</dd>
+
+      <dt><strong>Servidor de streaming</strong></dt>
+      <dd>Wowza, MediaLive; áudio e vídeo em tempo real.</dd>
+
+      <dt><strong>Servidor de jogos</strong></dt>
+      <dd>Multiplayer com baixa latência.</dd>
+
+      <dt><strong>Servidor de DNS</strong></dt>
+      <dd>BIND, Route 53; traduz nomes em IPs.</dd>
+
+      <dt><strong>Servidor de backup</strong></dt>
+      <dd>Veeam, Commvault, Bacula; cópias de segurança.</dd>
+
+      <dt><strong>Migração on-premise → nuvem</strong></dt>
+      <dd>Fechar datacenter e levar para AWS/Azure/GCP.</dd>
+
+      <dt><strong>Migração nuvem → nuvem</strong></dt>
+      <dd>Mudar de provedor, muitas vezes para evitar vendor lock-in.</dd>
+
+      <dt><strong>Repatriação</strong></dt>
+      <dd>Migrar de volta para datacenter próprio (caso Dropbox).</dd>
+
+      <dt><strong>Seis etapas do planejamento</strong></dt>
+      <dd>1. Inventário 2. Provedor 3. Plano detalhado 4. Testes 5. Execução 6. Pós-migração.</dd>
+
+      <dt><strong>Vendor lock-in</strong></dt>
+      <dd>Dependência excessiva de um provedor; dificulta mudar para outro.</dd>
+
+      <dt><strong>PoC (Prova de Conceito)</strong></dt>
+      <dd>Teste piloto em pequena escala antes da migração completa.</dd>
+
+      <dt><strong>Ondas</strong></dt>
+      <dd>Grupos de sistemas migrados em sequência.</dd>
+
+      <dt><strong>Lift and Shift (Rehospedagem)</strong></dt>
+      <dd>Mover sem mudar; rápida, aproveita pouco a nuvem.</dd>
+
+      <dt><strong>Refatoração</strong></dt>
+      <dd>Ajustar o código para usar recursos nativos da nuvem.</dd>
+
+      <dt><strong>Replataformização</strong></dt>
+      <dd>Pequenos ajustes com ganhos (ex.: trocar banco por gerenciado).</dd>
+
+      <dt><strong>Reconstrução</strong></dt>
+      <dd>Rewrite do zero, cloud-native; mais cara, mais benefício.</dd>
+
+      <dt><strong>Netflix</strong></dt>
+      <dd>Migrou 2008-2016 para AWS, reconstruindo como microsserviços.</dd>
+
+      <dt><strong>Spotify</strong></dt>
+      <dd>Migrou armazenamento para GCP em 2018, via refatoração.</dd>
+
+      <dt><strong>Thomson Reuters</strong></dt>
+      <dd>Migrou para AWS combinando lift and shift e refatoração.</dd>
+
+      <dt><strong>Betabrand</strong></dt>
+      <dd>Fechou em 2021 por custos de nuvem insustentáveis.</dd>
+
+      <dt><strong>Weston</strong></dt>
+      <dd>Rede canadense com migração apressada e prejuízos.</dd>
+
+      <dt><strong>HealthCare.gov</strong></dt>
+      <dd>Lançado em 2013, só 6 cadastros no dia 1; custou mais de 1 bilhão de dólares.</dd>
+
+      <dt><strong>FinOps</strong></dt>
+      <dd>Gestão financeira da nuvem; disciplina de custos contínua.</dd>
+
+      <dt><strong>Rollback</strong></dt>
+      <dd>Plano de voltar atrás em caso de falha na migração.</dd>
+    </dl>
+  </div>
+
+  <div class="chefao">
+    <h3>👑 CHEFÃO — DESAFIO FINAL</h3>
+    <p><strong>Enunciado:</strong> Você é arquiteto de nuvem na consultoria <strong>MigraTech</strong> (consultoria fictícia brasileira inspirada em empresas como ThoughtWorks e DB1 Group) e recebeu três clientes no mesmo mês. Para cada um, você deve propor um plano de migração tecnicamente justificado.</p>
+
+    <p style="margin-top:1rem"><strong>Cliente 1 — Editora LerBem:</strong> editora de livros brasileira com e-commerce legado rodando em um servidor físico próprio no porão da sede. O prédio será vendido em 60 dias e o sistema precisa estar rodando em outro lugar até lá. O código é antigo, em PHP 5, e ninguém na equipe sabe reescrever.</p>
+
+    <p style="margin-top:0.75rem"><strong>Cliente 2 — Banco Digital Veloz:</strong> banco digital que quer migrar o sistema de pagamentos para a nuvem. O sistema é crítico (processa milhões de reais por dia), tem 15 anos de idade e foi reescrito em Java há 5 anos. O prazo é flexível (2 anos), mas a qualidade não pode falhar.</p>
+
+    <p style="margin-top:0.75rem"><strong>Cliente 3 — Startup StreamMax:</strong> startup de streaming de vídeo com crescimento acelerado. Está na AWS mas a conta mensal triplicou em 6 meses e a diretoria quer cortar custos pela metade. A equipe tem 4 desenvolvedores experientes em nuvem.</p>
+
+    <p style="margin-top:1rem"><strong>Parte 1 — Editora (Abas 3 e 4):</strong> proponha a estratégia de migração mais adequada (termo da cola rápida) considerando o prazo de 60 dias e a equipe sem capacidade de reescrever. Cite qual provedor escolheria (AWS, Azure ou GCP), justificando, e duas ferramentas de migração desse provedor que usaria.</p>
+
+    <p style="margin-top:1rem"><strong>Parte 2 — Banco (Abas 3 e 4):</strong> proponha as seis etapas do planejamento (termos da cola rápida) em ordem, explicando o que fazer em cada uma para esse caso específico. Justifique a estratégia de migração (termo da cola rápida) considerando que é um sistema crítico de longo prazo.</p>
+
+    <p style="margin-top:1rem"><strong>Parte 3 — Startup (Aba 5):</strong> cite TRÊS causas prováveis de custo excessivo em nuvem (termos da cola rápida) que você investigaria primeiro. Proponha DUAS medidas concretas da disciplina FinOps (termo da cola rápida) para reduzir a conta e cite UM caso de sucesso (termo da cola rápida) de empresa que otimizou custos de streaming.</p>
+
+    <p style="margin-top:1rem"><strong>Parte 4 — Análise crítica:</strong> cite UM caso famoso de falha (termo da cola rápida) estudado na aula e explique qual lição dele se aplicaria a cada um dos três clientes acima para evitar erro similar.</p>
+  </div>
+
+  <details>
+    <summary>📚 Dica para o Chefão</summary>
+    <p style="margin-top:0.75rem">Na Parte 1, Lift and Shift é a resposta (prazo curto, sem capacidade de reescrever); AWS com Migration Hub e Server Migration Service seria uma escolha sólida. Na Parte 2, a ordem é: inventário, escolha do provedor, plano detalhado, PoC, execução por ondas, pós-migração; Refatoração se justifica pelo longo prazo. Na Parte 3, causas típicas são recursos superdimensionados, falta de auto-scaling e egresso de dados; FinOps inclui dashboards semanais de custo e desligar recursos ociosos; Spotify é caso de sucesso em streaming. Na Parte 4, Betabrand ensina FinOps (Cliente 3), Weston ensina planejamento e testes (Cliente 1), HealthCare.gov ensina testes e governança (Cliente 2).</p>
+  </details>
+</div>
+
+<!-- ============ RODAPÉ ============ -->
+<footer>
+  <div class="bloco">
+    <h4>📋 FICHA TÉCNICA DA AULA</h4>
+    <p>Computação em Nuvem — Aula 06, Unidade 2, págs. 45–95 · Gerado em 06/11/2026 · 5 abas de conteúdo + Revisão · 15 perguntas · 5 demos · cor #EA580C</p>
+  </div>
+
+  <div class="bloco">
+    <h4>🪄 SOBRE O HTMLearning · v2.17 (23/10/2026)</h4>
+    <p style="margin-bottom:0.75rem">Transformar o sumário de qualquer disciplina em uma classe interativa em HTML único e offline, com previsão antes do clique, tentativa e erro guiado e exemplos reais.</p>
+
+    <ul style="margin-left:1.5rem; margin-bottom:0.75rem">
+      <li>O que é: metodologia e arquitetura de prompts que converte sumários em aulas interativas em minutos, com IAs gratuitas.</li>
+      <li>O que entrega: 5 a 7 abas + Revisão, simulações com previsão, quiz com retry sem revelar gabarito, linguagem plana, Modos Apresentação/Leitura.</li>
+      <li>Por que é inclusivo: um único .html leve, 100% offline, roda em PC e celular e viaja em pen drive para escolas desconectadas ou áreas rurais.</li>
+    </ul>
+
+    <p style="margin-bottom:0.5rem">Idealizador do projeto: Professor Wellington Dimas da Cruz</p>
+    <p style="margin-bottom:0.75rem">Apoiadora do projeto: Prof.ª Dr.ª Mariella Berger Andrade (IFES / CEFOR)</p>
+
+    <p style="margin-top:0.75rem">Contatos e links do projeto:</p>
+    <ul>
+      <li>E-mail do idealizador: <a href="mailto:cloud.ai-generative@outlook.com">cloud.ai-generative@outlook.com</a></li>
+      <li>Repositório GitHub do idealizador: <a href="https://github.com/cloud-ai-Generative" target="_blank" rel="noopener">github.com/cloud-ai-Generative</a></li>
+      <li>Currículo Lattes do idealizador: <a href="https://lattes.cnpq.br/6801791839011321" target="_blank" rel="noopener">lattes.cnpq.br/6801791839011321</a></li>
+      <li>Currículo Lattes da apoiadora: <a href="https://lattes.cnpq.br/3929645439848570" target="_blank" rel="noopener">lattes.cnpq.br/3929645439848570</a></li>
+      <li>Site oficial do projeto: <a href="https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html" target="_blank" rel="noopener">https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html</a></li>
+    </ul>
+  </div>
+</footer>
+
+<script>
+"use strict";
+
+/* ================= ESTADO ================= */
+var estado = {
+  abaAtual: 1,
+  xp: 0,
+  selos: {},
+  totalSelos: 0,
+  respostas: {},
+  modo: "leitura",
+  tema: "claro"
+};
+
+/* ================= NAVEGAÇÃO ================= */
+function ativarAba(num) {
+  estado.abaAtual = num;
+  var tabs = document.querySelectorAll(".tab");
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].setAttribute("aria-selected", tabs[i].getAttribute("data-aba") === String(num) ? "true" : "false");
+  }
+  var paineis = document.querySelectorAll(".painel");
+  for (var j = 0; j < paineis.length; j++) {
+    paineis[j].classList.remove("active");
+  }
+  var alvo = document.getElementById("painel-" + num);
+  if (alvo) alvo.classList.add("active");
+  document.getElementById("progresso").textContent = "Aba " + num + " de 6";
+}
+
+function irParaAba(num) {
+  ativarAba(num);
+  var novo = "#aba-" + num;
+  if (window.location.hash !== novo) {
+    window.location.hash = novo;
+  }
+  window.scrollTo(0, 0);
+}
+
+function lerHash() {
+  var h = window.location.hash.replace("#aba-", "");
+  var n = parseInt(h, 10);
+  if (n >= 1 && n <= 6) return n;
+  return 0;
+}
+
+window.addEventListener("hashchange", function () {
+  var n = lerHash();
+  if (n && n !== estado.abaAtual) ativarAba(n);
+});
+
+/* ================= MODOS ================= */
+function alternarModo() {
+  if (estado.modo === "leitura") {
+    document.body.classList.add("modo-apresentacao");
+    document.getElementById("btn-modo").textContent = "📖 Leitura";
+    estado.modo = "apresentacao";
+  } else {
+    document.body.classList.remove("modo-apresentacao");
+    document.getElementById("btn-modo").textContent = "🎤 Apresentação";
+    estado.modo = "leitura";
+  }
+}
+
+function alternarTema() {
+  if (estado.tema === "claro") {
+    document.body.setAttribute("data-theme", "dark");
+    document.getElementById("btn-tema").textContent = "☀️ Claro";
+    estado.tema = "escuro";
+  } else {
+    document.body.removeAttribute("data-theme");
+    document.getElementById("btn-tema").textContent = "🌙 Escuro";
+    estado.tema = "claro";
+  }
+}
+
+/* ================= QUIZ ================= */
+function fisherYates(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function inicializarQuiz() {
+  var perguntas = document.querySelectorAll(".pergunta");
+  for (var p = 0; p < perguntas.length; p++) {
+    (function (perg) {
+      var altsDiv = perg.querySelector(".alts");
+      var certaKey = altsDiv.getAttribute("data-certa");
+      var alts = [];
+      var filhos = altsDiv.querySelectorAll(".alt");
+      for (var k = 0; k < filhos.length; k++) alts.push(filhos[k]);
+      for (var idx = 0; idx < alts.length; idx++) {
+        var letra = String.fromCharCode(97 + idx);
+        alts[idx].setAttribute("data-ehcerta", letra === certaKey ? "true" : "false");
+      }
+      var emb = fisherYates(alts);
+      altsDiv.innerHTML = "";
+      for (var e = 0; e < emb.length; e++) {
+        altsDiv.appendChild(emb[e]);
+        emb[e].addEventListener("click", function () { responderQuiz(perg, this); });
+      }
+    })(perguntas[p]);
+  }
+}
+
+function responderQuiz(perg, alt) {
+  var id = perg.getAttribute("data-pergunta");
+  var reg = estado.respostas[id];
+  if (reg && reg.acertou) return;
+
+  var acerto = alt.getAttribute("data-ehcerta") === "true";
+  var fbCerta = perg.querySelector(".fb-certa");
+  var fbErrada = perg.querySelector(".fb-errada");
+
+  if (acerto) {
+    alt.classList.add("certa");
+    alt.textContent = "✓ " + alt.textContent;
+    var todas = perg.querySelectorAll(".alt");
+    for (var i = 0; i < todas.length; i++) todas[i].disabled = true;
+    fbCerta.textContent = "✅ Por que esta está certa: " + alt.getAttribute("data-fb");
+    fbCerta.classList.add("show");
+    fbErrada.classList.remove("show");
+    var pontos = (reg && !reg.acertou) ? 5 : 10;
+    estado.xp += pontos;
+    estado.respostas[id] = { acertou: true };
+    verificarSelo(id);
+    atualizarXP();
+  } else {
+    alt.classList.add("errada");
+    alt.textContent = "✗ " + alt.textContent;
+    alt.disabled = true;
+    fbErrada.textContent = "❌ Por que esta está errada: " + alt.getAttribute("data-fb");
+    fbErrada.classList.add("show");
+    if (!reg) estado.respostas[id] = { acertou: false };
+  }
+}
+
+function verificarSelo(id) {
+  var aba = id.split("-")[0];
+  var ids = [aba + "-1", aba + "-2", aba + "-3"];
+  for (var i = 0; i < ids.length; i++) {
+    var r = estado.respostas[ids[i]];
+    if (!r || !r.acertou) return;
+  }
+  if (!estado.selos[aba]) {
+    estado.selos[aba] = true;
+    estado.totalSelos += 1;
+    document.getElementById("selos").textContent = estado.totalSelos;
+  }
+}
+
+function atualizarXP() {
+  document.getElementById("xp").textContent = estado.xp;
+}
+
+/* ================= DEMO 1: ERAS DOS SERVIDORES ================= */
+var erasData = {
+  mainframe: {
+    titulo: "Anos 1960 — Mainframes",
+    marco: "IBM System/360 (1964): primeiro mainframe a usar uma família de modelos compatíveis entre si.",
+    empresa: "IBM (International Business Machines, empresa americana fundada em 1911).",
+    uso: "Bancos, seguradoras e governo; atendiam centenas de terminais burros (teclado+tela sem processamento).",
+    legado: "Mainframes modernos ainda rodam sistemas críticos; IBM z16 (2022) processa 25 bilhões de transações por dia."
+  },
+  mini: {
+    titulo: "Anos 1970-80 — Minicomputadores",
+    marco: "DEC PDP-11 (1970) e VAX (1977): máquinas menores e mais baratas que mainframes, acessíveis a departamentos.",
+    empresa: "DEC (Digital Equipment Corporation, empresa americana) e HP (Hewlett-Packard, americana).",
+    uso: "Laboratórios, universidades e médias empresas que não podiam comprar um mainframe.",
+    legado: "Introduziram o modelo cliente-servidor; a DEC foi comprada pela Compaq em 1998, depois pela HP."
+  },
+  x86: {
+    titulo: "Anos 1990 — Servidores x86 com Linux",
+    marco: "Linux (1991, Linus Torvalds) + Windows NT (1993, Microsoft): SOs de servidor em hardware x86 padrão Intel/AMD.",
+    empresa: "Dell, HP, IBM passaram a vender servidores em rack, muito mais baratos.",
+    uso: "Empresas de todos os tamanhos; o boom da internet nos anos 1990 multiplicou a demanda.",
+    legado: "Dell PowerEdge e HPE ProLiant dominam o mercado corporativo até hoje."
+  },
+  virtual: {
+    titulo: "Anos 2000 — Virtualização",
+    marco: "VMware (1999): permite rodar vários SOs em um só hardware; mais tarde o ESX vira padrão de datacenters.",
+    empresa: "VMware (empresa americana, hoje parte da Broadcom).",
+    uso: "Consolidação de servidores físicos; redução de custos de energia e espaço.",
+    legado: "Preparou o terreno para a nuvem; hoje hypervisors como KVM (livre, do Linux) e Hyper-V (Microsoft) dominam."
+  },
+  nuvem: {
+    titulo: "2006 em diante — Nuvem pública",
+    marco: "AWS S3 e EC2 (2006): a Amazon disponibiliza storage e servidores virtuais pela internet, pagos por uso.",
+    empresa: "AWS (Amazon Web Services); Azure (Microsoft, 2010) e GCP (Google, 2011) vieram depois.",
+    uso: "Startups nascem 100% na nuvem; grandes empresas migram datacenters inteiros.",
+    legado: "Hoje AWS, Azure e GCP detêm cerca de 66% do mercado mundial (Synergy Group, 2024)."
+  }
+};
+
+function demo1Mostrar(era) {
+  var d = erasData[era];
+  document.getElementById("demo1-cartao").innerHTML =
+    "<div style='border-left:4px solid var(--cor-destaque); padding-left:1rem'>" +
+    "<h4 style='color:var(--cor-destaque-escuro); margin-bottom:0.5rem'>" + d.titulo + "</h4>" +
+    "<p><strong>🎯 Marco:</strong> " + d.marco + "</p>" +
+    "<p><strong>🏢 Empresa símbolo:</strong> " + d.empresa + "</p>" +
+    "<p><strong>💼 Uso típico:</strong> " + d.uso + "</p>" +
+    "<p><strong>🌱 Legado hoje:</strong> " + d.legado + "</p>" +
+    "</div>";
+}
+
+function demo1Reset() {
+  document.getElementById("demo1-cartao").innerHTML = "👆 Clique em uma era para abrir o cartão histórico.";
+}
+
+/* ================= DEMO 2: QUAL SERVIDOR ================= */
+var cenarios2 = [
+  {
+    desc: "Um e-commerce precisa responder em milissegundos a consulta 'quantos produtos há no carrinho do usuário X?' para milhões de usuários simultâneos.",
+    certa: "cache",
+    opcoes: [
+      { id: "web", nome: "Servidor web" },
+      { id: "bd", nome: "Servidor de banco de dados" },
+      { id: "cache", nome: "Servidor de cache" },
+      { id: "app", nome: "Servidor de aplicações" }
+    ],
+    fbCerta: "Correto! O cache (Redis ou Memcached) guarda dados em memória e responde em microssegundos. É ideal para dados quentes consultados milhões de vezes, como carrinho de compras.",
+    fbOutros: "Não é esse. Dados muito consultados com baixa latência pedem cache em memória (Redis/Memcached), não disco ou processamento."
+  },
+  {
+    desc: "Uma pessoa digita www.banco.com.br no navegador. Qual servidor informa o IP numérico (187.33.22.11) para o navegador se conectar?",
+    certa: "dns",
+    opcoes: [
+      { id: "web", nome: "Servidor web" },
+      { id: "dns", nome: "Servidor de DNS" },
+      { id: "cache", nome: "Servidor de cache" },
+      { id: "app", nome: "Servidor de aplicações" }
+    ],
+    fbCerta: "Correto! O servidor DNS traduz nomes humanos (www.banco.com.br) em IPs numéricos (187.33.22.11). Sem DNS, precisaríamos decorar números. Registro.br, Route 53 e BIND são exemplos.",
+    fbOutros: "Não é esse. A tradução de nome em IP é papel específico do DNS, não de outros tipos de servidor."
+  },
+  {
+    desc: "Um escritório de contabilidade precisa centralizar milhares de arquivos (contratos, declarações) para 50 funcionários acessarem.",
+    certa: "arquivos",
+    opcoes: [
+      { id: "web", nome: "Servidor web" },
+      { id: "bd", nome: "Servidor de banco de dados" },
+      { id: "arquivos", nome: "Servidor de arquivos (NAS)" },
+      { id: "backup", nome: "Servidor de backup" }
+    ],
+    fbCerta: "Correto! Servidor de arquivos (ou NAS) é especializado em centralizar documentos para múltiplos usuários. Synology e QNAP são marcas comuns. Backup é diferente: faz cópias, não serve arquivos ao vivo.",
+    fbOutros: "Não é esse. Centralizar documentos para múltiplos usuários é o papel do servidor de arquivos ou NAS."
+  },
+  {
+    desc: "Uma plataforma de cursos online precisa entregar vídeo em tempo real para 100 mil alunos simultâneos.",
+    certa: "streaming",
+    opcoes: [
+      { id: "web", nome: "Servidor web" },
+      { id: "arquivos", nome: "Servidor de arquivos" },
+      { id: "streaming", nome: "Servidor de streaming" },
+      { id: "cache", nome: "Servidor de cache" }
+    ],
+    fbCerta: "Correto! Streaming de mídia exige servidor especializado (Wowza, nginx-rtmp) para entregar áudio/vídeo em tempo real, com adaptação de qualidade e CDN. GloboPlay e Netflix usam essa arquitetura.",
+    fbOutros: "Não é esse. Entrega de vídeo em tempo real para múltiplos usuários simultâneos é papel do servidor de streaming."
+  },
+  {
+    desc: "Um banco precisa guardar dados estruturados de milhões de clientes e permitir consultas complexas para gerar extratos.",
+    certa: "bd",
+    opcoes: [
+      { id: "bd", nome: "Servidor de banco de dados" },
+      { id: "arquivos", nome: "Servidor de arquivos" },
+      { id: "cache", nome: "Servidor de cache" },
+      { id: "backup", nome: "Servidor de backup" }
+    ],
+    fbCerta: "Correto! Servidor de banco de dados (PostgreSQL, MySQL, Oracle, SQL Server) é especializado em guardar dados estruturados e responder consultas SQL. É o coração dos sistemas transacionais.",
+    fbOutros: "Não é esse. Dados estruturados com consultas complexas pedem servidor de banco de dados relacional ou NoSQL."
+  },
+  {
+    desc: "Uma empresa de jogos online precisa hospedar partidas de Counter-Strike 2 com 10 jogadores por sala e baixa latência.",
+    certa: "jogos",
+    opcoes: [
+      { id: "web", nome: "Servidor web" },
+      { id: "jogos", nome: "Servidor de jogos" },
+      { id: "streaming", nome: "Servidor de streaming" },
+      { id: "app", nome: "Servidor de aplicações" }
+    ],
+    fbCerta: "Correto! Servidores de jogos são otimizados para baixa latência e sincronização de estado entre jogadores. Riot Games, Valve e estúdios brasileiros usam servidores dedicados para multiplayer.",
+    fbOutros: "Não é esse. Hospedar partidas multiplayer com baixa latência exige servidor especializado em jogos."
+  },
+  {
+    desc: "Uma empresa precisa guardar cópias de segurança dos dados críticos, com retenção de 7 anos por questões regulatórias.",
+    certa: "backup",
+    opcoes: [
+      { id: "arquivos", nome: "Servidor de arquivos" },
+      { id: "backup", nome: "Servidor de backup" },
+      { id: "bd", nome: "Servidor de banco de dados" },
+      { id: "cache", nome: "Servidor de cache" }
+    ],
+    fbCerta: "Correto! Servidor de backup (Veeam, Commvault, Bacula) é especializado em cópias de segurança com retenção longa, criptografia e versionamento. Diferente de servidor de arquivos, que serve dados ao vivo.",
+    fbOutros: "Não é esse. Cópias de segurança com retenção regulatória exigem servidor especializado em backup."
+  },
+  {
+    desc: "Uma empresa precisa enviar e receber e-mails corporativos para 5 mil funcionários, com caixas postais individuais.",
+    certa: "email",
+    opcoes: [
+      { id: "web", nome: "Servidor web" },
+      { id: "email", nome: "Servidor de e-mail" },
+      { id: "arquivos", nome: "Servidor de arquivos" },
+      { id: "app", nome: "Servidor de aplicações" }
+    ],
+    fbCerta: "Correto! Servidor de e-mail (Exchange, Postfix) usa protocolos SMTP (envio) e IMAP/POP3 (recebimento) para gerenciar mensagens e caixas postais. Microsoft 365 e Google Workspace são exemplos em nuvem.",
+    fbOutros: "Não é esse. Gerenciar mensagens e caixas postais de e-mail é papel do servidor de e-mail."
+  }
+];
+
+var demo2Estado = { atual: null, resolvidos: 0, acertos: 0 };
+
+function demo2Novo() {
+  var i = Math.floor(Math.random() * cenarios2.length);
+  demo2Estado.atual = cenarios2[i];
+  document.getElementById("demo2-caso").textContent = "📋 " + demo2Estado.atual.desc;
+  var opcoesDiv = document.getElementById("demo2-opcoes");
+  opcoesDiv.style.display = "block";
+  opcoesDiv.innerHTML = "";
+  for (var k = 0; k < demo2Estado.atual.opcoes.length; k++) {
+    (function (op) {
+      var b = document.createElement("button");
+      b.className = "btn";
+      b.type = "button";
+      b.textContent = op.nome;
+      b.addEventListener("click", function () { demo2Responder(op.id); });
+      opcoesDiv.appendChild(b);
+    })(demo2Estado.atual.opcoes[k]);
+  }
+  document.getElementById("demo2-feedback").innerHTML = "";
+}
+
+function demo2Responder(resp) {
+  if (!demo2Estado.atual) return;
+  var certa = resp === demo2Estado.atual.certa;
+  var fb = document.getElementById("demo2-feedback");
+  demo2Estado.resolvidos += 1;
+  if (certa) {
+    demo2Estado.acertos += 1;
+    fb.innerHTML = '<div class="resultado-demo">✅ <strong>Escolha correta!</strong> ' + demo2Estado.atual.fbCerta + '</div>';
+  } else {
+    fb.innerHTML = '<div class="resultado-erro">❌ <strong>Escolha incorreta.</strong> ' + demo2Estado.atual.fbOutros + '</div>';
+  }
+  document.getElementById("demo2-opcoes").style.display = "none";
+  document.getElementById("demo2-placar").textContent = "Placar: " + demo2Estado.acertos + " acertos em " + demo2Estado.resolvidos + " cenários";
+}
+
+function demo2Reset() {
+  demo2Estado.atual = null;
+  demo2Estado.resolvidos = 0;
+  demo2Estado.acertos = 0;
+  document.getElementById("demo2-caso").textContent = "📋 O cenário aparecerá aqui. Clique em Novo cenário para começar.";
+  document.getElementById("demo2-opcoes").style.display = "none";
+  document.getElementById("demo2-opcoes").innerHTML = "";
+  document.getElementById("demo2-feedback").innerHTML = "";
+  document.getElementById("demo2-placar").textContent = "";
+}
+
+/* ================= DEMO 3: ETAPAS DO PLANEJAMENTO ================= */
+var etapas = [
+  {
+    titulo: "Etapa 1 — Avaliação e planejamento inicial",
+    ferramentas: "AWS Migration Evaluator, Azure Migrate, Google Migrate",
+    entregas: "Inventário completo de servidores, aplicações e dados; medição do custo atual do on-premise; lista de objetivos (reduzir custo, ganhar agilidade, cumprir LGPD).",
+    armadilha: "Pular esta etapa é a causa #1 de migrações fracassadas. Sem inventário, toda decisão vira palpite."
+  },
+  {
+    titulo: "Etapa 2 — Seleção do provedor e modelagem",
+    ferramentas: "Comparadores de preço dos provedores; calculadoras de TCO (do inglês Total Cost of Ownership; em português, Custo Total de Propriedade).",
+    entregas: "Escolha do provedor (AWS, Azure, GCP ou multicloud); definição de quais serviços usar (IaaS, PaaS, SaaS); análise de regiões geográficas e conformidade (LGPD no Brasil).",
+    armadilha: "Escolher só por preço pode levar a problemas de latência ou de conformidade regulatória."
+  },
+  {
+    titulo: "Etapa 3 — Planejamento detalhado",
+    ferramentas: "Microsoft Project, Asana, Jira para cronograma; matrizes de risco em Excel.",
+    entregas: "Cronograma com marcos; equipe definida; orçamento detalhado; matriz de riscos; estratégia de migração por aplicação; plano de rollback para cada onda.",
+    armadilha: "Não prever rollback. Se a migração falhar no meio, sem plano de volta o prejuízo se multiplica."
+  },
+  {
+    titulo: "Etapa 4 — Preparação e testes",
+    ferramentas: "VPN (rede privada virtual), ambientes de staging (ambiente espelho de produção), ferramentas de teste de carga como JMeter (software livre da Apache).",
+    entregas: "Equipe treinada (certificações AWS/Azure/GCP); rede conectada (VPN ou Direct Connect); PoC com aplicação piloto funcionando em produção paralela.",
+    armadilha: "Ir direto para a produção sem PoC. Testes revelam problemas de integração que economizam milhões."
+  },
+  {
+    titulo: "Etapa 5 — Execução da migração",
+    ferramentas: "AWS Server Migration Service, Azure Migrate, ferramentas de sincronização de banco de dados.",
+    entregas: "Migração por ondas (grupos de sistemas); monitoramento em tempo real; cortes (cutover, em inglês) planejados com janelas de baixo uso.",
+    armadilha: "Migrar tudo de uma vez. Ondas pequenas com rollback pronto reduzem o risco drasticamente."
+  },
+  {
+    titulo: "Etapa 6 — Pós-migração e gestão de mudanças",
+    ferramentas: "Dashboards de custo (AWS Cost Explorer, Azure Cost Management), monitoramento (Datadog, New Relic), documentação em wiki interna.",
+    entregas: "Otimização de custos (desligar recursos ociosos, reservar instâncias); treinamento de usuários finais; documentação do novo ambiente; processos de operação contínua.",
+    armadilha: "Achar que o trabalho acabou. Migração bem-sucedida vira operação bem-sucedida com FinOps e governança."
+  }
+];
+
+var demo3Estado = { etapa: 0 };
+
+function demo3Render() {
+  var st = demo3Estado;
+  if (st.etapa === 0) {
+    document.getElementById("demo3-conteudo").innerHTML = "<div class='resultado-demo'>📋 Clique em Próxima etapa para percorrer as seis etapas do planejamento de migração para a nuvem.</div>";
+    document.getElementById("demo3-barra").style.width = "0%";
+    return;
+  }
+  var e = etapas[st.etapa - 1];
+  var html = "<div style='background:var(--fundo-codigo); padding:1rem; border-radius:8px'>";
+  html += "<h4 style='color:var(--cor-destaque-escuro)'><span class='etapa-badge'>" + st.etapa + "</span>" + e.titulo + "</h4>";
+  html += "<p style='margin-top:0.75rem'><strong>🛠️ Ferramentas:</strong> " + e.ferramentas + "</p>";
+  html += "<p><strong>📦 Entregas:</strong> " + e.entregas + "</p>";
+  html += "<p><strong>⚠️ Armadilha:</strong> " + e.armadilha + "</p>";
+  html += "</div>";
+  document.getElementById("demo3-conteudo").innerHTML = html;
+  document.getElementById("demo3-barra").style.width = (st.etapa * 100 / 6) + "%";
+  if (st.etapa === 6) {
+    document.getElementById("demo3-conteudo").innerHTML += "<div class='resultado-demo' style='margin-top:1rem'>🎯 Planejamento completo! Lembre-se: inventário antes de provedor, testes antes de execução, otimização depois da migração. Pular etapas é a causa principal de migrações fracassadas.</div>";
+  }
+}
+
+function demo3Next() {
+  if (demo3Estado.etapa < 6) {
+    demo3Estado.etapa += 1;
+    demo3Render();
+  }
+}
+
+function demo3Reset() {
+  demo3Estado.etapa = 0;
+  demo3Render();
+}
+
+/* ================= DEMO 4: ESTRATÉGIAS ================= */
+var cenarios4 = [
+  {
+    desc: "Uma editora tem um sistema legado em PHP 5 rodando em servidor físico. O prédio será vendido em 60 dias e a equipe não sabe reescrever.",
+    certa: "lift",
+    opcoes: [
+      { id: "lift", nome: "Lift and Shift (Rehospedagem)" },
+      { id: "refactor", nome: "Refatoração" },
+      { id: "replatform", nome: "Replataformização" },
+      { id: "rewrite", nome: "Reconstrução" }
+    ],
+    fbCerta: "Correto! Prazo curtíssimo e sem capacidade de reescrever: Lift and Shift é a única opção viável. Mova o servidor tal como está para uma VM na nuvem e compre tempo para decidir o futuro do sistema.",
+    fbOutros: "Não é essa. Com prazo de 60 dias e sem capacidade de reescrever, apenas Lift and Shift é viável."
+  },
+  {
+    desc: "Um banco digital quer migrar o sistema de pagamentos (crítico, processa milhões por dia) para a nuvem. Prazo flexível de 2 anos, equipe experiente.",
+    certa: "refactor",
+    opcoes: [
+      { id: "lift", nome: "Lift and Shift (Rehospedagem)" },
+      { id: "refactor", nome: "Refatoração" },
+      { id: "replatform", nome: "Replataformização" },
+      { id: "rewrite", nome: "Reconstrução" }
+    ],
+    fbCerta: "Correto! Sistema crítico com prazo flexível pede Refatoração: ajustar o código para usar auto-scaling, serviços gerenciados e recursos nativos da nuvem. Aproveita a nuvem de verdade sem jogar fora anos de trabalho.",
+    fbOutros: "Não é essa. Sistema crítico de longo prazo pede Refatoração para aproveitar a nuvem sem reescrever do zero."
+  },
+  {
+    desc: "Uma empresa quer trocar seu banco MySQL próprio pelo Amazon RDS (MySQL gerenciado pela AWS) sem mudar o código da aplicação.",
+    certa: "replatform",
+    opcoes: [
+      { id: "lift", nome: "Lift and Shift (Rehospedagem)" },
+      { id: "refactor", nome: "Refatoração" },
+      { id: "replatform", nome: "Replataformização" },
+      { id: "rewrite", nome: "Reconstrução" }
+    ],
+    fbCerta: "Correto! Replataformização: pequeno ajuste (trocar banco próprio por gerenciado) que traz ganhos (backup automático, alta disponibilidade) sem reescrever o código. É o melhor dos dois mundos.",
+    fbOutros: "Não é essa. Trocar um componente por equivalente gerenciado sem mudar o código é Replataformização."
+  },
+  {
+    desc: "A Netflix em 2008 tinha um sistema monolítico e um apagão tirou o serviço do ar por 3 dias. Decidiu migrar para a AWS com prazo de longo prazo.",
+    certa: "rewrite",
+    opcoes: [
+      { id: "lift", nome: "Lift and Shift (Rehospedagem)" },
+      { id: "refactor", nome: "Refatoração" },
+      { id: "replatform", nome: "Replataformização" },
+      { id: "rewrite", nome: "Reconstrução" }
+    ],
+    fbCerta: "Correto! A Netflix escolheu Reconstrução: reescreveu o sistema do zero como microsserviços cloud-native, aproveitando ao máximo os recursos da AWS. Levou 8 anos (2008-2016) mas deu certo.",
+    fbOutros: "Não é essa. A Netflix reescreveu tudo do zero, caracterizando Reconstrução, não Lift and Shift ou Refatoração."
+  },
+  {
+    desc: "Uma startup de e-commerce precisa sair do datacenter em 2 semanas porque o contrato expirou. A aplicação é em Node.js moderno.",
+    certa: "lift",
+    opcoes: [
+      { id: "lift", nome: "Lift and Shift (Rehospedagem)" },
+      { id: "refactor", nome: "Refatoração" },
+      { id: "replatform", nome: "Replataformização" },
+      { id: "rewrite", nome: "Reconstrução" }
+    ],
+    fbCerta: "Correto! Prazo curtíssimo (2 semanas) exige Lift and Shift: mover a aplicação tal como está para uma VM na nuvem. Depois, com calma, pode-se refatorar em fases.",
+    fbOutros: "Não é essa. Prazo de 2 semanas só permite Lift and Shift; as outras estratégias levam meses."
+  },
+  {
+    desc: "Um varejista tem um ERP legado em COBOL de 30 anos, sem documentação e sem equipe que conheça a linguagem. O sistema é crítico mas está cada vez mais difícil de manter.",
+    certa: "rewrite",
+    opcoes: [
+      { id: "lift", nome: "Lift and Shift (Rehospedagem)" },
+      { id: "refactor", nome: "Refatoração" },
+      { id: "replatform", nome: "Replataformização" },
+      { id: "rewrite", nome: "Reconstrução" }
+    ],
+    fbCerta: "Correto! Legado sem futuro (COBOL de 30 anos sem documentação) pede Reconstrução: reescrever em linguagem moderna, cloud-native. É caro e demorado, mas evita manter um sistema insustentável.",
+    fbOutros: "Não é essa. Sistema legado sem futuro e sem equipe que o conheça pede Reconstrução, não Lift and Shift."
+  }
+];
+
+var demo4Estado = { atual: null, resolvidos: 0, acertos: 0 };
+
+function demo4Novo() {
+  var i = Math.floor(Math.random() * cenarios4.length);
+  demo4Estado.atual = cenarios4[i];
+  document.getElementById("demo4-caso").textContent = "📋 " + demo4Estado.atual.desc;
+  var opcoesDiv = document.getElementById("demo4-opcoes");
+  opcoesDiv.style.display = "block";
+  opcoesDiv.innerHTML = "";
+  for (var k = 0; k < demo4Estado.atual.opcoes.length; k++) {
+    (function (op) {
+      var b = document.createElement("button");
+      b.className = "estrategia-pill";
+      b.type = "button";
+      b.textContent = op.nome;
+      b.addEventListener("click", function () { demo4Responder(op.id); });
+      opcoesDiv.appendChild(b);
+    })(demo4Estado.atual.opcoes[k]);
+  }
+  document.getElementById("demo4-feedback").innerHTML = "";
+}
+
+function demo4Responder(resp) {
+  if (!demo4Estado.atual) return;
+  var certa = resp === demo4Estado.atual.certa;
+  var fb = document.getElementById("demo4-feedback");
+  demo4Estado.resolvidos += 1;
+  if (certa) {
+    demo4Estado.acertos += 1;
+    fb.innerHTML = '<div class="resultado-demo">✅ <strong>Estratégia correta!</strong> ' + demo4Estado.atual.fbCerta + '</div>';
+  } else {
+    fb.innerHTML = '<div class="resultado-erro">❌ <strong>Estratégia incorreta.</strong> ' + demo4Estado.atual.fbOutros + '</div>';
+  }
+  document.getElementById("demo4-opcoes").style.display = "none";
+  document.getElementById("demo4-placar").textContent = "Placar: " + demo4Estado.acertos + " acertos em " + demo4Estado.resolvidos + " cenários";
+}
+
+function demo4Reset() {
+  demo4Estado.atual = null;
+  demo4Estado.resolvidos = 0;
+  demo4Estado.acertos = 0;
+  document.getElementById("demo4-caso").textContent = "📋 O cenário aparecerá aqui. Clique em Novo cenário para começar.";
+  document.getElementById("demo4-opcoes").style.display = "none";
+  document.getElementById("demo4-opcoes").innerHTML = "";
+  document.getElementById("demo4-feedback").innerHTML = "";
+  document.getElementById("demo4-placar").textContent = "";
+}
+
+/* ================= DEMO 5: CAUSAS DE FALHA ================= */
+var cenarios5 = [
+  {
+    desc: "Empresa migra para a nuvem e a conta mensal chega ao DOBRO do previsto. Ninguém tinha estimado o custo de transferência de dados entre regiões.",
+    certa: "custos",
+    opcoes: [
+      { id: "planejamento", nome: "Falta de planejamento" },
+      { id: "custos", nome: "Subestimação de custos" },
+      { id: "equipe", nome: "Equipe sem treinamento" },
+      { id: "arquitetura", nome: "Arquitetura inadequada" }
+    ],
+    fbCerta: "Correto! A causa raiz é subestimação de custos: não foram modelados custos de egresso, transferência entre regiões e recursos ociosos. FinOps teria evitado isso. Caso similar: Betabrand (2021), que fechou por custos insustentáveis.",
+    fbOutros: "Não é essa. Conta dobrada por custos não previstos é subestimação de custos, que FinOps evitaria."
+  },
+  {
+    desc: "Após a migração, os administradores não sabem usar as ferramentas de monitoramento da nuvem. Problemas demoram horas para serem detectados.",
+    certa: "equipe",
+    opcoes: [
+      { id: "planejamento", nome: "Falta de planejamento" },
+      { id: "custos", nome: "Subestimação de custos" },
+      { id: "equipe", nome: "Equipe sem treinamento" },
+      { id: "seguranca", nome: "Falta de governança" }
+    ],
+    fbCerta: "Correto! Equipe destreinada em ferramentas de nuvem causa atrasos na detecção de problemas e perda de dinheiro. Certificações AWS/Azure/GCP e treinamento prático teriam evitado. A lição vale para qualquer migração: capacitar pessoas é tão importante quanto migrar sistemas.",
+    fbOutros: "Não é essa. Falta de conhecimento em ferramentas da nuvem é equipe sem treinamento."
+  },
+  {
+    desc: "No dia do lançamento do novo portal, apenas alguns usuários conseguem se cadastrar. Problemas de arquitetura de microsserviços mal integrados e falta de testes de carga.",
+    certa: "arquitetura",
+    opcoes: [
+      { id: "planejamento", nome: "Falta de planejamento" },
+      { id: "arquitetura", nome: "Arquitetura inadequada e falta de testes" },
+      { id: "equipe", nome: "Equipe sem treinamento" },
+      { id: "custos", nome: "Subestimação de custos" }
+    ],
+    fbCerta: "Correto! É o caso clássico do HealthCare.gov (2013): arquitetura de microsserviços mal integrados, falta de testes de carga e governança fragmentada causaram falha no lançamento. A lição: testes de carga e integração são obrigatórios antes do go-live.",
+    fbOutros: "Não é essa. Falha de lançamento por problemas de arquitetura e testes é caso clássico de HealthCare.gov."
+  },
+  {
+    desc: "A empresa migrou apressadamente sem PoC e sem plano de rollback. Problemas de integração derrubaram o atendimento nas lojas por semanas.",
+    certa: "planejamento",
+    opcoes: [
+      { id: "planejamento", nome: "Falta de planejamento (sem PoC e sem rollback)" },
+      { id: "custos", nome: "Subestimação de custos" },
+      { id: "equipe", nome: "Equipe sem treinamento" },
+      { id: "arquitetura", nome: "Arquitetura inadequada" }
+    ],
+    fbCerta: "Correto! Migração apressada sem PoC e sem rollback é falta de planejamento, caso similar ao da Weston (rede canadense), que teve prejuízos milionários. Lição: sempre teste em pequena escala (PoC) e tenha plano de rollback antes de cada onda.",
+    fbOutros: "Não é essa. Migração apressada sem PoC e rollback é falta de planejamento."
+  },
+  {
+    desc: "Dados sensíveis de clientes foram expostos porque ninguém configurou criptografia em repouso nem políticas de acesso aos buckets de storage.",
+    certa: "seguranca",
+    opcoes: [
+      { id: "planejamento", nome: "Falta de planejamento" },
+      { id: "seguranca", nome: "Falta de segurança e governança" },
+      { id: "custos", nome: "Subestimação de custos" },
+      { id: "equipe", nome: "Equipe sem treinamento" }
+    ],
+    fbCerta: "Correto! Falta de políticas de segurança e governança na nuvem leva a vazamentos de dados. Criptografia, IAM (do inglês Identity and Access Management; em português, Gerenciamento de Identidade e Acesso) e auditoria contínua são obrigatórios. Sem isso, a nuvem vira um ambiente exposto.",
+    fbOutros: "Não é essa. Vazamento de dados por falta de criptografia e políticas é falha de segurança e governança."
+  }
+];
+
+var demo5Estado = { atual: null, resolvidos: 0, acertos: 0 };
+
+function demo5Novo() {
+  var i = Math.floor(Math.random() * cenarios5.length);
+  demo5Estado.atual = cenarios5[i];
+  document.getElementById("demo5-caso").textContent = "📋 " + demo5Estado.atual.desc;
+  var opcoesDiv = document.getElementById("demo5-opcoes");
+  opcoesDiv.style.display = "block";
+  opcoesDiv.innerHTML = "";
+  for (var k = 0; k < demo5Estado.atual.opcoes.length; k++) {
+    (function (op) {
+      var b = document.createElement("button");
+      b.className = "btn";
+      b.type = "button";
+      b.textContent = op.nome;
+      b.addEventListener("click", function () { demo5Responder(op.id); });
+      opcoesDiv.appendChild(b);
+    })(demo5Estado.atual.opcoes[k]);
+  }
+  document.getElementById("demo5-feedback").innerHTML = "";
+}
+
+function demo5Responder(resp) {
+  if (!demo5Estado.atual) return;
+  var certa = resp === demo5Estado.atual.certa;
+  var fb = document.getElementById("demo5-feedback");
+  demo5Estado.resolvidos += 1;
+  if (certa) {
+    demo5Estado.acertos += 1;
+    fb.innerHTML = '<div class="resultado-demo">✅ <strong>Diagnóstico correto!</strong> ' + demo5Estado.atual.fbCerta + '</div>';
+  } else {
+    fb.innerHTML = '<div class="resultado-erro">❌ <strong>Diagnóstico incorreto.</strong> ' + demo5Estado.atual.fbOutros + '</div>';
+  }
+  document.getElementById("demo5-opcoes").style.display = "none";
+  document.getElementById("demo5-placar").textContent = "Placar: " + demo5Estado.acertos + " acertos em " + demo5Estado.resolvidos + " casos";
+}
+
+function demo5Reset() {
+  demo5Estado.atual = null;
+  demo5Estado.resolvidos = 0;
+  demo5Estado.acertos = 0;
+  document.getElementById("demo5-caso").textContent = "📋 O caso aparecerá aqui. Clique em Novo caso para começar.";
+  document.getElementById("demo5-opcoes").style.display = "none";
+  document.getElementById("demo5-opcoes").innerHTML = "";
+  document.getElementById("demo5-feedback").innerHTML = "";
+  document.getElementById("demo5-placar").textContent = "";
+}
+
+/* ================= LIGAÇÕES ================= */
+function ligarBotoes() {
+  var tabs = document.querySelectorAll(".tab");
+  for (var t = 0; t < tabs.length; t++) {
+    (function (tab) {
+      tab.addEventListener("click", function () {
+        irParaAba(parseInt(tab.getAttribute("data-aba"), 10));
+      });
+      tab.addEventListener("keydown", function (ev) {
+        var lista = Array.prototype.slice.call(document.querySelectorAll(".tab"));
+        var idx = lista.indexOf(tab);
+        if (ev.key === "ArrowRight" && idx < lista.length - 1) { lista[idx + 1].focus(); ev.preventDefault(); }
+        if (ev.key === "ArrowLeft" && idx > 0) { lista[idx - 1].focus(); ev.preventDefault(); }
+      });
+    })(tabs[t]);
+  }
+
+  document.getElementById("btn-modo").addEventListener("click", alternarModo);
+  document.getElementById("btn-tema").addEventListener("click", alternarTema);
+
+  // Demo 1
+  var eras = document.querySelectorAll("#demo1-area [data-era]");
+  for (var i = 0; i < eras.length; i++) {
+    (function (b) { b.addEventListener("click", function () { demo1Mostrar(b.getAttribute("data-era")); }); })(eras[i]);
+  }
+  document.getElementById("demo1-reset").addEventListener("click", demo1Reset);
+
+  // Demo 2
+  document.getElementById("demo2-novo").addEventListener("click", demo2Novo);
+  document.getElementById("demo2-reset").addEventListener("click", demo2Reset);
+
+  // Demo 3
+  document.getElementById("demo3-next").addEventListener("click", demo3Next);
+  document.getElementById("demo3-reset").addEventListener("click", demo3Reset);
+  demo3Render();
+
+  // Demo 4
+  document.getElementById("demo4-novo").addEventListener("click", demo4Novo);
+  document.getElementById("demo4-reset").addEventListener("click", demo4Reset);
+
+  // Demo 5
+  document.getElementById("demo5-novo").addEventListener("click", demo5Novo);
+  document.getElementById("demo5-reset").addEventListener("click", demo5Reset);
+
+  // Teclado
+  document.addEventListener("keydown", function (ev) {
+    if (estado.modo === "apresentacao") {
+      if (ev.key === "ArrowRight" && estado.abaAtual < 6) irParaAba(estado.abaAtual + 1);
+      if (ev.key === "ArrowLeft" && estado.abaAtual > 1) irParaAba(estado.abaAtual - 1);
+    }
+  });
+}
+
+/* ================= CARGA INICIAL ================= */
+document.addEventListener("DOMContentLoaded", function () {
+  ligarBotoes();
+  inicializarQuiz();
+  var n = lerHash();
+  ativarAba(n ? n : 1);
+  atualizarXP();
+});
+</script>
+
+</body>
+</html>
