@@ -1,0 +1,2146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Desenvolvimento Back-End — Aula 6</title>
+<!-- HTMLearning v2.17 — Campos não informados: professor da disciplina (nome, e-mail, lattes, orcid, site, instituição). Nenhum conteúdo pedagógico foi inventado. -->
+<style>
+:root {
+  --cor-destaque: #15803D;
+  --cor-destaque-claro: #DCFCE7;
+  --cor-destaque-escuro: #14532D;
+  --fundo: #FFFFFF;
+  --fundo-cartao: #F8FAFC;
+  --fundo-codigo: #F1F5F9;
+  --texto: #0F172A;
+  --texto-suave: #64748B;
+  --borda: #E2E8F0;
+  --sucesso: #059669;
+  --erro: #DC2626;
+  --aviso: #F59E0B;
+}
+[data-theme="dark"] {
+  --fundo: #0F172A;
+  --fundo-cartao: #1E293B;
+  --fundo-codigo: #334155;
+  --texto: #F1F5F9;
+  --texto-suave: #94A3B8;
+  --borda: #475569;
+  --cor-destaque-claro: #14532D;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 18px;
+  line-height: 1.6;
+  background: var(--fundo);
+  color: var(--texto);
+  transition: background 0.3s, color 0.3s;
+}
+body.modo-apresentacao { font-size: 22px; }
+header {
+  background: linear-gradient(135deg, var(--cor-destaque), var(--cor-destaque-escuro));
+  color: white;
+  padding: 2rem 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+header .meta { opacity: 0.95; font-size: 0.95rem; }
+.controles-topo { position: fixed; top: 1rem; right: 1rem; z-index: 1000; display: flex; gap: 0.5rem; }
+.controles-topo button {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--cor-destaque);
+  color: var(--cor-destaque);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+.controles-topo button:hover { background: var(--cor-destaque); color: white; }
+.xp-bar {
+  position: sticky;
+  top: 0;
+  background: var(--cor-destaque-claro);
+  padding: 0.75rem 1.5rem;
+  border-bottom: 2px solid var(--cor-destaque);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  z-index: 99;
+}
+.tabs-container {
+  position: sticky;
+  top: 52px;
+  background: var(--fundo);
+  border-bottom: 2px solid var(--borda);
+  z-index: 98;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+.tabs { display: flex; padding: 0 1rem; gap: 0.25rem; }
+.tab {
+  padding: 1rem 1.5rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--texto-suave);
+  font-size: 1rem;
+  font-weight: 600;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.tab:hover { color: var(--cor-destaque); }
+.tab[aria-selected="true"] {
+  color: var(--cor-destaque);
+  border-bottom-color: var(--cor-destaque);
+  background: var(--fundo);
+}
+.painel { display: none; padding: 2rem 1.5rem; max-width: 1100px; margin: 0 auto; }
+.painel.active { display: block; animation: fade 0.3s; }
+@keyframes fade { from {opacity:0} to {opacity:1} }
+h2 {
+  color: var(--cor-destaque-escuro);
+  border-left: 5px solid var(--cor-destaque);
+  padding-left: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.6rem;
+}
+h3 { color: var(--cor-destaque-escuro); margin: 1.5rem 0 1rem; font-size: 1.3rem; }
+.cartao {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.missao {
+  background: linear-gradient(135deg, var(--cor-destaque-claro), var(--fundo-cartao));
+  border-left: 5px solid var(--cor-destaque);
+}
+.missao::before {
+  content: "🎯 MISSÃO";
+  display: block;
+  font-weight: bold;
+  color: var(--cor-destaque-escuro);
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.mundo-real { background: #E7F5FF; border-left: 5px solid #1971C2; }
+[data-theme="dark"] .mundo-real { background: #1A3A52; }
+.mundo-real::before {
+  content: "🌎 NO MUNDO REAL";
+  display: block;
+  font-weight: bold;
+  color: #1971C2;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.ferramentas { background: #D3F9D8; border-left: 5px solid #059669; }
+[data-theme="dark"] .ferramentas { background: #1B4332; }
+.ferramentas::before {
+  content: "🛠️ FERRAMENTAS";
+  display: block;
+  font-weight: bold;
+  color: #059669;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.demo-box {
+  background: var(--fundo-codigo);
+  border: 3px solid var(--cor-destaque);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+.instrucoes {
+  background: #FFF9DB;
+  border: 2px solid var(--aviso);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .instrucoes { background: #3D3518; }
+.instrucoes::before {
+  content: "📋 INSTRUÇÕES PASSO A PASSO";
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.roteiro {
+  background: #F3D9FA;
+  border-left: 4px solid #9C36B5;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+[data-theme="dark"] .roteiro { background: #3D1F47; }
+.roteiro::before { content: "🎤 Roteiro do apresentador: "; font-weight: bold; font-style: normal; }
+.prever {
+  background: #E3FAFC;
+  border: 2px dashed #0C8599;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+[data-theme="dark"] .prever { background: #0F3742; }
+.prever::before {
+  content: "🔮 PREVISÃO";
+  display: block;
+  font-weight: bold;
+  color: #0C8599;
+  margin-bottom: 0.5rem;
+}
+.legenda {
+  background: #FFF3BF;
+  border-left: 4px solid #F59F00;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+  border-radius: 6px;
+}
+[data-theme="dark"] .legenda { background: #3D3518; }
+.legenda::before { content: "🔑 Legenda: "; font-weight: bold; }
+.quiz-box {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+.termos-quiz {
+  background: #FFF3BF;
+  border: 2px solid #F59F00;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+[data-theme="dark"] .termos-quiz { background: #3D3518; }
+.termos-quiz::before {
+  content: "🔑 Termos deste quiz";
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.pergunta {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--fundo);
+  border-radius: 8px;
+  border: 2px solid var(--borda);
+}
+.pergunta p { font-weight: 600; margin-bottom: 0.75rem; }
+.alt {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+  background: white;
+  border: 2px solid var(--borda);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--texto);
+  transition: all 0.2s;
+}
+[data-theme="dark"] .alt { background: var(--fundo-cartao); }
+.alt:hover:not(:disabled) { border-color: var(--cor-destaque); background: var(--cor-destaque-claro); }
+.alt.certa { background: #D3F9D8 !important; border-color: var(--sucesso) !important; color: var(--sucesso); font-weight: bold; }
+.alt.errada { background: #FFE3E3 !important; border-color: var(--erro) !important; color: var(--erro); }
+[data-theme="dark"] .alt.certa { background: #1B4332 !important; color: #51CF66 !important; }
+[data-theme="dark"] .alt.errada { background: #3D1F24 !important; color: #FF6B6B !important; }
+.alt:disabled { cursor: not-allowed; opacity: 0.7; }
+.fb { margin-top: 0.5rem; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.95rem; display: none; }
+.fb.show { display: block; }
+.fb.fb-certa { background: #D3F9D8; border-left: 4px solid var(--sucesso); color: #087F23; }
+.fb.fb-errada { background: #FFE3E3; border-left: 4px solid var(--erro); color: #C92A2A; }
+[data-theme="dark"] .fb.fb-certa { background: #1B4332; color: #69DB7C; }
+[data-theme="dark"] .fb.fb-errada { background: #3D1F24; color: #FFA8A8; }
+details {
+  background: var(--fundo-codigo);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+  border: 1px solid var(--borda);
+}
+details[open] { background: var(--cor-destaque-claro); }
+summary { cursor: pointer; font-weight: bold; color: var(--cor-destaque-escuro); padding: 0.25rem 0; }
+.demo-area {
+  background: white;
+  border: 2px dashed var(--cor-destaque);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+  min-height: 150px;
+}
+[data-theme="dark"] .demo-area { background: var(--fundo-cartao); }
+.btn {
+  background: var(--cor-destaque);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.95rem;
+  margin: 0.25rem;
+}
+.btn:hover { background: var(--cor-destaque-escuro); }
+.btn-secundario { background: var(--texto-suave); color: white; }
+.resultado-demo {
+  background: #D3F9D8;
+  border-left: 4px solid var(--sucesso);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .resultado-demo { background: #1B4332; color: #69DB7C; }
+.resultado-erro {
+  background: #FFE3E3;
+  border-left: 4px solid var(--erro);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .resultado-erro { background: #3D1F24; color: #FFA8A8; }
+footer {
+  background: var(--fundo-cartao);
+  border-top: 3px solid var(--cor-destaque);
+  padding: 2rem 1.5rem;
+  margin-top: 3rem;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+footer h4 { color: var(--cor-destaque-escuro); margin-bottom: 0.75rem; font-size: 1rem; }
+footer .bloco { padding: 1rem 0; line-height: 1.7; }
+footer .bloco + .bloco { border-top: 2px solid var(--borda); margin-top: 1rem; padding-top: 1.5rem; }
+footer a { color: var(--cor-destaque-escuro); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+footer ul { list-style: none; padding-left: 0; }
+footer ul li { margin: 0.4rem 0; }
+.revisao-mapa {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+.no-mapa {
+  background: var(--cor-destaque-claro);
+  border: 2px solid var(--cor-destaque);
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+}
+.no-mapa h4 { color: var(--cor-destaque-escuro); margin-bottom: 0.5rem; }
+.cola-rapida {
+  background: #FFF9DB;
+  border: 2px solid var(--aviso);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin: 1rem 0;
+}
+[data-theme="dark"] .cola-rapida { background: #3D3518; }
+.cola-rapida dt { font-weight: bold; color: var(--cor-destaque-escuro); margin-top: 0.75rem; }
+.cola-rapida dd { margin-left: 1rem; margin-bottom: 0.5rem; color: var(--texto); }
+.chefao {
+  background: linear-gradient(135deg, var(--cor-destaque-claro), white);
+  border: 3px solid var(--cor-destaque);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+[data-theme="dark"] .chefao { background: linear-gradient(135deg, var(--cor-destaque-claro), var(--fundo-cartao)); }
+.chefao::before {
+  content: "👑 CHEFÃO — DESAFIO FINAL";
+  display: block;
+  font-weight: bold;
+  color: var(--cor-destaque-escuro);
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+}
+.mitoverdade {
+  background: #F3D9FA;
+  border-left: 5px solid #9C36B5;
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 8px;
+}
+[data-theme="dark"] .mitoverdade { background: #3D1F47; }
+code {
+  background: var(--fundo-codigo);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-family: "Courier New", monospace;
+  font-size: 0.95em;
+  color: var(--cor-destaque-escuro);
+}
+pre {
+  background: var(--fundo-codigo);
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  border-left: 4px solid var(--cor-destaque);
+  margin: 1rem 0;
+  font-family: "Courier New", monospace;
+  font-size: 0.9rem;
+}
+table.tab-dados { border-collapse: collapse; margin: 0.75rem 0; font-size: 0.88rem; width: 100%; }
+table.tab-dados th, table.tab-dados td { border: 1px solid var(--borda); padding: 0.35rem 0.5rem; text-align: left; }
+table.tab-dados th { background: var(--cor-destaque-claro); color: var(--cor-destaque-escuro); }
+.chave-badge {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  margin-left: 0.3rem;
+}
+.chave-badge.pk { background: #FEF3C7; color: #92400E; }
+.chave-badge.fk { background: #DBEAFE; color: #1E40AF; }
+.coluna-linha {
+  padding: 0.4rem 0.6rem;
+  margin: 0.25rem 0;
+  background: var(--fundo-codigo);
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 0.88rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+@media (max-width: 600px) {
+  header h1 { font-size: 1.5rem; }
+  .tab { padding: 0.75rem 1rem; font-size: 0.9rem; }
+  .painel { padding: 1rem; }
+  .controles-topo { position: static; padding: 0.5rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="controles-topo">
+  <button id="btn-modo" type="button">🎤 Apresentação</button>
+  <button id="btn-tema" type="button">🌙 Escuro</button>
+</div>
+
+<header>
+  <h1>Desenvolvimento Back-End</h1>
+  <div class="meta">Aula 6 · Unidade 3 · Págs. 9 a 25 · Fundamentos de Banco de Dados e Linguagem SQL</div>
+</header>
+
+<div class="xp-bar">
+  <div>⭐ XP: <span id="xp">0</span> · Selos: <span id="selos">0</span>/5</div>
+  <div id="progresso">Aba 1 de 6</div>
+</div>
+
+<div class="tabs-container">
+  <div class="tabs" role="tablist" aria-label="Abas da aula">
+    <button class="tab" role="tab" id="tab-1" aria-selected="true" aria-controls="painel-1" data-aba="1" type="button">1 · O que é BD</button>
+    <button class="tab" role="tab" id="tab-2" aria-selected="false" aria-controls="painel-2" data-aba="2" type="button">2 · Elementos</button>
+    <button class="tab" role="tab" id="tab-3" aria-selected="false" aria-controls="painel-3" data-aba="3" type="button">3 · SQL: criar</button>
+    <button class="tab" role="tab" id="tab-4" aria-selected="false" aria-controls="painel-4" data-aba="4" type="button">4 · SQL: manipular</button>
+    <button class="tab" role="tab" id="tab-5" aria-selected="false" aria-controls="painel-5" data-aba="5" type="button">5 · SQL no back-end</button>
+    <button class="tab" role="tab" id="tab-6" aria-selected="false" aria-controls="painel-6" data-aba="6" type="button">⭐ Revisão</button>
+  </div>
+</div>
+
+<!-- ============ ABA 1 ============ -->
+<div class="painel active" id="painel-1" role="tabpanel" aria-labelledby="tab-1">
+  <h2>Aba 1 · Definição de banco de dados</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é entender o que é um <strong>banco de dados</strong> (coleção organizada de dados guardada de forma persistente, que pode ser consultada e alterada por programas) e por que ele é o coração de quase toda aplicação back-end. Você vai distinguir o banco de dados do <strong>SGBD</strong> (Sistema Gerenciador de Banco de Dados; o software que administra o banco) e conhecer as duas grandes famílias: <strong>relacionais</strong> (dados em tabelas com linhas e colunas) e <strong>não relacionais</strong> (NoSQL, dados em documentos, pares chave-valor, grafos ou colunas).</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Banco de dados versus SGBD</h3>
+    <p>Uma planilha do Excel (programa de planilhas da Microsoft) guardada no seu computador já é uma coleção de dados, mas não é um banco de dados de verdade: falta controle de acesso simultâneo, integridade, recuperação de falhas e consulta eficiente. Um banco de dados de verdade oferece:</p>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Persistência</strong>: os dados sobrevivem ao desligamento da máquina e ao fim do programa.</li>
+      <li><strong>Compartilhamento</strong>: vários usuários e programas acessam ao mesmo tempo, sem corromper nada.</li>
+      <li><strong>Integridade</strong>: regras impedem dados impossíveis (idade negativa, pedido sem cliente).</li>
+      <li><strong>Consulta eficiente</strong>: encontrar um registro entre milhões em milissegundos, graças a índices (estruturas que aceleram a busca).</li>
+      <li><strong>Recuperação</strong>: voltar a um estado consistente depois de uma queda de energia.</li>
+    </ul>
+    <p>Quem entrega tudo isso é o <strong>SGBD</strong> (Sistema Gerenciador de Banco de Dados; em inglês <em>DBMS</em>, <em>Database Management System</em>). O banco é o conteúdo; o SGBD é o software que guarda, protege e serve esse conteúdo. Exemplos de SGBDs: PostgreSQL, MySQL, Oracle Database, SQL Server e SQLite.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Relacional versus não relacional (NoSQL)</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Relacional</strong>: os dados vivem em <strong>tabelas</strong> com colunas fixas e linhas; as tabelas se ligam por chaves. A linguagem padrão é a <strong>SQL</strong> (do inglês <em>Structured Query Language</em>; em português, Linguagem de Consulta Estruturada). Ideal quando os dados têm estrutura estável e as relações importam (clientes, pedidos, produtos). Exemplos: PostgreSQL, MySQL, Oracle, SQL Server, SQLite.</li>
+      <li><strong>Não relacional (NoSQL)</strong>:放弃了 a rigidez das tabelas em troca de flexibilidade e escala horizontal. Quatro subfamílias principais:
+        <ul style="margin-left:1.5rem">
+          <li><strong>Documentos</strong>: guarda objetos JSON (formato de texto para troca de dados). Exemplo: MongoDB.</li>
+          <li><strong>Chave-valor</strong>: um dicionário gigante e rapidíssimo. Exemplo: Redis.</li>
+          <li><strong>Colunas largas</strong>: otimizado para escrita massiva distribuída. Exemplo: Apache Cassandra.</li>
+          <li><strong>Grafos</strong>: otimizado para relações complexas (redes sociais, recomendação). Exemplo: Neo4j.</li>
+        </ul>
+      </li>
+    </ul>
+    <p>Não existe "melhor": existe o adequado. Um sistema de pedidos com regras fiscais pede relacional; um catálogo com atributos que mudam toda semana pode pedir documentos; um placar de jogo em tempo real pede chave-valor.</p>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Quem usa o quê</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Nubank</strong> (banco digital brasileiro): usa Datomic (banco de dados imutável criado pela empresa americana Cognitect) como núcleo transacional, com PostgreSQL e Cassandra em partes do ecossistema.</li>
+      <li><strong>iFood</strong> (aplicativo brasileiro de entregas): PostgreSQL para dados transacionais de pedidos e Redis para cache de cardápios e sessões.</li>
+      <li><strong>Instagram</strong> (rede social de fotos da Meta): PostgreSQL em larga escala para dados de usuários e Cassandra para feeds.</li>
+      <li><strong>Netflix</strong> (serviço americano de streaming): Cassandra para histórico de visualização em escala global e MySQL para dados de assinatura.</li>
+      <li><strong>Aplicativos de celular</strong>: SQLite (banco relacional embutido, sem servidor) roda dentro de praticamente todo Android e iPhone para guardar dados locais.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Ferramentas para conversar com o banco</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>pgAdmin</strong> (interface gráfica oficial do PostgreSQL): cria tabelas, roda consultas e mostra planos de execução.</li>
+      <li><strong>DBeaver</strong> (cliente universal gratuito): conecta em PostgreSQL, MySQL, SQLite, Oracle e dezenas de outros.</li>
+      <li><strong>MySQL Workbench</strong> (ferramenta oficial da Oracle para MySQL): modelagem visual e administração.</li>
+      <li><strong>psql</strong> (terminal do PostgreSQL) e <strong>mysql</strong> (terminal do MySQL): linha de comando para quem gosta de velocidade.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: explorador de SGBDs</h3>
+
+    <div class="prever">
+      <strong>Antes de explorar, preveja:</strong> qual destes SGBDs NÃO é relacional: PostgreSQL, MySQL, MongoDB ou SQLite?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, registre sua previsão.<br>
+      <strong>Passo 1:</strong> clique em um SGBD para abrir o cartão.<br>
+      <strong>Passo 2:</strong> leia família, modelo de dados, ponto forte e caso real.<br>
+      <strong>Passo 3:</strong> compare pelo menos um relacional e um NoSQL.<br>
+      <strong>Passo 4:</strong> confira sua previsão inicial.
+    </div>
+
+    <div class="roteiro">
+      abra o PostgreSQL e destaque que é relacional e gratuito. Depois abra o MongoDB e mostre o documento JSON. Feche com o Redis e pergunte: para um placar de jogo em tempo real, qual dos três? A resposta fixa a diferença de propósito.
+    </div>
+
+    <div class="legenda">
+      SGBD = software que gerencia o banco · relacional = dados em tabelas ligadas por chaves · NoSQL = não relacional (documentos, chave-valor, colunas, grafos) · JSON = formato de texto para objetos · embutido = roda dentro do próprio aplicativo, sem servidor separado
+    </div>
+
+    <div class="demo-area" id="demo1-area">
+      <div style="display:flex; flex-wrap:wrap; gap:0.4rem">
+        <button class="btn" type="button" data-sgbd="postgres">PostgreSQL</button>
+        <button class="btn" type="button" data-sgbd="mysql">MySQL</button>
+        <button class="btn" type="button" data-sgbd="sqlite">SQLite</button>
+        <button class="btn" type="button" data-sgbd="mongo">MongoDB</button>
+        <button class="btn" type="button" data-sgbd="redis">Redis</button>
+        <button class="btn" type="button" data-sgbd="cassandra">Cassandra</button>
+      </div>
+      <div id="demo1-cartao" style="margin-top:1rem; padding:1rem; background:var(--fundo-codigo); border-radius:8px; min-height:140px">
+        👆 Clique em um SGBD para abrir o cartão técnico.
+      </div>
+      <button class="btn btn-secundario" type="button" id="demo1-reset" style="margin-top:0.75rem">🔄 Reiniciar</button>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> os três primeiros são relacionais e falam SQL; os três últimos são NoSQL e cada um resolve um problema diferente. A escolha do SGBD é uma decisão de arquitetura, não de moda.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 1</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      banco de dados = coleção organizada e persistente de dados ·
+      SGBD = software que gerencia o banco (PostgreSQL, MySQL) ·
+      relacional = dados em tabelas com linhas e colunas ·
+      NoSQL = não relacional (documentos, chave-valor, colunas, grafos) ·
+      SQL = Linguagem de Consulta Estruturada.
+    </div>
+
+    <div class="pergunta" data-pergunta="1-1">
+      <p>1. Qual é a diferença entre banco de dados e SGBD?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! São conceitos distintos: o banco é o conteúdo guardado; o SGBD é o software que o administra. Não são sinônimos.">São a mesma coisa, apenas nomes diferentes</button>
+        <button class="alt" type="button" data-fb="Correto! O banco de dados é a coleção organizada de dados; o SGBD (como PostgreSQL ou MySQL) é o software que guarda, protege, consulta e recupera esses dados. Um é o conteúdo, o outro é o gerente.">O banco é a coleção de dados; o SGBD é o software que a gerencia</button>
+        <button class="alt" type="button" data-fb="Errado! O SGBD não é o hardware: é software. O hardware é o servidor e o disco onde o SGBD grava os arquivos do banco.">O banco é o software e o SGBD é o hardware onde ele roda</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="1-2">
+      <p>2. Qual dos SGBDs abaixo é NÃO relacional (NoSQL)?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! PostgreSQL é um SGBD relacional completo, com tabelas, chaves e SQL. É um dos relacionais mais usados no mundo.">PostgreSQL</button>
+        <button class="alt" type="button" data-fb="Errado! MySQL é relacional, muito usado em aplicações web e no stack LAMP (Linux, Apache, MySQL, PHP).">MySQL</button>
+        <button class="alt" type="button" data-fb="Correto! MongoDB é um banco de documentos NoSQL: guarda objetos JSON em vez de linhas de tabela, permitindo esquema flexível. É útil para catálogos com atributos variáveis.">MongoDB</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="1-3">
+      <p>3. Para um sistema de pedidos com regras fiscais, clientes e produtos bem definidos, qual família de banco é a escolha mais natural?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! Dados com estrutura estável, relações fortes e necessidade de transações e integridade referencial são o cenário clássico do modelo relacional, com SQL, chaves e restrições.">Relacional, porque os dados têm estrutura estável e relações que exigem integridade</button>
+        <button class="alt" type="button" data-fb="Errado! Documentos flexíveis brilham quando o esquema muda muito; aqui o esquema é estável e as relações importam, então o relacional é mais natural.">Documentos NoSQL, porque todo sistema moderno deve usar NoSQL</button>
+        <button class="alt" type="button" data-fb="Errado! Chave-valor é ótimo para cache e contadores, mas não modela bem relações entre clientes, pedidos e produtos nem oferece consultas complexas.">Chave-valor, porque é o mais rápido de todos</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 1</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=o+que+é+banco+de+dados+SGBD+relacional+NoSQL" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=banco+de+dados+relacional+não+relacional+comparação" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=banco+de+dados+relacional+vs+NoSQL+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Banco de dados</strong>: coleção organizada e persistente de dados.</li>
+      <li><strong>SGBD</strong>: software que gerencia o banco.</li>
+      <li><strong>Relacional</strong>: tabelas com linhas, colunas e chaves.</li>
+      <li><strong>NoSQL</strong>: documentos, chave-valor, colunas largas, grafos.</li>
+      <li><strong>SQL</strong>: linguagem padrão dos bancos relacionais.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> NoSQL substituiu o banco relacional; hoje ninguém mais usa SQL.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> os dois convivem. Bancos relacionais seguem dominando sistemas transacionais (bancos, e-commerce, ERP), enquanto NoSQL brilha em cache, catálogos flexíveis e escala massiva. Muitas empresas usam os dois ao mesmo tempo.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 2 ============ -->
+<div class="painel" id="painel-2" role="tabpanel" aria-labelledby="tab-2">
+  <h2>Aba 2 · Elementos relevantes de banco de dados no back-end</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é dominar o vocabulário estrutural do banco relacional: <strong>tabela</strong> (conjunto de registros do mesmo tipo), <strong>linha ou tupla</strong> (um registro), <strong>coluna ou atributo</strong> (uma característica), <strong>esquema</strong> (o desenho das tabelas e relações), <strong>chave primária</strong> (identificador único da linha), <strong>chave estrangeira</strong> (ponteiro para a chave de outra tabela) e as <strong>restrições</strong> que barram dados impossíveis. Você vai explorar um esquema de loja e ver a integridade em ação.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 As peças do modelo relacional</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Tabela (relação)</strong>: agrupa registros do mesmo tipo, como clientes ou pedidos.</li>
+      <li><strong>Linha (tupla)</strong>: um registro individual, como a cliente Ana.</li>
+      <li><strong>Coluna (atributo)</strong>: uma característica com tipo definido, como nome (texto) ou idade (inteiro).</li>
+      <li><strong>Esquema (schema)</strong>: o projeto do banco: quais tabelas existem, com quais colunas, tipos e relações.</li>
+      <li><strong>Chave primária (PRIMARY KEY)</strong>: coluna (ou conjunto) que identifica cada linha de forma única e não nula.</li>
+      <li><strong>Chave estrangeira (FOREIGN KEY)</strong>: coluna que aponta para a chave primária de outra tabela, garantindo a <strong>integridade referencial</strong> (nenhum pedido aponta para cliente inexistente).</li>
+      <li><strong>Restrições</strong>: UNIQUE (sem duplicatas), NOT NULL (obrigatório), CHECK (regra de negócio, como preço maior que zero), DEFAULT (valor padrão).</li>
+    </ul>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Cardinalidade e outros elementos do dia a dia</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>1:1</strong> (um para um): um cliente tem um cadastro de fidelidade.</li>
+      <li><strong>1:N</strong> (um para muitos): um cliente faz muitos pedidos; a tabela pedidos guarda cliente_id.</li>
+      <li><strong>N:M</strong> (muitos para muitos): um pedido tem vários produtos e um produto aparece em vários pedidos; resolve-se com uma <strong>tabela associativa</strong> (itens_pedido).</li>
+      <li><strong>Índice</strong>: estrutura auxiliar (geralmente uma árvore B) que acelera buscas por uma coluna, ao custo de espaço e de escrita um pouco mais lenta.</li>
+      <li><strong>Transação</strong>: pacote de operações tudo-ou-nada, confirmado por COMMIT ou desfeito por ROLLBACK.</li>
+      <li><strong>Visão (view)</strong>: consulta salva que se comporta como uma tabela virtual, útil para relatórios e para esconder colunas sensíveis.</li>
+    </ul>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Esses elementos protegendo sistemas reais</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Nota fiscal eletrônica</strong>: a chave estrangeira entre nota e cliente impede emitir nota para um CNPJ (Cadastro Nacional da Pessoa Jurídica) que não existe no cadastro.</li>
+      <li><strong>Cadastro no gov.br</strong> (portal do governo federal): a restrição UNIQUE no CPF impede duas contas para a mesma pessoa.</li>
+      <li><strong>Estoque da Amazon</strong> (varejista americana): um CHECK de quantidade não negativa impede que um bug zere o estoque para valores impossíveis.</li>
+      <li><strong>Busca do Mercado Livre</strong> (marketplace latino-americano): índices nas colunas de categoria e preço fazem a busca responder em milissegundos entre milhões de produtos.</li>
+      <li><strong>Transferência bancária</strong>: a transação garante que débito e crédito aconteçam juntos ou nenhum aconteça.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Como inspecionar o esquema</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>PostgreSQL</strong>: no psql, o comando <code>\d pedidos</code> mostra colunas, tipos, índices e chaves estrangeiras.</li>
+      <li><strong>MySQL</strong>: <code>DESCRIBE pedidos;</code> e <code>SHOW CREATE TABLE pedidos;</code>.</li>
+      <li><strong>DBeaver</strong>: aba de propriedades da tabela mostra chaves, índices e diagrama de relações.</li>
+      <li><strong>Diagrama ER</strong> (entidade-relacionamento): desenho das tabelas e ligações, gerado automaticamente por pgAdmin e MySQL Workbench.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: explorador de esquema e teste de integridade</h3>
+
+    <div class="prever">
+      <strong>Antes de testar, preveja:</strong> se você tentar inserir um pedido com cliente_id = 999, que não existe na tabela clientes, o banco vai aceitar ou recusar a operação?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, registre sua previsão.<br>
+      <strong>Passo 1:</strong> clique em cada tabela para ver colunas, chaves primárias e estrangeiras.<br>
+      <strong>Passo 2:</strong> clique em Inserir pedido válido (cliente_id = 1) e veja o sucesso.<br>
+      <strong>Passo 3:</strong> clique em Inserir pedido órfão (cliente_id = 999) e veja a recusa.<br>
+      <strong>Passo 4:</strong> teste também o preço negativo e observe o CHECK agir.
+    </div>
+
+    <div class="roteiro">
+      mostre primeiro a tabela pedidos e destaque a coluna cliente_id com o selo FK. Depois provoque a inserção órfã: a mensagem de erro do banco é a integridade referencial trabalhando. Feche perguntando: e se essa regra estivesse só no código da aplicação?
+    </div>
+
+    <div class="legenda">
+      PK = chave primária, identifica a linha · FK = chave estrangeira, aponta para outra tabela · UNIQUE = não permite duplicatas · NOT NULL = obrigatório · CHECK = regra de negócio validada pelo banco · integridade referencial = nenhuma linha aponta para o vazio
+    </div>
+
+    <div class="demo-area" id="demo2-area">
+      <div style="display:flex; flex-wrap:wrap; gap:0.4rem">
+        <button class="btn" type="button" data-tab2="clientes">👤 clientes</button>
+        <button class="btn" type="button" data-tab2="produtos">📦 produtos</button>
+        <button class="btn" type="button" data-tab2="pedidos">🧾 pedidos</button>
+        <button class="btn" type="button" data-tab2="itens">🔗 itens_pedido</button>
+      </div>
+      <div id="demo2-esquema" style="margin-top:1rem"></div>
+      <div style="margin-top:0.75rem">
+        <button class="btn" type="button" id="demo2-ok">✅ Inserir pedido válido (cliente 1, total 150)</button>
+        <button class="btn btn-secundario" type="button" id="demo2-orfao">🚫 Inserir pedido órfão (cliente 999)</button>
+        <button class="btn btn-secundario" type="button" id="demo2-check">🚫 Inserir pedido com total negativo</button>
+        <button class="btn btn-secundario" type="button" id="demo2-reset">🔄 Reiniciar</button>
+      </div>
+      <div id="demo2-resultado" style="margin-top:0.75rem"></div>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> as restrições vivem no banco, não só no código. Mesmo que um bug, um script de manutenção ou um ataque tente gravar dados impossíveis, o SGBD recusa. Essa é a última muralha da integridade.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 2</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      tabela = conjunto de registros do mesmo tipo ·
+      linha (tupla) = um registro ·
+      coluna (atributo) = uma característica ·
+      chave primária (PK) = identificador único da linha ·
+      chave estrangeira (FK) = ponteiro para a PK de outra tabela ·
+      tabela associativa = tabela que resolve relação N:M ·
+      índice = estrutura que acelera buscas.
+    </div>
+
+    <div class="pergunta" data-pergunta="2-1">
+      <p>1. Qual é a função da chave primária (PRIMARY KEY) em uma tabela?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! A chave primária identifica cada linha de forma única e não nula. É por ela que outras tabelas apontam para este registro e que o banco encontra a linha rapidamente.">Identificar cada linha de forma única e não nula</button>
+        <button class="alt" type="button" data-fb="Errado! Apontar para outra tabela é papel da chave estrangeira, não da primária.">Apontar para a chave de outra tabela</button>
+        <button class="alt" type="button" data-fb="Errado! Criptografar a linha é função de recursos de segurança, não da chave primária.">Criptografar o conteúdo da linha</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="2-2">
+      <p>2. Um Pedido tem vários Produtos e um Produto aparece em vários Pedidos. Como modelar essa relação N:M?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! Guardar uma lista de produtos numa célula viola a primeira forma normal e impede consultar ou somar por produto.">Com uma coluna de lista de produtos dentro da tabela pedidos</button>
+        <button class="alt" type="button" data-fb="Errado! Duplicar o pedido para cada produto cria anomalias de atualização e totais confusos.">Duplicando a linha do pedido para cada produto</button>
+        <button class="alt" type="button" data-fb="Correto! Cria-se uma tabela associativa (itens_pedido) com as chaves estrangeiras de pedidos e produtos, mais atributos do relacionamento como quantidade e preço unitário.">Com uma tabela associativa contendo as chaves dos dois lados</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="2-3">
+      <p>3. Para que serve um índice em uma coluna como email ou categoria?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! Impedir duplicatas é papel da restrição UNIQUE (que até usa um índice por baixo, mas o propósito do índice em si é acelerar busca).">Impedir valores duplicados na coluna</button>
+        <button class="alt" type="button" data-fb="Correto! O índice é uma estrutura auxiliar que permite localizar linhas por aquela coluna sem varrer a tabela inteira, transformando buscas de segundos em milissegundos. O custo é mais espaço e escrita um pouco mais lenta.">Acelerar a busca por valores daquela coluna, evitando varrer a tabela inteira</button>
+        <button class="alt" type="button" data-fb="Errado! Compressão é recurso de alguns SGBDs, não a função de um índice.">Comprimir os dados para ocupar menos disco</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 2</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=chave+primária+estrangeira+restrições+banco+de+dados+relacional" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=integridade+referencial+índices+modelo+relacional" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=chave+primária+estrangeira+cardinalidade+aula+banco+de+dados" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Tabela / linha / coluna</strong>: relação / tupla / atributo.</li>
+      <li><strong>Esquema</strong>: o projeto das tabelas e relações.</li>
+      <li><strong>PK / FK</strong>: identificador único / ponteiro para outra tabela.</li>
+      <li><strong>Restrições</strong>: UNIQUE, NOT NULL, CHECK, DEFAULT.</li>
+      <li><strong>Índice / transação / visão</strong>: aceleração / tudo-ou-nada / consulta salva.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Quanto mais índices, melhor o desempenho do banco.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> índices aceleram leituras, mas cada INSERT, UPDATE e DELETE precisa atualizar todos os índices da tabela. Índices demais deixam a escrita lenta e consomem disco. O segredo é indexar as colunas realmente usadas em buscas e junções.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 3 ============ -->
+<div class="painel" id="painel-3" role="tabpanel" aria-labelledby="tab-3">
+  <h2>Aba 3 · SQL para criar bancos de dados relacionais (DDL)</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é aprender a <strong>DDL</strong> (do inglês <em>Data Definition Language</em>; em português, Linguagem de Definição de Dados): o subconjunto da SQL que cria e altera a estrutura do banco. Você vai usar <code>CREATE DATABASE</code>, <code>CREATE TABLE</code> com tipos e restrições, <code>ALTER TABLE</code> para evoluir o esquema e <code>DROP</code> para remover, montando uma tabela na demo e vendo o SQL nascer.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Os comandos de definição</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>CREATE DATABASE loja;</strong> cria o banco vazio.</li>
+      <li><strong>CREATE TABLE</strong> cria uma tabela com colunas, tipos e restrições.</li>
+      <li><strong>ALTER TABLE</strong> adiciona, remove ou altera colunas e restrições em uma tabela existente.</li>
+      <li><strong>DROP TABLE</strong> remove a tabela e todos os seus dados (irreversível sem backup).</li>
+      <li><strong>TRUNCATE TABLE</strong> apaga todas as linhas rapidamente, mas mantém a estrutura.</li>
+    </ul>
+    <pre>CREATE DATABASE loja;
+
+CREATE TABLE clientes (
+    id        SERIAL PRIMARY KEY,
+    nome      VARCHAR(100) NOT NULL,
+    email     VARCHAR(150) UNIQUE,
+    idade     INT CHECK (idade &gt;= 18),
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE pedidos (
+    id         SERIAL PRIMARY KEY,
+    cliente_id INT NOT NULL REFERENCES clientes(id),
+    total      DECIMAL(10,2) CHECK (total &gt; 0),
+    criado_em  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);</pre>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Tipos de dados mais usados</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>INT / INTEGER</strong>: números inteiros (idade, quantidade).</li>
+      <li><strong>SERIAL</strong> (PostgreSQL) ou <strong>AUTO_INCREMENT</strong> (MySQL): inteiro que se incrementa sozinho, ideal para chaves primárias.</li>
+      <li><strong>VARCHAR(n)</strong>: texto de tamanho variável até n caracteres (nome, email).</li>
+      <li><strong>TEXT</strong>: texto longo sem limite prático (descrição, comentário).</li>
+      <li><strong>DECIMAL(p,s) / NUMERIC</strong>: número exato com casas decimais, obrigatório para dinheiro.</li>
+      <li><strong>DATE / TIMESTAMP</strong>: data e data com hora.</li>
+      <li><strong>BOOLEAN</strong>: verdadeiro ou falso.</li>
+    </ul>
+    <p><strong>Regra de ouro</strong>: nunca use FLOAT ou DOUBLE para valores monetários; o arredondamento binário gera centavos fantasmas. Use DECIMAL(10,2).</p>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 DDL no mundo real</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Migrações versionadas</strong>: ferramentas como Flyway (Java) e as migrations do Django (Python) guardam cada CREATE e ALTER em arquivos numerados, aplicados em ordem em todos os ambientes.</li>
+      <li><strong>Nota fiscal eletrônica</strong>: o esquema das tabelas de NF-e segue tipos e restrições definidos pela Receita Federal (órgão brasileiro).</li>
+      <li><strong>Sistemas bancários</strong>: valores em DECIMAL de alta precisão, nunca em ponto flutuante, para evitar diferenças de centavos em milhões de transações.</li>
+      <li><strong>Startups</strong>: o primeiro CREATE TABLE de um MVP (produto mínimo viável) costuma virar o esquema que sustenta a empresa por anos; por isso vale pensar nas restrições desde o início.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Boas práticas de DDL</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Nomes claros e consistentes</strong>: tabelas no plural (clientes), colunas em snake_case (criado_em).</li>
+      <li><strong>Sempre defina PK</strong>: toda tabela precisa de identificador único.</li>
+      <li><strong>Restrições no banco</strong>: NOT NULL, UNIQUE e CHECK protegem mesmo quando o código falha.</li>
+      <li><strong>Versione o esquema</strong>: cada mudança vira um arquivo de migração, nunca um comando solto em produção.</li>
+      <li><strong>Cuidado com DROP</strong>: em produção, DROP sem backup é perda definitiva.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: montador de CREATE TABLE</h3>
+
+    <div class="prever">
+      <strong>Antes de montar, preveja:</strong> para guardar o preço de um produto sem perder centavos, qual tipo é o correto: FLOAT, VARCHAR(20) ou DECIMAL(10,2)?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, registre sua previsão de tipo para preço.<br>
+      <strong>Passo 1:</strong> digite o nome da tabela.<br>
+      <strong>Passo 2:</strong> escolha o nome da coluna, o tipo e marque as restrições.<br>
+      <strong>Passo 3:</strong> clique em Adicionar coluna e veja o SQL sendo montado ao vivo.<br>
+      <strong>Passo 4:</strong> adicione pelo menos três colunas, incluindo uma chave primária, e leia o CREATE TABLE completo.
+    </div>
+
+    <div class="roteiro">
+      monte a tabela produtos com id SERIAL PRIMARY KEY, nome VARCHAR(100) NOT NULL e preco DECIMAL(10,2) CHECK. Destaque que o SQL aparece pronto para copiar no pgAdmin ou no psql.
+    </div>
+
+    <div class="legenda">
+      DDL = linguagem de definição de dados (CREATE, ALTER, DROP) · SERIAL = inteiro autoincrementado · VARCHAR(n) = texto até n caracteres · DECIMAL(p,s) = número exato com s casas decimais · PK = chave primária · NOT NULL = obrigatório · UNIQUE = sem duplicatas
+    </div>
+
+    <div class="demo-area" id="demo3-area">
+      <div style="display:grid; gap:0.5rem; max-width:640px">
+        <label>📋 Nome da tabela:
+          <input type="text" id="demo3-tabela" value="produtos" style="padding:0.4rem; border:1px solid var(--borda); border-radius:6px; background:var(--fundo); color:var(--texto); width:180px">
+        </label>
+        <div style="display:flex; flex-wrap:wrap; gap:0.5rem; align-items:center">
+          <select id="demo3-coluna" style="padding:0.4rem; border-radius:6px; border:1px solid var(--borda); background:var(--fundo); color:var(--texto)">
+            <option value="id">id</option>
+            <option value="nome">nome</option>
+            <option value="email">email</option>
+            <option value="preco">preco</option>
+            <option value="estoque">estoque</option>
+            <option value="ativo">ativo</option>
+            <option value="criado_em">criado_em</option>
+          </select>
+          <select id="demo3-tipo" style="padding:0.4rem; border-radius:6px; border:1px solid var(--borda); background:var(--fundo); color:var(--texto)">
+            <option value="SERIAL">SERIAL</option>
+            <option value="INT">INT</option>
+            <option value="VARCHAR(100)">VARCHAR(100)</option>
+            <option value="TEXT">TEXT</option>
+            <option value="DECIMAL(10,2)">DECIMAL(10,2)</option>
+            <option value="BOOLEAN">BOOLEAN</option>
+            <option value="TIMESTAMP">TIMESTAMP</option>
+          </select>
+          <label><input type="checkbox" id="demo3-pk"> PK</label>
+          <label><input type="checkbox" id="demo3-nn"> NOT NULL</label>
+          <label><input type="checkbox" id="demo3-uq"> UNIQUE</label>
+          <button class="btn" type="button" id="demo3-add">➕ Adicionar coluna</button>
+        </div>
+        <div>
+          <button class="btn btn-secundario" type="button" id="demo3-reset">🔄 Reiniciar</button>
+        </div>
+      </div>
+      <div id="demo3-colunas" style="margin-top:1rem"></div>
+      <pre id="demo3-sql">-- adicione colunas para gerar o CREATE TABLE</pre>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> o SQL gerado é exatamente o que você colaria no pgAdmin ou no psql. Repare que as restrições fazem parte da definição da tabela: elas nascem com ela e protegem todos os dados que entrarem depois.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 3</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      DDL = Linguagem de Definição de Dados (CREATE, ALTER, DROP) ·
+      DML = Linguagem de Manipulação de Dados (INSERT, SELECT, UPDATE, DELETE) ·
+      CREATE TABLE = comando que cria tabela ·
+      SERIAL = inteiro autoincrementado ·
+      DECIMAL(p,s) = número exato com casas decimais ·
+      ALTER TABLE = comando que altera a estrutura.
+    </div>
+
+    <div class="pergunta" data-pergunta="3-1">
+      <p>1. Qual comando SQL cria uma nova tabela no banco?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! INSERT insere linhas em uma tabela que já existe; ele não cria estrutura.">INSERT INTO</button>
+        <button class="alt" type="button" data-fb="Correto! CREATE TABLE define a estrutura: nome da tabela, colunas, tipos e restrições. É um comando DDL, de definição.">CREATE TABLE</button>
+        <button class="alt" type="button" data-fb="Errado! ALTER TABLE altera uma tabela existente (adiciona ou remove colunas); a criação inicial é com CREATE TABLE.">ALTER TABLE</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="3-2">
+      <p>2. Qual tipo de dado é o mais adequado para guardar valores monetários como o preço de um produto?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! FLOAT usa representação binária aproximada e gera erros de arredondamento em centavos, inaceitáveis em dinheiro.">FLOAT</button>
+        <button class="alt" type="button" data-fb="Errado! VARCHAR guardaria o número como texto, impedindo somas e comparações numéricas corretas.">VARCHAR(20)</button>
+        <button class="alt" type="button" data-fb="Correto! DECIMAL(10,2) (ou NUMERIC) guarda o valor exato com duas casas decimais, sem arredondamento binário. É o padrão para dinheiro em sistemas financeiros.">DECIMAL(10,2)</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="3-3">
+      <p>3. Qual das alternativas contém apenas comandos DDL (definição de estrutura)?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! CREATE, ALTER e DROP mexem na estrutura do banco (tabelas, colunas, restrições), não nos dados. Por isso são DDL.">CREATE, ALTER, DROP</button>
+        <button class="alt" type="button" data-fb="Errado! INSERT, UPDATE e DELETE mexem nos dados dentro das tabelas; são DML, não DDL.">INSERT, UPDATE, DELETE</button>
+        <button class="alt" type="button" data-fb="Errado! SELECT consulta dados e é classificado como DQL (consulta) ou DML em sentido amplo; não é definição de estrutura.">SELECT, INSERT, CREATE</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 3</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=SQL+DDL+CREATE+TABLE+tipos+de+dados+restrições" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=SQL+data+definition+language+schema+constraints" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=SQL+CREATE+TABLE+ALTER+DROP+aula+português" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>DDL</strong>: CREATE, ALTER, DROP, TRUNCATE.</li>
+      <li><strong>Tipos</strong>: INT, SERIAL, VARCHAR, TEXT, DECIMAL, DATE, BOOLEAN.</li>
+      <li><strong>Restrições</strong>: PRIMARY KEY, NOT NULL, UNIQUE, CHECK, DEFAULT.</li>
+      <li><strong>Dinheiro</strong>: sempre DECIMAL, nunca FLOAT.</li>
+      <li><strong>Migração</strong>: arquivo versionado com mudanças de esquema.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> DROP TABLE e DELETE FROM fazem a mesma coisa.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> DELETE apaga linhas (e aceita WHERE), mantendo a tabela. DROP remove a tabela inteira, com estrutura, índices e restrições. TRUNCATE fica no meio: apaga todas as linhas de uma vez, mas mantém a estrutura.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 4 ============ -->
+<div class="painel" id="painel-4" role="tabpanel" aria-labelledby="tab-4">
+  <h2>Aba 4 · SQL para manipular bancos de dados relacionais (DML)</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é dominar a <strong>DML</strong> (do inglês <em>Data Manipulation Language</em>; em português, Linguagem de Manipulação de Dados): <code>INSERT</code> para criar linhas, <code>SELECT</code> para consultar, <code>UPDATE</code> para alterar e <code>DELETE</code> para remover. Você vai operar um console SQL simulado sobre uma tabela de clientes e ver o efeito de cada comando, incluindo o perigo de um UPDATE sem WHERE.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Os quatro comandos essenciais</h3>
+    <pre>-- Criar linhas
+INSERT INTO clientes (nome, cidade, idade)
+VALUES ('Ana', 'SP', 28);
+
+-- Consultar linhas
+SELECT * FROM clientes;
+SELECT nome, cidade FROM clientes WHERE cidade = 'SP' ORDER BY nome;
+
+-- Alterar linhas
+UPDATE clientes SET cidade = 'RJ' WHERE id = 2;
+
+-- Remover linhas
+DELETE FROM clientes WHERE idade &lt; 25;</pre>
+    <ul style="margin-left:1.5rem">
+      <li><strong>INSERT</strong>: lista as colunas e os valores na mesma ordem; o id SERIAL é gerado sozinho.</li>
+      <li><strong>SELECT</strong>: escolhe colunas (ou * para todas), filtra com WHERE, ordena com ORDER BY e limita com LIMIT.</li>
+      <li><strong>UPDATE</strong>: define novos valores com SET e escolhe as linhas com WHERE.</li>
+      <li><strong>DELETE</strong>: remove as linhas que casam com o WHERE.</li>
+    </ul>
+    <p><strong>Aviso mais importante da aula</strong>: UPDATE e DELETE sem WHERE atingem TODAS as linhas da tabela. Em produção, isso significa alterar ou apagar a base inteira em um comando.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Consultando com mais poder</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Operadores no WHERE</strong>: =, &lt;&gt;, &gt;, &lt;, BETWEEN, IN, LIKE, IS NULL.</li>
+      <li><strong>Funções de agregação</strong>: COUNT, SUM, AVG, MIN, MAX resumem várias linhas em um valor.</li>
+      <li><strong>GROUP BY</strong>: agrupa linhas antes de agregar (total de pedidos por cliente).</li>
+      <li><strong>JOIN</strong>: combina linhas de duas tabelas pela chave que as liga.</li>
+    </ul>
+    <pre>SELECT c.nome, COUNT(p.id) AS qtde_pedidos, SUM(p.total) AS total_gasto
+FROM clientes c
+JOIN pedidos p ON p.cliente_id = c.id
+GROUP BY c.nome
+ORDER BY total_gasto DESC;</pre>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 DML no dia a dia</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Cadastro no iFood</strong> (aplicativo brasileiro de entregas): um INSERT cria o cliente; o SELECT com WHERE busca por email no login.</li>
+      <li><strong>Atualização de endereço</strong>: um UPDATE com WHERE id garante que só o registro do próprio usuário mude.</li>
+      <li><strong>Relatório de vendas</strong>: SELECT com JOIN e GROUP BY gera o total por loja que a diretoria vê no painel.</li>
+      <li><strong>Incidentes reais</strong>: em 2017, um engenheiro da GitLab (plataforma de hospedagem de código) executou um comando de remoção no diretório errado e apagou dados de produção; o episódio virou caso público sobre a importância de WHERE, backups e revisão de comandos.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Hábitos que evitam desastres</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>SELECT antes de UPDATE/DELETE</strong>: rode o SELECT com o mesmo WHERE para ver quais linhas serão atingidas.</li>
+      <li><strong>Transação em produção</strong>: BEGIN, comando, conferência, COMMIT ou ROLLBACK.</li>
+      <li><strong>LIMIT em consultas exploratórias</strong>: evita trazer milhões de linhas para a tela.</li>
+      <li><strong>Backup antes de manutenção</strong>: sempre.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: console SQL simulado sobre a tabela clientes</h3>
+
+    <div class="prever">
+      <strong>Antes de operar, preveja:</strong> se você executar UPDATE clientes SET cidade = 'RJ' SEM a cláusula WHERE, quantas linhas da tabela serão alteradas: nenhuma, uma ou todas?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, registre sua previsão.<br>
+      <strong>Passo 1:</strong> clique em SELECT * para ver o estado inicial da tabela.<br>
+      <strong>Passo 2:</strong> clique em INSERT e veja uma linha nascer.<br>
+      <strong>Passo 3:</strong> clique em UPDATE com WHERE e depois em UPDATE sem WHERE e compare o estrago.<br>
+      <strong>Passo 4:</strong> use DELETE com WHERE e observe quantas linhas foram removidas.
+    </div>
+
+    <div class="roteiro">
+      rode SELECT *, depois UPDATE com WHERE id = 2 (uma linha). Reinicie e rode UPDATE sem WHERE: todas as linhas viram RJ. Esse contraste visual é a lição mais importante da aba.
+    </div>
+
+    <div class="legenda">
+      INSERT = cria linhas · SELECT = consulta · UPDATE = altera · DELETE = remove · WHERE = filtro que escolhe as linhas · ORDER BY = ordenação · linhas afetadas = quantas linhas o comando atingiu
+    </div>
+
+    <div class="demo-area" id="demo4-area">
+      <div style="display:flex; flex-wrap:wrap; gap:0.3rem">
+        <button class="btn" type="button" data-sql="select">SELECT *</button>
+        <button class="btn" type="button" data-sql="selectsp">SELECT WHERE SP</button>
+        <button class="btn" type="button" data-sql="insert">INSERT</button>
+        <button class="btn" type="button" data-sql="update">UPDATE com WHERE</button>
+        <button class="btn btn-secundario" type="button" data-sql="updateall">⚠️ UPDATE sem WHERE</button>
+        <button class="btn" type="button" data-sql="delete">DELETE com WHERE</button>
+        <button class="btn" type="button" data-sql="order">ORDER BY nome</button>
+        <button class="btn btn-secundario" type="button" id="demo4-reset">🔄 Reiniciar</button>
+      </div>
+      <pre id="demo4-sql" style="margin-top:1rem">-- clique em um comando para executar</pre>
+      <div id="demo4-tabela" style="overflow-x:auto"></div>
+      <div id="demo4-msg" style="margin-top:0.75rem"></div>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> cada comando mostra o SQL executado, a tabela resultante e o número de linhas afetadas. O UPDATE sem WHERE é o lembrete visual de por que todo profissional confere o filtro antes de confirmar.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 4</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      DML = Linguagem de Manipulação de Dados ·
+      INSERT = cria linhas · SELECT = consulta · UPDATE = altera · DELETE = remove ·
+      WHERE = cláusula de filtro ·
+      ORDER BY = ordenação ·
+      linhas afetadas = quantas linhas o comando atingiu.
+    </div>
+
+    <div class="pergunta" data-pergunta="4-1">
+      <p>1. Qual comando remove apenas as linhas que atendem a uma condição, mantendo a tabela e as demais linhas?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! DROP TABLE remove a tabela inteira, com estrutura e dados; não aceita condição sobre linhas.">DROP TABLE</button>
+        <button class="alt" type="button" data-fb="Correto! DELETE FROM tabela WHERE condição remove só as linhas que casam com o filtro, preservando a estrutura e as demais linhas.">DELETE com WHERE</button>
+        <button class="alt" type="button" data-fb="Errado! TRUNCATE apaga todas as linhas de uma vez e não aceita WHERE; é tudo ou nada.">TRUNCATE TABLE</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="4-2">
+      <p>2. Em um SELECT, qual cláusula filtra as linhas pelo valor de uma coluna?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! ORDER BY apenas ordena o resultado; não filtra linhas.">ORDER BY</button>
+        <button class="alt" type="button" data-fb="Errado! GROUP BY agrupa linhas para agregação; o filtro de linhas antes do agrupamento é o WHERE.">GROUP BY</button>
+        <button class="alt" type="button" data-fb="Correto! WHERE define a condição que cada linha precisa satisfazer para aparecer no resultado, como cidade = 'SP' ou idade maior que 18.">WHERE</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="4-3">
+      <p>3. O que acontece se você executar UPDATE clientes SET cidade = 'RJ' sem cláusula WHERE?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! Sem WHERE, o UPDATE atinge todas as linhas da tabela: todos os clientes passam a ter cidade RJ. Em produção, isso é um incidente grave; por isso se roda antes um SELECT com o mesmo filtro e se usa transação.">Todas as linhas da tabela são alteradas</button>
+        <button class="alt" type="button" data-fb="Errado! O banco não recusa o comando por falta de WHERE; ele executa sobre a tabela inteira, que é justamente o perigo.">O banco recusa o comando por segurança</button>
+        <button class="alt" type="button" data-fb="Errado! Não há escolha arbitrária de uma linha: sem filtro, o alcance é total.">Apenas a primeira linha é alterada</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 4</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=SQL+DML+INSERT+SELECT+UPDATE+DELETE+exercícios" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=SQL+data+manipulation+language+query+optimization" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=SQL+INSERT+SELECT+UPDATE+DELETE+aula+prática" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>INSERT / SELECT / UPDATE / DELETE</strong>: criar, consultar, alterar, remover.</li>
+      <li><strong>WHERE</strong>: filtro de linhas.</li>
+      <li><strong>ORDER BY / LIMIT</strong>: ordenação / limite de linhas.</li>
+      <li><strong>COUNT, SUM, AVG</strong>: funções de agregação.</li>
+      <li><strong>JOIN / GROUP BY</strong>: combinar tabelas / agrupar para agregar.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> SELECT também é perigoso em produção.<br>
+      <strong>Veredito:</strong> 🎯 VERDADE (com ressalva).<br>
+      <strong>Explicação:</strong> SELECT não altera dados, mas um SELECT sem LIMIT em uma tabela de bilhões de linhas pode consumir memória, travar o banco e derrubar o serviço. Consultas exploratórias devem sempre usar LIMIT e filtros.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 5 ============ -->
+<div class="painel" id="painel-5" role="tabpanel" aria-labelledby="tab-5">
+  <h2>Aba 5 · SQL no back-end: conexão, segurança e transações</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é conectar o que você aprendeu ao código back-end: usar <strong>drivers</strong> (bibliotecas que falam o protocolo do banco), <strong>pool de conexões</strong> (conjunto de conexões reutilizáveis), <strong>consultas parametrizadas</strong> (valores enviados separados do comando, que bloqueiam a injeção de SQL) e <strong>transações</strong> (BEGIN, COMMIT, ROLLBACK). Você vai atacar uma consulta vulnerável na demo e ver a versão parametrizada resistir.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Do código ao banco</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Driver</strong>: biblioteca que implementa o protocolo do SGBD. Exemplos: <code>pg</code> (PostgreSQL em Node.js), <code>mysql2</code> (MySQL em Node.js), <code>psycopg</code> (PostgreSQL em Python), JDBC (do inglês <em>Java Database Connectivity</em>; interface padrão de banco em Java).</li>
+      <li><strong>Pool de conexões</strong>: abrir uma conexão custa tempo e memória; o pool mantém várias abertas e as empresta aos pedidos, devolvendo ao fim. Sem pool, um pico de acessos derruba o banco.</li>
+      <li><strong>Consulta parametrizada</strong>: o comando vai com marcadores ($1, %s, ?) e os valores viajam separados. O banco trata o valor sempre como dado, nunca como parte do SQL.</li>
+      <li><strong>Transação</strong>: BEGIN agrupa operações; COMMIT confirma; ROLLBACK desfaz. Essencial para transferências e criação de pedido com itens.</li>
+      <li><strong>ORM</strong> (mapeamento objeto-relacional, visto na Aula 5): gera SQL parametrizado por baixo, mas o desenvolvedor continua precisando entender SQL para diagnosticar desempenho.</li>
+    </ul>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Injeção de SQL: o ataque mais clássico</h3>
+    <p>Quando o código monta a consulta colando texto digitado pelo usuário, um invasor pode escrever SQL dentro do campo. Exemplo vulnerável:</p>
+    <pre>// ERRADO: concatenação de texto do usuário
+const sql = "SELECT * FROM clientes WHERE nome = '" + nome + "'";</pre>
+    <p>Se o usuário digitar <code>' OR '1'='1</code>, a consulta vira:</p>
+    <pre>SELECT * FROM clientes WHERE nome = '' OR '1'='1';</pre>
+    <p>Como '1'='1' é sempre verdadeiro, o banco devolve TODOS os clientes. A versão segura usa parâmetro:</p>
+    <pre>// CERTO: consulta parametrizada
+const sql = "SELECT * FROM clientes WHERE nome = $1";
+await pool.query(sql, [nome]);</pre>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Casos reais de injeção e de boas práticas</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>TalkTalk (2015)</strong>: a operadora de telecomunicações britânica sofreu ataque por injeção de SQL; dados de cerca de 157 mil clientes foram expostos e a empresa foi multada em 400 mil libras pelo órgão regulador britânico.</li>
+      <li><strong>Heartland Payment Systems (2008)</strong>: a processadora de pagamentos americana foi comprometida por injeção de SQL, em um dos maiores vazamentos de cartões da história, com mais de 100 milhões de cartões expostos.</li>
+      <li><strong>OWASP Top 10</strong> (lista de riscos da organização aberta de segurança de aplicações): a injeção aparece há anos no topo, e a defesa recomendada é sempre consulta parametrizada.</li>
+      <li><strong>Frameworks modernos</strong>: Django ORM, Hibernate e Prisma geram SQL parametrizado por padrão, o que reduziu drasticamente esse tipo de falha em projetos novos.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Checklist de segurança e desempenho</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Nunca concatene</strong> entrada do usuário em SQL; use parâmetros sempre.</li>
+      <li><strong>Menor privilégio</strong>: o usuário do banco da aplicação não deve ser superusuário nem ter permissão de DROP.</li>
+      <li><strong>Pool dimensionado</strong>: conexões demais esgotam o banco; de menos criam fila.</li>
+      <li><strong>Transações curtas</strong>: transações longas seguram travas e degradam a concorrência.</li>
+      <li><strong>Índices nas colunas de filtro e junção</strong>: sem eles, cada consulta varre a tabela inteira.</li>
+      <li><strong>Logs e monitoramento</strong>: registre consultas lentas (slow query log no MySQL, pg_stat_statements no PostgreSQL).</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: caçador de injeção de SQL</h3>
+
+    <div class="prever">
+      <strong>Antes de atacar, preveja:</strong> se o campo de busca receber o texto <code>' OR '1'='1</code>, uma consulta montada por concatenação vai devolver apenas o cliente pesquisado, nenhum cliente ou todos os clientes?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, registre sua previsão.<br>
+      <strong>Passo 1:</strong> deixe o campo com Ana e clique em Buscar (concatenação): resultado normal.<br>
+      <strong>Passo 2:</strong> clique em Injetar ataque para preencher o campo com o texto malicioso.<br>
+      <strong>Passo 3:</strong> clique em Buscar (concatenação) e veja o vazamento de todos os registros.<br>
+      <strong>Passo 4:</strong> clique em Buscar (parametrizada) com o mesmo texto e veja a consulta resistir.
+    </div>
+
+    <div class="roteiro">
+      mostre a consulta gerada nas duas versões lado a lado. Na concatenada, o texto do usuário vira parte do comando; na parametrizada, vira apenas um valor. Conecte com o caso TalkTalk de 2015.
+    </div>
+
+    <div class="legenda">
+      concatenação = colar texto do usuário dentro do comando (perigoso) · parametrizada = comando com marcador e valor enviado separado (seguro) · $1 = marcador de parâmetro no PostgreSQL · injeção de SQL = ataque que insere comandos pelo campo de entrada
+    </div>
+
+    <div class="demo-area" id="demo5-area">
+      <label>🔎 Buscar cliente por nome:
+        <input type="text" id="demo5-entrada" value="Ana" style="width:100%; padding:0.5rem; border:1px solid var(--borda); border-radius:6px; font-family:monospace; background:var(--fundo); color:var(--texto)">
+      </label>
+      <div style="margin-top:0.75rem">
+        <button class="btn btn-secundario" type="button" id="demo5-ataque">💉 Injetar ataque</button>
+        <button class="btn" type="button" id="demo5-concat">⚠️ Buscar (concatenação)</button>
+        <button class="btn" type="button" id="demo5-param">🛡️ Buscar (parametrizada)</button>
+        <button class="btn btn-secundario" type="button" id="demo5-reset">🔄 Reiniciar</button>
+      </div>
+      <pre id="demo5-sql" style="margin-top:1rem">-- a consulta gerada aparecerá aqui</pre>
+      <div id="demo5-resultado"></div>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> a mesma entrada do usuário produz dois destinos opostos. Na concatenação, o texto vira código SQL e o banco obedece; na parametrizada, o texto é apenas um valor procurado literalmente. Essa única diferença de implementação separa um sistema seguro de um vazamento como o da TalkTalk.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 5</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      driver = biblioteca que fala o protocolo do banco ·
+      pool de conexões = conjunto de conexões reutilizáveis ·
+      consulta parametrizada = comando com marcadores e valores separados ·
+      injeção de SQL = ataque que insere comandos pelo campo de entrada ·
+      transação = pacote tudo-ou-nada com BEGIN, COMMIT e ROLLBACK.
+    </div>
+
+    <div class="pergunta" data-pergunta="5-1">
+      <p>1. Qual é a defesa recomendada contra injeção de SQL?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! Apagar caracteres como aspas é uma lista negra frágil, cheia de brechas e que ainda corrompe nomes legítimos com apóstrofo.">Remover caracteres especiais do texto digitado</button>
+        <button class="alt" type="button" data-fb="Correto! Na consulta parametrizada, o comando vai com marcadores e os valores viajam separados; o banco os trata sempre como dado, nunca como código SQL. É a defesa recomendada pelo OWASP.">Usar consultas parametrizadas, com valores enviados separados do comando</button>
+        <button class="alt" type="button" data-fb="Errado! Criptografar o texto não impede que ele vire parte do comando antes de ser criptografado; a defesa é estrutural, não criptográfica.">Criptografar o texto antes de colocá-lo na consulta</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="5-2">
+      <p>2. Para que serve um pool de conexões em uma aplicação back-end?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! O pool não criptografa nada; a criptografia da conexão é papel do TLS configurado no driver e no servidor.">Criptografar a conexão com o banco</button>
+        <button class="alt" type="button" data-fb="Errado! O pool não faz backup; backup é tarefa de ferramentas como pg_dump ou mysqldump.">Fazer backup automático do banco</button>
+        <button class="alt" type="button" data-fb="Correto! Abrir conexão custa tempo e memória. O pool mantém um conjunto pronto e empresta aos pedidos, devolvendo ao fim; isso reduz latência e evita esgotar o limite de conexões do SGBD em picos de acesso.">Reutilizar conexões já abertas, reduzindo latência e evitando esgotar o banco</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="5-3">
+      <p>3. Ao criar um pedido com vários itens, por que envolver os INSERTs em uma transação?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! Se o terceiro item falhar, o ROLLBACK desfaz o pedido e os itens já inseridos, evitando pedido incompleto no banco. É a atomicidade: tudo ou nada.">Para garantir que pedido e itens sejam gravados juntos ou nenhum seja gravado</button>
+        <button class="alt" type="button" data-fb="Errado! Transação não acelera a consulta; ela garante consistência. O ganho de desempenho vem de índices e de menos idas ao banco.">Para deixar os INSERTs mais rápidos</button>
+        <button class="alt" type="button" data-fb="Errado! Transação não criptografa dados; sigilo é papel de TLS e de criptografia em repouso.">Para criptografar os dados gravados</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 5</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=consulta+parametrizada+injeção+SQL+pool+de+conexões+back-end" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=SQL+injection+prepared+statements+connection+pooling" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=injeção+SQL+consulta+parametrizada+aula+prática" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Driver</strong>: biblioteca de conexão (pg, mysql2, psycopg, JDBC).</li>
+      <li><strong>Pool</strong>: conexões reutilizáveis.</li>
+      <li><strong>Parametrizada</strong>: marcadores + valores separados.</li>
+      <li><strong>Injeção de SQL</strong>: ataque por campo de entrada.</li>
+      <li><strong>BEGIN / COMMIT / ROLLBACK</strong>: abrir, confirmar, desfazer transação.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Se eu uso ORM, não preciso me preocupar com injeção de SQL.<br>
+      <strong>Veredito:</strong> 🎯 MITO (parcial).<br>
+      <strong>Explicação:</strong> ORMs parametrizam por padrão, o que protege a maioria dos casos. Mas quase todos oferecem consultas cruas (raw) para casos especiais; se o desenvolvedor concatenar texto ali, a vulnerabilidade volta. Entender SQL continua sendo essencial.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 6 - REVISÃO ============ -->
+<div class="painel" id="painel-6" role="tabpanel" aria-labelledby="tab-6">
+  <h2>⭐ Revisão — Mapa completo da aula</h2>
+
+  <h3>🗺️ Mapa da aula</h3>
+  <div class="revisao-mapa">
+    <div class="no-mapa">
+      <h4>Aba 1 · O que é BD</h4>
+      <p>Banco versus SGBD; relacional versus NoSQL; PostgreSQL, MySQL, SQLite, MongoDB, Redis, Cassandra.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 2 · Elementos</h4>
+      <p>Tabela, linha, coluna, esquema, PK, FK, restrições, cardinalidade, índice, transação, visão.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 3 · SQL criar</h4>
+      <p>DDL: CREATE DATABASE, CREATE TABLE, tipos, restrições, ALTER, DROP, TRUNCATE.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 4 · SQL manipular</h4>
+      <p>DML: INSERT, SELECT, UPDATE, DELETE; WHERE, ORDER BY, JOIN, GROUP BY; perigo do UPDATE sem WHERE.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 5 · SQL no back-end</h4>
+      <p>Driver, pool, consulta parametrizada, injeção de SQL, transações, índices e monitoramento.</p>
+    </div>
+    <div class="no-mapa">
+      <h4> Estudo em casa</h4>
+      <p>Refaça os quizzes das cinco abas para garantir os 5 selos e enfrente o Chefão com a cola rápida ao lado.</p>
+    </div>
+  </div>
+
+  <div class="cola-rapida">
+    <h3>🧷 Cola rápida — glossário da aula</h3>
+    <dl>
+      <dt><strong>Banco de dados</strong></dt>
+      <dd>Coleção organizada e persistente de dados, consultável por programas.</dd>
+
+      <dt><strong>SGBD</strong></dt>
+      <dd>Sistema Gerenciador de Banco de Dados: o software que administra o banco.</dd>
+
+      <dt><strong>Relacional</strong></dt>
+      <dd>Modelo com tabelas, linhas, colunas e chaves; linguagem SQL.</dd>
+
+      <dt><strong>NoSQL</strong></dt>
+      <dd>Não relacional: documentos, chave-valor, colunas largas, grafos.</dd>
+
+      <dt><strong>Tabela / linha / coluna</strong></dt>
+      <dd>Relação / tupla / atributo.</dd>
+
+      <dt><strong>Esquema</strong></dt>
+      <dd>O projeto das tabelas, colunas, tipos e relações.</dd>
+
+      <dt><strong>Chave primária (PK)</strong></dt>
+      <dd>Identificador único e não nulo de cada linha.</dd>
+
+      <dt><strong>Chave estrangeira (FK)</strong></dt>
+      <dd>Coluna que aponta para a PK de outra tabela; garante integridade referencial.</dd>
+
+      <dt><strong>Restrições</strong></dt>
+      <dd>UNIQUE, NOT NULL, CHECK, DEFAULT: regras impostas pelo banco.</dd>
+
+      <dt><strong>Tabela associativa</strong></dt>
+      <dd>Resolve relação N:M com as chaves dos dois lados.</dd>
+
+      <dt><strong>Índice</strong></dt>
+      <dd>Estrutura que acelera buscas; custa espaço e escrita.</dd>
+
+      <dt><strong>Transação</strong></dt>
+      <dd>Pacote tudo-ou-nada: BEGIN, COMMIT, ROLLBACK.</dd>
+
+      <dt><strong>Visão (view)</strong></dt>
+      <dd>Consulta salva que se comporta como tabela virtual.</dd>
+
+      <dt><strong>DDL</strong></dt>
+      <dd>Linguagem de Definição de Dados: CREATE, ALTER, DROP, TRUNCATE.</dd>
+
+      <dt><strong>DML</strong></dt>
+      <dd>Linguagem de Manipulação de Dados: INSERT, SELECT, UPDATE, DELETE.</dd>
+
+      <dt><strong>Tipos SQL</strong></dt>
+      <dd>INT, SERIAL, VARCHAR(n), TEXT, DECIMAL(p,s), DATE, TIMESTAMP, BOOLEAN.</dd>
+
+      <dt><strong>Dinheiro</strong></dt>
+      <dd>Sempre DECIMAL/NUMERIC; nunca FLOAT ou DOUBLE.</dd>
+
+      <dt><strong>WHERE</strong></dt>
+      <dd>Cláusula que filtra linhas; sem ela, UPDATE e DELETE atingem tudo.</dd>
+
+      <dt><strong>ORDER BY / LIMIT</strong></dt>
+      <dd>Ordenação / limite de linhas retornadas.</dd>
+
+      <dt><strong>JOIN / GROUP BY</strong></dt>
+      <dd>Combinar tabelas pela chave / agrupar para agregar.</dd>
+
+      <dt><strong>Agregações</strong></dt>
+      <dd>COUNT, SUM, AVG, MIN, MAX.</dd>
+
+      <dt><strong>Driver</strong></dt>
+      <dd>Biblioteca que fala o protocolo do banco (pg, mysql2, psycopg, JDBC).</dd>
+
+      <dt><strong>Pool de conexões</strong></dt>
+      <dd>Conjunto de conexões reutilizáveis, emprestadas aos pedidos.</dd>
+
+      <dt><strong>Consulta parametrizada</strong></dt>
+      <dd>Comando com marcadores e valores separados; bloqueia injeção.</dd>
+
+      <dt><strong>Injeção de SQL</strong></dt>
+      <dd>Ataque que insere comandos pelo campo de entrada; defesa: parametrizar.</dd>
+    </dl>
+  </div>
+
+  <div class="chefao">
+    <h3>👑 CHEFÃO — DESAFIO FINAL</h3>
+    <p><strong>Enunciado:</strong> Você foi contratado pela <strong>LojaRápida</strong> (e-commerce fictício brasileiro, inspirado no modelo de lojas como a Magazine Luiza) para desenhar e implementar o núcleo de dados do sistema de vendas. O sistema tem clientes, produtos, pedidos e itens de pedido.</p>
+
+    <p style="margin-top:1rem"><strong>Parte 1 — escolha do banco (Aba 1):</strong> justifique em um parágrafo por que um SGBD relacional (termo da cola rápida) é a escolha adequada para esse sistema, citando duas características do negócio que pedem esse modelo. Indique um SGBD concreto e justifique.</p>
+
+    <p style="margin-top:1rem"><strong>Parte 2 — modelagem (Aba 2):</strong> desenhe em texto as quatro tabelas com suas colunas mínimas, indicando chave primária (termo da cola rápida) e chave estrangeira (termo da cola rápida) de cada uma. Indique as cardinalidades entre elas e explique qual relação exige tabela associativa (termo da cola rápida) e por quê.</p>
+
+    <p style="margin-top:1rem"><strong>Parte 3 — DDL (Aba 3):</strong> escreva o comando CREATE TABLE completo da tabela pedidos, com pelo menos quatro colunas, tipos adequados (termo da cola rápida) e três restrições diferentes. Justifique a escolha do tipo da coluna de valor total.</p>
+
+    <p style="margin-top:1rem"><strong>Parte 4 — DML (Aba 4):</strong> escreva quatro comandos: (a) inserir um pedido; (b) listar os pedidos de um cliente ordenados por data; (c) atualizar o total de um pedido específico; (d) remover pedidos cancelados. Em cada um, aponte a cláusula que garante que só as linhas certas sejam atingidas (termo da cola rápida).</p>
+
+    <p style="margin-top:1rem"><strong>Parte 5 — back-end seguro (Aba 5):</strong> o código legado busca clientes assim: <code>sql = "SELECT * FROM clientes WHERE nome = '" + nome + "'"</code>. Explique o risco (termo da cola rápida), mostre um exemplo de entrada maliciosa e reescreva a consulta de forma segura (termo da cola rápida). Depois explique por que a criação de um pedido com seus itens deve ocorrer dentro de uma transação (termo da cola rápida).</p>
+  </div>
+
+  <details>
+    <summary>📚 Dica para o Chefão</summary>
+    <p style="margin-top:0.75rem">Na Parte 1, estrutura estável, relações fortes e necessidade de transações e integridade pedem relacional; PostgreSQL é escolha sólida e gratuita. Na Parte 2, clientes 1:N pedidos, pedidos N:M produtos resolvido por itens_pedido. Na Parte 3, total em DECIMAL(10,2) com CHECK maior que zero, cliente_id como FK NOT NULL. Na Parte 4, o WHERE é a cláusula que limita o alcance; no SELECT use ORDER BY criado_em DESC. Na Parte 5, a entrada ' OR '1'='1 devolve todos os clientes na versão concatenada; a versão segura usa marcador ($1, %s ou ?) com o valor enviado separado; a transação garante que pedido e itens nasçam juntos ou não nasçam.</p>
+  </details>
+</div>
+
+<!-- ============ RODAPÉ ============ -->
+<footer>
+  <div class="bloco">
+    <h4>📋 FICHA TÉCNICA DA AULA</h4>
+    <p>Desenvolvimento Back-End — Aula 6, Unidade 3, págs. 9–25 · Gerado em 06/11/2026 · 5 abas de conteúdo + Revisão · 15 perguntas · 5 demos · cor #15803D</p>
+  </div>
+
+  <div class="bloco">
+    <h4>🪄 SOBRE O HTMLearning · v2.17 (23/10/2026)</h4>
+    <p style="margin-bottom:0.75rem">Transformar o sumário de qualquer disciplina em uma classe interativa em HTML único e offline, com previsão antes do clique, tentativa e erro guiado e exemplos reais.</p>
+
+    <ul style="margin-left:1.5rem; margin-bottom:0.75rem">
+      <li>O que é: metodologia e arquitetura de prompts que converte sumários em aulas interativas em minutos, com IAs gratuitas.</li>
+      <li>O que entrega: 5 a 7 abas + Revisão, simulações com previsão, quiz com retry sem revelar gabarito, linguagem plana, Modos Apresentação/Leitura.</li>
+      <li>Por que é inclusivo: um único .html leve, 100% offline, roda em PC e celular e viaja em pen drive para escolas desconectadas ou áreas rurais.</li>
+    </ul>
+
+    <p style="margin-bottom:0.5rem">Idealizador do projeto: Professor Wellington Dimas da Cruz</p>
+    <p style="margin-bottom:0.75rem">Apoiadora do projeto: Prof.ª Dr.ª Mariella Berger Andrade (IFES / CEFOR)</p>
+
+    <p style="margin-top:0.75rem">Contatos e links do projeto:</p>
+    <ul>
+      <li>E-mail do idealizador: <a href="mailto:cloud.ai-generative@outlook.com">cloud.ai-generative@outlook.com</a></li>
+      <li>Repositório GitHub do idealizador: <a href="https://github.com/cloud-ai-Generative" target="_blank" rel="noopener">github.com/cloud-ai-Generative</a></li>
+      <li>Currículo Lattes do idealizador: <a href="https://lattes.cnpq.br/6801791839011321" target="_blank" rel="noopener">lattes.cnpq.br/6801791839011321</a></li>
+      <li>Currículo Lattes da apoiadora: <a href="https://lattes.cnpq.br/3929645439848570" target="_blank" rel="noopener">lattes.cnpq.br/3929645439848570</a></li>
+      <li>Site oficial do projeto: <a href="https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html" target="_blank" rel="noopener">https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html</a></li>
+    </ul>
+  </div>
+</footer>
+
+<script>
+"use strict";
+
+/* ================= ESTADO ================= */
+var estado = {
+  abaAtual: 1,
+  xp: 0,
+  selos: {},
+  totalSelos: 0,
+  respostas: {},
+  modo: "leitura",
+  tema: "claro"
+};
+
+/* ================= NAVEGAÇÃO ================= */
+function ativarAba(num) {
+  estado.abaAtual = num;
+  var tabs = document.querySelectorAll(".tab");
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].setAttribute("aria-selected", tabs[i].getAttribute("data-aba") === String(num) ? "true" : "false");
+  }
+  var paineis = document.querySelectorAll(".painel");
+  for (var j = 0; j < paineis.length; j++) {
+    paineis[j].classList.remove("active");
+  }
+  var alvo = document.getElementById("painel-" + num);
+  if (alvo) alvo.classList.add("active");
+  document.getElementById("progresso").textContent = "Aba " + num + " de 6";
+}
+
+function irParaAba(num) {
+  ativarAba(num);
+  var novo = "#aba-" + num;
+  if (window.location.hash !== novo) {
+    window.location.hash = novo;
+  }
+  window.scrollTo(0, 0);
+}
+
+function lerHash() {
+  var h = window.location.hash.replace("#aba-", "");
+  var n = parseInt(h, 10);
+  if (n >= 1 && n <= 6) return n;
+  return 0;
+}
+
+window.addEventListener("hashchange", function () {
+  var n = lerHash();
+  if (n && n !== estado.abaAtual) ativarAba(n);
+});
+
+/* ================= MODOS ================= */
+function alternarModo() {
+  if (estado.modo === "leitura") {
+    document.body.classList.add("modo-apresentacao");
+    document.getElementById("btn-modo").textContent = "📖 Leitura";
+    estado.modo = "apresentacao";
+  } else {
+    document.body.classList.remove("modo-apresentacao");
+    document.getElementById("btn-modo").textContent = "🎤 Apresentação";
+    estado.modo = "leitura";
+  }
+}
+
+function alternarTema() {
+  if (estado.tema === "claro") {
+    document.body.setAttribute("data-theme", "dark");
+    document.getElementById("btn-tema").textContent = "☀️ Claro";
+    estado.tema = "escuro";
+  } else {
+    document.body.removeAttribute("data-theme");
+    document.getElementById("btn-tema").textContent = "🌙 Escuro";
+    estado.tema = "claro";
+  }
+}
+
+/* ================= QUIZ ================= */
+function fisherYates(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function inicializarQuiz() {
+  var perguntas = document.querySelectorAll(".pergunta");
+  for (var p = 0; p < perguntas.length; p++) {
+    (function (perg) {
+      var altsDiv = perg.querySelector(".alts");
+      var certaKey = altsDiv.getAttribute("data-certa");
+      var alts = [];
+      var filhos = altsDiv.querySelectorAll(".alt");
+      for (var k = 0; k < filhos.length; k++) alts.push(filhos[k]);
+      for (var idx = 0; idx < alts.length; idx++) {
+        var letra = String.fromCharCode(97 + idx);
+        alts[idx].setAttribute("data-ehcerta", letra === certaKey ? "true" : "false");
+      }
+      var emb = fisherYates(alts);
+      altsDiv.innerHTML = "";
+      for (var e = 0; e < emb.length; e++) {
+        altsDiv.appendChild(emb[e]);
+        emb[e].addEventListener("click", function () { responderQuiz(perg, this); });
+      }
+    })(perguntas[p]);
+  }
+}
+
+function responderQuiz(perg, alt) {
+  var id = perg.getAttribute("data-pergunta");
+  var reg = estado.respostas[id];
+  if (reg && reg.acertou) return;
+
+  var acerto = alt.getAttribute("data-ehcerta") === "true";
+  var fbCerta = perg.querySelector(".fb-certa");
+  var fbErrada = perg.querySelector(".fb-errada");
+
+  if (acerto) {
+    alt.classList.add("certa");
+    alt.textContent = "✓ " + alt.textContent;
+    var todas = perg.querySelectorAll(".alt");
+    for (var i = 0; i < todas.length; i++) todas[i].disabled = true;
+    fbCerta.textContent = "✅ Por que esta está certa: " + alt.getAttribute("data-fb");
+    fbCerta.classList.add("show");
+    fbErrada.classList.remove("show");
+    var pontos = (reg && !reg.acertou) ? 5 : 10;
+    estado.xp += pontos;
+    estado.respostas[id] = { acertou: true };
+    verificarSelo(id);
+    atualizarXP();
+  } else {
+    alt.classList.add("errada");
+    alt.textContent = "✗ " + alt.textContent;
+    alt.disabled = true;
+    fbErrada.textContent = "❌ Por que esta está errada: " + alt.getAttribute("data-fb");
+    fbErrada.classList.add("show");
+    if (!reg) estado.respostas[id] = { acertou: false };
+  }
+}
+
+function verificarSelo(id) {
+  var aba = id.split("-")[0];
+  var ids = [aba + "-1", aba + "-2", aba + "-3"];
+  for (var i = 0; i < ids.length; i++) {
+    var r = estado.respostas[ids[i]];
+    if (!r || !r.acertou) return;
+  }
+  if (!estado.selos[aba]) {
+    estado.selos[aba] = true;
+    estado.totalSelos += 1;
+    document.getElementById("selos").textContent = estado.totalSelos;
+  }
+}
+
+function atualizarXP() {
+  document.getElementById("xp").textContent = estado.xp;
+}
+
+/* ================= DEMO 1: SGBDs ================= */
+var sgbdData = {
+  postgres: {
+    nome: "PostgreSQL",
+    familia: "Relacional (SQL)",
+    modelo: "Tabelas com linhas, colunas, chaves e restrições; suporta também JSON e tipos geográficos.",
+    forte: "Robustez, conformidade com o padrão SQL, extensibilidade e recursos avançados (CTE, window functions, JSONB).",
+    caso: "Instagram e iFood usam PostgreSQL para dados transacionais; é o padrão de fato de muitas startups brasileiras.",
+    licenca: "Livre e aberta (licença PostgreSQL)."
+  },
+  mysql: {
+    nome: "MySQL",
+    familia: "Relacional (SQL)",
+    modelo: "Tabelas relacionais; motores de armazenamento como InnoDB com transações e chaves estrangeiras.",
+    forte: "Simplicidade, velocidade em leituras e enorme ecossistema de hospedagem compartilhada.",
+    caso: "Base do stack LAMP (Linux, Apache, MySQL, PHP); usado por WordPress, que roda cerca de 40% dos sites do mundo.",
+    licenca: "Livre (GPL), mantido pela Oracle."
+  },
+  sqlite: {
+    nome: "SQLite",
+    familia: "Relacional (SQL), embutido",
+    modelo: "Banco inteiro em um único arquivo; roda dentro do aplicativo, sem servidor separado.",
+    forte: "Zero configuração, leveza e portabilidade; ideal para aplicativos locais e dispositivos móveis.",
+    caso: "Presente em praticamente todo Android e iPhone, além de navegadores e aplicativos desktop.",
+    licenca: "Domínio público."
+  },
+  mongo: {
+    nome: "MongoDB",
+    familia: "NoSQL — documentos",
+    modelo: "Documentos JSON (BSON) em coleções, com esquema flexível.",
+    forte: "Flexibilidade de esquema e escala horizontal; bom para catálogos com atributos variáveis.",
+    caso: "Usado por empresas como a Bosch e a eBay em catálogos e perfis com estrutura variável.",
+    licenca: "Licença SSPL (código disponível, não OSI)."
+  },
+  redis: {
+    nome: "Redis",
+    familia: "NoSQL — chave-valor",
+    modelo: "Dicionário em memória com estruturas ricas (listas, conjuntos, hashes, sorted sets).",
+    forte: "Latência de microssegundos; ideal para cache, sessões, filas e placares em tempo real.",
+    caso: "Usado por Twitter e GitHub para cache e contadores; iFood usa para cardápios e sessões.",
+    licenca: "Livre (BSD nas versões clássicas)."
+  },
+  cassandra: {
+    nome: "Apache Cassandra",
+    familia: "NoSQL — colunas largas",
+    modelo: "Tabelas distribuídas com escrita massiva e replicação entre nós, sem mestre único.",
+    forte: "Escalabilidade linear e alta disponibilidade para escrita em escala global.",
+    caso: "Netflix usa para histórico de visualização; Instagram usou para feeds.",
+    licenca: "Livre (Apache 2.0)."
+  }
+};
+
+function demo1Mostrar(sgbd) {
+  var d = sgbdData[sgbd];
+  document.getElementById("demo1-cartao").innerHTML =
+    "<div style='border-left:4px solid var(--cor-destaque); padding-left:1rem'>" +
+    "<h4 style='color:var(--cor-destaque-escuro); margin-bottom:0.5rem'>" + d.nome + "</h4>" +
+    "<p><strong>👪 Família:</strong> " + d.familia + "</p>" +
+    "<p><strong>🧱 Modelo de dados:</strong> " + d.modelo + "</p>" +
+    "<p><strong>💪 Ponto forte:</strong> " + d.forte + "</p>" +
+    "<p><strong>🌎 Caso real:</strong> " + d.caso + "</p>" +
+    "<p><strong>📜 Licença:</strong> " + d.licenca + "</p>" +
+    "</div>";
+}
+
+function demo1Reset() {
+  document.getElementById("demo1-cartao").innerHTML = "👆 Clique em um SGBD para abrir o cartão técnico.";
+}
+
+/* ================= DEMO 2: ESQUEMA ================= */
+var esquemaData = {
+  clientes: {
+    titulo: "Tabela clientes",
+    colunas: [
+      { nome: "id", tipo: "SERIAL", selo: "PK" },
+      { nome: "nome", tipo: "VARCHAR(100) NOT NULL", selo: "" },
+      { nome: "email", tipo: "VARCHAR(150) UNIQUE", selo: "" },
+      { nome: "idade", tipo: "INT CHECK (idade >= 18)", selo: "" }
+    ],
+    rel: "Um cliente pode ter muitos pedidos (1:N)."
+  },
+  produtos: {
+    titulo: "Tabela produtos",
+    colunas: [
+      { nome: "id", tipo: "SERIAL", selo: "PK" },
+      { nome: "nome", tipo: "VARCHAR(100) NOT NULL", selo: "" },
+      { nome: "preco", tipo: "DECIMAL(10,2) CHECK (preco > 0)", selo: "" },
+      { nome: "estoque", tipo: "INT CHECK (estoque >= 0)", selo: "" }
+    ],
+    rel: "Um produto aparece em muitos itens de pedido (1:N com itens_pedido)."
+  },
+  pedidos: {
+    titulo: "Tabela pedidos",
+    colunas: [
+      { nome: "id", tipo: "SERIAL", selo: "PK" },
+      { nome: "cliente_id", tipo: "INT NOT NULL REFERENCES clientes(id)", selo: "FK" },
+      { nome: "total", tipo: "DECIMAL(10,2) CHECK (total > 0)", selo: "" },
+      { nome: "criado_em", tipo: "TIMESTAMP DEFAULT now()", selo: "" }
+    ],
+    rel: "Cada pedido pertence a um cliente (N:1) e tem vários itens (1:N)."
+  },
+  itens: {
+    titulo: "Tabela itens_pedido (associativa)",
+    colunas: [
+      { nome: "pedido_id", tipo: "INT REFERENCES pedidos(id)", selo: "FK" },
+      { nome: "produto_id", tipo: "INT REFERENCES produtos(id)", selo: "FK" },
+      { nome: "quantidade", tipo: "INT CHECK (quantidade > 0)", selo: "" },
+      { nome: "preco_unit", tipo: "DECIMAL(10,2)", selo: "" }
+    ],
+    rel: "Resolve a relação N:M entre pedidos e produtos; a PK é composta por (pedido_id, produto_id)."
+  }
+};
+
+function demo2Mostrar(tab) {
+  var d = esquemaData[tab];
+  var html = "<div style='background:var(--fundo-codigo); padding:1rem; border-radius:8px'>";
+  html += "<h4 style='color:var(--cor-destaque-escuro); margin-bottom:0.5rem'>" + d.titulo + "</h4>";
+  for (var i = 0; i < d.colunas.length; i++) {
+    var c = d.colunas[i];
+    var selo = "";
+    if (c.selo === "PK") selo = "<span class='chave-badge pk'>PK</span>";
+    if (c.selo === "FK") selo = "<span class='chave-badge fk'>FK</span>";
+    html += "<div class='coluna-linha'><span>" + c.nome + selo + "</span><span style='color:var(--texto-suave)'>" + c.tipo + "</span></div>";
+  }
+  html += "<p style='margin-top:0.6rem; font-size:0.9rem'><strong>🔗 Relações:</strong> " + d.rel + "</p>";
+  html += "</div>";
+  document.getElementById("demo2-esquema").innerHTML = html;
+}
+
+function demo2Inserir(tipo) {
+  var alvo = document.getElementById("demo2-resultado");
+  if (tipo === "ok") {
+    alvo.innerHTML = "<div class='resultado-demo'>✅ INSERT aceito: o pedido com cliente_id = 1 e total 150 foi gravado. A chave estrangeira encontrou o cliente 1 e o CHECK confirmou total maior que zero.</div>";
+  } else if (tipo === "orfao") {
+    alvo.innerHTML = "<div class='resultado-erro'>🚫 INSERT recusado: violação de chave estrangeira. Não existe cliente com id 999, então o pedido seria órfão. O SGBD protege a integridade referencial mesmo que a aplicação tenha um bug.</div>";
+  } else {
+    alvo.innerHTML = "<div class='resultado-erro'>🚫 INSERT recusado: violação de CHECK. A regra total maior que zero foi definida na tabela e o banco a impõe para qualquer caminho de escrita, inclusive scripts e ataques.</div>";
+  }
+}
+
+function demo2Reset() {
+  document.getElementById("demo2-esquema").innerHTML = "";
+  document.getElementById("demo2-resultado").innerHTML = "";
+}
+
+/* ================= DEMO 3: MONTADOR DDL ================= */
+var demo3Estado = { colunas: [] };
+
+function demo3Render() {
+  var st = demo3Estado;
+  var lista = "";
+  for (var i = 0; i < st.colunas.length; i++) {
+    var c = st.colunas[i];
+    lista += "<div class='coluna-linha'><span>" + c.nome + " " + c.tipo + (c.pk ? " PRIMARY KEY" : "") + (c.nn ? " NOT NULL" : "") + (c.uq ? " UNIQUE" : "") + "</span>" +
+      "<button class='btn btn-secundario' type='button' data-rm='" + i + "' style='padding:0.2rem 0.6rem; font-size:0.8rem'>remover</button></div>";
+  }
+  document.getElementById("demo3-colunas").innerHTML = lista;
+
+  var botoes = document.querySelectorAll("#demo3-colunas [data-rm]");
+  for (var b = 0; b < botoes.length; b++) {
+    (function (bt) {
+      bt.addEventListener("click", function () {
+        var idx = parseInt(bt.getAttribute("data-rm"), 10);
+        demo3Estado.colunas.splice(idx, 1);
+        demo3Render();
+      });
+    })(botoes[b]);
+  }
+
+  var nomeTab = document.getElementById("demo3-tabela").value.trim() || "minha_tabela";
+  if (st.colunas.length === 0) {
+    document.getElementById("demo3-sql").textContent = "-- adicione colunas para gerar o CREATE TABLE";
+    return;
+  }
+  var sql = "CREATE TABLE " + nomeTab + " (\n";
+  var linhas = [];
+  for (var k = 0; k < st.colunas.length; k++) {
+    var col = st.colunas[k];
+    var linha = "    " + col.nome + " " + col.tipo;
+    if (col.pk) linha += " PRIMARY KEY";
+    if (col.nn) linha += " NOT NULL";
+    if (col.uq) linha += " UNIQUE";
+    linhas.push(linha);
+  }
+  sql += linhas.join(",\n") + "\n);";
+  document.getElementById("demo3-sql").textContent = sql;
+}
+
+function demo3Adicionar() {
+  var nome = document.getElementById("demo3-coluna").value;
+  var tipo = document.getElementById("demo3-tipo").value;
+  var pk = document.getElementById("demo3-pk").checked;
+  var nn = document.getElementById("demo3-nn").checked;
+  var uq = document.getElementById("demo3-uq").checked;
+  for (var i = 0; i < demo3Estado.colunas.length; i++) {
+    if (demo3Estado.colunas[i].nome === nome) {
+      document.getElementById("demo3-sql").textContent = "-- a coluna " + nome + " já foi adicionada; remova-a antes de redefinir.";
+      return;
+    }
+  }
+  demo3Estado.colunas.push({ nome: nome, tipo: tipo, pk: pk, nn: nn, uq: uq });
+  document.getElementById("demo3-pk").checked = false;
+  document.getElementById("demo3-nn").checked = false;
+  document.getElementById("demo3-uq").checked = false;
+  demo3Render();
+}
+
+function demo3Reset() {
+  demo3Estado.colunas = [];
+  document.getElementById("demo3-tabela").value = "produtos";
+  document.getElementById("demo3-pk").checked = false;
+  document.getElementById("demo3-nn").checked = false;
+  document.getElementById("demo3-uq").checked = false;
+  demo3Render();
+}
+
+/* ================= DEMO 4: CONSOLE SQL ================= */
+var demo4Inicial = [
+  { id: 1, nome: "Ana", cidade: "SP", idade: 28 },
+  { id: 2, nome: "Bruno", cidade: "RJ", idade: 22 },
+  { id: 3, nome: "Carla", cidade: "SP", idade: 35 }
+];
+
+var demo4Estado = { rows: [], proxId: 4, visao: [], sql: "", msg: "" };
+var demo4Inserts = [
+  { nome: "Diego", cidade: "MG", idade: 24 },
+  { nome: "Elisa", cidade: "SP", idade: 31 },
+  { nome: "Felipe", cidade: "BA", idade: 19 }
+];
+var demo4InsertIdx = 0;
+
+function demo4Reset() {
+  demo4Estado.rows = demo4Inicial.map(function (r) { return { id: r.id, nome: r.nome, cidade: r.cidade, idade: r.idade }; });
+  demo4Estado.proxId = 4;
+  demo4Estado.visao = demo4Estado.rows.slice();
+  demo4Estado.sql = "-- clique em um comando para executar";
+  demo4Estado.msg = "";
+  demo4InsertIdx = 0;
+  demo4Render();
+}
+
+function demo4Render() {
+  var st = demo4Estado;
+  document.getElementById("demo4-sql").textContent = st.sql;
+  var html = "<table class='tab-dados'><tr><th>id</th><th>nome</th><th>cidade</th><th>idade</th></tr>";
+  if (st.visao.length === 0) {
+    html += "<tr><td colspan='4' style='text-align:center; color:var(--texto-suave)'>(nenhuma linha retornada)</td></tr>";
+  } else {
+    for (var i = 0; i < st.visao.length; i++) {
+      var r = st.visao[i];
+      html += "<tr><td>" + r.id + "</td><td>" + r.nome + "</td><td>" + r.cidade + "</td><td>" + r.idade + "</td></tr>";
+    }
+  }
+  html += "</table>";
+  html += "<p style='font-size:0.85rem; color:var(--texto-suave)'>Total de linhas na tabela: " + st.rows.length + "</p>";
+  document.getElementById("demo4-tabela").innerHTML = html;
+  document.getElementById("demo4-msg").innerHTML = st.msg;
+}
+
+function demo4Executar(cmd) {
+  var st = demo4Estado;
+  if (cmd === "select") {
+    st.sql = "SELECT * FROM clientes;";
+    st.visao = st.rows.slice();
+    st.msg = "<div class='resultado-demo'>📖 SELECT retornou " + st.visao.length + " linha(s). Nenhum dado foi alterado.</div>";
+  } else if (cmd === "selectsp") {
+    st.sql = "SELECT * FROM clientes WHERE cidade = 'SP';";
+    st.visao = st.rows.filter(function (r) { return r.cidade === "SP"; });
+    st.msg = "<div class='resultado-demo'>📖 O WHERE filtrou apenas clientes de SP: " + st.visao.length + " linha(s) de " + st.rows.length + ".</div>";
+  } else if (cmd === "insert") {
+    var novo = demo4Inserts[demo4InsertIdx % demo4Inserts.length];
+    demo4InsertIdx += 1;
+    var linha = { id: st.proxId, nome: novo.nome, cidade: novo.cidade, idade: novo.idade };
+    st.proxId += 1;
+    st.rows.push(linha);
+    st.visao = st.rows.slice();
+    st.sql = "INSERT INTO clientes (nome, cidade, idade) VALUES ('" + novo.nome + "', '" + novo.cidade + "', " + novo.idade + ");";
+    st.msg = "<div class='resultado-demo'>➕ 1 linha inserida com id " + linha.id + " (gerado pelo SERIAL).</div>";
+  } else if (cmd === "update") {
+    st.sql = "UPDATE clientes SET cidade = 'RJ' WHERE id = 2;";
+    var afetadas = 0;
+    for (var i = 0; i < st.rows.length; i++) {
+      if (st.rows[i].id === 2) { st.rows[i].cidade = "RJ"; afetadas++; }
+    }
+    st.visao = st.rows.slice();
+    if (afetadas > 0) {
+      st.msg = "<div class='resultado-demo'>✏️ UPDATE com WHERE afetou " + afetadas + " linha(s): apenas o cliente de id 2 mudou.</div>";
+    } else {
+      st.msg = "<div class='resultado-erro'>⚠️ UPDATE com WHERE afetou 0 linhas: não existe cliente com id 2 nesta base.</div>";
+    }
+  } else if (cmd === "updateall") {
+    st.sql = "UPDATE clientes SET cidade = 'RJ';   -- SEM WHERE!";
+    var n = st.rows.length;
+    for (var j = 0; j < st.rows.length; j++) st.rows[j].cidade = "RJ";
+    st.visao = st.rows.slice();
+    st.msg = "<div class='resultado-erro'>⚠️ UPDATE sem WHERE afetou TODAS as " + n + " linhas! Em produção isso alteraria a base inteira. Sempre confira o filtro e use transação.</div>";
+  } else if (cmd === "delete") {
+    st.sql = "DELETE FROM clientes WHERE idade < 25;";
+    var antes = st.rows.length;
+    st.rows = st.rows.filter(function (r) { return r.idade >= 25; });
+    var removidas = antes - st.rows.length;
+    st.visao = st.rows.slice();
+    st.msg = "<div class='resultado-demo'>🗑️ DELETE com WHERE removeu " + removidas + " linha(s) com idade menor que 25. A estrutura da tabela permanece.</div>";
+  } else if (cmd === "order") {
+    st.sql = "SELECT * FROM clientes ORDER BY nome;";
+    st.visao = st.rows.slice().sort(function (a, b) { return a.nome.localeCompare(b.nome); });
+    st.msg = "<div class='resultado-demo'>🔤 ORDER BY apenas ordena a exibição; os dados na tabela não mudam de posição física.</div>";
+  }
+  demo4Render();
+}
+
+/* ================= DEMO 5: INJEÇÃO ================= */
+var demo5Base = [
+  { id: 1, nome: "Ana", cidade: "SP" },
+  { id: 2, nome: "Bruno", cidade: "RJ" },
+  { id: 3, nome: "Carla", cidade: "SP" },
+  { id: 4, nome: "Diego", cidade: "MG" }
+];
+
+function demo5Injetar() {
+  document.getElementById("demo5-entrada").value = "' OR '1'='1";
+  document.getElementById("demo5-sql").textContent = "-- campo preenchido com o texto malicioso; escolha como executar a busca";
+  document.getElementById("demo5-resultado").innerHTML = "";
+}
+
+function demo5Buscar(modo) {
+  var entrada = document.getElementById("demo5-entrada").value;
+  var sql;
+  var retornadas = [];
+  var msg;
+
+  if (modo === "concat") {
+    sql = "SELECT * FROM clientes WHERE nome = '" + entrada + "';";
+    var malicioso = entrada.indexOf("'") >= 0 && entrada.toUpperCase().indexOf("OR") >= 0;
+    if (malicioso) {
+      retornadas = demo5Base.slice();
+      msg = "<div class='resultado-erro'>🚨 VAZAMENTO! O texto digitado virou parte do comando SQL. A condição '1'='1' é sempre verdadeira, então o banco devolveu TODOS os " + retornadas.length + " clientes. Foi assim que a operadora britânica TalkTalk expôs dados de cerca de 157 mil clientes em 2015.</div>";
+    } else {
+      retornadas = demo5Base.filter(function (r) { return r.nome === entrada; });
+      msg = "<div class='resultado-demo'>🔎 Busca normal: " + retornadas.length + " cliente(s) encontrado(s). Mas atenção: esta implementação continua vulnerável, basta mudar a entrada.</div>";
+    }
+  } else {
+    sql = "SELECT * FROM clientes WHERE nome = $1;\n-- parâmetro enviado separado: " + entrada;
+    retornadas = demo5Base.filter(function (r) { return r.nome === entrada; });
+    var tentou = entrada.indexOf("'") >= 0;
+    if (tentou) {
+      msg = "<div class='resultado-demo'>🛡️ ATAQUE BLOQUEADO! O banco tratou o texto inteiro como um valor literal a procurar, não como código. Nenhum cliente se chama assim, então o resultado é vazio e nenhum dado vazou.</div>";
+    } else {
+      msg = "<div class='resultado-demo'>🛡️ Busca segura: " + retornadas.length + " cliente(s). O valor viajou separado do comando, como dado.</div>";
+    }
+  }
+
+  document.getElementById("demo5-sql").textContent = sql;
+  var html = "<table class='tab-dados'><tr><th>id</th><th>nome</th><th>cidade</th></tr>";
+  if (retornadas.length === 0) {
+    html += "<tr><td colspan='3' style='text-align:center; color:var(--texto-suave)'>(nenhuma linha retornada)</td></tr>";
+  } else {
+    for (var i = 0; i < retornadas.length; i++) {
+      html += "<tr><td>" + retornadas[i].id + "</td><td>" + retornadas[i].nome + "</td><td>" + retornadas[i].cidade + "</td></tr>";
+    }
+  }
+  html += "</table>";
+  html += msg;
+  document.getElementById("demo5-resultado").innerHTML = html;
+}
+
+function demo5Reset() {
+  document.getElementById("demo5-entrada").value = "Ana";
+  document.getElementById("demo5-sql").textContent = "-- a consulta gerada aparecerá aqui";
+  document.getElementById("demo5-resultado").innerHTML = "";
+}
+
+/* ================= LIGAÇÕES ================= */
+function ligarBotoes() {
+  var tabs = document.querySelectorAll(".tab");
+  for (var t = 0; t < tabs.length; t++) {
+    (function (tab) {
+      tab.addEventListener("click", function () {
+        irParaAba(parseInt(tab.getAttribute("data-aba"), 10));
+      });
+      tab.addEventListener("keydown", function (ev) {
+        var lista = Array.prototype.slice.call(document.querySelectorAll(".tab"));
+        var idx = lista.indexOf(tab);
+        if (ev.key === "ArrowRight" && idx < lista.length - 1) { lista[idx + 1].focus(); ev.preventDefault(); }
+        if (ev.key === "ArrowLeft" && idx > 0) { lista[idx - 1].focus(); ev.preventDefault(); }
+      });
+    })(tabs[t]);
+  }
+
+  document.getElementById("btn-modo").addEventListener("click", alternarModo);
+  document.getElementById("btn-tema").addEventListener("click", alternarTema);
+
+  var sgbds = document.querySelectorAll("#demo1-area [data-sgbd]");
+  for (var i = 0; i < sgbds.length; i++) {
+    (function (b) { b.addEventListener("click", function () { demo1Mostrar(b.getAttribute("data-sgbd")); }); })(sgbds[i]);
+  }
+  document.getElementById("demo1-reset").addEventListener("click", demo1Reset);
+
+  var tabs2 = document.querySelectorAll("#demo2-area [data-tab2]");
+  for (var j = 0; j < tabs2.length; j++) {
+    (function (b) { b.addEventListener("click", function () { demo2Mostrar(b.getAttribute("data-tab2")); }); })(tabs2[j]);
+  }
+  document.getElementById("demo2-ok").addEventListener("click", function () { demo2Inserir("ok"); });
+  document.getElementById("demo2-orfao").addEventListener("click", function () { demo2Inserir("orfao"); });
+  document.getElementById("demo2-check").addEventListener("click", function () { demo2Inserir("check"); });
+  document.getElementById("demo2-reset").addEventListener("click", demo2Reset);
+
+  document.getElementById("demo3-add").addEventListener("click", demo3Adicionar);
+  document.getElementById("demo3-reset").addEventListener("click", demo3Reset);
+  document.getElementById("demo3-tabela").addEventListener("input", demo3Render);
+  demo3Render();
+
+  var cmds = document.querySelectorAll("#demo4-area [data-sql]");
+  for (var k = 0; k < cmds.length; k++) {
+    (function (b) { b.addEventListener("click", function () { demo4Executar(b.getAttribute("data-sql")); }); })(cmds[k]);
+  }
+  document.getElementById("demo4-reset").addEventListener("click", demo4Reset);
+  demo4Reset();
+
+  document.getElementById("demo5-ataque").addEventListener("click", demo5Injetar);
+  document.getElementById("demo5-concat").addEventListener("click", function () { demo5Buscar("concat"); });
+  document.getElementById("demo5-param").addEventListener("click", function () { demo5Buscar("param"); });
+  document.getElementById("demo5-reset").addEventListener("click", demo5Reset);
+
+  document.addEventListener("keydown", function (ev) {
+    if (estado.modo === "apresentacao") {
+      if (ev.key === "ArrowRight" && estado.abaAtual < 6) irParaAba(estado.abaAtual + 1);
+      if (ev.key === "ArrowLeft" && estado.abaAtual > 1) irParaAba(estado.abaAtual - 1);
+    }
+  });
+}
+
+/* ================= CARGA INICIAL ================= */
+document.addEventListener("DOMContentLoaded", function () {
+  ligarBotoes();
+  inicializarQuiz();
+  var n = lerHash();
+  ativarAba(n ? n : 1);
+  atualizarXP();
+});
+</script>
+
+</body>
+</html>
