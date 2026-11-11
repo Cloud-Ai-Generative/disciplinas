@@ -1,0 +1,2096 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DEVOPS — Aula 6</title>
+<!-- HTMLearning v2.17 — Campos não informados: professor da disciplina (nome, e-mail, lattes, orcid, site, instituição). Nenhum conteúdo pedagógico foi inventado. -->
+<style>
+:root {
+  --cor-destaque: #0369A1;
+  --cor-destaque-claro: #E0F2FE;
+  --cor-destaque-escuro: #0C4A6E;
+  --fundo: #FFFFFF;
+  --fundo-cartao: #F8FAFC;
+  --fundo-codigo: #F1F5F9;
+  --texto: #0F172A;
+  --texto-suave: #64748B;
+  --borda: #E2E8F0;
+  --sucesso: #059669;
+  --erro: #DC2626;
+  --aviso: #F59E0B;
+}
+[data-theme="dark"] {
+  --fundo: #0F172A;
+  --fundo-cartao: #1E293B;
+  --fundo-codigo: #334155;
+  --texto: #F1F5F9;
+  --texto-suave: #94A3B8;
+  --borda: #475569;
+  --cor-destaque-claro: #0C4A6E;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 18px;
+  line-height: 1.6;
+  background: var(--fundo);
+  color: var(--texto);
+  transition: background 0.3s, color 0.3s;
+}
+body.modo-apresentacao { font-size: 22px; }
+header {
+  background: linear-gradient(135deg, var(--cor-destaque), var(--cor-destaque-escuro));
+  color: white;
+  padding: 2rem 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+header .meta { opacity: 0.95; font-size: 0.95rem; }
+.controles-topo { position: fixed; top: 1rem; right: 1rem; z-index: 1000; display: flex; gap: 0.5rem; }
+.controles-topo button {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--cor-destaque);
+  color: var(--cor-destaque);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+.controles-topo button:hover { background: var(--cor-destaque); color: white; }
+.xp-bar {
+  position: sticky;
+  top: 0;
+  background: var(--cor-destaque-claro);
+  padding: 0.75rem 1.5rem;
+  border-bottom: 2px solid var(--cor-destaque);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  z-index: 99;
+}
+.tabs-container {
+  position: sticky;
+  top: 52px;
+  background: var(--fundo);
+  border-bottom: 2px solid var(--borda);
+  z-index: 98;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+.tabs { display: flex; padding: 0 1rem; gap: 0.25rem; }
+.tab {
+  padding: 1rem 1.5rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--texto-suave);
+  font-size: 1rem;
+  font-weight: 600;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.tab:hover { color: var(--cor-destaque); }
+.tab[aria-selected="true"] {
+  color: var(--cor-destaque);
+  border-bottom-color: var(--cor-destaque);
+  background: var(--fundo);
+}
+.painel { display: none; padding: 2rem 1.5rem; max-width: 1100px; margin: 0 auto; }
+.painel.active { display: block; animation: fade 0.3s; }
+@keyframes fade { from {opacity:0} to {opacity:1} }
+h2 {
+  color: var(--cor-destaque-escuro);
+  border-left: 5px solid var(--cor-destaque);
+  padding-left: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.6rem;
+}
+h3 { color: var(--cor-destaque-escuro); margin: 1.5rem 0 1rem; font-size: 1.3rem; }
+.cartao {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.missao {
+  background: linear-gradient(135deg, var(--cor-destaque-claro), var(--fundo-cartao));
+  border-left: 5px solid var(--cor-destaque);
+}
+.missao::before {
+  content: "🎯 MISSÃO";
+  display: block;
+  font-weight: bold;
+  color: var(--cor-destaque-escuro);
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.mundo-real { background: #E7F5FF; border-left: 5px solid #1971C2; }
+[data-theme="dark"] .mundo-real { background: #1A3A52; }
+.mundo-real::before {
+  content: "🌎 NO MUNDO REAL";
+  display: block;
+  font-weight: bold;
+  color: #1971C2;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+.ferramentas { background: #D3F9D8; border-left: 5px solid #059669; }
+[data-theme="dark"] .ferramentas { background: #1B4332; }
+.ferramentas::before {
+  content: "🛠️ FERRAMENTAS";
+  display: block;
+  font-weight: bold;
+  color: #059669;
+  margin-bottom: 0.5rem;
+}
+.demo-box {
+  background: var(--fundo-codigo);
+  border: 3px solid var(--cor-destaque);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+.instrucoes {
+  background: #FFF9DB;
+  border: 2px solid var(--aviso);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .instrucoes { background: #3D3518; }
+.instrucoes::before {
+  content: "📋 INSTRUÇÕES PASSO A PASSO";
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.roteiro {
+  background: #F3D9FA;
+  border-left: 4px solid #9C36B5;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+[data-theme="dark"] .roteiro { background: #3D1F47; }
+.roteiro::before { content: "🎤 Roteiro do apresentador: "; font-weight: bold; font-style: normal; }
+.prever {
+  background: #E3FAFC;
+  border: 2px dashed #0C8599;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+[data-theme="dark"] .prever { background: #0F3742; }
+.prever::before {
+  content: "🔮 PREVISÃO";
+  display: block;
+  font-weight: bold;
+  color: #0C8599;
+  margin-bottom: 0.5rem;
+}
+.legenda {
+  background: #FFF3BF;
+  border-left: 4px solid #F59F00;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+  border-radius: 6px;
+}
+[data-theme="dark"] .legenda { background: #3D3518; }
+.legenda::before { content: "🔑 Legenda: "; font-weight: bold; }
+.quiz-box {
+  background: var(--fundo-cartao);
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+.termos-quiz {
+  background: #FFF3BF;
+  border: 2px solid #F59F00;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+[data-theme="dark"] .termos-quiz { background: #3D3518; }
+.termos-quiz::before {
+  content: "🔑 Termos deste quiz";
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.pergunta {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--fundo);
+  border-radius: 8px;
+  border: 2px solid var(--borda);
+}
+.pergunta p { font-weight: 600; margin-bottom: 0.75rem; }
+.alt {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+  background: white;
+  border: 2px solid var(--borda);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--texto);
+  transition: all 0.2s;
+}
+[data-theme="dark"] .alt { background: var(--fundo-cartao); }
+.alt:hover:not(:disabled) { border-color: var(--cor-destaque); background: var(--cor-destaque-claro); }
+.alt.certa { background: #D3F9D8 !important; border-color: var(--sucesso) !important; color: var(--sucesso); font-weight: bold; }
+.alt.errada { background: #FFE3E3 !important; border-color: var(--erro) !important; color: var(--erro); }
+[data-theme="dark"] .alt.certa { background: #1B4332 !important; color: #51CF66 !important; }
+[data-theme="dark"] .alt.errada { background: #3D1F24 !important; color: #FF6B6B !important; }
+.alt:disabled { cursor: not-allowed; opacity: 0.7; }
+.fb { margin-top: 0.5rem; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.95rem; display: none; }
+.fb.show { display: block; }
+.fb.fb-certa { background: #D3F9D8; border-left: 4px solid var(--sucesso); color: #087F23; }
+.fb.fb-errada { background: #FFE3E3; border-left: 4px solid var(--erro); color: #C92A2A; }
+[data-theme="dark"] .fb.fb-certa { background: #1B4332; color: #69DB7C; }
+[data-theme="dark"] .fb.fb-errada { background: #3D1F24; color: #FFA8A8; }
+details {
+  background: var(--fundo-codigo);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+  border: 1px solid var(--borda);
+}
+details[open] { background: var(--cor-destaque-claro); }
+summary { cursor: pointer; font-weight: bold; color: var(--cor-destaque-escuro); padding: 0.25rem 0; }
+.demo-area {
+  background: white;
+  border: 2px dashed var(--cor-destaque);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+  min-height: 150px;
+}
+[data-theme="dark"] .demo-area { background: var(--fundo-cartao); }
+.btn {
+  background: var(--cor-destaque);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.95rem;
+  margin: 0.25rem;
+}
+.btn:hover { background: var(--cor-destaque-escuro); }
+.btn-secundario { background: var(--texto-suave); color: white; }
+.resultado-demo {
+  background: #D3F9D8;
+  border-left: 4px solid var(--sucesso);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .resultado-demo { background: #1B4332; color: #69DB7C; }
+.resultado-erro {
+  background: #FFE3E3;
+  border-left: 4px solid var(--erro);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+}
+[data-theme="dark"] .resultado-erro { background: #3D1F24; color: #FFA8A8; }
+footer {
+  background: var(--fundo-cartao);
+  border-top: 3px solid var(--cor-destaque);
+  padding: 2rem 1.5rem;
+  margin-top: 3rem;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+footer h4 { color: var(--cor-destaque-escuro); margin-bottom: 0.75rem; font-size: 1rem; }
+footer .bloco { padding: 1rem 0; line-height: 1.7; }
+footer .bloco + .bloco { border-top: 2px solid var(--borda); margin-top: 1rem; padding-top: 1.5rem; }
+footer a { color: var(--cor-destaque-escuro); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+footer ul { list-style: none; padding-left: 0; }
+footer ul li { margin: 0.4rem 0; }
+.revisao-mapa {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+.no-mapa {
+  background: var(--cor-destaque-claro);
+  border: 2px solid var(--cor-destaque);
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+}
+.no-mapa h4 { color: var(--cor-destaque-escuro); margin-bottom: 0.5rem; }
+.cola-rapida {
+  background: #FFF9DB;
+  border: 2px solid var(--aviso);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin: 1rem 0;
+}
+[data-theme="dark"] .cola-rapida { background: #3D3518; }
+.cola-rapida dt { font-weight: bold; color: var(--cor-destaque-escuro); margin-top: 0.75rem; }
+.cola-rapida dd { margin-left: 1rem; margin-bottom: 0.5rem; color: var(--texto); }
+.chefao {
+  background: linear-gradient(135deg, var(--cor-destaque-claro), white);
+  border: 3px solid var(--cor-destaque);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+[data-theme="dark"] .chefao { background: linear-gradient(135deg, var(--cor-destaque-claro), var(--fundo-cartao)); }
+.chefao::before {
+  content: "👑 CHEFÃO — DESAFIO FINAL";
+  display: block;
+  font-weight: bold;
+  color: var(--cor-destaque-escuro);
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+}
+.mitoverdade {
+  background: #F3D9FA;
+  border-left: 5px solid #9C36B5;
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 8px;
+}
+[data-theme="dark"] .mitoverdade { background: #3D1F47; }
+code {
+  background: var(--fundo-codigo);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-family: "Courier New", monospace;
+  font-size: 0.95em;
+  color: var(--cor-destaque-escuro);
+}
+pre {
+  background: var(--fundo-codigo);
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  border-left: 4px solid var(--cor-destaque);
+  margin: 1rem 0;
+  font-family: "Courier New", monospace;
+  font-size: 0.9rem;
+}
+.criterio-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.8rem;
+  margin: 0.3rem 0;
+  background: var(--fundo-codigo);
+  border-radius: 6px;
+  border-left: 4px solid var(--borda);
+  transition: all 0.2s;
+}
+.criterio-item.marcado { border-left-color: var(--cor-destaque); background: var(--cor-destaque-claro); }
+.criterio-item input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; }
+.criterio-item label { cursor: pointer; flex: 1; font-size: 0.95rem; }
+.peso-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  background: var(--cor-destaque);
+  color: white;
+}
+.barra-score {
+  height: 28px;
+  background: var(--borda);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+.barra-score .fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--erro), var(--aviso), var(--sucesso));
+  transition: width 0.4s;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 0.5rem;
+  color: white;
+  font-weight: bold;
+  font-size: 0.85rem;
+}
+@media (max-width: 600px) {
+  header h1 { font-size: 1.5rem; }
+  .tab { padding: 0.75rem 1rem; font-size: 0.9rem; }
+  .painel { padding: 1rem; }
+  .controles-topo { position: static; padding: 0.5rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="controles-topo">
+  <button id="btn-modo" type="button">🎤 Apresentação</button>
+  <button id="btn-tema" type="button">🌙 Escuro</button>
+</div>
+
+<header>
+  <h1>DEVOPS</h1>
+  <div class="meta">Aula 6 · Unidade 2 · Págs. 47 a 59 · Ferramentas de Estimativa de Esforço</div>
+</header>
+
+<div class="xp-bar">
+  <div>⭐ XP: <span id="xp">0</span> · Selos: <span id="selos">0</span>/5</div>
+  <div id="progresso">Aba 1 de 6</div>
+</div>
+
+<div class="tabs-container">
+  <div class="tabs" role="tablist" aria-label="Abas da aula">
+    <button class="tab" role="tab" id="tab-1" aria-selected="true" aria-controls="painel-1" data-aba="1" type="button">1 · Introdução</button>
+    <button class="tab" role="tab" id="tab-2" aria-selected="false" aria-controls="painel-2" data-aba="2" type="button">2 · Tipos</button>
+    <button class="tab" role="tab" id="tab-3" aria-selected="false" aria-controls="painel-3" data-aba="3" type="button">3 · Critérios</button>
+    <button class="tab" role="tab" id="tab-4" aria-selected="false" aria-controls="painel-4" data-aba="4" type="button">4 · Ferramentas</button>
+    <button class="tab" role="tab" id="tab-5" aria-selected="false" aria-controls="painel-5" data-aba="5" type="button">5 · Estudo de caso</button>
+    <button class="tab" role="tab" id="tab-6" aria-selected="false" aria-controls="painel-6" data-aba="6" type="button">⭐ Revisão</button>
+  </div>
+</div>
+
+<!-- ============ ABA 1 ============ -->
+<div class="painel active" id="painel-1" role="tabpanel" aria-labelledby="tab-1">
+  <h2>Aba 1 · Introdução às ferramentas de estimativa de esforço</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é entender por que as <strong>ferramentas de estimativa de esforço</strong> (softwares que aplicam modelos matemáticos ou históricos para prever quanto trabalho um projeto de software vai consumir) existem e qual problema elas resolvem. Você vai comparar a estimativa manual (feita no papel ou em planilha) com a estimativa apoiada por ferramenta, e descobrir o que a ferramenta agrega: consistência, rastreabilidade, calibração e velocidade.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 O problema que as ferramentas resolvem</h3>
+    <p>Estimar esforço manualmente é possível, mas sofre de quatro males crônicos:</p>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Inconsistência</strong>: dois estimadores experientes chegam a números diferentes para o mesmo projeto, porque cada um usa critérios implícitos.</li>
+      <li><strong>Falta de rastreabilidade</strong>: quando o projeto estoura, ninguém consegue explicar de onde veio o número original.</li>
+      <li><strong>Sem calibração</strong>: o histórico de projetos entregues não é reaproveitado de forma sistemática para melhorar as próximas estimativas.</li>
+      <li><strong>Lentidão</strong>: recalcular cenários (e se a equipe for menor? e se o prazo apertar?) exige refazer contas à mão.</li>
+    </ul>
+    <p>Uma ferramenta de estimativa ataca esses males ao <strong>explicitar o modelo</strong> (as fórmulas e parâmetros ficam visíveis), <strong>guardar o histórico</strong> (cada estimativa vira um registro auditável), <strong>permitir calibração</strong> (comparar estimado versus realizado) e <strong>recalcular cenários em segundos</strong>.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 O que uma ferramenta de estimativa faz</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Recebe entradas</strong>: tamanho do software (em linhas de código, pontos de função ou pontos de história), complexidade, experiência da equipe, restrições de prazo.</li>
+      <li><strong>Aplica um modelo</strong>: paramétrico (como COCOMO), baseado em analogia (comparar com projetos parecidos), ou de consenso (como Planning Poker).</li>
+      <li><strong>Devolve saídas</strong>: esforço em pessoas-hora ou pessoas-mês, prazo em meses, tamanho de equipe sugerido e distribuição por fase.</li>
+      <li><strong>Permite análise de sensibilidade</strong>: mostra como o resultado muda quando uma entrada varia.</li>
+      <li><strong>Gera relatório</strong>: documento que justifica o número perante o cliente ou a diretoria.</li>
+    </ul>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Estimativa manual versus ferramenta no mundo real</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Fábricas de software do governo brasileiro</strong>: contratos do SISP (Sistema de Administração dos Recursos de Tecnologia da Informação) exigem estimativa por pontos de função com método documentado; ferramentas como as usadas pelo Serpro (Serviço Federal de Processamento de Dados) tornam a contagem auditável.</li>
+      <li><strong>Banco do Brasil</strong>: usa modelos paramétricos calibrados com histórico próprio para dimensionar equipes de fornecedores.</li>
+      <li><strong>Consultorias globais</strong>: empresas como a Galorath (americana, criadora do SEER-SEM) e a Quantitative Software Management (americana, criadora do SLIM) vendem ferramentas de estimativa usadas por defesa, aeroespacial e bancos.</li>
+      <li><strong>Times ágeis</strong>: usam ferramentas leves de Planning Poker (PlanningPoker.com, Parabol) integradas ao Jira (ferramenta de gestão ágil da Atlassian, empresa australiana).</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ O que a ferramenta NÃO faz</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Não substitui o julgamento</strong>: a ferramenta calcula; o profissional decide se as premissas fazem sentido.</li>
+      <li><strong>Não conserta entrada ruim</strong>: tamanho mal estimado gera esforço mal estimado, com aparência de precisão.</li>
+      <li><strong>Não conhece seu contexto</strong>: sem calibração local, os coeficientes de fábrica podem estar errados para a sua equipe.</li>
+      <li><strong>Não elimina incerteza</strong>: entrega um número ou uma faixa, nunca uma certeza.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: manual versus ferramenta, lado a lado</h3>
+
+    <div class="prever">
+      <strong>Antes de comparar, preveja:</strong> para um projeto de 50 mil linhas de código, se você mudar a experiência da equipe de baixa para alta, a estimativa manual típica muda de forma consistente entre estimadores? E a ferramenta?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, registre sua previsão.<br>
+      <strong>Passo 1:</strong> defina o tamanho do projeto e a experiência da equipe.<br>
+      <strong>Passo 2:</strong> clique em Estimar manualmente e veja três estimadores humanos divergirem.<br>
+      <strong>Passo 3:</strong> clique em Estimar com ferramenta e veja o modelo aplicado de forma consistente.<br>
+      <strong>Passo 4:</strong> mude a experiência da equipe e repita: observe a rastreabilidade do cálculo.
+    </div>
+
+    <div class="roteiro">
+      mostre a divergência humana primeiro (três números diferentes para o mesmo projeto). Depois mostre a ferramenta com o cálculo aberto, passo a passo. A lição não é que a ferramenta é mais inteligente, e sim que ela é consistente e auditável.
+    </div>
+
+    <div class="legenda">
+      KLOC = milhares de linhas de código · pessoas-mês = trabalho de uma pessoa durante um mês · modelo paramétrico = fórmula com coeficientes ajustáveis · calibração = ajustar coeficientes com histórico local · rastreabilidade = poder explicar de onde veio cada número
+    </div>
+
+    <div class="demo-area" id="demo1-area">
+      <div style="display:grid; gap:0.5rem; max-width:560px">
+        <label>📏 Tamanho do projeto (KLOC):
+          <input type="number" id="demo1-kloc" value="50" min="1" max="1000" style="width:100px; padding:0.4rem; border:1px solid var(--borda); border-radius:6px; background:var(--fundo); color:var(--texto)">
+        </label>
+        <label>👥 Experiência da equipe:
+          <select id="demo1-exp" style="padding:0.4rem; border-radius:6px; border:1px solid var(--borda); background:var(--fundo); color:var(--texto)">
+            <option value="baixa">Baixa (equipe nova no domínio)</option>
+            <option value="media" selected>Média (alguns projetos similares)</option>
+            <option value="alta">Alta (equipe veterana no domínio)</option>
+          </select>
+        </label>
+        <div>
+          <button class="btn" type="button" id="demo1-manual">🧠 Estimar manualmente</button>
+          <button class="btn" type="button" id="demo1-ferramenta">🛠️ Estimar com ferramenta</button>
+          <button class="btn btn-secundario" type="button" id="demo1-reset">🔄 Reiniciar</button>
+        </div>
+      </div>
+      <div id="demo1-resultado" style="margin-top:1rem"></div>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> a ferramenta não é mais inteligente que os humanos; ela é mais consistente. O mesmo input sempre gera o mesmo output, e cada passo do cálculo fica registrado. Isso é o que permite auditar, calibrar e comparar cenários.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 1</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      ferramenta de estimativa = software que aplica modelos para prever esforço ·
+      modelo paramétrico = fórmula com coeficientes (como COCOMO) ·
+      calibração = ajustar o modelo com histórico local ·
+      rastreabilidade = poder explicar a origem de cada número ·
+      análise de sensibilidade = ver como o resultado muda quando uma entrada varia.
+    </div>
+
+    <div class="pergunta" data-pergunta="1-1">
+      <p>1. Qual é o principal ganho de usar uma ferramenta de estimativa em vez de estimar apenas manualmente?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! A ferramenta não elimina a incerteza nem garante acerto; ela apenas torna o processo consistente e auditável.">Garantir que a estimativa estará correta no fim do projeto</button>
+        <button class="alt" type="button" data-fb="Correto! O ganho central é consistência (mesmo input, mesmo output), rastreabilidade (cada passo registrado) e capacidade de recalibrar e comparar cenários rapidamente.">Consistência, rastreabilidade do cálculo e recálculo rápido de cenários</button>
+        <button class="alt" type="button" data-fb="Errado! A ferramenta não substitui o julgamento humano; ela calcula, mas o profissional valida as premissas.">Eliminar a necessidade de julgamento humano na estimativa</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="1-2">
+      <p>2. O que significa calibrar uma ferramenta de estimativa?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! Instalar atualizações é manutenção de software, não calibração de modelo.">Instalar a versão mais recente do software</button>
+        <button class="alt" type="button" data-fb="Errado! Aumentar o tamanho da equipe é decisão de planejamento, não calibração.">Aumentar o número de pessoas para bater o prazo</button>
+        <button class="alt" type="button" data-fb="Correto! Calibrar é ajustar os coeficientes do modelo com o histórico de projetos realmente entregues pela própria organização, para que a estimativa reflita a produtividade local.">Ajustar os coeficientes do modelo com o histórico real de projetos da organização</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="1-3">
+      <p>3. Uma ferramenta de estimativa recebeu um tamanho de projeto subestimado pela metade. O que acontece?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! A ferramenta calcula corretamente sobre a entrada errada, produzindo um esforço subestimado com aparência de precisão. É o clássico lixo entra, lixo sai; por isso a qualidade da entrada é crítica.">A ferramenta produzirá uma estimativa errada, mas com aparência de precisão</button>
+        <button class="alt" type="button" data-fb="Errado! A ferramenta não tem como saber que o tamanho está errado; ela não valida a realidade do input.">A ferramenta detectará o erro e corrigirá o tamanho automaticamente</button>
+        <button class="alt" type="button" data-fb="Errado! A ferramenta não se recusa a calcular por entrada suspeita; ela processa o que recebe.">A ferramenta se recusará a calcular até a entrada ser corrigida</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 1</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=ferramentas+de+estimativa+de+esforço+software+introdução" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=software+effort+estimation+tools+overview" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=ferramentas+estimativa+esforço+software+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Ferramenta de estimativa</strong>: software que aplica modelos de previsão de esforço.</li>
+      <li><strong>Modelo paramétrico</strong>: fórmula com coeficientes ajustáveis.</li>
+      <li><strong>Calibração</strong>: ajuste com histórico local.</li>
+      <li><strong>Rastreabilidade</strong>: origem de cada número documentada.</li>
+      <li><strong>Análise de sensibilidade</strong>: efeito de variar uma entrada.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Com uma boa ferramenta, não é mais preciso entender o modelo por trás da estimativa.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> a ferramenta automatiza o cálculo, mas o profissional precisa entender as premissas para saber quando o resultado faz sentido. Sem isso, aceita-se qualquer número com aparência de autoridade, o que é mais perigoso que estimar à mão.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 2 ============ -->
+<div class="painel" id="painel-2" role="tabpanel" aria-labelledby="tab-2">
+  <h2>Aba 2 · Tipos de ferramentas de estimativa de esforço</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é classificar as ferramentas de estimativa em quatro grandes famílias: <strong>paramétricas</strong> (usam fórmulas matemáticas calibradas, como COCOMO e SLIM), <strong>baseadas em analogia</strong> (comparam com projetos históricos parecidos), <strong>de consenso ágil</strong> (reúnem a equipe para estimar, como Planning Poker) e <strong>híbridas ou especializadas</strong> (combinam abordagens ou focam em um nicho, como pontos de função). Você vai identificar cada família por sua descrição.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 As quatro famílias</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Paramétricas</strong>: aplicam fórmulas com coeficientes derivados de bases históricas. Exemplos: <strong>COCOMO II</strong> (do inglês <em>Constructive Cost Model</em>; em português, Modelo Construtivo de Custo, criado por Barry Boehm), <strong>SLIM</strong> (do inglês <em>Software Lifecycle Management</em>; da empresa americana QSM), <strong>SEER-SEM</strong> (da empresa americana Galorath). Vantagem: rapidez e cenários. Desvantagem: exigem calibração e entradas de tamanho confiáveis.</li>
+      <li><strong>Baseadas em analogia</strong>: buscam no histórico projetos semelhantes e ajustam pelo grau de diferença. Exemplo: ferramentas de <strong>estimativa por analogia</strong> (do inglês <em>case-based reasoning</em>; em português, raciocínio baseado em casos). Vantagem: intuitivas e locais. Desvantagem: exigem base histórica rica e bem medida.</li>
+      <li><strong>De consenso ágil</strong>: apoiam a estimativa em grupo com cartas e rodadas. Exemplos: <strong>PlanningPoker.com</strong>, <strong>Parabol</strong>, <strong>Pointing Poker</strong>. Vantagem: engajam a equipe e capturam conhecimento tácito. Desvantagem: resultados relativos à equipe, não comparáveis entre empresas.</li>
+      <li><strong>Híbridas ou especializadas</strong>: combinam modelos ou focam em uma métrica. Exemplos: ferramentas de <strong>contagem de pontos de função</strong> (como as usadas em contratos do governo brasileiro) e suítes que integram paramétrico com histórico, como o <strong>ISBSG</strong> (do inglês <em>International Software Benchmarking Standards Group</em>; banco de dados internacional de projetos).</li>
+    </ul>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Quem usa cada família</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Paramétricas</strong>: defesa e aeroespacial (Boeing e Lockheed Martin, empresas americanas) usam SEER-SEM e COCOMO para projetos de longo prazo com requisitos estáveis.</li>
+      <li><strong>Analogia</strong>: fábricas de software brasileiras com anos de histórico medido em pontos de função estimam novos contratos comparando com os anteriores.</li>
+      <li><strong>Consenso ágil</strong>: squads de produtos digitais (Spotify, empresa sueca de streaming, e times brasileiros como os do Nubank) estimam sprints com Planning Poker.</li>
+      <li><strong>Híbridas</strong>: órgãos públicos brasileiros combinam contagem de pontos de função com produtividade histórica própria para precificar contratos.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Como reconhecer a família pela descrição</h3>
+    <ul style="margin-left:1.5rem">
+      <li>Fala em <strong>fórmula, coeficientes e expoentes</strong>? É paramétrica.</li>
+      <li>Fala em <strong>projeto parecido do histórico</strong>? É analogia.</li>
+      <li>Fala em <strong>cartas, rodadas e consenso da equipe</strong>? É consenso ágil.</li>
+      <li>Fala em <strong>contagem de funções, ALI, AIE, EE</strong>? É especializada em pontos de função.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: classificador de famílias de ferramentas</h3>
+
+    <div class="prever">
+      <strong>Antes de classificar, preveja:</strong> uma ferramenta que pergunta o tamanho em linhas de código, aplica uma fórmula com expoente e devolve pessoas-mês pertence a qual família: paramétrica, analogia, consenso ágil ou especializada em PF?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, registre sua previsão.<br>
+      <strong>Passo 1:</strong> clique em Novo caso e leia a descrição da ferramenta.<br>
+      <strong>Passo 2:</strong> escolha a família correspondente.<br>
+      <strong>Passo 3:</strong> leia o feedback com o exemplo real de ferramenta daquela família.<br>
+      <strong>Passo 4:</strong> acompanhe o placar de classificações corretas.
+    </div>
+
+    <div class="roteiro">
+      leia a descrição em voz alta e peça votos antes de revelar. Destaque as palavras-chave de cada família: fórmula para paramétrica, histórico para analogia, cartas para consenso, funções para PF.
+    </div>
+
+    <div class="legenda">
+      paramétrica = fórmula com coeficientes · analogia = comparação com projetos históricos · consenso ágil = estimativa em grupo com cartas · PF = pontos de função · ALI/AIE/EE = tipos de função contados em PF
+    </div>
+
+    <div class="demo-area" id="demo2-area">
+      <div id="demo2-caso" style="background:var(--cor-destaque-claro); padding:1rem; border-radius:8px; margin-bottom:1rem; font-weight:600; min-height:80px">
+        📋 A descrição aparecerá aqui. Clique em Novo caso para começar.
+      </div>
+      <div id="demo2-opcoes" style="display:none"></div>
+      <div id="demo2-feedback" style="margin-top:1rem"></div>
+      <div style="margin-top:1rem">
+        <button class="btn" type="button" id="demo2-novo">🎲 Novo caso</button>
+        <button class="btn btn-secundario" type="button" id="demo2-reset">🔄 Reiniciar</button>
+      </div>
+      <div id="demo2-placar" style="margin-top:1rem; font-weight:bold; color:var(--cor-destaque-escuro)"></div>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> a família da ferramenta determina o que ela exige de você: paramétricas exigem tamanho confiável; analogia exige histórico medido; consenso exige equipe disponível; PF exige requisitos detalhados. Escolher a família errada é escolher uma ferramenta que você não consegue alimentar.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 2</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      paramétrica = usa fórmula com coeficientes (COCOMO, SLIM, SEER-SEM) ·
+      analogia = compara com projetos históricos parecidos ·
+      consenso ágil = estimativa em grupo com cartas (Planning Poker) ·
+      especializada em PF = foca em contagem de pontos de função ·
+      ISBSG = banco internacional de dados de projetos.
+    </div>
+
+    <div class="pergunta" data-pergunta="2-1">
+      <p>1. COCOMO II, SLIM e SEER-SEM pertencem a qual família de ferramentas?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! Os três aplicam fórmulas matemáticas com coeficientes derivados de bases históricas de projetos. São as ferramentas paramétricas clássicas do mercado.">Paramétricas</button>
+        <button class="alt" type="button" data-fb="Errado! Analogia compara com projetos parecidos do histórico, sem fórmula com expoentes; COCOMO e SLIM usam fórmulas explícitas.">Baseadas em analogia</button>
+        <button class="alt" type="button" data-fb="Errado! Consenso ágil reúne a equipe com cartas; COCOMO e SLIM são modelos matemáticos, não técnicas de grupo.">De consenso ágil</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="2-2">
+      <p>2. Qual é a principal exigência de uma ferramenta baseada em analogia?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! Ter a equipe disponível é exigência do consenso ágil; a analogia depende de dados históricos, não de reuniões.">Ter toda a equipe disponível para reuniões de estimativa</button>
+        <button class="alt" type="button" data-fb="Errado! Coeficientes de fábrica são característica das paramétricas; a analogia usa projetos reais da organização.">Coeficientes de fábrica fornecidos pelo fabricante</button>
+        <button class="alt" type="button" data-fb="Correto! Sem uma base de projetos anteriores bem medidos e comparáveis, a analogia não tem com o que comparar. É por isso que organizações sem histórico medido não conseguem usar essa família.">Uma base histórica de projetos bem medidos e comparáveis</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="2-3">
+      <p>3. Ferramentas como PlanningPoker.com e Parabol pertencem a qual família?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! Elas não aplicam fórmulas com coeficientes; apenas apoiam a votação e o consenso da equipe.">Paramétricas</button>
+        <button class="alt" type="button" data-fb="Correto! São ferramentas de consenso ágil: apoiam rodadas de votação com cartas, revelação simultânea e discussão, produzindo estimativas relativas à equipe.">De consenso ágil</button>
+        <button class="alt" type="button" data-fb="Errado! Elas não contam funções nem produzem pontos de função; trabalham com pontos de história relativos.">Especializadas em pontos de função</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 2</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=tipos+de+ferramentas+estimativa+esforço+paramétrica+analogia" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=effort+estimation+parametric+analogy+expert+judgment+comparison" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=COCOMO+SLIM+SEER-SEM+estimativa+software+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Paramétrica</strong>: fórmula com coeficientes.</li>
+      <li><strong>Analogia</strong>: comparação com histórico.</li>
+      <li><strong>Consenso ágil</strong>: grupo com cartas.</li>
+      <li><strong>Especializada em PF</strong>: contagem de funções.</li>
+      <li><strong>Híbrida</strong>: combina duas ou mais abordagens.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Ferramentas paramétricas são sempre superiores às de consenso ágil.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> depende do contexto. Paramétricas brilham em contratos formais com tamanho medido; consenso ágil brilha em produtos com requisitos evolving e equipe disponível. Muitas organizações usam as duas em momentos diferentes do mesmo projeto.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 3 ============ -->
+<div class="painel" id="painel-3" role="tabpanel" aria-labelledby="tab-3">
+  <h2>Aba 3 · Critérios para seleção de ferramentas</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é aprender a escolher uma ferramenta de estimativa com critérios explícitos, em vez de por moda ou preço. Você vai conhecer os oito critérios que importam (modelo suportado, calibração, entradas disponíveis, integração, custo, usabilidade, suporte e conformidade) e usá-los em um simulador de decisão que pontua a adequação da ferramenta ao seu contexto.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 Os oito critérios de seleção</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>1. Modelo suportado</strong>: a ferramenta implementa o modelo que sua organização usa (COCOMO II, PF, pontos de história)?</li>
+      <li><strong>2. Capacidade de calibração</strong>: permite ajustar coeficientes com o histórico local, ou só usa valores de fábrica?</li>
+      <li><strong>3. Entradas disponíveis</strong>: você tem os dados que a ferramenta exige (tamanho medido, histórico, equipe)?</li>
+      <li><strong>4. Integração</strong>: conversa com Jira, Azure DevOps (ferramenta da Microsoft) ou planilhas existentes?</li>
+      <li><strong>5. Custo total</strong>: licença, treinamento, manutenção e tempo da equipe para alimentar a ferramenta.</li>
+      <li><strong>6. Usabilidade</strong>: a equipe consegue usar sem treinamento longo? A curva de aprendizado cabe no prazo?</li>
+      <li><strong>7. Suporte e comunidade</strong>: há documentação, suporte do fabricante e comunidade ativa?</li>
+      <li><strong>8. Conformidade</strong>: atende exigências contratuais ou regulatórias (como métodos aceitos em licitações)?</li>
+    </ul>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Escolhas reais e suas consequências</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Órgãos públicos brasileiros</strong>: escolhem ferramentas de pontos de função porque o método é aceito em contratos do SISP; o critério conformidade pesa mais que usabilidade.</li>
+      <li><strong>Startups</strong>: escolhem Planning Poker integrado ao Jira porque o custo é baixo e a equipe já usa a ferramenta; os critérios custo e integração dominam.</li>
+      <li><strong>Defesa e aeroespacial</strong>: escolhem SEER-SEM porque o modelo é aceito por agências reguladoras e permite análise de risco detalhada; conformidade e modelo dominam.</li>
+      <li><strong>Fábricas de software com histórico</strong>: escolhem ferramentas de analogia porque têm anos de projetos medidos; o critério entradas disponíveis é o que viabiliza a escolha.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Matriz de decisão ponderada</h3>
+    <p>Uma prática recomendada é montar uma matriz: liste os critérios, atribua pesos conforme o contexto (por exemplo, conformidade peso 5 em licitação, custo peso 5 em startup), pontue cada ferramenta candidata de 0 a 5 em cada critério e some o produto peso × nota. A ferramenta com maior pontuação total é a mais adequada àquele contexto, não a melhor em absoluto.</p>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: simulador de adequação por critérios</h3>
+
+    <div class="prever">
+      <strong>Antes de simular, preveja:</strong> para uma startup de 6 pessoas sem histórico medido e com prazo curto, qual critério deve ter peso maior: conformidade regulatória ou custo e usabilidade?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, registre sua previsão.<br>
+      <strong>Passo 1:</strong> escolha o contexto da organização.<br>
+      <strong>Passo 2:</strong> marque os critérios que sua organização atende hoje.<br>
+      <strong>Passo 3:</strong> clique em Calcular adequação e veja a pontuação por família de ferramenta.<br>
+      <strong>Passo 4:</strong> troque o contexto e observe como a recomendação muda.
+    </div>
+
+    <div class="roteiro">
+      comece com startup e mostre que consenso ágil vence. Depois troque para órgão público e mostre que especializada em PF vence. A lição: não existe ferramenta melhor, existe ferramenta adequada ao contexto.
+    </div>
+
+    <div class="legenda">
+      critério = aspecto avaliado na escolha · peso = importância relativa do critério no contexto · pontuação = nota de 0 a 5 por critério · adequação = soma de peso vezes nota · contexto = realidade da organização (tamanho, histórico, regulação)
+    </div>
+
+    <div class="demo-area" id="demo3-area">
+      <label>🏢 Contexto da organização:
+        <select id="demo3-contexto" style="padding:0.4rem; border-radius:6px; border:1px solid var(--borda); background:var(--fundo); color:var(--texto)">
+          <option value="startup" selected>Startup pequena, sem histórico medido</option>
+          <option value="fabrica">Fábrica de software com histórico em PF</option>
+          <option value="publico">Órgão público com contratos por PF</option>
+          <option value="defesa">Projeto de defesa/aeroespacial</option>
+        </select>
+      </label>
+      <div id="demo3-criterios" style="margin-top:1rem"></div>
+      <div style="margin-top:0.75rem">
+        <button class="btn" type="button" id="demo3-calcular">🧮 Calcular adequação</button>
+        <button class="btn btn-secundario" type="button" id="demo3-reset">🔄 Reiniciar</button>
+      </div>
+      <div id="demo3-resultado" style="margin-top:1rem"></div>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> a mesma ferramenta pode ser excelente em um contexto e péssima em outro. O simulador mostra que a escolha é uma função do contexto, não uma propriedade absoluta do software.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 3</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      critério = aspecto avaliado na escolha ·
+      peso = importância relativa do critério ·
+      matriz de decisão = tabela de critérios ponderados ·
+      calibração = ajuste com histórico local ·
+      conformidade = atendimento a exigências contratuais ou regulatórias.
+    </div>
+
+    <div class="pergunta" data-pergunta="3-1">
+      <p>1. Uma organização não tem histórico de projetos medidos. Qual critério isso afeta mais diretamente?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! Custo é afetado pelo orçamento, não pela ausência de histórico.">Custo total da licença</button>
+        <button class="alt" type="button" data-fb="Correto! Sem histórico medido, a organização não consegue alimentar ferramentas de analogia nem calibrar modelos paramétricos. O critério entradas disponíveis é o que fica comprometido.">Entradas disponíveis, pois não há dados para analogia nem calibração</button>
+        <button class="alt" type="button" data-fb="Errado! Suporte e comunidade dependem do fabricante, não do histórico da organização.">Suporte e comunidade do fabricante</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="3-2">
+      <p>2. Em uma licitação pública que exige estimativa por pontos de função, qual critério tende a ter o maior peso?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! Usabilidade importa, mas não pode se sobrepor a uma exigência contratual obrigatória.">Usabilidade da interface</button>
+        <button class="alt" type="button" data-fb="Errado! Integração com Jira é conveniência, não exigência de licitação.">Integração com ferramentas ágeis</button>
+        <button class="alt" type="button" data-fb="Correto! Se o contrato exige um método específico, a conformidade é eliminatória: qualquer ferramenta que não atenda fica fora, independentemente de preço ou interface.">Conformidade com o método exigido no contrato</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="3-3">
+      <p>3. Como se calcula a pontuação final em uma matriz de decisão ponderada?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! Multiplica-se a nota de cada critério pelo seu peso e soma-se tudo. Assim, critérios mais importantes influenciam mais o resultado final.">Somando, para cada critério, o produto do peso pela nota</button>
+        <button class="alt" type="button" data-fb="Errado! Somar apenas as notas ignoraria que alguns critérios são mais importantes que outros.">Somando apenas as notas, ignorando os pesos</button>
+        <button class="alt" type="button" data-fb="Errado! Escolher a maior nota isolada ignoraria o desempenho nos demais critérios.">Escolhendo a maior nota isolada entre todos os critérios</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 3</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=critérios+seleção+ferramentas+estimativa+software+matriz+decisão" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=tool+selection+criteria+software+estimation+weighted+decision+matrix" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=como+escolher+ferramenta+estimativa+software+critérios" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Modelo suportado</strong>: qual método a ferramenta implementa.</li>
+      <li><strong>Calibração</strong>: ajuste com dados locais.</li>
+      <li><strong>Entradas disponíveis</strong>: dados que você realmente tem.</li>
+      <li><strong>Integração / custo / usabilidade</strong>: encaixe, preço, facilidade.</li>
+      <li><strong>Conformidade</strong>: atendimento a exigências formais.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> A ferramenta mais cara é sempre a mais adequada.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> preço não mede adequação. Uma ferramenta caríssima que exige histórico medido é inútil para uma startup sem histórico; um Planning Poker gratuito pode ser exatamente o que ela precisa. O critério é o encaixe ao contexto.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 4 ============ -->
+<div class="painel" id="painel-4" role="tabpanel" aria-labelledby="tab-4">
+  <h2>Aba 4 · Ferramentas populares de estimativa</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é conhecer pelo nome as ferramentas mais usadas no mercado e saber o que cada uma entrega: <strong>COCOMO II</strong> (modelo paramétrico aberto), <strong>SLIM</strong> (suíte comercial da QSM), <strong>SEER-SEM</strong> (suíte comercial da Galorath), ferramentas de <strong>pontos de função</strong> (usadas em contratos brasileiros) e ferramentas de <strong>Planning Poker</strong> (usadas em times ágeis). Você vai explorar o cartão de cada uma.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 As ferramentas em detalhe</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>COCOMO II</strong>: modelo aberto publicado por Barry Boehm e colegas na Universidade do Sul da Califórnia. Existem implementações gratuitas em planilha e em calculadoras web acadêmicas. Entradas: tamanho, fatores de escala e direcionadores de custo. Saídas: esforço, prazo e distribuição por fase.</li>
+      <li><strong>SLIM (QSM)</strong>: suíte comercial da Quantitative Software Management (empresa americana). Usa o modelo Putnam, baseado na curva de Rayleigh (curva que descreve como o esforço se distribui ao longo do tempo). Forte em análise de risco e cenários de prazo versus equipe.</li>
+      <li><strong>SEER-SEM (Galorath)</strong>: suíte comercial da Galorath (empresa americana). Muito usada em defesa, aeroespacial e sistemas embarcados. Oferece estimativa de esforço, custo, risco e confiabilidade, com base histórica própria.</li>
+      <li><strong>Ferramentas de pontos de função</strong>: implementam a contagem IFPUG (do inglês <em>International Function Point Users Group</em>) ou NESMA simplificada. Usadas em contratos de fábricas de software, especialmente no setor público brasileiro.</li>
+      <li><strong>PlanningPoker.com / Parabol / Pointing Poker</strong>: ferramentas web de consenso ágil, com salas privadas, baralho customizável e integração com Jira. Gratuitas ou de baixo custo.</li>
+      <li><strong>ISBSG</strong>: não é ferramenta de cálculo, mas base de dados internacional com milhares de projetos medidos, usada para comparar produtividade e calibrar modelos.</li>
+    </ul>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 Onde cada uma aparece</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>COCOMO II</strong>: ensino universitário, pesquisa e estimativas preliminares em empresas que não querem pagar licença.</li>
+      <li><strong>SLIM</strong>: grandes corporações com portfólio de projetos e necessidade de análise de risco de prazo.</li>
+      <li><strong>SEER-SEM</strong>: contratos de defesa americanos e europeus, onde o método é aceito por agências.</li>
+      <li><strong>Pontos de função</strong>: contratos do governo federal brasileiro, bancos e fábricas de software.</li>
+      <li><strong>Planning Poker</strong>: squads ágeis de produtos digitais no mundo inteiro.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Como começar sem gastar</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Calculadoras COCOMO acadêmicas</strong>: universidades mantêm versões web gratuitas do modelo.</li>
+      <li><strong>Planilhas de PF</strong>: é possível montar uma planilha de contagem IFPUG ou NESMA com as tabelas de pesos.</li>
+      <li><strong>Pointing Poker</strong>: gratuito, sem cadastro, com salas privadas.</li>
+      <li><strong>Dados públicos do ISBSG</strong>: parte dos dados e relatórios é divulgada publicamente para estudo.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: explorador de ferramentas</h3>
+
+    <div class="prever">
+      <strong>Antes de explorar, preveja:</strong> qual destas ferramentas é um modelo aberto e gratuito, e não uma suíte comercial paga: COCOMO II, SLIM ou SEER-SEM?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, registre sua previsão.<br>
+      <strong>Passo 1:</strong> clique em uma ferramenta para abrir o cartão.<br>
+      <strong>Passo 2:</strong> leia família, entradas, saídas, custo e caso de uso típico.<br>
+      <strong>Passo 3:</strong> compare pelo menos uma comercial e uma gratuita.<br>
+      <strong>Passo 4:</strong> confira sua previsão inicial.
+    </div>
+
+    <div class="roteiro">
+      abra COCOMO II e destaque que é aberto. Abra SEER-SEM e mostre o foco em defesa. Abra Planning Poker e mostre a leveza. Feche perguntando: para o seu contexto atual, qual delas você conseguiria alimentar com dados?
+    </div>
+
+    <div class="legenda">
+      suíte comercial = software pago com suporte do fabricante · modelo aberto = especificação pública e implementações gratuitas · curva de Rayleigh = curva que modela distribuição do esforço no tempo · IFPUG = método oficial de contagem de pontos de função
+    </div>
+
+    <div class="demo-area" id="demo4-area">
+      <div style="display:flex; flex-wrap:wrap; gap:0.4rem">
+        <button class="btn" type="button" data-tool="cocomo">COCOMO II</button>
+        <button class="btn" type="button" data-tool="slim">SLIM (QSM)</button>
+        <button class="btn" type="button" data-tool="seer">SEER-SEM</button>
+        <button class="btn" type="button" data-tool="pf">Ferramentas de PF</button>
+        <button class="btn" type="button" data-tool="poker">Planning Poker</button>
+        <button class="btn" type="button" data-tool="isbsg">ISBSG</button>
+      </div>
+      <div id="demo4-cartao" style="margin-top:1rem; padding:1rem; background:var(--fundo-codigo); border-radius:8px; min-height:140px">
+        👆 Clique em uma ferramenta para abrir o cartão técnico.
+      </div>
+      <button class="btn btn-secundario" type="button" id="demo4-reset" style="margin-top:0.75rem">🔄 Reiniciar</button>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> as ferramentas diferem em modelo, custo e público-alvo, mas todas exigem a mesma coisa: entradas de qualidade. Nenhuma delas transforma dados ruins em estimativas boas.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 4</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      COCOMO II = modelo paramétrico aberto ·
+      SLIM = suíte comercial da QSM, modelo Putnam ·
+      SEER-SEM = suíte comercial da Galorath, foco em defesa ·
+      IFPUG = método oficial de pontos de função ·
+      ISBSG = base internacional de dados de projetos.
+    </div>
+
+    <div class="pergunta" data-pergunta="4-1">
+      <p>1. Qual destas ferramentas é um modelo aberto, com implementações gratuitas disponíveis?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! COCOMO II é um modelo publicado academicamente, com especificação aberta e diversas implementações gratuitas em planilhas e calculadoras web.">COCOMO II</button>
+        <button class="alt" type="button" data-fb="Errado! SLIM é uma suíte comercial paga da empresa americana QSM.">SLIM</button>
+        <button class="alt" type="button" data-fb="Errado! SEER-SEM é uma suíte comercial paga da empresa americana Galorath.">SEER-SEM</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="4-2">
+      <p>2. O SLIM, da QSM, é conhecido por usar qual modelo matemático?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! O modelo com expoentes e direcionadores de custo é o COCOMO; o SLIM usa outra base matemática.">Modelo COCOMO com expoentes</button>
+        <button class="alt" type="button" data-fb="Correto! O SLIM usa o modelo Putnam, baseado na curva de Rayleigh, que descreve como o esforço se distribui ao longo do tempo do projeto. Isso o torna forte em análise de prazo versus equipe.">Modelo Putnam, baseado na curva de Rayleigh</button>
+        <button class="alt" type="button" data-fb="Errado! Contagem de funções é o método IFPUG de pontos de função, não o modelo do SLIM.">Contagem de funções IFPUG</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="4-3">
+      <p>3. O ISBSG é principalmente:</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! O ISBSG não é uma suíte de cálculo de esforço; ele fornece dados para alimentar e calibrar modelos.">Uma suíte comercial de cálculo de esforço</button>
+        <button class="alt" type="button" data-fb="Errado! O ISBSG não é uma ferramenta de consenso ágil com cartas.">Uma ferramenta de Planning Poker para equipes</button>
+        <button class="alt" type="button" data-fb="Correto! O ISBSG é uma base de dados internacional com milhares de projetos medidos, usada para benchmarking de produtividade e calibração de modelos de estimativa.">Uma base internacional de dados de projetos para benchmarking e calibração</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 4</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=COCOMO+II+SLIM+SEER-SEM+ferramentas+estimativa+software" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=COCOMO+II+SLIM+Putnam+SEER+SEM+estimation+tools" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=ferramentas+estimativa+software+COCOMO+SLIM+aula" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>COCOMO II</strong>: modelo aberto, gratuito.</li>
+      <li><strong>SLIM</strong>: comercial, modelo Putnam/Rayleigh.</li>
+      <li><strong>SEER-SEM</strong>: comercial, defesa e embarcados.</li>
+      <li><strong>Ferramentas de PF</strong>: contagem IFPUG/NESMA.</li>
+      <li><strong>Planning Poker</strong>: consenso ágil, baixo custo.</li>
+      <li><strong>ISBSG</strong>: base de dados de projetos.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Ferramentas gratuitas são sempre inferiores às comerciais.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> COCOMO II é aberto e amplamente usado em pesquisa e indústria; Planning Poker gratuito resolve bem o problema de times ágeis. O que diferencia é o encaixe ao contexto e a qualidade da calibração, não o preço da licença.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 5 ============ -->
+<div class="painel" id="painel-5" role="tabpanel" aria-labelledby="tab-5">
+  <h2>Aba 5 · Estudo de caso: aplicação de uma ferramenta de estimativa</h2>
+
+  <div class="cartao missao">
+    <p>Sua missão é percorrer um estudo de caso completo: uma fábrica de software precisa estimar um novo sistema de gestão para um cliente do varejo. Você vai aplicar uma ferramenta paramétrica (COCOMO II simplificado) passo a passo, desde a definição das entradas até a análise de sensibilidade e o relatório final, e depois comparar com o resultado de uma contagem de pontos de função.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 O cenário do estudo de caso</h3>
+    <p><strong>Cliente:</strong> rede de varejo brasileira com 40 lojas (empresa fictícia inspirada no modelo de redes como a Havan).</p>
+    <p><strong>Projeto:</strong> sistema de gestão de estoque e vendas, com módulos de cadastro, movimentação, relatórios e integração com o sistema fiscal.</p>
+    <p><strong>Equipe:</strong> 6 desenvolvedores, experiência média no domínio de varejo, com histórico de 12 projetos medidos nos últimos 3 anos.</p>
+    <p><strong>Restrições:</strong> prazo desejado de 8 meses; orçamento limitado; contrato exige estimativa documentada.</p>
+    <p><strong>Tamanho estimado:</strong> 60 KLOC (sessenta mil linhas de código), obtido por analogia com dois projetos anteriores semelhantes.</p>
+  </div>
+
+  <div class="cartao">
+    <h3>📚 As seis etapas da aplicação</h3>
+    <ol style="margin-left:1.5rem">
+      <li><strong>Definir o modelo e as entradas</strong>: escolher COCOMO II simplificado, modo semidestacado, tamanho 60 KLOC.</li>
+      <li><strong>Calibrar com histórico</strong>: ajustar o coeficiente com a produtividade real dos 12 projetos anteriores.</li>
+      <li><strong>Calcular esforço e prazo</strong>: aplicar as fórmulas e obter pessoas-mês e meses.</li>
+      <li><strong>Analisar sensibilidade</strong>: variar tamanho e experiência da equipe para ver o impacto.</li>
+      <li><strong>Comparar com outro método</strong>: rodar contagem de pontos de função e comparar resultados.</li>
+      <li><strong>Documentar e reportar</strong>: registrar premissas, cálculos e faixas de incerteza no relatório ao cliente.</li>
+    </ol>
+  </div>
+
+  <div class="cartao mundo-real">
+    <h3>🌎 O que o estudo de caso ensina</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Calibração muda tudo</strong>: o mesmo modelo com coeficientes de fábrica e com coeficientes locais pode dar resultados 30% diferentes.</li>
+      <li><strong>Faixas valem mais que números únicos</strong>: apresentar otimista, provável e pessimista é mais honesto e mais útil que um número só.</li>
+      <li><strong>Dois métodos aumentam a confiança</strong>: quando paramétrico e PF convergem, a estimativa ganha credibilidade; quando divergem, é sinal de investigar.</li>
+      <li><strong>Documentar é obrigatório</strong>: em contratos, a estimativa precisa ser auditável, com premissas explícitas.</li>
+    </ul>
+  </div>
+
+  <div class="cartao ferramentas">
+    <h3>🛠️ Estrutura do relatório de estimativa</h3>
+    <ul style="margin-left:1.5rem">
+      <li><strong>Escopo e premissas</strong>: o que está incluído e o que ficou de fora.</li>
+      <li><strong>Método e ferramenta</strong>: qual modelo, qual versão, quais coeficientes.</li>
+      <li><strong>Entradas</strong>: tamanho, complexidade, experiência, restrições.</li>
+      <li><strong>Resultados</strong>: esforço, prazo, equipe, com faixas.</li>
+      <li><strong>Análise de sensibilidade</strong>: o que mais influencia o resultado.</li>
+      <li><strong>Riscos e recomendações</strong>: o que pode dar errado e como mitigar.</li>
+    </ul>
+  </div>
+
+  <div class="demo-box">
+    <h3>🧪 Demo: estudo de caso passo a passo</h3>
+
+    <div class="prever">
+      <strong>Antes de aplicar, preveja:</strong> se a calibração com o histórico local mostrar que a equipe é 20% mais produtiva que a média da base de fábrica, o esforço estimado vai subir ou cair em relação ao cálculo não calibrado?
+    </div>
+
+    <div class="instrucoes">
+      <strong>Passo 0:</strong> antes de clicar, registre sua previsão.<br>
+      <strong>Passo 1:</strong> clique em Próxima etapa para percorrer as seis etapas.<br>
+      <strong>Passo 2:</strong> em cada etapa, leia as entradas, o cálculo e a saída.<br>
+      <strong>Passo 3:</strong> na etapa de sensibilidade, observe o impacto de variar o tamanho.<br>
+      <strong>Passo 4:</strong> ao final, leia o relatório resumido e compare com sua previsão.
+    </div>
+
+    <div class="roteiro">
+      percorra as etapas devagar. Na calibração, destaque a diferença entre coeficiente de fábrica e local. Na sensibilidade, mostre que o tamanho é a entrada mais influente. No relatório, mostre a faixa em vez do número único.
+    </div>
+
+    <div class="legenda">
+      calibração = ajuste com histórico local · análise de sensibilidade = variar entradas para ver impacto · faixa = intervalo otimista-provável-pessimista · convergência = dois métodos chegando a resultados próximos
+    </div>
+
+    <div class="demo-area" id="demo5-area">
+      <div>
+        <button class="btn" type="button" id="demo5-next">▶ Próxima etapa</button>
+        <button class="btn btn-secundario" type="button" id="demo5-reset">🔄 Reiniciar</button>
+      </div>
+      <div id="demo5-conteudo" style="margin-top:1rem"></div>
+      <div class="barra-score"><div class="fill" id="demo5-barra" style="width:0%"></div></div>
+    </div>
+
+    <div class="resultado-demo" style="margin-top:1rem">
+      <strong>👀 O que observar:</strong> o estudo de caso mostra que a ferramenta é apenas uma parte do processo. As entradas, a calibração, a sensibilidade e a documentação são o que transformam um número em uma estimativa defensável perante o cliente.
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <h3>📝 Quiz — Aba 5</h3>
+    <div class="termos-quiz">
+      🔑 <strong>Termos deste quiz:</strong>
+      calibração = ajuste com histórico local ·
+      análise de sensibilidade = variar entradas para ver impacto ·
+      faixa = intervalo otimista-provável-pessimista ·
+      convergência = dois métodos com resultados próximos ·
+      relatório de estimativa = documento com premissas, método e resultados.
+    </div>
+
+    <div class="pergunta" data-pergunta="5-1">
+      <p>1. No estudo de caso, qual entrada tem maior influência sobre o esforço estimado?</p>
+      <div class="alts" data-certa="b">
+        <button class="alt" type="button" data-fb="Errado! A experiência da equipe influencia, mas o efeito é multiplicativo moderado; o tamanho entra elevado a um expoente e domina o resultado.">A experiência da equipe</button>
+        <button class="alt" type="button" data-fb="Correto! O tamanho entra na fórmula elevado a um expoente maior que 1, então erros no tamanho são amplificados. É por isso que a análise de sensibilidade sempre destaca o tamanho como entrada crítica.">O tamanho do software</button>
+        <button class="alt" type="button" data-fb="Errado! O prazo desejado é uma restrição a verificar, não uma entrada que determina o esforço no modelo.">O prazo desejado pelo cliente</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="5-2">
+      <p>2. Por que apresentar uma faixa (otimista, provável, pessimista) é melhor que um número único?</p>
+      <div class="alts" data-certa="a">
+        <button class="alt" type="button" data-fb="Correto! A faixa comunica explicitamente a incerteza da estimativa, permitindo ao cliente planejar com margem e evitando a falsa sensação de precisão de um número só.">Porque comunica a incerteza e permite planejar com margem, sem falsa precisão</button>
+        <button class="alt" type="button" data-fb="Errado! A faixa não elimina o risco; ela apenas o torna visível e gerenciável.">Porque elimina o risco de o projeto atrasar</button>
+        <button class="alt" type="button" data-fb="Errado! A faixa não é exigência de todo contrato; é boa prática de comunicação de incerteza.">Porque todo contrato exige três números por lei</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+
+    <div class="pergunta" data-pergunta="5-3">
+      <p>3. Quando o modelo paramétrico e a contagem de pontos de função chegam a resultados muito diferentes, o que fazer?</p>
+      <div class="alts" data-certa="c">
+        <button class="alt" type="button" data-fb="Errado! Escolher o menor número para agradar o cliente é como criar um problema futuro; a divergência é um sinal de alerta, não uma oportunidade.">Escolher o menor número para agradar o cliente</button>
+        <button class="alt" type="button" data-fb="Errado! Tirar a média sem investigar esconde o problema; a divergência pode indicar erro de entrada ou premissa errada.">Tirar a média dos dois e seguir em frente</button>
+        <button class="alt" type="button" data-fb="Correto! Divergência grande é sinal de que algo está errado nas entradas ou nas premissas de um dos métodos. O certo é investigar as causas antes de decidir qual estimativa adotar.">Investigar as entradas e premissas dos dois métodos antes de decidir</button>
+      </div>
+      <div class="fb fb-certa"></div>
+      <div class="fb fb-errada"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>📖 Aprofundar — Aba 5</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li>🔎 <a href="https://www.google.com/search?hl=pt-BR&amp;q=estudo+de+caso+estimativa+esforço+software+COCOMO+calibração" target="_blank" rel="noopener">Busca no Google (português)</a></li>
+      <li>🎓 <a href="https://scholar.google.com/scholar?hl=pt-BR&amp;q=case+study+software+effort+estimation+calibration+sensitivity+analysis" target="_blank" rel="noopener">Pesquisa científica (Google Scholar, português)</a></li>
+      <li>🎬 <a href="https://www.youtube.com/results?search_query=estimativa+esforço+software+estudo+de+caso+prático" target="_blank" rel="noopener">Vídeos-aula no YouTube (busca em português)</a></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>📚 Mini-dicionário da aba</summary>
+    <ul style="margin-left:1.5rem; margin-top:0.75rem">
+      <li><strong>Seis etapas</strong>: entradas, calibração, cálculo, sensibilidade, comparação, relatório.</li>
+      <li><strong>Calibração local</strong>: coeficientes ajustados com histórico próprio.</li>
+      <li><strong>Sensibilidade</strong>: qual entrada mais influencia.</li>
+      <li><strong>Faixa</strong>: otimista, provável, pessimista.</li>
+      <li><strong>Convergência</strong>: dois métodos com resultados próximos.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>🤔 Mito ou verdade?</summary>
+    <div class="mitoverdade">
+      <strong>Afirmação:</strong> Se a ferramenta deu um número, a estimativa está pronta para o contrato.<br>
+      <strong>Veredito:</strong> 🎯 MITO.<br>
+      <strong>Explicação:</strong> o número é apenas a saída do cálculo. A estimativa defensável exige premissas documentadas, calibração justificada, análise de sensibilidade e faixas de incerteza. Sem isso, o número é um chute com aparência de precisão.
+    </div>
+  </details>
+</div>
+
+<!-- ============ ABA 6 - REVISÃO ============ -->
+<div class="painel" id="painel-6" role="tabpanel" aria-labelledby="tab-6">
+  <h2>⭐ Revisão — Mapa completo da aula</h2>
+
+  <h3>🗺️ Mapa da aula</h3>
+  <div class="revisao-mapa">
+    <div class="no-mapa">
+      <h4>Aba 1 · Introdução</h4>
+      <p>Por que ferramentas existem: consistência, rastreabilidade, calibração e cenários rápidos.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 2 · Tipos</h4>
+      <p>Paramétricas, analogia, consenso ágil e especializadas em PF; o que cada uma exige.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 3 · Critérios</h4>
+      <p>Oito critérios e matriz de decisão ponderada; a escolha depende do contexto.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 4 · Ferramentas</h4>
+      <p>COCOMO II, SLIM, SEER-SEM, ferramentas de PF, Planning Poker e ISBSG.</p>
+    </div>
+    <div class="no-mapa">
+      <h4>Aba 5 · Estudo de caso</h4>
+      <p>Seis etapas: entradas, calibração, cálculo, sensibilidade, comparação e relatório.</p>
+    </div>
+    <div class="no-mapa">
+      <h4> Estudo em casa</h4>
+      <p>Refaça os quizzes das cinco abas para garantir os 5 selos e enfrente o Chefão com a cola rápida ao lado.</p>
+    </div>
+  </div>
+
+  <div class="cola-rapida">
+    <h3>🧷 Cola rápida — glossário da aula</h3>
+    <dl>
+      <dt><strong>Ferramenta de estimativa</strong></dt>
+      <dd>Software que aplica modelos para prever esforço, prazo e equipe de um projeto.</dd>
+
+      <dt><strong>Modelo paramétrico</strong></dt>
+      <dd>Fórmula com coeficientes derivados de bases históricas (COCOMO, SLIM, SEER-SEM).</dd>
+
+      <dt><strong>Estimativa por analogia</strong></dt>
+      <dd>Comparar o projeto com projetos históricos semelhantes e ajustar pelas diferenças.</dd>
+
+      <dt><strong>Consenso ágil</strong></dt>
+      <dd>Estimativa em grupo com cartas e rodadas (Planning Poker).</dd>
+
+      <dt><strong>Especializada em PF</strong></dt>
+      <dd>Ferramenta que implementa contagem de pontos de função (IFPUG ou NESMA).</dd>
+
+      <dt><strong>Calibração</strong></dt>
+      <dd>Ajustar coeficientes do modelo com o histórico real da organização.</dd>
+
+      <dt><strong>Rastreabilidade</strong></dt>
+      <dd>Poder explicar a origem de cada número da estimativa.</dd>
+
+      <dt><strong>Análise de sensibilidade</strong></dt>
+      <dd>Variar entradas para ver quais mais influenciam o resultado.</dd>
+
+      <dt><strong>Faixa de estimativa</strong></dt>
+      <dd>Intervalo otimista, provável e pessimista, que comunica incerteza.</dd>
+
+      <dt><strong>Matriz de decisão ponderada</strong></dt>
+      <dd>Tabela de critérios com pesos; pontuação final é a soma de peso vezes nota.</dd>
+
+      <dt><strong>COCOMO II</strong></dt>
+      <dd>Modelo paramétrico aberto, com implementações gratuitas.</dd>
+
+      <dt><strong>SLIM</strong></dt>
+      <dd>Suíte comercial da QSM, baseada no modelo Putnam e curva de Rayleigh.</dd>
+
+      <dt><strong>SEER-SEM</strong></dt>
+      <dd>Suíte comercial da Galorath, forte em defesa e sistemas embarcados.</dd>
+
+      <dt><strong>ISBSG</strong></dt>
+      <dd>Base internacional de dados de projetos, usada para benchmarking e calibração.</dd>
+
+      <dt><strong>IFPUG</strong></dt>
+      <dd>Método oficial de contagem de pontos de função.</dd>
+
+      <dt><strong>NESMA</strong></dt>
+      <dd>Método simplificado de contagem de pontos de função, com pesos fixos.</dd>
+
+      <dt><strong>Conformidade</strong></dt>
+      <dd>Atendimento a exigências contratuais ou regulatórias; critério eliminatório em licitações.</dd>
+
+      <dt><strong>Convergência</strong></dt>
+      <dd>Quando dois métodos chegam a resultados próximos, aumentando a confiança.</dd>
+    </dl>
+  </div>
+
+  <div class="chefao">
+    <h3>👑 CHEFÃO — DESAFIO FINAL</h3>
+    <p><strong>Enunciado:</strong> Você é consultor de estimativas na <strong>MétricaPro</strong> (consultoria fictícia brasileira de métricas de software) e recebeu três clientes no mesmo mês. Para cada um, você deve recomendar uma família de ferramenta, uma ferramenta concreta e justificar com critérios explícitos.</p>
+
+    <p style="margin-top:1rem"><strong>Cliente 1 — Startup ÁgilJá:</strong> 8 pessoas, produto digital em evolução, sem histórico medido, usa Jira, orçamento apertado, precisa estimar sprints quinzenais.</p>
+
+    <p style="margin-top:1rem"><strong>Cliente 2 — Fábrica SoftBrasil:</strong> 200 desenvolvedores, 15 anos de histórico medido em pontos de função, contratos com bancos e governo, precisa estimar novos contratos com método auditável.</p>
+
+    <p style="margin-top:1rem"><strong>Cliente 3 — AeroEspacial BR:</strong> projeto de software embarcado para satélite, contrato com agência espacial, requisitos estáveis, exige análise de risco e método aceito pela agência.</p>
+
+    <p style="margin-top:1rem"><strong>Parte 1 — recomendação por cliente (Abas 2, 3 e 4):</strong> para cada cliente, indique a família de ferramenta (termo da cola rápida), uma ferramenta concreta (termo da cola rápida) e os DOIS critérios de seleção (termo da cola rápida) que mais pesaram na escolha.</p>
+
+    <p style="margin-top:1rem"><strong>Parte 2 — matriz de decisão (Aba 3):</strong> monte uma matriz de decisão ponderada para o Cliente 2, com pelo menos quatro critérios, pesos de 1 a 5 e notas de 0 a 5 para duas ferramentas candidatas. Calcule a pontuação final e indique a vencedora.</p>
+
+    <p style="margin-top:1rem"><strong>Parte 3 — aplicação (Aba 5):</strong> para o Cliente 2, descreva as seis etapas da aplicação da ferramenta (termos da cola rápida) em ordem, explicando o que fazer em cada uma. Indique em qual etapa a calibração (termo da cola rápida) acontece e por que ela é crítica nesse cliente.</p>
+
+    <p style="margin-top:1rem"><strong>Parte 4 — comunicação (Abas 1 e 5):</strong> explique por que você apresentaria uma faixa de estimativa (termo da cola rápida) em vez de um número único para o Cliente 3, e cite o que a análise de sensibilidade (termo da cola rápida) revelaria sobre a entrada mais crítica.</p>
+  </div>
+
+  <details>
+    <summary>📚 Dica para o Chefão</summary>
+    <p style="margin-top:0.75rem">Na Parte 1, Cliente 1 pede consenso ágil (Planning Poker integrado ao Jira; critérios custo e integração); Cliente 2 pede especializada em PF ou híbrida com analogia (critérios conformidade e entradas disponíveis); Cliente 3 pede paramétrica comercial como SEER-SEM (critérios conformidade e modelo suportado). Na Parte 2, monte a tabela com pesos coerentes ao contexto de fábrica com histórico. Na Parte 3, a calibração é a etapa 2 e é crítica porque 15 anos de histórico permitem coeficientes locais muito mais precisos que os de fábrica. Na Parte 4, a faixa comunica incerteza em projeto de alto risco; a sensibilidade mostraria o tamanho como entrada mais influente.</p>
+  </details>
+</div>
+
+<!-- ============ RODAPÉ ============ -->
+<footer>
+  <div class="bloco">
+    <h4>📋 FICHA TÉCNICA DA AULA</h4>
+    <p>DEVOPS — Aula 6, Unidade 2, págs. 47–59 · Gerado em 06/11/2026 · 5 abas de conteúdo + Revisão · 15 perguntas · 5 demos · cor #0369A1</p>
+  </div>
+
+  <div class="bloco">
+    <h4>🪄 SOBRE O HTMLearning · v2.17 (23/10/2026)</h4>
+    <p style="margin-bottom:0.75rem">Transformar o sumário de qualquer disciplina em uma classe interativa em HTML único e offline, com previsão antes do clique, tentativa e erro guiado e exemplos reais.</p>
+
+    <ul style="margin-left:1.5rem; margin-bottom:0.75rem">
+      <li>O que é: metodologia e arquitetura de prompts que converte sumários em aulas interativas em minutos, com IAs gratuitas.</li>
+      <li>O que entrega: 5 a 7 abas + Revisão, simulações com previsão, quiz com retry sem revelar gabarito, linguagem plana, Modos Apresentação/Leitura.</li>
+      <li>Por que é inclusivo: um único .html leve, 100% offline, roda em PC e celular e viaja em pen drive para escolas desconectadas ou áreas rurais.</li>
+    </ul>
+
+    <p style="margin-bottom:0.5rem">Idealizador do projeto: Professor Wellington Dimas da Cruz</p>
+    <p style="margin-bottom:0.75rem">Apoiadora do projeto: Prof.ª Dr.ª Mariella Berger Andrade (IFES / CEFOR)</p>
+
+    <p style="margin-top:0.75rem">Contatos e links do projeto:</p>
+    <ul>
+      <li>E-mail do idealizador: <a href="mailto:cloud.ai-generative@outlook.com">cloud.ai-generative@outlook.com</a></li>
+      <li>Repositório GitHub do idealizador: <a href="https://github.com/cloud-ai-Generative" target="_blank" rel="noopener">github.com/cloud-ai-Generative</a></li>
+      <li>Currículo Lattes do idealizador: <a href="https://lattes.cnpq.br/6801791839011321" target="_blank" rel="noopener">lattes.cnpq.br/6801791839011321</a></li>
+      <li>Currículo Lattes da apoiadora: <a href="https://lattes.cnpq.br/3929645439848570" target="_blank" rel="noopener">lattes.cnpq.br/3929645439848570</a></li>
+      <li>Site oficial do projeto: <a href="https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html" target="_blank" rel="noopener">https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html</a></li>
+    </ul>
+  </div>
+</footer>
+
+<script>
+"use strict";
+
+/* ================= ESTADO ================= */
+var estado = {
+  abaAtual: 1,
+  xp: 0,
+  selos: {},
+  totalSelos: 0,
+  respostas: {},
+  modo: "leitura",
+  tema: "claro"
+};
+
+/* ================= NAVEGAÇÃO ================= */
+function ativarAba(num) {
+  estado.abaAtual = num;
+  var tabs = document.querySelectorAll(".tab");
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].setAttribute("aria-selected", tabs[i].getAttribute("data-aba") === String(num) ? "true" : "false");
+  }
+  var paineis = document.querySelectorAll(".painel");
+  for (var j = 0; j < paineis.length; j++) {
+    paineis[j].classList.remove("active");
+  }
+  var alvo = document.getElementById("painel-" + num);
+  if (alvo) alvo.classList.add("active");
+  document.getElementById("progresso").textContent = "Aba " + num + " de 6";
+}
+
+function irParaAba(num) {
+  ativarAba(num);
+  var novo = "#aba-" + num;
+  if (window.location.hash !== novo) {
+    window.location.hash = novo;
+  }
+  window.scrollTo(0, 0);
+}
+
+function lerHash() {
+  var h = window.location.hash.replace("#aba-", "");
+  var n = parseInt(h, 10);
+  if (n >= 1 && n <= 6) return n;
+  return 0;
+}
+
+window.addEventListener("hashchange", function () {
+  var n = lerHash();
+  if (n && n !== estado.abaAtual) ativarAba(n);
+});
+
+/* ================= MODOS ================= */
+function alternarModo() {
+  if (estado.modo === "leitura") {
+    document.body.classList.add("modo-apresentacao");
+    document.getElementById("btn-modo").textContent = "📖 Leitura";
+    estado.modo = "apresentacao";
+  } else {
+    document.body.classList.remove("modo-apresentacao");
+    document.getElementById("btn-modo").textContent = "🎤 Apresentação";
+    estado.modo = "leitura";
+  }
+}
+
+function alternarTema() {
+  if (estado.tema === "claro") {
+    document.body.setAttribute("data-theme", "dark");
+    document.getElementById("btn-tema").textContent = "☀️ Claro";
+    estado.tema = "escuro";
+  } else {
+    document.body.removeAttribute("data-theme");
+    document.getElementById("btn-tema").textContent = "🌙 Escuro";
+    estado.tema = "claro";
+  }
+}
+
+/* ================= QUIZ ================= */
+function fisherYates(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function inicializarQuiz() {
+  var perguntas = document.querySelectorAll(".pergunta");
+  for (var p = 0; p < perguntas.length; p++) {
+    (function (perg) {
+      var altsDiv = perg.querySelector(".alts");
+      var certaKey = altsDiv.getAttribute("data-certa");
+      var alts = [];
+      var filhos = altsDiv.querySelectorAll(".alt");
+      for (var k = 0; k < filhos.length; k++) alts.push(filhos[k]);
+      for (var idx = 0; idx < alts.length; idx++) {
+        var letra = String.fromCharCode(97 + idx);
+        alts[idx].setAttribute("data-ehcerta", letra === certaKey ? "true" : "false");
+      }
+      var emb = fisherYates(alts);
+      altsDiv.innerHTML = "";
+      for (var e = 0; e < emb.length; e++) {
+        altsDiv.appendChild(emb[e]);
+        emb[e].addEventListener("click", function () { responderQuiz(perg, this); });
+      }
+    })(perguntas[p]);
+  }
+}
+
+function responderQuiz(perg, alt) {
+  var id = perg.getAttribute("data-pergunta");
+  var reg = estado.respostas[id];
+  if (reg && reg.acertou) return;
+
+  var acerto = alt.getAttribute("data-ehcerta") === "true";
+  var fbCerta = perg.querySelector(".fb-certa");
+  var fbErrada = perg.querySelector(".fb-errada");
+
+  if (acerto) {
+    alt.classList.add("certa");
+    alt.textContent = "✓ " + alt.textContent;
+    var todas = perg.querySelectorAll(".alt");
+    for (var i = 0; i < todas.length; i++) todas[i].disabled = true;
+    fbCerta.textContent = "✅ Por que esta está certa: " + alt.getAttribute("data-fb");
+    fbCerta.classList.add("show");
+    fbErrada.classList.remove("show");
+    var pontos = (reg && !reg.acertou) ? 5 : 10;
+    estado.xp += pontos;
+    estado.respostas[id] = { acertou: true };
+    verificarSelo(id);
+    atualizarXP();
+  } else {
+    alt.classList.add("errada");
+    alt.textContent = "✗ " + alt.textContent;
+    alt.disabled = true;
+    fbErrada.textContent = "❌ Por que esta está errada: " + alt.getAttribute("data-fb");
+    fbErrada.classList.add("show");
+    if (!reg) estado.respostas[id] = { acertou: false };
+  }
+}
+
+function verificarSelo(id) {
+  var aba = id.split("-")[0];
+  var ids = [aba + "-1", aba + "-2", aba + "-3"];
+  for (var i = 0; i < ids.length; i++) {
+    var r = estado.respostas[ids[i]];
+    if (!r || !r.acertou) return;
+  }
+  if (!estado.selos[aba]) {
+    estado.selos[aba] = true;
+    estado.totalSelos += 1;
+    document.getElementById("selos").textContent = estado.totalSelos;
+  }
+}
+
+function atualizarXP() {
+  document.getElementById("xp").textContent = estado.xp;
+}
+
+/* ================= DEMO 1: MANUAL VS FERRAMENTA ================= */
+function demo1Manual() {
+  var kloc = parseFloat(document.getElementById("demo1-kloc").value) || 50;
+  var exp = document.getElementById("demo1-exp").value;
+  var fator = exp === "baixa" ? 1.3 : (exp === "alta" ? 0.8 : 1.0);
+
+  var base = kloc * 0.5 * fator;
+  var e1 = Math.round(base * 1.25);
+  var e2 = Math.round(base * 0.85);
+  var e3 = Math.round(base * 1.05);
+
+  var html = "<div style='background:var(--fundo-codigo); padding:1rem; border-radius:8px'>";
+  html += "<h4 style='color:var(--cor-destaque-escuro)'>🧠 Estimativa manual: três estimadores, três números</h4>";
+  html += "<table style='width:100%; border-collapse:collapse; margin-top:0.5rem; font-size:0.92rem'>";
+  html += "<tr><th style='padding:0.4rem; border:1px solid var(--borda); text-align:left'>Estimador</th><th style='padding:0.4rem; border:1px solid var(--borda)'>Esforço (pessoas-mês)</th><th style='padding:0.4rem; border:1px solid var(--borda); text-align:left'>Critério implícito</th></tr>";
+  html += "<tr><td style='padding:0.4rem; border:1px solid var(--borda)'>Sênior pessimista</td><td style='padding:0.4rem; border:1px solid var(--borda); text-align:center'>" + e1 + "</td><td style='padding:0.4rem; border:1px solid var(--borda)'>Sempre adiciona margem de segurança</td></tr>";
+  html += "<tr><td style='padding:0.4rem; border:1px solid var(--borda)'>Sênior otimista</td><td style='padding:0.4rem; border:1px solid var(--borda); text-align:center'>" + e2 + "</td><td style='padding:0.4rem; border:1px solid var(--borda)'>Assume que tudo corre bem</td></tr>";
+  html += "<tr><td style='padding:0.4rem; border:1px solid var(--borda)'>Analista intermediário</td><td style='padding:0.4rem; border:1px solid var(--borda); text-align:center'>" + e3 + "</td><td style='padding:0.4rem; border:1px solid var(--borda)'>Usa regra de bolso própria</td></tr>";
+  html += "</table>";
+  var menor = Math.min(e1, e2, e3);
+  var maior = Math.max(e1, e2, e3);
+  var variacao = Math.round(((maior - menor) / menor) * 100);
+  html += "<div class='resultado-erro' style='margin-top:0.75rem'>⚠️ Divergência de " + variacao + "% entre estimadores para o MESMO projeto. Nenhum consegue explicar exatamente de onde veio seu número, e não há registro auditável.</div>";
+  html += "</div>";
+  document.getElementById("demo1-resultado").innerHTML = html;
+}
+
+function demo1Ferramenta() {
+  var kloc = parseFloat(document.getElementById("demo1-kloc").value) || 50;
+  var exp = document.getElementById("demo1-exp").value;
+  var a = 3.0, b = 1.12, c = 2.5, d = 0.35;
+  var fatorExp = exp === "baixa" ? 1.25 : (exp === "alta" ? 0.80 : 1.00);
+
+  var pot = Math.pow(kloc, b);
+  var esforcoBase = a * pot;
+  var esforco = esforcoBase * fatorExp;
+  var prazo = c * Math.pow(esforco, d);
+  var equipe = esforco / prazo;
+
+  var html = "<div style='background:var(--fundo-codigo); padding:1rem; border-radius:8px'>";
+  html += "<h4 style='color:var(--cor-destaque-escuro)'>🛠️ Estimativa com ferramenta: modelo aberto e rastreável</h4>";
+  html += "<pre style='margin:0.5rem 0'>Modelo: COCOMO básico, modo semidestacado\n";
+  html += "Coeficientes: a=" + a + ", b=" + b + ", c=" + c + ", d=" + d + "\n";
+  html += "Entrada: tamanho = " + kloc + " KLOC\n";
+  html += "Direcionador: experiência da equipe = " + exp + " (fator " + fatorExp + ")\n\n";
+  html += "Passo 1: tamanho ^ b = " + kloc + " ^ " + b + " = " + pot.toFixed(2) + "\n";
+  html += "Passo 2: esforço base = " + a + " x " + pot.toFixed(2) + " = " + esforcoBase.toFixed(1) + " pessoas-mês\n";
+  html += "Passo 3: esforço ajustado = " + esforcoBase.toFixed(1) + " x " + fatorExp + " = " + esforco.toFixed(1) + " pessoas-mês\n";
+  html += "Passo 4: prazo = " + c + " x (" + esforco.toFixed(1) + " ^ " + d + ") = " + prazo.toFixed(1) + " meses\n";
+  html += "Passo 5: equipe média = " + esforco.toFixed(1) + " / " + prazo.toFixed(1) + " = " + equipe.toFixed(1) + " pessoas</pre>";
+  html += "<div class='resultado-demo'>✅ Resultado: <strong>" + esforco.toFixed(1) + " pessoas-mês</strong>, prazo de <strong>" + prazo.toFixed(1) + " meses</strong>, equipe média de <strong>" + equipe.toFixed(1) + " pessoas</strong>. Cada passo está registrado e o mesmo input sempre gera o mesmo output.</div>";
+  html += "</div>";
+  document.getElementById("demo1-resultado").innerHTML = html;
+}
+
+function demo1Reset() {
+  document.getElementById("demo1-kloc").value = "50";
+  document.getElementById("demo1-exp").value = "media";
+  document.getElementById("demo1-resultado").innerHTML = "";
+}
+
+/* ================= DEMO 2: CLASSIFICADOR ================= */
+var casos2 = [
+  {
+    desc: "A ferramenta pede o tamanho em milhares de linhas de código, aplica uma fórmula com expoente maior que 1 e devolve esforço em pessoas-mês.",
+    certa: "parametrica",
+    opcoes: [
+      { id: "parametrica", nome: "Paramétrica" },
+      { id: "analogia", nome: "Baseada em analogia" },
+      { id: "consenso", nome: "De consenso ágil" },
+      { id: "pf", nome: "Especializada em PF" }
+    ],
+    fbCerta: "Correto! Fórmula com coeficientes e expoentes é a assinatura das ferramentas paramétricas, como COCOMO II, SLIM e SEER-SEM.",
+    fbOutros: "Não é essa. Quando há fórmula explícita com expoentes e coeficientes, a família é paramétrica."
+  },
+  {
+    desc: "A ferramenta busca no banco de projetos da empresa os três mais parecidos com o novo projeto e ajusta o esforço pelas diferenças de tamanho e complexidade.",
+    certa: "analogia",
+    opcoes: [
+      { id: "parametrica", nome: "Paramétrica" },
+      { id: "analogia", nome: "Baseada em analogia" },
+      { id: "consenso", nome: "De consenso ágil" },
+      { id: "pf", nome: "Especializada em PF" }
+    ],
+    fbCerta: "Correto! Comparar com projetos históricos semelhantes e ajustar pelas diferenças é a definição de estimativa por analogia (raciocínio baseado em casos).",
+    fbOutros: "Não é essa. Buscar projetos parecidos do histórico é a marca da analogia."
+  },
+  {
+    desc: "A ferramenta abre uma sala virtual, distribui cartas com a sequência de Fibonacci, revela os votos ao mesmo tempo e registra o consenso da equipe.",
+    certa: "consenso",
+    opcoes: [
+      { id: "parametrica", nome: "Paramétrica" },
+      { id: "analogia", nome: "Baseada em analogia" },
+      { id: "consenso", nome: "De consenso ágil" },
+      { id: "pf", nome: "Especializada em PF" }
+    ],
+    fbCerta: "Correto! Cartas, rodadas e revelação simultânea são o Planning Poker, ferramenta de consenso ágil como PlanningPoker.com e Parabol.",
+    fbOutros: "Não é essa. Cartas e consenso da equipe caracterizam as ferramentas de consenso ágil."
+  },
+  {
+    desc: "A ferramenta pede a lista de funções do sistema, classifica cada uma como ALI, AIE, EE, CE ou EO e soma os pesos conforme a complexidade.",
+    certa: "pf",
+    opcoes: [
+      { id: "parametrica", nome: "Paramétrica" },
+      { id: "analogia", nome: "Baseada em analogia" },
+      { id: "consenso", nome: "De consenso ágil" },
+      { id: "pf", nome: "Especializada em PF" }
+    ],
+    fbCerta: "Correto! Contagem de ALI, AIE, EE, CE e EO com pesos por complexidade é o método de pontos de função (IFPUG), usado em contratos do governo brasileiro.",
+    fbOutros: "Não é essa. Classificar funções em ALI, AIE, EE, CE e EO é contagem de pontos de função."
+  },
+  {
+    desc: "A ferramenta combina uma fórmula paramétrica com uma base de projetos históricos, usando o histórico para ajustar automaticamente os coeficientes da fórmula.",
+    certa: "parametrica",
+    opcoes: [
+      { id: "parametrica", nome: "Paramétrica (híbrida com calibração)" },
+      { id: "analogia", nome: "Baseada em analogia pura" },
+      { id: "consenso", nome: "De consenso ágil" },
+      { id: "pf", nome: "Especializada em PF" }
+    ],
+    fbCerta: "Correto! O núcleo continua sendo uma fórmula paramétrica; o histórico serve para calibrar os coeficientes. É assim que suítes comerciais como SLIM e SEER-SEM operam.",
+    fbOutros: "Não é essa. Se há fórmula com coeficientes ajustados por histórico, o núcleo é paramétrico com calibração."
+  },
+  {
+    desc: "A ferramenta não calcula esforço: ela fornece dados de milhares de projetos entregues no mundo para você comparar sua produtividade e calibrar seu modelo.",
+    certa: "pf",
+    opcoes: [
+      { id: "parametrica", nome: "Paramétrica" },
+      { id: "analogia", nome: "Base de dados para analogia e calibração" },
+      { id: "consenso", nome: "De consenso ágil" },
+      { id: "pf", nome: "Especializada em PF" }
+    ],
+    fbCerta: "Correto! É o papel do ISBSG: uma base internacional de dados de projetos, que alimenta analogia e calibração, mas não calcula esforço por si só.",
+    fbOutros: "Não é essa. Uma base de dados de projetos serve de insumo para analogia e calibração; não é um modelo de cálculo."
+  }
+];
+
+var demo2Estado = { atual: null, resolvidos: 0, acertos: 0 };
+
+function demo2Novo() {
+  var i = Math.floor(Math.random() * casos2.length);
+  demo2Estado.atual = casos2[i];
+  document.getElementById("demo2-caso").textContent = "📋 " + demo2Estado.atual.desc;
+  var opcoesDiv = document.getElementById("demo2-opcoes");
+  opcoesDiv.style.display = "block";
+  opcoesDiv.innerHTML = "";
+  for (var k = 0; k < demo2Estado.atual.opcoes.length; k++) {
+    (function (op) {
+      var b = document.createElement("button");
+      b.className = "btn";
+      b.type = "button";
+      b.textContent = op.nome;
+      b.addEventListener("click", function () { demo2Responder(op.id); });
+      opcoesDiv.appendChild(b);
+    })(demo2Estado.atual.opcoes[k]);
+  }
+  document.getElementById("demo2-feedback").innerHTML = "";
+}
+
+function demo2Responder(resp) {
+  if (!demo2Estado.atual) return;
+  var certa = resp === demo2Estado.atual.certa;
+  var fb = document.getElementById("demo2-feedback");
+  demo2Estado.resolvidos += 1;
+  if (certa) {
+    demo2Estado.acertos += 1;
+    fb.innerHTML = '<div class="resultado-demo">✅ <strong>Classificação correta!</strong> ' + demo2Estado.atual.fbCerta + '</div>';
+  } else {
+    fb.innerHTML = '<div class="resultado-erro">❌ <strong>Classificação incorreta.</strong> ' + demo2Estado.atual.fbOutros + '</div>';
+  }
+  document.getElementById("demo2-opcoes").style.display = "none";
+  document.getElementById("demo2-placar").textContent = "Placar: " + demo2Estado.acertos + " acertos em " + demo2Estado.resolvidos + " casos";
+}
+
+function demo2Reset() {
+  demo2Estado.atual = null;
+  demo2Estado.resolvidos = 0;
+  demo2Estado.acertos = 0;
+  document.getElementById("demo2-caso").textContent = "📋 A descrição aparecerá aqui. Clique em Novo caso para começar.";
+  document.getElementById("demo2-opcoes").style.display = "none";
+  document.getElementById("demo2-opcoes").innerHTML = "";
+  document.getElementById("demo2-feedback").innerHTML = "";
+  document.getElementById("demo2-placar").textContent = "";
+}
+
+/* ================= DEMO 3: CRITÉRIOS ================= */
+var criteriosLista = [
+  { id: "modelo", nome: "Modelo suportado pela ferramenta", peso: 4 },
+  { id: "calibracao", nome: "Capacidade de calibração com histórico local", peso: 4 },
+  { id: "entradas", nome: "Entradas disponíveis na organização", peso: 5 },
+  { id: "integracao", nome: "Integração com ferramentas existentes", peso: 3 },
+  { id: "custo", nome: "Custo total compatível com orçamento", peso: 4 },
+  { id: "usabilidade", nome: "Usabilidade e curva de aprendizado curta", peso: 3 },
+  { id: "suporte", nome: "Suporte e comunidade ativos", peso: 2 },
+  { id: "conformidade", nome: "Conformidade com exigências contratuais", peso: 5 }
+];
+
+var pesosPorContexto = {
+  startup: { modelo: 2, calibracao: 1, entradas: 5, integracao: 5, custo: 5, usabilidade: 5, suporte: 2, conformidade: 1 },
+  fabrica: { modelo: 4, calibracao: 5, entradas: 5, integracao: 3, custo: 3, usabilidade: 3, suporte: 3, conformidade: 4 },
+  publico: { modelo: 5, calibracao: 4, entradas: 4, integracao: 2, custo: 3, usabilidade: 2, suporte: 3, conformidade: 5 },
+  defesa: { modelo: 5, calibracao: 4, entradas: 4, integracao: 2, custo: 2, usabilidade: 2, suporte: 4, conformidade: 5 }
+};
+
+var notasPorFamilia = {
+  parametrica: { modelo: 5, calibracao: 4, entradas: 3, integracao: 3, custo: 2, usabilidade: 2, suporte: 4, conformidade: 4 },
+  analogia: { modelo: 3, calibracao: 5, entradas: 2, integracao: 3, custo: 3, usabilidade: 3, suporte: 2, conformidade: 3 },
+  consenso: { modelo: 2, calibracao: 2, entradas: 5, integracao: 5, custo: 5, usabilidade: 5, suporte: 4, conformidade: 1 },
+  pf: { modelo: 5, calibracao: 4, entradas: 3, integracao: 3, custo: 3, usabilidade: 2, suporte: 3, conformidade: 5 }
+};
+
+var nomesFamilia = {
+  parametrica: "Paramétrica (COCOMO II, SLIM, SEER-SEM)",
+  analogia: "Baseada em analogia",
+  consenso: "Consenso ágil (Planning Poker)",
+  pf: "Especializada em pontos de função"
+};
+
+function demo3RenderCriterios() {
+  var ctx = document.getElementById("demo3-contexto").value;
+  var pesos = pesosPorContexto[ctx];
+  var html = "<p style='font-size:0.9rem; color:var(--texto-suave); margin-bottom:0.5rem'>Marque os critérios que sua organização atende hoje. O peso de cada critério já vem ajustado ao contexto escolhido.</p>";
+  for (var i = 0; i < criteriosLista.length; i++) {
+    var c = criteriosLista[i];
+    var peso = pesos[c.id];
+    html += "<div class='criterio-item' id='crit-" + c.id + "'>";
+    html += "<input type='checkbox' id='chk-" + c.id + "' data-crit='" + c.id + "'>";
+    html += "<label for='chk-" + c.id + "'>" + c.nome + "</label>";
+    html += "<span class='peso-badge'>peso " + peso + "</span>";
+    html += "</div>";
+  }
+  document.getElementById("demo3-criterios").innerHTML = html;
+
+  var chks = document.querySelectorAll("#demo3-criterios [data-crit]");
+  for (var k = 0; k < chks.length; k++) {
+    (function (chk) {
+      chk.addEventListener("change", function () {
+        var item = document.getElementById("crit-" + chk.getAttribute("data-crit"));
+        if (chk.checked) item.classList.add("marcado");
+        else item.classList.remove("marcado");
+      });
+    })(chks[k]);
+  }
+  document.getElementById("demo3-resultado").innerHTML = "";
+}
+
+function demo3Calcular() {
+  var ctx = document.getElementById("demo3-contexto").value;
+  var pesos = pesosPorContexto[ctx];
+  var marcados = {};
+  var chks = document.querySelectorAll("#demo3-criterios [data-crit]");
+  var algum = false;
+  for (var i = 0; i < chks.length; i++) {
+    if (chks[i].checked) { marcados[chks[i].getAttribute("data-crit")] = true; algum = true; }
+  }
+  if (!algum) {
+    document.getElementById("demo3-resultado").innerHTML = "<div class='resultado-erro'>❌ Marque pelo menos um critério que sua organização atende.</div>";
+    return;
+  }
+
+  var resultados = [];
+  var familias = ["parametrica", "analogia", "consenso", "pf"];
+  for (var f = 0; f < familias.length; f++) {
+    var fam = familias[f];
+    var total = 0;
+    var maximo = 0;
+    for (var c in pesos) {
+      var peso = pesos[c];
+      maximo += peso * 5;
+      if (marcados[c]) {
+        total += peso * notasPorFamilia[fam][c];
+      }
+    }
+    var pct = Math.round((total / maximo) * 100);
+    resultados.push({ fam: fam, total: total, pct: pct });
+  }
+  resultados.sort(function (a, b) { return b.total - a.total; });
+
+  var html = "<div style='background:var(--fundo-codigo); padding:1rem; border-radius:8px'>";
+  html += "<h4 style='color:var(--cor-destaque-escuro)'>🧮 Adequação por família (contexto: " + ctx + ")</h4>";
+  for (var r = 0; r < resultados.length; r++) {
+    var res = resultados[r];
+    html += "<div style='margin:0.6rem 0'>";
+    html += "<div style='font-size:0.92rem; font-weight:bold'>" + (r + 1) + ". " + nomesFamilia[res.fam] + " — " + res.total + " pontos (" + res.pct + "%)</div>";
+    html += "<div class='barra-score'><div class='fill' style='width:" + res.pct + "%'>" + res.pct + "%</div></div>";
+    html += "</div>";
+  }
+  html += "<div class='resultado-demo' style='margin-top:0.75rem'>🏆 Mais adequada a este contexto: <strong>" + nomesFamilia[resultados[0].fam] + "</strong>. Troque o contexto e veja a recomendação mudar: não existe ferramenta melhor em absoluto.</div>";
+  html += "</div>";
+  document.getElementById("demo3-resultado").innerHTML = html;
+}
+
+function demo3Reset() {
+  document.getElementById("demo3-contexto").value = "startup";
+  demo3RenderCriterios();
+}
+
+/* ================= DEMO 4: FERRAMENTAS ================= */
+var toolsData = {
+  cocomo: {
+    nome: "COCOMO II",
+    familia: "Paramétrica (modelo aberto)",
+    entradas: "Tamanho (KLOC ou PF), fatores de escala, direcionadores de custo.",
+    saidas: "Esforço em pessoas-mês, prazo em meses, distribuição por fase.",
+    custo: "Gratuito: especificação aberta, implementações em planilha e calculadoras web acadêmicas.",
+    uso: "Ensino, pesquisa e estimativas preliminares em empresas que não querem licença paga.",
+    curiosidade: "Criado por Barry Boehm e colegas na Universidade do Sul da Califórnia; é a evolução do COCOMO de 1981."
+  },
+  slim: {
+    nome: "SLIM (QSM)",
+    familia: "Paramétrica (suíte comercial)",
+    entradas: "Tamanho, produtividade histórica, restrições de prazo e equipe.",
+    saidas: "Esforço, prazo, equipe, curva de esforço no tempo, análise de risco.",
+    custo: "Comercial, licenciado pela Quantitative Software Management (empresa americana).",
+    uso: "Grandes corporações com portfólio de projetos e necessidade de análise de risco de prazo.",
+    curiosidade: "Usa o modelo Putnam, baseado na curva de Rayleigh, que descreve como o esforço se distribui ao longo do projeto."
+  },
+  seer: {
+    nome: "SEER-SEM (Galorath)",
+    familia: "Paramétrica (suíte comercial)",
+    entradas: "Tamanho, complexidade, tecnologia, experiência da equipe, requisitos de confiabilidade.",
+    saidas: "Esforço, custo, prazo, risco e confiabilidade, com faixas de incerteza.",
+    custo: "Comercial, licenciado pela Galorath (empresa americana).",
+    uso: "Defesa, aeroespacial e sistemas embarcados, onde o método é aceito por agências reguladoras.",
+    curiosidade: "Muito usado em contratos de defesa americanos e europeus; possui base histórica própria de projetos."
+  },
+  pf: {
+    nome: "Ferramentas de pontos de função",
+    familia: "Especializada em PF",
+    entradas: "Lista de funções do sistema, classificadas em ALI, AIE, EE, CE e EO com complexidade.",
+    saidas: "Pontos de função não ajustados e ajustados; com produtividade, converte em esforço.",
+    custo: "Variado: há planilhas gratuitas e suítes comerciais de contagem.",
+    uso: "Contratos de fábricas de software, especialmente no setor público brasileiro.",
+    curiosidade: "Implementam o método IFPUG (completo) ou NESMA (simplificado); são aceitas em licitações do SISP."
+  },
+  poker: {
+    nome: "Planning Poker (PlanningPoker.com, Parabol, Pointing Poker)",
+    familia: "Consenso ágil",
+    entradas: "Histórias de usuário, referência da equipe, votos individuais em cartas.",
+    saidas: "Pontos de história por história, com registro do consenso e das divergências.",
+    custo: "Gratuito ou muito baixo; versões pagas oferecem integração e histórico.",
+    uso: "Squads ágeis estimando sprints, com integração ao Jira e Azure DevOps.",
+    curiosidade: "A revelação simultânea das cartas evita ancoragem e efeito halo, dois vieses que distorcem estimativas em grupo."
+  },
+  isbsg: {
+    nome: "ISBSG",
+    familia: "Base de dados (não calcula esforço)",
+    entradas: "Dados de projetos entregues, submetidos por organizações do mundo inteiro.",
+    saidas: "Estatísticas de produtividade, benchmarks por setor e tecnologia, dados para calibração.",
+    custo: "Assinatura para acesso completo; parte dos dados e relatórios é pública.",
+    uso: "Benchmarking de produtividade e calibração de modelos paramétricos e de analogia.",
+    curiosidade: "Reúne milhares de projetos medidos; é a referência internacional para comparar produtividade de software."
+  }
+};
+
+function demo4Mostrar(tool) {
+  var d = toolsData[tool];
+  document.getElementById("demo4-cartao").innerHTML =
+    "<div style='border-left:4px solid var(--cor-destaque); padding-left:1rem'>" +
+    "<h4 style='color:var(--cor-destaque-escuro); margin-bottom:0.5rem'>" + d.nome + "</h4>" +
+    "<p><strong>👪 Família:</strong> " + d.familia + "</p>" +
+    "<p><strong>📥 Entradas:</strong> " + d.entradas + "</p>" +
+    "<p><strong>📤 Saídas:</strong> " + d.saidas + "</p>" +
+    "<p><strong>💰 Custo:</strong> " + d.custo + "</p>" +
+    "<p><strong>🎯 Uso típico:</strong> " + d.uso + "</p>" +
+    "<p><strong>💡 Curiosidade:</strong> " + d.curiosidade + "</p>" +
+    "</div>";
+}
+
+function demo4Reset() {
+  document.getElementById("demo4-cartao").innerHTML = "👆 Clique em uma ferramenta para abrir o cartão técnico.";
+}
+
+/* ================= DEMO 5: ESTUDO DE CASO ================= */
+var etapas5 = [
+  {
+    titulo: "Etapa 1 — Definir modelo e entradas",
+    conteudo: "Modelo escolhido: COCOMO básico, modo semidestacado (equipe mista, requisitos parcialmente novos).<br>Tamanho: 60 KLOC, obtido por analogia com dois projetos anteriores de varejo.<br>Experiência da equipe: média no domínio (fator 1,0).<br>Restrição: prazo desejado de 8 meses.",
+    saida: "Entradas registradas e justificadas no relatório."
+  },
+  {
+    titulo: "Etapa 2 — Calibrar com histórico local",
+    conteudo: "Os 12 projetos anteriores mostram produtividade 20% acima da média da base de fábrica.<br>Coeficiente a ajustado de 3,0 para 2,5 (equipe mais produtiva exige menos esforço por KLOC).<br>Justificativa documentada com os dados dos 12 projetos.",
+    saida: "Coeficiente local a = 2,5 em vez do 3,0 de fábrica."
+  },
+  {
+    titulo: "Etapa 3 — Calcular esforço e prazo",
+    conteudo: "Passo 1: 60 ^ 1,12 = 98,4<br>Passo 2: esforço = 2,5 x 98,4 = 246 pessoas-mês (calibrado)<br>Sem calibração seria 3,0 x 98,4 = 295 pessoas-mês<br>Passo 3: prazo = 2,5 x (246 ^ 0,35) = 17,2 meses<br>Passo 4: equipe média = 246 / 17,2 = 14,3 pessoas",
+    saida: "246 pessoas-mês, 17,2 meses, 14,3 pessoas. A calibração reduziu 17% o esforço."
+  },
+  {
+    titulo: "Etapa 4 — Análise de sensibilidade",
+    conteudo: "Variando o tamanho em ±20%:<br>48 KLOC → 191 pessoas-mês (-22%)<br>60 KLOC → 246 pessoas-mês (base)<br>72 KLOC → 304 pessoas-mês (+24%)<br>Variando a experiência de média para alta: 197 pessoas-mês (-20%).",
+    saida: "O tamanho é a entrada mais influente: erro de 20% no tamanho gera erro de mais de 20% no esforço."
+  },
+  {
+    titulo: "Etapa 5 — Comparar com pontos de função",
+    conteudo: "Contagem NESMA simplificada do escopo: 1.230 PF.<br>Produtividade histórica da fábrica: 5,0 horas por PF.<br>Esforço por PF: 1.230 x 5,0 = 6.150 horas ≈ 41 pessoas-mês (considerando 150 h/mês).<br>Divergência grande em relação ao paramétrico: investigar premissas.<br>Causa encontrada: o tamanho de 60 KLOC estava superestimado; a contagem de PF é mais confiável para este escopo.",
+    saida: "Divergência detectada e investigada; a contagem de PF prevaleceu por ser mais direta para o escopo."
+  },
+  {
+    titulo: "Etapa 6 — Documentar e reportar",
+    conteudo: "Relatório final com:<br>Escopo e premissas explícitas.<br>Método: contagem NESMA + produtividade histórica local.<br>Resultado em faixa: otimista 35, provável 41, pessimista 52 pessoas-mês.<br>Prazo compatível com a equipe de 6 pessoas: cerca de 7 a 9 meses.<br>Riscos: integração fiscal e mudança de escopo.<br>Recomendação: revisar escopo com o cliente antes de assinar.",
+    saida: "Estimativa defensável, auditável e com faixa de incerteza comunicada ao cliente."
+  }
+];
+
+var demo5Estado = { etapa: 0 };
+
+function demo5Render() {
+  var st = demo5Estado;
+  if (st.etapa === 0) {
+    document.getElementById("demo5-conteudo").innerHTML = "<div class='resultado-demo'>📋 Clique em Próxima etapa para percorrer as seis etapas da aplicação da ferramenta no estudo de caso do sistema de gestão de varejo.</div>";
+    document.getElementById("demo5-barra").style.width = "0%";
+    document.getElementById("demo5-barra").textContent = "";
+    return;
+  }
+  var e = etapas5[st.etapa - 1];
+  var html = "<div style='background:var(--fundo-codigo); padding:1rem; border-radius:8px'>";
+  html += "<h4 style='color:var(--cor-destaque-escuro)'>" + e.titulo + "</h4>";
+  html += "<p style='margin-top:0.6rem; font-size:0.94rem'>" + e.conteudo + "</p>";
+  html += "<div class='resultado-demo' style='margin-top:0.6rem'><strong>📤 Saída da etapa:</strong> " + e.saida + "</div>";
+  html += "</div>";
+  document.getElementById("demo5-conteudo").innerHTML = html;
+  var pct = Math.round((st.etapa / 6) * 100);
+  document.getElementById("demo5-barra").style.width = pct + "%";
+  document.getElementById("demo5-barra").textContent = pct + "%";
+  if (st.etapa === 6) {
+    document.getElementById("demo5-conteudo").innerHTML += "<div class='resultado-demo' style='margin-top:1rem'>🎯 Estudo de caso concluído. Lição central: a ferramenta calcula, mas o valor da estimativa vem das entradas, da calibração, da comparação entre métodos e da documentação.</div>";
+  }
+}
+
+function demo5Next() {
+  if (demo5Estado.etapa < 6) {
+    demo5Estado.etapa += 1;
+    demo5Render();
+  }
+}
+
+function demo5Reset() {
+  demo5Estado.etapa = 0;
+  demo5Render();
+}
+
+/* ================= LIGAÇÕES ================= */
+function ligarBotoes() {
+  var tabs = document.querySelectorAll(".tab");
+  for (var t = 0; t < tabs.length; t++) {
+    (function (tab) {
+      tab.addEventListener("click", function () {
+        irParaAba(parseInt(tab.getAttribute("data-aba"), 10));
+      });
+      tab.addEventListener("keydown", function (ev) {
+        var lista = Array.prototype.slice.call(document.querySelectorAll(".tab"));
+        var idx = lista.indexOf(tab);
+        if (ev.key === "ArrowRight" && idx < lista.length - 1) { lista[idx + 1].focus(); ev.preventDefault(); }
+        if (ev.key === "ArrowLeft" && idx > 0) { lista[idx - 1].focus(); ev.preventDefault(); }
+      });
+    })(tabs[t]);
+  }
+
+  document.getElementById("btn-modo").addEventListener("click", alternarModo);
+  document.getElementById("btn-tema").addEventListener("click", alternarTema);
+
+  document.getElementById("demo1-manual").addEventListener("click", demo1Manual);
+  document.getElementById("demo1-ferramenta").addEventListener("click", demo1Ferramenta);
+  document.getElementById("demo1-reset").addEventListener("click", demo1Reset);
+
+  document.getElementById("demo2-novo").addEventListener("click", demo2Novo);
+  document.getElementById("demo2-reset").addEventListener("click", demo2Reset);
+
+  document.getElementById("demo3-contexto").addEventListener("change", demo3RenderCriterios);
+  document.getElementById("demo3-calcular").addEventListener("click", demo3Calcular);
+  document.getElementById("demo3-reset").addEventListener("click", demo3Reset);
+  demo3RenderCriterios();
+
+  var tools = document.querySelectorAll("#demo4-area [data-tool]");
+  for (var i = 0; i < tools.length; i++) {
+    (function (b) { b.addEventListener("click", function () { demo4Mostrar(b.getAttribute("data-tool")); }); })(tools[i]);
+  }
+  document.getElementById("demo4-reset").addEventListener("click", demo4Reset);
+
+  document.getElementById("demo5-next").addEventListener("click", demo5Next);
+  document.getElementById("demo5-reset").addEventListener("click", demo5Reset);
+  demo5Render();
+
+  document.addEventListener("keydown", function (ev) {
+    if (estado.modo === "apresentacao") {
+      if (ev.key === "ArrowRight" && estado.abaAtual < 6) irParaAba(estado.abaAtual + 1);
+      if (ev.key === "ArrowLeft" && estado.abaAtual > 1) irParaAba(estado.abaAtual - 1);
+    }
+  });
+}
+
+/* ================= CARGA INICIAL ================= */
+document.addEventListener("DOMContentLoaded", function () {
+  ligarBotoes();
+  inicializarQuiz();
+  var n = lerHash();
+  ativarAba(n ? n : 1);
+  atualizarXP();
+});
+</script>
+
+</body>
+</html>
