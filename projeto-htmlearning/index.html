@@ -3096,9 +3096,75 @@ Entregue APENAS o bloco de código HTML (aberto com cerca tripla + "html" e fech
     const rodape = document.querySelector("footer .footer-inner");
     if (rodape) {
       const pv = document.createElement("p"); pv.className = "hl-privacidade";
-      pv.textContent = "🔒 Privacidade: este portal registra de forma anônima as páginas visitadas e os cliques, para fins de melhoria. Nenhum dado digitado nos campos é gravado.";
+      pv.textContent = "🔒 Privacidade: este portal registra de forma anônima as páginas visitadas e os cliques, para fins de melhoria. Nenhum dado digitado nos campos é gravado, exceto as mensagens enviadas voluntariamente.";
       rodape.appendChild(pv);
     }
+  });
+</script>
+
+<!-- ===== Caixa de sugestões espontâneas (após o encerramento da coleta) ===== -->
+<style>
+  .sug-box{margin-top:18px;padding:16px;border:1px solid rgba(127,127,127,.35);border-radius:10px}
+  .sug-box h3{margin:0 0 6px;font-size:1.05em}
+  .sug-box textarea,.sug-box select,.sug-box input[type=email]{width:100%;box-sizing:border-box;padding:10px;border-radius:8px;border:1px solid rgba(127,127,127,.5);font:inherit;background:transparent;color:inherit}
+  .sug-box textarea{min-height:110px;resize:vertical}
+  .sug-box select{margin-bottom:10px;max-width:260px}
+  .sug-box select option{color:#111}
+  .sug-box .sug-aviso{font-size:.85em;opacity:.85;margin:6px 0 10px}
+  .sug-box .sug-cont{font-size:.8em;opacity:.7;text-align:right}
+  .sug-hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+</style>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const URL_SUG = (typeof SCRIPT_URL !== "undefined") ? SCRIPT_URL : "https://script.google.com/macros/s/AKfycbzM_WFwdFyvga_zmE7sC9AvaSBpwGegj0PbIbdcaW45PmblUoUUK8R0DLqFanlzrxTs/exec";
+    const ft = document.querySelector("footer"); if (!ft) return;
+    const box = document.createElement("div"); box.className = "sug-box"; box.id = "sugestoes";
+    box.innerHTML =
+      '<h3>💬 Deixe sua opinião</h3>' +
+      '<p class="sug-aviso">Usou o portal e quer comentar algo? Elogios, sugestões e dificuldades são bem-vindos. Sua mensagem será usada para aprimorar o <em>HTMLearning</em> e <strong>não integra os dados da pesquisa</strong>, encerrada em 10/11/2026. O e-mail é opcional e serve apenas para eventual resposta.</p>' +
+      '<label for="sugTipo">Tipo de mensagem</label>' +
+      '<select id="sugTipo"><option>Elogio</option><option selected>Sugestão</option><option>Dificuldade</option><option>Outro</option></select>' +
+      '<label for="sugTexto">Sua mensagem *</label>' +
+      '<textarea id="sugTexto" maxlength="1000" placeholder="O que você gostou? O que poderia melhorar?"></textarea>' +
+      '<div class="sug-cont"><span id="sugCont">0</span>/1000</div>' +
+      '<label for="sugEmail">E-mail (opcional)</label>' +
+      '<input type="email" id="sugEmail" maxlength="120" autocomplete="email">' +
+      '<div class="sug-hp" aria-hidden="true"><label for="sugSite">Não preencha</label><input type="text" id="sugSite" tabindex="-1" autocomplete="off"></div>' +
+      '<p style="margin-top:10px"><button type="button" id="sugEnviar" class="btn-primary">Enviar mensagem</button></p>' +
+      '<div id="sugStatus" role="status" aria-live="polite" style="display:none"></div>';
+    box.style.maxWidth = "900px"; box.style.margin = "24px auto"; box.style.width = "calc(100% - 32px)";
+    ft.parentNode.insertBefore(box, ft);
+    const p5 = document.getElementById("passo5");
+    if (p5) { const pl = document.createElement("p"); pl.innerHTML = 'Quer comentar sua experiência? <a href="#sugestoes">Deixe sua opinião</a>.'; p5.appendChild(pl); }
+    const tx = box.querySelector("#sugTexto"), em = box.querySelector("#sugEmail"), hp = box.querySelector("#sugSite");
+    const bt = box.querySelector("#sugEnviar"), st = box.querySelector("#sugStatus"), ct = box.querySelector("#sugCont");
+    const aberto = Date.now();
+    tx.addEventListener("input", () => { ct.textContent = tx.value.length; });
+    const mostrar = (cls, html) => { st.style.display = "block"; st.className = cls; st.innerHTML = html; };
+    bt.addEventListener("click", async () => {
+      const texto = tx.value.trim(), email = em.value.trim();
+      if (texto.length < 5) { mostrar("alert-box", "Escreva sua mensagem antes de enviar."); tx.focus(); return; }
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { mostrar("alert-box", "Confira o e-mail ou deixe o campo em branco."); em.focus(); return; }
+      let ultimo = 0; try { ultimo = Number(localStorage.getItem("htmlearning_sug_ultimo") || 0); } catch (e) {}
+      if (Date.now() - ultimo < 60000) { mostrar("alert-box", "Aguarde um minuto antes de enviar outra mensagem."); return; }
+      if (hp.value || Date.now() - aberto < 3000) { mostrar("success-box", "Obrigado pela mensagem!"); return; }
+      bt.disabled = true; bt.textContent = "Enviando...";
+      try {
+        await fetch(URL_SUG, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ tipoRegistro: "SUGESTAO", tipo: box.querySelector("#sugTipo").value, texto: texto, email: email, site: hp.value,
+            sessaoId: (typeof SESSAO_ID !== "undefined") ? SESSAO_ID : "",
+            dispositivo: window.innerWidth < 768 ? "Celular" : "Computador/Tablet" }) });
+        try { localStorage.setItem("htmlearning_sug_ultimo", String(Date.now())); } catch (e) {}
+        mostrar("success-box", "🎉 <strong>Mensagem enviada!</strong> Obrigado por ajudar a melhorar o <em>HTMLearning</em>.");
+        tx.value = ""; em.value = ""; ct.textContent = "0"; bt.textContent = "Enviar mensagem";
+        if (typeof registrarEventoPlanilha === "function") registrarEventoPlanilha("6. Sugestão", "Enviou mensagem", "", false);
+      } catch (erro) {
+        mostrar("alert-box", "⚠️ Não foi possível enviar agora. Tente novamente em instantes.");
+        bt.textContent = "Enviar mensagem";
+      } finally { setTimeout(() => { bt.disabled = false; }, 2000); }
+    });
+    const lista = document.querySelector("footer .footer-links-list");
+    if (lista) { const li = document.createElement("li"); li.innerHTML = '<a href="#sugestoes">💬 Deixe sua opinião</a>'; lista.appendChild(li); }
   });
 </script>
 </body>
