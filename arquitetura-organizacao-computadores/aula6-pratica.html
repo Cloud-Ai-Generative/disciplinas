@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<!-- HTMLearning v2.17 (23/10/2026) — Aula gerada a partir do sumário fornecido. Arquivo único, CSS/JS inline, 100% offline. -->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arquitetura e Organização de Computadores — Aula 6: Paralelismo e Pipeline Moderno</title>
+<style>
+:root{
+  --acc:#6D28D9; --acc2:#4C1D95; --btn:#6D28D9;
+  --bg:#F4F4F8; --card:#FFFFFF; --ink:#1E293B; --muted:#475569; --line:#CBD5E1;
+  --soft:#EDE9FE; --amarelo:#FEF9C3; --amarelo-b:#CA8A04; --azul:#EFF6FF; --roxo:#F5F3FF; --laranja:#FFF7ED;
+  --ok:#166534; --okbg:#DCFCE7; --err:#991B1B; --errbg:#FEE2E2; --fs:18px;
+}
+body.dark{
+  --acc:#C4B5FD; --acc2:#4C1D95; --bg:#0D0B14; --card:#171326; --ink:#E4E1EE; --muted:#A3A0B5; --line:#3B3654;
+  --soft:#2E1065; --amarelo:#3F3A16; --amarelo-b:#EAB308; --azul:#172554; --roxo:#2E1065; --laranja:#431407;
+  --ok:#86EFAC; --okbg:#14351F; --err:#FCA5A5; --errbg:#3F1D1D;
+}
+body.apresentacao{--fs:22px}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:var(--fs);line-height:1.55;background:var(--bg);color:var(--ink)}
+.wrap{max-width:1080px;margin:0 auto;padding:16px}
+[hidden]{display:none!important}
+a{color:var(--acc)}
+code{font-family:ui-monospace,Consolas,Menlo,monospace;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:.92em}
+h2{margin:.2em 0 .5em;color:var(--acc)} h3{margin:1.2em 0 .4em} h4{margin:.6em 0 .3em}
+button{font-family:inherit}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.controles{position:fixed;top:10px;right:10px;z-index:100;display:flex;gap:8px}
+.btn{background:var(--btn);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;font-size:.95em;box-shadow:0 3px 0 var(--acc2)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.ctl{font-size:.78em;padding:8px 12px}
+.btn.ativo{outline:3px solid var(--acc);outline-offset:2px}
+.topo{background:linear-gradient(135deg,#6D28D9,#4C1D95);color:#fff;border-radius:16px;padding:20px;margin-top:44px}
+.topo h1{margin:0 0 6px;font-size:1.5em}
+.topo .sub{opacity:.95;margin:0}
+.glossa-inicial{background:rgba(255,255,255,.14);border-radius:10px;padding:10px 12px;font-size:.82em;margin-top:12px}
+.chips{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:rgba(255,255,255,.16);border-radius:999px;padding:3px 12px;font-size:.75em;font-weight:700}
+.hud{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0}
+.xpchip{background:var(--card);border:2px solid var(--line);border-radius:999px;padding:5px 14px;font-weight:700}
+.selos{display:flex;flex-wrap:wrap;gap:6px}
+.selo{border:2px solid var(--line);border-radius:999px;padding:4px 10px;font-size:.72em;color:var(--muted);background:var(--card)}
+.selo.ganho{border-color:var(--acc);color:var(--acc);font-weight:700;background:var(--soft)}
+.trilha{display:flex;align-items:center;gap:8px;font-size:.75em;color:var(--muted)}
+.barra{width:170px;height:12px;border:2px solid var(--line);border-radius:8px;overflow:hidden;background:var(--card)}
+#barra-fill{height:100%;width:0;background:var(--btn);transition:width .4s}
+.tabs{display:flex;gap:4px;overflow-x:auto;position:sticky;top:0;z-index:40;background:var(--bg);border-bottom:3px solid var(--line);padding:10px 8px 0}
+.tab{background:transparent;border:3px solid transparent;border-bottom:none;padding:10px 16px;border-radius:12px 12px 0 0;font-weight:700;color:var(--muted);white-space:nowrap;cursor:pointer;font-size:.9em}
+.tab.ativa{background:var(--card);border-color:var(--line);border-bottom:3px solid var(--card);color:var(--acc);position:relative;margin-bottom:-3px;z-index:2}
+.badge-estudo{display:inline-block;margin-left:8px;background:var(--soft);color:var(--acc);border:1px solid var(--acc);border-radius:999px;padding:2px 8px;font-size:.72em;font-weight:700;vertical-align:middle}
+.painel{background:var(--card);border:3px solid var(--line);border-top:none;border-radius:0 14px 14px 14px;padding:22px;box-shadow:0 6px 16px rgba(30,27,45,.08)}
+.missao{background:var(--soft);border-left:8px solid var(--acc);padding:14px;border-radius:10px;margin:10px 0}
+.real li,.ferramentas li{margin:6px 0}
+.conceito{border:3px solid var(--line);border-left:8px solid var(--acc);border-radius:12px;padding:14px;margin:12px 0;box-shadow:0 4px 10px rgba(30,27,45,.07)}
+.analogia{background:var(--amarelo);border-radius:8px;padding:8px 10px}
+.exreal{background:var(--azul);border-radius:8px;padding:8px 10px}
+.instr{background:var(--amarelo);border:2px dashed var(--amarelo-b);border-radius:12px;padding:12px 16px;margin:12px 0}
+.instr-t{font-weight:900;margin:0 0 6px}
+.previsao{font-weight:700}
+.observar{background:var(--azul);border:2px solid var(--line);border-radius:12px;padding:10px 14px;margin:10px 0}
+.legenda{background:var(--bg);border:2px solid var(--line);border-radius:12px;padding:10px 14px;margin:10px 0;font-size:.9em}
+.legenda li{margin:4px 0}
+details{border:2px solid var(--line);border-radius:12px;padding:10px 14px;margin:12px 0}
+details summary{cursor:pointer;font-weight:700}
+details.roteiro{background:var(--roxo)}
+details.mito{background:var(--laranja)}
+details.aprof{background:var(--azul)}
+.dic dt{font-weight:700;margin-top:8px;color:var(--acc)}
+.dic dd{margin:2px 0 6px 0}
+.buscas{list-style:none;padding:0}
+.buscas li{margin:8px 0}
+.demo-top{margin:10px 0}
+.demo{border:3px solid var(--line);border-radius:12px;padding:14px;background:var(--bg)}
+.termos{background:var(--soft);border:2px solid var(--acc);border-radius:12px;padding:12px 16px;margin:12px 0;font-size:.9em}
+.termos ul{margin:6px 0 0;padding-left:20px}
+.q{border:2px solid var(--line);border-radius:12px;padding:12px;margin:12px 0}
+.qp{margin:0 0 8px}
+.alt{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap;width:100%;text-align:left;padding:12px;border:2px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);cursor:pointer;font-size:.95em;margin:6px 0}
+.alt:hover:not(:disabled){border-color:var(--acc)}
+.alt:disabled{cursor:not-allowed}
+.alt.ok{background:var(--okbg);border-color:var(--ok);color:var(--ok);font-weight:700}
+.alt.err{background:var(--errbg);border-color:var(--err);color:var(--err);opacity:.9}
+.mark{font-weight:900;min-width:1.2em}
+.fb{border-radius:10px;padding:12px;margin:10px 0;border:2px solid var(--line);background:var(--card)}
+.fb-ok{background:var(--okbg);border-color:var(--ok);color:var(--ok)}
+.fb-err{background:var(--errbg);border-color:var(--err);color:var(--err)}
+.fb-info{background:var(--soft);border-color:var(--acc);color:var(--ink)}
+.afirm{font-weight:700;font-style:italic}
+.mito-btns{display:flex;gap:10px;flex-wrap:wrap}
+.mini{border-collapse:collapse;width:100%;background:var(--card)}
+.mini th,.mini td{border:2px solid var(--line);padding:8px;text-align:left}
+.mini th{background:var(--soft)}
+.contador{font-weight:700;color:var(--acc)}
+.demo-status{font-weight:700;color:var(--acc)}
+.cn-passo{border-top:2px dashed var(--line);padding-top:10px;margin-top:10px}
+.cola{border-collapse:collapse;width:100%;font-size:.92em}
+.cola th,.cola td{border:2px solid var(--line);padding:8px;text-align:left;vertical-align:top}
+.cola th{background:var(--soft);width:210px;color:var(--acc)}
+.chefao{border:3px solid var(--acc);border-radius:12px;padding:16px;background:var(--soft)}
+.chefao textarea{width:100%;font:inherit;font-size:.9em;border:2px solid var(--line);border-radius:10px;padding:10px;background:var(--card);color:var(--ink)}
+.semgab{font-size:.8em;color:var(--muted)}
+#toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--btn);color:#fff;padding:10px 18px;border-radius:999px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .25s;z-index:200;max-width:90vw;text-align:center}
+#toast.show{opacity:1}
+footer{font-size:.78em;color:var(--muted);margin-top:26px}
+.rod-bloco{background:var(--card);border:2px solid var(--line);border-radius:12px;padding:14px 18px;margin:10px 0}
+.rod-bloco h4{margin:0 0 8px;color:var(--acc)}
+footer hr{border:none;border-top:2px solid var(--line);margin:16px 0}
+footer ul{margin:6px 0;padding-left:20px}
+footer .links{list-style:none;padding:0}
+footer .links li{margin:6px 0}
+/* demos desta aula */
+.demo-botoes{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.lane{display:flex;align-items:center;gap:6px;margin:5px 0;flex-wrap:wrap}
+.lane .rot{min-width:96px;font-weight:700;font-size:.85em}
+.celula{width:36px;height:26px;border:2px solid var(--line);border-radius:6px;background:var(--card)}
+.celula.feito{background:var(--btn);border-color:var(--acc2)}
+.celula.atual{background:var(--amarelo);border-color:var(--amarelo-b)}
+.unidades{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:10px 0}
+.unidade{border:3px solid var(--line);border-radius:12px;padding:10px;text-align:center;background:var(--card)}
+.unidade.ativa{border-color:var(--acc);background:var(--soft)}
+.unidade.dim{opacity:.45}
+.unidade .inst{font-weight:900;color:var(--acc)}
+.unidade .dad{font-size:.75em;color:var(--muted);font-weight:700}
+.flynn-banner{font-weight:700;margin:6px 0;color:var(--acc)}
+.contador-grande{font-size:1.3em;font-weight:900;color:var(--acc);border:3px solid var(--acc);border-radius:12px;padding:8px 16px;display:inline-block;background:var(--card)}
+.log{list-style:none;padding:0;margin:10px 0}
+.log li{border:2px solid var(--line);border-radius:8px;padding:6px 10px;margin:4px 0;background:var(--card);animation:pop .3s ease}
+@keyframes pop{0%{transform:scale(.85);opacity:0}100%{transform:scale(1);opacity:1}}
+.pipe-top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:10px}
+.pipe-scroll{overflow-x:auto}
+.pipe td{min-width:52px;text-align:center;font-size:.8em}
+.pipe th{font-size:.8em;text-align:center}
+.pipe td.pipe-on{background:var(--soft);font-weight:700;color:var(--acc)}
+.pipe td.pipe-atual{background:var(--amarelo);color:var(--ink)}
+.caso-info{background:var(--soft);border:2px solid var(--acc);border-radius:12px;padding:10px 14px;margin:8px 0;font-weight:700}
+.barras{margin:10px 0}
+.barra-linha{margin:8px 0}
+.barra-rot{font-size:.8em;font-weight:700}
+.barra-ext{border:2px solid var(--line);border-radius:8px;background:var(--card);overflow:hidden;height:28px}
+.barra-int{height:100%;background:var(--btn);color:#fff;font-size:.75em;font-weight:700;display:flex;align-items:center;padding-left:8px;white-space:nowrap;transition:width .6s}
+@media (max-width:700px){
+  .painel{padding:14px}
+  .topo{margin-top:52px}
+  .cola th{width:130px}
+  .unidades{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="controles">
+  <button type="button" id="btn-modo" class="btn ctl" aria-pressed="false">🎤 Apresentação</button>
+  <button type="button" id="btn-dark" class="btn ctl" aria-pressed="false">🌙 Escuro</button>
+</div>
+<div class="wrap">
+  <header class="topo">
+    <h1>🔀 Arquitetura e Organização de Computadores</h1>
+    <p class="sub">Aula 6 — Paralelismo e Pipeline Moderno · Unidade 3 · págs. 9–35</p>
+    <div class="glossa-inicial">🔑 <strong>Antes de começar:</strong> paralelismo (fazer várias coisas ao mesmo tempo, de verdade, em unidades de execução diferentes) · pipeline (do inglês 'cano': a esteira de instruções do processador, em que cada etapa trabalha numa instrução diferente ao mesmo tempo) · processador (o chip que executa as instruções dos programas).</div>
+    <div class="chips"><span class="chip">⏱️ Trilha de sala: ~30 min (abas 1–5)</span><span class="chip">📖 Aba 6 para estudar em casa (vale XP e selo)</span><span class="chip">🧭 + aba Revisão com Chefão</span><span class="chip">📴 Arquivo único · 100% offline</span></div>
+  </header>
+
+  <div class="hud" aria-label="Progresso do aluno">
+    <span class="xpchip">⭐ XP: <strong id="xp">0</strong></span>
+    <span id="selos" class="selos"></span>
+    <span class="trilha"><span class="barra"><span id="barra-fill"></span></span><span id="trilha-txt"></span></span>
+  </div>
+
+  <nav aria-label="Abas da aula">
+    <div class="tabs" id="tabs" role="tablist" aria-label="Abas da aula"></div>
+  </nav>
+  <main id="paineis"></main>
+
+  <footer>
+    <div class="rod-bloco">
+      <h4>📋 FICHA TÉCNICA DA AULA</h4>
+      <p>Arquitetura e Organização de Computadores — Aula 6, Unidade 3, págs. 9–35 · Gerado em 12/11/2026 · 6 abas (5 de sala + 1 de estudo em casa) + Revisão · 18 perguntas · 6 demos · cor #6D28D9</p>
+    </div>
+    <hr>
+    <div class="rod-bloco">
+      <h4>🪄 SOBRE O HTMLearning · v2.17 (23/10/2026)</h4>
+      <p>Transformar o sumário de qualquer disciplina em uma classe interativa em HTML único e offline, com previsão antes do clique, tentativa e erro guiado e exemplos reais.</p>
+      <ul>
+        <li>O que é: metodologia e arquitetura de prompts que converte sumários em aulas interativas em minutos, com IAs gratuitas.</li>
+        <li>O que entrega: 5 a 7 abas + Revisão, simulações com previsão, quiz com retry sem revelar gabarito, linguagem plana, Modos Apresentação/Leitura.</li>
+        <li>Por que é inclusivo: um único .html leve, 100% offline, roda em PC e celular e viaja em pen drive para escolas desconectadas ou áreas rurais.</li>
+      </ul>
+      <p>Idealizador do projeto: Professor Wellington Dimas da Cruz</p>
+      <p>Apoiadora do projeto: Prof.ª Dr.ª Mariella Berger Andrade (IFES / CEFOR)</p>
+      <p><strong>Contatos e links do projeto:</strong></p>
+      <ul class="links">
+        <li>E-mail do idealizador: <a href="mailto:cloud.ai-generative@outlook.com">cloud.ai-generative@outlook.com</a></li>
+        <li>Repositório GitHub do idealizador: <a href="https://github.com/cloud-ai-Generative" target="_blank" rel="noopener">github.com/cloud-ai-Generative</a></li>
+        <li>Currículo Lattes do idealizador: <a href="https://lattes.cnpq.br/6801791839011321" target="_blank" rel="noopener">lattes.cnpq.br/6801791839011321</a></li>
+        <li>Currículo Lattes da apoiadora: <a href="https://lattes.cnpq.br/3929645439848570" target="_blank" rel="noopener">lattes.cnpq.br/3929645439848570</a></li>
+        <li>Site oficial do projeto: <a href="https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html" target="_blank" rel="noopener">https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html</a></li>
+      </ul>
+    </div>
+  </footer>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* ============ DADOS DA AULA (esquema obrigatório HTMLearning v2.17) ============ */
+var DADOS = [
+{
+  rotulo: "1 · Fundamentos do paralelismo",
+  titulo: "Aba 1 — Fundamentos do paralelismo",
+  narrativa: "🎯 Missão: entender o que é paralelismo — fazer várias coisas ao mesmo tempo, de verdade — e por que todo processador moderno (o chip que executa as instruções dos programas) aposta nisso. Cada instrução é um passo elementar (some, copie, compare); cada núcleo (do inglês core, 'caroço': uma unidade de execução completa dentro do chip) pode trabalhar em um pedaço diferente do problema ao mesmo tempo.",
+  mundoReal: [
+    "O Apple M1 (chip que a Apple, empresa americana de tecnologia, desenha para seus computadores) tem vários núcleos: você edita um vídeo enquanto o sistema baixa arquivos e toca música — cada núcleo pega um pedaço do trabalho.",
+    "O Chrome (navegador do Google, empresa americana de tecnologia) abre cada aba em um processo separado: o sistema espalha os processos entre os núcleos, e uma aba travada não derruba as outras.",
+    "Supercomputadores como o Frontier (máquina do laboratório americano Oak Ridge, uma das mais rápidas do mundo) somam milhões de unidades de execução para simular clima e explosões de estrelas."
+  ],
+  ferramentas: [
+    "Gerenciador de Tarefas do Windows (painel do sistema da Microsoft que mostra o uso de cada núcleo em tempo real).",
+    "htop (programa de linha de comando do Linux, o sistema operacional gratuito de código aberto, que mostra a carga de cada núcleo).",
+    "Monitor de Atividade do macOS (painel da Apple que lista processos e o uso dos núcleos)."
+  ],
+  dicionario: [
+    {t:"Paralelismo", d:"Executar várias tarefas ao mesmo tempo, de verdade, em unidades de execução diferentes."},
+    {t:"Sequencial", d:"Uma tarefa por vez, do começo ao fim, antes de começar a próxima."},
+    {t:"Núcleo (core)", d:"Do inglês 'caroço': uma unidade de execução completa dentro do processador; um chip pode ter vários."},
+    {t:"Instrução", d:"Cada passo elementar que o processador executa: somar, copiar, comparar, desviar."},
+    {t:"Concorrência", d:"Várias tarefas progredindo no mesmo período, alternando rapidinho em uma única unidade — parece simultâneo, mas não é."}
+  ],
+  conceitos: [
+    {
+      titulo: "Paralelismo: várias mãos ao mesmo tempo",
+      texto: "Em vez de terminar uma tarefa para só então começar a próxima (o modo sequencial), uma máquina paralela executa várias ao mesmo tempo, em unidades de execução diferentes. O ganho aparece quando as tarefas são independentes: se cada uma pode andar sem esperar a outra, quatro núcleos podem adiantar quatro tarefas de uma vez.",
+      analogia: "a cozinha com 4 cozinheiros e 4 pedidos independentes: cada um cuida de um pedido e todos ficam prontos juntos — contra o cozinheiro sozinho, que faz um por vez.",
+      exemploReal: "O Apple M1 (chip que a Apple desenha para seus computadores) divide o trabalho entre seus núcleos: enquanto um núcleo comprime o vídeo exportado, outro mantém o sistema responsivo — trabalho simultâneo de verdade."
+    },
+    {
+      titulo: "Concorrência não é paralelismo",
+      texto: "Um computador com um núcleo só também abre várias abas 'ao mesmo tempo': o núcleo alterna entre as tarefas milhares de vezes por segundo, criando a ilusão de simultaneidade — isso é concorrência. Paralelismo real exige várias unidades de execução trabalhando no mesmo instante. A distinção importa: alternar não multiplica a capacidade de cálculo; executar junto, sim.",
+      analogia: "um garçom atendendo 4 mesas: ele alterna tão rápido que todas se sentem atendidas (concorrência); 4 garçons, um por mesa, é atendimento simultâneo de verdade (paralelismo).",
+      exemploReal: "Num PC antigo de núcleo único, o Chrome (navegador do Google) ainda abre várias abas: o sistema operacional alterna os processos rapidinho. Num chip de vários núcleos, parte das abas roda de fato ao mesmo tempo."
+    }
+  ],
+  roteiroDemo: {
+    passo0: "Antes de dar play, preveja: 4 tarefas de 4 segundos cada — quanto tempo leva o modo sequencial (1 núcleo) e o modo paralelo (4 núcleos)?",
+    passos: [
+      {acao:"Clique em '▶ Sequencial (1 núcleo)' e acompanhe o contador de tempo.", ve:"As tarefas preenchem uma por vez: o tempo chega a 16 segundos.", significa:"Uma unidade de execução faz um trabalho por vez: 4 tarefas × 4 segundos."},
+      {acao:"Clique em '▶ Paralelo (4 núcleos)' e compare.", ve:"As 4 tarefas preenchem juntas: o tempo para em 4 segundos.", significa:"Tarefas independentes em unidades diferentes andam juntas: ganho de 4 vezes."},
+      {acao:"Clique em '🔄 Reiniciar demo' e preveja de novo antes de cada play.", ve:"Tudo zera e a comparação pode ser repetida.", significa:"O ganho depende de as tarefas serem independentes — guarde essa condição para a aba 3."}
+    ]
+  },
+  demo: {
+    tipo: "livre-cozinha",
+    config: {
+      titulo: "1 núcleo × 4 núcleos: a corrida dos 4 pedidos",
+      observar: "no modo sequencial, só uma linha preenche por vez; no paralelo, as quatro preenchem juntas — e o contador de tempo mostra 16 s contra 4 s.",
+      tarefas: ["Pedido 1","Pedido 2","Pedido 3","Pedido 4"],
+      ticks: 4,
+      vel: 280
+    }
+  },
+  quiz: {
+    termos: [
+      "paralelismo: executar várias tarefas ao mesmo tempo, de verdade, em unidades diferentes",
+      "núcleo (core): do inglês 'caroço'; uma unidade de execução completa dentro do processador",
+      "processador: o chip que executa as instruções dos programas",
+      "instrução: cada passo elementar (somar, copiar, comparar)",
+      "concorrência: tarefas alternando rapidinho em uma única unidade, parecendo simultâneas",
+      "sequencial: uma tarefa por vez, do começo ao fim"
+    ],
+    perguntas: [
+      {
+        q: "O que é paralelismo em um processador?",
+        alts: [
+          {t:"Executar várias tarefas ao mesmo tempo, em unidades de execução diferentes (núcleos)", ok:true, fb:"Isso! Como 4 cozinheiros com 4 pedidos: cada núcleo pega um pedaço. É o que o Apple M1 (chip que a Apple desenha para seus computadores) faz ao editar vídeo sem travar o resto do sistema."},
+          {t:"Executar uma tarefa bem rápida, sozinho", fb:"Uma tarefa rápida sozinha é desempenho sequencial (uma coisa por vez). Paralelismo é simultaneidade real: várias tarefas em unidades diferentes, como vários cozinheiros na mesma cozinha."},
+          {t:"Guardar mais arquivos no disco", fb:"Guardar arquivos é capacidade de armazenamento, outro assunto. Paralelismo trata de EXECUÇÃO: várias tarefas andando ao mesmo tempo em núcleos diferentes do processador."}
+        ]
+      },
+      {
+        q: "Um computador com 1 núcleo só abre várias abas do navegador 'ao mesmo tempo'. O que acontece de verdade?",
+        alts: [
+          {t:"O núcleo alterna entre as tarefas rapidinho: é concorrência, não paralelismo real", ok:true, fb:"Exato! É o garçom sozinho atendendo 4 mesas: alterna tão rápido que parece simultâneo. Paralelismo de verdade exigiria vários núcleos, como nos chips modernos."},
+          {t:"O núcleo se divide fisicamente em vários", fb:"O hardware não se divide: um núcleo é uma unidade física fixa. O que se divide é o TEMPO dele, em fatias minúsculas para cada tarefa — a ilusão da concorrência."},
+          {t:"Cada aba ganha um processador novo", fb:"Ninguém ganha chip novo por abrir aba! Com 1 núcleo, o sistema alterna as abas em fatias de tempo. Só com vários núcleos parte delas roda de fato ao mesmo tempo."}
+        ]
+      },
+      {
+        q: "Quando o paralelismo traz mais ganho de velocidade?",
+        alts: [
+          {t:"Quando as tarefas são independentes e podem rodar sem esperar umas pelas outras", ok:true, fb:"Isso! 4 pedidos independentes em 4 cozinheiros ficam prontos 4 vezes mais rápido. Se cada tarefa precisasse do resultado da anterior, os núcleos extras ficariam esperando."},
+          {t:"Quando cada tarefa depende do resultado da anterior", fb:"Dependência em cadeia é o pior caso: a tarefa 2 espera a 1, a 3 espera a 2 — os núcleos extras ficam parados. É como 4 cozinheiros para uma receita em que cada passo usa o anterior."},
+          {t:"Quando o disco está cheio", fb:"Disco cheio é problema de armazenamento, não de execução. O ganho do paralelismo depende da independência das tarefas — não do espaço livre em disco."}
+        ]
+      }
+    ]
+  },
+  aprofundar: {google:"paralelismo em arquitetura de computadores", scholar:"computação paralela fundamentos", youtube:"paralelismo em processadores"},
+  mitoOuVerdade: {
+    afirmacao: "Dobrar o número de núcleos sempre dobra a velocidade de qualquer programa.",
+    verdade: false,
+    explicacao: "É mito. Só a parte independente do trabalho acelera; a parte que precisa rodar em sequência limita o ganho (você verá a lei de Amdahl na aba 3). Por isso nem o Frontier (supercomputador do laboratório americano Oak Ridge, com milhões de unidades de execução) roda um programa comum milhões de vezes mais rápido."
+  }
+},
+{
+  rotulo: "2 · Tipos de arquiteturas",
+  titulo: "Aba 2 — Tipos de arquiteturas paralelas",
+  narrativa: "🎯 Missão: aprender a classificar as máquinas paralelas com a classificação de Flynn (proposta em 1966 por Michael Flynn, pesquisador americano de computação: conta quantos fluxos de instruções e de dados a máquina tem por vez). Dela saem o SISD (do inglês Single Instruction, Single Data; única instrução, único dado), o SIMD (Single Instruction, Multiple Data; única instrução, vários dados) e o MIMD (Multiple Instruction, Multiple Data; várias instruções, vários dados) — e a GPU (do inglês Graphics Processing Unit; unidade de processamento gráfico: chip com milhares de unidades simples) entra nessa história.",
+  mundoReal: [
+    "As instruções AVX (do inglês Advanced Vector Extensions; extensões vetoriais avançadas) dos processadores Intel e AMD (as duas principais fabricantes de chips de PC) aplicam a mesma conta a vários números de uma vez — SIMD dentro do processador.",
+    "As GPUs da NVIDIA (empresa americana que desenha chips gráficos) têm milhares de unidades simples que aplicam a mesma operação a milhões de pixels — e por isso também treinam sistemas de inteligência artificial.",
+    "Um chip de servidor como o AMD EPYC (linha da AMD para data centers, os grandes galpões de servidores) reúne dezenas de núcleos independentes, cada um executando seu próprio programa — MIMD."
+  ],
+  ferramentas: [
+    "CPU-Z (programa gratuito que mostra os recursos do processador, incluindo o suporte a instruções vetoriais como AVX).",
+    "lscpu (comando do Linux, o sistema operacional gratuito de código aberto, que lista núcleos e extensões do processador).",
+    "GPU-Z (programa gratuito que mostra os dados da placa de vídeo)."
+  ],
+  dicionario: [
+    {t:"Classificação de Flynn", d:"Jeito de classificar máquinas por quantos fluxos de instruções e de dados elas têm por vez (proposta por Michael Flynn em 1966)."},
+    {t:"SISD", d:"Do inglês Single Instruction, Single Data; única instrução, único dado: a máquina clássica de um fluxo só."},
+    {t:"SIMD", d:"Do inglês Single Instruction, Multiple Data; única instrução, vários dados: a mesma operação aplicada a uma lista de valores de uma vez."},
+    {t:"MIMD", d:"Do inglês Multiple Instruction, Multiple Data; várias instruções, vários dados: unidades independentes, cada uma com seu programa."},
+    {t:"GPU", d:"Do inglês Graphics Processing Unit; unidade de processamento gráfico: chip com milhares de unidades simples trabalhando em paralelo massivo."},
+    {t:"Multicore", d:"Do inglês 'vários caroços': processador com vários núcleos independentes no mesmo chip — um MIMD de bolso."}
+  ],
+  conceitos: [
+    {
+      titulo: "A pergunta de Flynn: quantas instruções e quantos dados por vez?",
+      texto: "Flynn propôs contar dois fluxos: o de instruções (as ordens) e o de dados (os valores). Uma instrução sobre um dado por vez = SISD, a máquina clássica. Uma instrução sobre vários dados = SIMD, como somar 4 pares de números de uma só vez. Várias instruções sobre vários dados = MIMD, vários núcleos independentes. (O quarto quadrante, MISD — várias instruções sobre um dado só — é raríssimo na prática.)",
+      analogia: "música: SISD é um músico tocando uma partitura; SIMD é um naipe inteiro tocando a mesma nota ao mesmo tempo, regido por um maestro; MIMD são várias bandas tocando músicas diferentes ao mesmo tempo.",
+      exemploReal: "As instruções AVX (extensões vetoriais) dos chips Intel e AMD (as principais fabricantes de chips de PC) são SIMD: uma única ordem de soma atua sobre 8 ou 16 números de uma vez, acelerando somas de listas, imagens e áudio."
+    },
+    {
+      titulo: "Multicore e GPU: os dois sabores modernos",
+      texto: "O processador multicore (vários núcleos no mesmo chip) é um MIMD: poucos núcleos fortes e independentes, bons em tarefas variadas. A GPU (chip gráfico com milhares de unidades simples) é SIMD em escala gigante: a mesma operação repetida em montanhas de dados. Programas escolhem onde rodar: lógica variada no multicore; contas repetitivas em massa na GPU.",
+      analogia: "poucos caminhões grandes e versáteis (multicore) contra um formigueiro de motos iguais (GPU): para entregar a mesma caixinha a milhares de casas, o formigueiro vence.",
+      exemploReal: "As GPUs da NVIDIA (empresa americana de chips gráficos) treinam sistemas de inteligência artificial porque treino é, no fundo, a mesma conta repetida em bilhões de números — o cenário perfeito do SIMD."
+    }
+  ],
+  roteiroDemo: {
+    passo0: "Antes de clicar, preveja: no modo SIMD, as 4 unidades vão executar instruções iguais ou diferentes?",
+    passos: [
+      {acao:"Clique em 'SISD' e observe o painel de unidades.", ve:"Só a unidade 1 trabalha, sobre o dado D1; as outras ficam paradas.", significa:"Um fluxo de instrução e um de dado por vez: a máquina clássica, sem paralelismo."},
+      {acao:"Clique em 'SIMD' e depois em 'MIMD'.", ve:"No SIMD, as 4 unidades executam a MESMA ordem sobre dados diferentes; no MIMD, cada uma executa uma ordem diferente.", significa:"SIMD = uma instrução, vários dados (naipe regido); MIMD = várias instruções, vários dados (bandas independentes)."},
+      {acao:"Compare os painéis e leia os exemplos reais de cada modo.", ve:"Cada modo aponta um hardware real: máquina clássica, instruções AVX e chips multicore/GPU.", significa:"A classificação de Flynn não é teoria de gaveta: ela nomeia o que existe dentro do seu computador."}
+    ]
+  },
+  demo: {
+    tipo: "livre-flynn",
+    config: {
+      titulo: "Painel Flynn: SISD × SIMD × MIMD ao vivo",
+      observar: "quem trabalha e com qual ordem: no SISD só uma unidade; no SIMD todas com a MESMA instrução; no MIMD cada uma com a SUA — e os dados são sempre vários no SIMD e no MIMD.",
+      modos: [
+        {chave:"sisd", rot:"SISD (1 instrução, 1 dado)", banner:"1 ordem por vez, 1 dado por vez: sem paralelismo.", instrucoes:["SOMA","parada","parada","parada"], ativa:[true,false,false,false], desc:"a máquina clássica: uma instrução sobre um dado por vez.", real:"um programa simples rodando num núcleo antigo, sem instruções vetoriais — um músico, uma partitura."},
+        {chave:"simd", rot:"SIMD (1 instrução, vários dados)", banner:"A MESMA ordem para todas as unidades, cada uma com seu dado.", instrucoes:["SOMA","SOMA","SOMA","SOMA"], ativa:[true,true,true,true], desc:"uma única instrução aplicada a vários dados ao mesmo tempo.", real:"as instruções AVX (extensões vetoriais) dos chips Intel e AMD somam 8 ou 16 números com uma única ordem — o naipe inteiro tocando a mesma nota."},
+        {chave:"mimd", rot:"MIMD (várias instruções, vários dados)", banner:"Cada unidade com sua PRÓPRIA ordem e seu próprio dado.", instrucoes:["SOMA","MULTIPLICA","LÊ","SUBTRAI"], ativa:[true,true,true,true], desc:"unidades independentes, cada uma executando seu próprio trecho de programa.", real:"um chip multicore como o AMD EPYC (linha da AMD para servidores) roda programas diferentes em cada núcleo — várias bandas tocando músicas diferentes."}
+      ]
+    }
+  },
+  quiz: {
+    termos: [
+      "classificação de Flynn: conta quantos fluxos de instruções e de dados a máquina tem por vez",
+      "SISD: do inglês Single Instruction, Single Data; única instrução, único dado",
+      "SIMD: do inglês Single Instruction, Multiple Data; única instrução, vários dados",
+      "MIMD: do inglês Multiple Instruction, Multiple Data; várias instruções, vários dados",
+      "GPU: chip gráfico com milhares de unidades simples (paralelismo massivo)",
+      "CPU: do inglês Central Processing Unit; unidade central de processamento — o chip principal",
+      "núcleo: unidade de execução completa dentro do processador"
+    ],
+    perguntas: [
+      {
+        q: "Na classificação de Flynn, o que define o SIMD (única instrução, vários dados)?",
+        alts: [
+          {t:"Uma mesma operação aplicada a vários dados ao mesmo tempo, como somar 4 pares de números de uma vez", ok:true, fb:"Isso! É o naipe tocando a mesma nota: uma ordem, muitos valores. As instruções AVX (extensões vetoriais) dos chips Intel e AMD fazem exatamente isso com 8 ou 16 números."},
+          {t:"Vários programas diferentes rodando em núcleos independentes", fb:"Programas diferentes em núcleos independentes é MIMD (várias instruções, vários dados) — várias bandas tocando músicas diferentes, não um naipe regido."},
+          {t:"Uma instrução por vez sobre um dado por vez", fb:"Um fluxo de cada é o SISD, a máquina clássica sem paralelismo. O SIMD mantém UMA instrução, mas espalha a operação por VÁRIOS dados de uma vez."}
+        ]
+      },
+      {
+        q: "Um processador com 8 núcleos, cada um rodando um programa diferente, é qual tipo de máquina?",
+        alts: [
+          {t:"MIMD: várias instruções sobre vários dados", ok:true, fb:"Exato! Cada núcleo com sua própria ordem e seus dados: várias bandas independentes. É o caso dos chips multicore, como o AMD EPYC (linha da AMD para servidores)."},
+          {t:"SISD: única instrução, único dado", fb:"SISD é um fluxo só, sem paralelismo. Com 8 núcleos rodando programas diferentes, há 8 fluxos de instrução e 8 de dados — o oposto de 'único'."},
+          {t:"SIMD: única instrução, vários dados", fb:"No SIMD todas as unidades executam a MESMA ordem. Aqui cada núcleo roda um programa DIFERENTE — são várias instruções, o que caracteriza o MIMD."}
+        ]
+      },
+      {
+        q: "Por que GPUs (chips gráficos com milhares de unidades simples) são boas para pixels e para inteligência artificial?",
+        alts: [
+          {t:"Porque as duas tarefas repetem a mesma conta em montanhas de dados — o cenário perfeito do SIMD", ok:true, fb:"Isso! Ajustar milhões de pixels e treinar redes de inteligência artificial é a mesma operação repetida em massa — por isso as GPUs da NVIDIA (empresa americana de chips gráficos) dominam as duas áreas."},
+          {t:"Porque cada unidade da GPU é mais rápida que um núcleo de CPU", fb:"É o contrário: cada unidade da GPU é mais SIMPLES e lenta que um núcleo de CPU (o chip principal). A força vem da quantidade trabalhando junta na mesma conta — o formigueiro de motos."},
+          {t:"Porque não precisam de memória", fb:"GPUs usam muita memória (a memória de vídeo guarda texturas e dados de treino). A vantagem não é dispensar memória, é aplicar a mesma operação a milhares de dados por vez."}
+        ]
+      }
+    ]
+  },
+  aprofundar: {google:"classificação de Flynn arquiteturas paralelas", scholar:"classificação de Flynn SIMD MIMD", youtube:"classificação de Flynn arquiteturas"},
+  mitoOuVerdade: {
+    afirmacao: "A GPU é sempre mais rápida que a CPU para qualquer tarefa.",
+    verdade: false,
+    explicacao: "É mito. A GPU (chip com milhares de unidades simples) brilha quando a mesma conta se repete em montanhas de dados (pixels, treino de inteligência artificial). Para lógica variada e encadeada — como o fluxo de um sistema bancário — os poucos núcleos fortes e versáteis da CPU (o chip principal) vencem. É caminhões contra formigueiro de motos: depende da carga."
+  }
+},
+{
+  rotulo: "3 · Desafios do paralelismo",
+  titulo: "Aba 3 — Desafios e soluções em paralelismo",
+  narrativa: "🎯 Missão: entender por que paralelismo não é automático. Quando duas threads (do inglês 'fios': linhas de execução dentro de um programa) mexem no mesmo dado, o resultado pode depender da ordem dos passos — a condição de corrida. A solução clássica é a trava (em inglês, lock ou mutex, de mutual exclusion, 'exclusão mútua': um cadeado que deixa só uma thread por vez entrar na seção crítica, o trecho que mexe no dado compartilhado). E a lei de Amdahl (regra de 1967 de Gene Amdahl, arquiteto de computadores americano) limita o ganho total.",
+  mundoReal: [
+    "Dois caixas eletrônicos sacando da mesma conta ao mesmo tempo: sem controle, os dois leem o mesmo saldo e o banco libera dinheiro a mais — por isso sistemas como os do Nubank (banco digital brasileiro) usam travas e transações (operações tudo-ou-nada).",
+    "Em promoções do Mercado Livre (site de compras e vendas da América Latina), milhares de pessoas tentam comprar o último item no mesmo segundo: o controle de concorrência garante vender uma vez só.",
+    "Nem o Frontier (supercomputador do laboratório americano Oak Ridge) acelera um programa comum milhões de vezes: a parte que precisa rodar em sequência limita o ganho — a lei de Amdahl, formulada por Gene Amdahl (arquiteto de computadores americano) em 1967."
+  ],
+  ferramentas: [
+    "ThreadSanitizer (ferramenta gratuita do projeto LLVM, um conjunto aberto de compiladores, que detecta condições de corrida em programas).",
+    "Helgrind (ferramenta gratuita do pacote Valgrind, do Linux, que caça erros de sincronização entre threads).",
+    "Travas das bibliotecas padrão: mutexes e semáforos em Java (linguagem mantida pela Oracle, empresa americana de software) e em Python (linguagem de programação gratuita)."
+  ],
+  dicionario: [
+    {t:"Thread", d:"Do inglês 'fio': uma linha de execução dentro de um programa; um programa pode ter várias."},
+    {t:"Condição de corrida", d:"Quando o resultado depende da ordem em que threads intercalam seus passos sobre o mesmo dado — um erro de sincronização."},
+    {t:"Seção crítica", d:"O trecho do programa que mexe no dado compartilhado e só pode ser executado por uma thread por vez."},
+    {t:"Trava (lock / mutex)", d:"O 'cadeado' da seção crítica: quem entra tranca; as outras esperam a destranca. Mutex vem de mutual exclusion (exclusão mútua)."},
+    {t:"Lei de Amdahl", d:"O ganho máximo do paralelismo é limitado pela parte sequencial: ganho máximo ≈ 1 ÷ parte sequencial."},
+    {t:"Parte sequencial", d:"O pedaço do programa que não pode ser dividido entre núcleos e precisa rodar em ordem, sozinho."}
+  ],
+  conceitos: [
+    {
+      titulo: "Condição de corrida: quando a ordem decide o resultado",
+      texto: "Somar 1 a um contador parece um passo, mas são três: ler o valor, somar, gravar. Se duas threads leem o mesmo valor antes de qualquer gravação, as duas gravam o mesmo resultado — uma soma 'engole' a outra. A solução é a trava (mutex): só uma thread por vez executa a seção crítica (ler-somar-gravar); a outra espera e lê o valor já atualizado.",
+      analogia: "dois editores abrindo a mesma planilha, mudando a mesma célula e salvando: o último a salvar apaga a mudança do outro. A trava é o 'arquivo em uso por outra pessoa'.",
+      exemploReal: "Dois caixas eletrônicos sacando da mesma conta: sem trava, os dois leem o mesmo saldo e liberam dinheiro a mais. Sistemas bancários como os do Nubank (banco digital brasileiro) trancam a seção crítica do saldo."
+    },
+    {
+      titulo: "Lei de Amdahl: a parte sequencial manda no ganho",
+      texto: "Se 10% do programa precisa rodar em sequência, o ganho máximo é 1 ÷ 0,1 = 10 vezes — mesmo com núcleos infinitos, porque os 10% não encolhem. A lei de Amdahl (1967) explica por que adicionar núcleos tem retorno decrescente: você acelera só a parte paralelizável, e a parte sequencial vira o pedaço dominante do tempo.",
+      analogia: "uma viagem com um trecho de estrada de pista única: não importa quantas pistas tenham os outros trechos — o pedágio da pista única limita a viagem inteira.",
+      exemploReal: "Gene Amdahl (arquiteto de computadores americano) formulou a regra ao defender os mainframes (grandes computadores centrais) da IBM nos anos 1960; hoje ela explica por que nem o Frontier (supercomputador de Oak Ridge) acelera um programa comum milhões de vezes."
+    }
+  ],
+  roteiroDemo: {
+    passo0: "Antes de clicar, preveja: duas threads somam 1 a um contador que começa em 0 — sem trava, ele termina em 2 ou em 1?",
+    passos: [
+      {acao:"Clique em '▶ Sem trava' e leia o registro de passos, um a um.", ve:"As duas threads leem 0 antes de qualquer gravação; o contador termina em 1.", significa:"Uma gravação engoliu a outra: a condição de corrida em ação."},
+      {acao:"Clique em '▶ Com trava (mutex)' e compare o registro.", ve:"A thread A tranca, lê, grava e destranca; só então a B entra e lê 1; o contador termina em 2.", significa:"A seção crítica vira fila de um por vez: o resultado fica correto."},
+      {acao:"Reinicie e preveja de novo; observe quais passos mudam de ordem.", ve:"O passo 'ler' da segunda thread acontece depois da gravação da primeira.", significa:"O erro não estava na soma — estava na intercalação dos passos sobre o dado compartilhado."}
+    ]
+  },
+  demo: {
+    tipo: "livre-corrida",
+    config: {
+      titulo: "O contador compartilhado: sem trava × com trava",
+      observar: "sem trava, as duas LEITURAS acontecem antes da primeira gravação — as duas somam sobre o mesmo valor velho; com trava, a segunda leitura só acontece depois da primeira gravação.",
+      legenda: [
+        "🔒 = pegar a trava (mutex, o 'cadeado' da seção crítica) · 🔓 = soltar a trava.",
+        "'lê 0' = copiar o valor atual do contador para a gaveta local da thread.",
+        "'grava 1' = escrever de volta o valor somado no contador compartilhado.",
+        "Thread A / Thread B = duas linhas de execução do mesmo programa."
+      ],
+      passosSem: [
+        {t:"Thread A lê o contador: 0"},
+        {t:"Thread B lê o contador: 0 (o mesmo valor!)"},
+        {t:"Thread A grava 0 + 1 = 1", valor:1},
+        {t:"Thread B grava 0 + 1 = 1 — a soma de A foi engolida!", valor:1}
+      ],
+      passosCom: [
+        {t:"Thread A pega a trava 🔒"},
+        {t:"Thread A lê o contador: 0"},
+        {t:"Thread A grava 0 + 1 = 1", valor:1},
+        {t:"Thread A solta a trava 🔓"},
+        {t:"Thread B pega a trava 🔒"},
+        {t:"Thread B lê o contador: 1 (valor já atualizado)"},
+        {t:"Thread B grava 1 + 1 = 2", valor:2},
+        {t:"Thread B solta a trava 🔓"}
+      ],
+      resultadoSem: "o contador terminou em 1, não em 2: as duas threads leram o valor velho e uma gravação apagou a outra. 🌍 É o erro dos dois caixas eletrônicos que leem o mesmo saldo — sistemas como os do Nubank (banco digital brasileiro) evitam isso com travas e transações.",
+      resultadoCom: "o contador terminou em 2, correto: a trava transformou a seção crítica em fila de um por vez. 🌍 É o controle que impede o Mercado Livre (site de compras da América Latina) de vender o último item duas vezes numa promoção."
+    }
+  },
+  quiz: {
+    termos: [
+      "thread: do inglês 'fio'; uma linha de execução dentro de um programa",
+      "contador: variável que guarda um número que vai sendo somado",
+      "condição de corrida: resultado depende da ordem dos passos sobre o mesmo dado",
+      "trava (mutex): o 'cadeado' que deixa só uma thread por vez na seção crítica",
+      "seção crítica: trecho que mexe no dado compartilhado",
+      "lei de Amdahl: ganho máximo ≈ 1 ÷ parte sequencial do programa",
+      "parte sequencial: pedaço que precisa rodar em ordem, sem dividir entre núcleos"
+    ],
+    perguntas: [
+      {
+        q: "Duas threads somam 1 ao mesmo contador (que começa em 0), sem trava. Qual resultado pode aparecer?",
+        alts: [
+          {t:"1, se as duas lerem 0 antes de gravar — uma gravação apaga a outra", ok:true, fb:"Isso! Ler-somar-gravar são três passos: se as duas leem 0, as duas gravam 1. É o erro dos dois caixas eletrônicos lendo o mesmo saldo — a condição de corrida."},
+          {t:"Sempre 2, porque soma é uma operação simples", fb:"Soma parece um passo, mas são três (ler, somar, gravar). Sem trava, as threads intercalam esses passos e uma gravação pode engolir a outra — o resultado pode ser 1."},
+          {t:"Um número aleatório grande", fb:"O erro não cria números grandes: cada thread soma só 1. Sem trava, o resultado pode ser 1 ou 2 — o problema é uma gravação apagar a outra, não valores absurdos."}
+        ]
+      },
+      {
+        q: "Para que serve uma trava (mutex, o 'cadeado' da seção crítica)?",
+        alts: [
+          {t:"Garantir que só uma thread por vez execute o trecho que mexe no dado compartilhado", ok:true, fb:"Exato! A seção crítica vira fila de um por vez: a segunda thread lê o valor já atualizado. É o controle que bancos como o Nubank (banco digital brasileiro) usam no saldo."},
+          {t:"Deixar o programa mais rápido sempre", fb:"Trava custa um pouco de tempo (as threads esperam). Ela compra CORREÇÃO, não velocidade: resultado certo primeiro, desempenho depois — como a fila do caixa, que evita duas pessoas sacando o mesmo saldo."},
+          {t:"Criar novas threads automaticamente", fb:"Criar threads é outra operação. A trava só organiza a entrada de quem JÁ existe: uma por vez no trecho protegido, como o cadeado da sala do arquivo."}
+        ]
+      },
+      {
+        q: "Pela lei de Amdahl, um programa com 10% de parte sequencial ganha no máximo quanto, mesmo com núcleos infinitos?",
+        alts: [
+          {t:"Cerca de 10 vezes: o ganho máximo é 1 dividido pela parte sequencial (1 ÷ 0,1)", ok:true, fb:"Isso! Os 10% não encolhem nunca: viram o piso do tempo. É a estrada de pista única da viagem — Gene Amdahl (arquiteto de computadores americano) formalizou essa regra em 1967."},
+          {t:"Infinito: basta adicionar núcleos", fb:"A parte sequencial não se divide: com núcleos infinitos, os 90% paralelos viram quase zero, mas os 10% ficam — o ganho trava em 1 ÷ 0,1 = 10 vezes."},
+          {t:"10%: o ganho é igual à parte sequencial", fb:"A conta é o inverso: ganho máximo ≈ 1 ÷ parte sequencial. Com 10% sequencial, o teto é 10 vezes — a parte sequencial LIMITA, não define o ganho diretamente."}
+        ]
+      }
+    ]
+  },
+  aprofundar: {google:"condição de corrida exclusão mútua", scholar:"lei de Amdahl computação paralela", youtube:"condição de corrida exclusão mútua"},
+  mitoOuVerdade: {
+    afirmacao: "Se um programa usa várias threads, ele está livre de erros de concorrência.",
+    verdade: false,
+    explicacao: "É mito — usar threads é justamente o que CRIA o risco: sem travas nas seções críticas, condições de corrida aparecem e o resultado depende da ordem dos passos. Ferramentas como o ThreadSanitizer (detector gratuito de corridas do projeto LLVM) existem porque esse erro é comum até em código profissional, como já mostrou em navegadores e bancos de dados famosos."
+  }
+},
+{
+  rotulo: "4 · Fundamentos do pipeline",
+  titulo: "Aba 4 — Fundamentos do pipeline em processadores",
+  narrativa: "🎯 Missão: entender a esteira de instruções dos processadores modernos. Pipeline (do inglês 'cano': execução dividida em estágios que trabalham sobrepostos) é a linha de montagem aplicada ao chip: cada estágio faz uma etapa e, a cada ciclo de clock (o 'tique' do relógio do processador), todas as etapas trabalham em instruções diferentes. A ideia é a mesma que Henry Ford (industrial americano) popularizou na fábrica do Modelo T em 1913.",
+  mundoReal: [
+    "Processadores como o Apple M1 (chip que a Apple desenha para seus computadores) e os AMD Ryzen (linha da AMD para PCs) usam esteiras com mais de uma dezena de estágios: várias instruções em andamento a cada tique do relógio.",
+    "A linha de montagem que Henry Ford (industrial americano) popularizou em 1913 na fábrica do Modelo T é a mesma ideia: cada posto faz uma etapa e vários carros ficam prontos em etapas diferentes ao mesmo tempo.",
+    "O Pentium 4 (processador da Intel lançado em 2000) levou a ideia ao extremo com até 31 estágios — a esteira ficou tão longa que cada tropeço custava caro (você verá o custo na aba 6)."
+  ],
+  ferramentas: [
+    "llvm-mca (ferramenta gratuita do projeto LLVM, um conjunto aberto de compiladores, que simula a esteira de processadores e prevê a vazão do código).",
+    "Compiler Explorer (site gratuito que mostra o código de máquina gerado pelos compiladores — as instruções que entram na esteira)."
+  ],
+  dicionario: [
+    {t:"Pipeline", d:"Do inglês 'cano': a esteira de instruções — execução dividida em estágios que trabalham ao mesmo tempo em instruções diferentes."},
+    {t:"Estágio", d:"Cada etapa da esteira (buscar, decodificar, executar, acessar memória, gravar resultado)."},
+    {t:"Ciclo de clock", d:"O 'tique' do relógio do processador: a cada tique, a esteira anda um passo."},
+    {t:"Vazão (throughput)", d:"Quantas instruções TERMINAM por ciclo — o que o pipeline aumenta."},
+    {t:"Latência", d:"Quanto tempo UMA instrução leva do começo ao fim — o que o pipeline NÃO diminui."},
+    {t:"Registrador", d:"Do inglês register: gaveta dentro do processador onde valores e resultados ficam guardados."}
+  ],
+  conceitos: [
+    {
+      titulo: "A esteira de 5 etapas",
+      texto: "A esteira clássica tem 5 estágios: IF (do inglês Instruction Fetch; busca da instrução na memória), ID (Instruction Decode; decodificação: entender o que a ordem pede), EX (Execute; execução: fazer a conta), MEM (Memory; acesso à memória, quando preciso) e WB (Write Back; escrita do resultado no registrador). A cada ciclo, cada estágio trabalha numa instrução diferente — cinco em andamento ao mesmo tempo.",
+      analogia: "a lavanderia: lavar, secar, dobrar e guardar são etapas fixas; com a lavanderia cheia, há uma carga diferente em cada etapa ao mesmo tempo.",
+      exemploReal: "O processador MIPS (arquitetura criada nos anos 1980 por John Hennessy, professor americano de computação, e muito usada em livros didáticos) imortalizou a esteira de 5 estágios: IF, ID, EX, MEM e WB."
+    },
+    {
+      titulo: "Vazão × latência: o que o pipeline realmente melhora",
+      texto: "Cada instrução continua levando 5 ciclos para atravessar a esteira (a latência não cai). O ganho é na vazão: com a esteira cheia, TERMINA uma instrução por ciclo, em vez de uma a cada 5. É por isso que o pipeline multiplica o trabalho entregue por segundo sem deixar nenhuma instrução individual mais rápida.",
+      analogia: "na lavanderia, a primeira leva de roupa leva o mesmo tempo de sempre — mas, com as etapas cheias, sai uma leva pronta a cada etapa de tempo.",
+      exemploReal: "Na fábrica do Modelo T, Henry Ford (industrial americano) não fez nenhum operário mais rápido: organizou as etapas para sair um carro pronto a cada intervalo — vazão, não velocidade individual."
+    }
+  ],
+  roteiroDemo: {
+    passo0: "Antes de clicar, preveja: 6 instruções de 5 etapas cada — em quantos ciclos a esteira termina tudo? (Sem esteira, seriam 30.)",
+    passos: [
+      {acao:"Clique em '⏭ Avançar 1 ciclo' pela primeira vez e observe a tabela.", ve:"Só a instrução I1 entra, no estágio IF; as outras esperam.", significa:"A esteira começa vazia: é o tempo de enchimento que come parte do ganho."},
+      {acao:"Continue avançando até o ciclo 5 e conte as instruções em andamento.", ve:"A partir do ciclo 5, há 5 instruções em etapas diferentes ao mesmo tempo; a primeira termina (WB).", significa:"Esteira cheia: a partir daqui termina uma instrução por ciclo."},
+      {acao:"Avance até o fim e compare os contadores.", ve:"6 instruções terminam em 10 ciclos (5 + 6 − 1), contra 30 sem esteira.", significa:"O ganho cresce com o número de instruções: com milhares delas, aproxima-se do número de estágios."}
+    ]
+  },
+  demo: {
+    tipo: "livre-pipeline",
+    config: {
+      titulo: "A esteira de 5 estágios, ciclo a ciclo",
+      observar: "a diagonal que se forma na tabela: cada instrução entra um ciclo depois da anterior; a partir do ciclo 5, cinco instruções trabalham juntas e uma termina por ciclo.",
+      legenda: [
+        "IF = Instruction Fetch → 'busca da instrução na memória'.",
+        "ID = Instruction Decode → 'decodificação: entender o que a ordem pede'.",
+        "EX = Execute → 'execução: fazer a conta'.",
+        "MEM = Memory → 'acesso à memória, quando a instrução precisa ler ou gravar dados'.",
+        "WB = Write Back → 'escrita do resultado no registrador (a gaveta do processador)'.",
+        "I1...I6 = as 6 instruções do programa, na ordem · colunas = ciclos (tiques do relógio)."
+      ],
+      instrucoes: 6,
+      estagios: ["IF","ID","EX","MEM","WB"]
+    }
+  },
+  quiz: {
+    termos: [
+      "pipeline: a esteira de instruções — estágios trabalhando sobrepostos em instruções diferentes",
+      "estágio: cada etapa da esteira (IF, ID, EX, MEM, WB)",
+      "ciclo de clock: o 'tique' do relógio do processador",
+      "IF: do inglês Instruction Fetch; busca da instrução na memória",
+      "EX: do inglês Execute; execução da conta",
+      "WB: do inglês Write Back; escrita do resultado no registrador",
+      "registrador: gaveta dentro do processador onde resultados ficam",
+      "vazão: quantas instruções terminam por ciclo",
+      "latência: quanto tempo uma instrução leva do começo ao fim"
+    ],
+    perguntas: [
+      {
+        q: "O que o pipeline (a esteira de instruções) faz dentro do processador?",
+        alts: [
+          {t:"Sobrepõe etapas de várias instruções: cada estágio trabalha numa instrução diferente a cada ciclo", ok:true, fb:"Isso! Como a linha de montagem de Henry Ford (industrial americano): cada posto numa etapa de um carro diferente. Cinco estágios = até cinco instruções em andamento."},
+          {t:"Faz cada instrução terminar em 1 ciclo", fb:"Cada instrução ainda atravessa todos os estágios (5 ciclos na esteira clássica). O que muda é a VAZÃO: termina uma por ciclo com a esteira cheia — a latência individual não cai."},
+          {t:"Executa as instruções fora de ordem sempre", fb:"Trocar a ordem é outra técnica (execução fora de ordem, usada em chips modernos). A esteira clássica mantém a ordem e só sobrepõe etapas — a linha de montagem não troca a ordem dos carros."}
+        ]
+      },
+      {
+        q: "Na esteira clássica de 5 estágios, o que acontece no estágio IF (a busca da instrução)?",
+        alts: [
+          {t:"O processador busca a próxima instrução na memória", ok:true, fb:"Exato! IF (Instruction Fetch) é o primeiro passo: trazer a ordem da memória para o chip — como pegar a receita antes de cozinhar. É o estágio que abre cada volta da esteira do MIPS (arquitetura didática criada por John Hennessy)."},
+          {t:"O resultado é gravado nos registradores", fb:"Gravar o resultado é o ÚLTIMO estágio, o WB (Write Back). O IF é o primeiro: busca a instrução na memória, antes de qualquer conta."},
+          {t:"A conta de soma é executada", fb:"Fazer a conta é o estágio EX (Execute), no meio da esteira. O IF só busca a ordem — como pegar a receita; a cozinha é depois."}
+        ]
+      },
+      {
+        q: "Com a esteira de 5 estágios cheia, quantas instruções terminam por ciclo (no caso ideal)?",
+        alts: [
+          {t:"Uma por ciclo: a vazão chega a 1 instrução por tique, embora cada uma leve 5 ciclos para atravessar", ok:true, fb:"Isso! Vazão de 1 por ciclo com latência de 5: a lavanderia entrega uma leva pronta por etapa, mesmo com cada leva passando por todas as etapas."},
+          {t:"Cinco por ciclo", fb:"Cinco instruções ficam EM ANDAMENTO juntas, mas cada uma só termina quando chega ao fim da esteira: termina 1 por ciclo, não 5 — como 5 carros na linha, mas um pronto por vez."},
+          {t:"Nenhuma até a esteira esvaziar", fb:"É o contrário: as instruções terminam enquanto a esteira está CHEIA (uma por ciclo). Quando ela esvazia, no fim do programa, é que o ritmo cai."}
+        ]
+      }
+    ]
+  },
+  aprofundar: {google:"esteira de instruções em processadores", scholar:"processamento em estágios de instruções", youtube:"esteira de instruções processador MIPS"},
+  mitoOuVerdade: {
+    afirmacao: "O pipeline faz cada instrução individual ficar mais rápida.",
+    verdade: false,
+    explicacao: "É mito. A latência de cada instrução continua a mesma (ela atravessa todos os estágios) — o que sobe é a vazão: mais instruções TERMINADAS por ciclo. Como na linha de montagem de Henry Ford (industrial americano): nenhum operário ficou mais rápido; a fábrica passou a entregar um carro pronto a cada intervalo."
+  }
+},
+{
+  rotulo: "5 · Desafios do pipeline",
+  titulo: "Aba 5 — Desafios e soluções no pipeline de processadores",
+  narrativa: "🎯 Missão: conhecer os tropeços da esteira — os hazards (do inglês 'riscos': situações que obrigam a esteira a parar). São três: estrutural (duas instruções querem o mesmo recurso), de dados (uma precisa do resultado da anterior, ainda não gravado) e de controle (um desvio condicional — o 'se' do programa — muda o caminho). As soluções: duplicar o recurso, adiantar o resultado (forwarding, do inglês 'encaminhar') e apostar no caminho (previsão de desvio, em inglês branch prediction).",
+  mundoReal: [
+    "Processadores como os da linha Intel Core (chips da Intel, uma das principais fabricantes de chips de PC) usam adiantamento de resultados e previsão de desvio há décadas: sem isso, a esteira pararia a cada 'se' do programa.",
+    "Em 2018, as falhas Spectre e Meltdown (vulnerabilidades descobertas em processadores modernos, catalogadas mundialmente) mostraram o lado arriscado da execução especulativa — o trabalho adiantado baseado em apostas: os rastros da aposta puderam ser lidos por atacantes, e as correções custaram desempenho.",
+    "O Pentium 4 (processador da Intel dos anos 2000) com esteira de até 31 estágios sofria mais a cada desvio previsto errado: quanto mais longa a esteira, mais trabalho adiantado é jogado fora quando a aposta erra."
+  ],
+  ferramentas: [
+    "llvm-mca (ferramenta gratuita do projeto LLVM que simula esteiras e mostra gargalos de recursos e dependências).",
+    "perf (ferramenta do Linux, o sistema operacional gratuito de código aberto, que mede eventos do processador, como desvios previstos errados)."
+  ],
+  dicionario: [
+    {t:"Hazard", d:"Do inglês 'risco/tropeço': situação que obriga a esteira a parar ou descartar trabalho."},
+    {t:"Hazard estrutural", d:"Duas instruções querem o mesmo recurso (a mesma unidade ou memória) no mesmo ciclo."},
+    {t:"Hazard de dados", d:"Uma instrução precisa do resultado da anterior, que ainda não foi gravado."},
+    {t:"Hazard de controle", d:"Um desvio condicional (o 'se') muda o caminho: a esteira não sabe qual instrução buscar em seguida."},
+    {t:"Forwarding (adiantamento)", d:"Passar o resultado direto de um estágio para quem precisa dele, sem esperar a gravação final."},
+    {t:"Bolha (stall)", d:"Pausa inserida na esteira: um ciclo em que um estágio fica sem trabalhar, esperando o problema passar."},
+    {t:"Previsão de desvio", d:"Apostar qual caminho o 'se' vai tomar e continuar trabalhando; se errar, descartar o trabalho adiantado."},
+    {t:"Execução especulativa", d:"Trabalhar adiantado com base na aposta da previsão de desvio — útil, mas com riscos (ver Spectre)."}
+  ],
+  conceitos: [
+    {
+      titulo: "Os três tropeços da esteira",
+      texto: "Estrutural: duas instruções disputam o mesmo recurso no mesmo ciclo — como dois postos querendo a mesma máquina. De dados: a instrução seguinte precisa de um resultado que ainda está no meio da esteira — a receita precisa do bolo que ainda está no forno. De controle: o programa tem um 'se' e o caminho certo só se sabe ciclos depois — a estrada bifurca antes da placa. Cada tropeço, sem solução, vira bolha (ciclo perdido).",
+      analogia: "a linha de montagem: dois postos, uma máquina (estrutural); o posto seguinte espera a peça do anterior (dados); o pedido do cliente muda no meio e metade do trabalho foi para o modelo errado (controle).",
+      exemploReal: "Os chips da linha Intel Core (da Intel) convivem com os três tropeços em todo programa: somas encadeadas (dados), acessos simultâneos à memória (estrutural) e milhões de 'se' por segundo (controle)."
+    },
+    {
+      titulo: "As soluções: duplicar, adiantar, pausar e apostar",
+      texto: "Contra o tropeço estrutural, duplicar o recurso (por exemplo, memórias separadas para instruções e dados). Contra o de dados, o adiantamento (forwarding): o resultado passa direto do estágio onde ficou pronto para quem precisa, sem esperar a gravação; quando não dá, insere-se uma bolha (pausa). Contra o de controle, a previsão de desvio: o chip aposta no caminho mais provável e continua trabalhando (execução especulativa); previsores modernos acertam mais de 90% — mas quando erram, todo o trabalho adiantado é descartado.",
+      analogia: "o garçom experiente já começa a preparar o pedido provável do cliente de sempre (aposta); se o cliente muda o pedido, o prato adiantado é descartado — aposta acertada economiza tempo, errada custa trabalho.",
+      exemploReal: "As falhas Spectre e Meltdown (2018) exploraram justamente os rastros da execução especulativa em chips Intel, AMD e Arm (a empresa inglesa que licencia projetos de chips): a aposta deixa marcas, e atacantes aprenderam a lê-las — as correções custaram desempenho."
+    }
+  ],
+  roteiroDemo: {
+    passo0: "Antes de clicar, preveja: quando a instrução seguinte precisa do resultado da anterior, qual solução evita parar a esteira — adiantar o resultado ou duplicar a memória?",
+    passos: [
+      {acao:"No Cenário 1 (resultado faltando), escolha a solução.", ve:"A escolha certa fica verde e o próximo cenário aparece; a errada explica por que falha.", significa:"Hazard de dados se resolve adiantando o resultado (forwarding), não mexendo na memória."},
+      {acao:"No Cenário 2 (o 'se' no caminho), escolha de novo.", ve:"A previsão de desvio é a resposta; as alternativas mostram o custo de parar sempre.", significa:"Apostar no caminho mantém a esteira cheia; errar a aposta custa o trabalho adiantado."},
+      {acao:"No Cenário 3 (recurso disputado), escolha a última solução.", ve:"Duplicar/separar o recurso resolve o conflito estrutural.", significa:"Cada tropeço tem sua solução própria — saber nomear o tropeço é metade do diagnóstico."}
+    ]
+  },
+  demo: {
+    tipo: "cenario",
+    config: {
+      titulo: "Diagnóstico da esteira: qual solução para qual tropeço?",
+      final: "🎉 Diagnóstico completo! Dados → adiantar (forwarding); controle → apostar (previsão de desvio); estrutural → duplicar o recurso. É esse trio que mantém chips como os da linha Intel Core (da Intel) com a esteira cheia — e que o Pentium 4 (esteira de 31 estágios) precisava mais que ninguém, porque cada erro custava mais trabalho jogado fora.",
+      passos: [
+        {
+          pergunta: "Cenário 1 — a instrução seguinte precisa do resultado da anterior, que ainda está no meio da esteira (hazard de dados). Qual é a melhor solução?",
+          opcoes: [
+            {t:"Adiantar o resultado (forwarding): passar direto do estágio onde ficou pronto para quem precisa", ok:true, fb:"Isso! O resultado não precisa esperar a gravação final: um atalho interno entrega o valor ao estágio seguinte. Chips como os da linha Intel Core (da Intel) fazem isso bilhões de vezes por segundo."},
+            {t:"Parar a esteira por 5 ciclos sempre", fb:"Parar sempre funciona, mas joga fora o ganho da esteira: 5 ciclos perdidos a cada dependência. O adiantamento resolve a maioria dos casos sem pausa — parar é o último recurso."},
+            {t:"Duplicar a memória de dados", fb:"Duplicar memória resolve disputa de RECURSO (hazard estrutural), não falta de resultado. Aqui o valor existe — só ainda não foi gravado; a solução é adiantá-lo, não comprar mais memória."}
+          ]
+        },
+        {
+          pergunta: "Cenário 2 — o programa tem um 'se' (desvio condicional) e o caminho certo só se sabe ciclos depois (hazard de controle). O que os chips modernos fazem?",
+          opcoes: [
+            {t:"Prever o caminho (branch prediction) e continuar trabalhando; se errar, descartar o adiantado", ok:true, fb:"Exato! Os previsores modernos acertam mais de 90% das apostas. O risco existe: as falhas Spectre e Meltdown (2018) exploraram os rastros desse trabalho adiantado."},
+            {t:"Parar a esteira a cada 'se' até saber o caminho", fb:"Programas têm milhões de 'se' por segundo: parar em todos esvaziaria a esteira o tempo todo. Por isso os chips apostam no caminho provável em vez de esperar cada placa da estrada."},
+            {t:"Apagar o programa e recomeçar do início", fb:"Recomeçar o programa seria catastroficamente caro e desnecessário: no erro de aposta, descarta-se só o trabalho adiantado no caminho errado e busca-se o caminho certo — não o programa inteiro."}
+          ]
+        },
+        {
+          pergunta: "Cenário 3 — duas instruções querem usar a mesma memória no mesmo ciclo (hazard estrutural). Qual solução ataca a causa?",
+          opcoes: [
+            {t:"Duplicar/separar o recurso: memórias distintas para instruções e dados", ok:true, fb:"Isso! Se cada busca tem seu próprio balcão, ninguém disputa: é por isso que chips modernos têm caches separados de instruções e dados (memórias rápidas internas)."},
+            {t:"Adiantar o resultado (forwarding)", fb:"Adiantar resolve falta de RESULTADO (hazard de dados). Aqui ninguém espera valor: as duas instruções disputam o mesmo RECURSO físico — a causa é outra, e a solução também."},
+            {t:"Prever o desvio", fb:"Previsão de desvio resolve o 'se' (hazard de controle). Aqui não há bifurcação: há duas instruções querendo o mesmo balcão ao mesmo tempo — resolve-se duplicando o balcão."}
+          ]
+        }
+      ]
+    }
+  },
+  quiz: {
+    termos: [
+      "hazard: do inglês 'tropeço'; situação que obriga a esteira a parar ou descartar trabalho",
+      "hazard de dados: a instrução precisa de um resultado ainda não gravado",
+      "hazard estrutural: duas instruções disputam o mesmo recurso",
+      "hazard de controle: o 'se' muda o caminho e a esteira não sabe o que buscar",
+      "forwarding (adiantamento): passar o resultado direto para quem precisa, sem esperar a gravação",
+      "bolha (stall): ciclo de pausa inserido na esteira",
+      "previsão de desvio: apostar no caminho do 'se' e continuar trabalhando",
+      "desvio condicional: o 'se' do programa, que bifurca o caminho"
+    ],
+    perguntas: [
+      {
+        q: "A instrução seguinte precisa do resultado da anterior, que ainda está na esteira. Que tropeço (hazard) é esse?",
+        alts: [
+          {t:"Hazard de dados: falta um resultado que ainda não foi gravado", ok:true, fb:"Isso! A receita precisa do bolo ainda no forno. A solução típica é o adiantamento (forwarding), usado há décadas nos chips da linha Intel Core (da Intel)."},
+          {t:"Hazard estrutural", fb:"Estrutural é disputa de RECURSO (a mesma unidade ou memória). Aqui ninguém disputa máquina: falta um VALOR que ainda não foi gravado — tropeço de dados."},
+          {t:"Hazard de controle", fb:"Controle é o problema do 'se' (qual caminho seguir). Aqui o caminho é conhecido: o que falta é o resultado da instrução anterior — tropeço de dados."}
+        ]
+      },
+      {
+        q: "O que o adiantamento de resultado (forwarding) faz na esteira?",
+        alts: [
+          {t:"Passa o resultado direto de um estágio para o seguinte que precisa dele, sem esperar a gravação final", ok:true, fb:"Exato! É o atalho interno: o valor recém-calculado vai direto para quem espera, como o cozinheiro passando a massa pronta ao colega sem esperar esfriar na forma."},
+          {t:"Apaga a instrução que depende do resultado", fb:"Apagar instrução mudaria o programa! O adiantamento entrega o valor mais cedo — a instrução dependente executa normalmente, só não precisa esperar a gravação."},
+          {t:"Duplica a memória do processador", fb:"Duplicar memória ataca disputa de recurso (tropeço estrutural). O adiantamento não adiciona hardware de memória: cria um atalho para o resultado já calculado chegar mais cedo."}
+        ]
+      },
+      {
+        q: "Quando a previsão de desvio (a aposta sobre o caminho do 'se') erra, o que acontece?",
+        alts: [
+          {t:"O trabalho adiantado no caminho errado é descartado e a esteira recomeça do caminho certo", ok:true, fb:"Isso! É o prato preparado para o pedido errado: joga-se fora e recomeça. Quanto mais longa a esteira (como as 31 etapas do Pentium 4, chip da Intel), mais trabalho perdido por erro."},
+          {t:"O processador queima", fb:"Errar aposta é evento NORMAL de projeto, não dano físico: o chip descarta o trabalho adiantado e segue pelo caminho certo. Previsores erram uma minoria das vezes e o custo é desempenho, não hardware."},
+          {t:"Nada: a aposta é sempre certa", fb:"Previsores modernos acertam mais de 90%, mas não 100%: cada erro descarta ciclos de trabalho. As falhas Spectre e Meltdown (2018) mostraram que até o rastro das apostas tem consequências."}
+        ]
+      }
+    ]
+  },
+  aprofundar: {google:"conflitos em esteira de instruções adiantamento de resultados", scholar:"conflitos de dados e controle em processadores", youtube:"conflitos esteira de instruções processador"},
+  mitoOuVerdade: {
+    afirmacao: "A previsão de desvio acerta sempre, por isso não tem custo nenhum.",
+    verdade: false,
+    explicacao: "É mito. Os previsores acertam mais de 90%, mas cada erro descarta o trabalho adiantado — e quanto mais longa a esteira, maior o prejuízo (o Pentium 4, chip da Intel com até 31 estágios, sofria com isso). Além do desempenho, as falhas Spectre e Meltdown (2018) mostraram que a execução especulativa deixa rastros exploráveis: aposta tem custo e risco."
+  }
+},
+{
+  rotulo: "6 · Desempenho e casos",
+  titulo: "Aba 6 — Avaliação de desempenho e casos de uso de pipeline",
+  narrativa: "🎯 Missão (estudo em casa): aprender a MEDIR o ganho da esteira com a equação do tempo: tempo = IC × CPI × Tclk, onde IC (do inglês Instruction Count; contagem de instruções do programa), CPI (Cycles Per Instruction; ciclos por instrução) e Tclk (período do clock: a duração de cada tique). O pipeline ideal derruba o CPI para perto de 1; o speedup (do inglês 'aceleração': tempo antigo ÷ tempo novo) conta o ganho real — que nunca é exatamente o número de estágios.",
+  mundoReal: [
+    "O Pentium 4 (processador da Intel dos anos 2000, na versão Prescott com 31 estágios) apostou em esteira longuíssima e relógio rápido: os tropeços custavam tantos ciclos que a Intel abandonou a corrida de estágios longos.",
+    "O Apple M1 (chip que a Apple desenha para seus computadores) aposta no equilíbrio: esteira bem dimensionada e várias unidades de execução — mais trabalho por ciclo, em vez de só tiques mais rápidos.",
+    "O site uops.info (projeto que mede instruções em processadores reais) publica latência e vazão medidas de cada instrução em chips Intel e AMD — dados reais para avaliar esteiras, não palpites."
+  ],
+  ferramentas: [
+    "uops.info (site gratuito com medições reais de latência e vazão de instruções em chips Intel e AMD).",
+    "llvm-mca (simulador gratuito de esteira do projeto LLVM, um conjunto aberto de compiladores).",
+    "perf (ferramenta do Linux, o sistema operacional gratuito de código aberto, que mede eventos como ciclos e desvios previstos errados)."
+  ],
+  dicionario: [
+    {t:"IC", d:"Do inglês Instruction Count; contagem de instruções: quantas instruções o programa tem."},
+    {t:"CPI", d:"Do inglês Cycles Per Instruction; ciclos por instrução: quantos tiques cada instrução consome, na média."},
+    {t:"Tclk", d:"Período do clock: a duração de cada tique do relógio do processador."},
+    {t:"Equação do tempo", d:"tempo = IC × CPI × Tclk: quantas instruções × tiques por instrução × duração do tique."},
+    {t:"Speedup", d:"Do inglês 'aceleração': tempo antigo ÷ tempo novo; 4× significa quatro vezes mais rápido."},
+    {t:"Frequência (GHz)", d:"Número de tiques por segundo; GHz (gigahertz) = bilhões de tiques por segundo. É o inverso do Tclk."}
+  ],
+  conceitos: [
+    {
+      titulo: "A equação do tempo: três alavancas",
+      texto: "O tempo de um programa é IC × CPI × Tclk. Cada técnica ataca uma alavanca: o compilador (programa que traduz código para instruções de máquina) tenta reduzir o IC; o pipeline derruba o CPI (de ~5 para perto de 1); aumentar a frequência encurta o Tclk. Comparar chips só por GHz olha uma alavanca só — e ignora que um CPI ruim pode comer todo o ganho do relógio.",
+      analogia: "tempo de entrega = número de pacotes × tempo por pacote × velocidade da esteira: melhorar só a velocidade da esteira não salva se cada pacote exige cinco voltas.",
+      exemploReal: "O Pentium 4 (chip da Intel) chegou a frequências altíssimas para a época, mas perdia para chips de relógio mais lento com CPI melhor — a lição que o Apple M1 (chip da Apple) levou a sério: mais trabalho por ciclo."
+    },
+    {
+      titulo: "Speedup real: por que não é exatamente 5×",
+      texto: "Com 100 instruções numa esteira de 5 estágios: sem esteira, 100 × 5 = 500 ciclos; com esteira, 5 + 100 − 1 = 104 ciclos (o primeiro resultado sai no ciclo 5, depois sai 1 por ciclo). O speedup é 500 ÷ 104 ≈ 4,8 — quase 5, mas o enchimento da esteira come uma fatia. E cada bolha (pausa por tropeço) adiciona ciclos: 20 bolhas levam a 124 ciclos e o ganho cai para ≈ 4,0. Esteiras longas sofrem mais: cada desvio errado descarta mais trabalho.",
+      analogia: "a linha de montagem leva um tempo para encher antes de sair um carro por intervalo — e cada tropeço atrasa a fila inteira; o ganho real é o ideal menos esses custos.",
+      exemploReal: "Foi exatamente o que derrubou o Pentium 4 Prescott (versão do chip da Intel com 31 estágios): cada desvio previsto errado jogava fora até 31 etapas de trabalho, e o CPI real ficava longe do ideal — a Intel abandonou a corrida de estágios longos."
+    }
+  ],
+  roteiroDemo: {
+    passo0: "Antes de dar play, preveja: o ganho da esteira de 5 estágios sobre 100 instruções é exatamente 5 vezes ou um pouco menos?",
+    passos: [
+      {acao:"Leia o painel do caso (500 ciclos sem esteira, 104 com) e clique na sua previsão de speedup.", ve:"Previsão errada fica vermelha com a explicação da conta; a certa libera '▶ Ver resultado'.", significa:"O enchimento da esteira (5 + 100 − 1) impede o ganho de ser exatamente 5."},
+      {acao:"Clique em '▶ Ver resultado' e compare as barras de ciclos.", ve:"500 contra 104 ciclos, com a conta 500 ÷ 104 ≈ 4,8×.", significa:"Speedup é divisão de tempos, não o número de estágios cravado."},
+      {acao:"Avance para a segunda previsão: 20 bolhas por tropeços.", ve:"124 ciclos e speedup ≈ 4,0×: o ganho encolheu.", significa:"Cada conflito da aba 5 vira ciclo perdido aqui — desempenho real é ideal menos tropeços."}
+    ]
+  },
+  demo: {
+    tipo: "prever",
+    config: {
+      titulo: "Quanto a esteira realmente acelera? (com e sem tropeços)",
+      legenda: [
+        "Sem esteira: 100 instruções × 5 ciclos = 500 ciclos.",
+        "Com esteira: 5 + 100 − 1 = 104 ciclos → 'estágios + instruções − 1' (o −1 evita contar duas vezes o primeiro ciclo de saída).",
+        "Speedup = tempo antigo ÷ tempo novo → 500 ÷ 104 ≈ 4,8×.",
+        "Bolha = ciclo de pausa por tropeço (conflito) → 104 + 20 = 124 ciclos."
+      ],
+      fases: [
+        {
+          info: "📋 Caso: 100 instruções · esteira de 5 estágios · sem esteira: 500 ciclos · com esteira (ideal): 104 ciclos",
+          pergunta: "Antes de dar play, preveja: qual é o speedup (aceleração) real da esteira nesse caso?",
+          opcoes: [
+            {t:"Exatamente 5 vezes", fb:"A esteira precisa encher: os primeiros ciclos não entregam 1 instrução por vez. A conta 500 ÷ 104 dá um pouco menos que 5 — o ideal só se aproxima com programas muito longos."},
+            {t:"Perto de 5 vezes, mas um pouco menos", ok:true, fb:"Isso: 500 ÷ 104 ≈ 4,8×. O tempo de encher a esteira (5 + 100 − 1 = 104 ciclos) come uma fatia do ganho — como a linha de montagem antes de sair um carro por intervalo."},
+            {t:"Cerca de 2 vezes", fb:"2× seria entregar 1 instrução a cada 2 ciclos. Com a esteira cheia sai quase 1 por ciclo: o ganho chega perto do número de estágios (5), não da metade."}
+          ],
+          barras: [{rot:"Sem esteira", val:500},{rot:"Com esteira (ideal)", val:104}],
+          conta: "Speedup = 500 ÷ 104 ≈ 4,8×",
+          resultado: "o ganho real é ≈ 4,8×, não 5× cravados: o enchimento da esteira custa ciclos. 🌍 Por isso bancos de teste reais, como os do site uops.info (projeto que mede instruções em chips Intel e AMD), medem vazão em vez de confiar no número de estágios."
+        },
+        {
+          info: "📋 Mesmo caso, agora com 20 bolhas (pausas por tropeços da esteira): 104 + 20 = 124 ciclos",
+          pergunta: "Antes de dar play, preveja: com 20 bolhas, o que acontece com o speedup?",
+          opcoes: [
+            {t:"Sobe para 5 vezes", fb:"Bolhas são ciclos PERDIDOS: mais pausas não podem aumentar o ganho — o tempo novo cresce (124 em vez de 104) e a divisão diminui."},
+            {t:"Não muda", fb:"Cada bolha é um ciclo a mais na conta: 124 em vez de 104. O denominador do speedup cresceu — o ganho necessariamente cai."},
+            {t:"Cai para cerca de 4 vezes", ok:true, fb:"Exato: 500 ÷ 124 ≈ 4,0×. Os tropeços da aba 5 comem o ganho ideal — por isso adiantamento e previsão de desvio valem ouro nos chips reais."}
+          ],
+          barras: [{rot:"Sem esteira", val:500},{rot:"Com esteira + 20 bolhas", val:124}],
+          conta: "Speedup = 500 ÷ 124 ≈ 4,0×",
+          resultado: "20 bolhas derrubaram o ganho de ≈ 4,8× para ≈ 4,0×. 🌍 Em esteiras longas o efeito é pior: o Pentium 4 Prescott (chip da Intel com 31 estágios) descartava até 31 etapas de trabalho a cada desvio errado — a lição que levou a Intel a abandonar a corrida de estágios longos."
+        }
+      ]
+    }
+  },
+  quiz: {
+    termos: [
+      "equação do tempo: tempo = IC × CPI × Tclk (instruções × tiques por instrução × duração do tique)",
+      "IC: do inglês Instruction Count; contagem de instruções do programa",
+      "CPI: do inglês Cycles Per Instruction; ciclos por instrução, na média",
+      "Tclk: período do clock, a duração de cada tique",
+      "speedup: do inglês 'aceleração'; tempo antigo ÷ tempo novo",
+      "GHz: gigahertz, bilhões de tiques por segundo (frequência do relógio)",
+      "bolha: ciclo de pausa na esteira, causado por um tropeço",
+      "Pentium 4: processador da Intel dos anos 2000, famoso pela esteira de até 31 estágios"
+    ],
+    perguntas: [
+      {
+        q: "Na equação do tempo (tempo = IC × CPI × Tclk), qual alavanca o pipeline ideal melhora?",
+        alts: [
+          {t:"O CPI: derruba os ciclos por instrução de cerca de 5 para perto de 1", ok:true, fb:"Isso! Com a esteira cheia termina ~1 instrução por ciclo: o CPI despenca. O IC (número de instruções) e o Tclk (duração do tique) não mudam por causa da esteira."},
+          {t:"O IC: apaga instruções do programa", fb:"O programa continua com as mesmas instruções: a esteira não apaga trabalho, só sobrepõe etapas. Quem tenta reduzir o IC é o compilador (o tradutor de código), com otimizações."},
+          {t:"O Tclk: acelera o relógio sozinho", fb:"A duração do tique é definida pelo projeto elétrico do chip, não pela esteira. Dividir em estágios PODE permitir tiques menores, mas o ganho direto da esteira é no CPI."}
+        ]
+      },
+      {
+        q: "100 instruções numa esteira de 5 estágios levam 104 ciclos (5 + 100 − 1). Qual o speedup sobre os 500 ciclos sem esteira?",
+        alts: [
+          {t:"Cerca de 4,8 vezes: 500 ÷ 104, quase 5 mas não exatamente", ok:true, fb:"Exato! O enchimento da esteira come uma fatia: só com programas muito longos o ganho se aproxima do número de estágios. Speedup é divisão de tempos, sempre."},
+          {t:"Exatamente 5 vezes", fb:"5× é o ideal inalcançável com programa finito: os primeiros ciclos enchem a esteira sem entregar 1 por ciclo. A conta honesta é 500 ÷ 104 ≈ 4,8."},
+          {t:"104 vezes", fb:"104 é o número de CICLOS, não o ganho. Speedup compara tempos: 500 ÷ 104 ≈ 4,8 — o programa ficou quase 5 vezes mais rápido, não 104."}
+        ]
+      },
+      {
+        q: "Por que esteiras muito longas (como as 31 etapas do Pentium 4, chip da Intel) podem piorar o desempenho real?",
+        alts: [
+          {t:"Porque cada desvio previsto errado joga fora mais trabalho adiantado, e as bolhas custam mais ciclos", ok:true, fb:"Isso! 31 etapas descartadas por erro de aposta é um prejuízo enorme — o CPI real ficava longe do ideal. Foi o que levou a Intel a abandonar a corrida de estágios longos."},
+          {t:"Porque as instruções ficam maiores", fb:"O tamanho das instruções não muda com a esteira: o programa é o mesmo. O custo está nos ciclos perdidos quando a esteira longa precisa descartar trabalho ou inserir pausas."},
+          {t:"Porque o relógio para de funcionar", fb:"O relógio continua ticando — o problema é o trabalho desperdiçado por tique: descartes e bolhas. Frequência alta com CPI ruim perde para relógio lento com CPI bom, como o Apple M1 (chip da Apple) mostrou."}
+        ]
+      }
+    ]
+  },
+  aprofundar: {google:"equação do tempo de processador ciclos por instrução", scholar:"avaliação de desempenho de processadores", youtube:"desempenho de processadores ciclos por instrução"},
+  mitoOuVerdade: {
+    afirmacao: "Um processador com mais GHz é sempre mais rápido que um com menos.",
+    verdade: false,
+    explicacao: "É mito. GHz mede só o Tclk (a duração do tique): o tempo real é IC × CPI × Tclk. O Pentium 4 (chip da Intel) tinha frequências altíssimas e perdia para chips de relógio mais lento com CPI melhor; o Apple M1 (chip da Apple) aposta em mais trabalho por ciclo, não em mais tiques — a equação do tempo explica por quê."
+  }
+}
+];
+
+var REVISAO = {
+  mapa: [
+    "Aba 1 — Fundamentos do paralelismo: várias mãos ao mesmo tempo exigem várias unidades; alternar rapidinho é outra coisa (nomes na cola rápida).",
+    "Aba 2 — Tipos de arquiteturas: a pergunta de Flynn separa um fluxo só, uma ordem para muitos dados e várias ordens independentes (siglas na cola rápida).",
+    "Aba 3 — Desafios do paralelismo: quando a ordem dos passos decide o resultado, entra o cadeado; e a parte que roda sozinha limita o ganho (termos na cola rápida).",
+    "Aba 4 — Fundamentos do pipeline: a esteira sobrepõe etapas e entrega mais trabalho por tique, sem apressar nenhuma instrução individual (etapas na cola rápida).",
+    "Aba 5 — Desafios do pipeline: três tropeços e três remédios — duplicar, adiantar e apostar (nomes na cola rápida).",
+    "Aba 6 (estudo em casa) — Avaliar desempenho: a conta do tempo com três alavancas e o ganho real da esteira, com casos de chips famosos (símbolos na cola rápida)."
+  ],
+  cola: [
+    {termo:"Paralelismo", linha:"fazer várias coisas ao mesmo tempo, de verdade, em unidades de execução diferentes."},
+    {termo:"Concorrência", linha:"tarefas alternando rapidinho em uma unidade só: parece simultâneo, mas não é."},
+    {termo:"Núcleo (core)", linha:"do inglês 'caroço': uma unidade de execução completa dentro do processador."},
+    {termo:"Processador (CPU)", linha:"o chip que executa as instruções; CPU vem do inglês Central Processing Unit (unidade central de processamento)."},
+    {termo:"Instrução", linha:"cada passo elementar: somar, copiar, comparar, desviar."},
+    {termo:"Thread", linha:"do inglês 'fio': uma linha de execução dentro de um programa."},
+    {termo:"Classificação de Flynn", linha:"conta quantos fluxos de instruções e de dados a máquina tem por vez (Michael Flynn, 1966)."},
+    {termo:"SISD", linha:"do inglês Single Instruction, Single Data; única instrução, único dado: a máquina clássica."},
+    {termo:"SIMD", linha:"do inglês Single Instruction, Multiple Data; uma ordem aplicada a vários dados de uma vez (naipe regido)."},
+    {termo:"MIMD", linha:"do inglês Multiple Instruction, Multiple Data; unidades independentes, cada uma com seu programa (várias bandas)."},
+    {termo:"GPU", linha:"chip gráfico com milhares de unidades simples: paralelismo massivo do tipo 'mesma conta, muitos dados'."},
+    {termo:"Multicore", linha:"vários núcleos independentes no mesmo chip: um MIMD de bolso."},
+    {termo:"AVX", linha:"do inglês Advanced Vector Extensions; extensões vetoriais: instruções SIMD dos chips Intel e AMD."},
+    {termo:"Condição de corrida", linha:"o resultado depende da ordem dos passos sobre o mesmo dado: uma gravação engole a outra."},
+    {termo:"Seção crítica", linha:"o trecho que mexe no dado compartilhado: só uma thread por vez."},
+    {termo:"Trava (mutex)", linha:"o cadeado da seção crítica: quem entra tranca, as outras esperam (mutex = exclusão mútua)."},
+    {termo:"Lei de Amdahl", linha:"ganho máximo ≈ 1 ÷ parte sequencial: 10% sequencial limita o ganho a 10×, mesmo com núcleos infinitos."},
+    {termo:"Pipeline", linha:"do inglês 'cano': a esteira de instruções — estágios trabalhando ao mesmo tempo em instruções diferentes."},
+    {termo:"Estágio", linha:"cada etapa da esteira; a clássica tem cinco (siglas logo abaixo)."},
+    {termo:"IF · ID · EX · MEM · WB", linha:"buscar a instrução · decodificar (entender a ordem) · executar (fazer a conta) · acessar memória · gravar resultado no registrador."},
+    {termo:"Ciclo de clock", linha:"o 'tique' do relógio do processador: a esteira anda um passo por tique."},
+    {termo:"Registrador", linha:"gaveta dentro do processador onde valores e resultados ficam guardados."},
+    {termo:"Vazão", linha:"quantas instruções TERMINAM por ciclo: o que a esteira aumenta (ideal: 1 por ciclo)."},
+    {termo:"Latência", linha:"quanto tempo UMA instrução leva do começo ao fim: o que a esteira não diminui."},
+    {termo:"Hazard", linha:"do inglês 'tropeço': situação que obriga a esteira a parar ou descartar trabalho (estrutural, de dados, de controle)."},
+    {termo:"Forwarding", linha:"do inglês 'encaminhar': adiantar o resultado direto para quem precisa, sem esperar a gravação."},
+    {termo:"Bolha (stall)", linha:"ciclo de pausa na esteira: um estágio fica sem trabalhar esperando o problema passar."},
+    {termo:"Previsão de desvio", linha:"apostar no caminho do 'se' e continuar trabalhando; erro = descartar o adiantado."},
+    {termo:"Execução especulativa", linha:"trabalho adiantado baseado na aposta: útil, mas com riscos (falhas Spectre e Meltdown, 2018)."},
+    {termo:"Equação do tempo", linha:"tempo = instruções × tiques por instrução × duração do tique (IC × CPI × Tclk)."},
+    {termo:"IC", linha:"do inglês Instruction Count; contagem de instruções: quantas o programa tem."},
+    {termo:"CPI", linha:"do inglês Cycles Per Instruction; ciclos por instrução: a esteira ideal derruba para perto de 1."},
+    {termo:"Tclk", linha:"período do clock: a duração de cada tique; o inverso da frequência."},
+    {termo:"GHz", linha:"gigahertz: bilhões de tiques por segundo — só uma das três alavancas do tempo."},
+    {termo:"Speedup", linha:"do inglês 'aceleração': tempo antigo ÷ tempo novo; esteira de 5 estágios com 100 instruções dá ≈ 4,8× (500 ÷ 104)."}
+  ],
+  desafio: "🐉 Chefão — Você avalia dois chips para o servidor de uma loja como o Mercado Livre (site de compras e vendas da América Latina): o chip A tem esteira de 5 estágios; o chip B tem 31 estágios, como o Pentium 4 (processador da Intel dos anos 2000). 1) Use a conta do tempo (IC × CPI × Tclk, na cola rápida) para explicar por que mais GHz (na cola) não garante mais velocidade; 2) calcule o speedup (aceleração, na cola) de 100 instruções na esteira de 5 estágios — dica: ciclos = estágios + instruções − 1 — e diga por que não dá exatamente 5×; 3) cite um tropeço da esteira (hazard, na cola) que derruba o ganho ideal e o remédio correspondente; 4) explique, com a lei de Amdahl (na cola rápida), por que 64 núcleos não aceleram 64 vezes um programa com 10% de parte sequencial. Escreva no rascunho e confira com a cola rápida e com o professor."
+};
+
+/* ============ MOTOR (JS puro, offline, roteamento por fragmento) ============ */
+var N_ABAS = DADOS.length;           // 6 abas de conteúdo
+var N_TOTAL = N_ABAS + 1;            // + Revisão = 7
+var STATE = {xp:0, acertos:[0,0,0,0,0,0], chefao:false, toastT:null};
+var DEMOS = [];
+var atual = -1;
+var apres = false;
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function toast(msg){var t=document.getElementById('toast');if(STATE.toastT)clearTimeout(STATE.toastT);t.textContent=msg;t.classList.add('show');STATE.toastT=setTimeout(function(){t.classList.remove('show');},1900);}
+function addXP(n){STATE.xp+=n;toast('+'+n+' XP ⭐');updateHUD();}
+function updateHUD(){
+  document.getElementById('xp').textContent=STATE.xp;
+  var g5=0,g6=0,h='';
+  for(var i=0;i<N_ABAS;i++){
+    var ok=STATE.acertos[i]>=3;
+    if(ok){g6++;if(i<5)g5++;}
+    var rot=(i===5)?'Aba 6 · casa':'Aba '+(i+1);
+    h+='<span class="selo'+(ok?' ganho':'')+'">'+(ok?'🏅':'▫️')+' '+rot+'</span>';
+  }
+  h+='<span class="selo'+(STATE.chefao?' ganho':'')+'">'+(STATE.chefao?'🏆':'▫️')+' Chefão</span>';
+  document.getElementById('selos').innerHTML=h;
+  document.getElementById('barra-fill').style.width=(g6/N_ABAS*100)+'%';
+  document.getElementById('trilha-txt').textContent='Sala (30 min): '+g5+'/5 · Geral: '+g6+'/'+N_ABAS+' selos';
+}
+function buscaLinks(ap){
+  var g='https://www.google.com/search?hl=pt-BR&q='+encodeURIComponent(ap.google);
+  var s='https://scholar.google.com/scholar?hl=pt-BR&q='+encodeURIComponent(ap.scholar);
+  var y='https://www.youtube.com/results?search_query='+encodeURIComponent(ap.youtube+' aula');
+  return '<li><a href="'+g+'" target="_blank" rel="noopener">🔎 Busca no Google (português)</a></li>'+
+         '<li><a href="'+s+'" target="_blank" rel="noopener">🎓 Pesquisa científica (Google Scholar, português)</a></li>'+
+         '<li><a href="'+y+'" target="_blank" rel="noopener">🎬 Vídeos-aula no YouTube (busca em português)</a></li>';
+}
+function painelHTML(d,i){
+  var h='<h2>'+esc(d.titulo)+'</h2>';
+  h+='<div class="missao"><p>'+esc(d.narrativa)+'</p></div>';
+  h+='<h3>🌍 No mundo real</h3><ul class="real">'+d.mundoReal.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>';
+  h+=d.conceitos.map(function(c){return '<div class="conceito"><h4>'+esc(c.titulo)+'</h4><p>'+esc(c.texto)+'</p><p class="analogia">💡 <strong>Analogia:</strong> '+esc(c.analogia)+'</p><p class="exreal">🌍 <strong>Exemplo real:</strong> '+esc(c.exemploReal)+'</p></div>';}).join('');
+  h+='<h3>🧰 Ferramentas reais</h3><ul class="ferramentas">'+d.ferramentas.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>';
+  h+='<h3>🕹️ Demo: '+esc(d.demo.config.titulo)+'</h3>';
+  h+='<div class="instr"><p class="instr-t">📋 INSTRUÇÕES PASSO A PASSO</p><p class="previsao">'+esc(d.roteiroDemo.passo0)+'</p><ol>'+d.roteiroDemo.passos.map(function(p){return '<li>'+esc(p.acao)+'</li>';}).join('')+'</ol></div>';
+  if(d.demo.config.observar){h+='<div class="observar"><strong>👀 O que observar:</strong> '+esc(d.demo.config.observar)+'</div>';}
+  if(d.demo.config.legenda){h+='<div class="legenda"><strong>🔑 Legenda</strong><ul>'+d.demo.config.legenda.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';}
+  h+='<details class="roteiro"><summary>🎤 Roteiro do apresentador</summary><p>'+esc(d.roteiroDemo.passo0)+'</p><ol>'+d.roteiroDemo.passos.map(function(p){return '<li><strong>Clique:</strong> '+esc(p.acao)+'<br><strong>Vê:</strong> '+esc(p.ve)+'<br><strong>Significa:</strong> '+esc(p.significa)+'</li>';}).join('')+'</ol></details>';
+  h+='<div class="demo-top"><button type="button" class="btn" id="rst-'+i+'">🔄 Reiniciar demo</button></div>';
+  h+='<div class="demo" id="demo-'+i+'"></div>';
+  h+='<h3>📝 Quiz da aba</h3><div id="quiz-'+i+'"></div>';
+  h+='<details class="mito"><summary>🤔 Mito ou Verdade?</summary><div id="mito-'+i+'"></div></details>';
+  h+='<details class="aprof"><summary>📚 Aprofundar (estudo em casa)</summary><h4>📖 Mini-dicionário</h4><dl class="dic">'+d.dicionario.map(function(x){return '<dt>'+esc(x.t)+'</dt><dd>'+esc(x.d)+'</dd>';}).join('')+'</dl><h4>🔗 Buscas para ir além (todas em português)</h4><ul class="buscas">'+buscaLinks(d.aprofundar)+'</ul></details>';
+  return h;
+}
+function revisaoHTML(){
+  var h='<h2>🧭 Revisão — mapa, cola rápida e Chefão</h2>';
+  h+='<h3>🗺️ Mapa da aula</h3><ol>'+REVISAO.mapa.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ol>';
+  h+='<h3>🧾 Cola rápida (glossário da revisão)</h3><table class="cola"><tbody>'+REVISAO.cola.map(function(r){return '<tr><th>'+esc(r.termo)+'</th><td>'+esc(r.linha)+'</td></tr>';}).join('')+'</tbody></table>';
+  h+='<h3>🐉 Chefão</h3><div class="chefao"><p>'+esc(REVISAO.desafio)+'</p><textarea id="rascunho" rows="7" placeholder="Escreva aqui o seu rascunho de contas e justificativas..."></textarea><p class="semgab">Sem gabarito automático: confira com a cola rápida acima e com o professor. O rascunho fica só nesta tela.</p><button type="button" class="btn" id="btn-chefao">🏆 Concluí o Chefão</button> <span id="chefao-ok"></span></div>';
+  return h;
+}
+function renderQuiz(i){
+  var qz=DADOS[i].quiz, box=document.getElementById('quiz-'+i);
+  var h='<div class="termos"><strong>🔑 Termos deste quiz:</strong><ul>'+qz.termos.map(function(t){return '<li>'+esc(t)+'</li>';}).join('')+'</ul></div>';
+  qz.perguntas.forEach(function(p,pi){h+='<div class="q" id="q-'+i+'-'+pi+'"><p class="qp"><strong>'+(pi+1)+') </strong>'+esc(p.q)+'</p><div class="alts"></div><div class="fb" hidden aria-live="polite"></div></div>';});
+  box.innerHTML=h;
+  qz.perguntas.forEach(function(p,pi){
+    var qEl=document.getElementById('q-'+i+'-'+pi), altsEl=qEl.querySelector('.alts'), fbEl=qEl.querySelector('.fb');
+    var est={errou:false,done:false};
+    shuffle(p.alts.slice()).forEach(function(a){
+      var b=document.createElement('button');b.type='button';b.className='alt';
+      b.innerHTML='<span class="mark"></span><span>'+esc(a.t)+'</span>';
+      b.setAttribute('data-fb',a.fb);
+      b.addEventListener('click',function(){
+        if(est.done||b.disabled)return;
+        var fb=b.getAttribute('data-fb');
+        if(a.ok){
+          est.done=true;b.classList.add('ok');b.querySelector('.mark').textContent='✓';
+          altsEl.querySelectorAll('button').forEach(function(x){x.disabled=true;});
+          fbEl.hidden=false;fbEl.className='fb fb-ok';fbEl.innerHTML='✅ <strong>Por que esta está certa:</strong> '+esc(fb);
+          var gan=est.errou?5:10;STATE.acertos[i]++;addXP(gan);
+          if(STATE.acertos[i]===3){toast('🏅 Selo da aba '+(i+1)+' conquistado! +'+gan+' XP ⭐');}
+          updateHUD();
+        }else{
+          est.errou=true;b.classList.add('err');b.querySelector('.mark').textContent='✗';b.disabled=true;
+          fbEl.hidden=false;fbEl.className='fb fb-err';fbEl.innerHTML='❌ <strong>Por que esta está errada:</strong> '+esc(fb)+' <em>Tente outra alternativa.</em>';
+        }
+      });
+      altsEl.appendChild(b);
+    });
+  });
+}
+function renderMito(i){
+  var m=DADOS[i].mitoOuVerdade, box=document.getElementById('mito-'+i);
+  box.innerHTML='<p class="afirm">“'+esc(m.afirmacao)+'”</p><div class="mito-btns"><button type="button" class="btn" data-v="0">🚫 Mito</button><button type="button" class="btn" data-v="1">✅ Verdade</button></div><div class="fb" hidden></div>';
+  var fb=box.querySelector('.fb'),done=false;
+  box.querySelectorAll('button').forEach(function(b){
+    b.addEventListener('click',function(){
+      if(done||b.disabled)return;
+      var escolha=b.getAttribute('data-v')==='1';
+      if(escolha===m.verdade){done=true;b.classList.add('ok');box.querySelectorAll('button').forEach(function(x){x.disabled=true;});fb.hidden=false;fb.className='fb fb-ok';fb.innerHTML='✅ <strong>Isso mesmo!</strong> '+esc(m.explicacao);}
+      else{b.classList.add('err');b.disabled=true;fb.hidden=false;fb.className='fb fb-err';fb.innerHTML='❌ Não é essa. Releia os cartões de conceito desta aba e tente a outra opção.';}
+    });
+  });
+}
+function dClear(i){var s=DEMOS[i];if(s&&s.timers){s.timers.forEach(function(t){if(t.tipo==='i')clearInterval(t.id);else clearTimeout(t.id);});s.timers=[];}}
+function dTimer(i,fn,ms,rep){var id=rep?setInterval(fn,ms):setTimeout(fn,ms);DEMOS[i].timers.push({id:id,tipo:rep?'i':'t'});return id;}
+function renderDemo(i){
+  dClear(i);DEMOS[i]={timers:[]};
+  var d=DADOS[i].demo,box=document.getElementById('demo-'+i);
+  if(d.tipo==='livre-cozinha')demoCozinha(i,d.config,box);
+  else if(d.tipo==='livre-flynn')demoFlynn(i,d.config,box);
+  else if(d.tipo==='livre-corrida')demoCorrida(i,d.config,box);
+  else if(d.tipo==='livre-pipeline')demoPipeline(i,d.config,box);
+  else if(d.tipo==='cenario')demoCenario(i,d.config,box);
+  else if(d.tipo==='prever')demoPrever(i,d.config,box);
+}
+function demoCozinha(i,cfg,box){
+  var st=DEMOS[i];st.correndo=false;
+  var h='<div class="demo-botoes"><button type="button" class="btn modo" data-m="seq">▶ Sequencial (1 núcleo)</button><button type="button" class="btn modo" data-m="par">▶ Paralelo (4 núcleos)</button></div>';
+  cfg.tarefas.forEach(function(t,r){
+    h+='<div class="lane"><span class="rot">'+esc(t)+'</span>';
+    for(var c=0;c<cfg.ticks;c++)h+='<span class="celula" data-r="'+r+'" data-c="'+c+'"></span>';
+    h+='</div>';
+  });
+  h+='<p class="contador" id="cz-t-'+i+'">Tempo: 0 s</p><div class="fb" id="cz-res-'+i+'" hidden></div>';
+  box.innerHTML=h;
+  var celulas=box.querySelectorAll('.celula'),tempo=box.querySelector('#cz-t-'+i),res=box.querySelector('#cz-res-'+i);
+  var botoes=box.querySelectorAll('.modo');
+  function run(modo){
+    if(st.correndo)return;st.correndo=true;dClear(i);
+    celulas.forEach(function(x){x.className='celula';});res.hidden=true;tempo.textContent='Tempo: 0 s';
+    botoes.forEach(function(x){x.disabled=true;});
+    var total=(modo==='seq')?cfg.tarefas.length*cfg.ticks:cfg.ticks,t=0;
+    dTimer(i,function(){
+      if(t>=total){
+        dClear(i);st.correndo=false;botoes.forEach(function(x){x.disabled=false;});
+        res.hidden=false;res.className='fb fb-info';
+        if(modo==='seq'){res.innerHTML='🏁 <strong>Modo sequencial: '+total+' s.</strong> Um núcleo faz um pedido por vez, como um PC antigo de núcleo único. 🌍 Agora compare com o modo paralelo: o Apple M1 (chip que a Apple desenha para seus computadores) tem vários núcleos justamente para não esperar assim.';}
+        else{res.innerHTML='🏁 <strong>Modo paralelo: '+total+' s.</strong> Quatro núcleos, quatro pedidos ao mesmo tempo: ganho de 4× porque os pedidos eram independentes. 🌍 É o que o Apple M1 (chip da Apple) faz ao dividir o trabalho entre seus núcleos.';}
+        return;
+      }
+      celulas.forEach(function(x){x.classList.remove('atual');});
+      if(modo==='seq'){
+        var r=Math.floor(t/cfg.ticks),c=t%cfg.ticks;
+        var alvo=box.querySelector('.celula[data-r="'+r+'"][data-c="'+c+'"]');
+        if(alvo){alvo.classList.add('feito','atual');}
+      }else{
+        for(var r2=0;r2<cfg.tarefas.length;r2++){
+          var alvo2=box.querySelector('.celula[data-r="'+r2+'"][data-c="'+t+'"]');
+          if(alvo2){alvo2.classList.add('feito','atual');}
+        }
+      }
+      t++;tempo.textContent='Tempo: '+t+' s';
+    },cfg.vel,true);
+  }
+  botoes.forEach(function(b){b.addEventListener('click',function(){run(b.getAttribute('data-m'));});});
+}
+function demoFlynn(i,cfg,box){
+  var h='<div class="demo-botoes">'+cfg.modos.map(function(m){return '<button type="button" class="btn modo" data-m="'+esc(m.chave)+'">'+esc(m.rot)+'</button>';}).join('')+'</div>';
+  h+='<p class="flynn-banner" id="fl-b-'+i+'">Escolha um modo para ver as unidades trabalhando.</p><div class="unidades" id="fl-u-'+i+'"></div><div class="fb" id="fl-res-'+i+'" hidden></div>';
+  box.innerHTML=h;
+  var banner=box.querySelector('#fl-b-'+i),unis=box.querySelector('#fl-u-'+i),res=box.querySelector('#fl-res-'+i);
+  box.querySelectorAll('.modo').forEach(function(b){
+    b.addEventListener('click',function(){
+      var m=cfg.modos.find(function(x){return x.chave===b.getAttribute('data-m');});
+      box.querySelectorAll('.modo').forEach(function(x){x.classList.remove('ativo');});b.classList.add('ativo');
+      banner.textContent=m.banner;
+      var hh='';
+      for(var u=0;u<4;u++){
+        hh+='<div class="unidade '+(m.ativa[u]?'ativa':'dim')+'"><div class="inst">'+esc(m.instrucoes[u])+'</div><div class="dad">Unidade '+(u+1)+' · dado D'+(u+1)+'</div></div>';
+      }
+      unis.innerHTML=hh;
+      res.hidden=false;res.className='fb fb-info';
+      res.innerHTML='<strong>'+esc(m.rot)+':</strong> '+esc(m.desc)+'<br>🌍 <strong>No mundo real:</strong> '+esc(m.real);
+    });
+  });
+}
+function demoCorrida(i,cfg,box){
+  var st=DEMOS[i];st.correndo=false;
+  var h='<div class="demo-botoes"><button type="button" class="btn modo" data-m="sem">▶ Sem trava</button><button type="button" class="btn modo" data-m="com">▶ Com trava (mutex)</button></div>';
+  h+='<p><span class="contador-grande" id="cr-c-'+i+'">Contador: 0</span></p><ol class="log" id="cr-log-'+i+'"></ol><div class="fb" id="cr-res-'+i+'" hidden></div>';
+  box.innerHTML=h;
+  var contador=box.querySelector('#cr-c-'+i),log=box.querySelector('#cr-log-'+i),res=box.querySelector('#cr-res-'+i);
+  var botoes=box.querySelectorAll('.modo');
+  function run(modo){
+    if(st.correndo)return;st.correndo=true;dClear(i);
+    log.innerHTML='';contador.textContent='Contador: 0';res.hidden=true;
+    botoes.forEach(function(x){x.disabled=true;});
+    var passos=(modo==='sem')?cfg.passosSem:cfg.passosCom,k=0;
+    dTimer(i,function(){
+      if(k>=passos.length){
+        dClear(i);st.correndo=false;botoes.forEach(function(x){x.disabled=false;});
+        res.hidden=false;res.className='fb fb-info';
+        res.innerHTML='🏁 <strong>Resultado:</strong> '+esc(modo==='sem'?cfg.resultadoSem:cfg.resultadoCom);
+        return;
+      }
+      var p=passos[k];
+      var li=document.createElement('li');li.textContent=(k+1)+'. '+p.t;log.appendChild(li);
+      if(typeof p.valor==='number')contador.textContent='Contador: '+p.valor;
+      k++;
+    },600,true);
+  }
+  botoes.forEach(function(b){b.addEventListener('click',function(){run(b.getAttribute('data-m'));});});
+}
+function demoPipeline(i,cfg,box){
+  var st=DEMOS[i];st.ciclo=0;
+  var nI=cfg.instrucoes,nE=cfg.estagios.length,total=nE+nI-1;
+  var h='<div class="pipe-top"><button type="button" class="btn" id="pp-adv-'+i+'">⏭ Avançar 1 ciclo</button><span class="contador" id="pp-cic-'+i+'">Ciclo: 0 de '+total+'</span></div>';
+  h+='<div class="pipe-scroll"><table class="mini pipe"><thead><tr><th>Instrução</th>';
+  for(var c=1;c<=total;c++)h+='<th>'+c+'</th>';
+  h+='</tr></thead><tbody>';
+  for(var r=0;r<nI;r++){
+    h+='<tr><th>I'+(r+1)+'</th>';
+    for(var c2=0;c2<total;c2++)h+='<td data-r="'+r+'" data-c="'+c2+'"></td>';
+    h+='</tr>';
+  }
+  h+='</tbody></table></div>';
+  h+='<p class="contador" id="pp-cmp-'+i+'">Sem esteira: '+(nI*nE)+' ciclos · Com esteira: 0 ciclos</p><p class="demo-status" id="pp-st-'+i+'">A esteira está vazia: avance o primeiro ciclo.</p><div class="fb" id="pp-res-'+i+'" hidden></div>';
+  box.innerHTML=h;
+  var adv=box.querySelector('#pp-adv-'+i),tds=box.querySelectorAll('td[data-r]');
+  adv.addEventListener('click',function(){
+    if(st.ciclo>=total)return;
+    st.ciclo++;
+    var emAndamento=0;
+    tds.forEach(function(td){
+      td.classList.remove('pipe-atual');
+      var r=parseInt(td.getAttribute('data-r'),10),c=parseInt(td.getAttribute('data-c'),10);
+      if(c===st.ciclo-1){
+        var idx=st.ciclo-1-r;
+        if(idx>=0&&idx<nE){td.textContent=cfg.estagios[idx];td.classList.add('pipe-on','pipe-atual');emAndamento++;}
+      }
+    });
+    box.querySelector('#pp-cic-'+i).textContent='Ciclo: '+st.ciclo+' de '+total;
+    box.querySelector('#pp-cmp-'+i).textContent='Sem esteira: '+(nI*nE)+' ciclos · Com esteira: '+st.ciclo+' ciclos';
+    box.querySelector('#pp-st-'+i).textContent='Ciclo '+st.ciclo+': '+emAndamento+' instrução(ões) em andamento, cada uma em uma etapa diferente.';
+    if(st.ciclo===total){
+      adv.disabled=true;
+      var res=box.querySelector('#pp-res-'+i);
+      res.hidden=false;res.className='fb fb-ok';
+      res.innerHTML='🏁 <strong>Esteira completa!</strong> '+nI+' instruções em '+total+' ciclos ('+nE+' + '+nI+' − 1), contra '+(nI*nE)+' sem esteira. Com milhares de instruções, o ganho se aproxima de '+nE+'× (o número de estágios). 🌍 É essa esteira que chips como o Apple M1 (da Apple) e os AMD Ryzen (da AMD) usam, com ainda mais estágios.';
+    }
+  });
+}
+function demoCenario(i,cfg,box){
+  var st=DEMOS[i];st.passo=0;
+  box.innerHTML='<p class="demo-status" id="cn-st-'+i+'"></p><div id="cn-area-'+i+'"></div>';
+  var area=box.querySelector('#cn-area-'+i),status=box.querySelector('#cn-st-'+i);
+  function mostra(){
+    if(st.passo>=cfg.passos.length){
+      status.textContent='Diagnóstico completo! 🎉';
+      var fim=document.createElement('div');fim.className='fb fb-ok';
+      fim.innerHTML=esc(cfg.final);
+      area.appendChild(fim);return;
+    }
+    status.textContent='Cenário '+(st.passo+1)+' de '+cfg.passos.length;
+    var p=cfg.passos[st.passo],bloco=document.createElement('div');bloco.className='cn-passo';
+    bloco.innerHTML='<p class="qp"><strong>'+esc(p.pergunta)+'</strong></p><div class="alts"></div><div class="fb" hidden></div>';
+    area.appendChild(bloco);
+    var alts=bloco.querySelector('.alts'),fb=bloco.querySelector('.fb'),done=false;
+    shuffle(p.opcoes.slice()).forEach(function(o){
+      var b=document.createElement('button');b.type='button';b.className='alt';
+      b.innerHTML='<span class="mark"></span><span>'+esc(o.t)+'</span>';
+      b.addEventListener('click',function(){
+        if(done||b.disabled)return;
+        if(o.ok){
+          done=true;b.classList.add('ok');b.querySelector('.mark').textContent='✓';
+          alts.querySelectorAll('button').forEach(function(x){x.disabled=true;});
+          fb.hidden=false;fb.className='fb fb-ok';fb.innerHTML='✅ <strong>Por que esta está certa:</strong> '+esc(o.fb);
+          st.passo++;dTimer(i,mostra,600,false);
+        }else{
+          b.classList.add('err');b.querySelector('.mark').textContent='✗';b.disabled=true;
+          fb.hidden=false;fb.className='fb fb-err';fb.innerHTML='❌ <strong>Por que esta está errada:</strong> '+esc(o.fb)+' <em>Tente outra opção.</em>';
+        }
+      });
+      alts.appendChild(b);
+    });
+  }
+  mostra();
+}
+function demoPrever(i,cfg,box){
+  var st=DEMOS[i];st.fase=0;
+  box.innerHTML='<div id="pv-area-'+i+'"></div>';
+  var area=box.querySelector('#pv-area-'+i);
+  function fase(){
+    if(st.fase>=cfg.fases.length)return;
+    var f=cfg.fases[st.fase];
+    area.innerHTML='<div class="caso-info">'+esc(f.info)+'</div><p class="qp"><strong>'+esc(f.pergunta)+'</strong></p><div class="alts"></div><div class="fb" hidden></div><button type="button" class="btn exec" hidden>▶ Ver resultado</button><div id="pv-out" hidden><div class="barras" id="pv-bars"></div><div class="fb fb-ok" id="pv-res"></div></div>';
+    var alts=area.querySelector('.alts'),fb=area.querySelector('.fb'),exec=area.querySelector('.exec'),out=area.querySelector('#pv-out'),bars=area.querySelector('#pv-bars'),res=area.querySelector('#pv-res'),done=false;
+    shuffle(f.opcoes.slice()).forEach(function(o){
+      var b=document.createElement('button');b.type='button';b.className='alt';
+      b.innerHTML='<span class="mark"></span><span>'+esc(o.t)+'</span>';
+      b.addEventListener('click',function(){
+        if(done||b.disabled)return;
+        if(o.ok){
+          done=true;b.classList.add('ok');b.querySelector('.mark').textContent='✓';
+          alts.querySelectorAll('button').forEach(function(x){x.disabled=true;});
+          fb.hidden=false;fb.className='fb fb-ok';fb.innerHTML='✅ <strong>Previsão certa:</strong> '+esc(o.fb);
+          exec.hidden=false;
+        }else{
+          b.classList.add('err');b.querySelector('.mark').textContent='✗';b.disabled=true;
+          fb.hidden=false;fb.className='fb fb-err';fb.innerHTML='❌ <strong>Por que esta previsão falha:</strong> '+esc(o.fb)+' <em>Preveja de novo.</em>';
+        }
+      });
+      alts.appendChild(b);
+    });
+    exec.addEventListener('click',function(){
+      exec.disabled=true;
+      var max=0;f.barras.forEach(function(x){if(x.val>max)max=x.val;});
+      var hh='';
+      f.barras.forEach(function(x){
+        hh+='<div class="barra-linha"><div class="barra-rot">'+esc(x.rot)+' — '+x.val+' ciclos</div><div class="barra-ext"><div class="barra-int" style="width:'+Math.round(x.val/max*100)+'%">'+x.val+'</div></div></div>';
+      });
+      bars.innerHTML=hh;
+      res.innerHTML='🏁 <strong>'+esc(f.conta)+'.</strong> '+esc(f.resultado);
+      out.hidden=false;
+      if(st.fase+1<cfg.fases.length){
+        var nb=document.createElement('button');nb.type='button';nb.className='btn';nb.textContent='➡ Próxima previsão (com bolhas)';
+        nb.addEventListener('click',function(){st.fase++;fase();});
+        res.appendChild(document.createElement('br'));res.appendChild(nb);
+      }else{
+        var fim=document.createElement('p');fim.innerHTML='🏁 <strong>Fim da demo:</strong> clique em 🔄 Reiniciar demo para prever de novo.';res.appendChild(fim);
+      }
+    });
+  }
+  fase();
+}
+function activate(idx,setHash){
+  if(idx<0||idx>=N_TOTAL)idx=0;
+  atual=idx;
+  for(var k=0;k<N_TOTAL;k++){
+    var b=document.getElementById('t-'+(k+1));
+    var p=document.getElementById(k===N_ABAS?'revisao':'aba-'+(k+1));
+    var on=(k===idx);
+    b.setAttribute('aria-selected',on?'true':'false');
+    b.tabIndex=on?0:-1;
+    b.classList.toggle('ativa',on);
+    p.hidden=!on;
+  }
+  if(setHash){
+    var h=(idx===N_ABAS)?'revisao':'aba-'+(idx+1);
+    if(location.hash!=='#'+h)location.hash=h;
+  }
+}
+function idxDoHash(){
+  var m=/^#aba-([1-6])$/.exec(location.hash);
+  if(m)return parseInt(m[1],10)-1;
+  if(location.hash==='#revisao')return N_ABAS;
+  return 0;
+}
+function init(){
+  var tabsEl=document.getElementById('tabs'),paineis=document.getElementById('paineis');
+  var th='',ph='';
+  DADOS.forEach(function(d,i){
+    var badge=(i===5)?' <span class="badge-estudo">📖 Estudo próprio</span>':'';
+    th+='<button type="button" class="tab" role="tab" id="t-'+(i+1)+'" aria-controls="aba-'+(i+1)+'" aria-selected="false" tabindex="-1">'+esc(d.rotulo)+badge+'</button>';
+    ph+='<section class="painel" id="aba-'+(i+1)+'" role="tabpanel" aria-labelledby="t-'+(i+1)+'" hidden>'+painelHTML(d,i)+'</section>';
+  });
+  th+='<button type="button" class="tab" role="tab" id="t-'+N_TOTAL+'" aria-controls="revisao" aria-selected="false" tabindex="-1">🧭 Revisão</button>';
+  ph+='<section class="painel" id="revisao" role="tabpanel" aria-labelledby="t-'+N_TOTAL+'" hidden>'+revisaoHTML()+'</section>';
+  tabsEl.innerHTML=th;paineis.innerHTML=ph;
+  DADOS.forEach(function(d,i){
+    renderQuiz(i);renderMito(i);renderDemo(i);
+    document.getElementById('rst-'+i).addEventListener('click',function(){renderDemo(i);toast('🔄 Demo reiniciada. Preveja antes de clicar!');});
+  });
+  document.getElementById('btn-chefao').addEventListener('click',function(){
+    if(STATE.chefao)return;STATE.chefao=true;
+    this.disabled=true;
+    document.getElementById('chefao-ok').textContent='🏆 Selo do Chefão conquistado!';
+    toast('🏆 Chefão enfrentado! Mostre seu rascunho ao professor.');
+    updateHUD();
+  });
+  tabsEl.addEventListener('click',function(e){
+    var b=e.target.closest('.tab');if(!b)return;
+    var n=parseInt(b.id.slice(2),10)-1;
+    activate(n,true);
+  });
+  tabsEl.addEventListener('keydown',function(e){
+    var idx=atual;
+    if(e.key==='ArrowRight')idx=Math.min(atual+1,N_TOTAL-1);
+    else if(e.key==='ArrowLeft')idx=Math.max(atual-1,0);
+    else if(e.key==='Home')idx=0;
+    else if(e.key==='End')idx=N_TOTAL-1;
+    else return;
+    e.preventDefault();activate(idx,true);document.getElementById('t-'+(idx+1)).focus();
+  });
+  window.addEventListener('hashchange',function(){var idx=idxDoHash();if(idx!==atual)activate(idx,false);});
+  document.addEventListener('keydown',function(e){
+    if(!apres)return;
+    var t=e.target,tag=(t.tagName||'').toLowerCase();
+    if(tag==='input'||tag==='textarea'||tag==='select'||t.isContentEditable)return;
+    if(e.key==='ArrowRight'){e.preventDefault();var n=Math.min(atual+1,N_TOTAL-1);activate(n,true);document.getElementById('t-'+(n+1)).focus();}
+    else if(e.key==='ArrowLeft'){e.preventDefault();var n2=Math.max(atual-1,0);activate(n2,true);document.getElementById('t-'+(n2+1)).focus();}
+  });
+  var btnModo=document.getElementById('btn-modo'),btnDark=document.getElementById('btn-dark');
+  btnModo.addEventListener('click',function(){
+    apres=!apres;
+    document.body.classList.toggle('apresentacao',apres);
+    btnModo.textContent=apres?'📖 Leitura':'🎤 Apresentação';
+    btnModo.setAttribute('aria-pressed',String(apres));
+    if(apres){document.body.classList.remove('dark');btnDark.disabled=true;btnDark.textContent='🌙 Escuro';btnDark.setAttribute('aria-pressed','false');}
+    else{btnDark.disabled=false;}
+    document.querySelectorAll('details.roteiro').forEach(function(d){d.open=apres;});
+    toast(apres?'🎤 Modo Apresentação: fonte maior, setas do teclado navegam as abas.':'📖 Modo Leitura: tamanho padrão, modo escuro disponível.');
+  });
+  btnDark.addEventListener('click',function(){
+    if(apres)return;
+    var on=document.body.classList.toggle('dark');
+    btnDark.textContent=on?'☀️ Claro':'🌙 Escuro';
+    btnDark.setAttribute('aria-pressed',String(on));
+  });
+  activate(idxDoHash(),false);
+  updateHUD();
+}
+init();
+</script>
+</body>
+</html>
