@@ -127,3 +127,35 @@ def test_corpo_que_nao_e_json_devolve_400(client):
     r = client.post("/doacoes", data="tipo=alimento", content_type="text/plain")
     assert r.status_code == 400
     assert r.get_json() == {"erros": ["o corpo da requisição deve ser um objeto JSON"]}
+
+
+def test_atualizar_doacao(client):
+    id_ = client.post("/doacoes", json=VALIDA).get_json()["id"]
+    r = client.put(f"/doacoes/{id_}", json={**VALIDA, "quantidade": 8})
+    assert r.status_code == 200
+    assert r.get_json()["quantidade"] == 8
+    assert client.get(f"/doacoes/{id_}").get_json()["quantidade"] == 8
+
+
+def test_atualizar_com_dados_invalidos_devolve_400(client):
+    id_ = client.post("/doacoes", json=VALIDA).get_json()["id"]
+    r = client.put(f"/doacoes/{id_}", json={**VALIDA, "quantidade": -1})
+    assert r.status_code == 400
+    assert client.get(f"/doacoes/{id_}").get_json()["quantidade"] == 10  # não mudou
+
+
+def test_atualizar_inexistente_devolve_404(client):
+    r = client.put("/doacoes/999", json=VALIDA)
+    assert r.status_code == 404
+
+
+def test_excluir_doacao(client):
+    id_ = client.post("/doacoes", json=VALIDA).get_json()["id"]
+    r = client.delete(f"/doacoes/{id_}")
+    assert r.status_code == 204
+    assert r.data == b""
+    assert client.get(f"/doacoes/{id_}").status_code == 404
+
+
+def test_excluir_inexistente_devolve_404(client):
+    assert client.delete("/doacoes/999").status_code == 404
