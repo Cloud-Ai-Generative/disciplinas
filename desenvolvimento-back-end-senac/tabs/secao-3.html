@@ -16,6 +16,51 @@
   <div class="missao"><h4>🫵 Sua missão nesta etapa, <span data-aluno-nome>Aluno(a) Back-End</span></h4><ul><li>Vote em como montar o ambiente da turma antes de ler o ADR 0003.</li><li>Suba o ambiente e confira os dois contêineres <strong>healthy</strong>.</li><li>Teste a rota <code>/saude</code> e explique como ela sabe se o banco está bem.</li></ul><p class="entrega"><strong>📦 Entrega:</strong> o ambiente no ar e a resposta <code>{"status": "ok", "banco": "ok"}</code>.</p></div>
 </div>
 
+<div class="card" id="por-que-docker">
+  <div class="card-title">🧳 Por que Docker? Instalar na máquina × usar contêiner</div>
+  <p class="section-intro">Para rodar a API você precisa de Python, de várias bibliotecas e de um PostgreSQL. Dá para instalar tudo direto no computador, ou deixar cada peça dentro de um contêiner.</p>
+  <h4 class="diag-title" id="d-12">📐 D-12 <span class="dt-type">Comparação</span> Instalar na máquina × Docker</h4>
+  <p class="text-sm text-muted" style="margin:4px 0 8px"><strong>👀 Como ler:</strong> à esquerda, tudo instalado direto no sistema, misturado com outros projetos. À direita, o sistema só tem o Docker, e cada peça do projeto vive isolada no seu contêiner.</p>
+  <div class="mermaid-box" data-code='flowchart TB
+  subgraph sem["❌ Sem Docker: tudo instalado no computador"]
+    direction TB
+    so1["💻 Sistema (Windows, macOS ou Linux)"]
+    py1["🐍 Python 3.? (a versão que você tiver)"]
+    pg1["🐘 PostgreSQL ? (a versão que você tiver)"]
+    out1["📁 Outro projeto: outro PostgreSQL, outras bibliotecas"]
+    so1 --- py1
+    so1 --- pg1
+    so1 --- out1
+    pg1 -. "⚠️ disputam a porta 5432" .- out1
+  end
+  subgraph com["✅ Com Docker: cada peça no seu contêiner"]
+    direction TB
+    so2["💻 Sistema (Windows, macOS ou Linux)"]
+    dk["🐳 Docker"]
+    c1["📦 contêiner api<br/>Python 3.13 + Flask"]
+    c2["📦 contêiner db<br/>PostgreSQL 17"]
+    c3["📦 contêiner de outro projeto"]
+    so2 --- dk
+    dk --- c1
+    dk --- c2
+    dk --- c3
+  end'>
+  <div class="mermaid"></div>
+  </div>
+  <div class="table-wrap mt-2"><table>
+    <thead><tr><th></th><th>Instalar na máquina</th><th>Docker</th></tr></thead>
+    <tbody>
+      <tr><td><strong>O que você instala</strong></td><td>Python, PostgreSQL, bibliotecas...</td><td>Só o Docker</td></tr>
+      <tr><td><strong>Versões</strong></td><td>As da sua máquina; cada pessoa tem uma</td><td>As do projeto, iguais para todos</td></tr>
+      <tr><td><strong>Dois projetos com versões diferentes</strong></td><td>Conflito</td><td>Cada um no seu contêiner</td></tr>
+      <tr><td><strong>Começar do zero</strong></td><td>Desinstalar tudo à mão</td><td><code>docker compose down -v</code></td></tr>
+      <tr><td><strong>Subir o ambiente da turma</strong></td><td>Um tutorial por sistema operacional</td><td><code>docker compose up</code></td></tr>
+      <tr><td><strong>Custo</strong></td><td>Nenhum extra</td><td>Usa memória; é preciso aprender os comandos; no Windows, precisa do WSL</td></tr>
+    </tbody>
+  </table></div>
+  <div class="info-banner mt-2"><strong>🧪 Um caso real, do dia da preparação desta aula:</strong> no notebook do professor já havia outro PostgreSQL rodando, de outro projeto, na porta 5432. Se os dois estivessem instalados direto na máquina, eles brigariam pela porta e pelas versões. Com Docker, bastou parar o contêiner do outro projeto (ou trocar a porta no <code>.env</code>), e nenhum dos dois precisou ser desinstalado.</div>
+</div>
+
 <div class="card">
   <div class="card-title">📐 Como o ambiente está montado</div>
   <h4 class="diag-title" id="d-04">📐 D-04 <span class="dt-type">C4 · Contêineres</span> Dois contêineres, uma rede<a class="o-que-e" href="#diagramas" onclick="switchTab('diagramas','tipo-c4');return false;">❓ o que é?</a></h4>
@@ -91,6 +136,27 @@
       db:
         condition: service_healthy     # espera o banco ficar pronto</pre></div>
   <div class="info-banner"><strong>💡 Repare no endereço do banco:</strong> dentro da rede do Compose, o banco se chama <code>db</code>, e não <code>localhost</code>. Para a API, <code>localhost</code> é o próprio contêiner dela.</div>
+</div>
+
+<div class="card" id="analogias-docker">
+  <div class="card-title">🚢 Analogias para não esquecer</div>
+  <div class="grid-2">
+    <div class="grid-card"><h5>🚢 Contêiner de navio</h5><p class="text-sm">É a origem do nome. O porto não precisa saber o que vai dentro: todo contêiner tem o mesmo formato e encaixa em qualquer navio ou caminhão. O Docker faz o mesmo com aplicações: qualquer contêiner roda em qualquer máquina com Docker.</p></div>
+    <div class="grid-card"><h5>🍰 Receita, massa e bolo</h5><p class="text-sm">O <strong>Dockerfile</strong> é a receita. A <strong>imagem</strong> é a massa pronta, congelada. O <strong>contêiner</strong> é o bolo assado. Da mesma massa saem vários bolos iguais.</p></div>
+    <div class="grid-card"><h5>🏢 Apartamentos num prédio</h5><p class="text-sm">Cada contêiner é um apartamento, com porta e endereço próprios (a porta 8000), dividindo a mesma estrutura do prédio (o sistema da máquina). Uma <strong>máquina virtual</strong> seria uma casa inteira, com fundação própria: mais isolada, porém mais pesada.</p></div>
+    <div class="grid-card"><h5>🔐 Cofre fora do apartamento</h5><p class="text-sm">O <strong>volume</strong> guarda os dados do banco fora do contêiner. Você pode demolir o apartamento (<code>docker compose down</code>) e o cofre continua lá. O <code>docker compose down -v</code> leva o cofre junto.</p></div>
+  </div>
+  <h4 class="diag-title mt-3" id="d-13">📐 D-13 <span class="dt-type">Fluxo</span> Do Dockerfile ao contêiner</h4>
+  <p class="text-sm text-muted" style="margin:4px 0 8px"><strong>👀 Como ler:</strong> da esquerda para a direita. Em cada seta está o comando que faz a passagem. O volume e a porta ligam o contêiner ao mundo de fora.</p>
+  <div class="mermaid-box" data-code='flowchart LR
+  df["📄 Dockerfile<br/>(a receita)"] -->|"docker compose build"| img["🧊 Imagem<br/>(a massa congelada)"]
+  img -->|"docker compose up"| ct["📦 Contêiner api<br/>(o bolo assado)"]
+  ct <-->|"porta 8000:8000"| pc["💻 Seu computador<br/>(REST Client, navegador)"]
+  vol[("🔐 Volume dados-postgres<br/>(o cofre)")] <--> db["📦 Contêiner db"]
+  ct <-->|"rede interna: db:5432"| db'>
+  <div class="mermaid"></div>
+  </div>
+  <p class="text-sm mt-2">Na prática, o <code>docker compose up -d --build</code> faz as duas setas de uma vez: monta a imagem e sobe o contêiner.</p>
 </div>
 
 <div class="card">
