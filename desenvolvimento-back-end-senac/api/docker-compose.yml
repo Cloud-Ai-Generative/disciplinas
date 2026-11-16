@@ -1,0 +1,43 @@
+# Ambiente completo da API de doações: banco PostgreSQL + API Flask
+# Subir:   docker compose up -d --build
+# Parar:   docker compose down        (os dados ficam no volume)
+# Zerar:   docker compose down -v     (apaga também os dados)
+name: vila-esperanca
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${DB_PORT:-5432}:5432"   # para acessar o banco pela extensão PostgreSQL do VS Code
+    volumes:
+      - dados-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      FLASK_DEBUG: ${FLASK_DEBUG:-0}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - ./:/app          # o código da sua máquina dentro do contêiner: salvou, recarregou
+    depends_on:
+      db:
+        condition: service_healthy   # só sobe a API quando o banco estiver pronto
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/saude')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  dados-postgres:
