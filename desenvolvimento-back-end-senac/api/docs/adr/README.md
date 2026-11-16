@@ -14,5 +14,6 @@ Todas as decisões foram tomadas pela **Bia Ferreira**, tech lead do Laboratóri
 | [0006](0006-configuracao-por-env.md) | Configuração por variáveis de ambiente (.env) | Aceita |
 | [0007](0007-formato-de-erro.md) | Formato único de erro em JSON e códigos de status | Aceita |
 | [0008](0008-create-all-em-vez-de-migrations.md) | `db.create_all()` em vez de migrations, por enquanto | Aceita |
+| [0009](0009-api-first.md) | Contrato antes do código (API First) | Aceita |
 
 Modelo de cada ADR: **Contexto → Decisão → Alternativas consideradas → Consequências**.

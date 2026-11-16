@@ -71,7 +71,7 @@ const INDICE=[
   {tab:'diagramas',title:'Diagramas e ADRs: como ler',k:'diagrama d-01 numeração c4 contexto contêineres componentes sequência uml entidade relacionamento er fluxo fluxograma mermaid adr decisão arquitetura ciclo de vida'},
   {tab:'ambiente',title:'Antes da aula: preparando o ambiente',k:'instalar instalação git vs code vscode extensões docker desktop wsl codespaces requisitos clonar verificação hello-world windows macos linux ubuntu'},
   {tab:'secao-1',title:'1. O problema do caderno',k:'problema caderno contexto voluntário aplicativo api banco extensão'},
-  {tab:'secao-2',title:'2. REST e o recurso /doacoes',k:'rest recurso verbo http get post put delete status 200 201 204 400 404 flask adr 0001'},
+  {tab:'secao-2',title:'2. REST e o recurso /doacoes',k:'rest recurso verbo http get post put delete status 200 201 204 400 404 flask adr 0001 api first contrato contract-first design-first openapi mock adr 0009'},
   {tab:'secao-3',title:'3. Ambiente com Docker Compose',k:'docker compose contêiner container env .env healthcheck volume porta app factory saude adr 0003 0006'},
   {tab:'secao-4',title:'4. Modelo Doacao',k:'modelo model sqlalchemy orm tabela postgresql seed camadas estrutura create_all adr 0002 0005 0008'},
   {tab:'secao-5',title:'5. Cadastro (POST) com validação',k:'post cadastro validação validar 400 201 erros location adr 0004 0007 ao vivo'},
