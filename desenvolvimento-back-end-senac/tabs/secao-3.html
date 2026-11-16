@@ -1,0 +1,168 @@
+<section class="tab-panel" id="secao-3">
+
+<div class="card">
+  <div class="card-title">🐳 3 · O ambiente com Docker Compose</div>
+  <div class="cena">
+    <div class="msg"><span class="av">🧑‍💻</span><div><div class="who">Lucas (estudante)</div><div class="txt">No meu notebook funciona! No do Laboratório dá erro de versão do Python...</div></div></div>
+    <div class="msg"><span class="av">👩‍💻</span><div><div class="who">Bia (tech lead)</div><div class="txt">O clássico "na minha máquina funciona". Por isso decidimos rodar tudo em contêineres: o mesmo Python, o mesmo PostgreSQL, em qualquer computador. Um arquivo descreve o ambiente; um comando sobe tudo.</div></div></div>
+  </div>
+  <div class="grid-3">
+    <div class="grid-card"><h5>🎯 Objetivo da etapa</h5><p class="text-sm">Executar a API e o banco com Docker Compose e entender a configuração por <code>.env</code>.</p></div>
+    <div class="grid-card"><h5>🛠️ O que você vai fazer</h5><p class="text-sm">Subir o ambiente, ler o <code>docker-compose.yml</code> e testar a rota <code>/saude</code>.</p></div>
+    <div class="grid-card"><h5>⏱️ Na aula</h5><p class="text-sm">3 minutos (o ambiente já está no ar). Em casa: 10 minutos.</p></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">📐 Como o ambiente está montado</div>
+  <h4 class="diag-title" id="d-04">📐 D-04 <span class="dt-type">C4 · Contêineres</span> Dois contêineres, uma rede</h4>
+  <p class="text-sm text-muted" style="margin:4px 0 8px"><strong>👀 Como ler:</strong> cada caixa dentro do retângulo é um contêiner. A API encontra o banco pelo nome <code>db</code>, pela rede interna que o Compose cria. Da sua máquina, você acessa a API pela porta 8000.</p>
+  <div class="mermaid-box" data-code='flowchart LR
+  voce(["🫵 Você<br/>navegador ou REST Client"])
+  subgraph compose["🐳 docker compose · projeto vila-esperanca"]
+    direction LR
+    api["⚙️ <b>api</b><br/>Python 3.13 + Flask<br/>porta 8000"]
+    db[("🐘 <b>db</b><br/>PostgreSQL 17<br/>porta 5432")]
+    vol[["💾 volume<br/>dados-postgres"]]
+  end
+  pasta["📁 sua pasta api/<br/>código-fonte"]
+  voce -->|"localhost:8000"| api
+  api -->|"db:5432"| db
+  db --- vol
+  pasta -.->|"montada em /app<br/>salvou, recarregou"| api'>
+  <div class="mermaid"></div>
+  </div>
+
+  <h4 class="diag-title" id="d-05">📐 D-05 <span class="dt-type">UML · Sequência</span> O que acontece no <code>docker compose up</code></h4>
+  <p class="text-sm text-muted" style="margin:4px 0 8px"><strong>👀 Como ler:</strong> a API só começa depois que o banco responde ao <strong>healthcheck</strong>. Sem isso, ela tentaria conectar num banco ainda ligando e cairia.</p>
+  <div class="mermaid-box" data-code='sequenceDiagram
+  autonumber
+  participant C as 🐳 Compose
+  participant DB as 🐘 db
+  participant API as ⚙️ api
+  C->>DB: inicia o PostgreSQL
+  loop a cada 5 s
+    C->>DB: pg_isready?
+    DB-->>C: ainda não... pronto!
+  end
+  C->>API: inicia (depends_on: service_healthy)
+  API->>DB: create_all (cria a tabela se faltar)
+  API->>DB: flask seed (exemplos, se vazio)
+  API-->>C: escutando na porta 8000'>
+  <div class="mermaid"></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">💡 Conceito: imagem, contêiner e Compose</div>
+  <div class="deep-concept-box">
+    <h3>📦 Três palavras</h3>
+    <ul style="margin-left:22px;line-height:1.9">
+      <li><strong>Imagem:</strong> a "receita congelada" de um ambiente: sistema, Python e dependências. É descrita no <code>Dockerfile</code>.</li>
+      <li><strong>Contêiner:</strong> uma imagem <strong>em execução</strong>, isolada do resto da máquina.</li>
+      <li><strong>Docker Compose:</strong> descreve <strong>vários</strong> contêineres que trabalham juntos (API + banco) num único arquivo YAML.</li>
+    </ul>
+  </div>
+  <p>O <code>docker-compose.yml</code> do projeto, resumido (o arquivo completo tem comentários linha a linha):</p>
+  <div class="code-editor-wrap"><span class="code-filepath">api/docker-compose.yml</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">services:
+  db:
+    image: postgres:17-alpine          # imagem oficial do PostgreSQL
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}  # valores vêm do .env
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - dados-postgres:/var/lib/postgresql/data   # os dados sobrevivem ao "down"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+
+  api:
+    build: .                           # imagem feita a partir do Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - ./:/app                        # seu código dentro do contêiner
+    depends_on:
+      db:
+        condition: service_healthy     # espera o banco ficar pronto</pre></div>
+  <div class="info-banner"><strong>💡 Repare no endereço do banco:</strong> dentro da rede do Compose, o banco se chama <code>db</code>, e não <code>localhost</code>. Para a API, <code>localhost</code> é o próprio contêiner dela.</div>
+</div>
+
+<div class="card">
+  <div class="card-title">📝 As decisões: ADR 0003 e ADR 0006</div>
+  <div class="adr">
+    <h5>ADR 0003 · Docker Compose para todo o ambiente <span class="status">aceita</span></h5>
+    <p><b>Contexto:</b> turma com Windows, macOS e Linux e versões diferentes de Python; o clássico "na minha máquina funciona".</p>
+    <p><b>Decisão:</b> API e banco em contêineres, descritos num <code>docker-compose.yml</code>; o código é montado no contêiner para recarregar ao salvar.</p>
+    <p><b>Alternativas:</b> instalar Python e PostgreSQL em cada máquina; ou só o banco no Docker.</p>
+    <p><b>Consequências:</b> o aluno não instala Python nem PostgreSQL e sobe tudo com um comando; em troca, o Docker pede memória e virtualização (plano B: Codespaces).</p>
+  </div>
+  <div class="adr">
+    <h5>ADR 0006 · Configuração por variáveis de ambiente (.env) <span class="status">aceita</span></h5>
+    <p><b>Contexto:</b> o repositório é público; senha no código é senha publicada.</p>
+    <p><b>Decisão:</b> tudo vem de variáveis de ambiente; o <code>.env</code> fica fora do Git e o repositório traz só o modelo <code>.env.example</code>.</p>
+    <p><b>Alternativas:</b> valores fixos no código; arquivo de configuração versionado.</p>
+    <p><b>Consequências:</b> nenhum segredo no GitHub e o mesmo código roda em qualquer ambiente; em troca, é preciso lembrar de criar o <code>.env</code>.</p>
+  </div>
+  <p class="text-sm text-muted">Arquivos completos: <a class="ext" href="https://github.com/Cloud-Ai-Generative/disciplinas/blob/main/desenvolvimento-back-end-senac/api/docs/adr/0003-docker-compose-para-o-ambiente.md" target="_blank" rel="noopener">ADR 0003</a> · <a class="ext" href="https://github.com/Cloud-Ai-Generative/disciplinas/blob/main/desenvolvimento-back-end-senac/api/docs/adr/0006-configuracao-por-env.md" target="_blank" rel="noopener">ADR 0006</a></p>
+</div>
+
+<div class="card" id="lab-secao-3">
+  <div class="card-title">🧪 Passo a passo para reproduzir <span class="camada essencial">Essencial</span></div>
+  <div class="step-box">
+    <h4><span class="step-num">1</span> Vá para o código desta etapa</h4>
+    <p>Na pasta <code>disciplinas</code> que você clonou na trilha "Antes da aula":</p>
+    <div class="code-editor-wrap"><span class="code-filepath">terminal</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose -f desenvolvimento-back-end-senac/api/docker-compose.yml down
+git fetch --tags
+git checkout backend-senac-etapa-3
+cd desenvolvimento-back-end-senac/api</pre></div>
+    <p>O primeiro comando só desliga o ambiente, caso ele esteja no ar. Nesta etapa o projeto tem o ambiente, a <strong>app factory</strong> e uma única rota, <code>/saude</code>.</p>
+  </div>
+  <div class="step-box">
+    <h4><span class="step-num">2</span> Suba o ambiente</h4>
+    <div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta api</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose up -d --build
+docker compose ps
+docker compose logs api --tail 20</pre></div>
+    <div class="esperado"><strong>✅ Resultado esperado:</strong> <code>db</code> e <code>api</code> com <strong>(healthy)</strong>; nos logs, <code>Running on http://0.0.0.0:8000</code>.</div>
+  </div>
+  <div class="step-box">
+    <h4><span class="step-num">3</span> Teste a rota de saúde</h4>
+    <div class="preveja"><strong>🤔 Preveja antes de enviar:</strong> o que a rota <code>/saude</code> faz para saber se o <strong>banco</strong> está bem?</div>
+    <div class="code-editor-wrap"><span class="code-filepath">terminal (ou "Send Request" no requests.http)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">curl -i http://localhost:8000/saude</pre></div>
+    <div class="esperado"><strong>✅ Resultado esperado:</strong> <code>HTTP/1.1 200 OK</code> e <code>{"status": "ok", "banco": "ok"}</code>. A rota executa um <code>SELECT 1</code> no PostgreSQL: se o banco estivesse fora, a resposta seria erro.</div>
+  </div>
+  <div class="step-box">
+    <h4><span class="step-num">4</span> Leia a app factory</h4>
+    <p>Abra <code>app/__init__.py</code>. A função <code>create_app()</code> <strong>monta</strong> a aplicação: lê a configuração, liga o banco, registra o formato de erro e as rotas. Nos testes, criamos a mesma API com outra configuração (SQLite em memória) sem mudar uma linha do código.</p>
+    <div class="code-editor-wrap"><span class="code-filepath">api/app/__init__.py (trecho)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">def create_app(config=None):
+    app = Flask(__name__)
+    app.config.from_object(Config)          # lê DATABASE_URL do ambiente
+    if config:
+        app.config.update(config)           # os testes trocam o banco aqui
+
+    db.init_app(app)
+    registrar_erros(app)
+
+    @app.get("/saude")
+    def saude():
+        db.session.execute(db.text("SELECT 1"))
+        return {"status": "ok", "banco": "ok"}
+
+    with app.app_context():
+        db.create_all()
+    return app</pre></div>
+  </div>
+</div>
+
+<div class="card" id="errou-secao-3">
+  <div class="card-title">✋ Errou? Casos comuns desta etapa</div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">port is already allocated (porta 8000 ou 5432 ocupada)</div><div class="faq-a"><p>Outro programa usa a porta (por exemplo, um PostgreSQL instalado na máquina). Mude a porta no <code>.env</code> (<code>API_PORT=8001</code> ou <code>DB_PORT=5433</code>) e rode <code>docker compose up -d</code> de novo.</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">variable is not set. Defaulting to a blank string (POSTGRES_USER)</div><div class="faq-a"><p>Você esqueceu de criar o <code>.env</code>, ou rodou o comando fora da pasta <code>api</code>. Rode <code>cp .env.example .env</code> (Windows: <code>copy .env.example .env</code>) na pasta <code>api</code>.</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">A api fica "unhealthy" ou reiniciando</div><div class="faq-a"><p>Veja o motivo nos logs: <code>docker compose logs api --tail 40</code>. Se trocou a senha no <code>.env</code> depois da primeira subida, o banco antigo ainda usa a senha velha: zere com <code>docker compose down -v</code> e suba de novo.</p></div></div>
+  <div class="info-banner"><strong>🛠️ Mais casos:</strong> aba <a class="ext" href="#problemas" onclick="switchTab('problemas');return false;">Problemas comuns</a>.</div>
+  <div class="buscas" data-termos="Docker Compose PostgreSQL Flask tutorial"></div>
+</div>
+
+</section>
