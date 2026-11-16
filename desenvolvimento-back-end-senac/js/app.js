@@ -72,7 +72,7 @@ const INDICE=[
   {tab:'ambiente',title:'Antes da aula: preparando o ambiente',k:'github conta login git x github student pack fork instalar instalação git vs code vscode extensões docker desktop wsl codespaces requisitos clonar verificação hello-world windows macos linux ubuntu'},
   {tab:'secao-1',title:'1. O problema do caderno',k:'problema caderno contexto voluntário aplicativo api banco extensão'},
   {tab:'secao-2',title:'2. REST e o recurso /doacoes',k:'rest restful fielding restrições stateless cache hateoas camadas cliente-servidor recurso verbo http get post put delete status 200 201 204 400 404 flask adr 0001 api first contrato contract-first design-first openapi mock adr 0009'},
-  {tab:'secao-3',title:'3. Ambiente com Docker Compose',k:'git tag commit branch checkout clone fetch stash detached head histórico d-10 docker compose contêiner container env .env healthcheck volume porta app factory saude adr 0003 0006'},
+  {tab:'secao-3',title:'3. Ambiente com Docker Compose',k:'por que docker instalar máquina virtual analogia contêiner navio receita bolo apartamento cofre volume dockerfile imagem git tag commit branch checkout clone fetch stash detached head histórico d-10 docker compose contêiner container env .env healthcheck volume porta app factory saude adr 0003 0006'},
   {tab:'secao-4',title:'4. Modelo Doacao',k:'modelo model sqlalchemy orm tabela postgresql seed camadas estrutura create_all adr 0002 0005 0008'},
   {tab:'secao-5',title:'5. Cadastro (POST) com validação',k:'post cadastro validação validar 400 201 erros location adr 0004 0007 code review git diff rest client send request requisição'},
   {tab:'secao-6',title:'6. Listagem e consulta (GET)',k:'get listar consultar 200 404 psql banco'},
