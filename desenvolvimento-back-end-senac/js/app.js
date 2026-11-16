@@ -106,10 +106,18 @@ window.addEventListener('hashchange',()=>{const t=(location.hash||'').slice(1);c
 function posCarregar(p){renderBuscas(p);restaurarPassos(p);atualizarProgresso();aplicarPerfil(p);}
 
 /* ── Buscas para ir além (Google, Scholar e YouTube em português) ── */
-function renderBuscas(c){c.querySelectorAll('.buscas[data-termos]:not([data-ok])').forEach(b=>{const q=encodeURIComponent(b.dataset.termos);b.innerHTML='<h5>🔗 Buscas para ir além (em português)</h5>'+
- '<a class="ext" target="_blank" rel="noopener" onclick="event.stopPropagation()" href="https://www.google.com/search?hl=pt-BR&lr=lang_pt&q='+q+'">🔎 Busca no Google</a>'+
- '<a class="ext" target="_blank" rel="noopener" onclick="event.stopPropagation()" href="https://scholar.google.com/scholar?hl=pt-BR&lr=lang_pt&q='+q+'">🎓 Pesquisa científica (Google Scholar)</a>'+
- '<a class="ext" target="_blank" rel="noopener" onclick="event.stopPropagation()" href="https://www.youtube.com/results?search_query='+q+'">🎬 Videoaulas no YouTube</a>';b.setAttribute('data-ok','1');});}
+const URL_BUSCA={g:['🔎 Google','https://www.google.com/search?hl=pt-BR&lr=lang_pt&q='],y:['🎬 YouTube','https://www.youtube.com/results?search_query='],s:['🎓 Google Scholar','https://scholar.google.com/scholar?hl=pt-BR&lr=lang_pt&q=']};
+function linkBusca(tipo,termo){const [rot,url]=URL_BUSCA[tipo];return '<a class="ext" target="_blank" rel="noopener" onclick="event.stopPropagation()" href="'+url+encodeURIComponent(termo)+'">'+rot+': <em>'+termo+'</em></a>';}
+function blocoTermo(termo,tipos){return '<div class="busca-item">'+tipos.split('').map(t=>linkBusca(t,termo)).join('')+'</div>';}
+function renderBuscas(c){c.querySelectorAll('.buscas:not([data-ok])').forEach(b=>{
+  let html='<h5>🔗 Buscas para ir além (em português)</h5>';
+  try{
+    if(b.dataset.soTermos){const m=JSON.parse(b.dataset.soTermos);html+=['win','mac','linux'].map(so=>'<div class="so" data-so="'+so+'">'+blocoTermo(m[so],'gy')+'</div>').join('');}
+    if(b.dataset.itens){JSON.parse(b.dataset.itens).forEach(t=>html+=blocoTermo(t,'gy'));}
+    if(b.dataset.termos){html+=blocoTermo(b.dataset.termos,'gy');}
+    if(b.dataset.scholar){html+='<div class="busca-item">'+linkBusca('s',b.dataset.scholar)+'</div>';}
+  }catch(e){return;}
+  b.innerHTML=html;b.setAttribute('data-ok','1');});}
 
 /* ── Checklist de progresso (salvo só neste navegador) ── */
 function lerPassos(){try{return JSON.parse(localStorage.getItem(PASSOS_KEY)||'{}');}catch(e){return {};}}
