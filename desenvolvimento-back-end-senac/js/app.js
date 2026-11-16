@@ -41,18 +41,25 @@ function switchTab(t,a){
 }
 
 /* ── Checkpoint (quiz) ── */
-function responder(btn){
-  const q=btn.closest('.quiz-q');if(q.dataset.done)return;q.dataset.done='1';
-  const ok=btn.dataset.correct==='1';
-  q.querySelectorAll('.quiz-opt').forEach(o=>{if(o.dataset.correct==='1')o.classList.add('ok');});
-  if(!ok)btn.classList.add('bad');
-  const fb=q.querySelector('.quiz-fb');
-  let html=(ok?'<strong>✅ Isso mesmo.</strong> ':'<strong>Quase.</strong> ')+fb.dataset.exp;
-  const itens=[...q.querySelectorAll('.quiz-opt')].filter(o=>o.dataset.exp);
-  if(itens.length)html+='<ul class="exp-opcoes">'+itens.map(o=>'<li>'+(o.dataset.correct==='1'?'🟢':'🔴')+' <strong>'+o.textContent.trim()+'</strong>: '+o.dataset.exp+'</li>').join('')+'</ul>';
-  fb.innerHTML=html;fb.classList.add('show');
+function rotulo(o){return '<em>'+o.textContent.trim()+'</em>'+(o.dataset.exp?': '+o.dataset.exp:'.');}
+function listaOutras(c,certa,icone){
+  const itens=[...c.querySelectorAll('.quiz-opt')].filter(o=>o!==certa&&o.dataset.exp);
+  if(!itens.length)return '';
+  return '<details class="outras"><summary>Ver por que as outras opções não servem</summary><ul class="exp-opcoes">'+itens.map(o=>'<li>'+icone(o)+' <strong>'+o.textContent.trim()+'</strong>: '+o.dataset.exp+'</li>').join('')+'</ul></details>';
 }
-function refazerQuiz(id){document.querySelectorAll('#'+id+' .quiz-q').forEach(q=>{delete q.dataset.done;q.querySelectorAll('.quiz-opt').forEach(o=>o.classList.remove('ok','bad'));q.querySelector('.quiz-fb').classList.remove('show');});}
+function responder(btn){
+  const q=btn.closest('.quiz-q');if(q.dataset.done||btn.disabled)return;
+  const fb=q.querySelector('.quiz-fb');
+  if(btn.dataset.correct!=='1'){
+    btn.classList.add('bad');btn.disabled=true;
+    fb.innerHTML='<strong>🔴 Ainda não.</strong> '+rotulo(btn)+' <strong>Tente outra opção.</strong>';
+    fb.classList.add('show');return;
+  }
+  q.dataset.done='1';btn.classList.add('ok');q.querySelectorAll('.quiz-opt').forEach(o=>o.disabled=true);
+  fb.innerHTML='<strong>🎉 Parabéns, '+nomeAluno()+'!</strong> '+rotulo(btn)+' '+(fb.dataset.exp||'')+listaOutras(q,btn,()=>'🔴');
+  fb.classList.add('show');
+}
+function refazerQuiz(id){document.querySelectorAll('#'+id+' .quiz-q').forEach(q=>{delete q.dataset.done;q.querySelectorAll('.quiz-opt').forEach(o=>{o.classList.remove('ok','bad');o.disabled=false;});q.querySelector('.quiz-fb').classList.remove('show');});}
 
 /* ── Diversos ── */
 function showToast(m){const c=document.getElementById('toast-container');const d=document.createElement('div');d.className='toast';d.textContent=m;c.appendChild(d);setTimeout(()=>{d.classList.add('hiding');setTimeout(()=>d.remove(),300);},3000);}
@@ -135,17 +142,20 @@ function escolherAvatar(a){const p=lerPerfil();p.avatar=a;gravarPerfil(p);aplica
 /* ── Decisões do time: o aluno escolhe e vê o que o time decidiu ── */
 const ICONE_DEC={time:'🟢',alt:'🟠',errada:'🔴'};
 function decidir(btn){
-  const d=btn.closest('.decisao');if(d.dataset.done)return;d.dataset.done='1';
-  d.querySelectorAll('.quiz-opt').forEach(o=>{const t=o.dataset.tipo;o.classList.add(t==='time'?'ok':t==='errada'?'bad':'alt');});
-  btn.classList.add('escolhida');
-  const fb=d.querySelector('.decisao-fb');
-  let html='<strong>🗳️ Você votou: '+btn.textContent.trim()+'.</strong> '+(fb.dataset.exp||'');
-  html+='<ul class="exp-opcoes">'+[...d.querySelectorAll('.quiz-opt')].map(o=>'<li>'+ICONE_DEC[o.dataset.tipo]+' <strong>'+o.textContent.trim()+'</strong>'+(o.dataset.tipo==='time'?' (escolha do time)':'')+': '+o.dataset.exp+'</li>').join('')+'</ul>';
+  const d=btn.closest('.decisao');if(d.dataset.done||btn.disabled)return;
+  const fb=d.querySelector('.decisao-fb');const t=btn.dataset.tipo;
+  if(t==='errada'){btn.classList.add('bad');btn.disabled=true;
+    fb.innerHTML='<strong>🔴 Ainda não.</strong> '+rotulo(btn)+' <strong>Tente outra opção.</strong>';fb.classList.add('show');return;}
+  if(t==='alt'){btn.classList.add('alt');btn.disabled=true;
+    fb.innerHTML='<strong>🟠 Alternativa válida.</strong> '+rotulo(btn)+' <strong>Mas o time escolheu outra. Qual será?</strong>';fb.classList.add('show');return;}
+  d.dataset.done='1';btn.classList.add('ok');d.querySelectorAll('.quiz-opt').forEach(o=>o.disabled=true);
+  let html='<strong>🎉 '+(d.querySelector('[data-tipo=alt]')?'Você encontrou a escolha do time':'Parabéns')+', '+nomeAluno()+'!</strong> '+rotulo(btn)+(fb.dataset.exp?' '+fb.dataset.exp:'');
+  html+=listaOutras(d,btn,o=>ICONE_DEC[o.dataset.tipo]);
   if(d.dataset.adr)html+='<p class="regra-adr">📌 Esta decisão está registrada no <strong>ADR '+d.dataset.adr+'</strong> e vale para todo o projeto: o time segue o que foi decidido, inclusive quem votou diferente. Se o contexto mudar ou surgir um argumento novo, ninguém edita o ADR antigo: propõe-se um <strong>novo ADR</strong> que o substitui.</p>';
   else if(d.dataset.regra)html+='<p class="regra-adr">📌 '+d.dataset.regra+'</p>';
   fb.innerHTML=html;fb.classList.add('show');
 }
-function refazerDecisao(btn){const d=btn.closest('.decisao');delete d.dataset.done;d.querySelectorAll('.quiz-opt').forEach(o=>o.classList.remove('escolhida','ok','bad','alt'));d.querySelector('.decisao-fb').classList.remove('show');}
+function refazerDecisao(btn){const d=btn.closest('.decisao');delete d.dataset.done;d.querySelectorAll('.quiz-opt').forEach(o=>{o.classList.remove('escolhida','ok','bad','alt');o.disabled=false;});d.querySelector('.decisao-fb').classList.remove('show');}
 
 /* ── Revelação progressiva (tabela da Seção 2) ── */
 function revelar(el){el.classList.add('revelado');}
