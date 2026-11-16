@@ -1,0 +1,168 @@
+<section class="tab-panel" id="secao-5">
+
+<div class="card">
+  <div class="card-title">✍️ 5 · Cadastro com validação <span class="ao-vivo">ao vivo</span></div>
+  <div class="cena">
+    <div class="msg"><span class="av">🙋</span><div><div class="who">Marcos (voluntário)</div><div class="txt">Às vezes eu clico "salvar" sem escolher o tipo. Ou digito -5 sem querer. No caderno, ninguém me avisava.</div></div></div>
+    <div class="msg"><span class="av">🧑‍💻</span><div><div class="who">Lucas (estudante)</div><div class="txt">O aplicativo pode validar isso, né? Aí a API só salva.</div></div></div>
+    <div class="msg"><span class="av">👩‍💻</span><div><div class="who">Bia (tech lead)</div><div class="txt">O aplicativo pode <strong>ajudar</strong>, mas quem garante é a API. Amanhã pode existir outro aplicativo, ou alguém mandando requisição direto. <strong>Nunca confie no cliente.</strong></div></div></div>
+  </div>
+  <div class="grid-3">
+    <div class="grid-card"><h5>🎯 Objetivo da etapa</h5><p class="text-sm">Implementar o cadastro de uma doação com validação e respostas de erro adequadas.</p></div>
+    <div class="grid-card"><h5>🛠️ O que você vai fazer</h5><p class="text-sm">Escrever a rota <code>POST /doacoes</code> e testar casos válidos e inválidos, prevendo cada resposta.</p></div>
+    <div class="grid-card"><h5>⏱️ Na aula</h5><p class="text-sm">8 minutos de codificação ao vivo.</p></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">📐 O fluxo do cadastro</div>
+  <h4 class="diag-title" id="d-08">📐 D-08 <span class="dt-type">UML · Sequência</span> POST /doacoes: o caminho feliz e o caminho do erro</h4>
+  <p class="text-sm text-muted" style="margin:4px 0 8px"><strong>👀 Como ler:</strong> o bloco <code>alt</code> mostra duas possibilidades. Repare que, com dados inválidos, o banco <strong>nem é tocado</strong>.</p>
+  <div class="mermaid-box" data-code='sequenceDiagram
+  autonumber
+  participant App as 📱 Aplicativo
+  participant R as routes.py
+  participant V as validacao.py
+  participant DB as 🐘 PostgreSQL
+  App->>R: POST /doacoes + JSON
+  R->>V: validar_doacao(json)
+  alt dados válidos
+    V-->>R: (dados_limpos, [])
+    R->>DB: INSERT INTO doacoes
+    DB-->>R: id = 6
+    R-->>App: 201 Created + Location /doacoes/6
+  else dados inválidos
+    V-->>R: (None, ["tipo é obrigatório"])
+    R-->>App: 400 Bad Request + {"erros": [...]}
+  end'>
+  <div class="mermaid"></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">📏 As regras combinadas com a Dona Cida</div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Campo</th><th>Regra</th><th>Exemplo inválido → mensagem</th></tr></thead>
+    <tbody>
+      <tr><td><code>tipo</code></td><td>Obrigatório: <code>alimento</code>, <code>roupa</code> ou <code>higiene</code></td><td><code>"brinquedo"</code> → tipo deve ser um destes: alimento, roupa, higiene</td></tr>
+      <tr><td><code>descricao</code></td><td>Obrigatória, até 200 caracteres</td><td><code>"   "</code> → descricao é obrigatória</td></tr>
+      <tr><td><code>quantidade</code></td><td>Obrigatória, número inteiro maior que zero</td><td><code>-5</code> → quantidade deve ser maior que zero</td></tr>
+      <tr><td><code>data_recebimento</code></td><td>Obrigatória, <code>AAAA-MM-DD</code>, sem data futura</td><td><code>"14/11/2026"</code> → data_recebimento deve estar no formato AAAA-MM-DD</td></tr>
+      <tr><td><code>doador</code></td><td>Opcional, até 100 caracteres</td><td><code>123</code> → doador deve ser um texto</td></tr>
+    </tbody>
+  </table></div>
+  <p class="mt-2">A função <code>validar_doacao()</code> confere <strong>todas</strong> as regras e devolve <strong>todos</strong> os erros de uma vez. Trecho da regra da quantidade:</p>
+  <div class="code-editor-wrap"><span class="code-filepath">api/app/validacao.py (trecho)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">    # quantidade: obrigatória, número inteiro maior que zero
+    quantidade = dados.get("quantidade")
+    if quantidade is None:
+        erros.append("quantidade é obrigatória")
+    elif isinstance(quantidade, bool) or not isinstance(quantidade, int):
+        erros.append("quantidade deve ser um número inteiro")
+    elif quantidade &lt;= 0:
+        erros.append("quantidade deve ser maior que zero")</pre></div>
+  <div class="warning-banner"><strong>🧑‍💻 O erro do Lucas:</strong> ele escreveu só <code>if quantidade &lt;= 0</code>. Com <code>"quantidade": "10"</code> (texto), o Python quebra ao comparar texto com número e a API devolve <strong>500</strong>. E <code>true</code> passaria como 1, porque em Python <code>bool</code> é um tipo de <code>int</code>. Por isso conferimos o <strong>tipo</strong> antes do <strong>valor</strong>.</div>
+</div>
+
+<div class="card">
+  <div class="card-title">⌨️ O código da aula: a rota POST</div>
+  <p class="section-intro">Esta é a rota escrita ao vivo. São poucas linhas, porque cada responsabilidade está no seu arquivo (ADR 0005).</p>
+  <div class="code-editor-wrap"><span class="code-filepath">api/app/routes.py (acrescentar)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">@bp.post("")
+def cadastrar():
+    dados, erros = validar_doacao(request.get_json(silent=True))
+    if erros:
+        return jsonify({"erros": erros}), 400
+
+    doacao = Doacao(**dados)
+    db.session.add(doacao)
+    db.session.commit()
+
+    local = url_for("doacoes.consultar", doacao_id=doacao.id)
+    return jsonify(doacao.to_dict()), 201, {"Location": local}</pre></div>
+  <ul style="margin-left:22px;line-height:1.9">
+    <li><code>get_json(silent=True)</code>: se o corpo não for JSON, devolve <code>None</code> em vez de quebrar; a validação transforma isso em 400.</li>
+    <li><code>201</code> + cabeçalho <code>Location</code>: o padrão REST para "criei, e ela está neste endereço".</li>
+    <li>Não esqueça os imports no topo: <code>request</code> e <code>url_for</code> do Flask, e <code>validar_doacao</code> de <code>.validacao</code>.</li>
+  </ul>
+</div>
+
+<div class="card">
+  <div class="card-title">📝 As decisões: ADRs 0004 e 0007</div>
+  <div class="adr">
+    <h5>ADR 0004 · Validação escrita à mão, sem biblioteca <span class="status">aceita</span></h5>
+    <p><b>Contexto:</b> o desafio exige rejeitar doações inválidas com respostas adequadas.</p>
+    <p><b>Decisão:</b> a função <code>validar_doacao()</code>, que devolve todos os erros de uma vez, em português.</p>
+    <p><b>Alternativas:</b> Marshmallow ou Pydantic, maduras, mas escondem a lógica que a turma precisa entender agora.</p>
+    <p><b>Consequências:</b> regras legíveis e fáceis de testar; em troca, mais código para manter quando a API crescer.</p>
+  </div>
+  <div class="adr">
+    <h5>ADR 0007 · Formato único de erro em JSON e códigos de status <span class="status">aceita</span></h5>
+    <p><b>Contexto:</b> o aplicativo precisa saber se deu certo e, se não, mostrar o motivo.</p>
+    <p><b>Decisão:</b> status pelo significado (201, 400, 404...) e todo erro no formato <code>{"erros": ["..."]}</code>.</p>
+    <p><b>Alternativas:</b> Problem Details (RFC 9457), o padrão oficial e próximo passo natural; responder sempre 200 com um campo "sucesso", que esconde o erro do HTTP.</p>
+    <p><b>Consequências:</b> o aplicativo trata qualquer erro do mesmo jeito; em troca, é um formato próprio.</p>
+  </div>
+  <p class="text-sm text-muted">Arquivos completos: <a class="ext" href="https://github.com/Cloud-Ai-Generative/disciplinas/blob/main/desenvolvimento-back-end-senac/api/docs/adr/0004-validacao-manual.md" target="_blank" rel="noopener">ADR 0004</a> · <a class="ext" href="https://github.com/Cloud-Ai-Generative/disciplinas/blob/main/desenvolvimento-back-end-senac/api/docs/adr/0007-formato-de-erro.md" target="_blank" rel="noopener">ADR 0007</a></p>
+</div>
+
+<div class="card" id="lab-secao-5">
+  <div class="card-title">🧪 Passo a passo para reproduzir <span class="camada essencial">Essencial</span></div>
+  <div class="step-box">
+    <h4><span class="step-num">1</span> Escolha o ponto de partida</h4>
+    <p><strong>Para escrever o código você mesmo</strong> (recomendado), parta da etapa 4 e acrescente a rota acima e o arquivo <code>validacao.py</code>:</p>
+    <div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta api</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">git checkout backend-senac-etapa-4</pre></div>
+    <p><strong>Para ver o resultado pronto:</strong></p>
+    <div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta api</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">git checkout backend-senac-etapa-5</pre></div>
+    <p>A API recarrega sozinha ao salvar (o código está montado no contêiner). Para acompanhar: <code>docker compose logs -f api</code>.</p>
+  </div>
+  <div class="step-box">
+    <h4><span class="step-num">2</span> Preveja e envie</h4>
+    <p>Abra o <code>requests.http</code>. Para cada requisição abaixo, <strong>preveja o status</strong> antes de clicar em <strong>Send Request</strong>.</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Requisição</th><th>Sua previsão</th><th>Resposta (clique para ver)</th></tr></thead>
+      <tbody>
+        <tr><td>Doação válida (óleo, 6 unidades)</td><td>?</td><td><details><summary>ver</summary><code>201</code> + <code>Location: /doacoes/6</code></details></td></tr>
+        <tr><td>Sem doador</td><td>?</td><td><details><summary>ver</summary><code>201</code>, com <code>"doador": null</code></details></td></tr>
+        <tr><td>Sem tipo</td><td>?</td><td><details><summary>ver</summary><code>400</code> + <code>tipo é obrigatório</code></details></td></tr>
+        <tr><td>Quantidade -5</td><td>?</td><td><details><summary>ver</summary><code>400</code> + <code>quantidade deve ser maior que zero</code></details></td></tr>
+        <tr><td>Vários erros de uma vez</td><td>?</td><td><details><summary>ver</summary><code>400</code> com três mensagens na lista</details></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+  <div class="step-box">
+    <h4><span class="step-num">3</span> Rode os testes automatizados</h4>
+    <div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta api</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose exec api pytest -v</pre></div>
+    <div class="esperado"><strong>✅ Resultado esperado:</strong> <code>23 passed</code> na etapa 5. Cada regra da tabela tem um teste; se alguém quebrar uma regra, o teste avisa.</div>
+  </div>
+</div>
+
+<div class="card" id="errou-secao-5">
+  <div class="card-title">✋ Errou? Casos comuns desta etapa</div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">NameError: name 'request' is not defined (ou url_for, validar_doacao)</div><div class="faq-a"><p>Faltou o import no topo do <code>routes.py</code>: <code>from flask import Blueprint, jsonify, request, url_for</code> e <code>from .validacao import validar_doacao</code>.</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">405 Method Not Allowed no POST</div><div class="faq-a"><p>A rota POST ainda não existe ou o arquivo não foi salvo. Confira o decorador <code>@bp.post("")</code> e veja nos logs se a API recarregou.</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">400 "o corpo da requisição deve ser um objeto JSON" com um JSON correto</div><div class="faq-a"><p>Faltou o cabeçalho <code>Content-Type: application/json</code>, ou há uma linha em branco faltando entre o cabeçalho e o corpo no <code>requests.http</code>.</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">500 Internal Server Error com "quantidade": "10"</div><div class="faq-a"><p>É o erro do Lucas: comparar texto com número. Confira o <strong>tipo</strong> antes do valor, como no trecho de <code>validacao.py</code> acima.</p></div></div>
+</div>
+
+<div class="card" id="quiz-secao-5">
+  <div class="card-title">✅ Checkpoint</div>
+  <div class="quiz-q">
+    <div class="enunciado">1. <span class="tag-lab">depende do lab</span> O que a API responde para <code>{"descricao": "Cesta básica", "quantidade": -1}</code>?</div>
+    <button class="quiz-opt" onclick="responder(this)">400 com uma mensagem: só o primeiro erro encontrado.</button>
+    <button class="quiz-opt" data-correct="1" onclick="responder(this)">400 com três mensagens: tipo, quantidade e data_recebimento.</button>
+    <button class="quiz-opt" onclick="responder(this)">201, porque descricao foi enviada.</button>
+    <button class="quiz-opt" onclick="responder(this)">500, porque faltam campos.</button>
+    <div class="quiz-fb" data-exp="A validação confere todas as regras e devolve todos os erros de uma vez (ADR 0004). Assim o Marcos corrige tudo numa só tentativa."></div>
+  </div>
+  <div class="quiz-q">
+    <div class="enunciado">2. Por que validar na API se o aplicativo também pode validar?</div>
+    <button class="quiz-opt" onclick="responder(this)">Não precisa: validar no aplicativo é suficiente.</button>
+    <button class="quiz-opt" onclick="responder(this)">Porque o Flask exige.</button>
+    <button class="quiz-opt" data-correct="1" onclick="responder(this)">Porque qualquer cliente pode chamar a API; só a API garante que dado inválido não entra no banco.</button>
+    <button class="quiz-opt" onclick="responder(this)">Para deixar a API mais rápida.</button>
+    <div class="quiz-fb" data-exp="Nunca confie no cliente. A validação no aplicativo melhora a experiência; a validação na API protege os dados."></div>
+  </div>
+  <button class="btn" onclick="refazerQuiz('quiz-secao-5')">↺ Refazer</button>
+  <div class="buscas" data-termos="Flask validação de dados API REST POST 201 400"></div>
+</div>
+
+</section>

@@ -1,0 +1,92 @@
+<section class="tab-panel" id="secao-6">
+
+<div class="card">
+  <div class="card-title">🔍 6 · Listagem e consulta</div>
+  <div class="cena">
+    <div class="msg"><span class="av">👵</span><div><div class="who">Dona Cida (coordenadora)</div><div class="txt">Agora sim: quero abrir o celular e ver tudo o que chegou. E, se eu procurar uma doação que não existe, quero que ele me diga isso, e não que fique carregando.</div></div></div>
+  </div>
+  <div class="grid-3">
+    <div class="grid-card"><h5>🎯 Objetivo da etapa</h5><p class="text-sm">Consultar o recurso e confirmar que os dados foram gravados no PostgreSQL.</p></div>
+    <div class="grid-card"><h5>🛠️ O que você vai fazer</h5><p class="text-sm">Executar as rotas <code>GET</code> (já prontas desde a etapa 4) e conferir no banco.</p></div>
+    <div class="grid-card"><h5>⏱️ Na aula</h5><p class="text-sm">4 minutos.</p></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">📐 Consultar: encontrado ou não</div>
+  <h4 class="diag-title" id="d-09">📐 D-09 <span class="dt-type">UML · Sequência</span> GET /doacoes/{id}</h4>
+  <p class="text-sm text-muted" style="margin:4px 0 8px"><strong>👀 Como ler:</strong> <code>get_or_404</code> busca pela chave primária; se não acha, interrompe a rota e o formato único de erro (ADR 0007) monta a resposta.</p>
+  <div class="mermaid-box" data-code='sequenceDiagram
+  autonumber
+  participant App as 📱 Aplicativo
+  participant R as routes.py
+  participant DB as 🐘 PostgreSQL
+  participant E as erros.py
+  App->>R: GET /doacoes/3
+  R->>DB: SELECT ... WHERE id = 3
+  alt encontrada
+    DB-->>R: linha da doação 3
+    R-->>App: 200 OK + JSON
+  else não encontrada
+    DB-->>R: nada
+    R->>E: get_or_404 levanta 404
+    E-->>App: 404 + {"erros": ["doação não encontrada"]}
+  end'>
+  <div class="mermaid"></div>
+  </div>
+  <div class="code-editor-wrap"><span class="code-filepath">api/app/routes.py (trecho)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">@bp.get("")
+def listar():
+    doacoes = db.session.scalars(db.select(Doacao).order_by(Doacao.id)).all()
+    return jsonify([d.to_dict() for d in doacoes])
+
+
+@bp.get("/&lt;int:doacao_id&gt;")
+def consultar(doacao_id):
+    doacao = db.get_or_404(Doacao, doacao_id, description=NAO_ENCONTRADA)
+    return jsonify(doacao.to_dict())</pre></div>
+  <div class="info-banner"><strong>💡 Repare no <code>&lt;int:doacao_id&gt;</code>:</strong> o Flask só aceita números nessa posição. <code>GET /doacoes/abc</code> nem chega à função: responde 404 direto.</div>
+</div>
+
+<div class="card" id="lab-secao-6">
+  <div class="card-title">🧪 Passo a passo para reproduzir <span class="camada essencial">Essencial</span></div>
+  <div class="step-box">
+    <h4><span class="step-num">1</span> Preveja e consulte</h4>
+    <p>Continue na etapa 5 (<code>git checkout backend-senac-etapa-5</code>). No <code>requests.http</code>:</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Requisição</th><th>Sua previsão</th><th>Resposta (clique para ver)</th></tr></thead>
+      <tbody>
+        <tr><td><code>GET /doacoes</code></td><td>?</td><td><details><summary>ver</summary><code>200</code> com as doações de exemplo e as que você cadastrou na etapa 5</details></td></tr>
+        <tr><td><code>GET /doacoes/1</code></td><td>?</td><td><details><summary>ver</summary><code>200</code> com o arroz da Mercearia do Zé</details></td></tr>
+        <tr><td><code>GET /doacoes/999</code></td><td>?</td><td><details><summary>ver</summary><code>404</code> + <code>doação não encontrada</code></details></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+  <div class="step-box">
+    <h4><span class="step-num">2</span> Confirme no banco</h4>
+    <p>A prova de que o caderno foi aposentado: a doação cadastrada pela API está no PostgreSQL.</p>
+    <div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta api</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose exec db psql -U vila -d doacoes -c "SELECT id, tipo, descricao, quantidade, doador FROM doacoes ORDER BY id;"</pre></div>
+    <div class="esperado"><strong>✅ Resultado esperado:</strong> as mesmas doações que a API listou, incluindo a <code>Lata de óleo 900 ml</code> do Marcos.</div>
+  </div>
+  <div class="step-box">
+    <h4><span class="step-num">3</span> Os dados sobrevivem?</h4>
+    <div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta api</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose down
+docker compose up -d
+curl http://localhost:8000/doacoes</pre></div>
+    <div class="esperado"><strong>✅ Resultado esperado:</strong> as doações continuam lá: elas ficam no <strong>volume</strong> <code>dados-postgres</code>. Só o <code>docker compose down -v</code> apaga os dados.</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">🔬 Aprofundamento <span class="camada aprofundamento">opcional</span></div>
+  <details class="aprofundamento">
+    <summary>1. Filtrar por tipo: <code>GET /doacoes?tipo=alimento</code></summary>
+    <p class="mt-2">A Dona Cida quer ver só os alimentos. Na função <code>listar()</code>, leia <code>request.args.get("tipo")</code> e, se vier, acrescente <code>.where(Doacao.tipo == tipo)</code> à consulta. Parâmetros de consulta (<code>?tipo=</code>) filtram uma coleção sem criar uma rota nova.</p>
+  </details>
+  <details class="aprofundamento">
+    <summary>2. Quanto há em estoque de cada tipo?</summary>
+    <p class="mt-2">Some as quantidades por tipo com <code>db.select(Doacao.tipo, db.func.sum(Doacao.quantidade)).group_by(Doacao.tipo)</code>. Que rota REST você daria a esse resumo? Uma sugestão: <code>GET /doacoes/resumo</code>. Discuta com a turma os prós e contras.</p>
+  </details>
+  <div class="buscas" data-termos="Flask GET rota parâmetro 404 SQLAlchemy select"></div>
+</div>
+
+</section>

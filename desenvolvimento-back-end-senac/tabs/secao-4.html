@@ -1,0 +1,150 @@
+<section class="tab-panel" id="secao-4">
+
+<div class="card">
+  <div class="card-title">🗃️ 4 · O modelo Doacao e a arquitetura em camadas</div>
+  <div class="cena">
+    <div class="msg"><span class="av">👵</span><div><div class="who">Dona Cida (coordenadora)</div><div class="txt">No caderno eu anoto: o que é, quanto veio, quando chegou e, se a pessoa quiser, o nome de quem doou.</div></div></div>
+    <div class="msg"><span class="av">👩‍💻</span><div><div class="who">Bia (tech lead)</div><div class="txt">Pronto, isso é o nosso <strong>modelo</strong>. Cada linha do caderno vira uma linha da tabela <code>doacoes</code> no PostgreSQL. E o código fica em camadas: cada arquivo cuida de uma coisa só.</div></div></div>
+  </div>
+  <div class="grid-3">
+    <div class="grid-card"><h5>🎯 Objetivo da etapa</h5><p class="text-sm">Organizar o projeto Flask em camadas e mapear a doação para uma tabela.</p></div>
+    <div class="grid-card"><h5>🛠️ O que você vai fazer</h5><p class="text-sm">Ler o modelo, ver a tabela no banco e listar as doações de exemplo.</p></div>
+    <div class="grid-card"><h5>⏱️ Na aula</h5><p class="text-sm">Junto com a etapa 3 (minutos 7 a 10). Em casa: 15 minutos.</p></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">📐 Os dados e as camadas</div>
+  <h4 class="diag-title" id="d-06">📐 D-06 <span class="dt-type">Entidade-relacionamento</span> A tabela doacoes</h4>
+  <p class="text-sm text-muted" style="margin:4px 0 8px"><strong>👀 Como ler:</strong> cada linha é uma coluna da tabela, com o tipo no PostgreSQL. <code>PK</code> é a chave primária, gerada pelo banco. Só <code>doador</code> pode ficar vazio.</p>
+  <div class="mermaid-box" data-code='erDiagram
+  DOACOES {
+    integer id PK "gerado pelo banco"
+    varchar tipo "alimento, roupa ou higiene"
+    varchar descricao "até 200 caracteres"
+    integer quantidade "maior que zero"
+    date data_recebimento "AAAA-MM-DD"
+    varchar doador "opcional"
+    timestamptz criado_em "preenchido sozinho"
+  }'>
+  <div class="mermaid"></div>
+  </div>
+
+  <h4 class="diag-title" id="d-07">📐 D-07 <span class="dt-type">C4 · Componentes</span> O caminho de uma requisição dentro da API</h4>
+  <p class="text-sm text-muted" style="margin:4px 0 8px"><strong>👀 Como ler:</strong> cada caixa é um arquivo da pasta <code>app/</code>. A requisição entra pelas rotas, passa pela validação, vira um objeto do modelo e chega ao banco. Qualquer erro sai pelo mesmo formato.</p>
+  <div class="mermaid-box" data-code='flowchart LR
+  req(["📨 Requisição HTTP"]) --> routes
+  subgraph app["📁 app/"]
+    direction LR
+    init["__init__.py<br/>create_app()"] -.->|"registra"| routes
+    routes["routes.py<br/>rotas /doacoes"] --> valid["validacao.py<br/>regras"]
+    routes --> models["models.py<br/>Doacao"]
+    models --> ext["extensions.py<br/>db"]
+    erros["erros.py<br/>formato de erro"]
+    config["config.py<br/>lê o .env"] -.-> init
+  end
+  ext -->|"SQL"| pg[("🐘 PostgreSQL")]
+  routes -.->|"400, 404"| erros'>
+  <div class="mermaid"></div>
+  </div>
+
+  <div class="tree-view"><span class="folder">api/</span>
+├── <span class="folder">app/</span>
+│   ├── <span class="file">__init__.py</span>     <span class="comment"># create_app(): monta a aplicação</span>
+│   ├── <span class="file">config.py</span>       <span class="comment"># configuração lida do .env</span>
+│   ├── <span class="file">extensions.py</span>   <span class="comment"># o objeto db</span>
+│   ├── <span class="file">models.py</span>       <span class="comment"># o modelo Doacao            ← nesta etapa</span>
+│   ├── <span class="file">cli.py</span>          <span class="comment"># o comando "flask seed"     ← nesta etapa</span>
+│   ├── <span class="file">routes.py</span>       <span class="comment"># as rotas GET               ← nesta etapa</span>
+│   └── <span class="file">erros.py</span>        <span class="comment"># o formato único de erro</span>
+├── <span class="folder">tests/</span>              <span class="comment"># testes automatizados</span>
+├── <span class="folder">docs/adr/</span>           <span class="comment"># decisões de arquitetura</span>
+├── <span class="file">requests.http</span>       <span class="comment"># requisições prontas</span>
+├── <span class="file">Dockerfile</span>
+└── <span class="file">docker-compose.yml</span></div>
+</div>
+
+<div class="card">
+  <div class="card-title">💡 Conceito: ORM e modelo</div>
+  <div class="deep-concept-box">
+    <h3>🔄 ORM (Object-Relational Mapping)</h3>
+    <p>O banco fala SQL e guarda <strong>linhas em tabelas</strong>. O Python trabalha com <strong>objetos</strong>. O <strong>ORM</strong> (aqui, o SQLAlchemy) traduz um no outro: você escreve <code>Doacao(tipo="roupa", ...)</code> e ele gera o <code>INSERT</code>; pede <code>db.select(Doacao)</code> e ele gera o <code>SELECT</code>.</p>
+  </div>
+  <div class="code-editor-wrap"><span class="code-filepath">api/app/models.py</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">class Doacao(db.Model):
+    __tablename__ = "doacoes"
+
+    id = db.Column(db.Integer, primary_key=True)
+    tipo = db.Column(db.String(20), nullable=False)          # alimento, roupa ou higiene
+    descricao = db.Column(db.String(200), nullable=False)
+    quantidade = db.Column(db.Integer, nullable=False)
+    data_recebimento = db.Column(db.Date, nullable=False)
+    doador = db.Column(db.String(100), nullable=True)        # opcional
+    criado_em = db.Column(db.DateTime(timezone=True), nullable=False,
+                          default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        """Converte a doação no JSON que a API devolve."""
+        return {"id": self.id, "tipo": self.tipo, "descricao": self.descricao,
+                "quantidade": self.quantidade,
+                "data_recebimento": self.data_recebimento.isoformat(),
+                "doador": self.doador}</pre></div>
+  <div class="info-banner"><strong>💡 Repare:</strong> <code>criado_em</code> existe na tabela, mas <strong>não</strong> aparece no <code>to_dict()</code>. O modelo do banco e o JSON da API não precisam ser iguais: a API decide o que expor.</div>
+</div>
+
+<div class="card">
+  <div class="card-title">📝 As decisões: ADRs 0002, 0005 e 0008</div>
+  <div class="adr">
+    <h5>ADR 0002 · PostgreSQL como banco de dados <span class="status">aceita</span></h5>
+    <p><b>Contexto:</b> as doações se perdem nos cadernos; várias pessoas registram ao mesmo tempo.</p>
+    <p><b>Decisão:</b> PostgreSQL 17, em contêiner.</p>
+    <p><b>Alternativas:</b> SQLite (ótimo para os testes, fraco para vários usuários num servidor); MySQL (também atenderia); NoSQL (os dados têm estrutura fixa e conhecida).</p>
+    <p><b>Consequências:</b> banco robusto e gratuito, com restrições que protegem os dados; em troca, é mais um serviço para rodar (o Compose resolve).</p>
+  </div>
+  <div class="adr">
+    <h5>ADR 0005 · App factory, blueprint, modelo e validação separados <span class="status">aceita</span></h5>
+    <p><b>Contexto:</b> tudo num <code>app.py</code> funciona no começo, mas mistura responsabilidades e dificulta testar.</p>
+    <p><b>Decisão:</b> um arquivo por responsabilidade (diagrama D-07).</p>
+    <p><b>Alternativas:</b> arquivo único; camadas completas com serviços e repositórios (excesso para um recurso só).</p>
+    <p><b>Consequências:</b> cada arquivo tem um motivo para mudar e os testes trocam o banco pela app factory; em troca, mais arquivos para quem está começando.</p>
+  </div>
+  <div class="adr">
+    <h5>ADR 0008 · <code>db.create_all()</code> em vez de migrations, por enquanto <span class="status">aceita</span></h5>
+    <p><b>Contexto:</b> a tabela precisa existir antes do primeiro uso.</p>
+    <p><b>Decisão:</b> <code>create_all()</code> ao subir a API: cria o que falta e não mexe no que existe.</p>
+    <p><b>Alternativas:</b> Flask-Migrate (Alembic), o caminho certo quando o modelo começar a mudar.</p>
+    <p><b>Consequências:</b> zero passos extras; em troca, mudar uma coluna exige zerar o banco até adotarmos migrations.</p>
+  </div>
+  <p class="text-sm text-muted">Arquivos completos: <a class="ext" href="https://github.com/Cloud-Ai-Generative/disciplinas/blob/main/desenvolvimento-back-end-senac/api/docs/adr/0002-postgresql-como-banco.md" target="_blank" rel="noopener">ADR 0002</a> · <a class="ext" href="https://github.com/Cloud-Ai-Generative/disciplinas/blob/main/desenvolvimento-back-end-senac/api/docs/adr/0005-estrutura-em-camadas.md" target="_blank" rel="noopener">ADR 0005</a> · <a class="ext" href="https://github.com/Cloud-Ai-Generative/disciplinas/blob/main/desenvolvimento-back-end-senac/api/docs/adr/0008-create-all-em-vez-de-migrations.md" target="_blank" rel="noopener">ADR 0008</a></p>
+</div>
+
+<div class="card" id="lab-secao-4">
+  <div class="card-title">🧪 Passo a passo para reproduzir <span class="camada essencial">Essencial</span></div>
+  <div class="step-box">
+    <h4><span class="step-num">1</span> Vá para o código desta etapa</h4>
+    <div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta api</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">git checkout backend-senac-etapa-4
+docker compose up -d --build</pre></div>
+    <p>O <code>--build</code> refaz a imagem, porque o comando de inicialização mudou: agora a API roda <code>flask seed</code> antes de subir.</p>
+  </div>
+  <div class="step-box">
+    <h4><span class="step-num">2</span> Veja a tabela no PostgreSQL</h4>
+    <div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta api</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose exec db psql -U vila -d doacoes -c "\d doacoes"
+docker compose exec db psql -U vila -d doacoes -c "SELECT id, tipo, descricao, quantidade FROM doacoes;"</pre></div>
+    <div class="esperado"><strong>✅ Resultado esperado:</strong> a estrutura da tabela com as 7 colunas do diagrama D-06 e as 5 doações de exemplo.</div>
+    <div class="info-banner"><strong>💡 Prefere visual?</strong> Na extensão PostgreSQL do VS Code (elefante azul), crie uma conexão com servidor <code>localhost</code>, porta <code>5432</code>, usuário e senha do seu <code>.env</code> e banco <code>doacoes</code>.</div>
+  </div>
+  <div class="step-box">
+    <h4><span class="step-num">3</span> Liste pela API</h4>
+    <div class="preveja"><strong>🤔 Preveja:</strong> a API vai devolver a coluna <code>criado_em</code>?</div>
+    <div class="code-editor-wrap"><span class="code-filepath">terminal (ou "Send Request" no requests.http)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">curl http://localhost:8000/doacoes</pre></div>
+    <div class="esperado"><strong>✅ Resultado esperado:</strong> as 5 doações em JSON, <strong>sem</strong> <code>criado_em</code>, porque o <code>to_dict()</code> não a inclui.</div>
+  </div>
+</div>
+
+<div class="card" id="errou-secao-4">
+  <div class="card-title">✋ Errou? Casos comuns desta etapa</div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">Adicionei um campo no modelo, mas a coluna não aparece no banco</div><div class="faq-a"><p>É a consequência do ADR 0008: <code>create_all()</code> não altera tabelas existentes. Zere o banco com <code>docker compose down -v</code> e suba de novo. Em projeto real, use migrations (Flask-Migrate).</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">role "vila" does not exist no psql</div><div class="faq-a"><p>Você mudou <code>POSTGRES_USER</code> no <code>.env</code>. Use o seu usuário no lugar de <code>vila</code> nos comandos.</p></div></div>
+  <div class="buscas" data-termos="Flask SQLAlchemy ORM modelo PostgreSQL"></div>
+</div>
+
+</section>
