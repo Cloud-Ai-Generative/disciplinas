@@ -59,7 +59,7 @@ Regras: `tipo` é `alimento`, `roupa` ou `higiene`; `quantidade` é inteiro maio
 | Para | Comando |
 |---|---|
 | Ver os logs da API | `docker compose logs -f api` |
-| Rodar os testes automatizados | `docker compose exec api pytest` |
+| Rodar os testes automatizados | `docker compose exec api python -m pytest` |
 | Abrir o banco no terminal | `docker compose exec db psql -U vila -d doacoes` |
 | Parar tudo (mantém os dados) | `docker compose down` |
 | Zerar o banco e começar de novo | `docker compose down -v` e depois `docker compose up -d` |

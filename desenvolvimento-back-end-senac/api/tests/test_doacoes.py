@@ -1,6 +1,6 @@
 """Testes automatizados da API.
 
-Rode dentro do contêiner:   docker compose exec api pytest
+Rode dentro do contêiner:   docker compose exec api python -m pytest
 Por padrão usam um SQLite em memória; para testar no PostgreSQL,
 defina TEST_DATABASE_URL.
 """
