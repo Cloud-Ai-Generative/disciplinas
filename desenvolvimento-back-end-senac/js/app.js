@@ -56,6 +56,7 @@ function toggleFaq(e){e.classList.toggle('open');}
 function filterGloss(){const t=document.getElementById('gloss-search').value.toLowerCase();document.querySelectorAll('#gloss-table tbody tr').forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(t)?'':'none';});}
 const INDICE=[
   {tab:'inicio',title:'Início: a Vila Esperança',k:'vila esperança associação contagem doações personagens dona cida marcos bia lucas objetivo indicador roteiro etapas'},
+  {tab:'time',title:'O time: papéis e funções',k:'time papéis funções tech lead product owner po qa testador cliente stakeholder usuário desenvolvedor back-end carreira ana julia bia lucas marcos dona cida'},
   {tab:'ambiente',title:'Antes da aula: preparando o ambiente',k:'instalar instalação git vs code vscode extensões docker desktop wsl codespaces requisitos clonar verificação hello-world windows macos linux ubuntu'},
   {tab:'secao-1',title:'1. O problema do caderno',k:'problema caderno contexto voluntário aplicativo api banco extensão'},
   {tab:'secao-2',title:'2. REST e o recurso /doacoes',k:'rest recurso verbo http get post put delete status 200 201 204 400 404 flask adr 0001'},
@@ -91,13 +92,13 @@ window.addEventListener('hashchange',()=>{const t=(location.hash||'').slice(1);c
 
 
 /* ═══════════ Complementos do ODA Vila Esperança ═══════════ */
-function posCarregar(p){renderBuscas(p);restaurarPassos(p);atualizarProgresso();}
+function posCarregar(p){renderBuscas(p);restaurarPassos(p);atualizarProgresso();aplicarPerfil(p);}
 
 /* ── Buscas para ir além (Google, Scholar e YouTube em português) ── */
 function renderBuscas(c){c.querySelectorAll('.buscas[data-termos]:not([data-ok])').forEach(b=>{const q=encodeURIComponent(b.dataset.termos);b.innerHTML='<h5>🔗 Buscas para ir além (em português)</h5>'+
- '<a class="ext" target="_blank" rel="noopener" href="https://www.google.com/search?hl=pt-BR&lr=lang_pt&q='+q+'">🔎 Busca no Google</a>'+
- '<a class="ext" target="_blank" rel="noopener" href="https://scholar.google.com/scholar?hl=pt-BR&lr=lang_pt&q='+q+'">🎓 Pesquisa científica (Google Scholar)</a>'+
- '<a class="ext" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query='+q+'">🎬 Videoaulas no YouTube</a>';b.setAttribute('data-ok','1');});}
+ '<a class="ext" target="_blank" rel="noopener" onclick="event.stopPropagation()" href="https://www.google.com/search?hl=pt-BR&lr=lang_pt&q='+q+'">🔎 Busca no Google</a>'+
+ '<a class="ext" target="_blank" rel="noopener" onclick="event.stopPropagation()" href="https://scholar.google.com/scholar?hl=pt-BR&lr=lang_pt&q='+q+'">🎓 Pesquisa científica (Google Scholar)</a>'+
+ '<a class="ext" target="_blank" rel="noopener" onclick="event.stopPropagation()" href="https://www.youtube.com/results?search_query='+q+'">🎬 Videoaulas no YouTube</a>';b.setAttribute('data-ok','1');});}
 
 /* ── Checklist de progresso (salvo só neste navegador) ── */
 function lerPassos(){try{return JSON.parse(localStorage.getItem(PASSOS_KEY)||'{}');}catch(e){return {};}}
@@ -113,3 +114,27 @@ function escolherSO(so){document.body.setAttribute('data-so',so);try{localStorag
 document.addEventListener('click',e=>{const b=e.target.closest('.os-btn[data-os]');if(b)escolherSO(b.dataset.os);});
 window.addEventListener('DOMContentLoaded',()=>{let so=null;try{so=localStorage.getItem(SO_KEY);}catch(e){}escolherSO(so||detectarSO());});
 const _switchOriginal=switchTab;switchTab=function(t,a){_switchOriginal(t,a);setTimeout(()=>{const so=document.body.getAttribute('data-so');if(so)escolherSO(so);},400);};
+
+/* ── Perfil do aluno: nome e ícone (salvos só neste navegador) ── */
+const PERFIL_KEY='vilaPerfil';
+const NOME_PADRAO='Aluno(a) Back-End', AVATAR_PADRAO='🧑‍💻';
+function lerPerfil(){try{return JSON.parse(localStorage.getItem(PERFIL_KEY)||'{}');}catch(e){return {};}}
+function gravarPerfil(o){try{localStorage.setItem(PERFIL_KEY,JSON.stringify(o));}catch(e){}}
+function nomeAluno(){const n=(lerPerfil().nome||'').trim();return n||NOME_PADRAO;}
+function avatarAluno(){return lerPerfil().avatar||AVATAR_PADRAO;}
+function aplicarPerfil(c){c=c||document;c.querySelectorAll('[data-aluno-nome]').forEach(e=>e.textContent=nomeAluno());c.querySelectorAll('[data-aluno-avatar]').forEach(e=>e.textContent=avatarAluno());
+  const inp=c.querySelector('#perfil-nome');if(inp&&document.activeElement!==inp)inp.value=lerPerfil().nome||'';
+  c.querySelectorAll('.avatar-opt').forEach(b=>b.classList.toggle('active',b.dataset.avatar===avatarAluno()));}
+function salvarNome(v){const p=lerPerfil();p.nome=v.slice(0,40);gravarPerfil(p);aplicarPerfil(document);}
+function escolherAvatar(a){const p=lerPerfil();p.avatar=a;gravarPerfil(p);aplicarPerfil(document);showToast(a+' Ícone escolhido!');}
+
+/* ── Decisões do time: o aluno escolhe e vê o que o time decidiu ── */
+function decidir(btn){const d=btn.closest('.decisao');if(d.dataset.done)return;d.dataset.done='1';btn.classList.add('escolhida');
+  const fb=d.querySelector('.decisao-fb');fb.innerHTML='<strong>🗳️ Você votou: '+btn.textContent.trim()+'.</strong> '+fb.dataset.exp;fb.classList.add('show');}
+function refazerDecisao(btn){const d=btn.closest('.decisao');delete d.dataset.done;d.querySelectorAll('.quiz-opt').forEach(o=>o.classList.remove('escolhida'));d.querySelector('.decisao-fb').classList.remove('show');}
+
+/* ── Revelação progressiva (tabela da Seção 2) ── */
+function revelar(el){el.classList.add('revelado');}
+function revelarTudo(id){document.querySelectorAll('#'+id+' .oculto').forEach(e=>e.classList.add('revelado'));}
+function esconderTudo(id){document.querySelectorAll('#'+id+' .oculto').forEach(e=>e.classList.remove('revelado'));}
+window.addEventListener('DOMContentLoaded',()=>aplicarPerfil(document));
