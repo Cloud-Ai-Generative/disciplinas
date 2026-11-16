@@ -66,7 +66,7 @@ function showToast(m){const c=document.getElementById('toast-container');const d
 function toggleFaq(e){e.classList.toggle('open');}
 function filterGloss(){const t=document.getElementById('gloss-search').value.toLowerCase();document.querySelectorAll('#gloss-table tbody tr').forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(t)?'':'none';});}
 const INDICE=[
-  {tab:'inicio',title:'Início: a Vila Esperança',k:'vila esperança associação contagem doações personagens dona cida marcos bia lucas objetivo indicador roteiro etapas'},
+  {tab:'inicio',title:'Início: a Vila Esperança',k:'oda objeto digital de aprendizagem vila esperança associação contagem doações personagens dona cida marcos bia lucas objetivo indicador roteiro etapas'},
   {tab:'time',title:'O time: papéis e funções',k:'time papéis funções tech lead product owner po qa testador cliente stakeholder usuário desenvolvedor back-end carreira ana julia bia lucas marcos dona cida'},
   {tab:'diagramas',title:'Diagramas e ADRs: como ler',k:'diagrama d-01 numeração c4 contexto contêineres componentes sequência uml entidade relacionamento er fluxo fluxograma mermaid adr decisão arquitetura ciclo de vida'},
   {tab:'ambiente',title:'Antes da aula: preparando o ambiente',k:'github conta login git x github student pack fork instalar instalação git vs code vscode extensões docker desktop wsl codespaces requisitos clonar verificação hello-world windows macos linux ubuntu'},
