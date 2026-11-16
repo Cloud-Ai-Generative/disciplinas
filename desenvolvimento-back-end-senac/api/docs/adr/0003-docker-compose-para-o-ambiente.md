@@ -15,11 +15,11 @@ Rodar **tudo** com **Docker Compose**: um contêiner para o PostgreSQL e outro p
 ## Alternativas consideradas
 
 - **Instalar Python e PostgreSQL na máquina:** cada sistema operacional tem um passo a passo diferente, e as versões variam.
-- **Só o banco no Docker e a API local:** reduz o problema, mas cada aluno ainda precisaria do Python certo e das dependências instaladas.
+- **Só o banco no Docker e a API local:** reduz o problema, mas cada estudante ainda precisaria do Python certo e das dependências instaladas.
 
 ## Consequências
 
-- ✅ **O aluno não precisa instalar Python nem PostgreSQL:** só Git, Docker e VS Code.
+- ✅ **Quem estuda não precisa instalar Python nem PostgreSQL:** só Git, Docker e VS Code.
 - ✅ Um comando sobe tudo: `docker compose up -d --build`.
 - ✅ A API só sobe depois que o banco está pronto (`depends_on` com `healthcheck`).
 - ⚠️ Docker exige memória (8 GB recomendados) e virtualização ligada. Para quem não tem, há o GitHub Codespaces.
