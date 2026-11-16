@@ -6,13 +6,13 @@ const SO_KEY = 'vilaSO';
 /* ── Mermaid ── */
 function getMermaidTheme(){return document.documentElement.getAttribute('data-theme')==='dark'?'dark':'default';}
 function initMermaid(){mermaid.initialize({startOnLoad:false,theme:getMermaidTheme(),securityLevel:'strict',flowchart:{useMaxWidth:false,htmlLabels:true,curve:'basis',padding:20},sequence:{useMaxWidth:false,actorMargin:50,width:160,height:44,boxMargin:8,noteMargin:10,messageMargin:35},themeVariables:{fontSize:'18px'}});}
-async function renderMermaidIn(c){if(!window.mermaid||!c)return;for(const b of c.querySelectorAll('.mermaid-box:not([data-rendered])')){const code=b.dataset.code,n=b.querySelector('.mermaid');if(!n||!code)continue;try{const{svg}=await mermaid.render('m'+Math.random().toString(36).slice(2,8),code);n.innerHTML=svg;b.setAttribute('data-rendered','1');if(/^\s*(erDiagram|sequenceDiagram)/.test(code))b.classList.add('compacto');}catch(e){n.innerHTML='<pre style="color:#ef4444;padding:10px">Erro no diagrama: '+e.message+'</pre>';}}}
+async function renderMermaidIn(c){if(!window.mermaid||!c)return;for(const b of c.querySelectorAll('.mermaid-box:not([data-rendered])')){const code=personalizar(b.dataset.code),n=b.querySelector('.mermaid');if(!n||!code)continue;try{const{svg}=await mermaid.render('m'+Math.random().toString(36).slice(2,8),code);n.innerHTML=svg;b.setAttribute('data-rendered','1');if(/^\s*(erDiagram|sequenceDiagram)/.test(code))b.classList.add('compacto');}catch(e){n.innerHTML='<pre style="color:#ef4444;padding:10px">Erro no diagrama: '+e.message+'</pre>';}}}
 const MM_TOOLBAR=`<div class="mermaid-toolbar"><button class="mermaid-btn" onclick="showMermaidCode(this)" title="Ver e copiar o código Mermaid"><span class="ico">⟨/⟩</span><span class="lbl">Código</span></button><button class="mermaid-btn" onclick="mZoom(this.closest('.mermaid-box'),-1)" title="Diminuir"><span class="ico">−</span><span class="lbl">Zoom</span></button><button class="mermaid-btn" onclick="mZoom(this.closest('.mermaid-box'),1)" title="Aumentar"><span class="ico">+</span><span class="lbl">Zoom</span></button><button class="mermaid-btn" onclick="mZoom(this.closest('.mermaid-box'),0)" title="Tamanho original"><span class="ico">↺</span><span class="lbl">Reset</span></button><button class="mermaid-btn" onclick="mFS(this.closest('.mermaid-box'),1)" title="Tela cheia"><span class="ico">⛶</span><span class="lbl">Tela cheia</span></button></div><button class="mermaid-close-fs" onclick="mFS(this.closest('.mermaid-box'),0)">✕</button>`;
 function injectMermaidToolbars(){document.querySelectorAll('.mermaid-box').forEach(b=>{if(!b.querySelector('.mermaid-toolbar'))b.insertAdjacentHTML('afterbegin',MM_TOOLBAR);});}
 const ZL=['','zoom-125','zoom-150','zoom-175','zoom-200'];
 function mZoom(b,d){let c=0;ZL.forEach((k,i)=>{if(k&&b.classList.contains(k))c=i;});c=d===0?0:Math.max(0,Math.min(4,c+d));ZL.forEach(k=>k&&b.classList.remove(k));if(ZL[c])b.classList.add(ZL[c]);}
 function mFS(b,on){b.classList.toggle('fullscreen',!!on);document.body.style.overflow=on?'hidden':'';}
-function showMermaidCode(btn){document.getElementById('modal-code-content').textContent=btn.closest('.mermaid-box').dataset.code;document.getElementById('code-modal').classList.add('active');}
+function showMermaidCode(btn){document.getElementById('modal-code-content').textContent=personalizar(btn.closest('.mermaid-box').dataset.code);document.getElementById('code-modal').classList.add('active');}
 function closeCodeModal(){document.getElementById('code-modal').classList.remove('active');}
 function copyModalCode(f){const c=document.getElementById('modal-code-content').textContent;const out=f==='github'?'```mermaid\n'+c+'\n```':c;navigator.clipboard.writeText(out).then(()=>showToast(f==='github'?'Formato GitHub copiado!':'Mermaid copiado!'));}
 function copyCode(btn){const w=btn.closest('.code-editor-wrap')||btn.parentElement;const p=w.querySelector('.code-editor,pre');if(!p)return;navigator.clipboard.writeText(p.textContent).then(()=>{btn.textContent='✅ Copiado!';btn.classList.add('copied');setTimeout(()=>{btn.textContent='📋 Copiar';btn.classList.remove('copied');},1500);});}
@@ -145,8 +145,8 @@ function avatarAluno(){return lerPerfil().avatar||AVATAR_PADRAO;}
 function aplicarPerfil(c){c=c||document;c.querySelectorAll('[data-aluno-nome]').forEach(e=>e.textContent=nomeAluno());c.querySelectorAll('[data-aluno-avatar]').forEach(e=>e.textContent=avatarAluno());
   const inp=c.querySelector('#perfil-nome');if(inp&&document.activeElement!==inp)inp.value=lerPerfil().nome||'';
   c.querySelectorAll('.avatar-opt').forEach(b=>b.classList.toggle('active',b.dataset.avatar===avatarAluno()));}
-function salvarNome(v){const p=lerPerfil();p.nome=v.slice(0,40);gravarPerfil(p);aplicarPerfil(document);}
-function escolherAvatar(a){const p=lerPerfil();p.avatar=a;gravarPerfil(p);aplicarPerfil(document);showToast(a+' Ícone escolhido!');}
+function salvarNome(v){const p=lerPerfil();p.nome=v.slice(0,40);gravarPerfil(p);aplicarPerfil(document);redesenharPersonalizados();}
+function escolherAvatar(a){const p=lerPerfil();p.avatar=a;gravarPerfil(p);aplicarPerfil(document);redesenharPersonalizados();showToast(a+' Ícone escolhido!');}
 
 /* ── Decisões do time: o aluno escolhe e vê o que o time decidiu ── */
 const ICONE_DEC={time:'🟢',alt:'🟠',errada:'🔴'};
@@ -171,3 +171,13 @@ function revelar(el){el.classList.add('revelado');}
 function revelarTudo(id){document.querySelectorAll('#'+id+' .oculto').forEach(e=>e.classList.add('revelado'));}
 function esconderTudo(id){document.querySelectorAll('#'+id+' .oculto').forEach(e=>e.classList.remove('revelado'));}
 window.addEventListener('DOMContentLoaded',()=>aplicarPerfil(document));
+
+/* ── Diagramas personalizados: {{ALUNO}} e {{AVATAR}} viram o nome e o ícone do aluno ── */
+function nomeSeguroDiagrama(){return nomeAluno().replace(/["'`<>\[\]{}#;|\\]/g,'').trim()||NOME_PADRAO;}
+function personalizar(code){if(!code)return code;
+  // a função é chamada antes do perfil existir na primeira renderização
+  try{return code.split('{{ALUNO}}').join(nomeSeguroDiagrama()).split('{{AVATAR}}').join(avatarAluno());}catch(e){return code;}}
+let _timerDiag=null;
+function redesenharPersonalizados(){clearTimeout(_timerDiag);_timerDiag=setTimeout(()=>{
+  document.querySelectorAll('.mermaid-box[data-rendered]').forEach(b=>{if((b.dataset.code||'').includes('{{ALUNO}}')||(b.dataset.code||'').includes('{{AVATAR}}'))b.removeAttribute('data-rendered');});
+  document.querySelectorAll('.tab-panel').forEach(p=>{if(p.dataset.loaded)renderMermaidIn(p);});},400);}
