@@ -35,3 +35,15 @@ def test_rota_inexistente_devolve_404_no_formato_padrao(client):
     r = client.get("/nao-existe")
     assert r.status_code == 404
     assert r.get_json() == {"erros": ["recurso não encontrado"]}
+
+
+def test_lista_vazia(client):
+    r = client.get("/doacoes")
+    assert r.status_code == 200
+    assert r.get_json() == []
+
+
+def test_consultar_inexistente_devolve_404(client):
+    r = client.get("/doacoes/999")
+    assert r.status_code == 404
+    assert r.get_json() == {"erros": ["doação não encontrada"]}

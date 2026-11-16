@@ -28,6 +28,13 @@ def create_app(config=None):
     db.init_app(app)
     registrar_erros(app)
 
+    from . import models  # noqa: F401  (registra o modelo antes do create_all)
+    from .cli import registrar_comandos
+    from .routes import bp as doacoes_bp
+
+    app.register_blueprint(doacoes_bp)
+    registrar_comandos(app)
+
     @app.get("/saude")
     def saude():
         """Verifica se a API está no ar e se consegue falar com o banco."""
