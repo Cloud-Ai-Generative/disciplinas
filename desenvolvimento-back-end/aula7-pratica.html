@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<!-- HTMLearning v2.17 (23/10/2026) — Aula gerada a partir do sumário fornecido. Arquivo único, CSS/JS inline, 100% offline. -->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Desenvolvimento Back-End — Aula 7: Modelagem de Dados e Frameworks ORM</title>
+<style>
+:root{
+  --acc:#3730A3;--acc-deep:#312E81;--acc-soft:#E0E7FF;--amber:#B45309;--amber-bright:#F59E0B;--magenta:#BE185D;--teal:#0F766E;--lime:#4D7C0F;--violet:#7C3AED;
+  --ok:#15803D;--okbg:#DCFCE7;--warn:#B45309;--warnbg:#FEF3C7;--danger:#B91C1C;--dangerbg:#FEE2E2;--info:#3730A3;--infobg:#E0E7FF;
+  --bg:#F4F5FA;--bg2:#E8EAF3;--card:#FFFFFF;--ink:#161A2E;--muted:#4B5266;--line:#C7CBDD;--warm:#FFF7ED;--roxo:#F5F3FF;
+  --shadow:0 10px 30px rgba(23,26,64,.10);--fs:18px;
+}
+body.dark{
+  --acc:#A5B4FC;--acc-deep:#3730A3;--acc-soft:#1E1B4B;--amber:#FBBF24;--amber-bright:#F59E0B;--magenta:#F472B6;--teal:#5EEAD4;--lime:#A3E635;--violet:#C4B5FD;
+  --ok:#4ADE80;--okbg:#052E16;--warn:#FBBF24;--warnbg:#3F2D06;--danger:#F87171;--dangerbg:#3F1D1D;--info:#A5B4FC;--infobg:#1E1B4B;
+  --bg:#070914;--bg2:#0E1226;--card:#121734;--ink:#E7E9F5;--muted:#9AA1BC;--line:#2A3050;--warm:#2A1B0E;--roxo:#1E1B4B;
+  --shadow:0 10px 30px rgba(0,0,0,.5);
+}
+body.apresentacao{--fs:22px}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:var(--fs);line-height:1.55;background:var(--bg);color:var(--ink);overflow-x:hidden}
+body::before{content:"";position:fixed;inset:-20%;z-index:-2;pointer-events:none;background:
+  radial-gradient(38% 34% at 12% 12%,rgba(55,48,163,.22),transparent 60%),
+  radial-gradient(34% 30% at 88% 8%,rgba(190,24,93,.16),transparent 62%),
+  radial-gradient(40% 36% at 80% 86%,rgba(245,158,11,.15),transparent 62%),
+  radial-gradient(36% 32% at 16% 90%,rgba(15,118,110,.16),transparent 62%);
+  animation:aurora 28s ease-in-out infinite alternate}
+body.dark::before{opacity:.5}
+@keyframes aurora{0%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(2%,-2%,0) scale(1.06)}100%{transform:translate3d(-2%,2%,0) scale(1.03)}}
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.5;
+  background-image:
+   repeating-linear-gradient(0deg,rgba(55,48,163,.055) 0 1px,transparent 1px 30px),
+   repeating-linear-gradient(90deg,rgba(55,48,163,.055) 0 1px,transparent 1px 30px),
+   url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/><feColorMatrix type='saturate' values='0'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='.35'/></svg>")}
+::-webkit-scrollbar{width:13px;height:13px}
+::-webkit-scrollbar-track{background:var(--bg2);border-left:1px solid var(--line)}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--acc),var(--magenta));border:3px solid var(--bg2);border-radius:99px}
+::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,var(--amber-bright),var(--acc))}
+*{scrollbar-color:var(--acc) var(--bg2);scrollbar-width:thin}
+.wrap{max-width:1140px;margin:0 auto;padding:16px}
+[hidden]{display:none!important}
+a{color:var(--acc)}
+code{font-family:ui-monospace,Consolas,Menlo,monospace;background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:.9em}
+h2{margin:.1em 0 .5em;font-size:1.35em;background:linear-gradient(92deg,var(--acc),var(--magenta) 72%,var(--teal));-webkit-background-clip:text;background-clip:text;color:transparent}
+h3{margin:1.3em 0 .4em;font-size:1.06em}h4{margin:.5em 0 .3em}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--magenta);outline-offset:2px}
+.controles{position:fixed;top:10px;right:12px;z-index:120;display:flex;gap:8px}
+.btn{background:linear-gradient(135deg,var(--acc),var(--acc-deep));color:#fff;border:none;border-radius:11px;padding:10px 15px;font-weight:700;cursor:pointer;font-size:.92em;box-shadow:0 3px 0 rgba(0,0,0,.18),0 6px 16px rgba(55,48,163,.24);transition:transform .12s,filter .12s}
+.btn:hover:not(:disabled){transform:translateY(-2px);filter:saturate(1.15)}
+.btn:active:not(:disabled){transform:translateY(1px)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ctl{font-size:.74em;padding:8px 12px;background:linear-gradient(135deg,var(--magenta),var(--acc))}
+.btn.alt{background:linear-gradient(135deg,var(--magenta),var(--violet))}
+.btn.warnb{background:linear-gradient(135deg,var(--amber-bright),var(--amber))}
+.btn.okb{background:linear-gradient(135deg,var(--teal),var(--lime))}
+.btn.ativo{outline:3px solid var(--magenta);outline-offset:2px}
+.topo{position:relative;overflow:hidden;background:linear-gradient(135deg,#312E81 0%,#3730A3 32%,#6D28D9 68%,#9D174D 100%);color:#fff;border-radius:20px;padding:24px;margin-top:46px;box-shadow:var(--shadow)}
+.topo::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(60% 80% at 88% 8%,rgba(165,180,252,.35),transparent 60%),radial-gradient(50% 70% at 4% 96%,rgba(245,158,11,.26),transparent 60%)}
+.topo h1{margin:0 0 6px;font-size:1.55em;position:relative}
+.topo .sub{opacity:.96;margin:0;position:relative}
+.glossa-inicial{position:relative;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:12px;padding:10px 13px;font-size:.8em;margin-top:13px}
+.chips{position:relative;margin-top:11px;display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.25);border-radius:99px;padding:3px 12px;font-size:.72em;font-weight:700}
+.badge-estudo{display:inline-block;margin-left:7px;background:linear-gradient(135deg,var(--magenta),var(--violet));color:#fff;border-radius:99px;padding:2px 8px;font-size:.7em;font-weight:800;vertical-align:middle}
+.hud{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0}
+.xpchip{background:var(--card);border:2px solid var(--line);border-radius:99px;padding:5px 15px;font-weight:800;box-shadow:var(--shadow)}
+.selos{display:flex;flex-wrap:wrap;gap:6px}
+.selo{border:2px solid var(--line);border-radius:99px;padding:3px 10px;font-size:.68em;color:var(--muted);background:var(--card)}
+.selo.ganho{border-color:var(--acc);color:var(--acc);font-weight:800;background:var(--acc-soft)}
+.trilha{display:flex;align-items:center;gap:8px;font-size:.72em;color:var(--muted)}
+.barra{width:170px;height:12px;border:2px solid var(--line);border-radius:99px;overflow:hidden;background:var(--card)}
+#barra-fill{height:100%;width:0;background:linear-gradient(90deg,var(--acc),var(--magenta),var(--teal));transition:width .5s}
+.tabs{display:flex;gap:4px;overflow-x:auto;position:sticky;top:0;z-index:60;background:linear-gradient(180deg,var(--bg) 70%,transparent);border-bottom:3px solid var(--line);padding:10px 8px 0}
+.tab{background:transparent;border:3px solid transparent;border-bottom:none;padding:9px 15px;border-radius:13px 13px 0 0;font-weight:700;color:var(--muted);white-space:nowrap;cursor:pointer;font-size:.85em}
+.tab:hover{color:var(--acc)}
+.tab.ativa{background:var(--card);border-color:var(--line);border-bottom:3px solid var(--card);color:var(--acc);position:relative;margin-bottom:-3px;z-index:2;box-shadow:0 -6px 18px rgba(23,26,64,.08)}
+.painel{background:var(--card);border:3px solid var(--line);border-top:none;border-radius:0 18px 18px 18px;padding:24px;box-shadow:var(--shadow);animation:sobe .45s ease both}
+@keyframes sobe{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.missao{background:linear-gradient(120deg,var(--acc-soft),transparent 72%);border-left:8px solid var(--acc);padding:14px 16px;border-radius:12px;margin:10px 0}
+.real li,.ferramentas li{margin:6px 0}
+.conceito{border:2px solid var(--line);border-left:8px solid var(--magenta);border-radius:14px;padding:15px;margin:13px 0;background:linear-gradient(180deg,var(--card),var(--bg2));box-shadow:var(--shadow);animation:sobe .5s ease both}
+.conceito:nth-child(2n){border-left-color:var(--teal)}
+.analogia{background:var(--warnbg);border-radius:10px;padding:8px 11px}
+.exreal{background:var(--infobg);border-radius:10px;padding:8px 11px}
+.instr{background:var(--warnbg);border:2px dashed var(--amber);border-radius:14px;padding:12px 16px;margin:12px 0}
+.instr-t{font-weight:900;margin:0 0 6px;letter-spacing:.02em}
+.previsao{font-weight:800;color:var(--amber)}
+.observar{background:var(--infobg);border:2px solid var(--info);border-radius:14px;padding:10px 14px;margin:10px 0}
+.legenda{background:var(--bg2);border:2px solid var(--line);border-radius:14px;padding:10px 14px;margin:10px 0;font-size:.86em}
+.legenda li{margin:4px 0}
+details{border:2px solid var(--line);border-radius:14px;padding:10px 15px;margin:12px 0}
+details summary{cursor:pointer;font-weight:800}
+details.roteiro{background:var(--roxo)}details.mito{background:var(--warm)}details.aprof{background:var(--infobg)}
+.dic dt{font-weight:800;margin-top:8px;color:var(--acc)}.dic dd{margin:2px 0 6px}
+.buscas{list-style:none;padding:0}.buscas li{margin:8px 0}
+.demo-top{margin:10px 0;display:flex;gap:8px;flex-wrap:wrap}
+.demo{border:3px solid var(--line);border-radius:16px;padding:15px;background:linear-gradient(180deg,var(--bg2),var(--card))}
+.ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(212px,1fr));gap:10px 14px;background:var(--card);border:2px solid var(--acc);border-radius:14px;padding:13px;margin-bottom:12px}
+.ctrls .full{grid-column:1/-1}
+.ctl{display:flex;flex-direction:column;gap:4px;font-size:.78em;font-weight:700;color:var(--muted)}
+.ctl b{color:var(--acc);font-size:1.05em}
+.ctl input[type=range]{width:100%;accent-color:var(--acc);height:22px}
+.ctl select,.ctl input[type=number],.ctl input[type=text]{border:2px solid var(--line);border-radius:9px;padding:7px;background:var(--card);font-size:1em;font-weight:600}
+.ctl.tog{flex-direction:row;align-items:center;gap:8px;background:var(--bg2);border:2px solid var(--line);border-radius:10px;padding:8px 10px;cursor:pointer}
+.ctl.tog input{width:20px;height:20px;accent-color:var(--magenta)}
+.ctl.botoes{flex-direction:row;flex-wrap:wrap;gap:7px;align-items:center}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(126px,1fr));gap:9px;margin:11px 0}
+.kpi{border:2px solid var(--line);border-radius:13px;background:var(--card);padding:9px 11px;text-align:center}
+.kpi .n{font-size:1.3em;font-weight:900;color:var(--acc);line-height:1.2}
+.kpi .l{font-size:.65em;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.kpi.ok .n{color:var(--ok)}.kpi.warn .n{color:var(--warn)}.kpi.bad .n{color:var(--danger)}.kpi.mag .n{color:var(--magenta)}.kpi.tea .n{color:var(--teal)}
+.mini{border-collapse:collapse;width:100%;background:var(--card);font-size:.82em}
+.mini th,.mini td{border:2px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+.mini th{background:var(--acc-soft);color:var(--acc-deep);font-size:.92em}
+body.dark .mini th{color:var(--acc)}
+.mini tr.ruim td{background:var(--dangerbg)}
+.tag{display:inline-block;border-radius:99px;padding:1px 9px;font-size:.78em;font-weight:800;border:1px solid;margin:1px 0}
+.t-ok{background:var(--okbg);color:var(--ok);border-color:var(--ok)}
+.t-warn{background:var(--warnbg);color:var(--warn);border-color:var(--warn)}
+.t-bad{background:var(--dangerbg);color:var(--danger);border-color:var(--danger)}
+.t-info{background:var(--infobg);color:var(--info);border-color:var(--info)}
+.fb{border-radius:12px;padding:12px;margin:10px 0;border:2px solid var(--line);background:var(--card);font-size:.94em}
+.fb-ok{background:var(--okbg);border-color:var(--ok);color:var(--ok)}
+.fb-err{background:var(--dangerbg);border-color:var(--danger);color:var(--danger)}
+.fb-info{background:var(--acc-soft);border-color:var(--acc);color:var(--ink)}
+.termos{background:linear-gradient(120deg,var(--acc-soft),var(--roxo));border:2px solid var(--acc);border-radius:14px;padding:12px 16px;margin:12px 0;font-size:.86em}
+.termos ul{margin:6px 0 0;padding-left:20px}
+.q{border:2px solid var(--line);border-radius:14px;padding:13px;margin:12px 0;background:var(--card)}
+.qp{margin:0 0 8px}
+.alt{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;padding:12px;border:2px solid var(--line);border-radius:11px;background:var(--card);cursor:pointer;font-size:.92em;margin:6px 0;transition:border-color .15s,transform .12s}
+.alt:hover:not(:disabled){border-color:var(--acc);transform:translateX(3px)}
+.alt:disabled{cursor:not-allowed}
+.alt.ok{background:var(--okbg);border-color:var(--ok);color:var(--ok);font-weight:700}
+.alt.err{background:var(--dangerbg);border-color:var(--danger);color:var(--danger);opacity:.9}
+.mark{font-weight:900;min-width:1.1em}
+.afirm{font-weight:800;font-style:italic}
+.mito-btns{display:flex;gap:10px;flex-wrap:wrap}
+.log{list-style:none;padding:0;margin:9px 0;font-size:.78em;max-height:210px;overflow-y:auto}
+.log li{border-left:4px solid var(--acc);background:var(--card);border-radius:0 9px 9px 0;padding:5px 10px;margin:4px 0;animation:sobe .3s ease both;font-family:ui-monospace,Consolas,monospace}
+.log li.ev-bad{border-left-color:var(--danger)}.log li.ev-ok{border-left-color:var(--ok)}.log li.ev-warn{border-left-color:var(--amber-bright)}
+.cola{border-collapse:collapse;width:100%;font-size:.88em}
+.cola th,.cola td{border:2px solid var(--line);padding:8px;text-align:left;vertical-align:top}
+.cola th{background:var(--acc-soft);width:220px;color:var(--acc-deep)}
+body.dark .cola th{color:var(--acc)}
+.chefao{border:3px solid var(--magenta);border-radius:16px;padding:16px;background:linear-gradient(135deg,var(--acc-soft),var(--roxo))}
+.chefao textarea{width:100%;font-size:.9em;border:2px solid var(--line);border-radius:11px;padding:10px;background:var(--card)}
+.semgab{font-size:.78em;color:var(--muted)}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(10px);background:linear-gradient(135deg,var(--acc),var(--magenta));color:#fff;padding:11px 20px;border-radius:99px;font-weight:800;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:200;max-width:92vw;text-align:center;box-shadow:var(--shadow)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+footer{font-size:.76em;color:var(--muted);margin-top:28px}
+.rod-bloco{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:14px 18px;margin:10px 0}
+.rod-bloco h4{margin:0 0 8px;color:var(--acc)}
+footer hr{border:none;border-top:2px solid var(--line);margin:16px 0}
+footer ul{margin:6px 0;padding-left:20px}footer .links{list-style:none;padding:0}footer .links li{margin:6px 0}
+/* componentes das demos */
+.codebox{background:#0B0E22;color:#DDE3FF;border:2px solid var(--acc-deep);border-radius:12px;padding:12px;font-family:ui-monospace,Consolas,Menlo,monospace;font-size:.8em;overflow-x:auto;white-space:pre-wrap;word-break:break-word}
+.codebox .trad{display:block;color:#FCD34D;font-family:system-ui,sans-serif;font-size:.95em;margin-top:7px}
+.codebox .hl{color:#F9A8D4}
+.er{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:10px 0}
+.ent{border:2px solid var(--acc);border-radius:12px;background:var(--card);overflow:hidden}
+.ent h5{margin:0;background:linear-gradient(135deg,var(--acc),var(--acc-deep));color:#fff;padding:6px 10px;font-size:.82em}
+.ent ul{list-style:none;margin:0;padding:7px 10px;font-size:.76em;font-family:ui-monospace,monospace}
+.ent li{padding:1px 0}
+.ent .pk{color:var(--magenta);font-weight:800}
+.ent .fk{color:var(--teal);font-weight:800}
+.rel{display:flex;align-items:center;gap:9px;flex-wrap:wrap;border:2px dashed var(--line);border-radius:11px;padding:8px 11px;margin:6px 0;background:var(--card);font-size:.8em;font-weight:800}
+.rel .card{background:var(--acc-soft);color:var(--acc);border:2px solid var(--acc);border-radius:99px;padding:2px 11px;font-family:ui-monospace,monospace}
+.rel .linha{flex:1;height:3px;background:linear-gradient(90deg,var(--acc),var(--magenta));min-width:36px;border-radius:2px}
+.bars{margin:10px 0}
+.bl{display:grid;grid-template-columns:172px 1fr 112px;gap:9px;align-items:center;margin:6px 0;font-size:.8em;font-weight:700}
+.bt{height:24px;border:2px solid var(--line);border-radius:8px;background:var(--card);overflow:hidden}
+.bi{height:100%;transition:width .45s ease;border-radius:6px 0 0 6px}
+.medidor{height:26px;border:2px solid var(--line);border-radius:99px;overflow:hidden;background:var(--card);margin:8px 0}
+.medidor div{height:100%;background:linear-gradient(90deg,var(--danger),var(--amber-bright),var(--ok));transition:width .5s}
+.duas{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.painelzinho{border:2px solid var(--line);border-radius:12px;padding:10px;background:var(--card)}
+.painelzinho h5{margin:0 0 7px;font-size:.78em;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.dirty{background:var(--warnbg);border-color:var(--amber);color:var(--amber);border-radius:6px;padding:0 4px;font-weight:800}
+.demo-status{font-weight:800;color:var(--magenta)}
+.cn-passo{border-top:2px dashed var(--line);padding-top:10px;margin-top:10px}
+@media (max-width:760px){
+  .painel{padding:15px}.topo{margin-top:56px;padding:18px}
+  .bl{grid-template-columns:112px 1fr 86px;font-size:.72em}
+  .cola th{width:126px}.ctrls{grid-template-columns:1fr}.duas{grid-template-columns:1fr}
+  .controles{top:6px;right:6px}
+}
+</style>
+</head>
+<body>
+<div class="controles">
+  <button type="button" id="btn-modo" class="btn ctl" aria-pressed="false">🎤 Apresentação</button>
+  <button type="button" id="btn-dark" class="btn ctl" aria-pressed="false">🌙 Escuro</button>
+</div>
+<div class="wrap">
+  <header class="topo">
+    <h1>🗺️ Desenvolvimento Back-End</h1>
+    <p class="sub">Aula 7 — Modelagem de Dados e Frameworks ORM · Unidade 3 · págs. 26–48</p>
+    <div class="glossa-inicial">🔑 <strong>Antes de começar:</strong> modelagem de dados (o desenho de como a informação será guardada: quais coisas existem e como se ligam) · ORM (do inglês Object-Relational Mapping; mapeamento objeto-relacional: a camada que traduz objetos da linguagem de programação para linhas de tabelas) · back-end (a parte do sistema que roda no servidor e conversa com o banco).</div>
+    <div class="chips"><span class="chip">⏱️ Trilha de sala: ~30 min (abas 1–5)</span><span class="chip">📖 Aba 6 para estudar em casa (vale XP e selo)</span><span class="chip">🧭 + aba Revisão com Chefão</span><span class="chip">📴 Arquivo único · 100% offline</span></div>
+  </header>
+
+  <div class="hud" aria-label="Progresso do aluno">
+    <span class="xpchip">⭐ XP: <strong id="xp">0</strong></span>
+    <span id="selos" class="selos"></span>
+    <span class="trilha"><span class="barra"><span id="barra-fill"></span></span><span id="trilha-txt"></span></span>
+  </div>
+
+  <nav aria-label="Abas da aula"><div class="tabs" id="tabs" role="tablist" aria-label="Abas da aula"></div></nav>
+  <main id="paineis"></main>
+
+  <footer>
+    <div class="rod-bloco">
+      <h4>📋 FICHA TÉCNICA DA AULA</h4>
+      <p>Desenvolvimento Back-End — Aula 7, Unidade 3, págs. 26–48 · Gerado em 18/11/2026 · 6 abas (5 de sala + 1 de estudo em casa) + Revisão · 18 perguntas · 6 demos · cor #3730A3</p>
+    </div>
+    <hr>
+    <div class="rod-bloco">
+      <h4>🪄 SOBRE O HTMLearning · v2.17 (23/10/2026)</h4>
+      <p>Transformar o sumário de qualquer disciplina em uma classe interativa em HTML único e offline, com previsão antes do clique, tentativa e erro guiado e exemplos reais.</p>
+      <ul>
+        <li>O que é: metodologia e arquitetura de prompts que converte sumários em aulas interativas em minutos, com IAs gratuitas.</li>
+        <li>O que entrega: 5 a 7 abas + Revisão, simulações com previsão, quiz com retry sem revelar gabarito, linguagem plana, Modos Apresentação/Leitura.</li>
+        <li>Por que é inclusivo: um único .html leve, 100% offline, roda em PC e celular e viaja em pen drive para escolas desconectadas ou áreas rurais.</li>
+      </ul>
+      <p>Idealizador do projeto: Professor Wellington Dimas da Cruz</p>
+      <p>Apoiadora do projeto: Prof.ª Dr.ª Mariella Berger Andrade (IFES / CEFOR)</p>
+      <p><strong>Contatos e links do projeto:</strong></p>
+      <ul class="links">
+        <li>E-mail do idealizador: <a href="mailto:cloud.ai-generative@outlook.com">cloud.ai-generative@outlook.com</a></li>
+        <li>Repositório GitHub do idealizador: <a href="https://github.com/cloud-ai-Generative" target="_blank" rel="noopener">github.com/cloud-ai-Generative</a></li>
+        <li>Currículo Lattes do idealizador: <a href="https://lattes.cnpq.br/6801791839011321" target="_blank" rel="noopener">lattes.cnpq.br/6801791839011321</a></li>
+        <li>Currículo Lattes da apoiadora: <a href="https://lattes.cnpq.br/3929645439848570" target="_blank" rel="noopener">lattes.cnpq.br/3929645439848570</a></li>
+        <li>Site oficial do projeto: <a href="https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html" target="_blank" rel="noopener">https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html</a></li>
+      </ul>
+    </div>
+  </footer>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* ================= DADOS DA AULA ================= */
+var DADOS=[
+{rotulo:"1 · Do mundo real ao modelo",titulo:"Aba 1 — Modelagem: entidades, relacionamentos e cardinalidade",
+narrativa:"🎯 Missão: transformar frases do negócio em desenho de dados. O caminho tem três passos: modelo conceitual (as coisas que existem e como se ligam), modelo lógico (tabelas, colunas e chaves) e modelo físico (tipos e índices no banco escolhido). As peças do desenho são entidade (a coisa: cliente, pedido), atributo (a característica: nome, data) e relacionamento com sua cardinalidade (quantos de um lado se ligam a quantos do outro).",
+mundoReal:["Um marketplace como o Mercado Livre (site de compras e vendas da América Latina) separa cliente, pedido e produto: um pedido contém vários itens, e cada item aponta para um produto — sem essa separação não há como guardar quantidade e preço de cada item.","Sistemas de agenda de clínicas modelam paciente, consulta e médico: a consulta liga um paciente a um médico numa data. Cardinalidade mal definida permitiria duas consultas do mesmo médico no mesmo horário."],
+ferramentas:["dbdiagram.io (site gratuito para desenhar modelos entidade-relacionamento e gerar o SQL das tabelas).","MySQL Workbench (programa visual da Oracle, empresa americana de software, para desenhar e administrar bancos MySQL).","diagrams.net (ferramenta gratuita de diagramas, também conhecida como draw.io)."],
+dicionario:[{t:"Entidade",d:"A coisa sobre a qual guardamos dados: cliente, pedido, produto. Vira tabela no modelo lógico."},{t:"Atributo",d:"A característica da entidade: nome, data, preço. Vira coluna."},{t:"Relacionamento",d:"A ligação entre entidades: o cliente FAZ o pedido; o pedido CONTÉM o produto."},{t:"Cardinalidade",d:"Quantos de cada lado participam: 1:1 (um para um), 1:N (um para muitos), N:N (muitos para muitos)."},{t:"Chave estrangeira (FK)",d:"Coluna que guarda a chave de outra tabela, materializando o relacionamento."},{t:"Tabela associativa",d:"A tabela do meio que resolve um N:N e pode guardar atributos do vínculo, como quantidade e preço."}],
+conceitos:[{titulo:"Da frase ao desenho",texto:"Leia o negócio e sublinhe os substantivos: eles viram entidades. Os verbos entre eles viram relacionamentos. 'Um cliente faz vários pedidos; cada pedido contém vários produtos' já entrega três entidades e dois relacionamentos. Desenhar antes de criar tabela evita o retrabalho caro: mudar coluna em produção com milhões de linhas é operação de risco, não clique.",analogia:"a planta da casa antes do tijolo: decidir onde ficam as portas no papel custa um lápis; decidir depois de levantar a parede custa demolição.",exemploReal:"Ferramentas como o dbdiagram.io (site gratuito de modelagem) existem para essa etapa: você escreve as entidades e relações num texto simples e o desenho com as tabelas e chaves aparece ao lado."},
+{titulo:"Cardinalidade decide a estrutura",texto:"Um relacionamento 1:N vira uma chave estrangeira no lado N: o pedido guarda o cliente_id. Já um N:N não cabe numa coluna: exige uma tabela associativa com as duas chaves — e é nela que moram os atributos do vínculo, como quantidade e preço_unitario. Tentar guardar 'vários produtos' numa coluna só, separados por vírgula, destrói a possibilidade de buscar, somar e indexar.",analogia:"a lista de presença liga aluno e turma: ela é uma tabela própria, com data e nota — não dá para escrever 'turmas: 1,2,3' dentro da ficha do aluno.",exemploReal:"A tabela de itens do pedido é o caso clássico: em lojas como o Mercado Livre (site de compras da América Latina), é ela que guarda quantas unidades de cada produto e por qual preço naquele momento."}],
+roteiroDemo:{passo0:"Antes de clicar, preveja: se você ligar Pedido e Produto como 1:N em vez de N:N, o que o carrinho de compras perde?",passos:[{acao:"Mude a cardinalidade das duas relações e observe as tabelas geradas.",ve:"Um N:N cria automaticamente a tabela associativa com as duas chaves; o 1:N cria apenas uma coluna de chave estrangeira.",significa:"A cardinalidade não é enfeite do diagrama: ela decide quantas tabelas o modelo terá."},{acao:"Desligue 'atributos no vínculo' com o N:N ativo e leia o painel de consequências.",ve:"A tabela associativa fica só com as chaves e o aviso sobre quantidade e preço aparece.",significa:"O vínculo também tem informação própria — sem ela o pedido não sabe quantos itens nem por quanto."}]},
+demo:{tipo:"livre-modelo",config:{titulo:"Monte o modelo: cardinalidade → tabelas geradas",observar:"cada mudança de cardinalidade muda o número de tabelas e de chaves estrangeiras; o N:N sempre cria a tabela do meio, e é nela que quantidade e preço passam a existir.",legenda:["1:1 = um para um · 1:N = um para muitos · N:N = muitos para muitos.","PK = primary key (chave primária, o código único da linha) · FK = foreign key (chave estrangeira, aponta para outra tabela).","Tabela associativa = a tabela do meio de um N:N; pode ter atributos próprios."],
+entidades:[{nome:"Cliente",cols:[["id","pk"],["nome",""],["email",""]]},{nome:"Pedido",cols:[["id","pk"],["data",""]]},{nome:"Produto",cols:[["id","pk"],["nome",""],["preco",""]]}],
+relacoes:[{chave:"cp",de:"Cliente",para:"Pedido",padrao:"1N"},{chave:"pp",de:"Pedido",para:"Produto",padrao:"NN"}]}},
+quiz:{termos:["entidade: a coisa que vira tabela (cliente, pedido)","atributo: a característica que vira coluna","cardinalidade: 1:1, 1:N ou N:N — quantos de cada lado se ligam","chave estrangeira (FK): coluna que guarda a chave de outra tabela","tabela associativa: tabela do meio que resolve o N:N","modelo lógico: o desenho em tabelas, colunas e chaves"],
+perguntas:[{q:"Pedido e Produto se relacionam como muitos-para-muitos (N:N). Como isso vira tabela?",alts:[{t:"Cria-se uma tabela associativa com as chaves dos dois lados",ok:true,fb:"Isso! É a tabela de itens do pedido: pedido_id + produto_id, e é nela que quantidade e preço_unitario moram — como nos marketplaces do tipo Mercado Livre (site de compras da América Latina)."},{t:"Guarda-se uma lista de ids de produto numa coluna do pedido",fb:"Lista dentro de coluna quebra a primeira forma normal: não dá para buscar por produto, somar quantidades nem criar índice. O N:N exige uma tabela do meio."},{t:"Copia-se o produto inteiro para dentro de cada pedido",fb:"Copiar o produto inteiro duplica nome e descrição em milhares de linhas e cria anomalia de atualização. O vínculo precisa de chaves, não de cópias."}]},
+{q:"Num relacionamento 1:N entre Cliente e Pedido, onde fica a chave estrangeira?",alts:[{t:"No lado N: o pedido guarda o cliente_id",ok:true,fb:"Exato! Cada pedido aponta para um cliente; um cliente tem vários pedidos. Colocar a chave no lado 1 obrigaria o cliente a guardar uma lista de pedidos."},{t:"No lado 1: o cliente guarda o pedido_id",fb:"Isso limitaria o cliente a um pedido só (ou exigiria uma lista na coluna). A chave sempre vai para o lado que tem 'muitos'."},{t:"Nos dois lados, obrigatoriamente",fb:"Colocar dos dois lados cria redundância e risco de contradição. Num 1:N basta a chave no lado N; o outro lado é consultado por junção."}]},
+{q:"Por que quantidade e preço_unitario ficam na tabela associativa do pedido?",alts:[{t:"Porque são fatos do vínculo entre aquele pedido e aquele produto, não do produto em si",ok:true,fb:"Isso! O preço do produto muda com o tempo; o preço praticado naquele pedido é um fato histórico do item — por isso mora na tabela do meio."},{t:"Porque a tabela produto não aceita colunas numéricas",fb:"Produto aceita números normalmente (o preço de catálogo, por exemplo). A questão é de significado: o preço praticado no pedido pertence ao item, não ao catálogo."},{t:"Porque assim o banco ocupa menos espaço",fb:"Economia de espaço é consequência da boa modelagem, não a razão. A razão é semântica: cada fato deve morar onde ele acontece."}]}]},
+aprofundar:{google:"modelagem de dados entidade relacionamento cardinalidade",scholar:"modelagem conceitual de dados em sistemas de informação",youtube:"modelo entidade relacionamento cardinalidade"},
+mitoOuVerdade:{afirmacao:"Um relacionamento muitos-para-muitos pode ser guardado numa única coluna com a lista de ids.",verdade:false,explicacao:"É mito. Lista dentro de coluna viola a primeira forma normal e impede busca por item, soma de quantidades, junções e índices. O N:N exige tabela associativa — a tabela de itens do pedido usada por lojas como o Mercado Livre (site de compras da América Latina) existe exatamente por isso, e ainda guarda quantidade e preço do vínculo."}},
+
+{rotulo:"2 · Normalização e índices",titulo:"Aba 2 — Técnicas de modelagem para eficiência: normalização e índices",
+narrativa:"🎯 Missão: guardar cada fato uma única vez e encontrar esse fato rápido. Normalização é organizar as tabelas para eliminar repetição: 1FN (primeira forma normal: nada de listas dentro de coluna), 2FN (nada que dependa só de parte da chave) e 3FN (nada que dependa de outra coluna que não é a chave). Índice é a estrutura que acelera a busca — no PostgreSQL e no MySQL, geralmente uma B-tree (árvore balanceada: estrutura que mantém as chaves em ordem para descer direto até o valor).",
+mundoReal:["Um cadastro que repete o endereço do cliente em cada pedido cria anomalia de atualização: o cliente muda de cidade e é preciso corrigir milhares de linhas — se o processo falha no meio, o banco fica contraditório.","No PostgreSQL (banco de dados gratuito e de código aberto mantido por uma comunidade mundial), buscar por cliente_id sem índice faz varredura completa (lê a tabela inteira); com índice B-tree o banco desce direto até o registro: em milhões de linhas, a diferença vai de segundos para milissegundos."],
+ferramentas:["EXPLAIN e EXPLAIN ANALYZE (comandos do PostgreSQL e do MySQL que mostram o plano de execução da consulta).","pgAdmin e MySQL Workbench (painéis visuais que desenham o plano e destacam varreduras completas)."],
+dicionario:[{t:"Normalização",d:"Organizar as tabelas para que cada fato seja guardado uma única vez, no lugar certo."},{t:"1FN",d:"Primeira forma normal: colunas com valor atômico (um valor por célula), sem listas nem grupos repetidos."},{t:"2FN",d:"Segunda forma normal: nenhum atributo depende só de PARTE de uma chave composta."},{t:"3FN",d:"Terceira forma normal: nenhum atributo depende de outra coluna que não seja a chave (sem dependência transitiva)."},{t:"Anomalia de atualização",d:"O mesmo fato em várias linhas: atualizar exige mexer em todas, e uma falha deixa o banco contraditório."},{t:"Índice",d:"Estrutura auxiliar que acelera a busca por uma coluna, ao custo de espaço e de escrita mais lenta."},{t:"B-tree",d:"Árvore balanceada: estrutura ordenada que permite chegar ao valor em poucos passos, como um sumário."},{t:"Desnormalização",d:"Duplicar de propósito, com critério, para acelerar consultas específicas (comum em relatórios)."}],
+conceitos:[{titulo:"Normalizar é guardar cada fato uma vez",texto:"Se o nome e a cidade do cliente aparecem em cada pedido, esse fato está guardado dezenas de vezes. A 3FN manda movê-lo para a tabela de clientes e deixar no pedido apenas a chave. O ganho não é só espaço: é consistência — existe um único lugar para corrigir, e nenhuma consulta pode encontrar duas versões do mesmo fato.",analogia:"a ficha do cliente fica no arquivo de clientes; o pedido só carrega o número da ficha. Mudou o endereço, corrige-se uma folha, não mil.",exemploReal:"Em sistemas de vendas, o histórico do preço praticado fica no item do pedido (fato do vínculo), enquanto nome e descrição ficam no produto — separar o que é histórico do que é cadastro é decisão de normalização."},
+{titulo:"Índice: o sumário do livro",texto:"Sem índice, o banco lê a tabela inteira para achar uma linha (varredura completa). Com índice, ele desce por uma árvore ordenada e chega em poucos passos. Mas índice não é grátis: cada inserção e atualização precisa manter a árvore, e o índice ocupa disco. Por isso se indexa o que é muito consultado — chaves estrangeiras, campos de filtro e ordenação — e não tudo. Em relatórios pesados, às vezes vale desnormalizar de propósito.",analogia:"o sumário remissivo de um livro grosso: achar o assunto vira questão de segundos, mas alguém precisa manter o sumário atualizado a cada nova edição.",exemploReal:"O comando EXPLAIN ANALYZE do PostgreSQL (banco aberto mantido por comunidade mundial) mostra o plano real: 'Seq Scan' indica varredura completa; 'Index Scan' indica que o índice foi usado — é a primeira ferramenta de diagnóstico de lentidão."}],
+roteiroDemo:{passo0:"Antes de clicar, preveja: ao aplicar a 3FN, quantas linhas precisam mudar quando o cliente troca de cidade?",passos:[{acao:"Aplique 1FN, 2FN e 3FN em sequência e observe as tabelas e a redundância.",ve:"A tabela bruta se divide em várias; o percentual de dado repetido despenca.",significa:"Cada forma normal remove um tipo de repetição — e com ela um tipo de anomalia."},{acao:"Clique em 'cliente mudou de cidade', depois mexa no tamanho da tabela e ligue o índice.",ve:"O número de linhas afetadas cai para 1; com índice, as leituras da consulta despencam.",significa:"Normalização protege a consistência; índice protege o tempo de resposta. São ganhos diferentes."}]},
+demo:{tipo:"livre-normal",config:{titulo:"Laboratório: da tabela bruta à 3FN, com e sem índice",observar:"a redundância cai a cada forma normal e a anomalia de atualização some na 3FN; o índice não muda a redundância — ele muda quantas linhas o banco precisa LER para responder.",legenda:["1FN = sem listas na célula · 2FN = sem dependência parcial da chave · 3FN = sem dependência transitiva.","Varredura completa (Seq Scan) = o banco lê todas as linhas · Index Scan = desce pela árvore até o alvo.","Leituras com índice ≈ log2(número de linhas) + alguns passos — por isso cresce muito devagar."],
+estagios:[{rot:"Tabela bruta (sem normalizar)",tabs:["pedidos_brutos"],red:62},{rot:"1FN aplicada",tabs:["pedidos","itens"],red:38},{rot:"2FN aplicada",tabs:["pedidos","itens","produtos"],red:20},{rot:"3FN aplicada",tabs:["clientes","pedidos","itens","produtos"],red:3}]}},
+quiz:{termos:["1FN: valores atômicos, sem listas dentro de coluna","2FN: sem atributo dependendo de parte de uma chave composta","3FN: sem atributo dependendo de coluna que não é a chave","anomalia de atualização: o mesmo fato em várias linhas exige corrigir todas","índice: estrutura que acelera a busca, custando espaço e escrita","varredura completa: o banco lê a tabela inteira para responder","B-tree: árvore balanceada usada pelos índices"],
+perguntas:[{q:"Uma coluna telefones guarda '9999-1111, 9888-2222'. Qual forma normal isso viola?",alts:[{t:"A 1FN, que exige um valor atômico por célula",ok:true,fb:"Isso! Lista dentro de coluna impede buscar por um telefone específico e indexar. O caminho é uma tabela de telefones ligada ao cliente."},{t:"A 3FN, por dependência transitiva",fb:"Dependência transitiva é quando uma coluna depende de outra que não é a chave. Aqui o problema é anterior: há vários valores numa célula só, o que é assunto da 1FN."},{t:"Nenhuma: listas em texto são aceitas em qualquer forma normal",fb:"Não são: a 1FN exige atomicidade. Guardar lista em texto é justamente o que a primeira forma normal proíbe."}]},
+{q:"Qual é o custo de criar muitos índices numa tabela?",alts:[{t:"Escritas mais lentas e mais espaço em disco, porque cada índice precisa ser mantido",ok:true,fb:"Exato! Cada inserção atualiza todas as árvores. É o sumário do livro: ótimo para achar, mas alguém precisa mantê-lo em dia a cada edição."},{t:"Nenhum: índice só traz benefício",fb:"Índice acelera leitura e cobra na escrita e no armazenamento. Tabela com muitos índices e muita inserção fica lenta justamente por isso."},{t:"As consultas passam a devolver resultados errados",fb:"Índice não altera resultado: altera o caminho para chegar a ele. O plano muda (Index Scan em vez de varredura completa), o conteúdo não."}]},
+{q:"Guardar o nome do cliente em cada linha de pedido, podendo buscá-lo pela chave, viola qual forma normal?",alts:[{t:"A 3FN: o nome depende do cliente, não da chave do pedido",ok:true,fb:"Isso! É dependência transitiva: pedido → cliente → nome. O nome pertence à tabela de clientes; no pedido fica só a chave."},{t:"A 1FN, porque o nome tem várias palavras",fb:"Várias palavras continuam sendo um valor atômico de texto. O problema aqui é de dependência: o nome depende do cliente, não do pedido."},{t:"Nenhuma, desde que o nome seja curto",fb:"Tamanho do texto não tem relação com forma normal. O critério é onde o fato depende: nome do cliente depende do cliente, então mora na tabela dele."}]}]},
+aprofundar:{google:"normalização de banco de dados e índices",scholar:"normalização e desempenho em bancos de dados relacionais",youtube:"normalização 1FN 2FN 3FN e índices"},
+mitoOuVerdade:{afirmacao:"Quanto mais índices, melhor o desempenho do banco.",verdade:false,explicacao:"É mito. Índice acelera leitura, mas cada inserção, atualização e remoção precisa manter todas as árvores, além do espaço em disco. Tabelas com escrita intensa e índices demais ficam lentas. A prática é indexar o que é muito filtrado, ordenado ou usado em junções — e conferir com EXPLAIN ANALYZE no PostgreSQL (banco aberto mantido por comunidade mundial) se o índice está mesmo sendo usado."}},
+
+{rotulo:"3 · Integridade",titulo:"Aba 3 — Integridade dos sistemas back-end: restrições e transações",
+narrativa:"🎯 Missão: fazer o banco garantir as regras mesmo quando o programa erra. Restrição (em inglês, constraint: uma regra declarada na tabela) é o porteiro que não se distrai: chave primária, chave estrangeira, UNIQUE (não repete), NOT NULL (não pode ficar vazio) e CHECK (condição que o valor precisa obedecer). Transação é o pacote tudo-ou-nada: ou todas as operações acontecem, ou nenhuma acontece — o famoso ACID (do inglês Atomicity, Consistency, Isolation, Durability; atomicidade, consistência, isolamento e durabilidade).",
+mundoReal:["Dois caixas eletrônicos sacando da mesma conta: sem transação, um débito pode ser gravado sem a operação correspondente. Sistemas de bancos como o Nubank (banco digital brasileiro) usam transações para que a transferência aconteça inteira ou não aconteça.","O MySQL com o motor InnoDB (o motor padrão do MySQL, que implementa transações e chaves estrangeiras) recusa um pedido que aponta para um cliente inexistente: a restrição protege o dado mesmo quando o código da aplicação falha."],
+ferramentas:["InnoDB (motor padrão do MySQL, banco gratuito mantido pela Oracle, com transações e chaves estrangeiras).","PostgreSQL (banco de dados gratuito e aberto com suporte completo a restrições, transações e níveis de isolamento)."],
+dicionario:[{t:"Integridade",d:"Garantia de que os dados obedecem às regras do negócio e permanecem coerentes ao longo do tempo."},{t:"Restrição (constraint)",d:"Regra declarada na tabela que o banco faz valer sozinho: PK, FK, UNIQUE, NOT NULL, CHECK."},{t:"Chave primária (PK)",d:"Identifica a linha e não se repete nem fica vazia."},{t:"Chave estrangeira (FK)",d:"Exige que o valor exista na tabela apontada: impede pedido órfão."},{t:"Transação",d:"Bloco de operações tratado como uma unidade: confirma tudo (commit) ou desfaz tudo (rollback)."},{t:"ACID",d:"Atomicidade (tudo ou nada), consistência (regras respeitadas), isolamento (uma transação não atrapalha outra), durabilidade (o que confirmou, ficou)."},{t:"Rollback",d:"O desfazer da transação: o banco volta ao estado anterior como se nada tivesse acontecido."}],
+conceitos:[{titulo:"Restrições: a regra mora no banco, não só no código",texto:"Validar no back-end é necessário, mas insuficiente: dados também entram por importação, por script de correção, por outro serviço ou por um bug futuro. Quando a regra está declarada na tabela, o banco recusa a operação venha de onde vier. Pedido sem cliente, e-mail duplicado, quantidade negativa: cada um tem uma restrição própria que devolve erro em vez de gravar lixo.",analogia:"a catraca do prédio não deixa entrar mesmo se o porteiro se distrair: a regra é física, não depende da atenção de alguém.",exemploReal:"O InnoDB (motor padrão do MySQL, banco da Oracle) recusa a inserção de um pedido com cliente_id inexistente e devolve erro de chave estrangeira — o dado inválido nunca chega ao disco."},
+{titulo:"Transação: tudo ou nada",texto:"Debitar o saldo e criar o pedido são duas gravações, mas um único fato de negócio. Envolvidas numa transação, ou as duas confirmam (commit) ou as duas são desfeitas (rollback) se algo falhar no meio. É o A do ACID: atomicidade. Sem isso, uma queda de energia entre os dois passos deixa o dinheiro debitado e o pedido inexistente — o pior tipo de bug, porque o dado fica plausível mas errado.",analogia:"a transferência no caixa eletrônico: se a conexão cai no meio, o banco desfaz tudo e o saldo volta — você não fica com o dinheiro debitado e sem destinatário.",exemploReal:"Operações de Pix (o meio de pagamento instantâneo do Banco Central do Brasil) em bancos como o Nubank (banco digital brasileiro) são transacionais: o débito e o crédito fazem parte do mesmo pacote lógico."}],
+roteiroDemo:{passo0:"Antes de clicar, preveja: com a chave estrangeira DESLIGADA, o que acontece ao inserir um pedido para um cliente que não existe?",passos:[{acao:"Tente as operações proibidas com as restrições ligadas e depois desligue uma delas.",ve:"Ligada, a operação é recusada com o nome da restrição; desligada, o dado inválido entra e a integridade cai.",significa:"A regra no banco é a última linha de defesa — e a única que vale para todos os caminhos de entrada."},{acao:"Execute a transferência com e sem transação, simulando uma queda no meio.",ve:"Com transação, o rollback devolve o saldo; sem transação, o dinheiro some sem pedido criado.",significa:"Atomicidade é o que impede o estado intermediário plausível-porém-errado."}]},
+demo:{tipo:"livre-integridade",config:{titulo:"Banco com e sem regras: restrições, violações e transação",observar:"desligar uma restrição não muda o formulário — muda o que o banco aceita gravar; e a queda no meio da transferência só é inofensiva quando há transação para desfazer.",legenda:["PK = chave primária · FK = chave estrangeira · UNIQUE = não repete · NOT NULL = não pode ser vazio · CHECK = condição obrigatória.","commit = confirmar tudo · rollback = desfazer tudo.","Saldo e pedido são duas gravações de um único fato de negócio."],
+restricoes:[{chave:"pk",rot:"🔑 PRIMARY KEY (código único)"},{chave:"fk",rot:"🔗 FOREIGN KEY (cliente deve existir)"},{chave:"uq",rot:"🚫 UNIQUE (e-mail não repete)"},{chave:"nn",rot:"❗ NOT NULL (cliente obrigatório)"},{chave:"ck",rot:"✅ CHECK (quantidade > 0)"}]}},
+quiz:{termos:["restrição (constraint): regra declarada na tabela que o banco faz valer","chave estrangeira (FK): exige que o valor exista na tabela apontada","UNIQUE: proíbe valores repetidos na coluna","CHECK: condição que o valor precisa obedecer","NOT NULL: proíbe valor vazio","transação: bloco tudo-ou-nada","rollback: desfazer a transação inteira","ACID: atomicidade, consistência, isolamento e durabilidade"],
+perguntas:[{q:"Qual restrição impede que um pedido aponte para um cliente que não existe?",alts:[{t:"A chave estrangeira (FOREIGN KEY) sobre cliente_id",ok:true,fb:"Isso! O InnoDB (motor padrão do MySQL, banco da Oracle) recusa a inserção e devolve erro: o pedido órfão nunca chega ao disco."},{t:"O NOT NULL sobre cliente_id",fb:"NOT NULL só proíbe o vazio. Um cliente_id preenchido com 999 (inexistente) passaria pelo NOT NULL — quem verifica a existência é a chave estrangeira."},{t:"O UNIQUE sobre cliente_id",fb:"UNIQUE proíbe repetição: impediria o cliente de ter dois pedidos, o que é errado no negócio. Existência do cliente é assunto da chave estrangeira."}]},
+{q:"Onde declarar a regra 'quantidade do item deve ser maior que zero'?",alts:[{t:"Num CHECK da tabela de itens, além da validação no back-end",ok:true,fb:"Exato! A validação no código dá mensagem amigável; o CHECK garante a regra para qualquer caminho de entrada — importação, script ou outro serviço."},{t:"Só no back-end, porque o banco não sabe regras de negócio",fb:"O banco sabe exatamente esse tipo de regra: CHECK (quantidade > 0). Confiar só no código deixa a porta aberta para scripts e importações."},{t:"Num índice sobre a coluna quantidade",fb:"Índice acelera busca, não valida valor. Quantidade negativa entraria normalmente numa coluna indexada."}]},
+{q:"Uma transferência debita o saldo e depois cria o pedido, mas o servidor cai entre os dois passos. Com transação, o que acontece?",alts:[{t:"O rollback desfaz o débito: nada foi confirmado, o saldo volta ao original",ok:true,fb:"Isso! É o A do ACID (atomicidade). O mesmo princípio protege um Pix (pagamento instantâneo do Banco Central do Brasil) em bancos como o Nubank (banco digital brasileiro)."},{t:"O débito fica gravado e o pedido é criado depois, automaticamente",fb:"Nada é retomado sozinho: sem commit, a transação é desfeita. O que fica gravado pela metade é justamente o cenário SEM transação."},{t:"O banco apaga as duas tabelas para evitar inconsistência",fb:"Rollback desfaz as operações da transação, não apaga tabelas. O dado anterior permanece intacto — esse é exatamente o objetivo."}]}]},
+aprofundar:{google:"restrições de integridade e transações em banco de dados",scholar:"integridade de dados e propriedades ACID",youtube:"constraints e transações ACID"},
+mitoOuVerdade:{afirmacao:"Se o back-end valida os dados, as restrições no banco são desnecessárias.",verdade:false,explicacao:"É mito. O back-end é só um dos caminhos de entrada: há importações em lote, scripts de correção, outros serviços e bugs futuros. A restrição declarada na tabela vale para todos eles. É por isso que o InnoDB (motor padrão do MySQL, banco da Oracle) e o PostgreSQL (banco aberto) oferecem chave estrangeira, UNIQUE, NOT NULL e CHECK como parte do esquema, não como enfeite."}},
+
+{rotulo:"4 · ORM: objeto ↔ tabela",titulo:"Aba 4 — Frameworks ORM: o tradutor entre objeto e tabela",
+narrativa:"🎯 Missão: usar um ORM (do inglês Object-Relational Mapping; mapeamento objeto-relacional) para conversar com o banco sem escrever SQL à mão o tempo todo. A classe vira tabela, o atributo vira coluna e o objeto vira linha. Além de traduzir, o ORM acompanha o que mudou — a unidade de trabalho (em inglês, unit of work: a lista de alterações pendentes que serão enviadas de uma vez no commit).",
+mundoReal:["O Django (framework web de Python, a linguagem criada por Guido van Rossum, programador holandês) permite escrever Cliente.objects.filter(cidade='Recife') em vez de SQL à mão: o framework gera a consulta e devolve objetos prontos.","O Hibernate (biblioteca de Java, linguagem mantida pela Oracle, que mapeia objetos para tabelas) é usado em sistemas corporativos há duas décadas: ele observa quais objetos mudaram e gera os comandos de atualização no momento do commit."],
+ferramentas:["SQLAlchemy (biblioteca de Python que mapeia objetos para tabelas e gera SQL).","Sequelize (biblioteca de Node.js — o ambiente que roda JavaScript fora do navegador — para bancos relacionais).","Hibernate (biblioteca de Java que mapeia objetos para tabelas) e Entity Framework Core (o ORM da Microsoft para a plataforma .NET)."],
+dicionario:[{t:"ORM",d:"Do inglês Object-Relational Mapping; camada que traduz objetos da linguagem para linhas de tabelas e vice-versa."},{t:"Entidade mapeada",d:"A classe que representa uma tabela; cada instância representa uma linha."},{t:"CRUD",d:"Do inglês Create, Read, Update, Delete; as quatro operações básicas: criar, ler, atualizar e apagar."},{t:"Unidade de trabalho",d:"O conjunto de mudanças pendentes que o ORM envia ao banco de uma vez no commit."},{t:"Mapa de identidade",d:"Do inglês identity map: dentro da mesma sessão, a mesma linha do banco devolve o MESMO objeto na memória."},{t:"SQL gerado",d:"O comando que o ORM monta e envia ao banco — pode e deve ser inspecionado."}],
+conceitos:[{titulo:"O tradutor entre dois mundos",texto:"O objeto vive na memória, tem identidade e métodos; a linha vive no disco, tem chave e colunas. O ORM faz a ponte nos dois sentidos: transforma o objeto em INSERT e UPDATE, e transforma o resultado de um SELECT em objetos com atributos preenchidos. Isso remove o trabalho repetitivo de escrever conversões — mas não remove o banco: por baixo, continua havendo SQL.",analogia:"o intérprete numa reunião de dois idiomas: você fala a sua língua, o banco entende a dele, e a conversa flui — mas o que é dito continua sendo dito.",exemploReal:"No Django (framework web de Python), o método save() de um objeto decide sozinho entre INSERT e UPDATE conforme o objeto já exista ou não no banco."},
+{titulo:"O que o ORM faz além de traduzir",texto:"Três serviços silenciosos: acompanhamento de mudanças (só os campos alterados viram UPDATE), mapa de identidade (buscar a mesma linha duas vezes na sessão devolve o mesmo objeto, evitando cópias divergentes) e portabilidade (o mesmo código funciona em PostgreSQL e MySQL, com o dialeto ajustado). O preço é a opacidade: se você não olhar o SQL gerado, não percebe consultas demais nem junções gigantes.",analogia:"o assistente que anota suas alterações e envia o pacote no fim do dia: eficiente, mas você precisa conferir o que ele vai mandar.",exemploReal:"O Hibernate (biblioteca de Java) chama isso de dirty checking: ao dar flush na sessão, ele compara o estado atual dos objetos com o carregado e emite apenas os UPDATE necessários."}],
+roteiroDemo:{passo0:"Antes de clicar, preveja: se você mudar só a cidade do cliente e mandar salvar, o ORM envia UPDATE de todas as colunas ou só da que mudou?",passos:[{acao:"Crie o objeto, salve e observe o SQL gerado e a linha na tabela.",ve:"O INSERT aparece com os valores; a tabela ganha a linha; a unidade de trabalho fica limpa.",significa:"O objeto virou linha por meio de um comando SQL real, que você pode ler."},{acao:"Altere só a cidade, veja o campo marcado como sujo e clique em 'alterar'.",ve:"O UPDATE gerado contém apenas a coluna alterada; o marcador de pendência some.",significa:"Acompanhamento de mudanças: o ORM envia o mínimo necessário no commit."}]},
+demo:{tipo:"livre-orm",config:{titulo:"Objeto ↔ tabela ao vivo: CRUD, SQL gerado e unidade de trabalho",observar:"o campo alterado fica marcado como pendente; o UPDATE gerado leva só esse campo; e depois do commit a pendência some — é a unidade de trabalho em ação.",legenda:["INSERT = criar linha · SELECT = ler · UPDATE = alterar · DELETE = apagar.","session.add / save / persist = 'grave este objeto' conforme o framework.","Campos marcados em âmbar estão alterados na memória e ainda não foram enviados ao banco."],
+orms:[{chave:"sqlalchemy",rot:"SQLAlchemy (Python)",code:"cliente = Cliente(nome='Ana Souza', email='ana@exemplo.com', cidade='Recife')\nsession.add(cliente); session.commit()"},
+{chave:"django",rot:"Django ORM (Python)",code:"cliente = Cliente(nome='Ana Souza', email='ana@exemplo.com', cidade='Recife')\ncliente.save()"},
+{chave:"sequelize",rot:"Sequelize (Node.js)",code:"const cliente = await Cliente.create({ nome:'Ana Souza', email:'ana@exemplo.com', cidade:'Recife' });"},
+{chave:"hibernate",rot:"Hibernate (Java)",code:"Cliente c = new Cliente('Ana Souza','ana@exemplo.com','Recife');\nsession.persist(c); transaction.commit();"}]}},
+quiz:{termos:["ORM: camada que traduz objetos para linhas de tabelas","entidade mapeada: classe que representa a tabela","CRUD: criar, ler, atualizar e apagar","unidade de trabalho: mudanças pendentes enviadas no commit","mapa de identidade: mesma linha → mesmo objeto dentro da sessão","SQL gerado: o comando que o ORM monta por baixo"],
+perguntas:[{q:"O que um framework ORM faz pelo desenvolvedor?",alts:[{t:"Traduz objetos da linguagem para linhas de tabelas e gera o SQL correspondente",ok:true,fb:"Isso! É o intérprete entre os dois mundos. No Django (framework web de Python), um save() vira INSERT ou UPDATE conforme o caso."},{t:"Substitui o banco de dados por arquivos na memória",fb:"O banco continua lá, com tabelas, índices e transações. O ORM só automatiza a conversa — por baixo continua havendo SQL."},{t:"Desenha o modelo de dados sozinho a partir das telas",fb:"A modelagem é decisão humana: entidades, cardinalidades e regras. O ORM mapeia o modelo que você definiu, não o inventa."}]},
+{q:"Você alterou apenas a cidade de um objeto carregado e confirmou a sessão. O que o ORM envia?",alts:[{t:"Um UPDATE apenas com a coluna alterada, graças ao acompanhamento de mudanças",ok:true,fb:"Exato! É o dirty checking do Hibernate (biblioteca de Java) e o equivalente nos demais ORMs: só o que mudou viaja para o banco."},{t:"Um UPDATE com todas as colunas, sempre",fb:"Alguns modos fazem isso, mas o comportamento padrão dos ORMs com acompanhamento de mudanças é enviar só o campo alterado — menos escrita e menos conflito."},{t:"Um DELETE seguido de INSERT",fb:"Recriar a linha mudaria a chave e o histórico, além de quebrar referências. Atualização é UPDATE, não substituição da linha."}]},
+{q:"Dentro da mesma sessão, você busca o cliente de id 7 duas vezes. O que o mapa de identidade garante?",alts:[{t:"Que as duas buscas devolvem o mesmo objeto na memória",ok:true,fb:"Isso! Evita duas cópias divergentes da mesma linha — como ter duas fichas do mesmo cliente com dados diferentes na mesa."},{t:"Que a segunda busca não faça nenhuma consulta em hipótese alguma",fb:"O efeito principal é a identidade do objeto; o cache pode evitar a ida ao banco, mas isso depende do estado da sessão. A garantia é não haver duas cópias divergentes."},{t:"Que o cliente fique bloqueado para outros usuários",fb:"Bloqueio é assunto de transação e isolamento. O mapa de identidade trata de objetos na memória do seu processo, não de travas no banco."}]}]},
+aprofundar:{google:"frameworks ORM mapeamento objeto relacional",scholar:"mapeamento objeto relacional em desenvolvimento de software",youtube:"ORM mapeamento objeto relacional"},
+mitoOuVerdade:{afirmacao:"Com ORM você não precisa mais entender SQL.",verdade:false,explicacao:"É mito. O ORM gera SQL por baixo: sem saber ler o comando gerado, você não diagnostica consultas demais, junções gigantes nem filtros que não usam índice. Equipes experientes ligam o log de SQL do SQLAlchemy (biblioteca de Python) ou do Hibernate (biblioteca de Java) justamente para enxergar o que o tradutor está dizendo em seu nome."}},
+
+{rotulo:"5 · Relações e N+1",titulo:"Aba 5 — Relacionamentos no ORM e o problema N+1",
+narrativa:"🎯 Missão: navegar relações com o ORM sem explodir o número de consultas. Carregamento preguiçoso (em inglês, lazy loading: o dado relacionado só é buscado quando você acessa) é cômodo, mas numa lista gera o problema N+1: uma consulta para a lista e mais uma por item. Carregamento ansioso (eager loading: trazer junto, por junção ou em lote) resolve — e a paginação limita o tamanho do problema.",
+mundoReal:["O Django (framework web de Python) oferece select_related (traz o relacionamento por junção na mesma consulta) e prefetch_related (traz em lote numa segunda consulta) exatamente para matar o N+1.","Em APIs de listagem de pedidos de lojas como o Mercado Livre (site de compras da América Latina), carregar o cliente de cada pedido preguiçosamente transforma uma resposta em centenas de idas ao banco: o sintoma é latência alta, não mensagem de erro."],
+ferramentas:["Django Debug Toolbar (painel que mostra quantas consultas cada página executou).","Opções de carregamento conjunto: joinedload no SQLAlchemy (Python), include no Sequelize (Node.js) e JOIN FETCH no Hibernate (Java)."],
+dicionario:[{t:"Lazy loading",d:"Carregamento preguiçoso: o relacionado só é buscado quando o código acessa o atributo."},{t:"Eager loading",d:"Carregamento ansioso: o relacionado vem junto, por junção ou por consulta em lote."},{t:"Problema N+1",d:"1 consulta para a lista + N consultas para os detalhes de cada item: o total cresce com o resultado."},{t:"JOIN",d:"Junção: comando que combina colunas de duas tabelas numa única consulta."},{t:"Consulta em lote",d:"Uma segunda consulta com WHERE id IN (...) que traz todos os relacionados de uma vez."},{t:"Paginação",d:"Devolver o resultado em páginas (ex.: 20 por vez), limitando trabalho e tráfego."}],
+conceitos:[{titulo:"Navegar relações é cômodo — e perigoso",texto:"Escrever pedido.cliente.nome parece grátis: é só um ponto. Mas cada ponto pode disparar uma consulta. Numa lista de 50 pedidos, são 1 + 50 idas ao banco, cada uma com seu custo de rede e planejamento. O código fica lindo e a resposta fica lenta — e como não há erro, só lentidão, o problema costuma aparecer apenas em produção, com dados de verdade.",analogia:"pedir um livro por vez ao bibliotecário: para uma lista de 50 títulos, são 50 viagens ao depósito — o pedido foi educado, mas o dia acabou.",exemploReal:"O Django Debug Toolbar (painel de depuração do Django, framework web de Python) existe para tornar isso visível: ele mostra a contagem de consultas por página e expõe o N+1 antes do deploy."},
+{titulo:"Como matar o N+1",texto:"Duas armas: junção (eager com JOIN) traz tudo numa consulta só, ao custo de repetir colunas do pai em cada linha; consulta em lote traz os relacionados numa segunda ida com IN (...), evitando a repetição. Some paginação para limitar o tamanho da lista e cache de identidade para não recriar o mesmo objeto. A escolha entre junção e lote depende do formato: um-para-um e muitos-para-um pedem junção; um-para-muitos costuma pedir lote.",analogia:"a lista de compras única em vez de uma ida ao mercado por item: a viagem é a parte cara, não o item.",exemploReal:"No SQLAlchemy (biblioteca de Python), joinedload gera junção e selectinload gera a consulta em lote; no Hibernate (Java) o equivalente é JOIN FETCH — nomes diferentes para as duas mesmas estratégias."}],
+roteiroDemo:{passo0:"Antes de clicar, preveja: com 20 pedidos e carregamento preguiçoso, quantas consultas o banco recebe?",passos:[{acao:"Ajuste o número de pedidos, escolha a estratégia e clique em executar.",ve:"O registro de consultas cresce linha a linha no modo preguiçoso; nos outros modos ficam 1 ou 2 linhas.",significa:"O número de idas ao banco é o custo escondido do ponto que navega a relação."},{acao:"Ligue o cache de identidade e reduza os clientes distintos; compare as barras.",ve:"O modo preguiçoso com cache repete menos consultas; as barras mostram a diferença entre as três estratégias.",significa:"Cache ajuda, mas não substitui a estratégia de carregamento certo."}]},
+demo:{tipo:"livre-nmais1",config:{titulo:"Contador de consultas: preguiçoso × junção × lote",observar:"no preguiçoso o número de consultas cresce com a lista (1 + N); na junção é sempre 1; no lote são sempre 2 — e o tempo estimado acompanha as idas ao banco, não o número de objetos.",legenda:["N+1 = 1 consulta da lista + N consultas de detalhe.","JOIN = junção numa consulta só · IN (...) = segunda consulta trazendo todos os relacionados.","Cada ida ao banco tem custo fixo de rede e planejamento — por isso 50 consultas pequenas custam mais que 1 grande."],
+estrategias:[{chave:"lazy",rot:"Preguiçoso (lazy)"},{chave:"join",rot:"Ansioso por junção (JOIN)"},{chave:"batch",rot:"Ansioso em lote (IN)"}]}},
+quiz:{termos:["lazy loading: busca o relacionado só quando o atributo é acessado","eager loading: traz o relacionado junto, por junção ou em lote","N+1: uma consulta da lista mais uma por item","JOIN: junção que combina tabelas numa consulta","consulta em lote: segunda consulta com IN (...)","paginação: devolver o resultado em páginas"],
+perguntas:[{q:"Uma lista de 20 pedidos é carregada e, para cada um, o código acessa pedido.cliente.nome no modo preguiçoso. Quantas consultas?",alts:[{t:"21 consultas: uma para a lista e vinte para os clientes",ok:true,fb:"Isso! É o N+1 clássico. O Django Debug Toolbar (painel do framework web de Python) mostra exatamente essa contagem em páginas mal otimizadas."},{t:"1 consulta: o ORM junta tudo automaticamente",fb:"No modo preguiçoso o ORM não adivinha: cada acesso ao atributo dispara uma nova consulta. Juntar tudo exige pedir carregamento ansioso."},{t:"20 consultas: a lista já vem junto com o primeiro cliente",fb:"A lista é uma consulta própria, separada. São 1 + 20 = 21 idas ao banco."}]},
+{q:"Qual é o efeito de usar carregamento ansioso por junção nessa mesma lista?",alts:[{t:"Uma única consulta traz pedidos e clientes juntos",ok:true,fb:"Exato! É o select_related do Django (framework web de Python) e o JOIN FETCH do Hibernate (biblioteca de Java): uma ida ao banco em vez de vinte e uma."},{t:"O número de consultas cai para dois, sempre",fb:"Dois é o padrão da estratégia em LOTE (IN). Na junção, tudo vem numa consulta só — ao custo de repetir as colunas do pai em cada linha."},{t:"As consultas continuam as mesmas, mas ficam mais rápidas",fb:"O ganho é justamente na CONTAGEM: menos idas ao banco significa menos custo de rede e de planejamento, que é a parte cara."}]},
+{q:"Por que a paginação ajuda mesmo com carregamento ansioso?",alts:[{t:"Porque limita quantos registros são lidos e trafegados de uma vez",ok:true,fb:"Isso! Vinte por página mantém a junção pequena e a resposta rápida. Sem paginação, uma junção de milhões de linhas ainda derruba a memória."},{t:"Porque elimina a necessidade de índices",fb:"Índice continua necessário para filtrar e ordenar. Paginação limita o tamanho do resultado, não substitui o caminho de acesso."},{t:"Porque transforma o N+1 em uma consulta automaticamente",fb:"Paginação não muda a estratégia de carregamento: com lazy, uma página de 20 itens ainda pode gerar 21 consultas. As duas técnicas se complementam."}]}]},
+aprofundar:{google:"problema N mais um em frameworks ORM",scholar:"desempenho de consultas em mapeamento objeto relacional",youtube:"problema N+1 carregamento ansioso"},
+mitoOuVerdade:{afirmacao:"Carregamento preguiçoso é sempre melhor porque economiza memória.",verdade:false,explicacao:"É mito. Ele economiza quando você realmente não usa o relacionado; numa lista em que todos os relacionados são acessados, gera N+1 e o custo de rede supera qualquer economia de memória. Por isso o Django (framework web de Python) tem select_related e prefetch_related, e o SQLAlchemy (biblioteca de Python) tem joinedload e selectinload: a estratégia certa depende do acesso, não de uma regra fixa."}},
+
+{rotulo:"6 · Aspectos adicionais",titulo:"Aba 6 — Aspectos adicionais importantes ao usar ORM",
+narrativa:"🎯 Missão (estudo em casa): cuidar do que cerca o ORM. Migração versionada (arquivo numerado que altera o esquema e roda igual em todo ambiente), consulta parametrizada (o valor do usuário vai como parâmetro, nunca colado no texto do comando — é o que impede a injeção SQL), escopo de transação na sessão e a saída de emergência: quando o relatório é pesado, SQL puro ou visão materializada (consulta gravada em disco e atualizada periodicamente) pode ser a resposta.",
+mundoReal:["Em 2015, a TalkTalk (operadora britânica de telecomunicações) sofreu um ataque de injeção SQL que expôs dados de clientes e rendeu multa de 400 mil libras: a falha estava em entradas de usuário concatenadas no texto da consulta.","Equipes que usam Django (framework web de Python) aplicam mudanças de esquema com migrações versionadas: cada alteração vira arquivo numerado que roda igual em desenvolvimento, teste e produção — e pode ser revertido."],
+ferramentas:["Alembic (ferramenta de migrações do SQLAlchemy, biblioteca de Python) e Flyway (ferramenta de migrações de banco com arquivos versionados).","Django migrations (sistema de migrações do próprio Django, framework web de Python)."],
+dicionario:[{t:"Migração",d:"Arquivo versionado que descreve uma mudança no esquema (criar tabela, adicionar coluna) e como desfazê-la."},{t:"Backfill",d:"Preencher dados em linhas antigas depois de criar uma coluna nova — feito em lotes para não travar a tabela."},{t:"Injeção SQL",d:"Ataque em que o texto digitado pelo usuário é interpretado como comando pelo banco."},{t:"Consulta parametrizada",d:"O comando vai com marcadores e os valores vão separados: o banco nunca interpreta o valor como código."},{t:"Visão materializada",d:"Resultado de uma consulta gravado em disco e atualizado periodicamente, para relatórios pesados."},{t:"SQL puro",d:"Escrever o comando diretamente quando o ORM não expressa bem a consulta ou gera plano ruim."}],
+conceitos:[{titulo:"Migrações: o esquema também é código",texto:"Alterar tabela na mão em produção é receita de desastre: ninguém sabe o que mudou, o ambiente de teste fica diferente e não há como voltar. A migração versionada transforma a mudança em arquivo revisado, aplicado na mesma ordem em todo lugar, com caminho de desfazer. Em tabelas grandes, a mudança é feita em etapas: criar coluna anulável, preencher em lotes (backfill), só depois exigir preenchimento.",analogia:"a receita versionada da casa: cada alteração é proposta, revisada e registrada — em vez de cada cozinhar de memória e o prato sair diferente a cada dia.",exemploReal:"O Alembic (ferramenta de migrações do SQLAlchemy) e o Flyway (ferramenta de migrações de banco) numeram os arquivos e guardam no próprio banco qual versão já foi aplicada, garantindo a mesma sequência em todo ambiente."},
+{titulo:"Segurança e a saída de emergência",texto:"O ORM parametriza por padrão, e isso protege a maior parte do código — mas não imuniza: comandos escritos à mão com concatenação de texto continuam vulneráveis à injeção SQL. A regra é simples: valor de usuário vai como parâmetro, sempre. E há o outro extremo: relatórios com agregações complexas podem gerar SQL ruim pelo ORM; nesses casos, SQL puro revisado ou visão materializada é decisão de engenharia, não fracasso.",analogia:"a porta com fechadura boa (parametrização) e a escada de emergência sinalizada (SQL puro): a saída existe, é documentada e usada com critério, não escondida.",exemploReal:"O ataque à TalkTalk (operadora britânica de telecomunicações) em 2015 explorou justamente entrada concatenada; a multa de 400 mil libras veio do órgão britânico de proteção de dados — um caso citado em todo treinamento de consulta parametrizada."}],
+roteiroDemo:{passo0:"Antes de clicar, preveja: para adicionar uma coluna obrigatória numa tabela de 40 milhões de linhas em produção, dá para fazer num passo só?",passos:[{acao:"Nos três cenários, escolha a decisão mais segura.",ve:"A escolha certa fica verde com a explicação; a errada mostra o risco concreto e permite tentar outra.",significa:"Cada aspecto adicional tem uma prática consagrada: migração em etapas, parâmetro sempre, SQL puro quando o plano é ruim."},{acao:"Leia a mensagem final e compare com o que você faria no seu projeto.",ve:"O resumo amarra migração, segurança e desempenho.",significa:"ORM simplifica o dia a dia, mas não substitui critério de engenharia."}]},
+demo:{tipo:"cenario",config:{titulo:"Três decisões reais ao redor do ORM",
+final:"🎉 Critério de engenharia! Migração em etapas para tabela grande, valor de usuário SEMPRE como parâmetro e SQL puro (ou visão materializada) quando o plano gerado é ruim. O ORM cuida do repetitivo; as decisões de risco continuam sendo suas — como mostrou o caso da TalkTalk (operadora britânica de telecomunicações), multada em 400 mil libras em 2015 por injeção SQL.",
+passos:[{pergunta:"Cenário 1 — adicionar uma coluna obrigatória numa tabela de 40 milhões de linhas em produção. Qual o caminho?",opcoes:[{t:"Migração em etapas: criar coluna anulável, preencher em lotes e só depois exigir preenchimento",ok:true,fb:"Isso! Cada etapa é curta e reversível; o backfill em lotes não trava a tabela. É o padrão recomendado em ferramentas como Alembic (migrações do SQLAlchemy) e Flyway.",fb2:""},{t:"Um ALTER TABLE único exigindo o valor, no horário de pico",fb:"Um comando desses reescreve/trava a tabela por muito tempo e derruba a aplicação. Tabelas grandes pedem etapas curtas e janela controlada."},{t:"Alterar na mão pelo painel e depois avisar o time",fb:"Sem arquivo versionado, teste e produção divergem e não há caminho de volta. Migração é código: revisada, numerada e aplicável em todo ambiente."}]},
+{pergunta:"Cenário 2 — o filtro de busca vem do usuário e você precisa de uma consulta específica que o ORM não expressa bem. Como escrever?",opcoes:[{t:"SQL puro com parâmetros: o texto do comando fixo e o valor enviado separadamente",ok:true,fb:"Exato! SQL puro é legítimo; concatenação é que não é. Com parâmetros, o banco nunca interpreta o valor como código — a defesa que faltou no caso da TalkTalk (operadora britânica) em 2015."},{t:"Montar o comando concatenando o texto digitado, mas filtrando aspas",fb:"Filtrar caracteres é defesa furada: existem codificações e contextos que escapam do filtro. A proteção real é parametrizar, não higienizar texto."},{t:"Usar o ORM mesmo que ele gere um plano ruim, sem olhar o SQL",fb:"Usar ORM às cegas troca um problema de segurança por um de desempenho. Quando o plano é ruim, SQL puro revisado ou visão materializada é decisão correta."}]},
+{pergunta:"Cenário 3 — um relatório mensal com várias agregações está lento pelo ORM. Qual decisão é razoável?",opcoes:[{t:"Escrever a consulta em SQL puro revisado ou criar uma visão materializada atualizada periodicamente",ok:true,fb:"Isso! Relatório pesado é o caso clássico de saída de emergência: você controla o plano e pode pré-computar. O ORM continua cuidando do CRUD do dia a dia."},{t:"Aumentar o tempo limite da requisição para 10 minutos",fb:"Aumentar o limite só esconde o problema e prende conexões. O caminho é reduzir o trabalho: consulta melhor, índice adequado ou resultado pré-computado."},{t:"Remover todos os índices para o relatório rodar mais rápido",fb:"Índices aceleram leitura; removê-los piora o relatório e todo o resto. O ajuste é escolher índices e plano, não eliminar a estrutura de acesso."}]}]}},
+quiz:{termos:["migração: arquivo versionado que muda o esquema e pode ser desfeito","backfill: preencher linhas antigas em lotes depois de criar a coluna","injeção SQL: texto do usuário interpretado como comando pelo banco","consulta parametrizada: comando fixo com valores enviados separadamente","visão materializada: resultado de consulta gravado e atualizado periodicamente","SQL puro: escrever o comando diretamente, com revisão"],
+perguntas:[{q:"Por que usar migrações versionadas em vez de alterar o esquema na mão?",alts:[{t:"Porque a mudança fica revisada, repetível em todo ambiente e com caminho de volta",ok:true,fb:"Isso! Alembic (migrações do SQLAlchemy) e Flyway guardam no banco qual versão foi aplicada: desenvolvimento, teste e produção ficam iguais."},{t:"Porque assim o banco fica mais rápido automaticamente",fb:"Migração não acelera nada por si: ela organiza o processo de mudança. Desempenho vem de índices, modelo e consultas."},{t:"Porque o ORM não consegue criar tabelas",fb:"Consegue, sim. A questão é controle: sem arquivo versionado não há revisão, repetição nem reversão — só um estado que ninguém sabe como chegou lá."}]},
+{q:"Qual prática impede injeção SQL ao usar um valor digitado pelo usuário?",alts:[{t:"Enviar o valor como parâmetro, separado do texto do comando",ok:true,fb:"Exato! O banco trata o valor como dado, nunca como código. Foi essa proteção que faltou no ataque à TalkTalk (operadora britânica), multada em 400 mil libras em 2015."},{t:"Remover aspas e pontos e vírgulas do texto digitado",fb:"Higienizar caracteres é defesa furada: há codificações e contextos que escapam. Parametrizar resolve na raiz, porque separa dado de comando."},{t:"Usar ORM, que elimina o risco em qualquer situação",fb:"O ORM parametriza por padrão, mas consultas escritas à mão com concatenação continuam vulneráveis. A proteção vem da parametrização, não do nome da ferramenta."}]},
+{q:"Quando faz sentido escapar do ORM e escrever SQL puro?",alts:[{t:"Em consultas complexas de relatório cujo plano gerado é ruim, com revisão e parâmetros",ok:true,fb:"Isso! É a saída de emergência sinalizada: você controla o plano e pode pré-computar com visão materializada. O CRUD comum continua no ORM."},{t:"Sempre: ORM é lento por definição",fb:"Não é: para o CRUD do dia a dia o ORM é produtivo e gera SQL adequado. A fuga é pontual e justificada por medição, não por preconceito."},{t:"Nunca: usar SQL puro é sinal de má prática",fb:"Ao contrário: conhecer SQL e usá-lo onde o ORM não expressa bem é sinal de maturidade. O problema é concatenar valor de usuário, não escrever SQL."}]}]},
+aprofundar:{google:"migrações de banco de dados e consulta parametrizada",scholar:"segurança e desempenho em mapeamento objeto relacional",youtube:"migrações de banco e injeção SQL"},
+mitoOuVerdade:{afirmacao:"Usar ORM elimina o risco de injeção SQL em qualquer situação.",verdade:false,explicacao:"É mito. O ORM parametriza por padrão, mas quase todos oferecem caminhos de SQL bruto — e ali a concatenação de texto continua vulnerável. O ataque à TalkTalk (operadora britânica de telecomunicações), em 2015, expôs dados de clientes e rendeu multa de 400 mil libras por entrada concatenada. A proteção é a parametrização, não o nome da ferramenta."}}
+];
+
+var REVISAO={mapa:[
+"Aba 1 — Do mundo real ao modelo: substantivos viram coisas, verbos viram ligações, e a quantidade de cada lado decide quantas tabelas nascem (termos na cola rápida).",
+"Aba 2 — Eficiência: guardar cada fato uma vez e achar esse fato rápido são ganhos diferentes — um vem da organização, outro do sumário (siglas na cola rápida).",
+"Aba 3 — Integridade: a regra mora no banco para valer por todos os caminhos, e o pacote de operações confirma inteiro ou volta inteiro (nomes na cola rápida).",
+"Aba 4 — ORM: o tradutor entre a memória e o disco, que ainda anota o que mudou e manda só o necessário (termos na cola rápida).",
+"Aba 5 — Relações e N+1: cada ponto que navega a relação pode ser uma viagem ao banco; trazer junto ou em lote mata a repetição (siglas na cola rápida).",
+"Aba 6 (estudo em casa) — Aspectos adicionais: mudança de esquema versionada, valor do usuário sempre separado do comando e saída de emergência para relatório pesado (termos na cola rápida)."],
+cola:[
+{termo:"Entidade",linha:"a coisa que vira tabela: cliente, pedido, produto."},
+{termo:"Atributo",linha:"a característica que vira coluna: nome, data, preço."},
+{termo:"Cardinalidade",linha:"1:1 (um para um), 1:N (um para muitos), N:N (muitos para muitos)."},
+{termo:"Chave primária (PK)",linha:"código único da linha; não repete nem fica vazio."},
+{termo:"Chave estrangeira (FK)",linha:"coluna que guarda a chave de outra tabela; num 1:N vai no lado 'muitos'."},
+{termo:"Tabela associativa",linha:"a tabela do meio do N:N; guarda as duas chaves e os fatos do vínculo (quantidade, preço)."},
+{termo:"Modelo conceitual / lógico / físico",linha:"o desenho do negócio → tabelas e chaves → tipos e índices no banco escolhido."},
+{termo:"1FN",linha:"um valor por célula: nada de listas dentro de coluna."},
+{termo:"2FN",linha:"nada depende só de parte de uma chave composta."},
+{termo:"3FN",linha:"nada depende de coluna que não seja a chave (sem dependência transitiva)."},
+{termo:"Anomalia de atualização",linha:"o mesmo fato em várias linhas: corrigir exige mexer em todas."},
+{termo:"Índice",linha:"sumário do livro: acelera a busca, custa espaço e escrita mais lenta."},
+{termo:"B-tree",linha:"árvore balanceada: estrutura ordenada que chega ao valor em poucos passos."},
+{termo:"Varredura completa",linha:"o banco lê a tabela inteira (Seq Scan no plano do PostgreSQL)."},
+{termo:"Desnormalização",linha:"duplicar de propósito, com critério, para acelerar consultas específicas."},
+{termo:"Restrição (constraint)",linha:"regra declarada na tabela que o banco faz valer sozinho."},
+{termo:"UNIQUE / NOT NULL / CHECK",linha:"não repete / não pode ser vazio / precisa obedecer à condição."},
+{termo:"Transação",linha:"pacote tudo-ou-nada: confirma tudo (commit) ou desfaz tudo (rollback)."},
+{termo:"ACID",linha:"atomicidade, consistência, isolamento e durabilidade — as garantias da transação."},
+{termo:"ORM",linha:"do inglês Object-Relational Mapping; traduz objetos para linhas e gera o SQL."},
+{termo:"CRUD",linha:"criar, ler, atualizar e apagar (INSERT, SELECT, UPDATE, DELETE)."},
+{termo:"Unidade de trabalho",linha:"as mudanças pendentes que o ORM envia de uma vez no commit."},
+{termo:"Mapa de identidade",linha:"na mesma sessão, a mesma linha devolve o mesmo objeto na memória."},
+{termo:"Lazy loading",linha:"preguiçoso: busca o relacionado só quando o atributo é acessado."},
+{termo:"Eager loading",linha:"ansioso: traz junto por junção (1 consulta) ou em lote (2 consultas)."},
+{termo:"Problema N+1",linha:"1 consulta da lista + N dos detalhes: o total cresce com o resultado."},
+{termo:"JOIN / IN (...)",linha:"junção numa consulta só / segunda consulta trazendo todos os relacionados."},
+{termo:"Paginação",linha:"devolver em páginas para limitar leitura, memória e tráfego."},
+{termo:"Migração",linha:"arquivo versionado que muda o esquema e sabe desfazer."},
+{termo:"Backfill",linha:"preencher linhas antigas em lotes depois de criar a coluna."},
+{termo:"Injeção SQL",linha:"texto do usuário interpretado como comando pelo banco."},
+{termo:"Consulta parametrizada",linha:"comando fixo, valores separados: o dado nunca vira código."},
+{termo:"Visão materializada",linha:"resultado de consulta gravado em disco e atualizado periodicamente."},
+{termo:"SQL puro",linha:"escrever o comando diretamente, revisado e parametrizado, quando o plano do ORM é ruim."}],
+desafio:"🐉 Chefão — Você vai modelar e implementar o back-end de pedidos de uma loja que vende no Mercado Livre (site de compras e vendas da América Latina). 1) Desenhe as entidades e a cardinalidade (na cola rápida) entre cliente, pedido e produto, dizendo onde ficam quantidade e preço praticado e por quê; 2) mostre uma violação de 3FN (na cola) que apareceria se o nome do cliente fosse copiado em cada pedido e explique a anomalia que isso cria; 3) escreva as restrições (na cola) que impedem pedido sem cliente, e-mail repetido e quantidade negativa, e diga por que a validação só no código não basta; 4) a listagem de 30 pedidos com o nome do cliente está lenta: calcule quantas consultas o modo preguiçoso gera (N+1, na cola) e proponha a estratégia de carregamento (na cola) que resolve; 5) a tabela de pedidos já tem 40 milhões de linhas e precisa de uma coluna nova obrigatória: descreva a mudança em etapas (migração e backfill, na cola) e diga como o valor digitado pelo usuário deve chegar ao banco (consulta parametrizada, na cola), citando o caso da TalkTalk (operadora britânica de telecomunicações, 2015). Escreva no rascunho e confira com a cola rápida e com o professor."};
+
+/* ================= MOTOR ================= */
+var N_ABAS=DADOS.length,N_TOTAL=N_ABAS+1;
+var STATE={xp:0,acertos:[0,0,0,0,0,0],chefao:false,toastT:null};
+var DEMOS=[],atual=-1,apres=false;
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function nfmt(v){return Math.round(v).toLocaleString('pt-BR');}
+function toast(m){var t=document.getElementById('toast');if(STATE.toastT)clearTimeout(STATE.toastT);t.textContent=m;t.classList.add('show');STATE.toastT=setTimeout(function(){t.classList.remove('show');},2100);}
+function addXP(n){STATE.xp+=n;toast('+'+n+' XP ⭐');updateHUD();}
+function updateHUD(){
+  document.getElementById('xp').textContent=STATE.xp;var g5=0,gT=0,h='';
+  for(var i=0;i<N_ABAS;i++){var ok=STATE.acertos[i]>=3;if(ok){gT++;if(i<5)g5++;}
+    h+='<span class="selo'+(ok?' ganho':'')+'">'+(ok?'🏅':'▫️')+' Aba '+(i+1)+(i>=5?' · casa':'')+'</span>';}
+  h+='<span class="selo'+(STATE.chefao?' ganho':'')+'">'+(STATE.chefao?'🏆':'▫️')+' Chefão</span>';
+  document.getElementById('selos').innerHTML=h;
+  document.getElementById('barra-fill').style.width=(gT/N_ABAS*100)+'%';
+  document.getElementById('trilha-txt').textContent='Sala (30 min): '+g5+'/5 · Geral: '+gT+'/'+N_ABAS+' selos';
+}
+function buscaLinks(ap){
+  return '<li><a href="https://www.google.com/search?hl=pt-BR&q='+encodeURIComponent(ap.google)+'" target="_blank" rel="noopener">🔎 Busca no Google (português)</a></li>'+
+  '<li><a href="https://scholar.google.com/scholar?hl=pt-BR&q='+encodeURIComponent(ap.scholar)+'" target="_blank" rel="noopener">🎓 Pesquisa científica (Google Scholar, português)</a></li>'+
+  '<li><a href="https://www.youtube.com/results?search_query='+encodeURIComponent(ap.youtube+' aula')+'" target="_blank" rel="noopener">🎬 Vídeos-aula no YouTube (busca em português)</a></li>';
+}
+function painelHTML(d,i){
+  var h='<h2>'+esc(d.titulo)+'</h2><div class="missao"><p>'+esc(d.narrativa)+'</p></div>';
+  h+='<h3>🌍 No mundo real</h3><ul class="real">'+d.mundoReal.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>';
+  h+=d.conceitos.map(function(c){return '<div class="conceito"><h4>'+esc(c.titulo)+'</h4><p>'+esc(c.texto)+'</p><p class="analogia">💡 <strong>Analogia:</strong> '+esc(c.analogia)+'</p><p class="exreal">🌍 <strong>Exemplo real:</strong> '+esc(c.exemploReal)+'</p></div>';}).join('');
+  h+='<h3>🧰 Ferramentas reais</h3><ul class="ferramentas">'+d.ferramentas.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>';
+  h+='<h3>🕹️ Demo: '+esc(d.demo.config.titulo)+'</h3>';
+  h+='<div class="instr"><p class="instr-t">📋 INSTRUÇÕES PASSO A PASSO</p><p class="previsao">'+esc(d.roteiroDemo.passo0)+'</p><ol>'+d.roteiroDemo.passos.map(function(p){return '<li>'+esc(p.acao)+'</li>';}).join('')+'</ol></div>';
+  if(d.demo.config.observar)h+='<div class="observar"><strong>👀 O que observar:</strong> '+esc(d.demo.config.observar)+'</div>';
+  if(d.demo.config.legenda)h+='<div class="legenda"><strong>🔑 Legenda</strong><ul>'+d.demo.config.legenda.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';
+  h+='<details class="roteiro"><summary>🎤 Roteiro do apresentador</summary><p>'+esc(d.roteiroDemo.passo0)+'</p><ol>'+d.roteiroDemo.passos.map(function(p){return '<li><strong>Clique:</strong> '+esc(p.acao)+'<br><strong>Vê:</strong> '+esc(p.ve)+'<br><strong>Significa:</strong> '+esc(p.significa)+'</li>';}).join('')+'</ol></details>';
+  h+='<div class="demo-top"><button type="button" class="btn" id="rst-'+i+'">🔄 Reiniciar demo</button></div><div class="demo" id="demo-'+i+'"></div>';
+  h+='<h3>📝 Quiz da aba</h3><div id="quiz-'+i+'"></div>';
+  h+='<details class="mito"><summary>🤔 Mito ou Verdade?</summary><div id="mito-'+i+'"></div></details>';
+  h+='<details class="aprof"><summary>📚 Aprofundar (estudo em casa)</summary><h4>📖 Mini-dicionário</h4><dl class="dic">'+d.dicionario.map(function(x){return '<dt>'+esc(x.t)+'</dt><dd>'+esc(x.d)+'</dd>';}).join('')+'</dl><h4>🔗 Buscas para ir além (todas em português)</h4><ul class="buscas">'+buscaLinks(d.aprofundar)+'</ul></details>';
+  return h;
+}
+function revisaoHTML(){
+  return '<h2>🧭 Revisão — mapa, cola rápida e Chefão</h2><h3>🗺️ Mapa da aula</h3><ol>'+REVISAO.mapa.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ol>'+
+  '<h3>🧾 Cola rápida (glossário da revisão)</h3><table class="cola"><tbody>'+REVISAO.cola.map(function(r){return '<tr><th>'+esc(r.termo)+'</th><td>'+esc(r.linha)+'</td></tr>';}).join('')+'</tbody></table>'+
+  '<h3>🐉 Chefão</h3><div class="chefao"><p>'+esc(REVISAO.desafio)+'</p><textarea id="rascunho" rows="8" placeholder="Escreva aqui o modelo, a violação de 3FN, as restrições, a conta do N+1 e o plano de migração..."></textarea><p class="semgab">Sem gabarito automático: confira com a cola rápida acima e com o professor. O rascunho fica só nesta tela.</p><button type="button" class="btn alt" id="btn-chefao">🏆 Concluí o Chefão</button> <span id="chefao-ok"></span></div>';
+}
+function renderQuiz(i){
+  var qz=DADOS[i].quiz,box=document.getElementById('quiz-'+i);
+  var h='<div class="termos"><strong>🔑 Termos deste quiz:</strong><ul>'+qz.termos.map(function(t){return '<li>'+esc(t)+'</li>';}).join('')+'</ul></div>';
+  qz.perguntas.forEach(function(p,pi){h+='<div class="q" id="q-'+i+'-'+pi+'"><p class="qp"><strong>'+(pi+1)+') </strong>'+esc(p.q)+'</p><div class="alts"></div><div class="fb" hidden aria-live="polite"></div></div>';});
+  box.innerHTML=h;
+  qz.perguntas.forEach(function(p,pi){
+    var qE=document.getElementById('q-'+i+'-'+pi),aE=qE.querySelector('.alts'),fE=qE.querySelector('.fb'),est={errou:false,done:false};
+    shuffle(p.alts.slice()).forEach(function(a){
+      var b=document.createElement('button');b.type='button';b.className='alt';
+      b.innerHTML='<span class="mark"></span><span>'+esc(a.t)+'</span>';b.setAttribute('data-fb',a.fb);
+      b.addEventListener('click',function(){
+        if(est.done||b.disabled)return;var fb=b.getAttribute('data-fb');
+        if(a.ok){est.done=true;b.classList.add('ok');b.querySelector('.mark').textContent='✓';
+          aE.querySelectorAll('button').forEach(function(x){x.disabled=true;});
+          fE.hidden=false;fE.className='fb fb-ok';fE.innerHTML='✅ <strong>Por que esta está certa:</strong> '+esc(fb);
+          var g=est.errou?5:10;STATE.acertos[i]++;addXP(g);
+          if(STATE.acertos[i]===3)toast('🏅 Selo da aba '+(i+1)+' conquistado! +'+g+' XP ⭐');updateHUD();
+        }else{est.errou=true;b.classList.add('err');b.querySelector('.mark').textContent='✗';b.disabled=true;
+          fE.hidden=false;fE.className='fb fb-err';fE.innerHTML='❌ <strong>Por que esta está errada:</strong> '+esc(fb)+' <em>Tente outra alternativa.</em>';}
+      });
+      aE.appendChild(b);
+    });
+  });
+}
+function renderMito(i){
+  var m=DADOS[i].mitoOuVerdade,box=document.getElementById('mito-'+i);
+  box.innerHTML='<p class="afirm">“'+esc(m.afirmacao)+'”</p><div class="mito-btns"><button type="button" class="btn" data-v="0">🚫 Mito</button><button type="button" class="btn alt" data-v="1">✅ Verdade</button></div><div class="fb" hidden></div>';
+  var fb=box.querySelector('.fb'),done=false;
+  box.querySelectorAll('button').forEach(function(b){b.addEventListener('click',function(){
+    if(done||b.disabled)return;
+    if((b.getAttribute('data-v')==='1')===m.verdade){done=true;b.classList.add('ativo');box.querySelectorAll('button').forEach(function(x){x.disabled=true;});fb.hidden=false;fb.className='fb fb-ok';fb.innerHTML='✅ <strong>Isso mesmo!</strong> '+esc(m.explicacao);}
+    else{b.disabled=true;fb.hidden=false;fb.className='fb fb-err';fb.innerHTML='❌ Não é essa. Releia os cartões de conceito desta aba e tente a outra opção.';}
+  });});
+}
+function cS(id,rot,opts){return '<label class="ctl"><span>'+rot+'</span><select id="'+id+'">'+opts.map(function(o){return '<option value="'+esc(o.chave)+'">'+esc(o.rot)+'</option>';}).join('')+'</select></label>';}
+function cR(id,rot,min,max,v,step,u){return '<label class="ctl"><span>'+rot+' <b id="'+id+'-v">'+v+(u||'')+'</b></span><input type="range" id="'+id+'" min="'+min+'" max="'+max+'" step="'+(step||1)+'" value="'+v+'" data-u="'+(u||'')+'"></label>';}
+function cTxt(id,rot,v){return '<label class="ctl"><span>'+rot+'</span><input type="text" id="'+id+'" value="'+esc(v)+'"></label>';}
+function cT(id,rot,on){return '<label class="ctl tog"><input type="checkbox" id="'+id+'"'+(on?' checked':'')+'><span>'+rot+'</span></label>';}
+function val(box,id){var e=box.querySelector('#'+id);return e?e.value:'';}
+function num(box,id,d){var v=parseFloat(val(box,id));return isNaN(v)?d:v;}
+function chk(box,id){var e=box.querySelector('#'+id);return !!(e&&e.checked);}
+function wire(box,fn){var c=box.querySelector('.ctrls');if(!c)return;
+  c.addEventListener('input',function(e){if(e.target.type==='range'){var s=box.querySelector('#'+e.target.id+'-v');if(s)s.textContent=e.target.value+(e.target.getAttribute('data-u')||'');}fn();});
+  c.addEventListener('change',fn);}
+function dClear(i){var s=DEMOS[i];if(s&&s.timers){s.timers.forEach(function(t){if(t.tipo==='i')clearInterval(t.id);else clearTimeout(t.id);});s.timers=[];}}
+function dTimer(i,fn,ms,rep){var id=rep?setInterval(fn,ms):setTimeout(fn,ms);DEMOS[i].timers.push({id:id,tipo:rep?'i':'t'});return id;}
+function renderDemo(i){
+  dClear(i);DEMOS[i]={timers:[]};
+  var d=DADOS[i].demo,b=document.getElementById('demo-'+i);
+  ({'livre-modelo':demoModelo,'livre-normal':demoNormal,'livre-integridade':demoIntegridade,'livre-orm':demoOrm,'livre-nmais1':demoNmais1,'cenario':demoCenario}[d.tipo])(i,d.config,b);
+}
+/* ---- 1: modelo ER ---- */
+function demoModelo(i,cfg,box){
+  box.innerHTML='<div class="ctrls">'+cS('m1-cp','Cliente → Pedido',[{chave:'11',rot:'1:1 (um pedido por cliente)'},{chave:'1N',rot:'1:N (vários pedidos)'},{chave:'NN',rot:'N:N (muitos para muitos)'}])+
+    cS('m1-pp','Pedido ↔ Produto',[{chave:'1N',rot:'1:N (um produto por pedido)'},{chave:'NN',rot:'N:N (vários produtos)'},{chave:'11',rot:'1:1 (um para um)'}])+
+    cT('m1-atr','🧾 Atributos no vínculo (quantidade, preço)',true)+cT('m1-cols','👁 Mostrar colunas nas entidades',true)+
+    '<div class="ctl full botoes"><button type="button" class="btn okb" id="m1-ideal">✅ Modelo usual de loja</button></div></div>'+
+    '<div class="kpis" id="m1-k"></div><div class="er" id="m1-er"></div><div id="m1-rels"></div><div class="fb" id="m1-res"></div>';
+  box.querySelector('#m1-cp').value='1N';box.querySelector('#m1-pp').value='NN';
+  function tabelas(){
+    var cp=val(box,'m1-cp'),pp=val(box,'m1-pp'),atr=chk(box,'m1-atr');
+    var T=[{n:'Cliente',c:['id (PK)','nome','email']},{n:'Produto',c:['id (PK)','nome','preco']}];
+    var ped={n:'Pedido',c:['id (PK)','data']},fks=0;
+    if(cp==='1N'){ped.c.push('cliente_id (FK)');fks++;}
+    else if(cp==='11'){ped.c.push('cliente_id (FK, único)');fks++;}
+    T.push(ped);
+    if(cp==='NN'){T.push({n:'Cliente_Pedido',c:['cliente_id (FK)','pedido_id (FK)'].concat(atr?['papel_no_vinculo']:[])});fks+=2;}
+    if(pp==='NN'){T.push({n:'ItemPedido',c:['pedido_id (FK)','produto_id (FK)'].concat(atr?['quantidade','preco_unitario']:[])});fks+=2;}
+    else if(pp==='1N'){T.push({n:'Produto',c:[]});T.pop();ped.c.push('produto_id (FK)');fks++;}
+    else if(pp==='11'){ped.c.push('produto_id (FK, único)');fks++;}
+    return {T:T,fks:fks,cp:cp,pp:pp,atr:atr};
+  }
+  function pinta(){
+    var m=tabelas(),cols=chk(box,'m1-cols');
+    box.querySelector('#m1-k').innerHTML='<div class="kpi"><div class="n">'+m.T.length+'</div><div class="l">Tabelas geradas</div></div>'+
+      '<div class="kpi tea"><div class="n">'+m.fks+'</div><div class="l">Chaves estrangeiras</div></div>'+
+      '<div class="kpi mag"><div class="n">'+(m.pp==='NN'?'sim':'não')+'</div><div class="l">Carrinho com vários itens</div></div>'+
+      '<div class="kpi '+(m.pp==='NN'&&m.atr?'ok':'warn')+'"><div class="n">'+(m.pp==='NN'&&m.atr?'sim':'não')+'</div><div class="l">Guarda quantidade e preço</div></div>';
+    box.querySelector('#m1-er').innerHTML=m.T.map(function(t){
+      return '<div class="ent"><h5>'+esc(t.n)+'</h5>'+(cols?'<ul>'+t.c.map(function(c){
+        var cls=c.indexOf('PK')>=0?'pk':(c.indexOf('FK')>=0?'fk':'');
+        return '<li class="'+cls+'">'+esc(c)+'</li>';}).join('')+'</ul>':'<ul><li>('+t.c.length+' colunas)</li></ul>')+'</div>';}).join('');
+    var nome={11:'1:1',1N:'1:N',NN:'N:N'};
+    box.querySelector('#m1-rels').innerHTML=
+      '<div class="rel"><span>Cliente</span><span class="linha"></span><span class="card">'+nome[m.cp]+'</span><span class="linha"></span><span>Pedido</span></div>'+
+      '<div class="rel"><span>Pedido</span><span class="linha"></span><span class="card">'+nome[m.pp]+'</span><span class="linha"></span><span>Produto</span></div>';
+    var msgs=[],cls='fb-ok';
+    if(m.pp!=='NN'){msgs.push('Com '+nome[m.pp]+' entre Pedido e Produto, cada pedido só consegue apontar para UM produto: o carrinho de compras quebra.');cls='fb-err';}
+    if(m.pp==='NN'&&!m.atr){msgs.push('A tabela ItemPedido existe, mas sem atributos: não há como saber QUANTOS itens nem por QUAL preço naquele pedido.');cls='fb-err';}
+    if(m.cp==='11'){msgs.push('Com 1:1 entre Cliente e Pedido, cada cliente só poderia fazer um pedido na vida — restrição que não existe no negócio.');cls='fb-err';}
+    if(m.cp==='NN'){msgs.push('Cliente↔Pedido como N:N cria tabela do meio sem necessidade: no negócio, um pedido pertence a um cliente só (1:N).');cls='fb-err';}
+    if(!msgs.length)msgs.push('Modelo coerente: um cliente tem vários pedidos (1:N) e cada pedido tem vários produtos por meio de ItemPedido (N:N), que guarda quantidade e preço praticado.');
+    var res=box.querySelector('#m1-res');res.className='fb '+cls;
+    res.innerHTML='🧩 <strong>Consequências do desenho:</strong><br>• '+msgs.map(esc).join('<br>• ')+
+      '<br>🌍 '+esc(m.pp==='NN'&&m.atr?'É exatamente a estrutura de itens de pedido de lojas como o Mercado Livre (site de compras e vendas da América Latina).':'Ferramentas como o dbdiagram.io (site gratuito de modelagem) mostram esse mesmo efeito ao mudar a cardinalidade do traço.');
+  }
+  wire(box,pinta);
+  box.querySelector('#m1-ideal').addEventListener('click',function(){box.querySelector('#m1-cp').value='1N';box.querySelector('#m1-pp').value='NN';box.querySelector('#m1-atr').checked=true;pinta();toast('✅ Modelo usual de loja aplicado');});
+  pinta();
+}
+/* ---- 2: normalização + índice ---- */
+function demoNormal(i,cfg,box){
+  var st=DEMOS[i];st.n=0;
+  box.innerHTML='<div class="ctrls">'+cR('n2-lin','Linhas na tabela de pedidos',1000,1000000,50000,1000,'')+cT('n2-idx','📇 Índice em cliente_id',false)+
+    '<div class="ctl full botoes"><span style="font-size:.9em">Normalizar:</span><button type="button" class="btn nrm" data-n="1">1FN</button><button type="button" class="btn nrm" data-n="2">2FN</button>'+
+    '<button type="button" class="btn nrm" data-n="3">3FN</button><button type="button" class="btn warnb" id="n2-bruto">↩ Voltar ao bruto</button>'+
+    '<button type="button" class="btn alt" id="n2-muda">🏠 Cliente mudou de cidade</button></div></div>'+
+    '<div class="kpis" id="n2-k"></div><div class="bars" id="n2-bars"></div><div id="n2-tabs"></div><div class="fb" id="n2-res"></div>';
+  function pinta(msgExtra,cls){
+    var e=cfg.estagios[st.n],linhas=num(box,'n2-lin',50000),idx=chk(box,'n2-idx');
+    var leiturasIdx=Math.ceil(Math.log(Math.max(2,linhas))/Math.log(2))+5;
+    var leituras=idx?leiturasIdx:linhas;
+    var ms=leituras*0.0008,msIdx=leiturasIdx*0.0008,msSeq=linhas*0.0008;
+    var afetadas=st.n>=3?1:linhas;
+    box.querySelector('#n2-k').innerHTML='<div class="kpi"><div class="n">'+e.tabs.length+'</div><div class="l">Tabelas</div></div>'+
+      '<div class="kpi '+(e.red>30?'bad':e.red>10?'warn':'ok')+'"><div class="n">'+e.red+'%</div><div class="l">Dado repetido</div></div>'+
+      '<div class="kpi '+(afetadas>1?'bad':'ok')+'"><div class="n">'+nfmt(afetadas)+'</div><div class="l">Linhas a corrigir na mudança</div></div>'+
+      '<div class="kpi '+(idx?'ok':'warn')+'"><div class="n">'+nfmt(leituras)+'</div><div class="l">Linhas lidas na consulta</div></div>'+
+      '<div class="kpi tea"><div class="n">'+(ms<1?ms.toFixed(2).replace('.',','):nfmt(ms))+' ms</div><div class="l">Tempo estimado</div></div>';
+    var maxL=Math.max(linhas,1);
+    box.querySelector('#n2-bars').innerHTML=
+      '<div class="bl"><span>Sem índice (varredura)</span><span class="bt"><span class="bi" style="width:100%;background:var(--danger)"></span></span><span>'+nfmt(linhas)+' linhas</span></div>'+
+      '<div class="bl"><span>Com índice B-tree</span><span class="bt"><span class="bi" style="width:'+Math.max(1,leiturasIdx/maxL*100)+'%;background:var(--teal)"></span></span><span>'+nfmt(leiturasIdx)+' linhas</span></div>'+
+      '<div class="bl"><span>Redundância do modelo</span><span class="bt"><span class="bi" style="width:'+e.red+'%;background:var(--amber-bright)"></span></span><span>'+e.red+'%</span></div>';
+    box.querySelector('#n2-tabs').innerHTML='<p class="demo-status">'+esc(e.rot)+'</p><div class="er">'+e.tabs.map(function(t){
+      var cols={pedidos_brutos:['pedido_id (PK)','cliente_nome','cliente_cidade','produto_nome','produto_preco','telefones (lista!)'],
+        pedidos:['id (PK)','data','cliente_nome','cliente_cidade'],itens:['pedido_id (FK)','produto_nome','produto_preco','quantidade'],
+        produtos:['id (PK)','nome','preco'],clientes:['id (PK)','nome','cidade','email']}[t]||['id (PK)'];
+      if(st.n>=2&&t==='itens')cols=['pedido_id (FK)','produto_id (FK)','quantidade'];
+      if(st.n>=3&&t==='pedidos')cols=['id (PK)','data','cliente_id (FK)'];
+      return '<div class="ent"><h5>'+esc(t)+'</h5><ul>'+cols.map(function(c){return '<li class="'+(c.indexOf('PK')>=0?'pk':c.indexOf('FK')>=0?'fk':'')+'">'+esc(c)+'</li>';}).join('')+'</ul></div>';}).join('')+'</div>';
+    var res=box.querySelector('#n2-res');res.className='fb '+(cls||'fb-info');
+    res.innerHTML=(msgExtra||'📐 <strong>'+esc(e.rot)+'.</strong> ')+
+      (st.n>=3?'Cada fato mora num lugar só: mudar a cidade do cliente é uma linha, não a tabela inteira. ':'Ainda há dado repetido: mudar a cidade exige corrigir '+nfmt(afetadas)+' linhas — e uma falha no meio deixa o banco contraditório. ')+
+      (idx?'Com índice, a consulta desce pela árvore e lê ~'+nfmt(leiturasIdx)+' entradas em vez de '+nfmt(linhas)+'. ':'Sem índice, o banco faz varredura completa e lê '+nfmt(linhas)+' linhas. ')+
+      '🌍 '+esc('O comando EXPLAIN ANALYZE do PostgreSQL (banco de dados gratuito e aberto) mostra exatamente isso: Seq Scan quando não há índice, Index Scan quando há.');
+  }
+  box.querySelectorAll('.nrm').forEach(function(b){b.addEventListener('click',function(){
+    st.n=parseInt(b.getAttribute('data-n'),10);pinta();toast(cfg.estagios[st.n].rot);});});
+  box.querySelector('#n2-bruto').addEventListener('click',function(){st.n=0;pinta();});
+  box.querySelector('#n2-muda').addEventListener('click',function(){
+    var linhas=num(box,'n2-lin',50000),af=st.n>=3?1:linhas;
+    pinta('🏠 <strong>Anomalia de atualização:</strong> com o modelo atual, a mudança de cidade exige corrigir <strong>'+nfmt(af)+'</strong> linha(s). '+(af>1?'Se o processo falhar no meio, metade dos pedidos mostra a cidade antiga e metade a nova. ':'Existe um único lugar para corrigir — a anomalia desapareceu. '),'fb-'+(af>1?'err':'ok'));
+  });
+  wire(box,function(){pinta();});pinta();
+}
+/* ---- 3: integridade ---- */
+function demoIntegridade(i,cfg,box){
+  var st=DEMOS[i];
+  function seed(){st.clientes=[{id:1,nome:'Ana Souza',email:'ana@exemplo.com'},{id:2,nome:'Bruno Lima',email:'bruno@exemplo.com'}];
+    st.pedidos=[{id:10,cliente_id:1,qtd:2},{id:11,cliente_id:2,qtd:1}];st.saldo=1000;st.viol=[];st.log=[];}
+  seed();
+  box.innerHTML='<div class="ctrls">'+cfg.restricoes.map(function(r){return cT('i3-'+r.chave,r.rot,true);}).join('')+
+    cT('i3-tx','📦 Usar transação na transferência',true)+
+    '<div class="ctl full botoes"><span style="font-size:.9em">Tentar operação:</span>'+
+    '<button type="button" class="btn alt op" data-o="fk">pedido p/ cliente 999</button><button type="button" class="btn alt op" data-o="uq">e-mail repetido</button>'+
+    '<button type="button" class="btn alt op" data-o="ck">quantidade -3</button><button type="button" class="btn alt op" data-o="nn">pedido sem cliente</button>'+
+    '<button type="button" class="btn warnb" id="i3-tx-run">💸 Transferir (queda no meio)</button><button type="button" class="btn okb" id="i3-seed">↺ Restaurar dados</button></div></div>'+
+    '<div class="kpis" id="i3-k"></div><div class="medidor"><div id="i3-med" style="width:100%"></div></div><div class="duas" id="i3-tb"></div><ol class="log" id="i3-log"></ol><div class="fb fb-info" id="i3-res"></div>';
+  function ev(t,c){st.log.unshift({t:t,c:c||''});if(st.log.length>9)st.log.pop();}
+  function pinta(msg,cls){
+    var integ=Math.max(0,100-st.viol.length*25);
+    box.querySelector('#i3-k').innerHTML='<div class="kpi"><div class="n">'+st.clientes.length+'</div><div class="l">Clientes</div></div>'+
+      '<div class="kpi"><div class="n">'+st.pedidos.length+'</div><div class="l">Pedidos</div></div>'+
+      '<div class="kpi '+(st.saldo===1000||st.saldo===700&&st.pedidos.length>2?'ok':'warn')+'"><div class="n">R$ '+st.saldo+'</div><div class="l">Saldo da conta</div></div>'+
+      '<div class="kpi '+(st.viol.length?'bad':'ok')+'"><div class="n">'+st.viol.length+'</div><div class="l">Violações gravadas</div></div>'+
+      '<div class="kpi '+(integ>=90?'ok':integ>=60?'warn':'bad')+'"><div class="n">'+integ+'%</div><div class="l">Integridade</div></div>';
+    box.querySelector('#i3-med').style.width=integ+'%';
+    var h1='<div class="painelzinho"><h5>clientes</h5><table class="mini"><thead><tr><th>id</th><th>nome</th><th>e-mail</th></tr></thead><tbody>'+
+      st.clientes.map(function(c){var dup=st.clientes.filter(function(x){return x.email===c.email;}).length>1;
+        return '<tr class="'+(dup?'ruim':'')+'"><td>'+c.id+'</td><td>'+esc(c.nome)+'</td><td>'+esc(c.email)+'</td></tr>';}).join('')+'</tbody></table></div>';
+    var h2='<div class="painelzinho"><h5>pedidos</h5><table class="mini"><thead><tr><th>id</th><th>cliente_id</th><th>qtd</th></tr></thead><tbody>'+
+      st.pedidos.map(function(p){
+        var orfao=!st.clientes.some(function(c){return c.id===p.cliente_id;});
+        var ruim=orfao||p.qtd<=0||p.cliente_id===null;
+        return '<tr class="'+(ruim?'ruim':'')+'"><td>'+p.id+'</td><td>'+(p.cliente_id===null?'NULL':p.cliente_id)+(orfao?' ⚠️ órfão':'')+'</td><td>'+p.qtd+(p.qtd<=0?' ⚠️':'')+'</td></tr>';}).join('')+'</tbody></table></div>';
+    box.querySelector('#i3-tb').innerHTML=h1+h2;
+    box.querySelector('#i3-log').innerHTML=st.log.map(function(l){return '<li class="'+l.c+'">'+esc(l.t)+'</li>';}).join('');
+    var res=box.querySelector('#i3-res');res.className='fb '+(cls||'fb-info');
+    res.innerHTML=msg||'Tente as operações proibidas com as restrições ligadas; depois desligue uma e repita. Por fim, simule a queda no meio da transferência com e sem transação.';
+  }
+  box.querySelectorAll('.op').forEach(function(b){b.addEventListener('click',function(){
+    var o=b.getAttribute('data-o'),on=chk(box,'i3-'+o),nid=12+st.pedidos.length;
+    var nomes={fk:'FOREIGN KEY',uq:'UNIQUE',ck:'CHECK',nn:'NOT NULL'};
+    if(on){ev('INSERT recusado → erro de '+nomes[o],'ev-ok');
+      pinta('🛡️ <strong>Recusado pelo banco:</strong> a restrição <code>'+nomes[o]+'</code> barrou a operação antes de gravar. '+
+        '🌍 É o que o InnoDB (motor padrão do MySQL, banco gratuito da Oracle) faz: o dado inválido nunca chega ao disco, venha do formulário, de um script ou de outro serviço.','fb-ok');return;}
+    if(o==='fk'){st.pedidos.push({id:nid,cliente_id:999,qtd:1});st.viol.push('pedido órfão');ev('INSERT aceito: pedido '+nid+' → cliente 999 (inexistente)','ev-bad');}
+    if(o==='uq'){st.clientes.push({id:st.clientes.length+1,nome:'Clone da Ana',email:'ana@exemplo.com'});st.viol.push('e-mail duplicado');ev('INSERT aceito: e-mail ana@exemplo.com repetido','ev-bad');}
+    if(o==='ck'){st.pedidos.push({id:nid,cliente_id:1,qtd:-3});st.viol.push('quantidade negativa');ev('INSERT aceito: pedido '+nid+' com quantidade -3','ev-bad');}
+    if(o==='nn'){st.pedidos.push({id:nid,cliente_id:null,qtd:1});st.viol.push('cliente nulo');ev('INSERT aceito: pedido '+nid+' sem cliente (NULL)','ev-bad');}
+    pinta('💥 <strong>Gravado sem a restrição '+nomes[o]+':</strong> o dado inválido entrou e a integridade caiu. Nenhuma tela avisou — o formulário estava igual. '+
+      '🌍 É por isso que a regra precisa morar no banco: ela vale para importações, scripts e serviços que você nem escreveu ainda.','fb-err');
+  });});
+  box.querySelector('#i3-tx-run').addEventListener('click',function(){
+    var tx=chk(box,'i3-tx'),btn=this;btn.disabled=true;
+    var antes=st.saldo,nid=20+st.pedidos.length;
+    ev('BEGIN; UPDATE conta SET saldo = saldo - 300;','ev-warn');st.saldo=antes-300;pinta('⏳ Passo 1 concluído: saldo debitado. O servidor vai cair antes do passo 2...','fb-info');
+    dTimer(i,function(){
+      ev('💥 Queda do servidor antes de criar o pedido','ev-bad');
+      if(tx){st.saldo=antes;ev('ROLLBACK: débito desfeito automaticamente','ev-ok');
+        pinta('📦 <strong>Com transação: ROLLBACK.</strong> O débito foi desfeito e o saldo voltou a R$ '+antes+'. É o A do ACID (atomicidade): o pacote não confirmou, então nada aconteceu. '+
+          '🌍 É a mesma garantia de um Pix (pagamento instantâneo do Banco Central do Brasil) em bancos como o Nubank (banco digital brasileiro).','fb-ok');}
+      else{st.viol.push('débito sem pedido');ev('Sem transação: débito persistiu, pedido não existe','ev-bad');
+        pinta('💥 <strong>Sem transação:</strong> o saldo ficou em R$ '+st.saldo+' e o pedido '+nid+' nunca foi criado. O dinheiro sumiu e o dado parece plausível — o pior tipo de erro, porque ninguém percebe na hora. Ligue a transação e repita.','fb-err');}
+      btn.disabled=false;
+    },900,false);
+  });
+  box.querySelector('#i3-seed').addEventListener('click',function(){dClear(i);seed();pinta();toast('↺ Dados restaurados');});
+  wire(box,function(){pinta();});pinta();
+}
+/* ---- 4: ORM ---- */
+function demoOrm(i,cfg,box){
+  var st=DEMOS[i];st.obj={nome:'Ana Souza',email:'ana@exemplo.com',cidade:'Recife'};st.row=null;st.log=[];
+  box.innerHTML='<div class="ctrls">'+cTxt('o4-nome','nome',st.obj.nome)+cTxt('o4-email','email',st.obj.email)+cTxt('o4-cidade','cidade',st.obj.cidade)+
+    cS('o4-orm','Framework ORM',cfg.orms)+cT('o4-sql','🔍 Mostrar SQL gerado',true)+
+    '<div class="ctl full botoes"><button type="button" class="btn" id="o4-ins">💾 salvar (INSERT)</button><button type="button" class="btn" id="o4-upd">✏️ alterar (UPDATE)</button>'+
+    '<button type="button" class="btn alt" id="o4-sel">🔎 buscar (SELECT)</button><button type="button" class="btn warnb" id="o4-del">🗑 excluir (DELETE)</button></div></div>'+
+    '<div class="duas"><div class="painelzinho"><h5>Objeto na memória</h5><div class="codebox" id="o4-obj"></div></div>'+
+    '<div class="painelzinho"><h5>Linha na tabela clientes</h5><div id="o4-row"></div></div></div>'+
+    '<div class="codebox" id="o4-sqlbox" style="margin-top:10px"></div><ol class="log" id="o4-log"></ol><div class="fb fb-info" id="o4-res"></div>';
+  function dirty(){if(!st.row)return [];return ['nome','email','cidade'].filter(function(k){return st.obj[k]!==st.row[k];});}
+  function ev(t,c){st.log.unshift({t:t,c:c||''});if(st.log.length>7)st.log.pop();}
+  function pinta(sql,trad,msg,cls){
+    var d=dirty();
+    box.querySelector('#o4-obj').innerHTML='Cliente {\n'+['nome','email','cidade'].map(function(k){
+      var sujo=d.indexOf(k)>=0;return '  '+k+' = <span class="'+(sujo?'hl':'')+'">'+esc(st.obj[k])+'</span>'+(sujo?'  ← alterado, pendente':'');}).join('\n')+'\n}'+
+      '<span class="trad">🔤 unidade de trabalho: '+(d.length?d.length+' campo(s) pendente(s) — '+d.join(', '):'limpa, nada a enviar')+'</span>';
+    box.querySelector('#o4-row').innerHTML=st.row?
+      '<table class="mini"><thead><tr><th>id</th><th>nome</th><th>email</th><th>cidade</th></tr></thead><tbody><tr><td>7</td><td>'+esc(st.row.nome)+'</td><td>'+esc(st.row.email)+'</td><td>'+esc(st.row.cidade)+'</td></tr></tbody></table>':
+      '<p style="font-size:.85em;color:var(--muted)">(nenhuma linha gravada ainda)</p>';
+    var sb=box.querySelector('#o4-sqlbox');
+    if(chk(box,'o4-sql')){sb.hidden=false;
+      var orm=cfg.orms.find(function(o){return o.chave===val(box,'o4-orm');});
+      sb.innerHTML=esc(orm.code)+'\n\n'+(sql?esc(sql):'-- nenhuma operação executada ainda')+(trad?'<span class="trad">🔤 '+esc(trad)+'</span>':'');
+    }else sb.hidden=true;
+    box.querySelector('#o4-log').innerHTML=st.log.map(function(l){return '<li class="'+l.c+'">'+esc(l.t)+'</li>';}).join('');
+    var res=box.querySelector('#o4-res');res.className='fb '+(cls||'fb-info');
+    res.innerHTML=msg||'Edite os campos, salve o objeto e depois altere só a cidade: o ORM envia apenas o campo pendente. Inspecione o SQL gerado — é ele que vai ao banco de verdade.';
+  }
+  function leia(){st.obj={nome:val(box,'o4-nome'),email:val(box,'o4-email'),cidade:val(box,'o4-cidade')};}
+  ['o4-nome','o4-email','o4-cidade'].forEach(function(id){box.querySelector('#'+id).addEventListener('input',function(){leia();pinta();});});
+  box.querySelector('#o4-ins').addEventListener('click',function(){
+    leia();if(st.row){pinta(null,null,'O objeto já existe no banco (id 7): o save() de um objeto persistente gera UPDATE, não INSERT. Use ✏️ alterar.','fb-info');return;}
+    st.row={nome:st.obj.nome,email:st.obj.email,cidade:st.obj.cidade};
+    var sql="INSERT INTO clientes (nome, email, cidade) VALUES ('"+st.obj.nome+"', '"+st.obj.email+"', '"+st.obj.cidade+"');";
+    ev(sql,'ev-ok');pinta(sql,'crie uma linha em clientes com estes valores','💾 <strong>INSERT gerado.</strong> O objeto virou linha. 🌍 No Django (framework web de Python), save() escolhe INSERT quando o objeto ainda não existe no banco.','fb-ok');});
+  box.querySelector('#o4-upd').addEventListener('click',function(){
+    leia();if(!st.row){pinta(null,null,'Não há linha gravada: salve primeiro para depois alterar.','fb-info');return;}
+    var d=dirty();if(!d.length){pinta(null,null,'✅ Nada pendente: a unidade de trabalho está limpa, então o ORM não envia comando nenhum.','fb-ok');return;}
+    var sets=d.map(function(k){return k+" = '"+st.obj[k]+"'";}).join(', ');
+    var sql='UPDATE clientes SET '+sets+' WHERE id = 7;';
+    d.forEach(function(k){st.row[k]=st.obj[k];});
+    ev(sql,'ev-ok');pinta(sql,'altere só a(s) coluna(s) '+d.join(', ')+' da linha de código 7',
+      '✏️ <strong>UPDATE só do que mudou:</strong> '+d.join(', ')+'. É o acompanhamento de mudanças (dirty checking). 🌍 O Hibernate (biblioteca de Java que mapeia objetos para tabelas) compara o estado atual com o carregado e emite apenas o necessário.','fb-ok');});
+  box.querySelector('#o4-sel').addEventListener('click',function(){
+    var sql='SELECT id, nome, email, cidade FROM clientes WHERE id = 7;';
+    if(st.row){st.obj={nome:st.row.nome,email:st.row.email,cidade:st.row.cidade};
+      box.querySelector('#o4-nome').value=st.obj.nome;box.querySelector('#o4-email').value=st.obj.email;box.querySelector('#o4-cidade').value=st.obj.cidade;}
+    ev(sql,'ev-ok');pinta(sql,'traga a linha de código 7 e transforme em objeto',
+      '🔎 <strong>SELECT gerado.</strong> '+(st.row?'O resultado voltou para o MESMO objeto da sessão (mapa de identidade): não há duas cópias divergentes da mesma linha.':'Não há linha com id 7: o ORM devolveria None/null. ')+'🌍 É o comportamento do SQLAlchemy (biblioteca de Python) e do Hibernate (Java).','fb-ok');});
+  box.querySelector('#o4-del').addEventListener('click',function(){
+    if(!st.row){pinta(null,null,'Não há linha para excluir.','fb-info');return;}
+    var sql='DELETE FROM clientes WHERE id = 7;';st.row=null;ev(sql,'ev-warn');
+    pinta(sql,'apague a linha de código 7','🗑 <strong>DELETE gerado.</strong> O objeto continua na memória, mas não representa mais nenhuma linha — a sessão foi informada. 🌍 Por isso ORMs marcam o objeto como removido em vez de simplesmente esquecê-lo.','fb-ok');});
+  wire(box,function(){pinta();});pinta();
+}
+/* ---- 5: N+1 ---- */
+function demoNmais1(i,cfg,box){
+  var st=DEMOS[i];st.log=[];st.rodando=false;
+  box.innerHTML='<div class="ctrls">'+cR('n5-n','Pedidos na listagem',1,50,20,1,'')+cR('n5-cli','Clientes distintos',1,20,8,1,'')+
+    cS('n5-est','Estratégia de carregamento',cfg.estrategias)+cT('n5-cache','🧠 Mapa de identidade (cache da sessão)',true)+
+    cT('n5-pag','📄 Paginação de 10 por página',false)+
+    '<div class="ctl full botoes"><button type="button" class="btn" id="n5-run">▶ Executar carregamento</button></div></div>'+
+    '<div class="kpis" id="n5-k"></div><div class="bars" id="n5-bars"></div><ol class="log" id="n5-log"></ol><div class="fb fb-info" id="n5-res"></div>';
+  function calc(){
+    var n=num(box,'n5-n',20),cli=Math.max(1,Math.min(num(box,'n5-cli',8),n)),est=val(box,'n5-est'),cache=chk(box,'n5-cache'),pag=chk(box,'n5-pag');
+    var efetivos=pag?Math.min(10,n):n;
+    var distintos=Math.max(1,Math.min(cli,efetivos));
+    var q=est==='lazy'?(1+(cache?distintos:efetivos)):est==='join'?1:2;
+    var linhas=est==='join'?efetivos:efetivos+distintos;
+    var ms=q*1.8+linhas*0.02;
+    return {n:efetivos,q:q,est:est,ms:ms,linhas:linhas,distintos:distintos,pag:pag};
+  }
+  function pinta(){
+    var c=calc();
+    var qs={lazy:1+(chk(box,'n5-cache')?c.distintos:c.n),join:1,batch:2};
+    var maxQ=Math.max(qs.lazy,qs.join,qs.batch);
+    box.querySelector('#n5-k').innerHTML='<div class="kpi '+(c.q>10?'bad':c.q>2?'warn':'ok')+'"><div class="n">'+c.q+'</div><div class="l">Consultas ao banco</div></div>'+
+      '<div class="kpi"><div class="n">'+c.n+'</div><div class="l">Pedidos devolvidos</div></div>'+
+      '<div class="kpi tea"><div class="n">'+c.linhas+'</div><div class="l">Linhas trafegadas</div></div>'+
+      '<div class="kpi '+(c.ms>40?'bad':c.ms>12?'warn':'ok')+'"><div class="n">'+c.ms.toFixed(1).replace('.',',')+' ms</div><div class="l">Tempo estimado</div></div>';
+    var cores={lazy:'var(--danger)',join:'var(--teal)',batch:'var(--acc)'};
+    var rotulos={lazy:'Preguiçoso (lazy)',join:'Junção (JOIN)',batch:'Lote (IN)'};
+    box.querySelector('#n5-bars').innerHTML=['lazy','join','batch'].map(function(k){
+      return '<div class="bl"><span>'+rotulos[k]+(k===c.est?' ◀':'')+'</span><span class="bt"><span class="bi" style="width:'+(qs[k]/maxQ*100)+'%;background:'+cores[k]+'"></span></span><span>'+qs[k]+' consulta(s)</span></div>';}).join('');
+    box.querySelector('#n5-log').innerHTML=st.log.map(function(l){return '<li class="'+l.c+'">'+esc(l)+'</li>';}).join('');
+    var res=box.querySelector('#n5-res');
+    res.className='fb '+(c.q>10?'fb-err':'fb-ok');
+    res.innerHTML=(c.est==='lazy'?'🐢 <strong>Preguiçoso:</strong> cada acesso a pedido.cliente dispara uma ida ao banco'+(chk(box,'n5-cache')?' (o cache evita repetir o mesmo cliente)':'')+'. Com '+c.n+' pedidos, são '+c.q+' consultas — o problema N+1.':
+      c.est==='join'?'⚡ <strong>Junção:</strong> uma consulta traz pedidos e clientes juntos; o custo é repetir as colunas do cliente em cada linha.':
+      '📦 <strong>Lote:</strong> uma consulta para os pedidos e outra com WHERE id IN (...) para os clientes — duas idas, sem repetição de colunas.')+
+      (c.pag?' A paginação limitou a página a 10 itens, contendo o tamanho do problema.':'')+
+      ' 🌍 '+esc(c.est==='lazy'?'O Django Debug Toolbar (painel do Django, framework web de Python) mostra essa contagem por página.':
+      c.est==='join'?'É o select_related do Django e o JOIN FETCH do Hibernate (biblioteca de Java).':'É o prefetch_related do Django e o selectinload do SQLAlchemy (biblioteca de Python).');
+  }
+  box.querySelector('#n5-run').addEventListener('click',function(){
+    if(st.rodando)return;var c=calc();st.rodando=true;st.log=[];dClear(i);
+    var btn=this;btn.disabled=true;
+    var filas=[];
+    if(c.est==='lazy'){filas.push('SELECT * FROM pedidos LIMIT '+c.n+';');
+      var alvo=chk(box,'n5-cache')?c.distintos:c.n;
+      for(var k=1;k<=alvo;k++)filas.push('SELECT * FROM clientes WHERE id = '+k+';  -- disparada pelo acesso pedido.cliente');
+    }else if(c.est==='join'){filas.push('SELECT p.*, c.nome FROM pedidos p JOIN clientes c ON c.id = p.cliente_id LIMIT '+c.n+';');
+    }else{filas.push('SELECT * FROM pedidos LIMIT '+c.n+';');filas.push('SELECT * FROM clientes WHERE id IN ('+Array.from({length:c.distintos},function(_,k){return k+1;}).join(', ')+');');}
+    var idx=0,mostradas=0;
+    dTimer(i,function(){
+      if(idx>=filas.length){dClear(i);st.rodando=false;btn.disabled=false;
+        if(filas.length>12)st.log.unshift({t:'… '+filas.length+' consultas no total (registro resumido)',c:'ev-warn'});
+        pinta();toast('▶ '+filas.length+' consulta(s) executada(s)');return;}
+      if(mostradas<12){st.log.push({t:filas[idx],c:c.est==='lazy'&&idx>0?'ev-bad':'ev-ok'});mostradas++;}
+      idx++;pinta();
+    },110,true);
+  });
+  wire(box,function(){st.log=[];pinta();});pinta();
+}
+/* ---- 6: cenário ---- */
+function demoCenario(i,cfg,box){
+  var st=DEMOS[i];st.passo=0;
+  box.innerHTML='<p class="demo-status" id="cn-st-'+i+'"></p><div id="cn-area-'+i+'"></div>';
+  var area=box.querySelector('#cn-area-'+i),status=box.querySelector('#cn-st-'+i);
+  function mostra(){
+    if(st.passo>=cfg.passos.length){
+      status.textContent='Decisões tomadas! 🎉';
+      var fim=document.createElement('div');fim.className='fb fb-ok';fim.innerHTML=esc(cfg.final);area.appendChild(fim);return;}
+    status.textContent='Cenário '+(st.passo+1)+' de '+cfg.passos.length;
+    var p=cfg.passos[st.passo],bloco=document.createElement('div');bloco.className='cn-passo';
+    bloco.innerHTML='<p class="qp"><strong>'+esc(p.pergunta)+'</strong></p><div class="alts"></div><div class="fb" hidden></div>';
+    area.appendChild(bloco);
+    var alts=bloco.querySelector('.alts'),fb=bloco.querySelector('.fb'),done=false;
+    shuffle(p.opcoes.slice()).forEach(function(o){
+      var b=document.createElement('button');b.type='button';b.className='alt';
+      b.innerHTML='<span class="mark"></span><span>'+esc(o.t)+'</span>';
+      b.addEventListener('click',function(){
+        if(done||b.disabled)return;
+        if(o.ok){done=true;b.classList.add('ok');b.querySelector('.mark').textContent='✓';
+          alts.querySelectorAll('button').forEach(function(x){x.disabled=true;});
+          fb.hidden=false;fb.className='fb fb-ok';fb.innerHTML='✅ <strong>Por que esta está certa:</strong> '+esc(o.fb);
+          st.passo++;dTimer(i,mostra,650,false);
+        }else{b.classList.add('err');b.querySelector('.mark').textContent='✗';b.disabled=true;
+          fb.hidden=false;fb.className='fb fb-err';fb.innerHTML='❌ <strong>Por que esta está errada:</strong> '+esc(o.fb)+' <em>Tente outra opção.</em>';}
+      });
+      alts.appendChild(b);
+    });
+  }
+  mostra();
+}
+/* ---- navegação ---- */
+function activate(idx,setHash){
+  if(idx<0||idx>=N_TOTAL)idx=0;atual=idx;
+  for(var k=0;k<N_TOTAL;k++){
+    var b=document.getElementById('t-'+(k+1)),p=document.getElementById(k===N_ABAS?'revisao':'aba-'+(k+1)),on=(k===idx);
+    b.setAttribute('aria-selected',on?'true':'false');b.tabIndex=on?0:-1;b.classList.toggle('ativa',on);p.hidden=!on;}
+  if(setHash){var h=(idx===N_ABAS)?'revisao':'aba-'+(idx+1);if(location.hash!=='#'+h)location.hash=h;}
+}
+function idxDoHash(){var m=/^#aba-([1-6])$/.exec(location.hash);if(m)return parseInt(m[1],10)-1;if(location.hash==='#revisao')return N_ABAS;return 0;}
+function init(){
+  var tabsEl=document.getElementById('tabs'),pn=document.getElementById('paineis'),th='',ph='';
+  DADOS.forEach(function(d,i){
+    var badge=(i>=5)?' <span class="badge-estudo">📖 Estudo próprio</span>':'';
+    th+='<button type="button" class="tab" role="tab" id="t-'+(i+1)+'" aria-controls="aba-'+(i+1)+'" aria-selected="false" tabindex="-1">'+esc(d.rotulo)+badge+'</button>';
+    ph+='<section class="painel" id="aba-'+(i+1)+'" role="tabpanel" aria-labelledby="t-'+(i+1)+'" hidden>'+painelHTML(d,i)+'</section>';});
+  th+='<button type="button" class="tab" role="tab" id="t-'+N_TOTAL+'" aria-controls="revisao" aria-selected="false" tabindex="-1">🧭 Revisão</button>';
+  ph+='<section class="painel" id="revisao" role="tabpanel" aria-labelledby="t-'+N_TOTAL+'" hidden>'+revisaoHTML()+'</section>';
+  tabsEl.innerHTML=th;pn.innerHTML=ph;
+  DADOS.forEach(function(d,i){
+    renderQuiz(i);renderMito(i);renderDemo(i);
+    document.getElementById('rst-'+i).addEventListener('click',function(){renderDemo(i);toast('🔄 Demo reiniciada. Preveja antes de clicar!');});});
+  document.getElementById('btn-chefao').addEventListener('click',function(){
+    if(STATE.chefao)return;STATE.chefao=true;this.disabled=true;
+    document.getElementById('chefao-ok').textContent='🏆 Selo do Chefão conquistado!';
+    toast('🏆 Chefão enfrentado! Mostre seu rascunho ao professor.');updateHUD();});
+  tabsEl.addEventListener('click',function(e){var b=e.target.closest('.tab');if(!b)return;activate(parseInt(b.id.slice(2),10)-1,true);});
+  tabsEl.addEventListener('keydown',function(e){
+    var idx=atual;
+    if(e.key==='ArrowRight')idx=Math.min(atual+1,N_TOTAL-1);else if(e.key==='ArrowLeft')idx=Math.max(atual-1,0);
+    else if(e.key==='Home')idx=0;else if(e.key==='End')idx=N_TOTAL-1;else return;
+    e.preventDefault();activate(idx,true);document.getElementById('t-'+(idx+1)).focus();});
+  window.addEventListener('hashchange',function(){var idx=idxDoHash();if(idx!==atual)activate(idx,false);});
+  document.addEventListener('keydown',function(e){
+    if(!apres)return;var t=e.target,tag=(t.tagName||'').toLowerCase();
+    if(tag==='input'||tag==='textarea'||tag==='select'||t.isContentEditable)return;
+    if(e.key==='ArrowRight'){e.preventDefault();var n=Math.min(atual+1,N_TOTAL-1);activate(n,true);document.getElementById('t-'+(n+1)).focus();}
+    else if(e.key==='ArrowLeft'){e.preventDefault();var n2=Math.max(atual-1,0);activate(n2,true);document.getElementById('t-'+(n2+1)).focus();}});
+  var bm=document.getElementById('btn-modo'),bd=document.getElementById('btn-dark');
+  bm.addEventListener('click',function(){
+    apres=!apres;document.body.classList.toggle('apresentacao',apres);
+    bm.textContent=apres?'📖 Leitura':'🎤 Apresentação';bm.setAttribute('aria-pressed',String(apres));
+    if(apres){document.body.classList.remove('dark');bd.disabled=true;bd.textContent='🌙 Escuro';bd.setAttribute('aria-pressed','false');}else bd.disabled=false;
+    document.querySelectorAll('details.roteiro').forEach(function(d){d.open=apres;});
+    toast(apres?'🎤 Modo Apresentação: fonte maior e setas do teclado navegam.':'📖 Modo Leitura: tamanho padrão e modo escuro disponível.');});
+  bd.addEventListener('click',function(){if(apres)return;var on=document.body.classList.toggle('dark');bd.textContent=on?'☀️ Claro':'🌙 Escuro';bd.setAttribute('aria-pressed',String(on));});
+  activate(idxDoHash(),false);updateHUD();
+}
+init();
+</script>
+</body>
+</html>
