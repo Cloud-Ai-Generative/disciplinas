@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <!-- HTMLearning v2.17 (23/10/2026) — Aula gerada a partir do sumário fornecido. Arquivo único, CSS/JS inline, 100% offline. -->
+<!-- Correção desta entrega: chaves de objeto iniciadas por dígito agora estão entre aspas (o arquivo anterior não inicializava e mostrava só cabeçalho e rodapé); registro de consultas do N+1 corrigido; controles de cardinalidade ligados ao redesenho; renderização de cada demo isolada por try/catch. -->
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
@@ -75,9 +76,9 @@ button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit
 .barra{width:170px;height:12px;border:2px solid var(--line);border-radius:99px;overflow:hidden;background:var(--card)}
 #barra-fill{height:100%;width:0;background:linear-gradient(90deg,var(--acc),var(--magenta),var(--teal));transition:width .5s}
 .tabs{display:flex;gap:4px;overflow-x:auto;position:sticky;top:0;z-index:60;background:linear-gradient(180deg,var(--bg) 70%,transparent);border-bottom:3px solid var(--line);padding:10px 8px 0}
-.tab{background:transparent;border:3px solid transparent;border-bottom:none;padding:9px 15px;border-radius:13px 13px 0 0;font-weight:700;color:var(--muted);white-space:nowrap;cursor:pointer;font-size:.85em}
-.tab:hover{color:var(--acc)}
-.tab.ativa{background:var(--card);border-color:var(--line);border-bottom:3px solid var(--card);color:var(--acc);position:relative;margin-bottom:-3px;z-index:2;box-shadow:0 -6px 18px rgba(23,26,64,.08)}
+.tab{background:var(--bg2);border:3px solid transparent;border-bottom:none;padding:9px 15px;border-radius:13px 13px 0 0;font-weight:700;color:var(--muted);white-space:nowrap;cursor:pointer;font-size:.85em;transition:color .15s,background .15s}
+.tab:hover{color:var(--acc);background:var(--acc-soft)}
+.tab.ativa{background:var(--card);border-color:var(--line);border-bottom:3px solid var(--card);color:var(--acc);position:relative;margin-bottom:-3px;z-index:2;box-shadow:0 -6px 18px rgba(23,26,64,.10)}
 .painel{background:var(--card);border:3px solid var(--line);border-top:none;border-radius:0 18px 18px 18px;padding:24px;box-shadow:var(--shadow);animation:sobe .45s ease both}
 @keyframes sobe{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 .missao{background:linear-gradient(120deg,var(--acc-soft),transparent 72%);border-left:8px solid var(--acc);padding:14px 16px;border-radius:12px;margin:10px 0}
@@ -161,7 +162,7 @@ footer ul{margin:6px 0;padding-left:20px}footer .links{list-style:none;padding:0
 .codebox .trad{display:block;color:#FCD34D;font-family:system-ui,sans-serif;font-size:.95em;margin-top:7px}
 .codebox .hl{color:#F9A8D4}
 .er{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:10px 0}
-.ent{border:2px solid var(--acc);border-radius:12px;background:var(--card);overflow:hidden}
+.ent{border:2px solid var(--acc);border-radius:12px;background:var(--card);overflow:hidden;animation:sobe .35s ease both}
 .ent h5{margin:0;background:linear-gradient(135deg,var(--acc),var(--acc-deep));color:#fff;padding:6px 10px;font-size:.82em}
 .ent ul{list-style:none;margin:0;padding:7px 10px;font-size:.76em;font-family:ui-monospace,monospace}
 .ent li{padding:1px 0}
@@ -179,9 +180,9 @@ footer ul{margin:6px 0;padding-left:20px}footer .links{list-style:none;padding:0
 .duas{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .painelzinho{border:2px solid var(--line);border-radius:12px;padding:10px;background:var(--card)}
 .painelzinho h5{margin:0 0 7px;font-size:.78em;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-.dirty{background:var(--warnbg);border-color:var(--amber);color:var(--amber);border-radius:6px;padding:0 4px;font-weight:800}
 .demo-status{font-weight:800;color:var(--magenta)}
 .cn-passo{border-top:2px dashed var(--line);padding-top:10px;margin-top:10px}
+.aviso-tecnico{border:2px dashed var(--danger);background:var(--dangerbg);color:var(--danger);border-radius:12px;padding:12px;font-size:.85em;font-weight:700}
 @media (max-width:760px){
   .painel{padding:15px}.topo{margin-top:56px;padding:18px}
   .bl{grid-template-columns:112px 1fr 86px;font-size:.72em}
@@ -211,6 +212,7 @@ footer ul{margin:6px 0;padding-left:20px}footer .links{list-style:none;padding:0
 
   <nav aria-label="Abas da aula"><div class="tabs" id="tabs" role="tablist" aria-label="Abas da aula"></div></nav>
   <main id="paineis"></main>
+  <noscript><p class="aviso-tecnico">Esta aula interativa precisa de JavaScript ativado no navegador para montar as abas, as demos e o quiz.</p></noscript>
 
   <footer>
     <div class="rod-bloco">
@@ -253,9 +255,7 @@ dicionario:[{t:"Entidade",d:"A coisa sobre a qual guardamos dados: cliente, pedi
 conceitos:[{titulo:"Da frase ao desenho",texto:"Leia o negócio e sublinhe os substantivos: eles viram entidades. Os verbos entre eles viram relacionamentos. 'Um cliente faz vários pedidos; cada pedido contém vários produtos' já entrega três entidades e dois relacionamentos. Desenhar antes de criar tabela evita o retrabalho caro: mudar coluna em produção com milhões de linhas é operação de risco, não clique.",analogia:"a planta da casa antes do tijolo: decidir onde ficam as portas no papel custa um lápis; decidir depois de levantar a parede custa demolição.",exemploReal:"Ferramentas como o dbdiagram.io (site gratuito de modelagem) existem para essa etapa: você escreve as entidades e relações num texto simples e o desenho com as tabelas e chaves aparece ao lado."},
 {titulo:"Cardinalidade decide a estrutura",texto:"Um relacionamento 1:N vira uma chave estrangeira no lado N: o pedido guarda o cliente_id. Já um N:N não cabe numa coluna: exige uma tabela associativa com as duas chaves — e é nela que moram os atributos do vínculo, como quantidade e preço_unitario. Tentar guardar 'vários produtos' numa coluna só, separados por vírgula, destrói a possibilidade de buscar, somar e indexar.",analogia:"a lista de presença liga aluno e turma: ela é uma tabela própria, com data e nota — não dá para escrever 'turmas: 1,2,3' dentro da ficha do aluno.",exemploReal:"A tabela de itens do pedido é o caso clássico: em lojas como o Mercado Livre (site de compras da América Latina), é ela que guarda quantas unidades de cada produto e por qual preço naquele momento."}],
 roteiroDemo:{passo0:"Antes de clicar, preveja: se você ligar Pedido e Produto como 1:N em vez de N:N, o que o carrinho de compras perde?",passos:[{acao:"Mude a cardinalidade das duas relações e observe as tabelas geradas.",ve:"Um N:N cria automaticamente a tabela associativa com as duas chaves; o 1:N cria apenas uma coluna de chave estrangeira.",significa:"A cardinalidade não é enfeite do diagrama: ela decide quantas tabelas o modelo terá."},{acao:"Desligue 'atributos no vínculo' com o N:N ativo e leia o painel de consequências.",ve:"A tabela associativa fica só com as chaves e o aviso sobre quantidade e preço aparece.",significa:"O vínculo também tem informação própria — sem ela o pedido não sabe quantos itens nem por quanto."}]},
-demo:{tipo:"livre-modelo",config:{titulo:"Monte o modelo: cardinalidade → tabelas geradas",observar:"cada mudança de cardinalidade muda o número de tabelas e de chaves estrangeiras; o N:N sempre cria a tabela do meio, e é nela que quantidade e preço passam a existir.",legenda:["1:1 = um para um · 1:N = um para muitos · N:N = muitos para muitos.","PK = primary key (chave primária, o código único da linha) · FK = foreign key (chave estrangeira, aponta para outra tabela).","Tabela associativa = a tabela do meio de um N:N; pode ter atributos próprios."],
-entidades:[{nome:"Cliente",cols:[["id","pk"],["nome",""],["email",""]]},{nome:"Pedido",cols:[["id","pk"],["data",""]]},{nome:"Produto",cols:[["id","pk"],["nome",""],["preco",""]]}],
-relacoes:[{chave:"cp",de:"Cliente",para:"Pedido",padrao:"1N"},{chave:"pp",de:"Pedido",para:"Produto",padrao:"NN"}]}},
+demo:{tipo:"livre-modelo",config:{titulo:"Monte o modelo: cardinalidade → tabelas geradas",observar:"cada mudança de cardinalidade muda o número de tabelas e de chaves estrangeiras; o N:N sempre cria a tabela do meio, e é nela que quantidade e preço passam a existir.",legenda:["1:1 = um para um · 1:N = um para muitos · N:N = muitos para muitos.","PK = primary key (chave primária, o código único da linha) · FK = foreign key (chave estrangeira, aponta para outra tabela).","Tabela associativa = a tabela do meio de um N:N; pode ter atributos próprios."]}},
 quiz:{termos:["entidade: a coisa que vira tabela (cliente, pedido)","atributo: a característica que vira coluna","cardinalidade: 1:1, 1:N ou N:N — quantos de cada lado se ligam","chave estrangeira (FK): coluna que guarda a chave de outra tabela","tabela associativa: tabela do meio que resolve o N:N","modelo lógico: o desenho em tabelas, colunas e chaves"],
 perguntas:[{q:"Pedido e Produto se relacionam como muitos-para-muitos (N:N). Como isso vira tabela?",alts:[{t:"Cria-se uma tabela associativa com as chaves dos dois lados",ok:true,fb:"Isso! É a tabela de itens do pedido: pedido_id + produto_id, e é nela que quantidade e preço_unitario moram — como nos marketplaces do tipo Mercado Livre (site de compras da América Latina)."},{t:"Guarda-se uma lista de ids de produto numa coluna do pedido",fb:"Lista dentro de coluna quebra a primeira forma normal: não dá para buscar por produto, somar quantidades nem criar índice. O N:N exige uma tabela do meio."},{t:"Copia-se o produto inteiro para dentro de cada pedido",fb:"Copiar o produto inteiro duplica nome e descrição em milhares de linhas e cria anomalia de atualização. O vínculo precisa de chaves, não de cópias."}]},
 {q:"Num relacionamento 1:N entre Cliente e Pedido, onde fica a chave estrangeira?",alts:[{t:"No lado N: o pedido guarda o cliente_id",ok:true,fb:"Exato! Cada pedido aponta para um cliente; um cliente tem vários pedidos. Colocar a chave no lado 1 obrigaria o cliente a guardar uma lista de pedidos."},{t:"No lado 1: o cliente guarda o pedido_id",fb:"Isso limitaria o cliente a um pedido só (ou exigiria uma lista na coluna). A chave sempre vai para o lado que tem 'muitos'."},{t:"Nos dois lados, obrigatoriamente",fb:"Colocar dos dois lados cria redundância e risco de contradição. Num 1:N basta a chave no lado N; o outro lado é consultado por junção."}]},
@@ -305,7 +305,7 @@ dicionario:[{t:"ORM",d:"Do inglês Object-Relational Mapping; camada que traduz 
 conceitos:[{titulo:"O tradutor entre dois mundos",texto:"O objeto vive na memória, tem identidade e métodos; a linha vive no disco, tem chave e colunas. O ORM faz a ponte nos dois sentidos: transforma o objeto em INSERT e UPDATE, e transforma o resultado de um SELECT em objetos com atributos preenchidos. Isso remove o trabalho repetitivo de escrever conversões — mas não remove o banco: por baixo, continua havendo SQL.",analogia:"o intérprete numa reunião de dois idiomas: você fala a sua língua, o banco entende a dele, e a conversa flui — mas o que é dito continua sendo dito.",exemploReal:"No Django (framework web de Python), o método save() de um objeto decide sozinho entre INSERT e UPDATE conforme o objeto já exista ou não no banco."},
 {titulo:"O que o ORM faz além de traduzir",texto:"Três serviços silenciosos: acompanhamento de mudanças (só os campos alterados viram UPDATE), mapa de identidade (buscar a mesma linha duas vezes na sessão devolve o mesmo objeto, evitando cópias divergentes) e portabilidade (o mesmo código funciona em PostgreSQL e MySQL, com o dialeto ajustado). O preço é a opacidade: se você não olhar o SQL gerado, não percebe consultas demais nem junções gigantes.",analogia:"o assistente que anota suas alterações e envia o pacote no fim do dia: eficiente, mas você precisa conferir o que ele vai mandar.",exemploReal:"O Hibernate (biblioteca de Java) chama isso de dirty checking: ao dar flush na sessão, ele compara o estado atual dos objetos com o carregado e emite apenas os UPDATE necessários."}],
 roteiroDemo:{passo0:"Antes de clicar, preveja: se você mudar só a cidade do cliente e mandar salvar, o ORM envia UPDATE de todas as colunas ou só da que mudou?",passos:[{acao:"Crie o objeto, salve e observe o SQL gerado e a linha na tabela.",ve:"O INSERT aparece com os valores; a tabela ganha a linha; a unidade de trabalho fica limpa.",significa:"O objeto virou linha por meio de um comando SQL real, que você pode ler."},{acao:"Altere só a cidade, veja o campo marcado como sujo e clique em 'alterar'.",ve:"O UPDATE gerado contém apenas a coluna alterada; o marcador de pendência some.",significa:"Acompanhamento de mudanças: o ORM envia o mínimo necessário no commit."}]},
-demo:{tipo:"livre-orm",config:{titulo:"Objeto ↔ tabela ao vivo: CRUD, SQL gerado e unidade de trabalho",observar:"o campo alterado fica marcado como pendente; o UPDATE gerado leva só esse campo; e depois do commit a pendência some — é a unidade de trabalho em ação.",legenda:["INSERT = criar linha · SELECT = ler · UPDATE = alterar · DELETE = apagar.","session.add / save / persist = 'grave este objeto' conforme o framework.","Campos marcados em âmbar estão alterados na memória e ainda não foram enviados ao banco."],
+demo:{tipo:"livre-orm",config:{titulo:"Objeto ↔ tabela ao vivo: CRUD, SQL gerado e unidade de trabalho",observar:"o campo alterado fica marcado como pendente; o UPDATE gerado leva só esse campo; e depois do commit a pendência some — é a unidade de trabalho em ação.",legenda:["INSERT = criar linha · SELECT = ler · UPDATE = alterar · DELETE = apagar.","session.add / save / persist = 'grave este objeto' conforme o framework.","Campos destacados no código estão alterados na memória e ainda não foram enviados ao banco."],
 orms:[{chave:"sqlalchemy",rot:"SQLAlchemy (Python)",code:"cliente = Cliente(nome='Ana Souza', email='ana@exemplo.com', cidade='Recife')\nsession.add(cliente); session.commit()"},
 {chave:"django",rot:"Django ORM (Python)",code:"cliente = Cliente(nome='Ana Souza', email='ana@exemplo.com', cidade='Recife')\ncliente.save()"},
 {chave:"sequelize",rot:"Sequelize (Node.js)",code:"const cliente = await Cliente.create({ nome:'Ana Souza', email:'ana@exemplo.com', cidade:'Recife' });"},
@@ -344,7 +344,7 @@ conceitos:[{titulo:"Migrações: o esquema também é código",texto:"Alterar ta
 roteiroDemo:{passo0:"Antes de clicar, preveja: para adicionar uma coluna obrigatória numa tabela de 40 milhões de linhas em produção, dá para fazer num passo só?",passos:[{acao:"Nos três cenários, escolha a decisão mais segura.",ve:"A escolha certa fica verde com a explicação; a errada mostra o risco concreto e permite tentar outra.",significa:"Cada aspecto adicional tem uma prática consagrada: migração em etapas, parâmetro sempre, SQL puro quando o plano é ruim."},{acao:"Leia a mensagem final e compare com o que você faria no seu projeto.",ve:"O resumo amarra migração, segurança e desempenho.",significa:"ORM simplifica o dia a dia, mas não substitui critério de engenharia."}]},
 demo:{tipo:"cenario",config:{titulo:"Três decisões reais ao redor do ORM",
 final:"🎉 Critério de engenharia! Migração em etapas para tabela grande, valor de usuário SEMPRE como parâmetro e SQL puro (ou visão materializada) quando o plano gerado é ruim. O ORM cuida do repetitivo; as decisões de risco continuam sendo suas — como mostrou o caso da TalkTalk (operadora britânica de telecomunicações), multada em 400 mil libras em 2015 por injeção SQL.",
-passos:[{pergunta:"Cenário 1 — adicionar uma coluna obrigatória numa tabela de 40 milhões de linhas em produção. Qual o caminho?",opcoes:[{t:"Migração em etapas: criar coluna anulável, preencher em lotes e só depois exigir preenchimento",ok:true,fb:"Isso! Cada etapa é curta e reversível; o backfill em lotes não trava a tabela. É o padrão recomendado em ferramentas como Alembic (migrações do SQLAlchemy) e Flyway.",fb2:""},{t:"Um ALTER TABLE único exigindo o valor, no horário de pico",fb:"Um comando desses reescreve/trava a tabela por muito tempo e derruba a aplicação. Tabelas grandes pedem etapas curtas e janela controlada."},{t:"Alterar na mão pelo painel e depois avisar o time",fb:"Sem arquivo versionado, teste e produção divergem e não há caminho de volta. Migração é código: revisada, numerada e aplicável em todo ambiente."}]},
+passos:[{pergunta:"Cenário 1 — adicionar uma coluna obrigatória numa tabela de 40 milhões de linhas em produção. Qual o caminho?",opcoes:[{t:"Migração em etapas: criar coluna anulável, preencher em lotes e só depois exigir preenchimento",ok:true,fb:"Isso! Cada etapa é curta e reversível; o backfill em lotes não trava a tabela. É o padrão recomendado em ferramentas como Alembic (migrações do SQLAlchemy) e Flyway."},{t:"Um ALTER TABLE único exigindo o valor, no horário de pico",fb:"Um comando desses reescreve/trava a tabela por muito tempo e derruba a aplicação. Tabelas grandes pedem etapas curtas e janela controlada."},{t:"Alterar na mão pelo painel e depois avisar o time",fb:"Sem arquivo versionado, teste e produção divergem e não há caminho de volta. Migração é código: revisada, numerada e aplicável em todo ambiente."}]},
 {pergunta:"Cenário 2 — o filtro de busca vem do usuário e você precisa de uma consulta específica que o ORM não expressa bem. Como escrever?",opcoes:[{t:"SQL puro com parâmetros: o texto do comando fixo e o valor enviado separadamente",ok:true,fb:"Exato! SQL puro é legítimo; concatenação é que não é. Com parâmetros, o banco nunca interpreta o valor como código — a defesa que faltou no caso da TalkTalk (operadora britânica) em 2015."},{t:"Montar o comando concatenando o texto digitado, mas filtrando aspas",fb:"Filtrar caracteres é defesa furada: existem codificações e contextos que escapam do filtro. A proteção real é parametrizar, não higienizar texto."},{t:"Usar o ORM mesmo que ele gere um plano ruim, sem olhar o SQL",fb:"Usar ORM às cegas troca um problema de segurança por um de desempenho. Quando o plano é ruim, SQL puro revisado ou visão materializada é decisão correta."}]},
 {pergunta:"Cenário 3 — um relatório mensal com várias agregações está lento pelo ORM. Qual decisão é razoável?",opcoes:[{t:"Escrever a consulta em SQL puro revisado ou criar uma visão materializada atualizada periodicamente",ok:true,fb:"Isso! Relatório pesado é o caso clássico de saída de emergência: você controla o plano e pode pré-computar. O ORM continua cuidando do CRUD do dia a dia."},{t:"Aumentar o tempo limite da requisição para 10 minutos",fb:"Aumentar o limite só esconde o problema e prende conexões. O caminho é reduzir o trabalho: consulta melhor, índice adequado ou resultado pré-computado."},{t:"Remover todos os índices para o relatório rodar mais rápido",fb:"Índices aceleram leitura; removê-los piora o relatório e todo o resto. O ajuste é escolher índices e plano, não eliminar a estrutura de acesso."}]}]}},
 quiz:{termos:["migração: arquivo versionado que muda o esquema e pode ser desfeito","backfill: preencher linhas antigas em lotes depois de criar a coluna","injeção SQL: texto do usuário interpretado como comando pelo banco","consulta parametrizada: comando fixo com valores enviados separadamente","visão materializada: resultado de consulta gravado e atualizado periodicamente","SQL puro: escrever o comando diretamente, com revisão"],
@@ -401,8 +401,11 @@ desafio:"🐉 Chefão — Você vai modelar e implementar o back-end de pedidos 
 
 /* ================= MOTOR ================= */
 var N_ABAS=DADOS.length,N_TOTAL=N_ABAS+1;
-var STATE={xp:0,acertos:[0,0,0,0,0,0],chefao:false,toastT:null};
+var STATE={xp:0,acertos:[],chefao:false,toastT:null};
+for(var ai=0;ai<N_ABAS;ai++)STATE.acertos.push(0);
 var DEMOS=[],atual=-1,apres=false;
+var ROT_CARD={'11':'1:1','1N':'1:N','NN':'N:N'};
+
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t;}return a;}
 function nfmt(v){return Math.round(v).toLocaleString('pt-BR');}
@@ -489,14 +492,19 @@ function wire(box,fn){var c=box.querySelector('.ctrls');if(!c)return;
   c.addEventListener('change',fn);}
 function dClear(i){var s=DEMOS[i];if(s&&s.timers){s.timers.forEach(function(t){if(t.tipo==='i')clearInterval(t.id);else clearTimeout(t.id);});s.timers=[];}}
 function dTimer(i,fn,ms,rep){var id=rep?setInterval(fn,ms):setTimeout(fn,ms);DEMOS[i].timers.push({id:id,tipo:rep?'i':'t'});return id;}
+var RENDERIZADORES={'livre-modelo':demoModelo,'livre-normal':demoNormal,'livre-integridade':demoIntegridade,'livre-orm':demoOrm,'livre-nmais1':demoNmais1,'cenario':demoCenario};
 function renderDemo(i){
   dClear(i);DEMOS[i]={timers:[]};
   var d=DADOS[i].demo,b=document.getElementById('demo-'+i);
-  ({'livre-modelo':demoModelo,'livre-normal':demoNormal,'livre-integridade':demoIntegridade,'livre-orm':demoOrm,'livre-nmais1':demoNmais1,'cenario':demoCenario}[d.tipo])(i,d.config,b);
+  var fn=RENDERIZADORES[d.tipo];
+  if(!fn){b.innerHTML='<p class="aviso-tecnico">Demo indisponível nesta aba.</p>';return;}
+  try{fn(i,d.config,b);}
+  catch(err){b.innerHTML='<p class="aviso-tecnico">Não foi possível montar esta demo ('+esc(err&&err.message?err.message:'erro')+'). O restante da aba — conceitos, quiz e aprofundamento — continua funcionando.</p>';}
 }
 /* ---- 1: modelo ER ---- */
 function demoModelo(i,cfg,box){
-  box.innerHTML='<div class="ctrls">'+cS('m1-cp','Cliente → Pedido',[{chave:'11',rot:'1:1 (um pedido por cliente)'},{chave:'1N',rot:'1:N (vários pedidos)'},{chave:'NN',rot:'N:N (muitos para muitos)'}])+
+  box.innerHTML='<div class="ctrls">'+
+    cS('m1-cp','Cliente → Pedido',[{chave:'11',rot:'1:1 (um pedido por cliente)'},{chave:'1N',rot:'1:N (vários pedidos)'},{chave:'NN',rot:'N:N (muitos para muitos)'}])+
     cS('m1-pp','Pedido ↔ Produto',[{chave:'1N',rot:'1:N (um produto por pedido)'},{chave:'NN',rot:'N:N (vários produtos)'},{chave:'11',rot:'1:1 (um para um)'}])+
     cT('m1-atr','🧾 Atributos no vínculo (quantidade, preço)',true)+cT('m1-cols','👁 Mostrar colunas nas entidades',true)+
     '<div class="ctl full botoes"><button type="button" class="btn okb" id="m1-ideal">✅ Modelo usual de loja</button></div></div>'+
@@ -504,16 +512,17 @@ function demoModelo(i,cfg,box){
   box.querySelector('#m1-cp').value='1N';box.querySelector('#m1-pp').value='NN';
   function tabelas(){
     var cp=val(box,'m1-cp'),pp=val(box,'m1-pp'),atr=chk(box,'m1-atr');
-    var T=[{n:'Cliente',c:['id (PK)','nome','email']},{n:'Produto',c:['id (PK)','nome','preco']}];
-    var ped={n:'Pedido',c:['id (PK)','data']},fks=0;
-    if(cp==='1N'){ped.c.push('cliente_id (FK)');fks++;}
-    else if(cp==='11'){ped.c.push('cliente_id (FK, único)');fks++;}
-    T.push(ped);
-    if(cp==='NN'){T.push({n:'Cliente_Pedido',c:['cliente_id (FK)','pedido_id (FK)'].concat(atr?['papel_no_vinculo']:[])});fks+=2;}
-    if(pp==='NN'){T.push({n:'ItemPedido',c:['pedido_id (FK)','produto_id (FK)'].concat(atr?['quantidade','preco_unitario']:[])});fks+=2;}
-    else if(pp==='1N'){T.push({n:'Produto',c:[]});T.pop();ped.c.push('produto_id (FK)');fks++;}
-    else if(pp==='11'){ped.c.push('produto_id (FK, único)');fks++;}
-    return {T:T,fks:fks,cp:cp,pp:pp,atr:atr};
+    var cliente={n:'Cliente',c:['id (PK)','nome','email']};
+    var pedido={n:'Pedido',c:['id (PK)','data']};
+    var produto={n:'Produto',c:['id (PK)','nome','preco']};
+    var extra=[],fks=0;
+    if(cp==='1N'){pedido.c.push('cliente_id (FK)');fks++;}
+    else if(cp==='11'){pedido.c.push('cliente_id (FK, único)');fks++;}
+    else{extra.push({n:'Cliente_Pedido',c:['cliente_id (FK)','pedido_id (FK)'].concat(atr?['papel_no_vinculo']:[])});fks+=2;}
+    if(pp==='NN'){extra.push({n:'ItemPedido',c:['pedido_id (FK)','produto_id (FK)'].concat(atr?['quantidade','preco_unitario']:[])});fks+=2;}
+    else if(pp==='1N'){pedido.c.push('produto_id (FK)');fks++;}
+    else{pedido.c.push('produto_id (FK, único)');fks++;}
+    return {T:[cliente,pedido,produto].concat(extra),fks:fks,cp:cp,pp:pp,atr:atr};
   }
   function pinta(){
     var m=tabelas(),cols=chk(box,'m1-cols');
@@ -525,12 +534,11 @@ function demoModelo(i,cfg,box){
       return '<div class="ent"><h5>'+esc(t.n)+'</h5>'+(cols?'<ul>'+t.c.map(function(c){
         var cls=c.indexOf('PK')>=0?'pk':(c.indexOf('FK')>=0?'fk':'');
         return '<li class="'+cls+'">'+esc(c)+'</li>';}).join('')+'</ul>':'<ul><li>('+t.c.length+' colunas)</li></ul>')+'</div>';}).join('');
-    var nome={11:'1:1',1N:'1:N',NN:'N:N'};
     box.querySelector('#m1-rels').innerHTML=
-      '<div class="rel"><span>Cliente</span><span class="linha"></span><span class="card">'+nome[m.cp]+'</span><span class="linha"></span><span>Pedido</span></div>'+
-      '<div class="rel"><span>Pedido</span><span class="linha"></span><span class="card">'+nome[m.pp]+'</span><span class="linha"></span><span>Produto</span></div>';
+      '<div class="rel"><span>Cliente</span><span class="linha"></span><span class="card">'+ROT_CARD[m.cp]+'</span><span class="linha"></span><span>Pedido</span></div>'+
+      '<div class="rel"><span>Pedido</span><span class="linha"></span><span class="card">'+ROT_CARD[m.pp]+'</span><span class="linha"></span><span>Produto</span></div>';
     var msgs=[],cls='fb-ok';
-    if(m.pp!=='NN'){msgs.push('Com '+nome[m.pp]+' entre Pedido e Produto, cada pedido só consegue apontar para UM produto: o carrinho de compras quebra.');cls='fb-err';}
+    if(m.pp!=='NN'){msgs.push('Com '+ROT_CARD[m.pp]+' entre Pedido e Produto, cada pedido só consegue apontar para UM produto: o carrinho de compras quebra.');cls='fb-err';}
     if(m.pp==='NN'&&!m.atr){msgs.push('A tabela ItemPedido existe, mas sem atributos: não há como saber QUANTOS itens nem por QUAL preço naquele pedido.');cls='fb-err';}
     if(m.cp==='11'){msgs.push('Com 1:1 entre Cliente e Pedido, cada cliente só poderia fazer um pedido na vida — restrição que não existe no negócio.');cls='fb-err';}
     if(m.cp==='NN'){msgs.push('Cliente↔Pedido como N:N cria tabela do meio sem necessidade: no negócio, um pedido pertence a um cliente só (1:N).');cls='fb-err';}
@@ -540,7 +548,8 @@ function demoModelo(i,cfg,box){
       '<br>🌍 '+esc(m.pp==='NN'&&m.atr?'É exatamente a estrutura de itens de pedido de lojas como o Mercado Livre (site de compras e vendas da América Latina).':'Ferramentas como o dbdiagram.io (site gratuito de modelagem) mostram esse mesmo efeito ao mudar a cardinalidade do traço.');
   }
   wire(box,pinta);
-  box.querySelector('#m1-ideal').addEventListener('click',function(){box.querySelector('#m1-cp').value='1N';box.querySelector('#m1-pp').value='NN';box.querySelector('#m1-atr').checked=true;pinta();toast('✅ Modelo usual de loja aplicado');});
+  box.querySelector('#m1-ideal').addEventListener('click',function(){
+    box.querySelector('#m1-cp').value='1N';box.querySelector('#m1-pp').value='NN';box.querySelector('#m1-atr').checked=true;pinta();toast('✅ Modelo usual de loja aplicado');});
   pinta();
 }
 /* ---- 2: normalização + índice ---- */
@@ -551,29 +560,32 @@ function demoNormal(i,cfg,box){
     '<button type="button" class="btn nrm" data-n="3">3FN</button><button type="button" class="btn warnb" id="n2-bruto">↩ Voltar ao bruto</button>'+
     '<button type="button" class="btn alt" id="n2-muda">🏠 Cliente mudou de cidade</button></div></div>'+
     '<div class="kpis" id="n2-k"></div><div class="bars" id="n2-bars"></div><div id="n2-tabs"></div><div class="fb" id="n2-res"></div>';
+  function colunas(t,n){
+    if(t==='pedidos_brutos')return ['pedido_id (PK)','cliente_nome','cliente_cidade','produto_nome','produto_preco','telefones (lista!)'];
+    if(t==='clientes')return ['id (PK)','nome','cidade','email'];
+    if(t==='produtos')return ['id (PK)','nome','preco'];
+    if(t==='pedidos')return n>=3?['id (PK)','data','cliente_id (FK)']:['id (PK)','data','cliente_nome','cliente_cidade'];
+    if(t==='itens')return n>=2?['pedido_id (FK)','produto_id (FK)','quantidade']:['pedido_id (FK)','produto_nome','produto_preco','quantidade'];
+    return ['id (PK)'];
+  }
   function pinta(msgExtra,cls){
     var e=cfg.estagios[st.n],linhas=num(box,'n2-lin',50000),idx=chk(box,'n2-idx');
     var leiturasIdx=Math.ceil(Math.log(Math.max(2,linhas))/Math.log(2))+5;
     var leituras=idx?leiturasIdx:linhas;
-    var ms=leituras*0.0008,msIdx=leiturasIdx*0.0008,msSeq=linhas*0.0008;
+    var ms=leituras*0.0008;
     var afetadas=st.n>=3?1:linhas;
     box.querySelector('#n2-k').innerHTML='<div class="kpi"><div class="n">'+e.tabs.length+'</div><div class="l">Tabelas</div></div>'+
       '<div class="kpi '+(e.red>30?'bad':e.red>10?'warn':'ok')+'"><div class="n">'+e.red+'%</div><div class="l">Dado repetido</div></div>'+
       '<div class="kpi '+(afetadas>1?'bad':'ok')+'"><div class="n">'+nfmt(afetadas)+'</div><div class="l">Linhas a corrigir na mudança</div></div>'+
       '<div class="kpi '+(idx?'ok':'warn')+'"><div class="n">'+nfmt(leituras)+'</div><div class="l">Linhas lidas na consulta</div></div>'+
       '<div class="kpi tea"><div class="n">'+(ms<1?ms.toFixed(2).replace('.',','):nfmt(ms))+' ms</div><div class="l">Tempo estimado</div></div>';
-    var maxL=Math.max(linhas,1);
     box.querySelector('#n2-bars').innerHTML=
       '<div class="bl"><span>Sem índice (varredura)</span><span class="bt"><span class="bi" style="width:100%;background:var(--danger)"></span></span><span>'+nfmt(linhas)+' linhas</span></div>'+
-      '<div class="bl"><span>Com índice B-tree</span><span class="bt"><span class="bi" style="width:'+Math.max(1,leiturasIdx/maxL*100)+'%;background:var(--teal)"></span></span><span>'+nfmt(leiturasIdx)+' linhas</span></div>'+
+      '<div class="bl"><span>Com índice B-tree</span><span class="bt"><span class="bi" style="width:'+Math.max(1,leiturasIdx/linhas*100)+'%;background:var(--teal)"></span></span><span>'+nfmt(leiturasIdx)+' linhas</span></div>'+
       '<div class="bl"><span>Redundância do modelo</span><span class="bt"><span class="bi" style="width:'+e.red+'%;background:var(--amber-bright)"></span></span><span>'+e.red+'%</span></div>';
     box.querySelector('#n2-tabs').innerHTML='<p class="demo-status">'+esc(e.rot)+'</p><div class="er">'+e.tabs.map(function(t){
-      var cols={pedidos_brutos:['pedido_id (PK)','cliente_nome','cliente_cidade','produto_nome','produto_preco','telefones (lista!)'],
-        pedidos:['id (PK)','data','cliente_nome','cliente_cidade'],itens:['pedido_id (FK)','produto_nome','produto_preco','quantidade'],
-        produtos:['id (PK)','nome','preco'],clientes:['id (PK)','nome','cidade','email']}[t]||['id (PK)'];
-      if(st.n>=2&&t==='itens')cols=['pedido_id (FK)','produto_id (FK)','quantidade'];
-      if(st.n>=3&&t==='pedidos')cols=['id (PK)','data','cliente_id (FK)'];
-      return '<div class="ent"><h5>'+esc(t)+'</h5><ul>'+cols.map(function(c){return '<li class="'+(c.indexOf('PK')>=0?'pk':c.indexOf('FK')>=0?'fk':'')+'">'+esc(c)+'</li>';}).join('')+'</ul></div>';}).join('')+'</div>';
+      return '<div class="ent"><h5>'+esc(t)+'</h5><ul>'+colunas(t,st.n).map(function(c){
+        return '<li class="'+(c.indexOf('PK')>=0?'pk':c.indexOf('FK')>=0?'fk':'')+'">'+esc(c)+'</li>';}).join('')+'</ul></div>';}).join('')+'</div>';
     var res=box.querySelector('#n2-res');res.className='fb '+(cls||'fb-info');
     res.innerHTML=(msgExtra||'📐 <strong>'+esc(e.rot)+'.</strong> ')+
       (st.n>=3?'Cada fato mora num lugar só: mudar a cidade do cliente é uma linha, não a tabela inteira. ':'Ainda há dado repetido: mudar a cidade exige corrigir '+nfmt(afetadas)+' linhas — e uma falha no meio deixa o banco contraditório. ')+
@@ -592,8 +604,10 @@ function demoNormal(i,cfg,box){
 /* ---- 3: integridade ---- */
 function demoIntegridade(i,cfg,box){
   var st=DEMOS[i];
-  function seed(){st.clientes=[{id:1,nome:'Ana Souza',email:'ana@exemplo.com'},{id:2,nome:'Bruno Lima',email:'bruno@exemplo.com'}];
-    st.pedidos=[{id:10,cliente_id:1,qtd:2},{id:11,cliente_id:2,qtd:1}];st.saldo=1000;st.viol=[];st.log=[];}
+  function seed(){
+    st.clientes=[{id:1,nome:'Ana Souza',email:'ana@exemplo.com'},{id:2,nome:'Bruno Lima',email:'bruno@exemplo.com'}];
+    st.pedidos=[{id:10,cliente_id:1,qtd:2},{id:11,cliente_id:2,qtd:1}];
+    st.saldo=1000;st.viol=[];st.log=[];}
   seed();
   box.innerHTML='<div class="ctrls">'+cfg.restricoes.map(function(r){return cT('i3-'+r.chave,r.rot,true);}).join('')+
     cT('i3-tx','📦 Usar transação na transferência',true)+
@@ -605,9 +619,10 @@ function demoIntegridade(i,cfg,box){
   function ev(t,c){st.log.unshift({t:t,c:c||''});if(st.log.length>9)st.log.pop();}
   function pinta(msg,cls){
     var integ=Math.max(0,100-st.viol.length*25);
+    var saldoOk=st.viol.indexOf('débito sem pedido')<0;
     box.querySelector('#i3-k').innerHTML='<div class="kpi"><div class="n">'+st.clientes.length+'</div><div class="l">Clientes</div></div>'+
       '<div class="kpi"><div class="n">'+st.pedidos.length+'</div><div class="l">Pedidos</div></div>'+
-      '<div class="kpi '+(st.saldo===1000||st.saldo===700&&st.pedidos.length>2?'ok':'warn')+'"><div class="n">R$ '+st.saldo+'</div><div class="l">Saldo da conta</div></div>'+
+      '<div class="kpi '+(saldoOk?'ok':'bad')+'"><div class="n">R$ '+st.saldo+'</div><div class="l">Saldo da conta</div></div>'+
       '<div class="kpi '+(st.viol.length?'bad':'ok')+'"><div class="n">'+st.viol.length+'</div><div class="l">Violações gravadas</div></div>'+
       '<div class="kpi '+(integ>=90?'ok':integ>=60?'warn':'bad')+'"><div class="n">'+integ+'%</div><div class="l">Integridade</div></div>';
     box.querySelector('#i3-med').style.width=integ+'%';
@@ -640,7 +655,8 @@ function demoIntegridade(i,cfg,box){
   box.querySelector('#i3-tx-run').addEventListener('click',function(){
     var tx=chk(box,'i3-tx'),btn=this;btn.disabled=true;
     var antes=st.saldo,nid=20+st.pedidos.length;
-    ev('BEGIN; UPDATE conta SET saldo = saldo - 300;','ev-warn');st.saldo=antes-300;pinta('⏳ Passo 1 concluído: saldo debitado. O servidor vai cair antes do passo 2...','fb-info');
+    ev('BEGIN; UPDATE conta SET saldo = saldo - 300;','ev-warn');st.saldo=antes-300;
+    pinta('⏳ Passo 1 concluído: saldo debitado. O servidor vai cair antes do passo 2...','fb-info');
     dTimer(i,function(){
       ev('💥 Queda do servidor antes de criar o pedido','ev-bad');
       if(tx){st.saldo=antes;ev('ROLLBACK: débito desfeito automaticamente','ev-ok');
@@ -666,25 +682,24 @@ function demoOrm(i,cfg,box){
     '<div class="codebox" id="o4-sqlbox" style="margin-top:10px"></div><ol class="log" id="o4-log"></ol><div class="fb fb-info" id="o4-res"></div>';
   function dirty(){if(!st.row)return [];return ['nome','email','cidade'].filter(function(k){return st.obj[k]!==st.row[k];});}
   function ev(t,c){st.log.unshift({t:t,c:c||''});if(st.log.length>7)st.log.pop();}
+  function leia(){st.obj={nome:val(box,'o4-nome'),email:val(box,'o4-email'),cidade:val(box,'o4-cidade')};}
   function pinta(sql,trad,msg,cls){
     var d=dirty();
     box.querySelector('#o4-obj').innerHTML='Cliente {\n'+['nome','email','cidade'].map(function(k){
       var sujo=d.indexOf(k)>=0;return '  '+k+' = <span class="'+(sujo?'hl':'')+'">'+esc(st.obj[k])+'</span>'+(sujo?'  ← alterado, pendente':'');}).join('\n')+'\n}'+
-      '<span class="trad">🔤 unidade de trabalho: '+(d.length?d.length+' campo(s) pendente(s) — '+d.join(', '):'limpa, nada a enviar')+'</span>';
+      '<span class="trad">🔤 unidade de trabalho: '+(d.length?d.length+' campo(s) pendente(s) — '+esc(d.join(', ')):'limpa, nada a enviar')+'</span>';
     box.querySelector('#o4-row').innerHTML=st.row?
       '<table class="mini"><thead><tr><th>id</th><th>nome</th><th>email</th><th>cidade</th></tr></thead><tbody><tr><td>7</td><td>'+esc(st.row.nome)+'</td><td>'+esc(st.row.email)+'</td><td>'+esc(st.row.cidade)+'</td></tr></tbody></table>':
       '<p style="font-size:.85em;color:var(--muted)">(nenhuma linha gravada ainda)</p>';
     var sb=box.querySelector('#o4-sqlbox');
     if(chk(box,'o4-sql')){sb.hidden=false;
-      var orm=cfg.orms.find(function(o){return o.chave===val(box,'o4-orm');});
+      var orm=cfg.orms.find(function(o){return o.chave===val(box,'o4-orm');})||cfg.orms[0];
       sb.innerHTML=esc(orm.code)+'\n\n'+(sql?esc(sql):'-- nenhuma operação executada ainda')+(trad?'<span class="trad">🔤 '+esc(trad)+'</span>':'');
     }else sb.hidden=true;
     box.querySelector('#o4-log').innerHTML=st.log.map(function(l){return '<li class="'+l.c+'">'+esc(l.t)+'</li>';}).join('');
     var res=box.querySelector('#o4-res');res.className='fb '+(cls||'fb-info');
     res.innerHTML=msg||'Edite os campos, salve o objeto e depois altere só a cidade: o ORM envia apenas o campo pendente. Inspecione o SQL gerado — é ele que vai ao banco de verdade.';
   }
-  function leia(){st.obj={nome:val(box,'o4-nome'),email:val(box,'o4-email'),cidade:val(box,'o4-cidade')};}
-  ['o4-nome','o4-email','o4-cidade'].forEach(function(id){box.querySelector('#'+id).addEventListener('input',function(){leia();pinta();});});
   box.querySelector('#o4-ins').addEventListener('click',function(){
     leia();if(st.row){pinta(null,null,'O objeto já existe no banco (id 7): o save() de um objeto persistente gera UPDATE, não INSERT. Use ✏️ alterar.','fb-info');return;}
     st.row={nome:st.obj.nome,email:st.obj.email,cidade:st.obj.cidade};
@@ -697,7 +712,7 @@ function demoOrm(i,cfg,box){
     var sql='UPDATE clientes SET '+sets+' WHERE id = 7;';
     d.forEach(function(k){st.row[k]=st.obj[k];});
     ev(sql,'ev-ok');pinta(sql,'altere só a(s) coluna(s) '+d.join(', ')+' da linha de código 7',
-      '✏️ <strong>UPDATE só do que mudou:</strong> '+d.join(', ')+'. É o acompanhamento de mudanças (dirty checking). 🌍 O Hibernate (biblioteca de Java que mapeia objetos para tabelas) compara o estado atual com o carregado e emite apenas o necessário.','fb-ok');});
+      '✏️ <strong>UPDATE só do que mudou:</strong> '+esc(d.join(', '))+'. É o acompanhamento de mudanças (dirty checking). 🌍 O Hibernate (biblioteca de Java que mapeia objetos para tabelas) compara o estado atual com o carregado e emite apenas o necessário.','fb-ok');});
   box.querySelector('#o4-sel').addEventListener('click',function(){
     var sql='SELECT id, nome, email, cidade FROM clientes WHERE id = 7;';
     if(st.row){st.obj={nome:st.row.nome,email:st.row.email,cidade:st.row.cidade};
@@ -708,7 +723,7 @@ function demoOrm(i,cfg,box){
     if(!st.row){pinta(null,null,'Não há linha para excluir.','fb-info');return;}
     var sql='DELETE FROM clientes WHERE id = 7;';st.row=null;ev(sql,'ev-warn');
     pinta(sql,'apague a linha de código 7','🗑 <strong>DELETE gerado.</strong> O objeto continua na memória, mas não representa mais nenhuma linha — a sessão foi informada. 🌍 Por isso ORMs marcam o objeto como removido em vez de simplesmente esquecê-lo.','fb-ok');});
-  wire(box,function(){pinta();});pinta();
+  wire(box,function(){leia();pinta();});pinta();
 }
 /* ---- 5: N+1 ---- */
 function demoNmais1(i,cfg,box){
@@ -739,7 +754,7 @@ function demoNmais1(i,cfg,box){
     var rotulos={lazy:'Preguiçoso (lazy)',join:'Junção (JOIN)',batch:'Lote (IN)'};
     box.querySelector('#n5-bars').innerHTML=['lazy','join','batch'].map(function(k){
       return '<div class="bl"><span>'+rotulos[k]+(k===c.est?' ◀':'')+'</span><span class="bt"><span class="bi" style="width:'+(qs[k]/maxQ*100)+'%;background:'+cores[k]+'"></span></span><span>'+qs[k]+' consulta(s)</span></div>';}).join('');
-    box.querySelector('#n5-log').innerHTML=st.log.map(function(l){return '<li class="'+l.c+'">'+esc(l)+'</li>';}).join('');
+    box.querySelector('#n5-log').innerHTML=st.log.map(function(l){return '<li class="'+l.c+'">'+esc(l.t)+'</li>';}).join('');
     var res=box.querySelector('#n5-res');
     res.className='fb '+(c.q>10?'fb-err':'fb-ok');
     res.innerHTML=(c.est==='lazy'?'🐢 <strong>Preguiçoso:</strong> cada acesso a pedido.cliente dispara uma ida ao banco'+(chk(box,'n5-cache')?' (o cache evita repetir o mesmo cliente)':'')+'. Com '+c.n+' pedidos, são '+c.q+' consultas — o problema N+1.':
@@ -757,7 +772,8 @@ function demoNmais1(i,cfg,box){
       var alvo=chk(box,'n5-cache')?c.distintos:c.n;
       for(var k=1;k<=alvo;k++)filas.push('SELECT * FROM clientes WHERE id = '+k+';  -- disparada pelo acesso pedido.cliente');
     }else if(c.est==='join'){filas.push('SELECT p.*, c.nome FROM pedidos p JOIN clientes c ON c.id = p.cliente_id LIMIT '+c.n+';');
-    }else{filas.push('SELECT * FROM pedidos LIMIT '+c.n+';');filas.push('SELECT * FROM clientes WHERE id IN ('+Array.from({length:c.distintos},function(_,k){return k+1;}).join(', ')+');');}
+    }else{var ids=[];for(var j=1;j<=c.distintos;j++)ids.push(j);
+      filas.push('SELECT * FROM pedidos LIMIT '+c.n+';');filas.push('SELECT * FROM clientes WHERE id IN ('+ids.join(', ')+');');}
     var idx=0,mostradas=0;
     dTimer(i,function(){
       if(idx>=filas.length){dClear(i);st.rodando=false;btn.disabled=false;
@@ -804,7 +820,9 @@ function demoCenario(i,cfg,box){
 function activate(idx,setHash){
   if(idx<0||idx>=N_TOTAL)idx=0;atual=idx;
   for(var k=0;k<N_TOTAL;k++){
-    var b=document.getElementById('t-'+(k+1)),p=document.getElementById(k===N_ABAS?'revisao':'aba-'+(k+1)),on=(k===idx);
+    var b=document.getElementById('t-'+(k+1)),p=document.getElementById(k===N_ABAS?'revisao':'aba-'+(k+1));
+    if(!b||!p)continue;
+    var on=(k===idx);
     b.setAttribute('aria-selected',on?'true':'false');b.tabIndex=on?0:-1;b.classList.toggle('ativa',on);p.hidden=!on;}
   if(setHash){var h=(idx===N_ABAS)?'revisao':'aba-'+(idx+1);if(location.hash!=='#'+h)location.hash=h;}
 }
@@ -819,9 +837,13 @@ function init(){
   ph+='<section class="painel" id="revisao" role="tabpanel" aria-labelledby="t-'+N_TOTAL+'" hidden>'+revisaoHTML()+'</section>';
   tabsEl.innerHTML=th;pn.innerHTML=ph;
   DADOS.forEach(function(d,i){
-    renderQuiz(i);renderMito(i);renderDemo(i);
-    document.getElementById('rst-'+i).addEventListener('click',function(){renderDemo(i);toast('🔄 Demo reiniciada. Preveja antes de clicar!');});});
-  document.getElementById('btn-chefao').addEventListener('click',function(){
+    try{renderQuiz(i);}catch(e){}
+    try{renderMito(i);}catch(e){}
+    renderDemo(i);
+    var rb=document.getElementById('rst-'+i);
+    if(rb)rb.addEventListener('click',function(){renderDemo(i);toast('🔄 Demo reiniciada. Preveja antes de clicar!');});});
+  var bc=document.getElementById('btn-chefao');
+  if(bc)bc.addEventListener('click',function(){
     if(STATE.chefao)return;STATE.chefao=true;this.disabled=true;
     document.getElementById('chefao-ok').textContent='🏆 Selo do Chefão conquistado!';
     toast('🏆 Chefão enfrentado! Mostre seu rascunho ao professor.');updateHUD();});
@@ -847,7 +869,11 @@ function init(){
   bd.addEventListener('click',function(){if(apres)return;var on=document.body.classList.toggle('dark');bd.textContent=on?'☀️ Claro':'🌙 Escuro';bd.setAttribute('aria-pressed',String(on));});
   activate(idxDoHash(),false);updateHUD();
 }
-init();
+try{init();}
+catch(err){
+  var pn=document.getElementById('paineis');
+  if(pn)pn.innerHTML='<section class="painel"><h2>⚠️ Falha ao montar a aula</h2><p class="aviso-tecnico">'+esc(err&&err.message?err.message:'erro desconhecido')+'</p><p>Recarregue a página. Se persistir, abra o arquivo em outro navegador.</p></section>';
+}
 </script>
 </body>
 </html>
