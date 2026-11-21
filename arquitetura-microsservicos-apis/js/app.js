@@ -66,6 +66,7 @@ function toggleFaq(e){e.classList.toggle('open');}
 function filterGloss(){const t=document.getElementById('gloss-search').value.toLowerCase();document.querySelectorAll('#gloss-table tbody tr').forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(t)?'':'none';});}
 const INDICE=[
   {tab:'inicio',title:'Início: a PagUai',k:'pagUai fintech história personagens helena joana rafa diego geraldo tech lead product owner sre coordenadora arquitetura avatar crachá sprints mapa unidade jornada'},
+  {tab:'sprint-02',title:'Sprint 2: Strangler Fig e API First',k:'strangler fig gateway yarp extrato serviço síncrona assíncrona contrato openapi api first design first contract first code first mock prism spectral lint sala de contrato lívia paginação cursor problem details rfc 9457 falha parcial timeout 502 503 adr 0004'},
   {tab:'sprint-01',title:'Sprint 1: bounded contexts e monólito modular',k:'bounded context contexto delimitado ddd domínio subdomínio central suporte genérico linguagem ubíqua mapa de contextos monólito modular contrato schema testes de arquitetura netarchtest saldo pagamentos extrato adr 0002 0003 critérios extração event storming'},
   {tab:'sprint-00',title:'Sprint 0: o monólito',k:'monólito monolito docker compose scalar mailpit postgres adr vantagens custos deploy acoplamento laboratório checkpoint c4'},
   {tab:'ambiente',title:'Ambiente: preparar a máquina',k:'ambiente instalar docker desktop engine git vs code dotnet sdk winget brew apt codespaces verificar check-env progresso windows macos linux'},
@@ -98,7 +99,7 @@ window.addEventListener('hashchange',()=>{const t=(location.hash||'').slice(1);c
 /* ═══════════ Recursos trazidos da ODA SENAC (adaptados à PagUai) ═══════════ */
 const PASSOS_KEY='amaPassos', SO_KEY='amaSO', PERFIL_KEY='amaPerfil';
 const NOME_PADRAO='Arquiteto(a)', AVATAR_PADRAO='🧑‍💻';
-function posCarregar(p){renderBuscas(p);restaurarPassos(p);atualizarProgresso();aplicarPerfil(p);const so=document.body.getAttribute('data-so');if(so)escolherSO(so);}
+function posCarregar(p){if(window.iniciarSalas)iniciarSalas(p);renderBuscas(p);restaurarPassos(p);atualizarProgresso();aplicarPerfil(p);const so=document.body.getAttribute('data-so');if(so)escolherSO(so);}
 
 /* ── Buscas para ir além (Google, YouTube e Google Acadêmico) ── */
 const URL_BUSCA={g:['🔎 Google','https://www.google.com/search?hl=pt-BR&q='],y:['🎬 YouTube','https://www.youtube.com/results?search_query='],s:['🎓 Google Acadêmico','https://scholar.google.com/scholar?hl=pt-BR&q=']};

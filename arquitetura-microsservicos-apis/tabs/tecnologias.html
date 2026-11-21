@@ -13,7 +13,9 @@
       <tr><td><a class="ext" href="#f-mailpit" onclick="irAncora('f-mailpit');return false;">Mailpit</a></td><td>Caixa de e-mails de teste</td><td>0</td></tr>
       <tr><td><a class="ext" href="#f-scalar" onclick="irAncora('f-scalar');return false;">Scalar e OpenAPI</a></td><td>Documentar e testar a API no navegador</td><td>0</td></tr>
       <tr><td><a class="ext" href="#f-arquitetura" onclick="irAncora('f-arquitetura');return false;">Testes de arquitetura (NetArchTest)</a></td><td>Verificar as fronteiras entre os módulos a cada build</td><td>1</td></tr>
-      <tr class="text-muted"><td>YARP, RabbitMQ, CoreWCF, Hot Chocolate, gRPC, SignalR, Kubernetes (kind), Polly, OpenTelemetry, Keycloak e outras</td><td>As fichas chegam junto com cada sprint</td><td>1 a 13</td></tr>
+      <tr><td><a class="ext" href="#f-yarp" onclick="irAncora('f-yarp');return false;">YARP (gateway)</a></td><td>Porta de entrada única; desvia rota por rota no Strangler Fig</td><td>2</td></tr>
+      <tr><td><a class="ext" href="#f-prism" onclick="irAncora('f-prism');return false;">Prism e Spectral (mock e lint de contratos)</a></td><td>Testar o contrato antes do código e verificar a qualidade dele</td><td>2</td></tr>
+      <tr class="text-muted"><td>RabbitMQ, CoreWCF, Hot Chocolate, gRPC, SignalR, Kubernetes (kind), Polly, OpenTelemetry, Keycloak e outras</td><td>As fichas chegam junto com cada sprint</td><td>1 a 13</td></tr>
     </tbody>
   </table></div>
 </div>
@@ -91,6 +93,34 @@
     <p><span class="rot">Onde roda:</span> testes de arquitetura não dependem de provedor: rodam no pipeline de integração contínua, junto com os outros testes. Na PagUai, esse pipeline é o <strong>GitHub Actions</strong>, a cada envio de código. A partir da Sprint 8, o mesmo pipeline também cria a infraestrutura com <strong>Terraform</strong> e publica a aplicação na AWS, no Azure ou no Google Cloud. Cada provedor também tem o seu serviço nativo de pipeline: AWS CodeBuild e AWS CodePipeline, Azure Pipelines e Google Cloud Build.</p>
     <p><span class="rot">Critérios para decidir:</span></p>
     <ul class="criterios"><li>Quão forte a fronteira precisa ser: verificada por teste ou impedida pelo compilador.</li><li>Quantos módulos e times existem, e o custo de manter a estrutura de projetos.</li><li>Que outras regras o time quer verificar (camadas, ciclos, nomes), e se a biblioteca as expressa.</li></ul>
+  </div>
+
+  <div class="ficha" id="f-yarp">
+    <h4>🔧 Ficha da tecnologia: YARP (gateway)</h4>
+    <p><span class="rot">O que é:</span> o <strong>YARP</strong> (Yet Another Reverse Proxy) é uma biblioteca de código aberto da Microsoft para construir um proxy reverso em ASP.NET Core. Um <strong>gateway</strong> é a porta de entrada única de um sistema: recebe cada requisição e a encaminha ao serviço certo.</p>
+    <p><span class="rot">Por que usamos aqui:</span> para fins didáticos. O gateway roda num contêiner na sua máquina, sem conta em nuvem, e as rotas da PagUai ficam em poucas linhas de C# (<code>src/PagUai.Gateway/Rotas.cs</code>), fáceis de ler e de mudar. É o que torna o Strangler Fig visível: uma configuração decide se o extrato vai para o serviço novo ou para o monólito.</p>
+    <p><span class="rot">Outras opções no mercado:</span> Kong, NGINX, Envoy, Traefik e Ocelot, entre outras, cada uma com o seu modelo de configuração e de extensão.</p>
+    <p><span class="rot">Onde roda na nuvem:</span> os provedores oferecem gateways e balanceadores gerenciados, cada um com recursos e limites próprios:</p>
+    <div class="table-wrap"><table><thead><tr><th>AWS</th><th>Azure</th><th>Google Cloud</th></tr></thead>
+      <tbody><tr><td>Amazon API Gateway; Application Load Balancer (roteamento por caminho)</td><td>Azure API Management; Azure Application Gateway</td><td>API Gateway e Apigee; Cloud Load Balancing</td></tr></tbody></table></div>
+    <p><span class="rot">Critérios para decidir:</span></p>
+    <ul class="criterios"><li>Que recursos o gateway precisa ter: autenticação, limite de requisições, transformação, portal para consumidores (Sprints 11 e 13).</li><li>Quem vai operar: o time, num contêiner, ou o provedor, como serviço gerenciado.</li><li>Protocolos que precisam passar por ele, como WebSocket (Sprint 6), e o custo por requisição ou por hora.</li></ul>
+  </div>
+
+  <div class="ficha" id="f-prism">
+    <h4>🔧 Ficha da tecnologia: Prism e Spectral (mock e lint de contratos)</h4>
+    <p><span class="rot">O que é:</span> o <strong>Prism</strong> lê um contrato OpenAPI e sobe um servidor que responde o que o contrato descreve: um <strong>mock</strong>. O <strong>Spectral</strong> é um <strong>lint</strong> de contratos: verifica regras de qualidade, como toda operação ter <code>operationId</code> e todo parâmetro ter descrição. Os dois são de código aberto, da Stoplight.</p>
+    <p><span class="rot">Por que usamos aqui:</span> são o par mais direto para mostrar API First: com o contrato aprovado, o front-end testa no mock antes do código existir, e o CI recusa um contrato que não segue as regras. Os dois rodam sem instalação: o Prism num contêiner e o Spectral pelo <code>npx</code>.</p>
+    <p><span class="rot">Outras opções no mercado:</span></p>
+    <div class="table-wrap"><table><thead><tr><th>Para</th><th>Opções</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Mock a partir do contrato</strong></td><td>WireMock, Mockoon, Microcks</td></tr>
+        <tr><td><strong>Lint de contratos</strong></td><td>Redocly CLI, Vacuum</td></tr>
+        <tr><td><strong>Teste de contrato</strong></td><td>Validação das respostas contra o schema (como o <code>ContratoTests</code> da PagUai), Schemathesis, Pact (contratos definidos pelo consumidor)</td></tr>
+      </tbody></table></div>
+    <p><span class="rot">Onde roda:</span> o lint e os testes de contrato rodam no pipeline, que na PagUai é o GitHub Actions. Os gateways gerenciados também conseguem devolver respostas simuladas configuradas por rota, como as integrações mock do Amazon API Gateway e a política de resposta simulada do Azure API Management.</p>
+    <p><span class="rot">Critérios para decidir:</span></p>
+    <ul class="criterios"><li>Se o mock precisa só devolver exemplos ou também simular estado e cenários.</li><li>Que regras de estilo a empresa quer impor a todos os contratos.</li><li>Se o contrato é definido pelo fornecedor (design-first) ou pelo consumidor (contratos de consumidor, como Pact).</li></ul>
   </div>
 </div>
 

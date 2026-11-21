@@ -1,0 +1,462 @@
+<section class="tab-panel" id="sprint-02">
+
+<!-- ═══════════ 1. CENA DE ABERTURA ═══════════ -->
+<div class="card">
+  <div class="card-title">🌳 Sprint 2 · Strangler Fig: o primeiro serviço sai do monólito</div>
+  <div class="cena">
+    <div class="msg"><span class="av">👩‍💼</span><div><div class="who">Helena (Coordenadora de Arquitetura)</div><div class="txt">O ADR 0003 foi aprovado: o Extrato sai primeiro. <strong data-aluno-nome>Arquiteto(a)</strong>, a condição é uma só: nenhum cliente pode perceber a troca.</div></div></div>
+    <div class="msg"><span class="av">👩🏾‍🦱</span><div><div class="who">Lívia (front-end, pelos consumidores da API)</div><div class="txt">O líder de Front-end me pediu para acompanhar. O app e o portal do lojista chamam <code>/contas/{id}/extrato</code> hoje. Se a rota ou o formato mudarem, a gente quebra em produção.</div></div></div>
+    <div class="msg"><span class="av">🧔🏻</span><div><div class="who">Rafa (Tech Lead)</div><div class="txt">E agora vai existir uma rede entre o Extrato e o Pagamentos. O que acontece quando um dos dois cair?</div></div></div>
+    <div class="msg"><span class="av" data-aluno-avatar>🧑‍💻</span><div><div class="who"><span data-aluno-nome>Arquiteto(a)</span> (você)</div><div class="txt">Proposta: primeiro o contrato, combinado com a Lívia, e um mock para o app testar antes do código. Depois, um gateway na frente desvia só a rota do extrato para o serviço novo, com um jeito de voltar atrás. E vamos provocar as falhas que o Rafa teme.</div></div></div>
+  </div>
+  <div class="grid-3">
+    <div class="grid-card"><h5>🎯 Objetivo da sprint</h5><p class="text-sm">Explicar o padrão Strangler Fig e a comunicação síncrona baseada em contratos de API, com API First.</p></div>
+    <div class="grid-card"><h5>🛠️ O que você vai fazer</h5><p class="text-sm">Conduzir a Sala de Contrato, testar o mock, ver o gateway desviar a rota, derrubar serviços de propósito e escrever o ADR 0004.</p></div>
+    <div class="grid-card"><h5>⏱️ Tempo estimado</h5><p class="text-sm">Laboratório <span class="camada essencial">Essencial</span>: 120 a 150 min, incluindo a Sala e o ADR. <span class="camada aprofundamento">Aprofundamento</span>: opcional.</p></div>
+  </div>
+</div>
+
+<!-- ═══════════ 2. VÍDEOS ═══════════ -->
+<div class="card">
+  <div class="card-title">🎬 Videoaulas desta sprint</div>
+  <p class="section-intro">Assista na página da <strong>Sprint 2 no Canvas</strong>. A lista abaixo é só para você se orientar.</p>
+  <ul class="video-list">
+    <li><span>2.1 Comunicação síncrona e assíncrona: conceitos e trade-offs</span><span class="dur">10 min</span></li>
+    <li><span>2.2 APIs, contratos e API First</span><span class="dur">12 min</span></li>
+    <li><span>2.3 Strangler Fig na prática: extraindo o serviço de Extrato</span><span class="dur">12 min</span></li>
+    <li><span>2.4 O custo da chamada remota: latência e falhas parciais</span><span class="dur">8 min</span></li>
+  </ul>
+</div>
+
+<!-- ═══════════ 3. CONCEITO ═══════════ -->
+<div class="card">
+  <div class="card-title">💡 Conceito: comunicação, contratos, API First e Strangler Fig</div>
+
+  <div class="deep-concept-box">
+    <h3>📞 Síncrona e assíncrona</h3>
+    <p>Na comunicação <strong>síncrona</strong>, quem chama espera a resposta para continuar (requisição e resposta, como HTTP). Na <strong>assíncrona</strong>, quem chama avisa que algo aconteceu e segue em frente; quem se interessa reage depois (eventos e mensagens, tema da Sprint 3).</p>
+  </div>
+  <div class="table-wrap"><table>
+    <thead><tr><th></th><th>Síncrona (HTTP)</th><th>Assíncrona (mensagens)</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Acoplamento no tempo</strong></td><td>Os dois precisam estar no ar ao mesmo tempo</td><td>Quem recebe pode estar fora do ar; a mensagem espera</td></tr>
+      <tr><td><strong>Latência</strong></td><td>Soma a de cada chamada da cadeia</td><td>Quem chama não espera; o efeito acontece depois</td></tr>
+      <tr><td><strong>Consistência</strong></td><td>Resposta imediata</td><td>Eventual: por um tempo, as partes podem discordar</td></tr>
+      <tr><td><strong>Depuração</strong></td><td>Mais simples: uma cadeia de chamadas</td><td>Mais difícil: o fluxo se espalha no tempo</td></tr>
+      <tr><td><strong>Na PagUai, nesta sprint</strong></td><td>O Extrato consulta Contas e Pagamentos</td><td>Ainda não; a notificação vira mensagem na Sprint 3</td></tr>
+    </tbody>
+  </table></div>
+  <div class="analogy-highlight"><span class="icon">📱</span><div><strong>Analogia:</strong> síncrona é uma ligação telefônica; assíncrona é uma mensagem de texto. <strong>A analogia vale até aqui:</strong> ela explica quem precisa estar disponível e quando. <strong>A partir daqui ela engana:</strong> ela sugere que a mensagem "sempre chega". Sem um broker confiável e sem confirmação de recebimento, uma mensagem pode se perder ou chegar duas vezes, como você vai ver na Sprint 3.</div></div>
+  <div class="warning-banner"><strong>⚠️ Armadilha comum no mercado:</strong> achar que assíncrono é "mais rápido". Ele é mais <strong>desacoplado</strong>, e o trabalho termina depois; ele não fica mais rápido. E é mais difícil de depurar.</div>
+
+  <div class="deep-concept-box mt-3">
+    <h3>📜 API, Web Service e contrato</h3>
+    <p>Uma <strong>API</strong> é a forma combinada de um sistema usar o outro. <strong>Web Services</strong> é o nome que ficou associado às APIs em SOAP e XML (tema da Sprint 4); hoje, a maioria das APIs entre serviços usa HTTP e JSON. O que as duas têm em comum é o <strong>contrato</strong>: o acordo público sobre rotas, parâmetros, formatos de dados e erros. O padrão mais usado para descrever contratos HTTP é o <strong>OpenAPI</strong>; os erros seguem o <strong>Problem Details</strong> (RFC 9457).</p>
+  </div>
+
+  <div class="deep-concept-box mt-3">
+    <h3>🎯 API First: o contrato antes do código</h3>
+    <p><strong>API First</strong> é tratar a API como um produto: o contrato é desenhado e combinado <strong>com quem vai consumir</strong>, antes da implementação. Com o contrato aprovado, os times trabalham em paralelo: o front-end usa um <strong>mock</strong> gerado do contrato, e o back-end implementa o serviço, que é verificado contra o mesmo contrato.</p>
+  </div>
+  <div class="table-wrap"><table>
+    <thead><tr><th></th><th>Design-first (contract-first)</th><th>Code-first</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Como nasce o contrato</strong></td><td>Escrito primeiro, revisado com quem consome</td><td>Gerado a partir do código</td></tr>
+      <tr><td><strong>Quem consome participa</strong></td><td>Antes da implementação</td><td>Depois que a API existe</td></tr>
+      <tr><td><strong>Trabalho em paralelo</strong></td><td>Sim, com mock do contrato</td><td>Quem consome espera o código</td></tr>
+      <tr><td><strong>Risco principal</strong></td><td>Contrato e código divergirem (resolvido com teste de contrato)</td><td>O contrato muda sem querer quando o código muda</td></tr>
+      <tr><td><strong>Na PagUai</strong></td><td>O serviço de Extrato (porta 8082)</td><td>O monólito (porta 8081), que é legado</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="deep-concept-box mt-3">
+    <h3>🌳 Strangler Fig</h3>
+    <p>O nome vem da figueira estranguladora, que cresce em volta de uma árvore até substituí-la. No software, um <strong>proxy</strong> (aqui, um gateway) fica na frente do sistema antigo e desvia, <strong>rota por rota</strong>, o tráfego para os serviços novos. O sistema antigo continua atendendo o resto. Cada rota desviada pode voltar atrás se der problema, e o código antigo só é apagado quando o novo estiver confiável.</p>
+  </div>
+  <div class="warning-banner"><strong>⚠️ Armadilha comum no mercado:</strong> extrair o serviço mas manter o <strong>mesmo banco compartilhado</strong>, com o serviço novo lendo as tabelas do antigo. É um monólito distribuído. Na PagUai, o Extrato não lê o banco: ele usa a API de Pagamentos, que é o dono dos dados.</div>
+</div>
+
+<!-- ═══════════ 4. SALA DE CONTRATO ═══════════ -->
+<div class="card" id="sala-contrato-card">
+  <div class="card-title">🎭 Sala de Contrato: você conduz o contrato do Extrato</div>
+  <p class="section-intro">Uma reunião simulada em 6 atos. Clique em <strong>⏭ Próxima fala</strong> ou em <strong>▶ Auto</strong>. Quando alguém pedir uma decisão, <strong>você escolhe</strong>: o time reage com os trade-offs, o YAML do contrato muda ao vivo e a ata vira o rascunho do seu ADR 0004. As opções em laranja são alternativas válidas; uma escolha que quebra algo agora pede outra tentativa. No fim, a Helena compara as suas decisões com o contrato que o time adotou.</p>
+  <div id="sala-contrato">
+    <div class="sala-roster" id="sala-roster"></div>
+    <div class="sala-atos" id="sala-atos"></div>
+    <div class="sala-controles">
+      <button class="btn btn-primary" id="sala-proxima" onclick="salaProxima()">⏭ Próxima fala</button>
+      <button class="btn" id="sala-auto" onclick="salaAuto()">▶ Auto</button>
+      <button class="btn" onclick="salaRecomecar()">↺ Recomeçar</button>
+      <span class="text-sm text-muted" id="sala-status"></span>
+    </div>
+    <div class="sala-grid">
+      <div class="cena" id="sala-conversa"></div>
+      <div class="sala-quadro" id="sala-quadro"></div>
+    </div>
+    <div id="sala-fim" style="display:none" class="mt-3">
+      <h4>📊 Suas decisões e o contrato aprovado</h4>
+      <div class="table-wrap" id="sala-comparacao"></div>
+      <div class="sala-controles">
+        <button class="btn btn-primary" onclick="salaBaixarAta()">📝 Baixar a ata (rascunho do ADR 0004)</button>
+        <button class="btn" onclick="salaBaixarYaml()">⬇️ Baixar o YAML da sua sala</button>
+        <button class="btn" onclick="salaCopiarYaml()">📋 Copiar o YAML</button>
+        <a class="btn" href="https://github.com/Cloud-Ai-Generative/paguai/blob/sprint-02/contratos/extrato.openapi.yaml" target="_blank" rel="noopener">📜 Ver o contrato aprovado no GitHub</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ 5. DIAGRAMAS ═══════════ -->
+<div class="card">
+  <div class="card-title">📐 A arquitetura desta sprint</div>
+  <h4 class="diag-title" id="d-06">📐 D-06 <span class="dt-type">C4 · Contêineres</span> O gateway na frente, o Extrato fora do monólito</h4>
+  <p class="text-sm text-muted" style="margin:4px 0 8px"><strong>👀 Como ler:</strong> o cliente continua chamando o mesmo endereço (8080). Quem decide qual contêiner atende é o gateway. A seta tracejada é o "voltar atrás": a mesma rota pode ir para o Extrato antigo, ainda dentro do monólito.</p>
+  <div class="mermaid-box" data-code='flowchart TB
+  cliente(["👤 App, portal do lojista<br/>Scalar e arquivo .http"])
+  gw["<b>PagUai.Gateway</b> · YARP · :8080<br/>porta de entrada única"]
+  ext["<b>PagUai.Extrato</b> · :8082<br/>contract-first · sem banco"]
+  api["<b>PagUai.Api</b> (monólito modular) · :8081<br/>Contas · Pagamentos · Cobranças<br/>Antifraude · Notificações · Extrato antigo"]
+  db[("PostgreSQL 17<br/>um schema por módulo")]
+  mail["📧 Mailpit"]
+  cliente -->|"HTTP/JSON"| gw
+  gw -->|"GET /contas/{id}/extrato<br/>Strangler__Extrato=servico"| ext
+  gw -->|"todo o resto"| api
+  gw -.->|"Strangler__Extrato=monolito"| api
+  ext -->|"HTTP: conta, saldo, movimentos"| api
+  api --> db
+  api -->|"SMTP"| mail'>
+  <div class="mermaid"></div>
+  </div>
+
+  <h4 class="diag-title" id="d-07">📐 D-07 <span class="dt-type">UML · Sequência</span> Uma consulta de extrato, agora pela rede</h4>
+  <p class="text-sm text-muted" style="margin:4px 0 8px"><strong>👀 Como ler:</strong> na Sprint 1, eram chamadas de método dentro do processo. Agora são <strong>três chamadas HTTP</strong>, uma depois da outra. Cada uma soma latência e pode falhar.</p>
+  <div class="mermaid-box" data-code='sequenceDiagram
+  autonumber
+  actor L as App (Lívia)
+  participant G as Gateway
+  participant E as Extrato
+  participant M as Monólito
+  L->>G: GET /contas/{id}/extrato?limite=50
+  G->>E: mesma rota (Strangler__Extrato=servico)
+  E->>M: GET /contas/{id}
+  M-->>E: titular
+  E->>M: GET /saldos/{id}
+  M-->>E: saldo e consultadoEm
+  E->>M: GET /pagamentos/contas/{id}/movimentos
+  M-->>E: até 50 movimentos e proximoCursor
+  E-->>G: 200 no formato do contrato
+  G-->>L: 200 (X-PagUai-Servico: extrato)'>
+  <div class="mermaid"></div>
+  </div>
+</div>
+
+<!-- ═══════════ 6. DECISÃO ═══════════ -->
+<div class="card">
+  <div class="card-title">🧭 A decisão desta sprint</div>
+  <div class="decisao" data-adr="0004">
+    <div class="enunciado pergunta-cena"><div class="msg"><span class="av">👩‍💼</span><div><div class="who">Helena (Coordenadora de Arquitetura) · 🧭 Sua vez de decidir</div><div class="txt"><span data-aluno-nome>Arquiteto(a)</span>, como trocamos o Extrato do monólito pelo serviço novo sem que nenhum cliente perceba?</div></div></div></div>
+    <button class="quiz-opt" data-tipo="errada" data-exp="exige que o app mude o endereço no mesmo dia; se o serviço novo falhar, não há como voltar sem outra versão do app" onclick="decidir(this)">Publicar o serviço novo num endereço próprio e pedir ao time de Front-end para trocar a URL no app.</button>
+    <button class="quiz-opt" data-tipo="time" data-exp="o app não muda nada; a rota pode voltar para o monólito por configuração, sem mudar código; e o resto do sistema segue intocado" onclick="decidir(this)">Colocar um gateway na frente de tudo e desviar só a rota do extrato para o serviço novo, com uma configuração para voltar atrás.</button>
+    <button class="quiz-opt" data-tipo="alt" data-exp="mandar uma parte do tráfego (por exemplo, 5%) para o serviço novo e aumentar aos poucos é uma evolução do mesmo padrão (canary); exige medir erros por versão, o que a PagUai só terá com a observabilidade da Sprint 10" onclick="decidir(this)">Gateway na frente, mas desviando só uma parte do tráfego, como 5%, e aumentando aos poucos.</button>
+    <button class="quiz-opt" data-tipo="errada" data-exp="duas implementações gravando ou lendo de formas diferentes o mesmo banco, sem dono claro, é o monólito distribuído; o Extrato deve usar a API de Pagamentos" onclick="decidir(this)">Copiar o código do Extrato para um serviço novo que lê as mesmas tabelas do banco do monólito.</button>
+    <div class="decisao-fb" data-exp=""></div>
+    <button class="btn mt-2" onclick="refazerDecisao(this)">↺ Refazer</button>
+  </div>
+</div>
+
+<!-- ═══════════ 7. LABORATÓRIO ═══════════ -->
+<div class="card" id="lab-sprint-02">
+  <div class="card-title">🧪 Laboratório <span class="camada essencial">Essencial</span></div>
+  <div class="progresso"><div class="rotulo"><span>📈 Seu progresso</span><span class="conta">0 de 0 passos</span></div><div class="barra"><span></span></div></div>
+  <div class="phase-bar">
+    <span class="phase on">0 · Atualizar</span>
+    <span class="phase on">1 · Mock primeiro</span>
+    <span class="phase on">2 · Quem atende?</span>
+    <span class="phase on">3 · Contrato na prática</span>
+    <span class="phase on">4 · Falhas parciais</span>
+    <span class="phase on">5 · Voltar atrás</span>
+    <span class="phase on">6 · ADR 0004</span>
+  </div>
+
+  <div class="step-box" id="s2-fase-0">
+    <h4><span class="step-num">0</span> Atualizar o seu fork para a Sprint 2 <span class="tempo">⏱️ 10 min</span></h4>
+    <div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">git fetch https://github.com/Cloud-Ai-Generative/paguai.git --tags
+docker compose down
+git checkout sprint-02</pre></div>
+    <p>Não suba ainda: na fase 1 você vai usar <strong>só o contrato</strong>.</p>
+    <div class="info-banner"><strong>💡 Repare:</strong> agora são três serviços .NET e mais memória. Com menos de 8 GB de RAM, prefira o GitHub Codespaces.</div>
+    <label class="check-passo"><input type="checkbox" data-passo="s2-atualizar" onchange="marcarPasso(this)"> Fork na Sprint 2</label>
+  </div>
+
+  <div class="step-box" id="s2-fase-1">
+    <h4><span class="step-num">1</span> API First: o mock antes do código <span class="tempo">⏱️ 15 min</span></h4>
+    <p>Abra <code>contratos/extrato.openapi.yaml</code> no VS Code. Esse arquivo é o contrato aprovado na Sala. Agora suba <strong>só o mock</strong>, sem nenhum serviço da PagUai:</p>
+    <div class="so" data-so="mac linux"><div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose --profile mock up -d mock
+curl http://localhost:4010/contas/2a981875-052f-4076-abee-bf4e0b1a7abd/extrato</pre></div></div><div class="so" data-so="win"><div class="code-editor-wrap"><span class="code-filepath">PowerShell, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose --profile mock up -d mock
+curl.exe http://localhost:4010/contas/2a981875-052f-4076-abee-bf4e0b1a7abd/extrato</pre></div></div>
+    <details class="partes"><summary>🔍 Entenda o comando, parte por parte</summary>
+      <table class="partes-tab">
+        <tr><td><code>--profile mock</code></td><td>liga os serviços marcados com o perfil <code>mock</code>, que não sobem num <code>docker compose up</code> comum</td></tr>
+        <tr><td><code>up -d mock</code></td><td>sobe só o serviço <code>mock</code>: o Prism lendo o contrato</td></tr>
+      </table>
+    </details>
+    <div class="esperado"><strong>✅ Resultado esperado:</strong> o JSON do exemplo do contrato: a Ana Clara com saldo de 9.950,00 e dois lançamentos. Nenhuma linha de C# rodou: é assim que o time da Lívia começa a construir a tela antes do serviço existir.</div>
+    <p>Teste também um erro que o contrato descreve, pedindo ao Prism um exemplo específico:</p>
+    <div class="so" data-so="mac linux"><div class="code-editor-wrap"><span class="code-filepath">terminal</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">curl -i -H "Prefer: code=422" http://localhost:4010/contas/2a981875-052f-4076-abee-bf4e0b1a7abd/extrato</pre></div></div><div class="so" data-so="win"><div class="code-editor-wrap"><span class="code-filepath">PowerShell</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">curl.exe -i -H "Prefer: code=422" http://localhost:4010/contas/2a981875-052f-4076-abee-bf4e0b1a7abd/extrato</pre></div></div>
+    <div class="esperado"><strong>✅ Resultado esperado:</strong> <code>422</code>, com <code>Content-Type: application/problem+json</code> e o <code>type</code> <code>.../periodo-invalido</code>.</div>
+    <p class="text-sm">📇 O que é o Prism e quais são as opções: <a class="ext" href="#tecnologias" onclick="switchTab('tecnologias','f-prism');return false;">Ficha da tecnologia: Prism e o lint de contratos</a>.</p>
+    <label class="check-passo"><input type="checkbox" data-passo="s2-mock" onchange="marcarPasso(this)"> Usei o mock antes do código</label>
+  </div>
+
+  <div class="step-box" id="s2-fase-2">
+    <h4><span class="step-num">2</span> Subir tudo e ver quem atende <span class="tempo">⏱️ 15 min</span></h4>
+    <div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose down -v
+docker compose up -d --build
+docker compose ps</pre></div>
+    <div class="esperado"><strong>✅ Resultado esperado:</strong> cinco contêineres: <code>paguai-gateway</code>, <code>paguai-api</code>, <code>paguai-extrato</code>, <code>paguai-postgres</code> e <code>paguai-mailpit</code>.</div>
+    <p>Pegue o id da Ana e chame duas rotas pelo gateway, olhando o cabeçalho de cada resposta:</p>
+    <div class="so" data-so="mac linux"><div class="code-editor-wrap"><span class="code-filepath">terminal</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">curl -s http://localhost:8080/contas
+curl -si http://localhost:8080/contas/COLE_O_ID_DA_ANA/extrato | grep -i x-paguai
+curl -si http://localhost:8080/contas | grep -i x-paguai</pre></div></div>
+    <div class="so" data-so="win"><div class="code-editor-wrap"><span class="code-filepath">PowerShell</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">curl.exe -s http://localhost:8080/contas
+curl.exe -si http://localhost:8080/contas/COLE_O_ID_DA_ANA/extrato | Select-String x-paguai
+curl.exe -si http://localhost:8080/contas | Select-String x-paguai</pre></div></div>
+    <div class="esperado"><strong>✅ Resultado esperado:</strong> o extrato responde com <code>X-PagUai-Servico: extrato</code>; a lista de contas, com <code>X-PagUai-Servico: monolito</code>. O endereço é o mesmo (8080): quem escolheu foi o gateway.</div>
+    <p>Compare os dois jeitos de documentar: o monólito em <a class="ext" href="http://localhost:8081" target="_blank" rel="noopener">localhost:8081</a> (code-first: o contrato é gerado do código) e o Extrato em <a class="ext" href="http://localhost:8082" target="_blank" rel="noopener">localhost:8082</a> (contract-first: a documentação é o próprio arquivo do contrato).</p>
+    <p class="text-sm">📇 O que é o YARP e quais são os gateways na nuvem: <a class="ext" href="#tecnologias" onclick="switchTab('tecnologias','f-yarp');return false;">Ficha da tecnologia: YARP</a>.</p>
+    <label class="check-passo"><input type="checkbox" data-passo="s2-quem" onchange="marcarPasso(this)"> Vi o gateway escolher o serviço</label>
+  </div>
+
+  <div class="step-box" id="s2-fase-3">
+    <h4><span class="step-num">3</span> O contrato na prática: paginação e erros <span class="tempo">⏱️ 15 min</span></h4>
+    <p>Faça três PIX da Ana para a loja (no Scalar ou com o <code>requests/paguai.http</code>) e chame o extrato com duas linhas por página:</p>
+    <div class="so" data-so="mac linux"><div class="code-editor-wrap"><span class="code-filepath">terminal</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">curl -s "http://localhost:8080/contas/COLE_O_ID_DA_ANA/extrato?limite=2"</pre></div></div><div class="so" data-so="win"><div class="code-editor-wrap"><span class="code-filepath">PowerShell</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">curl.exe -s "http://localhost:8080/contas/COLE_O_ID_DA_ANA/extrato?limite=2"</pre></div></div>
+    <div class="esperado"><strong>✅ Resultado esperado:</strong> dois lançamentos e um <code>proximoCursor</code>. Repita a chamada acrescentando <code>&amp;cursor=</code> com esse valor: vêm os próximos, sem repetir nenhum.</div>
+    <p>Agora provoque os erros previstos no contrato:</p>
+    <div class="so" data-so="mac linux"><div class="code-editor-wrap"><span class="code-filepath">terminal</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">curl -s "http://localhost:8080/contas/COLE_O_ID_DA_ANA/extrato?de=2025-01-01T00:00:00Z"
+curl -s "http://localhost:8080/contas/00000000-0000-0000-0000-000000000001/extrato"</pre></div></div><div class="so" data-so="win"><div class="code-editor-wrap"><span class="code-filepath">PowerShell</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">curl.exe -s "http://localhost:8080/contas/COLE_O_ID_DA_ANA/extrato?de=2025-01-01T00:00:00Z"
+curl.exe -s "http://localhost:8080/contas/00000000-0000-0000-0000-000000000001/extrato"</pre></div></div>
+    <div class="esperado"><strong>✅ Resultado esperado:</strong> <code>422</code> com <code>"type": ".../periodo-invalido"</code> ("O período máximo é de 90 dias") e <code>404</code> com <code>".../conta-nao-encontrada"</code>. É exatamente o que o mock respondeu na fase 1.</div>
+    <label class="check-passo"><input type="checkbox" data-passo="s2-contrato" onchange="marcarPasso(this)"> Testei a paginação e os erros</label>
+  </div>
+
+  <div class="step-box" id="s2-fase-4">
+    <h4><span class="step-num">4</span> Falhas parciais: quem cai, quem continua <span class="tempo">⏱️ 20 min</span></h4>
+    <div class="preveja">
+      <div class="pergunta">🔮 Preveja: se o serviço de Extrato cair, o que acontece com o PIX? E se o monólito travar, o que acontece com o extrato?</div>
+      <textarea placeholder="Escreva o seu palpite aqui (fica só na tela, não é enviado)."></textarea>
+      <button class="btn mt-2" onclick="revelarPrevisao(this)">👀 Revelar</button>
+      <div class="resposta"><strong>O PIX continua; o extrato cai.</strong> Com o Extrato parado, o gateway responde <code>502</code> só na rota do extrato, e o PIX, que é do monólito, funciona. Mas o contrário não vale: o Extrato <strong>depende</strong> do monólito. Se o monólito estiver fora, o Extrato responde <code>503</code>; se estiver <strong>lento ou travado</strong>, o Extrato fica esperando, porque ninguém configurou um timeout.</div>
+    </div>
+    <ol class="step-number-list">
+      <li>Derrube o Extrato e teste as duas rotas:
+        <div class="so" data-so="mac linux"><div class="code-editor-wrap"><span class="code-filepath">terminal</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose stop extrato
+curl -si http://localhost:8080/contas/COLE_O_ID_DA_ANA/extrato | head -1</pre></div></div><div class="so" data-so="win"><div class="code-editor-wrap"><span class="code-filepath">PowerShell</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose stop extrato
+curl.exe -si http://localhost:8080/contas/COLE_O_ID_DA_ANA/extrato | Select-Object -First 1</pre></div></div>
+        Depois faça um PIX da Ana no Scalar e religue: <code>docker compose start extrato</code>.
+        <div class="esperado"><strong>✅ Resultado esperado:</strong> o extrato responde <code>502 Bad Gateway</code>, mas o PIX responde <code>201</code>. Na Sprint 0, um deploy do Extrato derrubou o checkout; agora, o Extrato fora do ar não derruba o pagamento.</div>
+      </li>
+      <li>Agora congele o monólito e meça o tempo do extrato:
+        <div class="so" data-so="mac linux"><div class="code-editor-wrap"><span class="code-filepath">terminal</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose pause api
+curl -s -o /dev/null -w "%{http_code} em %{time_total}s\n" --max-time 30 http://localhost:8080/contas/COLE_O_ID_DA_ANA/extrato
+docker compose unpause api</pre></div></div><div class="so" data-so="win"><div class="code-editor-wrap"><span class="code-filepath">PowerShell</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose pause api
+curl.exe -s -o /dev/null -w "%{http_code} em %{time_total}s\n" --max-time 30 http://localhost:8080/contas/COLE_O_ID_DA_ANA/extrato
+docker compose unpause api</pre></div></div>
+        <div class="esperado"><strong>✅ Resultado esperado:</strong> nenhuma resposta em 30 segundos (o <code>curl</code> desiste com <code>000</code>). O Extrato está no ar, mas pendurado esperando o monólito: o padrão do .NET espera até 100 segundos. Cada consulta presa ocupa recursos, e numa Black Friday elas se acumulam.</div>
+      </li>
+    </ol>
+    <div class="warning-banner"><strong>🤔 Para pensar:</strong> quanto tempo o Extrato deveria esperar antes de desistir? E o que ele deveria responder ao app nesse caso? É a dor proposital que a Sprint 9 resolve com timeout, retentativa e circuit breaker.</div>
+    <label class="check-passo"><input type="checkbox" data-passo="s2-falhas" onchange="marcarPasso(this)"> Provoquei as duas falhas</label>
+  </div>
+
+  <div class="step-box" id="s2-fase-5">
+    <h4><span class="step-num">5</span> Voltar atrás sem mudar código <span class="tempo">⏱️ 10 min</span></h4>
+    <p>No <code>docker-compose.yml</code>, no serviço <code>gateway</code>, troque <code>Strangler__Extrato: "servico"</code> por <code>"monolito"</code> e aplique:</p>
+    <div class="so" data-so="mac linux"><div class="code-editor-wrap"><span class="code-filepath">terminal</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose up -d gateway
+docker compose logs gateway | grep Strangler
+curl -si http://localhost:8080/contas/COLE_O_ID_DA_ANA/extrato | grep -i x-paguai</pre></div></div><div class="so" data-so="win"><div class="code-editor-wrap"><span class="code-filepath">PowerShell</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose up -d gateway
+docker compose logs gateway | Select-String Strangler
+curl.exe -si http://localhost:8080/contas/COLE_O_ID_DA_ANA/extrato | Select-String x-paguai</pre></div></div>
+    <div class="esperado"><strong>✅ Resultado esperado:</strong> o log mostra <code>Strangler Fig: GET /contas/{id}/extrato → monolito</code>, e a resposta vem com <code>X-PagUai-Servico: monolito</code>. O app não percebeu nada. Volte para <code>"servico"</code> e rode <code>docker compose up -d gateway</code> de novo.</div>
+    <div class="na-empresa"><strong>🏢 Na empresa</strong>Trocar a rota por configuração e subir o gateway de novo funciona no laboratório. Em produção, a troca costuma ser feita sem reiniciar nada: por uma ferramenta de <strong>feature flags</strong>, pela configuração dinâmica do gateway ou desviando o tráfego aos poucos (canary), com métricas de erro de cada versão. O código antigo do Extrato será apagado na Sprint 3, depois de o novo se mostrar confiável.</div>
+    <label class="check-passo"><input type="checkbox" data-passo="s2-voltar" onchange="marcarPasso(this)"> Voltei atrás e retornei ao serviço novo</label>
+  </div>
+
+  <div class="step-box" id="s2-fase-6">
+    <h4><span class="step-num">6</span> Escrever o ADR 0004 <span class="tempo">⏱️ 30 min</span></h4>
+    <p>Na Sala de Contrato, baixe a <strong>ata</strong>: ela já traz os requisitos e a tabela das suas decisões. Use-a como ponto de partida e complete o modelo <code>docs/adr/0004-como-extrair-o-extrato.md</code> com as perguntas-guia.</p>
+    <div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">git switch -c minha-sprint-02
+# edite docs/adr/0004-como-extrair-o-extrato.md
+git add docs/adr
+git commit -m "ADR 0004: minha proposta"
+git push -u origin minha-sprint-02</pre></div>
+    <label class="check-passo"><input type="checkbox" data-passo="s2-adr" onchange="marcarPasso(this)"> Escrevi e enviei o meu ADR 0004</label>
+    <div class="preveja mt-3">
+      <div class="pergunta">📝 Escreveu o seu ADR? Compare com a versão aprovada pela Helena.</div>
+      <button class="btn mt-2" onclick="revelarPrevisao(this)">📜 Ver a versão aprovada pela Helena</button>
+      <div class="resposta">
+        <div class="adr">
+          <h5>ADR 0004 · Como extrair o Extrato: Strangler Fig, gateway e contrato <span class="status">aceita · Sprint 2</span></h5>
+          <p><b>Proposta e aprovação:</b> proposto pelo(a) arquiteto(a) <span data-aluno-nome>Arquiteto(a)</span>, com Lívia (front-end), Joana e Rafa; aprovado por Helena Rocha, Coordenadora de Arquitetura.</p>
+          <p><b>Contexto:</b> o ADR 0003 decidiu extrair o Extrato primeiro. O app e o portal do lojista já usam <code>GET /contas/{id}/extrato</code> do monólito, então a troca precisa ser invisível para quem consome e reversível se o serviço novo falhar.</p>
+          <p><b>Decisão:</b> um gateway (YARP) passa a ser a porta de entrada e desvia só a rota do extrato para o serviço novo; a configuração <code>Strangler__Extrato</code> permite voltar ao Extrato antigo sem mudar código. O serviço nasce <strong>contract-first</strong>: o contrato foi combinado com a Lívia na Sala de Contrato, publicado como mock (Prism) e verificado no código por testes de contrato e pelo lint no CI. O Extrato não tem banco: consulta Contas e Pagamentos pela API do monólito.</p>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Tema do contrato</th><th>Decisão</th></tr></thead>
+            <tbody>
+              <tr><td>Valores em dinheiro</td><td>Número com duas casas decimais, como o app já lê; texto fica como candidato para a Sprint 7</td></tr>
+              <tr><td>Saldo</td><td>Dentro do extrato, com o momento da consulta (<code>saldoEm</code>)</td></tr>
+              <tr><td>Paginação</td><td>Cursor opcional; sem <code>limite</code>, até 100 lançamentos</td></tr>
+              <tr><td>Período</td><td>Padrão de 30 dias e máximo de 90, com 422</td></tr>
+              <tr><td>Erros</td><td>Problem Details (RFC 9457) com um <code>type</code> por erro; 503 quando uma dependência cair</td></tr>
+              <tr><td>Versão</td><td>Sem prefixo: só mudanças que não quebram</td></tr>
+              <tr><td>Segurança</td><td>Declarada no contrato como vulnerabilidade proposital até a Sprint 11</td></tr>
+            </tbody>
+          </table></div>
+          <p><b>Alternativas consideradas:</b> trocar a URL no app (rejeitada: não há como voltar atrás sem nova versão do app); desviar só uma parte do tráfego, canary (válida; adiada até haver métricas por versão, Sprint 10); o Extrato com banco próprio alimentado por eventos (adiada: depende da mensageria, Sprint 3); contrato gerado do código (rejeitada para um serviço novo: o consumidor só participaria depois).</p>
+          <p><b>Consequências:</b> um deploy ou uma falha do Extrato não derruba mais o PIX. Em troca, cada consulta faz três chamadas HTTP ao monólito, e o Extrato depende dele: com o monólito fora, responde 503; com o monólito lento, fica esperando, porque ainda não há timeout (dor proposital, Sprint 9). O Extrato antigo será apagado do monólito na Sprint 3.</p>
+        </div>
+        <p class="text-sm text-muted">A versão aprovada entra no repositório na tag <code>sprint-03</code>.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ 8. APROFUNDAMENTO ═══════════ -->
+<div class="card">
+  <div class="card-title">🔬 Aprofundamento <span class="camada aprofundamento">opcional</span></div>
+  <details class="aprofundamento">
+    <summary>1. Quebrar o contrato de propósito e ver o teste falhar</summary>
+    <p class="mt-2">Com o .NET 10 SDK, rode os testes de contrato:</p>
+    <div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">dotnet test --project tests/PagUai.Extrato.Tests</pre></div>
+    <p>Agora, em <code>src/PagUai.Extrato/ExtratoEndpoints.cs</code>, acrescente um campo que o contrato não tem:</p>
+    <div class="code-editor-wrap"><span class="code-filepath">troque a linha do LancamentoResponse por</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">public record LancamentoResponse(DateTime Data, string Tipo, decimal Valor, string Descricao, string Moeda = "BRL");</pre></div>
+    <p>Rode de novo: o teste <code>Resposta_200_segue_o_contrato</code> falha apontando <code>moeda</code>. Em API First, o caminho certo é o inverso: propor a mudança no contrato, revisar com quem consome e só então implementar. Desfaça com <code>git checkout -- src/PagUai.Extrato/ExtratoEndpoints.cs</code>.</p>
+  </details>
+  <details class="aprofundamento">
+    <summary>2. Rodar o lint do contrato na sua máquina</summary>
+    <p class="mt-2">O CI roda o Spectral a cada envio. Com o Node.js instalado, rode você mesmo:</p>
+    <div class="so" data-so="mac linux"><div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">echo 'extends: ["spectral:oas"]' &gt; .spectral.yaml
+npx @stoplight/spectral-cli@6 lint contratos/extrato.openapi.yaml</pre></div></div>
+    <div class="so" data-so="win"><div class="code-editor-wrap"><span class="code-filepath">PowerShell, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">Set-Content -Encoding utf8 .spectral.yaml 'extends: ["spectral:oas"]'
+npx @stoplight/spectral-cli@6 lint contratos/extrato.openapi.yaml</pre></div></div>
+    <p>Depois apague o <code>operationId</code> do contrato e rode de novo: o lint aponta o problema. Desfaça com <code>git checkout -- contratos</code>.</p>
+  </details>
+  <details class="aprofundamento">
+    <summary>3. Usar o YAML da sua Sala de Contrato no mock</summary>
+    <p class="mt-2">Baixe o YAML gerado pela sua sala, salve como <code>contratos/minha-sala.openapi.yaml</code> e suba um Prism com ele numa porta diferente:</p>
+    <div class="so" data-so="mac linux"><div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker run --rm -d --name mock-minha-sala -p 4011:4010 -v "$PWD/contratos:/contratos:ro" stoplight/prism:5 mock -h 0.0.0.0 --multiprocess=false --dynamic /contratos/minha-sala.openapi.yaml
+curl http://localhost:4011/contas/2a981875-052f-4076-abee-bf4e0b1a7abd/extrato
+docker stop mock-minha-sala</pre></div></div><div class="so" data-so="win"><div class="code-editor-wrap"><span class="code-filepath">PowerShell, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker run --rm -d --name mock-minha-sala -p 4011:4010 -v "${PWD}/contratos:/contratos:ro" stoplight/prism:5 mock -h 0.0.0.0 --multiprocess=false --dynamic /contratos/minha-sala.openapi.yaml
+curl.exe http://localhost:4011/contas/2a981875-052f-4076-abee-bf4e0b1a7abd/extrato
+docker stop mock-minha-sala</pre></div></div>
+    <p>Com <code>--dynamic</code>, o Prism inventa dados que seguem o schema, já que o YAML da sala não tem exemplos. Compare com o mock do contrato aprovado, na porta 4010.</p>
+  </details>
+  <details class="aprofundamento">
+    <summary>4. Cursor ou página: por que o extrato usa cursor</summary>
+    <p class="mt-2">Abra <code>src/PagUai.Api/Modulos/Pagamentos/Interno/ServicoDePagamentos.cs</code>, método <code>ListarMovimentosAsync</code>. A consulta continua <strong>depois do último item</strong> da página anterior (data e id), em vez de pular N linhas. Assim, um PIX novo que chega enquanto a pessoa navega não empurra os itens nem faz a próxima página repetir um lançamento. E o banco usa o índice <code>(conta_id, data)</code> sem contar a tabela inteira.</p>
+  </details>
+  <details class="aprofundamento">
+    <summary>5. Contar as chamadas de rede</summary>
+    <p class="mt-2">Rode <code>docker compose logs -f api</code> em um terminal e consulte o extrato em outro. Cada consulta gera três requisições no monólito. Compare com a Sprint 1, em que tudo eram chamadas de método no mesmo processo. Pense: o que aconteceria com o tempo de resposta se o monólito estivesse em outra região da nuvem?</p>
+  </details>
+  <div class="buscas" data-itens='["strangler fig pattern Martin Fowler","API first design first contract first","OpenAPI 3.1 tutorial","Problem Details RFC 9457","YARP reverse proxy tutorial","Prism mock server OpenAPI"]' data-scholar="strangler fig pattern microservices migration"></div>
+</div>
+
+<!-- ═══════════ 9. ERROU? ═══════════ -->
+<div class="card" id="errou-sprint-02">
+  <div class="card-title">✋ Errou? Casos comuns desta sprint</div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">502 Bad Gateway no extrato</div><div class="faq-a"><p>O serviço de Extrato está parado ou ainda subindo, e o gateway não tem para onde mandar a rota. Veja <code>docker compose ps</code> e <code>docker compose logs extrato --tail 40</code>. Para voltar ao Extrato antigo, use a fase 5.</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">503 com dependencia-indisponivel no extrato</div><div class="faq-a"><p>O Extrato está no ar, mas não consegue falar com o monólito. Veja <code>docker compose logs api --tail 40</code>. Se você usou <code>docker compose pause api</code>, rode <code>docker compose unpause api</code>.</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">port is already allocated na porta 8081, 8082 ou 4010</div><div class="faq-a"><p>Outro programa usa a porta. Suba em outra, por exemplo: <code>PAGUAI_EXTRATO_PORT=9082 docker compose up -d</code>. As variáveis estão no começo do <code>docker-compose.yml</code>.</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">O gateway não sobe e o log fala em Strangler:Extrato</div><div class="faq-a"><p>O valor de <code>Strangler__Extrato</code> está errado. Use exatamente <code>"servico"</code> ou <code>"monolito"</code>, sem acento.</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">O mock responde 404 ou não sobe</div><div class="faq-a"><p>Confira se usou <code>--profile mock</code> e se a rota é exatamente <code>/contas/{id}/extrato</code>. Os logs ficam em <code>docker compose logs mock</code>.</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">O curl com pause fica parado e não volta</div><div class="faq-a"><p>Esse é o efeito esperado da fase 4: sem timeout, o Extrato espera o monólito. Use sempre <code>--max-time 30</code> no curl e, ao terminar, <code>docker compose unpause api</code>.</p></div></div>
+  <div class="info-banner"><strong>🛠️ Mais casos:</strong> veja a aba <a class="ext" href="#problemas" onclick="switchTab('problemas');return false;">Problemas comuns</a>.</div>
+</div>
+
+<!-- ═══════════ 10. CHECKPOINT ═══════════ -->
+<div class="card" id="quiz-sprint-02">
+  <div class="card-title">✅ Checkpoint</div>
+  <div class="cena voz-professor"><div class="msg"><span class="av">👨🏿‍🏫</span><div><div class="who">Prof. Wellington</div><div class="txt">Agora saímos da história da PagUai. <span data-aluno-nome>Arquiteto(a)</span>, estas questões conferem se você domina comunicação síncrona, contratos, API First e Strangler Fig. Responda depois do laboratório: algumas só têm resposta para quem executou o sistema.</div></div></div></div>
+
+  <div class="quiz-q">
+    <div class="enunciado">1. O que caracteriza o padrão Strangler Fig?</div>
+    <button class="quiz-opt" data-exp="isso é uma reescrita completa (big bang), justamente o que o padrão evita" onclick="responder(this)">Reescrever o sistema inteiro e trocar tudo num único dia.</button>
+    <button class="quiz-opt" data-correct="1" onclick="responder(this)">Um proxy na frente do sistema antigo desvia, rota por rota, o tráfego para os serviços novos, com a possibilidade de voltar atrás.</button>
+    <button class="quiz-opt" data-exp="o padrão trata de como migrar o tráfego, não de duplicar o banco" onclick="responder(this)">Copiar o banco do sistema antigo para cada serviço novo.</button>
+    <button class="quiz-opt" data-exp="o sistema antigo continua atendendo as rotas que ainda não migraram" onclick="responder(this)">Desligar o sistema antigo assim que o primeiro serviço novo estiver no ar.</button>
+    <div class="quiz-fb" data-exp="Na PagUai, o gateway desvia só GET /contas/{id}/extrato, e a configuração Strangler__Extrato permite voltar ao Extrato antigo."></div>
+  </div>
+
+  <div class="quiz-q">
+    <div class="enunciado">2. O que define o API First?</div>
+    <button class="quiz-opt" data-exp="o protocolo não define API First; é a ordem e quem participa do desenho do contrato" onclick="responder(this)">Usar REST em vez de SOAP.</button>
+    <button class="quiz-opt" data-exp="isso é code-first: o contrato nasce do código" onclick="responder(this)">Gerar o contrato OpenAPI automaticamente a partir do código.</button>
+    <button class="quiz-opt" data-correct="1" onclick="responder(this)">Desenhar e combinar o contrato com quem vai consumir antes da implementação, tratando a API como produto.</button>
+    <button class="quiz-opt" data-exp="documentar depois é o oposto: o consumidor só participa quando a API já existe" onclick="responder(this)">Documentar a API depois que ela estiver em produção.</button>
+    <div class="quiz-fb" data-exp="Com o contrato combinado, o front-end usa o mock (Prism) e o back-end implementa, verificado por testes de contrato."></div>
+  </div>
+
+  <div class="quiz-q">
+    <div class="enunciado">3. <span class="tag-lab">depende do lab</span> Com o serviço de Extrato parado (<code>docker compose stop extrato</code>), o que acontece?</div>
+    <button class="quiz-opt" data-exp="o PIX é atendido pelo monólito, que continua no ar" onclick="responder(this)">O extrato e o PIX respondem erro.</button>
+    <button class="quiz-opt" data-correct="1" onclick="responder(this)">O extrato responde 502 pelo gateway, e o PIX continua respondendo 201.</button>
+    <button class="quiz-opt" data-exp="o gateway não muda de rota sozinho; quem decide é a configuração Strangler__Extrato" onclick="responder(this)">O gateway manda o extrato automaticamente para o monólito.</button>
+    <button class="quiz-opt" data-exp="o 503 vem do Extrato quando ele está no ar e não alcança o monólito; parado, quem responde é o gateway" onclick="responder(this)">O extrato responde 503 com dependencia-indisponivel.</button>
+    <div class="quiz-fb" data-exp="Isolamento de falha: na Sprint 0, um deploy do Extrato derrubou o checkout. Agora, o Extrato fora do ar afeta só a rota dele."></div>
+  </div>
+
+  <div class="quiz-q">
+    <div class="enunciado">4. <span class="tag-lab">depende do lab</span> Com o monólito congelado (<code>docker compose pause api</code>), por que a consulta de extrato não responde em 30 segundos?</div>
+    <button class="quiz-opt" data-exp="o gateway está no ar e repassou a requisição ao Extrato" onclick="responder(this)">Porque o gateway caiu.</button>
+    <button class="quiz-opt" data-exp="o Extrato está no ar; ele está esperando a resposta do monólito" onclick="responder(this)">Porque o serviço de Extrato caiu.</button>
+    <button class="quiz-opt" data-correct="1" onclick="responder(this)">Porque o Extrato chama o monólito sem timeout configurado e fica esperando, até 100 segundos pelo padrão do .NET.</button>
+    <button class="quiz-opt" data-exp="o banco não participa: a chamada nem chega a ele" onclick="responder(this)">Porque o PostgreSQL está lento.</button>
+    <div class="quiz-fb" data-exp="É a dor proposital desta sprint. Na Sprint 9, timeout, retentativa e circuit breaker tratam essa situação."></div>
+  </div>
+
+  <div class="quiz-q">
+    <div class="enunciado">5. Na Sala de Contrato, por que trocar os valores em dinheiro de número para texto foi recusado agora?</div>
+    <button class="quiz-opt" data-exp="o argumento a favor do texto é justamente a precisão; o problema é outro" onclick="responder(this)">Porque texto é menos preciso que número.</button>
+    <button class="quiz-opt" data-correct="1" onclick="responder(this)">Porque mudar o tipo de um campo que o app já usa quebraria o app; numa extração Strangler Fig, o contrato só pode acrescentar.</button>
+    <button class="quiz-opt" data-exp="OpenAPI aceita os dois; é uma decisão de compatibilidade" onclick="responder(this)">Porque o OpenAPI não permite dinheiro como texto.</button>
+    <button class="quiz-opt" data-exp="o desempenho não foi o argumento; foi a compatibilidade com quem já consome" onclick="responder(this)">Porque texto deixa a resposta mais lenta.</button>
+    <div class="quiz-fb" data-exp="Boa prática, momento errado. A mudança para texto fica registrada como candidata a uma nova versão na Sprint 7."></div>
+  </div>
+  <button class="btn" onclick="refazerQuiz('quiz-sprint-02')">↺ Refazer</button>
+</div>
+
+<!-- ═══════════ 11. PALAVRAS E RECAP ═══════════ -->
+<div class="card">
+  <div class="card-title">📖 Palavras desta sprint</div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Termo</th><th>Em uma frase</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Comunicação síncrona</strong></td><td>Quem chama espera a resposta para continuar.</td></tr>
+      <tr><td><strong>Comunicação assíncrona</strong></td><td>Quem chama avisa e segue; quem se interessa reage depois.</td></tr>
+      <tr><td><strong>Contrato de API</strong></td><td>O acordo público sobre rotas, parâmetros, formatos e erros.</td></tr>
+      <tr><td><strong>OpenAPI</strong></td><td>Padrão para descrever contratos de APIs HTTP em YAML ou JSON.</td></tr>
+      <tr><td><strong>API First</strong></td><td>Desenhar e combinar o contrato com quem consome antes de implementar.</td></tr>
+      <tr><td><strong>Mock</strong></td><td>Servidor que responde o que o contrato descreve, sem a implementação real.</td></tr>
+      <tr><td><strong>Teste de contrato</strong></td><td>Teste que falha quando a implementação diverge do contrato.</td></tr>
+      <tr><td><strong>Strangler Fig</strong></td><td>Migração rota por rota, com um proxy na frente do sistema antigo.</td></tr>
+      <tr><td><strong>Gateway</strong></td><td>Porta de entrada única que encaminha cada requisição ao serviço certo.</td></tr>
+      <tr><td><strong>Falha parcial</strong></td><td>Parte do sistema falha enquanto o resto continua no ar.</td></tr>
+      <tr><td><strong>Paginação por cursor</strong></td><td>Continua depois do último item recebido, sem repetir nem pular itens.</td></tr>
+    </tbody>
+  </table></div>
+</div>
+
+<div class="card">
+  <div class="card-title">🔁 Recapitulando</div>
+  <ul style="margin-left:22px;line-height:1.9">
+    <li>Você conduziu a <strong>Sala de Contrato</strong> e viu o contrato nascer antes do código, com quem consome.</li>
+    <li>O app pôde testar o <strong>mock</strong> antes de o serviço existir.</li>
+    <li>O <strong>gateway</strong> desviou só a rota do extrato, e uma configuração permitiu voltar atrás.</li>
+    <li>O Extrato fora do ar não derrubou o PIX, mas o monólito travado deixou o Extrato pendurado: <strong>sem timeout</strong>.</li>
+    <li>Cada consulta de extrato agora faz <strong>três chamadas de rede</strong>.</li>
+  </ul>
+  <div class="success-banner"><strong>➡️ Próxima sprint:</strong> a falha da notificação ainda derruba o PIX. Em vez de esperar a resposta, e se o pagamento só avisasse que aconteceu? Isso é mensageria.</div>
+</div>
+
+</section>
