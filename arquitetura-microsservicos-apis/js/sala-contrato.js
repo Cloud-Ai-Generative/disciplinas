@@ -10,7 +10,7 @@ const P={
   joana:{av:'👩🏻‍🦰',nome:'Joana',papel:'Product Owner'},
   rafa:{av:'🧔🏻',nome:'Rafa',papel:'Tech Lead'},
   helena:{av:'👩‍💼',nome:'Helena',papel:'Coordenadora de Arquitetura'},
-  voce:{av:null,nome:null,papel:'Arquiteto(a), conduz a sala'}
+  voce:{av:null,nome:null,papel:'arquiteto(a) recém-contratado(a), conduz a sala'}
 };
 const ATOS=['① Necessidades','② Formato dos dados','③ Navegação e período','④ Erros','⑤ Evolução e segurança','⑥ Aprovação'];
 
@@ -161,7 +161,7 @@ function rot(t){return t==='time'?'escolha do time':t==='alt'?'alternativa':'rep
 function opc(k){return DEC[k].opts.find(o=>o.v===st.esc[k]);}
 function aguardando(){const f=FALAS[st.i];return f&&f.dec&&!st.esc[f.dec];}
 function balao(s,html,cls){const p=P[s];const d=document.createElement('div');d.className='msg'+(cls?' '+cls:'');d.dataset.ato=FALAS[Math.min(st.i,FALAS.length-1)].a;
-  d.innerHTML='<span class="av">'+(s==='voce'?av():p.av)+'</span><div><div class="who">'+esc(s==='voce'?nome()+' (você)':p.nome+' ('+p.papel+')')+'</div><div class="txt">'+html+'</div></div>';
+  d.innerHTML='<span class="av">'+(s==='voce'?av():p.av)+'</span><div><div class="who">'+esc(s==='voce'?nome()+' (você · arquiteto(a) recém-contratado(a))':p.nome+' ('+p.papel+')')+'</div><div class="txt">'+html+'</div></div>';
   const c=el('sala-conversa');c.appendChild(d);aplicarFiltro();c.scrollTop=c.scrollHeight;}
 function texto(t){return esc(t.replace('{nome}',nome()).replace('{resumo}',resumo()));}
 function resumo(){return ORDEM.filter(k=>st.esc[k]).map(k=>DEC[k].tema.toLowerCase()+': '+opc(k).l).join('; ')+'.';}
