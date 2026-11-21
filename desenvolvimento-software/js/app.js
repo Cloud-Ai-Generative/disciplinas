@@ -76,3 +76,13 @@ document.getElementById('print-btn').onclick=()=>window.print();
 showToast('👋 B.29: 15 abas — nova 3-G: Git, GitHub e GitLab em uma aba só!');
 });
 (function(){const st=document.createElement('style');st.textContent='.ancora-destaque{outline:3px solid var(--primary);outline-offset:4px;border-radius:8px;transition:outline-color .6s}';document.head.appendChild(st);})();
+/* ── Modo leitura: botão fixo para sair, tecla Esc e aviso ── */
+(function(){
+  function garantirBotaoSair(){if(document.getElementById('sair-leitura'))return;const b=document.createElement('button');b.id='sair-leitura';b.type='button';b.className='btn sair-leitura';b.textContent='✕ Sair do modo leitura';b.onclick=()=>alternarLeitura(false);document.body.appendChild(b);}
+  function alternarLeitura(forcar){garantirBotaoSair();const on=document.body.classList.toggle('focus-mode',forcar);if(typeof showToast==='function')showToast(on?'📖 Modo leitura ativado. Esc ou o botão no canto para sair.':'Modo leitura desativado.');}
+  window.alternarLeitura=alternarLeitura;
+  function ligar(){garantirBotaoSair();const t=document.getElementById('focus-toggle');if(t){t.textContent='📖 Modo leitura';t.onclick=()=>alternarLeitura();}}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ligar);else ligar();
+  window.addEventListener('load',ligar);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.body.classList.contains('focus-mode'))alternarLeitura(false);},true);
+})();
