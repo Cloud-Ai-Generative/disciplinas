@@ -66,6 +66,7 @@ function toggleFaq(e){e.classList.toggle('open');}
 function filterGloss(){const t=document.getElementById('gloss-search').value.toLowerCase();document.querySelectorAll('#gloss-table tbody tr').forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(t)?'':'none';});}
 const INDICE=[
   {tab:'inicio',title:'Início: a PagUai',k:'pagUai fintech história personagens helena joana rafa diego geraldo tech lead product owner sre coordenadora arquitetura avatar crachá sprints mapa unidade jornada'},
+  {tab:'sprint-01',title:'Sprint 1: bounded contexts e monólito modular',k:'bounded context contexto delimitado ddd domínio subdomínio central suporte genérico linguagem ubíqua mapa de contextos monólito modular contrato schema testes de arquitetura netarchtest saldo pagamentos extrato adr 0002 0003 critérios extração event storming'},
   {tab:'sprint-00',title:'Sprint 0: o monólito',k:'monólito monolito docker compose scalar mailpit postgres adr vantagens custos deploy acoplamento laboratório checkpoint c4'},
   {tab:'ambiente',title:'Ambiente: preparar a máquina',k:'ambiente instalar docker desktop engine git vs code dotnet sdk winget brew apt codespaces verificar check-env progresso windows macos linux'},
   {tab:'diagramas',title:'Diagramas e ADRs',k:'diagrama desenho solução implantação resiliência c4 adr como ler zona disponibilidade aws azure google cloud fluxo pix legenda'},

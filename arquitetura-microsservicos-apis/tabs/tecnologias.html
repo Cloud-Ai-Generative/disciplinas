@@ -12,6 +12,7 @@
       <tr><td><a class="ext" href="#f-docker" onclick="irAncora('f-docker');return false;">Docker e Docker Compose</a></td><td>Rodar tudo em contêineres com um comando</td><td>0</td></tr>
       <tr><td><a class="ext" href="#f-mailpit" onclick="irAncora('f-mailpit');return false;">Mailpit</a></td><td>Caixa de e-mails de teste</td><td>0</td></tr>
       <tr><td><a class="ext" href="#f-scalar" onclick="irAncora('f-scalar');return false;">Scalar e OpenAPI</a></td><td>Documentar e testar a API no navegador</td><td>0</td></tr>
+      <tr><td><a class="ext" href="#f-arquitetura" onclick="irAncora('f-arquitetura');return false;">Testes de arquitetura (NetArchTest)</a></td><td>Verificar as fronteiras entre os módulos a cada build</td><td>1</td></tr>
       <tr class="text-muted"><td>YARP, RabbitMQ, CoreWCF, Hot Chocolate, gRPC, SignalR, Kubernetes (kind), Polly, OpenTelemetry, Keycloak e outras</td><td>As fichas chegam junto com cada sprint</td><td>1 a 13</td></tr>
     </tbody>
   </table></div>
@@ -73,6 +74,25 @@
       <tbody><tr><td>Console do Amazon API Gateway, que permite testar chamadas</td><td>Portal do desenvolvedor do Azure API Management</td><td>Portal integrado do Apigee</td></tr></tbody></table></div>
     <p><span class="rot">Critérios para decidir:</span></p>
     <ul class="criterios"><li>Quem vai usar a documentação: o próprio time ou parceiros externos.</li><li>Se a API precisa de cadastro de consumidores, chaves e planos de uso (Sprint 13).</li></ul>
+  </div>
+
+  <div class="ficha" id="f-arquitetura">
+    <h4>🔧 Ficha da tecnologia: testes de arquitetura (NetArchTest)</h4>
+    <p><span class="rot">O que é:</span> um teste de arquitetura verifica <strong>regras de dependência</strong> no código compilado, por exemplo: "nenhum tipo do módulo Cobranças pode depender da pasta Interno de Pagamentos". O <strong>NetArchTest</strong> é uma biblioteca .NET que lê os assemblies e permite escrever essas regras como testes comuns.</p>
+    <p><span class="rot">Por que usamos aqui:</span> todos os módulos da PagUai estão no mesmo projeto, então o compilador não impede um módulo de usar o interior de outro. Com poucas linhas, o teste transforma a fronteira em regra verificada a cada build, e a mensagem de erro diz qual tipo violou a regra.</p>
+    <p><span class="rot">Outras opções no mercado:</span></p>
+    <div class="table-wrap"><table><thead><tr><th>Opção</th><th>Como funciona</th></tr></thead>
+      <tbody>
+        <tr><td><strong>ArchUnitNET</strong></td><td>Biblioteca .NET inspirada no ArchUnit, com uma linguagem de regras mais ampla (camadas, ciclos, convenções de nome)</td></tr>
+        <tr><td><strong>ArchUnit</strong></td><td>A biblioteca original, para Java</td></tr>
+        <tr><td><strong>Um projeto (.csproj) por módulo</strong></td><td>A fronteira é verificada pelo <strong>compilador</strong>: um módulo só enxerga o projeto de contratos do outro; exige manter mais projetos e referências</td></tr>
+        <tr><td><strong>Analisadores e revisão de código</strong></td><td>Regras no build (analisadores Roslyn) ou combinadas no time e conferidas no Pull Request</td></tr>
+      </tbody></table></div>
+    <p><span class="rot">Onde roda na nuvem:</span> testes de arquitetura não dependem de provedor: rodam no pipeline de integração contínua, junto com os outros testes.</p>
+    <div class="table-wrap"><table><thead><tr><th>GitHub</th><th>AWS</th><th>Azure</th><th>Google Cloud</th></tr></thead>
+      <tbody><tr><td>GitHub Actions (usado na PagUai)</td><td>AWS CodeBuild, orquestrado pelo AWS CodePipeline</td><td>Azure Pipelines</td><td>Cloud Build</td></tr></tbody></table></div>
+    <p><span class="rot">Critérios para decidir:</span></p>
+    <ul class="criterios"><li>Quão forte a fronteira precisa ser: verificada por teste ou impedida pelo compilador.</li><li>Quantos módulos e times existem, e o custo de manter a estrutura de projetos.</li><li>Que outras regras o time quer verificar (camadas, ciclos, nomes), e se a biblioteca as expressa.</li></ul>
   </div>
 </div>
 

@@ -1,0 +1,536 @@
+<section class="tab-panel" id="sprint-01">
+
+<!-- ═══════════ 1. CENA DE ABERTURA ═══════════ -->
+<div class="card">
+  <div class="card-title">🧩 Sprint 1 · Bounded contexts e o monólito modular</div>
+  <div class="cena">
+    <div class="msg"><span class="av">👩🏻‍🦰</span><div><div class="who">Joana (Product Owner)</div><div class="txt">Os investidores querem ver progresso. Dá para extrair os seis módulos em microsserviços de uma vez, neste trimestre?</div></div></div>
+    <div class="msg"><span class="av">🧔🏻</span><div><div class="who">Rafa (Tech Lead)</div><div class="txt">Seis serviços são seis deploys, seis bancos e seis coisas para monitorar. E hoje o Pagamentos grava as tabelas do Extrato e o Cobranças usa o serviço interno de Transferências. Se cortarmos assim, vira um monólito distribuído.</div></div></div>
+    <div class="msg"><span class="av">👩‍💼</span><div><div class="who">Helena (Coordenadora de Arquitetura)</div><div class="txt"><strong data-aluno-nome>Arquiteto(a)</strong>, antes de cortar, quero saber onde cortar. Proponha as fronteiras de negócio da PagUai, organize o monólito por elas e escreva dois ADRs: como vamos organizar o código e qual módulo sai primeiro. Eu reviso.</div></div></div>
+  </div>
+  <div class="grid-3">
+    <div class="grid-card"><h5>🎯 Objetivo da sprint</h5><p class="text-sm">Reconhecer bounded contexts em um domínio de negócio e organizar um monólito por eles, com fronteiras verificadas.</p></div>
+    <div class="grid-card"><h5>🛠️ O que você vai fazer</h5><p class="text-sm">Ver os módulos e os schemas, rodar os testes de arquitetura, quebrar uma regra de propósito e escrever os ADRs 0002 e 0003.</p></div>
+    <div class="grid-card"><h5>⏱️ Tempo estimado</h5><p class="text-sm">Laboratório <span class="camada essencial">Essencial</span>: 90 a 120 min, incluindo os ADRs. <span class="camada aprofundamento">Aprofundamento</span>: opcional.</p></div>
+  </div>
+</div>
+
+<!-- ═══════════ 2. VÍDEOS ═══════════ -->
+<div class="card">
+  <div class="card-title">🎬 Videoaulas desta sprint</div>
+  <p class="section-intro">Assista na página da <strong>Sprint 1 no Canvas</strong>. A lista abaixo é só para você se orientar.</p>
+  <ul class="video-list">
+    <li><span>1.1 Mapeando o domínio da PagUai com bounded contexts</span><span class="dur">10 min</span></li>
+    <li><span>1.2 Monólito modular: organizar antes de quebrar</span><span class="dur">10 min</span></li>
+    <li><span>1.3 O que não extrair: critérios para decidir</span><span class="dur">8 min</span></li>
+  </ul>
+</div>
+
+<!-- ═══════════ 3. CONCEITO ═══════════ -->
+<div class="card">
+  <div class="card-title">💡 Conceito: domínio, subdomínios e bounded contexts</div>
+  <div class="deep-concept-box">
+    <h3>🗺️ Domínio e subdomínios</h3>
+    <p>O <strong>domínio</strong> é o negócio que o software atende: para a PagUai, pagamentos para pequenos comerciantes. Ele se divide em <strong>subdomínios</strong>, que não têm o mesmo peso para a empresa. A classificação vem do Domain-Driven Design (DDD):</p>
+  </div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Tipo</th><th>O que é</th><th>Na PagUai</th><th>Como costuma ser tratado</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Central</strong> (core)</td><td>O que diferencia a empresa no mercado</td><td>Pagamentos e Antifraude</td><td>Desenvolvido pelo próprio time, com o melhor esforço</td></tr>
+      <tr><td><strong>De suporte</strong></td><td>Necessário e específico do negócio, mas não é o diferencial</td><td>Contas, Cobranças, Extrato e as regras de Notificações</td><td>Desenvolvido pelo time, de forma mais simples</td></tr>
+      <tr><td><strong>Genérico</strong></td><td>Problema comum a qualquer empresa</td><td>Entrega de e-mail, identidade e login</td><td>Comprado ou adotado pronto (Sprint 11: Keycloak)</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="deep-concept-box mt-3">
+    <h3>🧩 Bounded context e linguagem ubíqua</h3>
+    <p>Um <strong>bounded context</strong> (contexto delimitado) é a fronteira dentro da qual um modelo e as suas palavras têm um significado único. Dentro dela, o time e o negócio falam a mesma <strong>linguagem ubíqua</strong>.</p>
+    <p>A mesma palavra pode significar coisas diferentes em contextos diferentes. Veja "conta" na PagUai:</p>
+    <ul>
+      <li><strong>Em Contas:</strong> o cadastro: titular, documento e chave PIX.</li>
+      <li><strong>Em Pagamentos:</strong> um saldo e os lançamentos que o explicam.</li>
+      <li><strong>Em Antifraude:</strong> um histórico de comportamento: quantas transferências no último minuto, de que valores.</li>
+    </ul>
+    <p>Na Sprint 0, uma única classe <code>Conta</code> tentava servir aos três. É por isso que o saldo saiu do cadastro nesta sprint: <strong>quem movimenta dinheiro é o dono do saldo</strong>.</p>
+  </div>
+
+  <div class="warning-banner"><strong>⚠️ Armadilha comum no mercado:</strong> um bounded context <strong>não é automaticamente um microsserviço</strong>. Ele é uma fronteira de modelo. Um contexto pode virar um serviço, vários contextos podem conviver num mesmo processo (é o que fazemos nesta sprint), e um contexto grande pode até ser dividido em mais de um serviço.</div>
+
+  <div class="deep-concept-box mt-3">
+    <h3>🏗️ Monólito modular</h3>
+    <p>Um <strong>monólito modular</strong> continua sendo um processo, um deploy e um banco, mas cada contexto vira um <strong>módulo</strong> com fronteira de verdade. Na PagUai, cada módulo tem quatro coisas:</p>
+    <ol>
+      <li><strong>Contrato público</strong> (pasta <code>Contratos</code>): a única coisa que os outros módulos podem usar.</li>
+      <li><strong>Interior privado</strong> (pasta <code>Interno</code>): entidades, regras, endpoints e acesso a dados.</li>
+      <li><strong>Dados próprios:</strong> um <code>DbContext</code> e um <strong>schema</strong> só do módulo no PostgreSQL. Nenhum módulo lê ou grava as tabelas de outro, e não há chave estrangeira entre schemas.</li>
+      <li><strong>Regra verificada:</strong> testes de arquitetura que falham se um módulo usar o interior de outro.</li>
+    </ol>
+  </div>
+
+  <div class="analogy-highlight"><span class="icon">🏢</span><div><strong>Analogia:</strong> o monólito modular é um prédio comercial com várias salas. Cada empresa tem a sua sala, a sua chave e os seus arquivos, e só se fala com ela pela recepção. <strong>A analogia vale até aqui:</strong> ela explica o contrato (a recepção) e os dados privados (os arquivos de cada sala). <strong>A partir daqui ela engana:</strong> no prédio, as salas são fisicamente separadas; no monólito, todos os módulos estão no mesmo processo, então uma falha grave em um ainda derruba todos, e o compilador não impede ninguém de "pular a recepção". É por isso que precisamos dos testes de arquitetura.</div></div>
+
+  <div class="split-view">
+    <div class="split-col">
+      <h4 style="color:var(--success);margin-bottom:8px">✅ O que o monólito modular resolve</h4>
+      <ul style="margin-left:20px;line-height:1.8">
+        <li>Cada módulo pode mudar por dentro sem quebrar os outros, enquanto o contrato for mantido.</li>
+        <li>As fronteiras ficam explícitas e testadas, antes de qualquer chamada de rede.</li>
+        <li>Errar a fronteira aqui é barato: mover código entre pastas, não entre serviços.</li>
+        <li>Extrair um módulo depois vira um passo pequeno: o contrato já existe.</li>
+      </ul>
+    </div>
+    <div class="split-col">
+      <h4 style="color:var(--danger);margin-bottom:8px">⚠️ O que ele não resolve</h4>
+      <ul style="margin-left:20px;line-height:1.8">
+        <li>O deploy continua único: mudar o Extrato ainda publica tudo.</li>
+        <li>A escala continua sendo do sistema inteiro.</li>
+        <li>A transação do PIX ainda passa por vários módulos, então a falha da notificação ainda derruba o pagamento (Sprint 3).</li>
+        <li>Exige disciplina: sem a regra verificada, o acoplamento volta.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ 4. DIAGRAMAS ═══════════ -->
+<div class="card">
+  <div class="card-title">📐 A arquitetura desta sprint</div>
+  <h4 class="diag-title" id="d-03">📐 D-03 <span class="dt-type">DDD · Mapa de contextos</span> Os contextos da PagUai e quem depende de quem</h4>
+  <p class="text-sm text-muted" style="margin:4px 0 8px"><strong>👀 Como ler:</strong> cada caixa é um contexto; a cor indica o tipo de subdomínio. A seta vai de quem <strong>usa</strong> para quem <strong>fornece</strong> o contrato. A linha tracejada é um evento: Contas avisa, Pagamentos reage, e Contas não conhece Pagamentos.</p>
+  <div class="mermaid-box" data-code='flowchart TB
+  classDef central fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#0f172a
+  classDef suporte fill:#f1f5f9,stroke:#475569,color:#0f172a
+  pag["<b>Pagamentos</b><br/>central<br/>saldo, lançamentos, PIX"]:::central
+  af["<b>Antifraude</b><br/>central<br/>análises"]:::central
+  contas["<b>Contas</b><br/>suporte<br/>cadastro, chave PIX"]:::suporte
+  cob["<b>Cobranças</b><br/>suporte"]:::suporte
+  ext["<b>Extrato</b><br/>suporte<br/>só leitura"]:::suporte
+  notif["<b>Notificações</b><br/>suporte<br/>quem avisar e quando"]:::suporte
+  pag -->|"IContas"| contas
+  pag -->|"IAntifraude"| af
+  pag -->|"INotificacoes"| notif
+  cob -->|"IContas"| contas
+  cob -->|"IPagamentos"| pag
+  ext -->|"IContas"| contas
+  ext -->|"IPagamentos"| pag
+  contas -. "evento ContaAberta" .-> pag'>
+  <div class="mermaid"></div>
+  </div>
+
+  <h4 class="diag-title" id="d-04">📐 D-04 <span class="dt-type">C4 · Componentes</span> Dentro do monólito modular</h4>
+  <p class="text-sm text-muted" style="margin:4px 0 8px"><strong>👀 Como ler:</strong> ainda é <strong>uma caixa só</strong> (um processo, um deploy). A diferença está dentro dela: cada módulo tem o seu contrato e o seu schema. Compare com o D-01 da Sprint 0.</p>
+  <div class="mermaid-box" data-code='flowchart TB
+  cliente(["👤 Cliente e lojista<br/>Scalar e arquivo .http"])
+  subgraph api["PagUai.Api · ASP.NET Core .NET 10 · UM processo, UM deploy"]
+    direction TB
+    mc["<b>Contas</b><br/>Contratos/IContas<br/><i>schema contas</i>"]
+    mp["<b>Pagamentos</b><br/>Contratos/IPagamentos<br/><i>schema pagamentos</i>"]
+    mcob["<b>Cobranças</b><br/><i>schema cobrancas</i>"]
+    maf["<b>Antifraude</b><br/>Contratos/IAntifraude<br/><i>schema antifraude</i>"]
+    me["<b>Extrato</b><br/>só leitura<br/><i>sem tabelas</i>"]
+    mn["<b>Notificações</b><br/>Contratos/INotificacoes<br/><i>schema notificacoes</i>"]
+  end
+  subgraph pg["PostgreSQL 17 · UM banco"]
+    direction TB
+    sc[("contas")]
+    sp[("pagamentos")]
+    scob[("cobrancas")]
+    saf[("antifraude")]
+    sn[("notificacoes")]
+  end
+  mail["📧 Mailpit"]
+  cliente -->|"HTTP/JSON"| api
+  api -->|"EF Core: um DbContext por módulo,<br/>cada um só no seu schema"| pg
+  api -->|"SMTP"| mail'>
+  <div class="mermaid"></div>
+  </div>
+
+  <h4 class="diag-title" id="d-05">📐 D-05 <span class="dt-type">UML · Sequência</span> O mesmo PIX, agora pelos contratos</h4>
+  <p class="text-sm text-muted" style="margin:4px 0 8px"><strong>👀 Como ler:</strong> compare com o D-02. Pagamentos agora fala com os outros módulos só pelos contratos, e cada módulo grava no seu schema. Mas repare na moldura: <strong>ainda é uma transação só</strong>.</p>
+  <div class="mermaid-box" data-code='sequenceDiagram
+  autonumber
+  actor A as Ana (cliente)
+  participant P as Pagamentos
+  participant C as Contas
+  participant F as Antifraude
+  participant N as Notificações
+  participant DB as PostgreSQL
+  A->>P: POST /transferencias (R$ 50)
+  P->>DB: BEGIN (transação da requisição)
+  P->>C: IContas: quem é a origem? quem é a chave?
+  C-->>P: Ana Clara, Loja do Seu Geraldo
+  P->>F: IAntifraude: analisar
+  F->>DB: grava em antifraude.analises
+  F-->>P: aprovado
+  P->>DB: atualiza pagamentos.saldos e grava pagamentos.lancamentos
+  P->>N: INotificacoes: avisar as duas contas
+  N->>DB: grava em notificacoes.notificacoes e envia o e-mail
+  P->>DB: COMMIT
+  P-->>A: 201 Created'>
+  <div class="mermaid"></div>
+  </div>
+</div>
+
+<!-- ═══════════ 5. DECISÕES ═══════════ -->
+<div class="card">
+  <div class="card-title">🧭 As duas decisões desta sprint</div>
+  <p class="section-intro">Você é o(a) arquiteto(a). Escolha primeiro aqui e depois escreva a sua proposta nos ADRs, no laboratório (fase 5). Não há pegadinha: as alternativas em laranja são escolhas legítimas que o time não adotou agora.</p>
+
+  <div class="decisao" data-adr="0002">
+    <div class="enunciado">🧭 Decisão 1, <span data-aluno-nome>Arquiteto(a)</span>: a Joana quer progresso rápido e o Rafa teme o custo de operar seis serviços. O que você propõe para esta sprint?</div>
+    <button class="quiz-opt" data-tipo="errada" data-exp="com módulos que ainda gravam as tabelas uns dos outros, cortar agora criaria um monólito distribuído: as mesmas dependências, agora com rede, seis deploys e seis bancos para sincronizar" onclick="decidir(this)">Extrair os seis módulos em microsserviços neste trimestre.</button>
+    <button class="quiz-opt" data-tipo="time" data-exp="as fronteiras ficam explícitas e testadas com custo baixo; se alguma estiver errada, corrigir é mover código entre pastas, e cada extração futura começa de um contrato que já existe" onclick="decidir(this)">Organizar o monólito em módulos, com contrato público, schema próprio e testes de arquitetura, e só então extrair um de cada vez.</button>
+    <button class="quiz-opt" data-tipo="alt" data-exp="um projeto .csproj por módulo faz o compilador impedir o acesso ao interior dos outros, o que é mais forte que um teste; o custo é uma solução com muitos projetos e referências para manter, e o time preferiu começar mais simples" onclick="decidir(this)">Organizar em módulos, mas com um projeto .csproj separado para cada um, em vez de testes de arquitetura.</button>
+    <button class="quiz-opt" data-tipo="errada" data-exp="as dores da Sprint 0 (deploy acoplado, módulos mexendo nas tabelas dos outros) continuam crescendo com o time; não decidir também é uma decisão, e cara" onclick="decidir(this)">Não mexer na arquitetura agora e focar só em novas funcionalidades.</button>
+    <div class="decisao-fb" data-exp=""></div>
+    <button class="btn mt-2" onclick="refazerDecisao(this)">↺ Refazer</button>
+  </div>
+
+  <div class="table-wrap mt-3"><table>
+    <thead><tr><th>Critério para extrair um módulo</th><th>Pergunta a fazer</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Escala diferente</strong></td><td>Ele recebe muito mais (ou muito menos) carga que o resto?</td></tr>
+      <tr><td><strong>Ritmo de mudança diferente</strong></td><td>Ele muda bem mais vezes que o resto, ou por outro time?</td></tr>
+      <tr><td><strong>Isolamento de falha</strong></td><td>Uma falha ou um deploy dele já derrubou o resto?</td></tr>
+      <tr><td><strong>Transação com outros módulos</strong></td><td>Ele precisa gravar junto com outros módulos, de forma atômica? Se sim, extrair é caro.</td></tr>
+      <tr><td><strong>Risco de errar a fronteira</strong></td><td>O modelo dele ainda muda muito? Fronteira errada entre serviços custa caro.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="decisao mt-3" data-adr="0003">
+    <div class="enunciado">🧭 Decisão 2, <span data-aluno-nome>Arquiteto(a)</span>: usando os critérios acima, qual módulo deve sair primeiro do monólito?</div>
+    <button class="quiz-opt" data-tipo="errada" data-exp="é o subdomínio central, participa de quase todas as transações e é o mais arriscado de todos; começar por ele concentra todo o risco na primeira extração" onclick="decidir(this)">Pagamentos, porque é o mais importante.</button>
+    <button class="quiz-opt" data-tipo="time" data-exp="é só de leitura, então não participa de nenhuma transação; tem carga própria (consultas frequentes); um deploy dele já derrubou o checkout na Sprint 0; e a fronteira é simples, o que deixa a primeira extração com risco baixo" onclick="decidir(this)">Extrato.</button>
+    <button class="quiz-opt" data-tipo="alt" data-exp="o Antifraude tem escala e ritmo de mudança próprios e causou o Apagão da Black Friday, então é um forte candidato; mas ele está no caminho crítico de todo PIX, e tirá-lo antes de ter timeout e resiliência (Sprint 9) põe cada pagamento atrás de uma chamada de rede" onclick="decidir(this)">Antifraude.</button>
+    <button class="quiz-opt" data-tipo="errada" data-exp="hoje a notificação roda dentro da transação do PIX; extraí-la como serviço síncrono manteria o acoplamento e somaria a rede; ela pede comunicação assíncrona, que é o tema da Sprint 3" onclick="decidir(this)">Notificações, chamado por HTTP a cada PIX.</button>
+    <div class="decisao-fb" data-exp=""></div>
+    <button class="btn mt-2" onclick="refazerDecisao(this)">↺ Refazer</button>
+  </div>
+</div>
+
+<!-- ═══════════ 6. LABORATÓRIO ═══════════ -->
+<div class="card" id="lab-sprint-01">
+  <div class="card-title">🧪 Laboratório <span class="camada essencial">Essencial</span></div>
+  <div class="progresso"><div class="rotulo"><span>📈 Seu progresso</span><span class="conta">0 de 0 passos</span></div><div class="barra"><span></span></div></div>
+  <div class="phase-bar">
+    <span class="phase on">0 · Atualizar</span>
+    <span class="phase on">1 · Ver os módulos</span>
+    <span class="phase on">2 · Ver os schemas</span>
+    <span class="phase on">3 · Onde está o saldo?</span>
+    <span class="phase on">4 · Testes de arquitetura</span>
+    <span class="phase on">5 · Escrever os ADRs</span>
+  </div>
+
+  <div class="step-box" id="s1-fase-0">
+    <h4><span class="step-num">0</span> Atualizar o seu fork para a Sprint 1 <span class="tempo">⏱️ 10 min</span></h4>
+    <p>Na pasta <code>paguai</code> do seu fork:</p>
+    <div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">git fetch https://github.com/Cloud-Ai-Generative/paguai.git --tags
+git checkout sprint-01
+docker compose down -v
+docker compose up -d --build</pre></div>
+    <details class="partes"><summary>🔍 Entenda os comandos, parte por parte</summary>
+      <table class="partes-tab">
+        <tr><td><code>git fetch &lt;repositório original&gt; --tags</code></td><td>traz para o seu fork as tags novas publicadas no repositório da disciplina, sem mudar os seus arquivos</td></tr>
+        <tr><td><code>git checkout sprint-01</code></td><td>coloca o código exatamente no estado da Sprint 1</td></tr>
+        <tr><td><code>docker compose down -v</code></td><td>derruba os contêineres e, com <code>-v</code>, <strong>apaga o volume do banco</strong>; a estrutura mudou (agora há um schema por módulo), então começamos limpo</td></tr>
+        <tr><td><code>docker compose up -d --build</code></td><td>reconstrói a imagem da API com o código novo e sobe tudo</td></tr>
+      </table>
+    </details>
+    <div class="esperado"><strong>✅ Resultado esperado:</strong> <code>curl http://localhost:8080/health</code> responde <code>{"status":"saudavel","banco":"ok"}</code>. Nos logs (<code>docker compose logs api</code>) aparecem cinco linhas <code>Schema ... pronto.</code> e <code>Dados fictícios iniciais inseridos.</code></div>
+    <label class="check-passo"><input type="checkbox" data-passo="s1-atualizar" onchange="marcarPasso(this)"> Fork na Sprint 1 e API no ar</label>
+  </div>
+
+  <div class="step-box" id="s1-fase-1">
+    <h4><span class="step-num">1</span> Ver os módulos no código <span class="tempo">⏱️ 15 min</span></h4>
+    <p>Abra a pasta no VS Code (<code>code .</code>) e explore <code>src/PagUai.Api/Modulos</code>. Cada módulo tem a mesma estrutura:</p>
+    <div class="code-editor-wrap"><span class="code-filepath">estrutura de um módulo</span><pre class="code-editor">Modulos/Pagamentos/
+├── Contratos/IPagamentos.cs   ← PÚBLICO: o que os outros podem usar
+├── Interno/                   ← PRIVADO: entidades, DbContext, serviços, endpoints, migrations
+└── ModuloPagamentos.cs        ← registro do módulo no Program.cs</pre></div>
+    <ol class="step-number-list">
+      <li>Abra <code>Modulos/Contas/Contratos/IContas.cs</code>. Repare no tipo <code>ContaResumo</code>: ele não tem saldo.</li>
+      <li>Abra <code>Modulos/Pagamentos/Interno/ServicoDePagamentos.cs</code>. Repare que ele só recebe <strong>interfaces</strong> dos outros módulos: <code>IContas</code>, <code>IAntifraude</code> e <code>INotificacoes</code>.</li>
+      <li>Abra <code>Modulos/Extrato/Interno/ExtratoEndpoints.cs</code>. O Extrato não tem tabelas: ele pergunta a Contas e a Pagamentos.</li>
+      <li>Abra <code>Program.cs</code> e compare com o da Sprint 0: cada módulo se registra com <code>AddModulo...</code> e <code>MapModulo...</code>.</li>
+    </ol>
+    <label class="check-passo"><input type="checkbox" data-passo="s1-modulos" onchange="marcarPasso(this)"> Explorei os módulos e os contratos</label>
+  </div>
+
+  <div class="step-box" id="s1-fase-2">
+    <h4><span class="step-num">2</span> Ver os schemas no banco <span class="tempo">⏱️ 10 min</span></h4>
+    <div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose exec postgres psql -U paguai -d paguai -c "\dn"
+docker compose exec postgres psql -U paguai -d paguai -c "\dt pagamentos.*"</pre></div>
+    <details class="partes"><summary>🔍 Entenda os comandos, parte por parte</summary>
+      <table class="partes-tab">
+        <tr><td><code>docker compose exec postgres</code></td><td>executa um comando dentro do contêiner do banco, que já está rodando</td></tr>
+        <tr><td><code>psql -U paguai -d paguai</code></td><td>o cliente de linha de comando do PostgreSQL, com o usuário e o banco do laboratório</td></tr>
+        <tr><td><code>-c "\dn"</code></td><td>roda um único comando e sai; <code>\dn</code> lista os schemas</td></tr>
+        <tr><td><code>"\dt pagamentos.*"</code></td><td>lista as tabelas do schema <code>pagamentos</code></td></tr>
+      </table>
+    </details>
+    <div class="esperado"><strong>✅ Resultado esperado:</strong> os schemas <code>antifraude</code>, <code>cobrancas</code>, <code>contas</code>, <code>notificacoes</code> e <code>pagamentos</code> (além do <code>public</code>, vazio). Em <code>pagamentos</code>: <code>saldos</code>, <code>transferencias</code>, <code>lancamentos</code> e <code>__historico_migrations</code>.</div>
+    <div class="na-empresa"><strong>🏢 Na empresa</strong>Um schema por módulo no mesmo banco é um degrau. A separação é lógica: o banco é um só, com o mesmo backup e o mesmo limite de recursos, e nada impede um usuário com permissão de ler tudo. Muitas empresas reforçam a fronteira com um <strong>usuário de banco por módulo</strong>, com permissão só no seu schema. O passo seguinte, a partir da Sprint 2, é o <strong>banco por serviço</strong> (Database per Service).</div>
+    <label class="check-passo"><input type="checkbox" data-passo="s1-schemas" onchange="marcarPasso(this)"> Vi os cinco schemas</label>
+  </div>
+
+  <div class="step-box" id="s1-fase-3">
+    <h4><span class="step-num">3</span> Onde está o saldo? <span class="tempo">⏱️ 15 min</span></h4>
+    <div class="preveja">
+      <div class="pergunta">🔮 Preveja antes de rodar: na Sprint 0, <code>GET /contas</code> mostrava o saldo de cada conta. E agora?</div>
+      <textarea placeholder="Escreva o seu palpite aqui (fica só na tela, não é enviado)."></textarea>
+      <button class="btn mt-2" onclick="revelarPrevisao(this)">👀 Revelar</button>
+      <div class="resposta"><strong>O saldo sumiu de <code>GET /contas</code>.</strong> Ele pertence agora ao contexto de Pagamentos, que é quem movimenta o dinheiro. Para consultá-lo, use <code>GET /saldos/{contaId}</code> ou o extrato. Repare: é uma <strong>mudança de contrato</strong> da API. Quem dependia do campo <code>saldo</code> em <code>/contas</code> quebrou. Como evoluir uma API sem quebrar quem a usa é o tema da Sprint 7.</div>
+    </div>
+    <ol class="step-number-list">
+      <li>No Scalar (<a class="ext" href="http://localhost:8080" target="_blank" rel="noopener">http://localhost:8080</a>), execute <code>GET /contas</code> e copie o id da <strong>Ana Clara Mendes</strong>.</li>
+      <li>Execute <code>GET /saldos/{contaId}</code> com o id da Ana.
+        <div class="esperado"><strong>✅ Resultado esperado:</strong> <code>{"contaId":"...","saldo":10000.00}</code>.</div>
+      </li>
+      <li>Faça um PIX de R$ 50 da Ana para <code>loja.geraldo@paguai.local</code> (<code>POST /transferencias</code>, como na Sprint 0) e abra o extrato: <code>GET /contas/{id}/extrato</code>.
+        <div class="esperado"><strong>✅ Resultado esperado:</strong> saldo atual de 9.950,00 e dois lançamentos: o débito do PIX e um crédito "Depósito inicial" de 10.000,00. O depósito inicial agora aparece porque Pagamentos registra todo dinheiro que entra, inclusive o da abertura da conta.</div>
+      </li>
+    </ol>
+    <div class="info-banner"><strong>💡 Como o saldo nasce?</strong> Contas não conhece Pagamentos. Ao abrir uma conta, Contas publica o evento <code>ContaAberta</code>, e Pagamentos reage criando o saldo (veja <code>Modulos/Pagamentos/Interno/AoAbrirConta.cs</code>). O evento ainda roda dentro do processo; na Sprint 3, eventos entre serviços passam por um broker de mensagens.</div>
+    <label class="check-passo"><input type="checkbox" data-passo="s1-saldo" onchange="marcarPasso(this)"> Encontrei o saldo em Pagamentos</label>
+  </div>
+
+  <div class="step-box" id="s1-fase-4">
+    <h4><span class="step-num">4</span> Rodar os testes de arquitetura e quebrar uma regra <span class="tempo">⏱️ 25 min</span></h4>
+    <p>Os testes de arquitetura não precisam de banco. Rode com o .NET 10 SDK, se você instalou, ou com o contêiner do SDK, sem instalar nada:</p>
+    <div class="so" data-so="mac linux"><div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor"># com o .NET 10 SDK instalado:
+dotnet test --filter-class "*ArquiteturaTests"
+
+# sem o SDK (usa um contêiner; a primeira vez baixa a imagem, cerca de 1 GB):
+docker run --rm -v "$PWD":/src -w /src mcr.microsoft.com/dotnet/sdk:10.0 dotnet test --filter-class "*ArquiteturaTests"</pre></div></div>
+    <div class="so" data-so="win"><div class="code-editor-wrap"><span class="code-filepath">PowerShell, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor"># com o .NET 10 SDK instalado:
+dotnet test --filter-class "*ArquiteturaTests"
+
+# sem o SDK (usa um contêiner; a primeira vez baixa a imagem, cerca de 1 GB):
+docker run --rm -v "${PWD}:/src" -w /src mcr.microsoft.com/dotnet/sdk:10.0 dotnet test --filter-class "*ArquiteturaTests"</pre></div></div>
+    <details class="partes"><summary>🔍 Entenda o comando com contêiner, parte por parte</summary>
+      <table class="partes-tab">
+        <tr><td><code>docker run --rm</code></td><td>cria um contêiner temporário e o apaga ao terminar</td></tr>
+        <tr><td><code>-v "$PWD":/src</code></td><td>monta a pasta atual dentro do contêiner, em <code>/src</code></td></tr>
+        <tr><td><code>-w /src</code></td><td>define <code>/src</code> como a pasta de trabalho</td></tr>
+        <tr><td><code>mcr.microsoft.com/dotnet/sdk:10.0</code></td><td>a imagem oficial do .NET 10 SDK</td></tr>
+        <tr><td><code>dotnet test --filter-class "*ArquiteturaTests"</code></td><td>compila e roda só a classe de testes de arquitetura</td></tr>
+      </table>
+    </details>
+    <div class="esperado"><strong>✅ Resultado esperado:</strong> 14 testes aprovados: dois por módulo (não usar o interior dos outros; o contrato não expor o próprio interior), um para o código compartilhado e um que confere que cada módulo tem as tabelas só no seu schema.</div>
+
+    <p class="mt-3"><strong>Agora quebre a regra de propósito.</strong> Em <code>Modulos/Cobrancas/Interno/CobrancasEndpoints.cs</code>, no endpoint <code>/pagar</code>, troque o contrato pelo serviço interno de Pagamentos:</p>
+    <div class="code-editor-wrap"><span class="code-filepath">antes</span><pre class="code-editor">IContas contas, IPagamentos pagamentos, UnidadeDeTrabalho unidade</pre></div>
+    <div class="code-editor-wrap"><span class="code-filepath">depois (só para o experimento)</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">IContas contas, PagUai.Api.Modulos.Pagamentos.Interno.ServicoDePagamentos pagamentos, UnidadeDeTrabalho unidade</pre></div>
+    <p>Salve e rode os testes de arquitetura de novo.</p>
+    <div class="esperado"><strong>✅ Resultado esperado:</strong> o código <strong>compila</strong>, mas um teste falha: <code>O módulo Cobrancas usa o interior de outro módulo em: PagUai.Api.Modulos.Cobrancas.Interno.CobrancasEndpoints. Use o contrato público (pasta Contratos) do outro módulo.</code></div>
+    <p>Desfaça a mudança:</p>
+    <div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">git checkout -- src/PagUai.Api/Modulos/Cobrancas/Interno/CobrancasEndpoints.cs</pre></div>
+    <div class="warning-banner"><strong>🤔 Para pensar:</strong> o compilador aceitou a violação. Por quê? Todos os módulos estão no mesmo projeto, e para o C# eles são só pastas. A fronteira só existe porque um teste a verifica a cada build. Fronteira em pasta, sem regra verificada, não é fronteira.</div>
+    <p class="text-sm">📇 Outras formas de verificar fronteiras e onde isso roda na nuvem: <a class="ext" href="#tecnologias" onclick="switchTab('tecnologias','f-arquitetura');return false;">Ficha da tecnologia: testes de arquitetura</a>.</p>
+    <label class="check-passo"><input type="checkbox" data-passo="s1-testes" onchange="marcarPasso(this)"> Vi os testes passarem, falharem e passarem de novo</label>
+  </div>
+
+  <div class="step-box" id="s1-fase-5">
+    <h4><span class="step-num">5</span> Escrever os ADRs 0002 e 0003 <span class="tempo">⏱️ 30 a 40 min</span></h4>
+    <p>Agora é com você, como arquiteto(a). O repositório traz os dois ADRs como <strong>modelo</strong>, com perguntas-guia:</p>
+    <ul style="margin-left:22px;line-height:1.8">
+      <li><code>docs/adr/0002-monolito-modular.md</code>: como organizar o código.</li>
+      <li><code>docs/adr/0003-primeiro-a-sair.md</code>: qual módulo sai primeiro, com a tabela de critérios para você preencher.</li>
+    </ul>
+    <ol class="step-number-list mt-2">
+      <li>Crie um branch para a sua proposta (a tag <code>sprint-01</code> não é um branch):
+        <div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">git switch -c minha-sprint-01</pre></div>
+      </li>
+      <li>Preencha os dois arquivos no VS Code, com as suas palavras, e apague as perguntas-guia.</li>
+      <li>Faça o commit e envie para o seu fork:
+        <div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">git add docs/adr
+git commit -m "ADRs 0002 e 0003: minha proposta"
+git push -u origin minha-sprint-01</pre></div>
+      </li>
+      <li>Só depois, compare com as versões aprovadas pela Helena, logo abaixo.</li>
+    </ol>
+    <label class="check-passo"><input type="checkbox" data-passo="s1-adrs" onchange="marcarPasso(this)"> Escrevi e enviei os meus ADRs</label>
+
+    <div class="preveja mt-3">
+      <div class="pergunta">📝 Escreveu os seus ADRs? Compare com a versão aprovada. Não existe uma única resposta certa: veja se a sua proposta está <strong>bem justificada</strong> e se considerou os mesmos trade-offs.</div>
+      <button class="btn mt-2" onclick="revelarPrevisao(this)">📜 Ver as versões aprovadas pela Helena</button>
+      <div class="resposta">
+        <div class="adr">
+          <h5>ADR 0002 · Organizar o monólito em módulos com fronteiras verificadas <span class="status">aceita · Sprint 1</span></h5>
+          <p><b>Proposta e aprovação:</b> proposto pelo(a) arquiteto(a) <span data-aluno-nome>Arquiteto(a)</span>; aprovado por Helena Rocha, Coordenadora de Arquitetura.</p>
+          <p><b>Contexto:</b> o monólito cresceu sem fronteiras. Transferências gravava as tabelas do Extrato e das Notificações, Cobranças usava o serviço interno de Transferências, o Antifraude lia a tabela de transferências e uma única classe <code>Conta</code> misturava cadastro e saldo. Extrair serviços nesse estado criaria um monólito distribuído. O time ainda não tem automação para operar seis serviços.</p>
+          <p><b>Decisão:</b> organizar o monólito em seis módulos, um por bounded context: Contas, Pagamentos, Cobranças, Antifraude, Extrato e Notificações. Cada módulo expõe um contrato público (pasta <code>Contratos</code>) e esconde o resto (pasta <code>Interno</code>); tem um <code>DbContext</code> e um schema próprios, sem chave estrangeira entre schemas. Transferências passa a se chamar Pagamentos e se torna dono do saldo e dos lançamentos; o Extrato vira só de leitura. Contas avisa a abertura de conta por um evento em processo, para não depender de Pagamentos. Testes de arquitetura, rodando a cada build, impedem um módulo de usar o interior de outro.</p>
+          <p><b>Alternativas consideradas:</b> extrair microsserviços já (rejeitada: monólito distribuído e custo de operação); um projeto <code>.csproj</code> por módulo (válida e mais forte, porque o compilador impede o acesso; adiada pelo custo de manter muitos projetos, e pode ser adotada depois sem mudar os contratos); só reorganizar pastas, sem regra verificada (rejeitada: o acoplamento volta).</p>
+          <p><b>Consequências:</b> cada módulo pode mudar por dentro sem afetar os outros, e as próximas extrações começam de um contrato pronto. Continuam: deploy único, escala do sistema inteiro e a transação do PIX passando por vários módulos (a falha da notificação ainda derruba o pagamento, Sprint 3). O contrato da API mudou: <code>GET /contas</code> não traz mais o saldo, que passa a ser consultado em <code>GET /saldos/{contaId}</code>.</p>
+        </div>
+        <div class="adr">
+          <h5>ADR 0003 · O Extrato é o primeiro módulo a sair do monólito <span class="status">aceita · Sprint 1</span></h5>
+          <p><b>Proposta e aprovação:</b> proposto pelo(a) arquiteto(a) <span data-aluno-nome>Arquiteto(a)</span>; aprovado por Helena Rocha, Coordenadora de Arquitetura.</p>
+          <p><b>Contexto:</b> a Joana precisa mostrar progresso; o Rafa teme o custo de operar muitos serviços de uma vez. A primeira extração vai ensinar ao time a operar um serviço separado (rede, deploy próprio, monitoramento), então ela deve ter o menor risco possível.</p>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Módulo</th><th>Escala própria</th><th>Ritmo próprio</th><th>Isolamento de falha</th><th>Transação com outros</th><th>Risco da fronteira</th></tr></thead>
+            <tbody>
+              <tr><td>Contas</td><td>baixa</td><td>baixo</td><td>médio</td><td>alta (abertura cria saldo)</td><td>baixo</td></tr>
+              <tr><td>Pagamentos</td><td>alta</td><td>médio</td><td>alto</td><td><strong>alta</strong> (centro do PIX)</td><td><strong>alto</strong></td></tr>
+              <tr><td>Cobranças</td><td>média</td><td>médio</td><td>médio</td><td>alta (paga via Pagamentos)</td><td>médio</td></tr>
+              <tr><td>Antifraude</td><td>alta</td><td>alto</td><td>alto</td><td>média</td><td>médio, mas no caminho crítico</td></tr>
+              <tr><td><strong>Extrato</strong></td><td><strong>alta</strong> (consultas)</td><td>médio</td><td><strong>alto</strong> (derrubou o checkout)</td><td><strong>nenhuma</strong> (só leitura)</td><td><strong>baixo</strong></td></tr>
+              <tr><td>Notificações</td><td>média</td><td>médio</td><td>alto</td><td>alta (dentro da transação)</td><td>baixo, mas pede assincronia</td></tr>
+            </tbody>
+          </table></div>
+          <p><b>Decisão:</b> o Extrato sai primeiro, na Sprint 2, com o padrão Strangler Fig: um proxy na frente desvia só a rota do extrato para o novo serviço, e o monólito continua atendendo o resto.</p>
+          <p><b>Alternativas consideradas:</b> Antifraude (forte candidato, mas está no caminho crítico de todo PIX; extraí-lo antes de ter timeout e resiliência, Sprint 9, põe cada pagamento atrás de uma chamada de rede); Notificações (precisa de comunicação assíncrona, Sprint 3; extraída como chamada síncrona, manteria o acoplamento); Pagamentos (subdomínio central e participante de quase todas as transações: o maior risco de todos).</p>
+          <p><b>Consequências:</b> a PagUai ganha um deploy independente para a parte que mais derrubou o checkout, com risco baixo. Em troca, aparece uma rede entre o Extrato e Pagamentos: latência, falhas parciais e a pergunta "o que acontece quando o Extrato cai?", tema da Sprint 2. As próximas extrações serão decididas em novos ADRs.</p>
+        </div>
+        <p class="text-sm text-muted">As versões aprovadas entram no repositório na tag <code>sprint-02</code>.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ 7. APROFUNDAMENTO ═══════════ -->
+<div class="card">
+  <div class="card-title">🔬 Aprofundamento <span class="camada aprofundamento">opcional</span></div>
+  <details class="aprofundamento">
+    <summary>1. A falha da notificação continua derrubando o PIX?</summary>
+    <div class="preveja mt-2">
+      <div class="pergunta">🔮 Preveja: agora que Notificações é um módulo separado, com contrato e schema próprios, o que acontece com o PIX se o e-mail falhar?</div>
+      <textarea placeholder="Escreva o seu palpite aqui (fica só na tela, não é enviado)."></textarea>
+      <button class="btn mt-2" onclick="revelarPrevisao(this)">👀 Revelar</button>
+      <div class="resposta"><strong>Continua derrubando.</strong> Os módulos estão separados no código e nos dados, mas a requisição ainda usa uma <strong>transação só</strong> (veja <code>Compartilhado/UnidadeDeTrabalho.cs</code> e o D-05). Organizar o código não muda a forma de comunicação. Isso só muda na Sprint 3, com mensageria.</div>
+    </div>
+    <p>Confira: no <code>docker-compose.yml</code>, troque <code>Notificacoes__SimularFalha</code> para <code>"true"</code>, rode <code>docker compose up -d</code>, repita o PIX e consulte <code>GET /saldos/{contaId}</code> da Ana. Depois volte para <code>"false"</code>.</p>
+  </details>
+  <details class="aprofundamento">
+    <summary>2. Padrões de relação entre contextos (Context Mapping)</summary>
+    <p class="mt-2">O DDD dá nomes às relações entre contextos. Os mais usados:</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Padrão</th><th>O que é</th><th>Onde aparece na PagUai</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Cliente e fornecedor</strong></td><td>O fornecedor publica um contrato e leva em conta as necessidades do cliente</td><td>Pagamentos (cliente) e Contas (fornecedor), pelo <code>IContas</code></td></tr>
+        <tr><td><strong>Conformista</strong></td><td>O cliente adota o modelo do fornecedor como ele é, sem traduzir</td><td>Extrato, que usa os movimentos de Pagamentos como vêm</td></tr>
+        <tr><td><strong>Camada anticorrupção</strong> (ACL)</td><td>Uma camada traduz um modelo externo para que ele não "contamine" o seu</td><td>Integração com o banco parceiro SOAP, na Sprint 4</td></tr>
+        <tr><td><strong>Linguagem publicada</strong></td><td>Um formato bem documentado e estável para a comunicação entre contextos</td><td>Os contratos OpenAPI e, na Sprint 3, os eventos</td></tr>
+      </tbody>
+    </table></div>
+  </details>
+  <details class="aprofundamento">
+    <summary>3. Event Storming: como as empresas descobrem os contextos</summary>
+    <p class="mt-2"><strong>Event Storming</strong> é uma oficina em que pessoas do negócio e da tecnologia escrevem, em notas adesivas, os <strong>eventos</strong> que acontecem no domínio, no passado ("Conta aberta", "PIX aprovado", "Cobrança paga"), e os colocam em ordem numa linha do tempo. Onde a linguagem muda ou os grupos de eventos se separam, costuma estar uma fronteira de contexto.</p>
+    <p><strong>Exercício:</strong> liste de 10 a 15 eventos da PagUai, em ordem, e agrupe-os. Os seus grupos batem com os seis módulos? Onde você colocaria "Análise antifraude reprovada"?</p>
+  </details>
+  <details class="aprofundamento">
+    <summary>4. Comparar a Sprint 0 com a Sprint 1</summary>
+    <div class="code-editor-wrap mt-2"><span class="code-filepath">terminal, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">git diff sprint-00 sprint-01 --stat
+git diff sprint-00 sprint-01 -- src/PagUai.Api/Program.cs</pre></div>
+    <p>O primeiro comando lista os arquivos que mudaram; o segundo mostra, linha a linha, como o <code>Program.cs</code> passou a registrar os módulos.</p>
+  </details>
+  <details class="aprofundamento">
+    <summary>5. Rodar todos os testes</summary>
+    <p class="mt-2">Com o .NET 10 SDK e o Docker em execução, <code>dotnet test</code> roda os 24 testes: 4 de unidade, 14 de arquitetura e 6 de integração (com PostgreSQL de verdade via Testcontainers). Um deles, <code>Falha_na_notificacao_desfaz_a_transferencia</code>, documenta a dor que continua para a Sprint 3.</p>
+  </details>
+  <details class="aprofundamento">
+    <summary>6. Abrir um Pull Request com os seus ADRs</summary>
+    <p class="mt-2">Em muitas empresas, um ADR é revisado como código: por Pull Request. No GitHub do seu fork, abra um Pull Request do branch <code>minha-sprint-01</code> para o <code>main</code> do <strong>seu</strong> fork (não para o repositório da disciplina). Releia a proposta como se fosse a Helena: as alternativas estão justas? As consequências incluem o que piora?</p>
+  </details>
+  <div class="buscas" data-itens='["bounded context DDD exemplos","monólito modular .NET","context mapping DDD padrões","event storming como fazer"]' data-scholar="modular monolith bounded context architecture"></div>
+</div>
+
+<!-- ═══════════ 8. ERROU? ═══════════ -->
+<div class="card" id="errou-sprint-01">
+  <div class="card-title">✋ Errou? Casos comuns desta sprint</div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">error: pathspec 'sprint-01' did not match any file(s) known to git</div><div class="faq-a"><p>O seu fork ainda não tem a tag nova. Rode <code>git fetch https://github.com/Cloud-Ai-Generative/paguai.git --tags</code> e tente o <code>git checkout sprint-01</code> de novo.</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">GET /contas não mostra mais o saldo. Quebrou?</div><div class="faq-a"><p>Não: é a mudança desta sprint. O saldo pertence a Pagamentos. Use <code>GET /saldos/{contaId}</code> ou o extrato.</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">As tabelas antigas da Sprint 0 (public.contas, public.transferencias) ainda aparecem</div><div class="faq-a"><p>O volume do banco foi criado na Sprint 0. A API cria os schemas novos e ignora as tabelas antigas. Para começar limpo: <code>docker compose down -v</code> e <code>docker compose up -d --build</code>.</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">HEAD detached ao fazer git checkout sprint-01</div><div class="faq-a"><p>Normal: uma tag aponta para um commit, não para um branch. Para escrever os seus ADRs, crie um branch: <code>git switch -c minha-sprint-01</code>.</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">O docker run com o SDK demora muito na primeira vez</div><div class="faq-a"><p>Ele baixa a imagem do .NET 10 SDK (cerca de 1 GB) e os pacotes NuGet. Nas próximas vezes a imagem já está na máquina. Se a conexão for lenta, use o GitHub Codespaces, que já vem com o SDK.</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">No Windows, docker run diz que o caminho é inválido</div><div class="faq-a"><p>Use o PowerShell, não o Prompt de Comando, e escreva o volume como <code>-v "${PWD}:/src"</code>, com as aspas. No Prompt de Comando, a forma equivalente é <code>-v "%cd%:/src"</code>.</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">Linux: "Permission denied" em bin/ ou obj/ depois de usar o docker run com o SDK</div><div class="faq-a"><p>O contêiner roda como root e criou as pastas de compilação com esse dono. Apague-as (elas são recriadas a cada build): <code>sudo rm -rf src/*/bin src/*/obj tests/*/bin tests/*/obj</code>.</p></div></div>
+  <div class="info-banner"><strong>🛠️ Mais casos:</strong> veja a aba <a class="ext" href="#problemas" onclick="switchTab('problemas');return false;">Problemas comuns</a>.</div>
+</div>
+
+<!-- ═══════════ 9. CHECKPOINT ═══════════ -->
+<div class="card" id="quiz-sprint-01">
+  <div class="card-title">✅ Checkpoint</div>
+  <p class="section-intro">Responda depois de fazer o laboratório. As questões marcadas com <span class="quiz-q" style="display:inline;padding:0;border:none;background:none"><span class="tag-lab">depende do lab</span></span> só podem ser respondidas executando o sistema.</p>
+
+  <div class="quiz-q">
+    <div class="enunciado">1. O que é um bounded context?</div>
+    <button class="quiz-opt" data-exp="um contexto é uma fronteira de modelo; ele pode virar um serviço, mas também pode conviver com outros no mesmo processo" onclick="responder(this)">Um microsserviço com o seu próprio banco de dados.</button>
+    <button class="quiz-opt" data-correct="1" onclick="responder(this)">A fronteira dentro da qual um modelo e as suas palavras têm um significado único.</button>
+    <button class="quiz-opt" data-exp="fronteira segue o negócio, não as tabelas; um contexto costuma ter várias tabelas" onclick="responder(this)">Um conjunto de tabelas que pertencem ao mesmo schema.</button>
+    <button class="quiz-opt" data-exp="a camada técnica (endpoints, serviços, repositórios) atravessa todos os contextos; contexto é um recorte de negócio" onclick="responder(this)">Uma camada da aplicação, como a de apresentação ou a de dados.</button>
+    <div class="quiz-fb" data-exp="Exemplo da PagUai: &quot;conta&quot; é cadastro em Contas, saldo em Pagamentos e histórico de comportamento em Antifraude."></div>
+  </div>
+
+  <div class="quiz-q">
+    <div class="enunciado">2. <span class="tag-lab">depende do lab</span> Na fase 4, você trocou <code>IPagamentos</code> por <code>ServicoDePagamentos</code> em Cobranças. O que aconteceu?</div>
+    <button class="quiz-opt" data-exp="todos os módulos estão no mesmo projeto, então para o compilador são só pastas; ele aceita a referência" onclick="responder(this)">O código não compilou.</button>
+    <button class="quiz-opt" data-correct="1" onclick="responder(this)">Compilou, mas um teste de arquitetura falhou, apontando que Cobranças usava o interior de Pagamentos.</button>
+    <button class="quiz-opt" data-exp="a falha aparece antes de qualquer requisição: os testes de arquitetura analisam o código compilado" onclick="responder(this)">Compilou e os testes passaram, mas o PIX passou a dar erro 500.</button>
+    <button class="quiz-opt" data-exp="o teste falha justamente para que a violação não passe despercebida" onclick="responder(this)">Compilou e todos os testes passaram.</button>
+    <div class="quiz-fb" data-exp="É por isso que dizemos que fronteira só em pasta não é fronteira: sem uma regra verificada, o acoplamento volta."></div>
+  </div>
+
+  <div class="quiz-q">
+    <div class="enunciado">3. <span class="tag-lab">depende do lab</span> Por que <code>GET /contas</code> deixou de mostrar o saldo?</div>
+    <button class="quiz-opt" data-exp="o saldo continua no banco, agora no schema pagamentos" onclick="responder(this)">Porque o saldo deixou de ser guardado.</button>
+    <button class="quiz-opt" data-exp="não há relação com segurança aqui; as vulnerabilidades propositais continuam e são tratadas nas Sprints 11 e 12" onclick="responder(this)">Por segurança, para esconder o saldo de quem não é dono da conta.</button>
+    <button class="quiz-opt" data-correct="1" onclick="responder(this)">Porque o saldo pertence ao contexto de Pagamentos, e Contas não conhece Pagamentos.</button>
+    <button class="quiz-opt" data-exp="a consulta ficou em outro endpoint, GET /saldos/{contaId}, e no extrato" onclick="responder(this)">Porque não é mais possível consultar o saldo pela API.</button>
+    <div class="quiz-fb" data-exp="Quem movimenta o dinheiro é o dono do saldo. Repare que isso mudou o contrato da API: um tema que volta na Sprint 7."></div>
+  </div>
+
+  <div class="quiz-q">
+    <div class="enunciado">4. Na Sprint 1, a falha na notificação ainda desfaz o PIX. Por quê?</div>
+    <button class="quiz-opt" data-exp="o teste de arquitetura verifica dependências de código, não o comportamento em tempo de execução" onclick="responder(this)">Porque os testes de arquitetura não estão rodando.</button>
+    <button class="quiz-opt" data-correct="1" onclick="responder(this)">Porque os módulos ainda estão no mesmo processo e a requisição usa uma única transação que passa por todos eles.</button>
+    <button class="quiz-opt" data-exp="cada módulo tem o seu schema; o que é compartilhado é a transação" onclick="responder(this)">Porque Notificações ainda grava nas tabelas de Pagamentos.</button>
+    <button class="quiz-opt" data-exp="o problema é a forma de comunicação (síncrona, na mesma transação), não um defeito do código" onclick="responder(this)">Porque há um erro no código de Notificações.</button>
+    <div class="quiz-fb" data-exp="Organizar o código não muda a forma de comunicação. A Sprint 3 tira a notificação da transação com mensageria."></div>
+  </div>
+
+  <div class="quiz-q">
+    <div class="enunciado">5. Qual combinação de características faz de um módulo um bom primeiro candidato à extração?</div>
+    <button class="quiz-opt" data-exp="esse é o perfil do módulo mais arriscado: extrair primeiro concentra o risco" onclick="responder(this)">Subdomínio central, que participa de quase todas as transações.</button>
+    <button class="quiz-opt" data-exp="se ninguém sente a dor, a extração custa sem trazer ganho" onclick="responder(this)">Pouca carga, pouca mudança e nenhum histórico de falhas.</button>
+    <button class="quiz-opt" data-correct="1" onclick="responder(this)">Nenhuma transação com outros módulos, carga própria, histórico de falhas que afetam o resto e fronteira simples.</button>
+    <button class="quiz-opt" data-exp="tamanho do código não está entre os critérios; um módulo grande e bem isolado pode sair antes de um pequeno e muito acoplado" onclick="responder(this)">O módulo com mais linhas de código.</button>
+    <div class="quiz-fb" data-exp="É o perfil do Extrato, registrado no ADR 0003."></div>
+  </div>
+  <button class="btn" onclick="refazerQuiz('quiz-sprint-01')">↺ Refazer</button>
+</div>
+
+<!-- ═══════════ 10. PALAVRAS E RECAP ═══════════ -->
+<div class="card">
+  <div class="card-title">📖 Palavras desta sprint</div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Termo</th><th>Em uma frase</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Domínio</strong></td><td>O negócio que o software atende.</td></tr>
+      <tr><td><strong>Subdomínio</strong></td><td>Parte do domínio; pode ser central, de suporte ou genérico.</td></tr>
+      <tr><td><strong>Bounded context</strong></td><td>Fronteira dentro da qual um modelo e as suas palavras têm um significado único.</td></tr>
+      <tr><td><strong>Linguagem ubíqua</strong></td><td>O vocabulário comum ao negócio e ao código dentro de um contexto.</td></tr>
+      <tr><td><strong>Mapa de contextos</strong></td><td>Desenho dos contextos e das relações entre eles.</td></tr>
+      <tr><td><strong>Monólito modular</strong></td><td>Um processo e um deploy, com módulos de fronteira explícita e verificada.</td></tr>
+      <tr><td><strong>Contrato público</strong></td><td>O que um módulo permite que os outros usem; o resto é interno.</td></tr>
+      <tr><td><strong>Schema</strong></td><td>Agrupamento de tabelas dentro de um banco PostgreSQL.</td></tr>
+      <tr><td><strong>Teste de arquitetura</strong></td><td>Teste automatizado que verifica regras de dependência entre partes do código.</td></tr>
+      <tr><td><strong>Monólito distribuído</strong></td><td>Serviços separados que ainda dependem uns dos detalhes dos outros: os custos da rede sem os ganhos da separação.</td></tr>
+    </tbody>
+  </table></div>
+</div>
+
+<div class="card">
+  <div class="card-title">🔁 Recapitulando</div>
+  <ul style="margin-left:22px;line-height:1.9">
+    <li>A PagUai tem seis contextos; Pagamentos e Antifraude formam o subdomínio central.</li>
+    <li>O monólito virou <strong>modular</strong>: contrato público, interior privado, schema próprio e testes de arquitetura.</li>
+    <li>O saldo foi para Pagamentos e o Extrato virou só de leitura; a API mudou de contrato.</li>
+    <li>Você viu o compilador aceitar uma violação e o teste recusá-la.</li>
+    <li>Você propôs dois ADRs: a organização em módulos e o Extrato como primeiro a sair.</li>
+    <li>Continua: deploy único e a falha da notificação derrubando o PIX.</li>
+  </ul>
+  <div class="success-banner"><strong>➡️ Próxima sprint:</strong> o Extrato sai do monólito com o padrão Strangler Fig, sem parar a PagUai. E aparece uma rede no meio do caminho.</div>
+</div>
+
+</section>
