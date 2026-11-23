@@ -15,7 +15,9 @@
       <tr><td><a class="ext" href="#f-arquitetura" onclick="irAncora('f-arquitetura');return false;">Testes de arquitetura (NetArchTest)</a></td><td>Verificar as fronteiras entre os módulos a cada build</td><td>1</td></tr>
       <tr><td><a class="ext" href="#f-yarp" onclick="irAncora('f-yarp');return false;">YARP (gateway)</a></td><td>Porta de entrada única; desvia rota por rota no Strangler Fig</td><td>2</td></tr>
       <tr><td><a class="ext" href="#f-prism" onclick="irAncora('f-prism');return false;">Prism e Spectral (mock e lint de contratos)</a></td><td>Testar o contrato antes do código e verificar a qualidade dele</td><td>2</td></tr>
-      <tr class="text-muted"><td>RabbitMQ, CoreWCF, Hot Chocolate, gRPC, SignalR, Kubernetes (kind), Polly, OpenTelemetry, Keycloak e outras</td><td>As fichas chegam junto com cada sprint</td><td>1 a 13</td></tr>
+      <tr><td><a class="ext" href="#f-rabbitmq" onclick="irAncora('f-rabbitmq');return false;">RabbitMQ (broker de mensagens)</a></td><td>Levar os eventos do pagamento a Notificações e ao Extrato, com retry e dead letter</td><td>3</td></tr>
+      <tr><td><a class="ext" href="#f-asyncapi" onclick="irAncora('f-asyncapi');return false;">AsyncAPI (contrato de eventos)</a></td><td>Descrever canais e formatos dos eventos, como o OpenAPI faz para HTTP</td><td>3</td></tr>
+      <tr class="text-muted"><td>CoreWCF, Hot Chocolate, gRPC, SignalR, Kubernetes (kind), Polly, OpenTelemetry, Keycloak e outras</td><td>As fichas chegam junto com cada sprint</td><td>1 a 13</td></tr>
     </tbody>
   </table></div>
 </div>
@@ -121,6 +123,34 @@
     <p><span class="rot">Onde roda:</span> o lint e os testes de contrato rodam no pipeline, que na PagUai é o GitHub Actions. Os gateways gerenciados também conseguem devolver respostas simuladas configuradas por rota, como as integrações mock do Amazon API Gateway e a política de resposta simulada do Azure API Management.</p>
     <p><span class="rot">Critérios para decidir:</span></p>
     <ul class="criterios"><li>Se o mock precisa só devolver exemplos ou também simular estado e cenários.</li><li>Que regras de estilo a empresa quer impor a todos os contratos.</li><li>Se o contrato é definido pelo fornecedor (design-first) ou pelo consumidor (contratos de consumidor, como Pact).</li></ul>
+  </div>
+
+  <div class="ficha" id="f-rabbitmq">
+    <h4>🔧 Ficha da tecnologia: RabbitMQ (broker de mensagens)</h4>
+    <p><span class="rot">O que é:</span> o <strong>RabbitMQ</strong> é um broker de mensagens de código aberto que implementa o protocolo <strong>AMQP 0.9.1</strong>, entre outros. Os produtores publicam em <strong>exchanges</strong>, que encaminham as mensagens às <strong>filas</strong> pelos <strong>bindings</strong>; os consumidores leem das filas e confirmam o que trataram.</p>
+    <p><span class="rot">Por que usamos aqui:</span> para fins didáticos. Ele roda num contêiner, tem uma interface web que mostra filas, mensagens e consumidores ao vivo, e deixa visíveis os mecanismos desta sprint: roteamento por exchange, confirmação, retry com tempo de espera e dead letter. Na PagUai, usamos o cliente oficial para .NET (<code>RabbitMQ.Client</code>), sem uma camada por cima, para que esses mecanismos apareçam no código (<code>src/PagUai.Mensageria</code>).</p>
+    <p><span class="rot">Outras opções no mercado:</span></p>
+    <div class="table-wrap"><table><thead><tr><th>Modelo</th><th>Opções</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Broker de mensagens</strong></td><td>ActiveMQ Artemis, NATS, Redis Streams, Apache Pulsar (que também atende o modelo de log)</td></tr>
+        <tr><td><strong>Log de eventos</strong></td><td>Apache Kafka, Redpanda, Apache Pulsar</td></tr>
+        <tr><td><strong>Bibliotecas para .NET por cima do broker</strong></td><td>MassTransit, Wolverine, NServiceBus, Brighter, Rebus, cada uma com o seu modelo de licença</td></tr>
+      </tbody></table></div>
+    <p><span class="rot">Onde roda na nuvem:</span> os provedores oferecem serviços gerenciados, alguns com outro modelo de entrega:</p>
+    <div class="table-wrap"><table><thead><tr><th>AWS</th><th>Azure</th><th>Google Cloud</th></tr></thead>
+      <tbody><tr><td>Amazon SNS e Amazon SQS (tópico e filas); Amazon MQ (RabbitMQ ou ActiveMQ gerenciados); Amazon MSK (Kafka); Amazon EventBridge</td><td>Azure Service Bus (filas, tópicos e assinaturas); Azure Event Hubs (log de eventos); Azure Event Grid</td><td>Pub/Sub (tópicos e assinaturas); Managed Service for Apache Kafka; Eventarc</td></tr></tbody></table></div>
+    <p><span class="rot">Critérios para decidir:</span></p>
+    <ul class="criterios"><li>Se o caso pede filas de trabalho e roteamento flexível ou um log que guarde o histórico para ser relido.</li><li>Que garantias são necessárias: ordem, retenção, retry e dead letter no broker ou no consumidor.</li><li>Quem vai operar (o time, num contêiner ou cluster, ou o provedor) e o custo por mensagem, por hora ou por capacidade.</li><li>Volume e latência esperados, e o que o time já conhece.</li></ul>
+  </div>
+
+  <div class="ficha" id="f-asyncapi">
+    <h4>🔧 Ficha da tecnologia: AsyncAPI (contrato de eventos)</h4>
+    <p><span class="rot">O que é:</span> o <strong>AsyncAPI</strong> é uma especificação aberta para descrever APIs orientadas a mensagens: canais, operações de envio e recebimento, formato de cada mensagem e detalhes do protocolo (AMQP, Kafka, MQTT, entre outros). É, para eventos, o que o OpenAPI é para HTTP.</p>
+    <p><span class="rot">Por que usamos aqui:</span> para manter o API First da Sprint 2 também nos eventos. O arquivo <code>contratos/eventos.asyncapi.yaml</code> diz o que Pagamentos e Contas publicam; o CI valida o arquivo, e os testes verificam que quem publica manda todos os campos e que quem consome só lê campos garantidos.</p>
+    <p><span class="rot">Outras opções no mercado:</span> CloudEvents (um formato padrão para o envelope do evento, que pode ser usado junto com o AsyncAPI); registros de schema, como Confluent Schema Registry, Apicurio Registry e AWS Glue Schema Registry, que guardam e versionam os formatos em Avro, Protobuf ou JSON Schema.</p>
+    <p><span class="rot">Onde roda:</span> a validação roda no pipeline, que na PagUai é o GitHub Actions. Os registros de schema podem ser serviços gerenciados na nuvem ou rodar em contêiner.</p>
+    <p><span class="rot">Critérios para decidir:</span></p>
+    <ul class="criterios"><li>Se o objetivo é documentar e combinar contratos entre times ou também validar cada mensagem em tempo de execução.</li><li>O formato das mensagens (JSON, Avro, Protobuf) e as regras de compatibilidade entre versões.</li><li>As ferramentas que o time já usa para gerar documentação e código.</li></ul>
   </div>
 </div>
 

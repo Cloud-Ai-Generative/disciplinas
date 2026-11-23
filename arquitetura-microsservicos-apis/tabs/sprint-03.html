@@ -1,0 +1,480 @@
+<section class="tab-panel" id="sprint-03">
+
+<!-- ═══════════ 1. CENA DE ABERTURA ═══════════ -->
+<div class="card">
+  <div class="card-title">📨 Sprint 3 · Mensageria com filas, tópicos e brokers</div>
+  <div class="cena">
+    <div class="msg"><span class="av">👴🏽</span><div><div class="who">Seu Geraldo (lojista de queijos)</div><div class="txt">Sexta-feira à noite, a Ana Clara pagou o queijo pelo PIX e apareceu erro. Ela pagou de novo, em dinheiro. No sábado o e-mail de vocês voltou ao normal, mas aquele PIX nunca entrou.</div></div></div>
+    <div class="msg"><span class="av">👩🏻‍🦰</span><div><div class="who">Joana (Product Owner)</div><div class="txt">É a mesma dor da Sprint 0. O servidor de e-mail caiu e levou o pagamento junto. O cliente não quer saber de e-mail: quer o dinheiro na conta do lojista.</div></div></div>
+    <div class="msg"><span class="av">🧔🏻</span><div><div class="who">Rafa (Tech Lead)</div><div class="txt">E o Extrato que extraímos na Sprint 2 faz três chamadas ao monólito a cada consulta. Se o monólito trava, o extrato trava junto.</div></div></div>
+    <div class="msg"><span class="av">👩‍💼</span><div><div class="who">Helena (Coordenadora de Arquitetura)</div><div class="txt"><strong data-aluno-nome>Arquiteto(a)</strong>, o pagamento precisa terminar sem depender de quem vem depois dele. Traga uma proposta, e quero saber o que pode dar errado com ela.</div></div></div>
+    <div class="msg"><span class="av" data-aluno-avatar>🧑‍💻</span><div><div class="who"><span data-aluno-nome>Arquiteto(a)</span> (você · arquiteto(a) recém-contratado(a))</div><div class="txt">Proposta: em vez de chamar Notificações, o pagamento só <strong>avisa que aconteceu</strong>. Um broker guarda o aviso e entrega uma cópia a cada interessado: Notificações manda o e-mail, o Extrato atualiza os próprios dados. E vamos derrubar cada peça de propósito para ver o que acontece.</div></div></div>
+  </div>
+  <div class="grid-3">
+    <div class="grid-card"><h5>🎯 Objetivos da sprint</h5><ul class="text-sm"><li>Descrever o funcionamento de filas, tópicos e brokers de mensageria.</li><li>Explicar como o RabbitMQ encaminha mensagens por exchanges e filas.</li><li>Reconhecer os mecanismos de confirmação, nova tentativa (retry) e dead letter.</li></ul></div>
+    <div class="grid-card"><h5>🛠️ O que você vai fazer</h5><p class="text-sm">Ver o evento <code>PagamentoAprovado</code> passar pelo RabbitMQ, derrubar Notificações, o Extrato, o monólito e o próprio broker, reprocessar a dead letter e escrever o ADR 0005.</p></div>
+    <div class="grid-card"><h5>⏱️ Tempo estimado</h5><p class="text-sm">Laboratório <span class="camada essencial">Essencial</span>: 120 a 150 min, incluindo o ADR. <span class="camada aprofundamento">Aprofundamento</span>: opcional.</p></div>
+  </div>
+</div>
+
+<!-- ═══════════ 2. VÍDEOS ═══════════ -->
+<div class="card">
+  <div class="card-title">🎬 Videoaulas desta sprint</div>
+  <p class="section-intro">Assista na página da <strong>Sprint 3 no Canvas</strong>. A lista abaixo é só para você se orientar.</p>
+  <ul class="video-list">
+    <li><span>3.1 Mensageria: filas, tópicos e brokers</span><span class="dur">10 min</span></li>
+    <li><span>3.2 RabbitMQ na prática: publicando o evento PagamentoAprovado</span><span class="dur">12 min</span></li>
+    <li><span>3.3 Consumidores, confirmação e reprocessamento</span><span class="dur">10 min</span></li>
+    <li><span>3.4 Retrospectiva da Unidade 1: o que mudou na PagUai</span><span class="dur">8 min</span></li>
+  </ul>
+</div>
+
+<!-- ═══════════ 3. CONCEITO ═══════════ -->
+<div class="card">
+  <div class="card-title">💡 Conceito: eventos, filas, tópicos e brokers</div>
+
+  <div class="deep-concept-box">
+    <h3>📣 Comando e evento</h3>
+    <p>Até a Sprint 2, o pagamento dava uma <strong>ordem</strong>: "Notificações, mande este e-mail", e esperava a resposta. Um <strong>evento</strong> é diferente: é o anúncio de um <strong>fato que já aconteceu</strong>, por isso o nome fica no passado (<code>PagamentoAprovado</code>). Quem publica não sabe quem vai reagir, nem quando. Quem se interessa reage no seu tempo.</p>
+  </div>
+
+  <div class="deep-concept-box mt-3">
+    <h3>📬 Produtor, consumidor e broker</h3>
+    <p>O <strong>produtor</strong> publica a mensagem; o <strong>consumidor</strong> a recebe e trata. Entre os dois fica o <strong>broker</strong>, um serviço que guarda a mensagem até ela ser entregue e confirmada. É o broker que permite ao consumidor estar fora do ar quando a mensagem é publicada: ela espera.</p>
+  </div>
+  <div class="table-wrap"><table>
+    <thead><tr><th></th><th>Fila (ponto a ponto)</th><th>Tópico (publicação e assinatura)</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Quem recebe</strong></td><td>Um consumidor por mensagem (vários consumidores dividem o trabalho)</td><td>Cada assinante recebe a sua cópia</td></tr>
+      <tr><td><strong>Para que serve</strong></td><td>Distribuir tarefas entre instâncias iguais</td><td>Avisar vários interessados diferentes do mesmo fato</td></tr>
+      <tr><td><strong>Na PagUai</strong></td><td>Duas instâncias de Notificações dividiriam a fila <code>notificacoes</code></td><td>Notificações e Extrato recebem, cada um, o <code>PagamentoAprovado</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="deep-concept-box mt-3">
+    <h3>🐇 O modelo do RabbitMQ: exchange, binding e fila</h3>
+    <p>No RabbitMQ, o produtor não publica direto numa fila. Ele publica numa <strong>exchange</strong>, com uma <strong>chave de roteamento</strong> (routing key). Cada fila se liga à exchange por um <strong>binding</strong>, que diz quais chaves ela quer receber. Na PagUai, a exchange <code>paguai.eventos</code> é do tipo <strong>topic</strong>: a fila <code>notificacoes</code> assina <code>pagamento.aprovado</code>, e a fila <code>extrato</code> assina <code>pagamento.aprovado</code> e <code>conta.aberta</code>. Uma fila por consumidor transforma a exchange num tópico: cada serviço recebe a sua cópia.</p>
+  </div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Tipo de exchange</th><th>Como escolhe as filas</th></tr></thead>
+    <tbody>
+      <tr><td><strong>direct</strong></td><td>Chave igual à do binding</td></tr>
+      <tr><td><strong>topic</strong></td><td>Chave por padrão com curingas (<code>pagamento.*</code>, <code>#</code>)</td></tr>
+      <tr><td><strong>fanout</strong></td><td>Todas as filas ligadas, sem olhar a chave</td></tr>
+      <tr><td><strong>headers</strong></td><td>Pelos cabeçalhos da mensagem, em vez da chave</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="deep-concept-box mt-3">
+    <h3>⚖️ Broker de mensagens e log de eventos</h3>
+    <p>Há dois modelos muito usados. Nenhum é melhor em geral: cada um atende melhor a um tipo de necessidade.</p>
+  </div>
+  <div class="table-wrap"><table>
+    <thead><tr><th></th><th>Broker de mensagens (por exemplo, RabbitMQ)</th><th>Log de eventos (por exemplo, Kafka)</th></tr></thead>
+    <tbody>
+      <tr><td><strong>O que acontece com a mensagem</strong></td><td>Sai da fila depois de confirmada</td><td>Fica guardada por um tempo configurado; cada consumidor marca até onde leu</td></tr>
+      <tr><td><strong>Roteamento</strong></td><td>Flexível, no broker (exchanges e bindings)</td><td>Por tópico e partição; a lógica fica mais no consumidor</td></tr>
+      <tr><td><strong>Reler o passado</strong></td><td>Não, depois da confirmação</td><td>Sim, dentro da retenção</td></tr>
+      <tr><td><strong>Ordem</strong></td><td>Por fila, enquanto não houver novas tentativas</td><td>Por partição</td></tr>
+      <tr><td><strong>Quando costuma ser escolhido</strong></td><td>Tarefas e eventos entre serviços, com roteamento e retry no broker</td><td>Grande volume, reprocessamento do histórico, várias leituras dos mesmos eventos</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="deep-concept-box mt-3">
+    <h3>✅ Confirmação, retry, dead letter e idempotência</h3>
+    <p>O consumidor <strong>confirma</strong> (ack) a mensagem só depois de terminar o trabalho. Se ele falhar, a mensagem vai para uma fila de <strong>retry</strong>, espera alguns segundos e volta. Depois de algumas tentativas, ela vai para a <strong>dead letter</strong> (<code>.dlq</code>), onde alguém investiga e reprocessa. Como o broker entrega <strong>pelo menos uma vez</strong>, a mesma mensagem pode chegar duas vezes, e o consumidor precisa ser <strong>idempotente</strong>: na PagUai, cada serviço guarda o <code>id</code> dos eventos que já tratou.</p>
+  </div>
+  <div class="analogy-highlight"><span class="icon">🏦</span><div><strong>Analogia:</strong> a fila é a fila do banco, com senha: quem chega primeiro é atendido primeiro, e ninguém precisa ficar no balcão esperando. <strong>A analogia vale até aqui:</strong> ela explica a ordem de atendimento e por que quem chega não precisa esperar o caixa. <strong>A partir daqui ela engana:</strong> no banco, uma senha é chamada uma vez só. No broker, uma mensagem pode ser entregue mais de uma vez, e quem atende precisa perceber que já atendeu.</div></div>
+  <div class="warning-banner"><strong>⚠️ Armadilha comum no mercado:</strong> achar que "o broker garante que a mensagem é processada exatamente uma vez". A entrega é <strong>pelo menos uma vez</strong>; o efeito "uma vez só" é responsabilidade do consumidor, com idempotência.</div>
+  <div class="warning-banner"><strong>⚠️ Outra armadilha:</strong> publicar o evento <strong>antes</strong> do commit no banco. Se a transação for desfeita, o evento anuncia um pagamento que não existiu. Publicar <strong>depois</strong> também tem um risco: o processo cair entre o commit e a publicação, e o evento se perder. Esse é o problema do <strong>dual write</strong>, que você vai provocar no laboratório.</div>
+</div>
+
+<!-- ═══════════ 4. DIAGRAMAS ═══════════ -->
+<div class="card">
+  <div class="card-title">📐 A arquitetura desta sprint</div>
+  <h4 class="diag-title" id="d-08">📐 D-08 <span class="dt-type">C4 · Contêineres</span> O pagamento publica; Notificações e Extrato consomem</h4>
+  <p class="text-sm text-muted" style="margin:4px 0 8px"><strong>👀 Como ler:</strong> as setas tracejadas são eventos, que passam pelo RabbitMQ. Nenhum serviço chama outro para avisar de um pagamento. Repare que o Extrato não tem mais seta para o monólito, e que cada serviço tem o seu banco.</p>
+  <div class="mermaid-box" data-code='flowchart TB
+  cliente(["👤 App, portal do lojista<br/>Scalar e arquivo .http"])
+  gw["<b>PagUai.Gateway</b> · YARP · :8080"]
+  api["<b>PagUai.Api</b> (monólito modular) · :8081<br/>Contas · Pagamentos · Cobranças · Antifraude"]
+  mq{{"<b>RabbitMQ</b> · exchange paguai.eventos (topic)<br/>filas notificacoes e extrato, com .retry e .dlq"}}
+  ext["<b>PagUai.Extrato</b> · :8082<br/>modelo de leitura"]
+  notif["<b>PagUai.Notificacoes</b><br/>Worker Service, sem HTTP"]
+  dbp[("PostgreSQL<br/>database paguai")]
+  dbe[("database extrato")]
+  dbn[("database notificacoes")]
+  mail["📧 Mailpit"]
+  cliente -->|"HTTP/JSON"| gw
+  gw -->|"GET /contas/{id}/extrato"| ext
+  gw -->|"todo o resto"| api
+  api --> dbp
+  api -.->|"ContaAberta, PagamentoAprovado<br/>depois do commit"| mq
+  mq -.->|"fila extrato"| ext
+  mq -.->|"fila notificacoes"| notif
+  ext --> dbe
+  notif --> dbn
+  notif -->|"SMTP"| mail'>
+  <div class="mermaid"></div>
+  </div>
+
+  <h4 class="diag-title" id="d-09">📐 D-09 <span class="dt-type">UML · Sequência</span> Um PIX com o e-mail fora do ar</h4>
+  <p class="text-sm text-muted" style="margin:4px 0 8px"><strong>👀 Como ler:</strong> o app recebe o <code>201</code> antes de qualquer e-mail. A partir do passo 5, tudo acontece depois, sem ninguém esperando. Compare com a Sprint 0, em que a falha do e-mail desfazia o PIX.</p>
+  <div class="mermaid-box" data-code='sequenceDiagram
+  autonumber
+  actor A as App (Ana)
+  participant P as Pagamentos (monólito)
+  participant R as RabbitMQ
+  participant N as Notificações
+  participant E as Extrato
+  A->>P: POST /transferencias
+  P->>P: debita, credita e faz o commit
+  P->>R: publica PagamentoAprovado (depois do commit)
+  P-->>A: 201 Created
+  R->>E: cópia na fila extrato
+  E->>E: grava lançamentos e o id do evento, ack
+  R->>N: cópia na fila notificacoes
+  N--xN: SMTP fora do ar: falha 1
+  N->>R: fila notificacoes.retry (espera 5 s)
+  R->>N: nova tentativa (2 e depois 3)
+  N->>R: falhou de novo: rejeita, vai para notificacoes.dlq
+  Note over R,N: alguém corrige o SMTP e move a mensagem de volta
+  R->>N: reprocessamento: e-mail enviado, ack'>
+  <div class="mermaid"></div>
+  </div>
+</div>
+
+<!-- ═══════════ 5. DECISÃO ═══════════ -->
+<div class="card">
+  <div class="card-title">🧭 A decisão desta sprint</div>
+  <div class="decisao" data-adr="0005">
+    <div class="enunciado pergunta-cena"><div class="msg"><span class="av">👩‍💼</span><div><div class="who">Helena (Coordenadora de Arquitetura) · 🧭 Sua vez de decidir</div><div class="txt"><span data-aluno-nome>Arquiteto(a)</span>, como fazemos o PIX terminar mesmo com o e-mail fora do ar, sem perder o aviso ao cliente?</div></div></div></div>
+    <button class="quiz-opt" data-tipo="errada" data-exp="o PIX passa, mas o aviso some sem rastro: ninguém sabe que o e-mail não saiu, e não há como tentar de novo" onclick="decidir(this)">Envolver o envio do e-mail num try/catch e ignorar o erro.</button>
+    <button class="quiz-opt" data-tipo="time" data-exp="o pagamento termina sem esperar ninguém; o broker guarda a mensagem até Notificações conseguir; cada consumidor tem a sua fila, com retry e dead letter; e o Extrato pode usar o mesmo evento" onclick="decidir(this)">Depois do commit, publicar o evento PagamentoAprovado num broker; cada serviço interessado consome da sua própria fila.</button>
+    <button class="quiz-opt" data-tipo="alt" data-exp="um log de eventos também desacopla e ainda permite reler o histórico; em troca, pede mais operação e deixa retry e dead letter mais por conta do consumidor; a PagUai preferiu o roteamento e o retry no broker para este volume" onclick="decidir(this)">Publicar o evento num log de eventos, como o Kafka, e cada serviço ler no seu ritmo.</button>
+    <button class="quiz-opt" data-tipo="errada" data-exp="se o processo cair, a chamada em segundo plano se perde; não há fila durável, nem retry, nem dead letter, e Notificações continua sendo chamada por quem paga" onclick="decidir(this)">Chamar Notificações por HTTP numa tarefa em segundo plano, sem esperar a resposta.</button>
+    <div class="decisao-fb" data-exp=""></div>
+    <button class="btn mt-2" onclick="refazerDecisao(this)">↺ Refazer</button>
+  </div>
+</div>
+
+<!-- ═══════════ 6. LABORATÓRIO ═══════════ -->
+<div class="card" id="lab-sprint-03">
+  <div class="card-title">🧪 Laboratório <span class="camada essencial">Essencial</span></div>
+  <div class="progresso"><div class="rotulo"><span>📈 Seu progresso</span><span class="conta">0 de 0 passos</span></div><div class="barra"><span></span></div></div>
+  <div class="phase-bar">
+    <span class="phase on">0 · Atualizar</span>
+    <span class="phase on">1 · O broker</span>
+    <span class="phase on">2 · O evento passa</span>
+    <span class="phase on">3 · Retry e dead letter</span>
+    <span class="phase on">4 · Reprocessar</span>
+    <span class="phase on">5 · Quem depende de quem</span>
+    <span class="phase on">6 · Dual write</span>
+    <span class="phase on">7 · ADR 0005</span>
+  </div>
+
+  <div class="step-box" id="s3-fase-0">
+    <h4><span class="step-num">0</span> Atualizar o seu fork para a Sprint 3 <span class="tempo">⏱️ 10 min</span></h4>
+    <div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">git fetch https://github.com/Cloud-Ai-Generative/paguai.git --tags
+docker compose down -v
+git checkout sprint-03</pre></div>
+    <p>O <code>-v</code> apaga o volume do banco: os serviços e os bancos mudaram, e os dados são fictícios.</p>
+    <div class="info-banner"><strong>💡 Repare:</strong> agora são sete contêineres. Com menos de 8 GB de RAM, prefira o GitHub Codespaces.</div>
+    <label class="check-passo"><input type="checkbox" data-passo="s3-atualizar" onchange="marcarPasso(this)"> Fork na Sprint 3</label>
+  </div>
+
+  <div class="step-box" id="s3-fase-1">
+    <h4><span class="step-num">1</span> Subir tudo e conhecer o broker <span class="tempo">⏱️ 15 min</span></h4>
+    <div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose up -d --build
+docker compose ps</pre></div>
+    <div class="esperado"><strong>✅ Resultado esperado:</strong> sete contêineres: <code>paguai-gateway</code>, <code>paguai-api</code>, <code>paguai-extrato</code>, <code>paguai-notificacoes</code>, <code>paguai-rabbitmq</code>, <code>paguai-postgres</code> e <code>paguai-mailpit</code>. Na Sprint 0 eram três.</div>
+    <p>Abra a interface do RabbitMQ em <a class="ext" href="http://localhost:15672" target="_blank" rel="noopener">localhost:15672</a> (usuário <code>paguai</code>, senha <code>paguai_dev_123</code>):</p>
+    <ol class="step-number-list">
+      <li>Aba <strong>Exchanges</strong> → <code>paguai.eventos</code> → <strong>Bindings</strong>: quais filas assinam quais chaves?</li>
+      <li>Aba <strong>Queues and Streams</strong>: as filas <code>notificacoes</code> e <code>extrato</code>, cada uma com a sua <code>.retry</code> e a sua <code>.dlq</code>.</li>
+      <li>Aba <strong>Connections</strong>: <code>paguai-api (monolito)</code>, <code>paguai-extrato</code> e <code>paguai-notificacoes</code>.</li>
+    </ol>
+    <div class="esperado"><strong>✅ Resultado esperado:</strong> <code>notificacoes</code> ligada a <code>pagamento.aprovado</code>; <code>extrato</code> ligada a <code>pagamento.aprovado</code> e a <code>conta.aberta</code>. Quem criou tudo isso foi o próprio RabbitMQ, ao subir, a partir de <code>infra/rabbitmq/definitions.json</code>.</div>
+    <p class="text-sm">📇 O que é o RabbitMQ e quais são as opções: <a class="ext" href="#tecnologias" onclick="switchTab('tecnologias','f-rabbitmq');return false;">Ficha da tecnologia: RabbitMQ</a>.</p>
+    <label class="check-passo"><input type="checkbox" data-passo="s3-broker" onchange="marcarPasso(this)"> Encontrei a exchange, as filas e os bindings</label>
+  </div>
+
+  <div class="step-box" id="s3-fase-2">
+    <h4><span class="step-num">2</span> O evento passa pelo broker <span class="tempo">⏱️ 20 min</span></h4>
+    <div class="preveja">
+      <div class="pergunta voz-prof-inline"><span class="av-prof av-prof-sm"><img src="img/prof-wellington.png" alt="Prof. Wellington"></span><span><strong>Prof. Wellington:</strong> <span data-aluno-nome>Arquiteto(a)</span>, preveja antes de rodar: se o serviço de Notificações estiver parado, o PIX funciona? E o e-mail, chega quando?</span></div>
+      <textarea placeholder="Escreva o seu palpite aqui (fica só na tela, não é enviado)."></textarea>
+      <button class="btn mt-2" onclick="revelarPrevisao(this)">👀 Revelar</button>
+      <div class="resposta"><strong>O PIX funciona, e o e-mail chega quando Notificações voltar.</strong> O pagamento não chama Notificações: ele publica o evento, e o RabbitMQ guarda a mensagem na fila <code>notificacoes</code> até alguém consumir. Isso é o fim do <strong>acoplamento no tempo</strong>.</div>
+    </div>
+    <ol class="step-number-list">
+      <li>Pare Notificações e faça um PIX da Ana para a loja (no Scalar, em <a class="ext" href="http://localhost:8081" target="_blank" rel="noopener">localhost:8081</a>, ou com o <code>requests/paguai.http</code>):
+        <div class="code-editor-wrap"><span class="code-filepath">terminal</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose stop notificacoes</pre></div>
+        <div class="esperado"><strong>✅ Resultado esperado:</strong> o PIX responde <code>201</code>. No Mailpit (<a class="ext" href="http://localhost:8025" target="_blank" rel="noopener">localhost:8025</a>), nenhum e-mail novo. No RabbitMQ, a fila <code>notificacoes</code> mostra <strong>1</strong> mensagem em <em>Ready</em>.</div>
+      </li>
+      <li>Veja a mensagem sem tirá-la da fila: na fila <code>notificacoes</code>, seção <strong>Get messages</strong>, escolha <em>Ack Mode: Nack message requeue true</em> e clique em <strong>Get Message(s)</strong>.
+        <div class="esperado"><strong>✅ Resultado esperado:</strong> o envelope do evento: <code>id</code>, <code>tipo</code> (<code>PagamentoAprovado</code>), <code>versao</code>, <code>ocorridoEm</code> e <code>dados</code>, com os titulares e o valor. É o formato descrito em <code>contratos/eventos.asyncapi.yaml</code>.</div>
+      </li>
+      <li>Religue Notificações e olhe o Mailpit de novo:
+        <div class="code-editor-wrap"><span class="code-filepath">terminal</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose start notificacoes
+docker compose logs notificacoes --tail 10</pre></div>
+        <div class="esperado"><strong>✅ Resultado esperado:</strong> dois e-mails, um para a Ana ("Você enviou...") e um para a loja ("Você recebeu..."), e a fila volta a <strong>0</strong>.</div>
+      </li>
+      <li>Consulte o extrato da Ana pelo gateway e repare no <code>saldoEm</code>:
+        <div class="so" data-so="mac linux"><div class="code-editor-wrap"><span class="code-filepath">terminal</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">curl -s http://localhost:8080/contas
+curl -s http://localhost:8080/contas/COLE_O_ID_DA_ANA/extrato</pre></div></div><div class="so" data-so="win"><div class="code-editor-wrap"><span class="code-filepath">PowerShell</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">curl.exe -s http://localhost:8080/contas
+curl.exe -s http://localhost:8080/contas/COLE_O_ID_DA_ANA/extrato</pre></div></div>
+        <div class="esperado"><strong>✅ Resultado esperado:</strong> o PIX aparece no extrato. O Extrato não perguntou nada ao monólito: ele recebeu o mesmo evento, pela fila <code>extrato</code>, e gravou no próprio banco. O <code>saldoEm</code> é o momento do último fato aplicado ao saldo.</div>
+      </li>
+    </ol>
+    <p class="text-sm">📇 O que é o AsyncAPI, o contrato dos eventos: <a class="ext" href="#tecnologias" onclick="switchTab('tecnologias','f-asyncapi');return false;">Ficha da tecnologia: AsyncAPI</a>.</p>
+    <label class="check-passo"><input type="checkbox" data-passo="s3-evento" onchange="marcarPasso(this)"> Vi o evento esperar na fila e ser consumido</label>
+  </div>
+
+  <div class="step-box" id="s3-fase-3">
+    <h4><span class="step-num">3</span> Falha no e-mail: retry e dead letter <span class="tempo">⏱️ 20 min</span></h4>
+    <p>No <code>docker-compose.yml</code>, no serviço <code>notificacoes</code>, troque <code>Notificacoes__SimularFalha: "false"</code> por <code>"true"</code> e aplique:</p>
+    <div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose up -d notificacoes
+docker compose logs -f notificacoes</pre></div>
+    <p>Deixe os logs abertos e, em outro terminal ou no Scalar, faça outro PIX da Ana.</p>
+    <div class="esperado"><strong>✅ Resultado esperado:</strong> o PIX responde <code>201</code>, e o saldo muda. Nos logs: "Tentativa 1 de 3 falhou... Nova tentativa em 5 s", depois a 2 e a 3, e por fim "Enviada para notificacoes.dlq". No RabbitMQ, a fila <code>notificacoes.dlq</code> fica com <strong>1</strong> mensagem. Até a Sprint 2, esta mesma falha desfazia o PIX.</div>
+    <details class="partes"><summary>🔍 Entenda o caminho da mensagem, passo a passo</summary>
+      <table class="partes-tab">
+        <tr><td><code>notificacoes</code></td><td>Notificações recebe e falha. Em vez de confirmar, publica uma cópia em <code>notificacoes.retry</code> com o número da próxima tentativa e confirma a original</td></tr>
+        <tr><td><code>notificacoes.retry</code></td><td>ninguém consome; a mensagem espera o tempo de vida da fila (5 s) e volta sozinha para <code>notificacoes</code></td></tr>
+        <tr><td><code>notificacoes.dlq</code></td><td>na 3ª falha, Notificações rejeita a mensagem, e o RabbitMQ a manda para a dead letter configurada na fila</td></tr>
+      </table>
+    </details>
+    <p>Pare os logs com <kbd>Ctrl</kbd>+<kbd>C</kbd>.</p>
+    <label class="check-passo"><input type="checkbox" data-passo="s3-dlq" onchange="marcarPasso(this)"> Vi as três tentativas e a mensagem na dead letter</label>
+  </div>
+
+  <div class="step-box" id="s3-fase-4">
+    <h4><span class="step-num">4</span> Corrigir e reprocessar <span class="tempo">⏱️ 15 min</span></h4>
+    <p>Volte <code>Notificacoes__SimularFalha</code> para <code>"false"</code> e aplique com <code>docker compose up -d notificacoes</code>. Agora mova a mensagem da dead letter de volta para a fila. Escolha um dos caminhos:</p>
+    <ol class="step-number-list">
+      <li><strong>Pela interface:</strong> fila <code>notificacoes.dlq</code> → seção <strong>Move messages</strong> → destino <code>notificacoes</code> → <strong>Move messages</strong>.</li>
+      <li><strong>Pelo terminal:</strong>
+        <div class="so" data-so="mac linux"><div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose exec rabbitmq rabbitmqctl set_parameter shovel reprocessar-notificacoes '{"src-uri":"amqp://","src-queue":"notificacoes.dlq","dest-uri":"amqp://","dest-queue":"notificacoes","src-delete-after":"queue-length"}'</pre></div></div>
+        <div class="so" data-so="win"><div class="code-editor-wrap"><span class="code-filepath">PowerShell, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose exec rabbitmq rabbitmqctl set_parameter shovel reprocessar-notificacoes '{\"src-uri\":\"amqp://\",\"src-queue\":\"notificacoes.dlq\",\"dest-uri\":\"amqp://\",\"dest-queue\":\"notificacoes\",\"src-delete-after\":\"queue-length\"}'</pre></div></div>
+      </li>
+    </ol>
+    <div class="esperado"><strong>✅ Resultado esperado:</strong> a dead letter volta a <strong>0</strong>, e os dois e-mails daquele PIX chegam no Mailpit. Nenhum aviso se perdeu: ele só esperou alguém corrigir o problema.</div>
+    <div class="na-empresa"><strong>🏢 Na empresa</strong>Uma dead letter com mensagens é um alarme: alguém precisa ser avisado (Sprint 10, observabilidade). Antes de reprocessar, o time descobre a causa; reprocessar sem corrigir só manda a mensagem de volta para a dead letter. E reprocessar pode entregar de novo algo que já tinha dado certo, por isso a idempotência importa.</div>
+    <label class="check-passo"><input type="checkbox" data-passo="s3-reprocessar" onchange="marcarPasso(this)"> Reprocessei a dead letter</label>
+  </div>
+
+  <div class="step-box" id="s3-fase-5">
+    <h4><span class="step-num">5</span> Quem depende de quem <span class="tempo">⏱️ 15 min</span></h4>
+    <div class="preveja">
+      <div class="pergunta voz-prof-inline"><span class="av-prof av-prof-sm"><img src="img/prof-wellington.png" alt="Prof. Wellington"></span><span><strong>Prof. Wellington:</strong> preveja: na Sprint 2, o monólito travado deixava o extrato pendurado. E agora, com o monólito parado, o extrato responde?</span></div>
+      <textarea placeholder="Escreva o seu palpite aqui (fica só na tela, não é enviado)."></textarea>
+      <button class="btn mt-2" onclick="revelarPrevisao(this)">👀 Revelar</button>
+      <div class="resposta"><strong>Responde.</strong> O Extrato tem os próprios dados, montados com os eventos. Ele não chama mais o monólito. O preço é a <strong>consistência eventual</strong>: um PIX feito agora pode levar um instante para aparecer, e enquanto o Extrato estiver parado ele fica para trás e depois se atualiza sozinho.</div>
+    </div>
+    <ol class="step-number-list">
+      <li>Pare o monólito e consulte o extrato direto no serviço:
+        <div class="so" data-so="mac linux"><div class="code-editor-wrap"><span class="code-filepath">terminal</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose stop api
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8082/contas/COLE_O_ID_DA_ANA/extrato
+docker compose start api</pre></div></div><div class="so" data-so="win"><div class="code-editor-wrap"><span class="code-filepath">PowerShell</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose stop api
+curl.exe -s -o NUL -w "%{http_code}\n" http://localhost:8082/contas/COLE_O_ID_DA_ANA/extrato
+docker compose start api</pre></div></div>
+        <div class="esperado"><strong>✅ Resultado esperado:</strong> <code>200</code>. A dor do "Extrato sem timeout" da Sprint 2 sumiu, porque a chamada sumiu.</div>
+      </li>
+      <li>Agora o contrário: pare o Extrato, faça um PIX e religue.
+        <div class="code-editor-wrap"><span class="code-filepath">terminal</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose stop extrato
+# faça um PIX da Ana no Scalar (localhost:8081)
+docker compose start extrato</pre></div>
+        <div class="esperado"><strong>✅ Resultado esperado:</strong> o PIX responde <code>201</code>. Com o Extrato parado, a mensagem espera na fila <code>extrato</code>. Quando ele volta, consome e o PIX aparece no extrato, sem ninguém fazer nada.</div>
+      </li>
+    </ol>
+    <label class="check-passo"><input type="checkbox" data-passo="s3-dependencias" onchange="marcarPasso(this)"> Derrubei o monólito e o Extrato e vi o que continuou</label>
+  </div>
+
+  <div class="step-box" id="s3-fase-6">
+    <h4><span class="step-num">6</span> A dor que fica: dual write <span class="tempo">⏱️ 10 min</span></h4>
+    <p>O evento sai <strong>depois</strong> do commit. O que acontece se o broker estiver fora do ar nesse instante?</p>
+    <div class="so" data-so="mac linux"><div class="code-editor-wrap"><span class="code-filepath">terminal</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose stop rabbitmq
+# faça um PIX da Ana no Scalar (localhost:8081)
+docker compose logs api | grep "EVENTO PERDIDO"
+docker compose start rabbitmq</pre></div></div><div class="so" data-so="win"><div class="code-editor-wrap"><span class="code-filepath">PowerShell</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose stop rabbitmq
+# faça um PIX da Ana no Scalar (localhost:8081)
+docker compose logs api | Select-String "EVENTO PERDIDO"
+docker compose start rabbitmq</pre></div></div>
+    <div class="esperado"><strong>✅ Resultado esperado:</strong> o PIX responde <code>201</code> e o saldo muda em Pagamentos (<code>GET /saldos/{id}</code>). Mas o log mostra <code>EVENTO PERDIDO</code>: nenhum e-mail sai, e o extrato nunca vai mostrar esse PIX. O banco e o broker são dois lugares diferentes, e não há uma transação que cubra os dois.</div>
+    <div class="warning-banner voz-prof-inline"><span class="av-prof av-prof-sm"><img src="img/prof-wellington.png" alt="Prof. Wellington"></span><span><strong>Prof. Wellington, para pensar:</strong> como garantir que o evento sai se, e somente se, o PIX foi gravado? Uma resposta conhecida é o padrão <strong>Outbox</strong>: gravar o evento numa tabela, na mesma transação do PIX, e publicar depois. Ele está no Aprofundamento e registrado no ADR 0005 como próximo passo.</span></div>
+    <label class="check-passo"><input type="checkbox" data-passo="s3-dualwrite" onchange="marcarPasso(this)"> Provoquei a perda do evento</label>
+  </div>
+
+  <div class="step-box" id="s3-fase-7">
+    <h4><span class="step-num">7</span> Escrever o ADR 0005 <span class="tempo">⏱️ 30 min</span></h4>
+    <p>Complete o modelo <code>docs/adr/0005-mensageria.md</code> com as perguntas-guia. A versão aprovada do ADR 0004 já está no repositório: compare com a sua.</p>
+    <div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">git switch -c minha-sprint-03
+# edite docs/adr/0005-mensageria.md
+git add docs/adr
+git commit -m "ADR 0005: minha proposta"
+git push -u origin minha-sprint-03</pre></div>
+    <label class="check-passo"><input type="checkbox" data-passo="s3-adr" onchange="marcarPasso(this)"> Escrevi e enviei o meu ADR 0005</label>
+    <div class="preveja mt-3">
+      <div class="pergunta">📝 Escreveu o seu ADR? Compare com a versão aprovada pela Helena.</div>
+      <button class="btn mt-2" onclick="revelarPrevisao(this)">📜 Ver a versão aprovada pela Helena</button>
+      <div class="resposta">
+        <div class="adr">
+          <h5>ADR 0005 · Como os serviços conversam por eventos (mensageria) <span class="status">aceita · Sprint 3</span></h5>
+          <p><b>Proposta e aprovação:</b> proposto pelo(a) arquiteto(a) <span data-aluno-nome>Arquiteto(a)</span>, com Rafa e Joana; aprovado por Helena Rocha, Coordenadora de Arquitetura.</p>
+          <p><b>Contexto:</b> desde a Sprint 0, a notificação roda dentro da transação do PIX, e uma falha no e-mail desfaz o pagamento; os módulos da Sprint 1 não mudaram isso. O Extrato da Sprint 2 faz três chamadas HTTP ao monólito e depende dele estar no ar e rápido.</p>
+          <p><b>Decisão:</b> Pagamentos e Contas <strong>publicam eventos</strong> (<code>PagamentoAprovado</code>, <code>ContaAberta</code>) no RabbitMQ, <strong>depois do commit</strong>, na exchange <code>paguai.eventos</code> (topic). Cada consumidor tem a sua fila. Notificações sai do monólito e vira um serviço próprio, com banco próprio. O Extrato passa a manter um <strong>modelo de leitura</strong> com os eventos e deixa de chamar o monólito; o Extrato antigo é apagado. O evento leva o que os consumidores precisam (como os titulares), para eles não perguntarem de volta. O formato dos eventos está em <code>contratos/eventos.asyncapi.yaml</code>.</p>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Tema</th><th>Decisão</th></tr></thead>
+            <tbody>
+              <tr><td>Confirmação</td><td>Ack manual, só depois de o consumidor terminar o trabalho</td></tr>
+              <tr><td>Entrega e idempotência</td><td>Pelo menos uma vez; cada consumidor guarda o <code>id</code> dos eventos tratados, na mesma transação do efeito</td></tr>
+              <tr><td>Retry</td><td>Até 3 tentativas, com 5 s de espera numa fila <code>.retry</code></td></tr>
+              <tr><td>Dead letter</td><td>Fila <code>.dlq</code> por consumidor; mensagem inválida vai direto, sem retry; reprocessamento manual</td></tr>
+              <tr><td>Publicação</td><td>Mensagem persistente, com confirmação do publicador e erro se nenhuma fila assinar a chave</td></tr>
+              <tr><td>Filas</td><td>Quorum, duráveis, criadas pelo próprio broker ao subir</td></tr>
+              <tr><td>Biblioteca</td><td>Cliente oficial do RabbitMQ, para deixar visíveis ack, retry e dead letter</td></tr>
+            </tbody>
+          </table></div>
+          <p><b>Alternativas consideradas:</b> log de eventos, como o Kafka (válida; permite reler o histórico, mas pede mais operação e deixa retry e dead letter mais por conta do consumidor; pode voltar com outras necessidades); bibliotecas de mais alto nível, como MassTransit ou Wolverine (válidas; escondem os mecanismos que esta sprint quer mostrar); padrão Outbox já nesta sprint (adiado: resolve o dual write, mas acrescenta uma tabela e um publicador; registrado como próximo passo); chamada HTTP em segundo plano (rejeitada: sem fila durável, sem retry e com o acoplamento de volta).</p>
+          <p><b>Consequências:</b> o PIX termina mesmo com Notificações, o Extrato ou o SMTP fora do ar, e o extrato responde mesmo com o monólito parado. Em troca: consistência eventual no extrato (<code>saldoEm</code> diz até quando o saldo está em dia; contrato do Extrato 1.1.0, só com descrições novas); mais coisas para operar (broker, filas, dead letter); entrega pelo menos uma vez, que exige idempotência; e o risco de perder o evento entre o commit e a publicação (dual write), visível no log como <code>EVENTO PERDIDO</code>.</p>
+        </div>
+        <p class="text-sm text-muted">A versão aprovada entra no repositório na tag <code>sprint-04</code>.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ 7. APROFUNDAMENTO ═══════════ -->
+<div class="card">
+  <div class="card-title">🔬 Aprofundamento <span class="camada aprofundamento">opcional</span></div>
+  <details class="aprofundamento">
+    <summary>1. O padrão Outbox: como acabar com o dual write</summary>
+    <p class="mt-2">Em vez de publicar no broker depois do commit, Pagamentos grava o evento numa tabela <code>outbox</code>, <strong>na mesma transação</strong> do PIX. Um processo separado lê essa tabela e publica no broker, marcando o que já saiu. Se o broker cair, o evento espera na tabela. Leia <code>src/PagUai.Api/Compartilhado/EventosDeIntegracao.cs</code> e <code>UnidadeDeTrabalho.cs</code> e pense: onde entraria a tabela? O que o processo publicador precisaria garantir? Repare que o Outbox também entrega "pelo menos uma vez": a idempotência dos consumidores continua necessária.</p>
+  </details>
+  <details class="aprofundamento">
+    <summary>2. Ver a idempotência funcionando</summary>
+    <p class="mt-2">Na interface do RabbitMQ, numa fila, use <strong>Get messages</strong> para copiar o corpo de uma mensagem já entregue (por exemplo, pegando uma da <code>.dlq</code> antes de reprocessar). Depois, na exchange <code>paguai.eventos</code>, use <strong>Publish message</strong> com a chave <code>pagamento.aprovado</code> e o mesmo corpo, duas vezes. Nos logs de Notificações e do Extrato aparece "já processado" ou "já aplicado": nenhum e-mail ou lançamento duplicado. Os testes estão em <code>tests/PagUai.Notificacoes.Tests</code> e <code>tests/PagUai.Extrato.Tests</code>.</p>
+  </details>
+  <details class="aprofundamento">
+    <summary>3. Duas instâncias de Notificações dividindo a fila</summary>
+    <div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">docker compose up -d --scale notificacoes=2 --no-recreate notificacoes</pre></div>
+    <p>O <code>docker-compose.yml</code> fixa o nome do contêiner, então o Compose pode recusar. Se isso acontecer, comente a linha <code>container_name: paguai-notificacoes</code>, rode de novo e faça vários PIX: na aba <strong>Consumers</strong> da fila há dois consumidores, e cada mensagem vai para um só. É a fila no modo ponto a ponto, dividindo trabalho. Volte o arquivo com <code>git checkout -- docker-compose.yml</code>.</p>
+  </details>
+  <details class="aprofundamento">
+    <summary>4. Rodar os testes de mensageria</summary>
+    <p class="mt-2">Com o .NET 10 SDK e o Docker em execução:</p>
+    <div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">dotnet test --project tests/PagUai.Mensageria.Tests</pre></div>
+    <p>Os testes sobem um RabbitMQ em contêiner e verificam: sucesso com ack, falha temporária que se resolve na 2ª tentativa, falha permanente que termina na dead letter depois de 3 tentativas, mensagem inválida que vai direto para a dead letter, e publicação numa chave que nenhuma fila assina.</p>
+  </details>
+  <details class="aprofundamento">
+    <summary>5. O contrato dos eventos, validado</summary>
+    <p class="mt-2">O CI valida <code>contratos/eventos.asyncapi.yaml</code> a cada envio. Com o Node.js instalado, rode você mesmo:</p>
+    <div class="code-editor-wrap"><span class="code-filepath">terminal, na pasta paguai</span><button class="copy-btn" onclick="copyCode(this)">📋 Copiar</button><pre class="code-editor">npx @asyncapi/cli@6 validate contratos/eventos.asyncapi.yaml</pre></div>
+    <p>Os testes <code>ContratoDeEventosTests</code> comparam o contrato com o código: quem publica precisa mandar todos os campos; quem consome só pode ler campos que o contrato garante.</p>
+  </details>
+  <div class="buscas" data-itens='["RabbitMQ tutorials exchanges routing","RabbitMQ dead letter exchange","RabbitMQ quorum queues","transactional outbox pattern","idempotent consumer pattern","AsyncAPI 3.0 tutorial"]' data-scholar="message broker microservices event-driven reliability"></div>
+</div>
+
+<!-- ═══════════ 8. ERROU? ═══════════ -->
+<div class="card" id="errou-sprint-03">
+  <div class="card-title">✋ Errou? Casos comuns desta sprint</div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">O PIX conclui, mas o e-mail não chega</div><div class="faq-a"><p>Notificações está parado ou falhando. Veja <code>docker compose logs notificacoes --tail 40</code> e as filas <code>notificacoes</code> e <code>notificacoes.dlq</code> na interface do RabbitMQ. Se <code>Notificacoes__SimularFalha</code> ficou <code>"true"</code>, volte para <code>"false"</code>, rode <code>docker compose up -d notificacoes</code> e reprocesse (fase 4).</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">404 no extrato de uma conta que acabou de ser aberta</div><div class="faq-a"><p>Consistência eventual: o evento <code>ContaAberta</code> ainda não chegou ao Extrato. Espere um instante. Se continuar, veja se há mensagens em <code>extrato.dlq</code>.</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">Não consigo entrar na interface do RabbitMQ</div><div class="faq-a"><p>Use o usuário <code>paguai</code> e a senha <code>paguai_dev_123</code> (o usuário <code>guest</code> não existe aqui). Se a página não abrir, veja <code>docker compose ps rabbitmq</code>: ele leva alguns segundos para ficar <em>healthy</em>.</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">PRECONDITION_FAILED ou inequivalent arg nos logs</div><div class="faq-a"><p>A fila já existe no RabbitMQ com outros argumentos, por exemplo criada por outra versão. Comece limpo: <code>docker compose down -v</code> e <code>docker compose up -d --build</code>.</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">port is already allocated na porta 5672 ou 15672</div><div class="faq-a"><p>Outro RabbitMQ ou programa usa a porta. Suba em outra, por exemplo: <code>PAGUAI_RABBITMQ_PORT=5673 PAGUAI_RABBITMQ_UI_PORT=15673 docker compose up -d</code>.</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">O comando do shovel dá erro no PowerShell</div><div class="faq-a"><p>O PowerShell trata as aspas do JSON de outro jeito. Use a versão de Windows do comando, com <code>\"</code>, ou faça pela interface: fila <code>notificacoes.dlq</code> → <strong>Move messages</strong>.</p></div></div>
+  <div class="faq-item" onclick="toggleFaq(this)"><div class="faq-q">EVENTO PERDIDO nos logs do monólito sem eu ter parado o RabbitMQ</div><div class="faq-a"><p>O monólito tentou publicar enquanto o broker ainda subia ou estava reiniciando. Veja <code>docker compose ps</code>. É exatamente a dor do dual write da fase 6.</p></div></div>
+  <div class="info-banner"><strong>🛠️ Mais casos:</strong> veja a aba <a class="ext" href="#problemas" onclick="switchTab('problemas');return false;">Problemas comuns</a>.</div>
+</div>
+
+<!-- ═══════════ 9. CHECKPOINT ═══════════ -->
+<div class="card" id="quiz-sprint-03">
+  <div class="card-title">✅ Checkpoint</div>
+  <div class="cena voz-professor"><div class="msg"><span class="av av-prof"><img src="img/prof-wellington.png" alt="Prof. Wellington"></span><div><div class="who">Prof. Wellington</div><div class="txt">Agora saímos da história da PagUai. <span data-aluno-nome>Arquiteto(a)</span>, estas questões conferem se você domina filas, tópicos, brokers e os mecanismos de confiabilidade. Responda depois do laboratório: algumas só têm resposta para quem executou o sistema.</div></div></div></div>
+
+  <div class="quiz-q">
+    <div class="enunciado">1. Qual é a diferença entre uma fila ponto a ponto e um tópico (publicação e assinatura)?</div>
+    <button class="quiz-opt" data-exp="as duas podem ser duráveis; a diferença está em quem recebe cada mensagem" onclick="responder(this)">Fila guarda as mensagens em disco; tópico só em memória.</button>
+    <button class="quiz-opt" data-correct="1" onclick="responder(this)">Na fila, cada mensagem vai para um consumidor; no tópico, cada assinante recebe a sua cópia.</button>
+    <button class="quiz-opt" data-exp="os dois modelos podem ser assíncronos; a resposta imediata é característica da comunicação síncrona" onclick="responder(this)">Na fila, o produtor espera a resposta; no tópico, não.</button>
+    <button class="quiz-opt" data-exp="RabbitMQ oferece os dois modelos, e Kafka também" onclick="responder(this)">Fila só existe no RabbitMQ; tópico só existe no Kafka.</button>
+    <div class="quiz-fb" data-exp="Na PagUai, a exchange topic com uma fila por consumidor faz Notificações e Extrato receberem, cada um, o PagamentoAprovado."></div>
+  </div>
+
+  <div class="quiz-q">
+    <div class="enunciado">2. No RabbitMQ, o que decide em quais filas uma mensagem publicada vai parar?</div>
+    <button class="quiz-opt" data-exp="o produtor publica na exchange, não direto nas filas" onclick="responder(this)">O produtor escolhe as filas uma a uma ao publicar.</button>
+    <button class="quiz-opt" data-exp="o consumidor só lê da fila dele; o roteamento acontece antes" onclick="responder(this)">O consumidor, ao pedir a mensagem.</button>
+    <button class="quiz-opt" data-correct="1" onclick="responder(this)">A exchange, pelo seu tipo e pelos bindings das filas, comparando com a chave de roteamento.</button>
+    <button class="quiz-opt" data-exp="a ordem de criação não influencia o roteamento" onclick="responder(this)">A ordem em que as filas foram criadas.</button>
+    <div class="quiz-fb" data-exp="Exchange paguai.eventos (topic), chave pagamento.aprovado: as filas notificacoes e extrato têm bindings para essa chave."></div>
+  </div>
+
+  <div class="quiz-q">
+    <div class="enunciado">3. <span class="tag-lab">depende do lab</span> Com <code>Notificacoes__SimularFalha=true</code>, o que acontece com um PIX?</div>
+    <button class="quiz-opt" data-exp="isso acontecia até a Sprint 2, quando a notificação rodava dentro da transação" onclick="responder(this)">O PIX falha e é desfeito.</button>
+    <button class="quiz-opt" data-exp="o monólito não espera Notificações; ele já respondeu quando o e-mail é tentado" onclick="responder(this)">O PIX fica pendurado até o e-mail sair.</button>
+    <button class="quiz-opt" data-correct="1" onclick="responder(this)">O PIX responde 201; a mensagem é tentada 3 vezes e vai para notificacoes.dlq.</button>
+    <button class="quiz-opt" data-exp="a mensagem não é descartada: ela vai para a dead letter, onde pode ser reprocessada" onclick="responder(this)">O PIX responde 201, e a mensagem é descartada depois da primeira falha.</button>
+    <div class="quiz-fb" data-exp="O pagamento não depende mais de quem vem depois dele. O aviso espera na dead letter até alguém corrigir e reprocessar."></div>
+  </div>
+
+  <div class="quiz-q">
+    <div class="enunciado">4. Por que os consumidores da PagUai guardam o <code>id</code> de cada evento já tratado?</div>
+    <button class="quiz-opt" data-exp="a ordem não é o problema aqui; o registro serve para reconhecer uma repetição" onclick="responder(this)">Para garantir que os eventos cheguem na ordem certa.</button>
+    <button class="quiz-opt" data-correct="1" onclick="responder(this)">Porque a entrega é pelo menos uma vez: a mesma mensagem pode chegar de novo, e o efeito não pode se repetir.</button>
+    <button class="quiz-opt" data-exp="o broker não lê o banco dos consumidores" onclick="responder(this)">Para o RabbitMQ saber que pode apagar a mensagem.</button>
+    <button class="quiz-opt" data-exp="o id é do evento, não do consumidor" onclick="responder(this)">Para identificar qual consumidor tratou a mensagem.</button>
+    <div class="quiz-fb" data-exp="Idempotência: o Seu Geraldo não pode receber o mesmo aviso duas vezes, nem o extrato mostrar o mesmo PIX duas vezes."></div>
+  </div>
+
+  <div class="quiz-q">
+    <div class="enunciado">5. <span class="tag-lab">depende do lab</span> Com o RabbitMQ parado, um PIX responde 201, mas o e-mail nunca chega e o extrato nunca mostra o PIX. Por quê?</div>
+    <button class="quiz-opt" data-exp="o PIX foi gravado: o saldo em Pagamentos mudou" onclick="responder(this)">Porque o PIX foi desfeito.</button>
+    <button class="quiz-opt" data-exp="as filas guardam mensagens publicadas; esta nunca chegou a ser publicada" onclick="responder(this)">Porque a mensagem está esperando na fila notificacoes.</button>
+    <button class="quiz-opt" data-correct="1" onclick="responder(this)">Porque o banco confirmou e a publicação falhou depois do commit: não há transação que cubra banco e broker (dual write).</button>
+    <button class="quiz-opt" data-exp="a dead letter recebe mensagens que chegaram ao consumidor e falharam; esta nunca chegou ao broker" onclick="responder(this)">Porque a mensagem foi para a dead letter.</button>
+    <div class="quiz-fb" data-exp="É a dor proposital desta sprint. O padrão Outbox grava o evento na mesma transação do PIX e publica depois."></div>
+  </div>
+  <button class="btn" onclick="refazerQuiz('quiz-sprint-03')">↺ Refazer</button>
+</div>
+
+<!-- ═══════════ 10. PALAVRAS E RECAP ═══════════ -->
+<div class="card">
+  <div class="card-title">📖 Palavras desta sprint</div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Termo</th><th>Em uma frase</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Evento</strong></td><td>Anúncio de um fato que já aconteceu, com o nome no passado.</td></tr>
+      <tr><td><strong>Broker</strong></td><td>Serviço que guarda as mensagens até elas serem entregues e confirmadas.</td></tr>
+      <tr><td><strong>Fila</strong></td><td>Cada mensagem vai para um consumidor (ponto a ponto).</td></tr>
+      <tr><td><strong>Tópico</strong></td><td>Cada assinante recebe a sua cópia (publicação e assinatura).</td></tr>
+      <tr><td><strong>Exchange e binding</strong></td><td>No RabbitMQ, a exchange recebe a mensagem e os bindings dizem para quais filas ela vai.</td></tr>
+      <tr><td><strong>Chave de roteamento</strong></td><td>Rótulo da mensagem que a exchange compara com os bindings.</td></tr>
+      <tr><td><strong>Ack</strong></td><td>Confirmação do consumidor de que terminou o trabalho; só então a mensagem sai da fila.</td></tr>
+      <tr><td><strong>Retry</strong></td><td>Nova tentativa depois de uma espera.</td></tr>
+      <tr><td><strong>Dead letter</strong></td><td>Fila para onde vão as mensagens que esgotaram as tentativas ou são inválidas.</td></tr>
+      <tr><td><strong>Idempotência</strong></td><td>Receber a mesma mensagem duas vezes sem repetir o efeito.</td></tr>
+      <tr><td><strong>Consistência eventual</strong></td><td>As partes podem discordar por um tempo, mas chegam ao mesmo estado.</td></tr>
+      <tr><td><strong>Modelo de leitura</strong></td><td>Cópia dos dados no formato que uma consulta precisa, mantida por eventos.</td></tr>
+      <tr><td><strong>Dual write</strong></td><td>Gravar em dois lugares (banco e broker) sem uma transação que cubra os dois.</td></tr>
+    </tbody>
+  </table></div>
+</div>
+
+<div class="card">
+  <div class="card-title">🔁 Recapitulando a Unidade 1</div>
+  <ul style="margin-left:22px;line-height:1.9">
+    <li><strong>Sprint 0:</strong> o monólito funcionava, mas tudo era publicado junto, e uma falha no e-mail desfazia o PIX.</li>
+    <li><strong>Sprint 1:</strong> os bounded contexts viraram módulos com fronteiras verificadas no build.</li>
+    <li><strong>Sprint 2:</strong> o Extrato saiu do monólito pelo Strangler Fig, com contrato definido antes do código.</li>
+    <li><strong>Sprint 3:</strong> o pagamento passou a <strong>publicar eventos</strong>; Notificações virou serviço, o Extrato ganhou dados próprios, e retry e dead letter garantem que nenhum aviso se perca.</li>
+    <li>O que ganhamos: isolamento de falhas e serviços que escalam e são publicados separadamente. O que pagamos: rede, broker, consistência eventual e mais coisas para operar.</li>
+  </ul>
+  <div class="warning-banner voz-prof-inline"><span class="av-prof av-prof-sm"><img src="img/prof-wellington.png" alt="Prof. Wellington"></span><span><strong>Prof. Wellington, para pensar:</strong> a PagUai ficou melhor ou só mais complicada? Meça pelos problemas resolvidos, não pelo número de serviços.</span></div>
+  <div class="success-banner"><strong>➡️ Próxima unidade:</strong> o banco parceiro da PagUai só aceita SOAP. Na Sprint 4, você integra o legado sem deixar o SOAP se espalhar pelo sistema.</div>
+</div>
+
+</section>
