@@ -1,0 +1,1602 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Computação em Nuvem — Aula 08: Segurança, Monitoramento e Resiliência</title>
+<!-- HTMLearning v2.18-beta.5 (20/11/2026) — Todos os campos de metadados foram informados (disciplina, aula, unidade, páginas). Dados do professor(a) não informados (campo opcional): linha A2 omitida. Nenhum conteúdo pedagógico foi inventado: tudo parte do sumário colado. -->
+<style>
+*{box-sizing:border-box}
+:root{
+  --acento:#0F5257; --fundo:#eef2f2; --painel:#ffffff; --tinta:#15211f; --suave:#566a69;
+  --borda:#c9d5d4; --ok:#166534; --erro:#9b1c1c; --real:#f3f8f7; --ferr:#f7f4ee; --link:#0F5257;
+}
+body.escuro{
+  --fundo:#0e1518; --painel:#172125; --tinta:#e9f1f0; --suave:#a9bdbc; --borda:#2d3d41;
+  --ok:#1f7a44; --erro:#a52a2a; --real:#152428; --ferr:#232019; --link:#7fd6cf;
+}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--fundo);color:var(--tinta);font-size:18px;line-height:1.55;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+body.apresentacao{font-size:22px}
+[hidden]{display:none !important}
+a{color:var(--link)}
+:focus-visible{outline:3px solid #d97706;outline-offset:2px}
+.envolve{max-width:1180px;margin:0 auto;padding:0 14px 40px}
+.modos{position:fixed;top:10px;right:10px;z-index:60;display:flex;gap:8px}
+.modos button{font-size:.78em;padding:8px 12px;border-radius:99px;border:2px solid var(--acento);
+  background:var(--acento);color:#fff;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.25)}
+.modos button:disabled{opacity:.5;cursor:not-allowed}
+header.topo{background:var(--acento);color:#fff;padding:22px 18px;border-radius:0 0 18px 18px;margin-bottom:14px}
+header.topo h1{margin:0 0 6px;font-size:1.5em;line-height:1.25}
+header.topo p{margin:2px 0;font-size:.9em}
+header.topo .meta{opacity:.95}
+.hud{display:flex;flex-wrap:wrap;gap:12px;align-items:center;background:var(--painel);border:3px solid var(--borda);
+  border-radius:14px;padding:12px 14px;margin-bottom:14px;box-shadow:0 4px 0 rgba(0,0,0,.07)}
+.hud .caixa{font-weight:700}
+.barra{flex:1;min-width:180px;height:16px;background:var(--borda);border-radius:99px;overflow:hidden}
+.barra i{display:block;height:100%;width:0;background:var(--acento);transition:width .35s}
+.selos{width:100%;display:flex;flex-wrap:wrap;gap:6px}
+.selo{background:var(--acento);color:#fff;border-radius:99px;padding:4px 12px;font-size:.78em;font-weight:700}
+.selo.vazio{background:var(--borda);color:var(--tinta)}
+.faixa-abas{position:sticky;top:0;z-index:30;display:flex;gap:6px;overflow-x:auto;padding:10px 6px 0;
+  background:var(--fundo);border-bottom:3px solid var(--acento);scrollbar-width:thin}
+.aba{flex:0 0 auto;white-space:nowrap;border:3px solid var(--acento);border-bottom:none;border-radius:14px 14px 0 0;
+  background:var(--acento);color:#fff;padding:10px 16px;font-size:.86em;font-weight:700;cursor:pointer;margin-bottom:-3px}
+.aba .num{display:inline-block;background:rgba(255,255,255,.25);border-radius:99px;padding:0 8px;margin-right:6px}
+.aba.ativa{background:var(--painel);color:var(--tinta);border-bottom:3px solid var(--painel);position:relative;z-index:31}
+.aba.ativa .num{background:var(--acento);color:#fff}
+.selo-estudo{display:inline-block;margin-left:8px;background:#8a5a00;color:#fff;border-radius:99px;padding:1px 9px;font-size:.82em}
+.paineis{background:var(--painel);border:3px solid var(--acento);border-top:none;border-radius:0 0 18px 18px;padding:20px 18px 26px}
+.painel{display:none}
+.painel.ativo{display:block}
+.painel h2{margin:.1em 0 .5em;font-size:1.35em;color:var(--tinta)}
+.painel h3{font-size:1.08em;margin:1.2em 0 .5em}
+.painel h4{font-size:1em;margin:.6em 0 .3em}
+.fora{background:var(--ferr);border-left:8px solid #8a5a00;padding:8px 12px;border-radius:8px;font-size:.9em}
+.missao{background:var(--acento);color:#fff;border-radius:12px;padding:12px 16px;margin-bottom:12px}
+.narrativa{font-size:1.02em}
+.dupla{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:820px){.dupla{grid-template-columns:1fr}}
+.cartao{border:3px solid var(--borda);border-radius:14px;padding:12px 16px;background:var(--painel);
+  box-shadow:0 4px 0 rgba(0,0,0,.07);margin:12px 0}
+.cartao.real{background:var(--real)}
+.cartao.ferr{background:var(--ferr)}
+.cartao ul{margin:.3em 0;padding-left:1.2em}
+.cartao li{margin:.45em 0}
+.demo{border:3px solid var(--acento);border-radius:16px;padding:14px 16px;margin:18px 0;background:var(--painel)}
+.prever{background:#fff4cf;color:#3a2a05;border:3px solid #b45309;border-radius:12px;padding:12px 14px;font-weight:600}
+body.escuro .prever{background:#3b2f10;color:#ffeec2}
+.instrucoes{background:#fff9e6;color:#3a2f0c;border:3px solid #d9a441;border-radius:12px;padding:10px 16px;margin:12px 0}
+body.escuro .instrucoes{background:#2c2513;color:#f6e6bd}
+.instrucoes ol{margin:.3em 0;padding-left:1.3em}
+.legenda{background:#eef6ff;color:#12283a;border:3px solid #2b6cb0;border-radius:12px;padding:10px 16px;margin:12px 0}
+body.escuro .legenda{background:#16232e;color:#d6e8f7}
+.legenda ul{margin:.3em 0;padding-left:1.2em}
+.palco{border:3px dashed var(--acento);border-radius:14px;padding:14px;background:var(--real);margin:12px 0}
+.botoes-demo{margin:10px 0}
+.btn{background:var(--acento);color:#fff;border:2px solid var(--acento);border-radius:10px;padding:10px 16px;
+  font-size:.92em;font-weight:700;cursor:pointer;margin:4px 6px 4px 0}
+.btn:hover{filter:brightness(1.15)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn.tog{background:var(--painel);color:var(--tinta);border:2px solid var(--borda);font-weight:600}
+.btn.tog.on{background:var(--acento);color:#fff;border-color:var(--acento)}
+.log{max-height:280px;overflow:auto;border-left:8px solid var(--acento);padding:6px 12px;background:var(--painel);margin-top:10px}
+.msg{border:2px solid var(--borda);border-radius:10px;padding:8px 12px;margin:6px 0;font-size:.94em}
+.msg.ok{border-color:var(--ok)}
+.msg.erro{border-color:var(--erro)}
+.msg.info{border-color:var(--acento)}
+.observa{background:var(--ferr);border:2px dashed var(--suave);border-radius:10px;padding:8px 14px;margin:10px 0;font-size:.92em}
+.grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:10px 0}
+.metrica{border:3px solid var(--borda);border-radius:12px;padding:10px;background:var(--painel);text-align:center}
+.metrica b{display:block;font-size:1.25em}
+.pacote{border:3px solid var(--borda);border-radius:12px;padding:10px 12px;margin:8px 0;background:var(--painel);font-size:.92em}
+.pacote code{font-family:ui-monospace,Consolas,"Courier New",monospace;word-break:break-all;font-size:.9em}
+.camada{border:3px solid var(--borda);border-radius:10px;padding:8px 12px;margin:6px 0;background:var(--painel);font-size:.92em}
+.camada.barrou{border-color:var(--ok)}
+.camada.passou{border-color:var(--erro)}
+.camada.atual{border-color:#d97706}
+.rotulo-slider{display:block;font-weight:600;margin-top:8px;font-size:.92em}
+input[type=range]{width:100%}
+input[type=text],textarea{width:100%;padding:10px;border:2px solid var(--borda);border-radius:10px;
+  background:var(--painel);color:var(--tinta);font-family:inherit;font-size:.95em}
+.quiz{border:3px solid var(--borda);border-radius:16px;padding:14px 16px;margin:18px 0;background:var(--real)}
+.termos{background:#eef6ff;color:#12283a;border:3px solid #2b6cb0;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:.93em}
+body.escuro .termos{background:#16232e;color:#d6e8f7}
+.pergunta{border-top:2px dashed var(--borda);padding-top:12px;margin-top:12px}
+.pergunta:first-of-type{border-top:none}
+.enun{font-weight:600}
+.alts{display:flex;flex-direction:column;gap:8px}
+.alt{text-align:left;background:var(--painel);color:var(--tinta);border:3px solid var(--borda);border-radius:10px;
+  padding:11px 14px;font-size:.95em;font-family:inherit;cursor:pointer}
+.alt:hover:not(:disabled){border-color:var(--acento)}
+.alt:disabled{cursor:not-allowed}
+.alt.certa{background:var(--ok);color:#fff;border-color:var(--ok);font-weight:700}
+.alt.errada{background:var(--erro);color:#fff;border-color:var(--erro)}
+.fb{margin-top:10px;border-radius:10px;padding:10px 14px;font-size:.95em;display:none}
+.fb.ok{display:block;background:var(--painel);border:3px solid var(--ok)}
+.fb.erro{display:block;background:var(--painel);border:3px solid var(--erro)}
+details.aprof,details.roteiro{border:3px solid var(--borda);border-radius:12px;padding:10px 16px;margin:12px 0;background:var(--real)}
+details.roteiro{background:#fff7e6}
+body.escuro details.roteiro{background:#2a2317}
+details.dicio{background:#eef6ff}
+body.escuro details.dicio{background:#16232e}
+details.conceitos{background:#eefaf1}
+body.escuro details.conceitos{background:#152a1e}
+details.buscas{background:#f3f0ff}
+body.escuro details.buscas{background:#201d2e}
+details.mito{background:#fdf2f8}
+body.escuro details.mito{background:#2a1a24}
+summary{cursor:pointer;font-weight:700}
+dt{font-weight:700;margin-top:.6em}
+dd{margin:.15em 0 .4em 0}
+.conceito{border-bottom:2px dashed var(--borda);padding-bottom:10px;margin-bottom:10px}
+.analogia{background:var(--painel);border-left:6px solid #d97706;padding:8px 12px;border-radius:8px}
+.exreal{font-size:.95em}
+.links li{margin:.5em 0}
+.nota{font-size:.85em;color:var(--suave)}
+table{border-collapse:collapse;width:100%;margin:10px 0;font-size:.93em}
+th,td{border:2px solid var(--borda);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--acento);color:#fff}
+.chefao{border:4px solid #8a5a00;border-radius:16px;padding:14px 16px;background:var(--ferr);margin-top:16px}
+.mapa li{margin:.5em 0}
+.cola td:first-child{width:32%}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:var(--acento);color:#fff;
+  padding:10px 20px;border-radius:99px;font-weight:700;z-index:80;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.rodape{max-width:1180px;margin:26px auto 0;padding:0 16px 30px;font-size:.82em;color:var(--suave);line-height:1.5}
+.rodape h4{color:var(--tinta);font-size:1.05em;margin:.4em 0 .5em}
+.rodape hr{border:none;border-top:2px solid var(--borda);margin:18px 0}
+.rodape ul{padding-left:1.1em;margin:.3em 0}
+.rodape .contatos div{margin:.25em 0;word-break:break-all}
+.rodape a{color:var(--link)}
+body.apresentacao .roteiro{border-color:#8a5a00}
+@media(max-width:640px){
+  body{font-size:17px}
+  header.topo{padding:18px 14px}
+  header.topo h1{font-size:1.25em;padding-right:70px}
+  .modos button{font-size:.68em;padding:7px 9px}
+  .painel h2{font-size:1.15em}
+}
+</style>
+</head>
+<body>
+<div class="modos">
+  <button id="btnModo" type="button" aria-pressed="false">🎤 Apresentação</button>
+  <button id="btnEscuro" type="button" aria-pressed="false">🌙 Escuro</button>
+</div>
+
+<header class="topo">
+  <h1>☁️ Computação em Nuvem — Aula 08: Segurança, Monitoramento e Resiliência</h1>
+  <p class="meta">Unidade 3 · Páginas 43 a 75 · Aula interativa offline (arquivo único)</p>
+  <p class="meta">Trilha de sala: 30 minutos nas abas 1 a 5 · Abas 6 e 7 para estudo em casa · Revisão com Chefão</p>
+</header>
+
+<div class="envolve">
+  <div class="hud">
+    <span class="caixa">⭐ XP: <span id="xp">0</span></span>
+    <span class="caixa" id="progTexto">Progresso: 0 de 21 perguntas</span>
+    <span class="barra"><i id="progBarra"></i></span>
+    <span class="selos" id="selos"><span class="selo vazio">Nenhum selo ainda: complete o quiz de uma aba</span></span>
+  </div>
+
+  <nav class="faixa-abas" id="faixa" role="tablist" aria-label="Abas da aula"></nav>
+  <main class="paineis" id="paineis"></main>
+  <noscript><p style="padding:16px">Esta aula interativa precisa de JavaScript ativado no navegador.</p></noscript>
+</div>
+
+<footer class="rodape">
+  <h4>📋 FICHA TÉCNICA DA AULA</h4>
+  <div>Computação em Nuvem — Aula 08, Unidade 3, págs. 43–75 · Gerado em 25/11/2026 · 7 abas · 21 perguntas · 7 demos · cor #0F5257</div>
+  <hr>
+  <h4>🪄 SOBRE O HTMLearning · v2.18-beta.5 (20/11/2026)</h4>
+  <div>Transformar o sumário de qualquer disciplina em uma classe interativa em HTML único e offline, com previsão antes do clique, tentativa e erro guiado e exemplos reais.</div>
+  <ul>
+    <li>O que é: metodologia e arquitetura de prompts que converte sumários em aulas interativas em minutos, com IAs gratuitas.</li>
+    <li>O que entrega: 5 a 7 abas + Revisão, simulações com previsão, quiz com retry sem revelar gabarito, linguagem plana, Modos Apresentação/Leitura.</li>
+    <li>Por que é inclusivo: um único .html leve, 100% offline, roda em PC e celular e viaja em pen drive para escolas desconectadas ou áreas rurais.</li>
+  </ul>
+  <div>Idealizador do projeto: Professor Wellington Dimas da Cruz</div>
+  <div>Apoiadora do projeto: Prof.ª Dr.ª Mariella Berger Andrade (IFES / CEFOR)</div>
+  <div class="contatos">
+    <div><strong>Contatos e links do projeto:</strong></div>
+    <div>E-mail do idealizador: <a href="mailto:cloud.ai-generative@outlook.com">cloud.ai-generative@outlook.com</a></div>
+    <div>Repositório GitHub do idealizador: <a href="https://github.com/cloud-ai-Generative" target="_blank" rel="noopener">https://github.com/cloud-ai-Generative</a></div>
+    <div>Currículo Lattes do idealizador: <a href="https://lattes.cnpq.br/6801791839011321" target="_blank" rel="noopener">https://lattes.cnpq.br/6801791839011321</a></div>
+    <div>Currículo Lattes da apoiadora: <a href="https://lattes.cnpq.br/3929645439848570" target="_blank" rel="noopener">https://lattes.cnpq.br/3929645439848570</a></div>
+    <div>Site oficial do projeto: <a href="https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html" target="_blank" rel="noopener">https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html</a></div>
+  </div>
+  <div>Licença do HTMLearning (metodologia e prompt): <a href="https://creativecommons.org/licenses/by/4.0/deed.pt-br" target="_blank" rel="noopener">CC BY 4.0 (Creative Commons Atribuição 4.0 Internacional)</a>. O conteúdo da aula pertence ao professor da disciplina.</div>
+</footer>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const AULA_DADOS = {
+  abas: [
+  {
+    id:"aba-1", rotulo:"Governança", estudoProprio:false,
+    titulo:"Governança e responsabilidade compartilhada",
+    missao:"Dizer, para qualquer serviço de nuvem, qual parte da segurança é do provedor e qual parte é sua — e apontar uma regra de governança que evitaria o erro.",
+    narrativa:"Alugar computador na nuvem é como alugar apartamento: o prédio cuida da estrutura, mas quem tranca a porta é você. Muita gente repete 'foi para a nuvem, então está seguro'. A conta da segurança é dividida, e a divisão muda conforme o que você aluga: a máquina crua, uma plataforma pronta ou um programa pronto. Governança é o combinado escrito que evita que cada equipe configure de um jeito.",
+    mundoReal:[
+      "Vazamentos de pastas guardadas em armazenamento de objetos (o 'pen drive gigante' alugado na nuvem) quase sempre nascem de configuração do cliente, não de invasão do provedor: a pasta ficou aberta ao público. Empresas de varejo, de telefonia e órgãos públicos já apareceram no noticiário por isso.",
+      "Em serviços de e-mail prontos, como o Microsoft 365 (conjunto de e-mail e documentos por assinatura da Microsoft), o provedor mantém os servidores no ar, mas é o cliente quem decide quem lê cada caixa de entrada e quem precisa de segunda etapa de login."
+    ],
+    ferramentas:[
+      "Modelo de responsabilidade compartilhada publicado por cada provedor: a Amazon Web Services (a nuvem da Amazon), o Google Cloud (a nuvem do Google) e o Microsoft Azure (a nuvem da Microsoft) listam, item por item, quem protege o quê.",
+      "Políticas de identidade e acesso, o IAM (do inglês Identity and Access Management; em português, Gerenciamento de Identidade e Acesso): a lista de quem pode fazer o quê dentro da sua conta.",
+      "Trilha de auditoria: o caderno automático que anota cada ação feita na conta, usado para conferir se as regras estão sendo cumpridas."
+    ],
+    dicionario:[
+      {termo:"Governança", def:"As regras escritas de quem decide, quem aprova e quem responde por cada coisa — mais a verificação de que estão sendo seguidas."},
+      {termo:"Responsabilidade compartilhada", def:"A divisão das tarefas de segurança entre o provedor da nuvem e o cliente."},
+      {termo:"IaaS (Infrastructure as a Service; Infraestrutura como Serviço)", def:"Você aluga a máquina virtual e cuida do sistema e dos programas instalados nela."},
+      {termo:"PaaS (Platform as a Service; Plataforma como Serviço)", def:"Você entrega o programa ou usa um banco pronto; o provedor cuida da máquina e do sistema."},
+      {termo:"SaaS (Software as a Service; Software como Serviço)", def:"Você usa o programa pronto pela internet, sem instalar nada."},
+      {termo:"IAM (Identity and Access Management; Gerenciamento de Identidade e Acesso)", def:"O cadastro de permissões: quem entra e o que cada um pode fazer."},
+      {termo:"Data center", def:"O galpão cheio de servidores, com energia e refrigeração, onde a nuvem fisicamente mora."}
+    ],
+    conceitos:[
+      {titulo:"Quanto mais pronto o serviço, menos tarefas suas — menos uma",
+       texto:"Na máquina alugada (IaaS) você aplica as correções do sistema operacional. No banco gerenciado (PaaS) o provedor corrige o motor do banco. No programa pronto (SaaS) quase tudo é do provedor. O que nunca sai da sua mão em nenhum dos três: as contas, as permissões e os dados.",
+       analogia:"💡 Apartamento vazio: você leva até a geladeira. Mobiliado: a geladeira é do dono. Hotel: só a sua mala é sua. Em todos, a chave do quarto continua sendo problema seu.",
+       exemploReal:"O Amazon EC2 (serviço da Amazon que aluga computadores virtuais) entrega a máquina; corrigir o sistema dentro dela é do cliente. Já o Amazon RDS (serviço da Amazon que entrega um banco de dados administrado) recebe as correções do motor pelo próprio provedor."},
+      {titulo:"Governança é regra escrita, não boa intenção",
+       texto:"Governança diz quem pode criar servidores, quem aprova gastos, em quais regiões os dados podem ficar e como isso é conferido. Sem regra escrita, cada equipe configura de um jeito e a conta vira um depósito de exceções. Com regra escrita e verificação automática, o erro aparece antes do incidente.",
+       analogia:"💡 É o regimento do condomínio: sem ele, cada morador decide onde guardar o botijão de gás.",
+       exemploReal:"Empresas que usam o Microsoft Azure (a nuvem da Microsoft) aplicam políticas que bloqueiam a criação de servidores fora das regiões permitidas, para respeitar a LGPD (Lei Geral de Proteção de Dados, a lei brasileira que regula o uso de dados pessoais)."}
+    ],
+    roteiroDemo:{
+      passo0:"Antes de clicar, preveja: em um banco de dados gerenciado pelo provedor, quem aplica a correção de segurança do motor do banco — você ou o provedor?",
+      passos:[
+        {acao:"Leia a situação 1 e clique em uma das três respostas.", ve:"A errada fica vermelha com ✗ e um quadro explica o motivo; as outras continuam clicáveis.", significa:"Errar aqui é de graça; errar na configuração da conta custa caro."},
+        {acao:"Acerte a situação 1 e clique em 'Próxima situação' para chegar ao banco gerenciado.", ve:"O quadro verde ✅ mostra por que a tarefa passou para o provedor.", significa:"Serviço gerenciado transfere tarefas, mas não transfere a responsabilidade pelos dados."},
+        {acao:"Resolva a situação 3, sobre contas e permissões, e leia o resumo final.", ve:"A regra que vale para os três modelos aparece no fim.", significa:"Identidade e dados nunca saem da sua mão."}
+      ]
+    },
+    demo:{
+      tipo:"cenario", titulo:"Quem cuida de quê? Três situações reais",
+      config:{
+        rodadas:[
+          {situacao:"Uma loja virtual alugou computadores virtuais no Amazon EC2 (serviço da Amazon que aluga máquinas virtuais). É o modelo IaaS: você recebe a máquina crua. Faz meses que ninguém aplica correções no sistema operacional dela.",
+           pergunta:"De quem é a tarefa de aplicar essas correções?",
+           opcoes:[
+             {t:"Do provedor, que cuida de tudo", ok:false, fb:"O provedor cuida do prédio físico e da camada que fatia o servidor em máquinas virtuais. O sistema dentro da máquina alugada é do cliente — máquinas alugadas desatualizadas já foram porta de entrada em invasões reais."},
+             {t:"Da equipe da loja, que administra a máquina", ok:true, fb:"Na máquina alugada o cliente administra o sistema. É o combinado do apartamento vazio: o dono cuida da estrutura, o inquilino cuida do que colocou dentro."},
+             {t:"Do fabricante do sistema, automaticamente", ok:false, fb:"O fabricante publica a correção, mas alguém precisa instalá-la. Na máquina alugada esse alguém é o cliente; sem isso a correção fica na prateleira."}
+           ]},
+          {situacao:"A mesma loja migrou o banco de dados para o Amazon RDS (serviço da Amazon que entrega um banco administrado). É o modelo PaaS: o provedor cuida da máquina e do motor do banco.",
+           pergunta:"Quem aplica a correção de segurança do motor do banco?",
+           opcoes:[
+             {t:"A equipe da loja, como antes", ok:false, fb:"No banco gerenciado o cliente não tem acesso ao sistema onde o motor roda. Tentar corrigir por conta própria nem é possível: essa tarefa mudou de lado."},
+             {t:"O provedor, dentro da janela de manutenção combinada", ok:true, fb:"Serviço gerenciado inclui a manutenção do motor. Ainda assim, quem escolhe a janela e testa o impacto no aplicativo é o cliente."},
+             {t:"Ninguém: banco gerenciado não precisa de correção", ok:false, fb:"Todo software precisa de correção. A diferença é quem aplica, não se aplica. Sem correção, falhas conhecidas continuam exploráveis."}
+           ]},
+          {situacao:"A loja também usa o Microsoft 365 (e-mail e documentos por assinatura da Microsoft) para a equipe administrativa. É o modelo SaaS: o programa já vem pronto.",
+           pergunta:"Quem decide quem pode ler cada caixa de entrada e quem precisa de segunda etapa de login?",
+           opcoes:[
+             {t:"O provedor, que administra o serviço", ok:false, fb:"O provedor mantém o serviço no ar, mas não conhece o organograma da sua empresa. Ele não pode decidir quem vê o quê."},
+             {t:"O cliente, sempre, em qualquer modelo", ok:true, fb:"Identidade, permissões e dados são do cliente em IaaS, PaaS e SaaS. Em incidentes reais com e-mail corporativo, o problema costuma ser conta sem segunda etapa, não o servidor do provedor."},
+             {t:"Cada funcionário, escolhendo o que quiser", ok:false, fb:"Sem regra central, cada pessoa libera o que acha melhor e a empresa perde o controle. Governança existe justamente para evitar isso."}
+           ]}
+        ],
+        resumo:"Regra de bolso: o provedor protege a nuvem; você protege o que coloca dentro dela. Contas, permissões e dados são sempre seus. Exemplo real: pastas públicas em armazenamento de objetos expuseram cadastros de clientes de empresas reais — a falha foi de configuração do cliente, não do provedor."
+      }
+    },
+    termosQuiz:"IaaS = alugar a máquina virtual crua e cuidar do sistema · PaaS = usar uma plataforma pronta, como um banco administrado · SaaS = usar o programa pronto pela internet · IAM = a lista de quem pode fazer o quê na conta · governança = regras escritas de quem decide, quem aprova e como se confere · data center = o galpão de servidores do provedor.",
+    quiz:[
+      {q:"Uma equipe alugou máquinas virtuais cruas (IaaS) e não aplica correções no sistema há meses. De quem é essa tarefa?",
+       alts:[
+         {t:"Do provedor da nuvem", ok:false, fb:"O provedor cuida do hardware e da virtualização (a tecnologia que fatia um servidor físico em várias máquinas). O sistema dentro da máquina alugada é do cliente."},
+         {t:"Da equipe que alugou a máquina", ok:true, fb:"Correto: na máquina crua alugada, o cliente administra o sistema, como o inquilino de um apartamento vazio cuida do que colocou dentro."},
+         {t:"Do fabricante do sistema, sozinho", ok:false, fb:"O fabricante publica a correção; instalar é tarefa de quem administra a máquina. Correção publicada e não instalada não protege ninguém."}
+       ]},
+      {q:"Em um serviço de e-mail pronto (SaaS), qual tarefa continua sempre com o cliente?",
+       alts:[
+         {t:"Manter os servidores de e-mail no ar", ok:false, fb:"Energia, refrigeração e hardware do data center (o galpão de servidores) são do provedor; o cliente nem tem acesso físico a eles."},
+         {t:"Decidir quem pode ler cada caixa de entrada", ok:true, fb:"Permissões e contas são do cliente em qualquer modelo. É a chave do quarto do hotel: o hotel cuida do prédio, você cuida da chave."},
+         {t:"Trocar discos que falharem", ok:false, fb:"Troca de disco é manutenção física, responsabilidade do provedor. O cliente não escolhe nem toca no hardware."}
+       ]},
+      {q:"Qual frase descreve melhor governança em nuvem?",
+       alts:[
+         {t:"Um antivírus instalado nos servidores", ok:false, fb:"Antivírus é uma ferramenta técnica. Governança é o combinado escrito sobre decisões e verificações; usa ferramentas, mas não se resume a uma delas."},
+         {t:"Regras escritas de quem decide, quem aprova e como se confere", ok:true, fb:"Isso mesmo: regra clara mais verificação automática evita que cada equipe configure de um jeito, como um regimento de condomínio."},
+         {t:"O contrato de preço com o provedor", ok:false, fb:"O contrato trata de custo e níveis de serviço. Governança trata das decisões do dia a dia e de quem responde por elas."}
+       ]}
+    ],
+    aprofundar:[
+      {rotulo:"🔎 Busca no Google (português)", url:"https://www.google.com/search?hl=pt-BR&q=responsabilidade+compartilhada+em+nuvem"},
+      {rotulo:"🎓 Pesquisa científica (Google Scholar, português)", url:"https://scholar.google.com/scholar?hl=pt-BR&q=responsabilidade+compartilhada+em+nuvem"},
+      {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)", url:"https://www.youtube.com/results?search_query=responsabilidade+compartilhada+em+nuvem+aula"}
+    ],
+    mitoOuVerdade:{afirmacao:"Migrar para a nuvem transfere toda a responsabilidade de segurança para o provedor.", verdade:false,
+      explicacao:"Mito. O provedor protege a infraestrutura; identidade, permissões e dados continuam com o cliente. Vazamentos de pastas públicas em armazenamento de objetos (as pastas de arquivos alugadas na nuvem) são erros de configuração do cliente, não falhas do provedor."}
+  },
+
+  {
+    id:"aba-2", rotulo:"Criptografia", estudoProprio:false,
+    titulo:"Proteção de dados e criptografia",
+    missao:"Explicar os três momentos em que o dado precisa ser embaralhado e dizer onde a chave deve ficar guardada.",
+    narrativa:"Trancar o documento na gaveta só funciona se a chave não ficar pendurada na fechadura. Na nuvem é igual: embaralhar o dado (cifrar) protege, mas o valor real está em quem guarda a chave e em quais momentos o embaralhamento acontece — parado no disco, viajando pela internet ou aberto na memória para ser usado.",
+    mundoReal:[
+      "O WhatsApp (aplicativo de mensagens da Meta) embaralha a conversa no seu celular e só desembaralha no celular de quem recebe: nem a empresa consegue ler o conteúdo no meio do caminho. Isso é criptografia de ponta a ponta.",
+      "Bancos e lojas virtuais mostram um cadeado no navegador porque a página viaja por um túnel embaralhado. Sem esse túnel, alguém no mesmo Wi-Fi de aeroporto conseguiria ler o que passa."
+    ],
+    ferramentas:[
+      "Cofre de chaves, como o AWS KMS (do inglês Key Management Service; em português, Serviço de Gerenciamento de Chaves da Amazon): guarda as chaves separadas dos dados e registra cada uso.",
+      "Criptografia de disco e de banco ligada por configuração no próprio provedor: um clique que embaralha tudo o que for gravado dali em diante."
+    ],
+    dicionario:[
+      {termo:"Cifrar", def:"Embaralhar o dado com uma chave, de modo que só quem tem a chave consegue desembaralhar."},
+      {termo:"AES (Advanced Encryption Standard; Padrão de Criptografia Avançada)", def:"O método de embaralhamento mais usado no mundo; a mesma chave embaralha e desembaralha."},
+      {termo:"TLS (Transport Layer Security; Segurança da Camada de Transporte)", def:"O túnel embaralhado que protege o dado enquanto ele viaja entre o seu aparelho e o servidor."},
+      {termo:"Chave pública e chave privada", def:"Um par em que uma tranca e a outra abre: você distribui a que tranca e guarda a que abre."},
+      {termo:"Hash (carimbo digital)", def:"Um resumo curto e de tamanho fixo do arquivo; se um bit muda, o carimbo muda."},
+      {termo:"KMS (Key Management Service; Serviço de Gerenciamento de Chaves)", def:"O cofre que guarda as chaves e anota quem usou cada uma."},
+      {termo:"Ponta a ponta", def:"Só os aparelhos de quem conversa têm as chaves; o serviço no meio transporta sem conseguir ler."}
+    ],
+    conceitos:[
+      {titulo:"Três momentos, três cuidados diferentes",
+       texto:"O dado fica parado no disco (em repouso), viaja pela rede (em trânsito) e é aberto na memória para ser processado (em uso). Cifrar o disco protege o repouso; o túnel embaralhado protege o trânsito; o uso é o momento mais difícil, porque o dado precisa estar legível para o programa trabalhar.",
+       analogia:"💡 Documento no cofre, documento no carro-forte e documento aberto na mesa: cada momento pede um cuidado diferente.",
+       exemploReal:"O Google Cloud (a nuvem do Google) embaralha por padrão o que é gravado nos discos; o navegador usa o túnel embaralhado no caminho; e o cálculo acontece na memória, o ponto mais exposto dos três."},
+      {titulo:"A chave vale mais que o cadeado",
+       texto:"Embaralhar com a chave guardada junto do dado é trancar a porta e deixar a chave na maçaneta. Por isso as chaves ficam em um cofre separado, com registro de cada uso e permissão para poucas pessoas. Rotação periódica da chave limita o estrago se ela vazar.",
+       analogia:"💡 Cadeado de bicicleta de nada adianta se a chave fica colada no quadro com fita adesiva.",
+       exemploReal:"Vazamentos reais envolveram chaves de acesso publicadas sem querer em repositórios públicos de código, como o GitHub (site onde equipes guardam e compartilham código): quem achou a chave levou junto o acesso aos dados."}
+    ],
+    roteiroDemo:{
+      passo0:"Antes de clicar, preveja: se o arquivo estiver embaralhado no disco, mas a chave estiver guardada dentro da mesma pasta, quem copiar a pasta inteira consegue ler o conteúdo?",
+      passos:[
+        {acao:"Clique em 'Embaralhar o arquivo gravado' e observe as três janelas de quem olha o dado.", ve:"A janela de quem copia o disco passa a mostrar símbolos embaralhados.", significa:"Cifrar em repouso protege contra cópia do disco, não contra quem espia a rede."},
+        {acao:"Ligue o túnel de transporte e depois desligue a opção de chave no cofre.", ve:"A janela de quem copia o disco volta a mostrar o texto legível, mesmo com o arquivo embaralhado.", significa:"Chave junto do dado anula a proteção: é a chave na maçaneta."},
+        {acao:"Gere o carimbo de integridade e edite o texto do arquivo no campo acima.", ve:"O carimbo muda por completo quando o texto muda.", significa:"O carimbo não esconde nada: ele denuncia alteração."}
+      ]
+    },
+    demo:{
+      tipo:"cripto", titulo:"O caminho do arquivo e os três olhares",
+      config:{
+        mensagem:"folha-de-pagamento.csv | CPF 123.456.789-00 | saldo R$ 4.500,00",
+        rotulos:{repouso:"🔐 Embaralhar o arquivo gravado (AES)", transito:"🔒 Enviar pelo túnel (TLS)", cofre:"🗝️ Guardar a chave no cofre (KMS)", carimbo:"🧾 Gerar carimbo de integridade (hash)"},
+        exemplos:{
+          repouso:"Exemplo real: provedores como o Google Cloud (a nuvem do Google) embaralham por padrão os discos; se alguém levar o disco físico, leva símbolos, não dados.",
+          transito:"Exemplo real: o cadeado do navegador em bancos e lojas indica o túnel embaralhado; sem ele, o mesmo Wi-Fi de aeroporto entrega sua senha a quem estiver escutando.",
+          cofre:"Exemplo real: chaves de acesso publicadas por engano em repositórios públicos de código, como o GitHub (site de compartilhamento de código), já expuseram dados de empresas.",
+          carimbo:"Exemplo real: sites de download publicam o carimbo do instalador para você conferir se o arquivo chegou sem alteração."
+        },
+        observa:[
+          "Cada janela mostra o que uma pessoa diferente enxerga: o aplicativo autorizado, quem espia a rede e quem copia o disco.",
+          "Embaralhar o disco não muda o que aparece na janela da rede: são momentos diferentes.",
+          "Com a chave fora do cofre, o embaralhamento do disco deixa de valer para quem copia a pasta."
+        ]
+      },
+      legenda:[
+        "AES = método de embaralhamento com uma única chave (a mesma tranca e abre).",
+        "TLS = túnel embaralhado por onde o dado viaja.",
+        "KMS = cofre que guarda as chaves longe dos dados.",
+        "Sequências como '66 6f 6c' = o texto virado em símbolos embaralhados; cada par representa um caractere.",
+        "Carimbo (hash) = resumo curto do arquivo, usado para perceber alteração."
+      ]
+    },
+    termosQuiz:"Cifrar = embaralhar com uma chave · AES = o método de embaralhamento mais usado, com a mesma chave para trancar e abrir · TLS = túnel embaralhado do caminho · KMS = cofre que guarda as chaves · hash (carimbo digital) = resumo curto que muda se o arquivo mudar · ponta a ponta = só os aparelhos das pessoas têm as chaves.",
+    quiz:[
+      {q:"Uma pasta está embaralhada no disco, mas a chave foi gravada em um arquivo dentro da mesma pasta. O que acontece se alguém copiar a pasta inteira?",
+       alts:[
+         {t:"Não consegue ler nada", ok:false, fb:"O embaralhamento é reversível para quem tem a chave — e a chave foi junto na cópia. Cadeado com a chave na maçaneta não protege."},
+         {t:"Consegue ler, porque levou o dado e a chave juntos", ok:true, fb:"Por isso as chaves ficam em um cofre separado (KMS), com registro de cada uso e acesso restrito a poucas pessoas."},
+         {t:"Consegue ler só metade dos arquivos", ok:false, fb:"Não existe meia proteção: com a chave certa, todo o conteúdo embaralhado com ela é revelado."}
+       ]},
+      {q:"Qual proteção atua enquanto o dado viaja do celular até o servidor?",
+       alts:[
+         {t:"O túnel embaralhado da conexão (TLS)", ok:true, fb:"É o carro-forte do caminho. O cadeado do navegador indica que esse túnel está ativo entre você e o servidor."},
+         {t:"A criptografia do disco do servidor", ok:false, fb:"Ela protege o dado depois que chega e é gravado. Durante o caminho, quem protege é o túnel embaralhado."},
+         {t:"A cópia de segurança diária", ok:false, fb:"Cópia de segurança serve para recuperar depois de um problema; não esconde nada de quem espia o caminho."}
+       ]},
+      {q:"Para que serve o carimbo digital (hash) de um arquivo?",
+       alts:[
+         {t:"Para esconder o conteúdo", ok:false, fb:"Esconder é papel do embaralhamento com chave. O carimbo não esconde: ele denuncia alteração."},
+         {t:"Para perceber se o arquivo foi alterado", ok:true, fb:"Se um bit muda, o carimbo muda inteiro. É assim que sites de download permitem conferir se o instalador chegou íntegro."},
+         {t:"Para comprimir e economizar espaço", ok:false, fb:"Compressão é outra técnica. O carimbo tem tamanho fixo e não permite reconstruir o arquivo."}
+       ]}
+    ],
+    aprofundar:[
+      {rotulo:"🔎 Busca no Google (português)", url:"https://www.google.com/search?hl=pt-BR&q=criptografia+de+dados+em+nuvem"},
+      {rotulo:"🎓 Pesquisa científica (Google Scholar, português)", url:"https://scholar.google.com/scholar?hl=pt-BR&q=criptografia+de+dados+em+nuvem"},
+      {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)", url:"https://www.youtube.com/results?search_query=criptografia+de+dados+em+nuvem+aula"}
+    ],
+    mitoOuVerdade:{afirmacao:"Na criptografia de ponta a ponta, a empresa do aplicativo consegue ler suas mensagens se precisar.", verdade:false,
+      explicacao:"Mito. No ponta a ponta as chaves ficam nos aparelhos de quem conversa; o serviço no meio só transporta o embaralhado. É o modelo do WhatsApp (aplicativo de mensagens da Meta). Atenção: a cópia de segurança guardada fora do aparelho pode não ter a mesma proteção."}
+  },
+
+  {
+    id:"aba-3", rotulo:"Bancos e arquivos", estudoProprio:false,
+    titulo:"Segurança de bancos de dados e armazenamento",
+    missao:"Identificar as três configurações que mais evitam vazamento e perda de dados: quem pode abrir, embaralhamento do que está gravado e cópia testada.",
+    narrativa:"O dado mora em dois lugares: nas pastas de arquivos (armazenamento de objetos) e nas tabelas do banco de dados. Cada um tem suas portas. A maior parte dos incidentes não vem de um invasor genial, e sim de porta deixada aberta, banco exposto na internet e cópia de segurança que nunca foi restaurada para ver se funciona.",
+    mundoReal:[
+      "Pastas públicas em armazenamento de objetos, como o Amazon S3 (do inglês Simple Storage Service; em português, Serviço de Armazenamento Simples da Amazon), já expuseram cadastros de clientes de empresas de varejo e telefonia: qualquer pessoa com o endereço do arquivo conseguia baixar.",
+      "Ataques de resgate, o ransomware (programa que embaralha seus arquivos e cobra para devolver a chave), atingem hospitais e prefeituras. Quem tem cópia isolada e testada volta ao ar sem pagar; quem não tem, negocia com o criminoso."
+    ],
+    ferramentas:[
+      "Políticas de acesso por pasta e por tabela: a lista de quem pode ler, gravar ou apagar cada coisa.",
+      "Versionamento de objetos (guardar as versões antigas de cada arquivo) e cópia automática com teste de restauração.",
+      "Banco de dados em rede privada, sem endereço público na internet."
+    ],
+    dicionario:[
+      {termo:"Bucket (pasta de objetos)", def:"A pasta gigante alugada na nuvem onde ficam arquivos; cada arquivo tem um endereço próprio."},
+      {termo:"Banco gerenciado", def:"Serviço em que o provedor instala, corrige e faz a manutenção do motor do banco; você cuida das tabelas e das permissões."},
+      {termo:"Versionamento", def:"Guardar as versões anteriores do arquivo, permitindo voltar atrás depois de uma sobrescrita ou apagada."},
+      {termo:"Backup (cópia de segurança)", def:"Cópia guardada separada, feita para recuperar depois de um problema."},
+      {termo:"Réplica", def:"Cópia viva sincronizada para o serviço continuar no ar; ela copia também os erros e apagadas."},
+      {termo:"Ransomware (programa de resgate)", def:"Praga que embaralha seus arquivos e cobra pela chave de volta."},
+      {termo:"Restauração testada", def:"Ensaio periódico de trazer a cópia de volta e conferir se os dados realmente voltam."}
+    ],
+    conceitos:[
+      {titulo:"A porta aberta é o erro mais comum",
+       texto:"Deixar a pasta pública significa que qualquer pessoa com o endereço baixa o arquivo, sem senha. O endereço costuma vazar em páginas, mensagens e sistemas de busca. O banco com endereço público na internet recebe tentativas de senha o dia inteiro. Fechar ao público e colocar o banco em rede privada derruba a maior parte do risco.",
+       analogia:"💡 É a diferença entre deixar a pasta de documentos na recepção da empresa e guardá-la na sala que só abre com crachá.",
+       exemploReal:"Vazamentos de pastas públicas no Amazon S3 (armazenamento de arquivos da Amazon) atingiram empresas de vários setores; o provedor não foi invadido — a permissão estava liberada pelo cliente."},
+      {titulo:"Cópia que nunca foi restaurada é aposta",
+       texto:"Réplica não é cópia de segurança: se alguém apaga a tabela, a réplica apaga junto. Cópia boa é separada, tem versões e é restaurada em ensaio periódico. Só o ensaio revela problemas como arquivo corrompido, permissão faltando ou tempo de recuperação maior do que o negócio aguenta.",
+       analogia:"💡 É o estepe do carro: só descobrir se está murcho na hora do furo é tarde demais.",
+       exemploReal:"Prefeituras e hospitais atacados por programa de resgate voltaram ao ar sem pagar porque tinham cópias isoladas e ensaiadas; organizações sem cópia utilizável ficaram semanas com o atendimento parado."}
+    ],
+    roteiroDemo:{
+      passo0:"Antes de clicar, preveja: com a pasta fechada ao público e o embaralhamento ligado, um endereço de arquivo que vaze em um fórum ainda entrega o conteúdo?",
+      passos:[
+        {acao:"Deixe a pasta aberta ao público e clique em 'Simular incidente'.", ve:"O quadro mostra o conteúdo entregue a quem tem o endereço, e o medidor de risco sobe.", significa:"Permissão aberta é a causa número um de vazamento em armazenamento de objetos."},
+        {acao:"Feche a pasta ao público, ligue o versionamento e simule de novo até passar pelos três incidentes.", ve:"O mesmo incidente agora termina com recuperação, e o risco cai.", significa:"Configuração muda o final da história sem trocar o provedor."},
+        {acao:"Desligue a cópia automática e simule o incidente do apagão de tabela.", ve:"Sem cópia, a réplica também perde os dados.", significa:"Réplica serve para disponibilidade; cópia serve para recuperação."}
+      ]
+    },
+    demo:{
+      tipo:"bucket", titulo:"Painel de configuração da pasta e do banco",
+      config:{
+        chaves:[
+          {id:"publico", nome:"🌐 Pasta aberta ao público", inicial:false},
+          {id:"cifra", nome:"🔐 Arquivos embaralhados no armazenamento", inicial:true},
+          {id:"versao", nome:"🕒 Versionamento dos arquivos", inicial:false},
+          {id:"backup", nome:"💾 Cópia automática diária e isolada", inicial:false},
+          {id:"privada", nome:"🧱 Banco só na rede privada", inicial:true}
+        ],
+        incidentes:[
+          {nome:"O endereço de um arquivo vazou em um fórum",
+           bom:"A pasta está fechada ao público: quem clicou recebeu 'acesso negado'. O endereço circulou, mas o conteúdo não saiu.",
+           ruim:"A pasta está aberta ao público: qualquer pessoa com o endereço baixou o arquivo. Foi assim que cadastros de clientes vazaram em casos reais com armazenamento de objetos.",
+           extra:"O banco também está com endereço público na internet, recebendo tentativas de senha de desconhecidos."},
+          {nome:"Um programa de resgate embaralhou os arquivos",
+           bom:"O versionamento e a cópia isolada permitiram voltar à versão de antes do ataque, sem pagar nada.",
+           ruim:"Sem versão antiga e sem cópia isolada, os arquivos ficaram embaralhados e a chave está com o criminoso.",
+           extra:"Hospitais e prefeituras reais já pararam o atendimento exatamente por isso."},
+          {nome:"Alguém apagou a tabela de pedidos por engano",
+           bom:"A cópia isolada foi restaurada e os pedidos voltaram. O ensaio de restauração feito antes garantiu que o procedimento funciona.",
+           ruim:"Sem cópia, não há para onde voltar: a réplica apagou junto, porque réplica copia tudo, inclusive o erro.",
+           extra:"Réplica mantém o serviço no ar; cópia devolve o que foi perdido. São coisas diferentes."}
+        ],
+        observa:[
+          "O medidor de risco soma as portas abertas: quanto mais configuração fraca, maior a chance de o incidente doer.",
+          "O mesmo incidente tem finais diferentes conforme as chaves que você liga.",
+          "Embaralhar protege o conteúdo, mas não substitui a permissão certa nem a cópia."
+        ]
+      },
+      legenda:[
+        "Pasta (bucket) = a pasta de arquivos alugada na nuvem.",
+        "Versionamento = guardar as versões antigas de cada arquivo.",
+        "Réplica = cópia viva para o serviço não parar; copia também os erros.",
+        "Medidor de risco de 0 a 100 = soma das configurações fracas, não uma probabilidade real."
+      ]
+    },
+    termosQuiz:"Bucket (pasta de objetos) = pasta de arquivos alugada na nuvem · versionamento = guardar versões antigas · backup (cópia de segurança) = cópia separada para recuperar · réplica = cópia viva que também copia erros · ransomware = praga que embaralha arquivos e cobra pela chave · rede privada = rede sem endereço público na internet.",
+    quiz:[
+      {q:"O endereço de um arquivo caiu em um fórum. Em qual configuração o conteúdo NÃO é entregue?",
+       alts:[
+         {t:"Pasta fechada ao público, com permissão por identidade", ok:true, fb:"Sem permissão, o endereço não vale nada: quem clica recebe acesso negado. É a diferença entre a recepção e a sala que abre com crachá."},
+         {t:"Pasta pública, mas com arquivos embaralhados", ok:false, fb:"Se a chave fica acessível ao próprio serviço de armazenamento para entregar o arquivo, quem baixa pode receber o conteúdo legível. Embaralhamento não substitui permissão."},
+         {t:"Pasta pública com nome de arquivo difícil de adivinhar", ok:false, fb:"Nome difícil não é senha. Endereços vazam em páginas, histórico e ferramentas de busca; segurança por obscuridade não protege."}
+       ]},
+      {q:"Por que deixar o banco de dados apenas na rede privada reduz o risco?",
+       alts:[
+         {t:"Porque ele fica mais rápido", ok:false, fb:"Pode até melhorar o caminho interno, mas o ganho de segurança é outro: menos gente consegue bater na porta do banco."},
+         {t:"Porque desconhecidos na internet não conseguem nem tentar senha", ok:true, fb:"Sem endereço público, só quem está dentro da rede privada alcança o banco. É tirar a porta da rua e colocá-la dentro do prédio."},
+         {t:"Porque a rede privada dispensa senhas", ok:false, fb:"Permissões continuam obrigatórias. Rede privada reduz quem chega, mas não substitui autenticação (a conferência de quem é você)."}
+       ]},
+      {q:"Uma tabela foi apagada por engano e a réplica apagou junto. O que salva a situação?",
+       alts:[
+         {t:"Aumentar o número de réplicas", ok:false, fb:"Mais réplicas copiam o mesmo erro mais vezes. Réplica serve para manter o serviço no ar, não para desfazer apagada."},
+         {t:"Uma cópia de segurança isolada, já testada em ensaio", ok:true, fb:"Cópia separada devolve o que foi perdido; o ensaio garante que ela realmente restaura. É conferir o estepe antes do furo do pneu."},
+         {t:"Reiniciar o servidor do banco", ok:false, fb:"Reiniciar não traz dado apagado de volta. Sem cópia, o que foi apagado continua apagado."}
+       ]}
+    ],
+    aprofundar:[
+      {rotulo:"🔎 Busca no Google (português)", url:"https://www.google.com/search?hl=pt-BR&q=seguran%C3%A7a+de+banco+de+dados+em+nuvem"},
+      {rotulo:"🎓 Pesquisa científica (Google Scholar, português)", url:"https://scholar.google.com/scholar?hl=pt-BR&q=seguran%C3%A7a+de+banco+de+dados+em+nuvem"},
+      {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)", url:"https://www.youtube.com/results?search_query=seguran%C3%A7a+de+banco+de+dados+em+nuvem+aula"}
+    ],
+    mitoOuVerdade:{afirmacao:"Ter réplica do banco de dados já resolve o problema de cópia de segurança.", verdade:false,
+      explicacao:"Mito. A réplica copia tudo em tempo real, inclusive a tabela apagada e o arquivo embaralhado pelo programa de resgate. Cópia de segurança é separada, tem versões e precisa ser restaurada em ensaio para provar que funciona."}
+  },
+
+  {
+    id:"aba-4", rotulo:"Defesa em camadas", estudoProprio:false,
+    titulo:"Arquiteturas de segurança e defesa em camadas",
+    missao:"Montar uma pilha de proteções independentes e explicar por que nenhuma delas, sozinha, segura um incidente.",
+    narrativa:"Castelo não se defende só com o portão: tem fosso, muralha, torre e cofre. Em nuvem é a mesma ideia, chamada de defesa em profundidade: várias proteções independentes, de jeito que a falha de uma não entregue tudo. Cada camada barra um tipo de ataque e nenhuma barra todos — por isso elas precisam ser diferentes entre si.",
+    mundoReal:[
+      "A Colonial Pipeline (empresa que opera um oleoduto de combustíveis nos Estados Unidos) parou a operação após um ataque de resgate que entrou por uma conta de acesso remoto sem segunda etapa de login. Uma camada faltando derrubou o serviço inteiro.",
+      "A Equifax (agência de crédito dos Estados Unidos que guarda histórico financeiro de consumidores) sofreu um vazamento enorme por uma falha já conhecida e não corrigida em um componente do site. Correção é camada de defesa, não burocracia."
+    ],
+    ferramentas:[
+      "Segunda etapa de login, o MFA (do inglês Multi-Factor Authentication; em português, Autenticação de Múltiplos Fatores): além da senha, um código do celular ou chave física.",
+      "Firewall de aplicação, o WAF (do inglês Web Application Firewall; em português, Firewall de Aplicações Web): o guarda que inspeciona o que chega nos formulários do site.",
+      "Segmentação de rede e monitoramento com alarme: separar os ambientes em pedaços e vigiar comportamento estranho."
+    ],
+    dicionario:[
+      {termo:"Defesa em profundidade", def:"Várias camadas independentes de proteção, para que a falha de uma não comprometa tudo."},
+      {termo:"MFA (Multi-Factor Authentication; Autenticação de Múltiplos Fatores)", def:"Segunda etapa para entrar: senha mais um código do celular ou chave física."},
+      {termo:"WAF (Web Application Firewall; Firewall de Aplicações Web)", def:"Filtro que examina o que chega no site e bloqueia pedidos maliciosos."},
+      {termo:"Injeção de comando (SQL injection)", def:"Truque de escrever um comando de banco dentro de um campo do formulário para o sistema executá-lo sem querer."},
+      {termo:"Segmentação de rede", def:"Dividir a rede em pedaços separados, para que um problema em um não se espalhe para todos."},
+      {termo:"Menor privilégio", def:"Cada pessoa e cada programa recebe só a permissão necessária para a sua tarefa."},
+      {termo:"Ransomware (programa de resgate)", def:"Praga que embaralha os arquivos da vítima e cobra pela chave."}
+    ],
+    conceitos:[
+      {titulo:"Camadas diferentes, porque os ataques são diferentes",
+       texto:"A segunda etapa de login barra entrada com senha vazada, mas não barra um comando malicioso escrito em um formulário. O firewall de aplicação barra esse comando, mas não barra quem já entrou com credencial válida. Embaralhar o disco protege contra furto do disco, não contra o aplicativo que lê o dado legitimamente. Por isso a pilha precisa ser variada.",
+       analogia:"💡 Cachorro, cerca e alarme: o cachorro assusta o invasor, a cerca atrasa, o alarme chama ajuda. Nenhum dos três faz o trabalho dos outros.",
+       exemploReal:"No caso da Colonial Pipeline (oleoduto de combustíveis dos Estados Unidos), a senha de uma conta de acesso remoto bastou para entrar: a segunda etapa de login estava desligada naquela conta."},
+      {titulo:"Menor privilégio limita o tamanho do estrago",
+       texto:"Se cada conta só pode fazer o necessário, uma conta comprometida alcança pouco. Rede segmentada impede que a praga pule do computador da recepção para o servidor de produção. Monitoramento não bloqueia, mas encurta o tempo entre a entrada e a descoberta — e esse tempo é o que define o tamanho do prejuízo.",
+       analogia:"💡 No hotel, o cartão do hóspede abre um quarto, não a casa de máquinas. Se o cartão for roubado, o estrago é pequeno.",
+       exemploReal:"Empresas que sofreram programa de resgate relatam que a praga se espalhou porque a rede era plana, sem separação entre estações de trabalho e servidores críticos."}
+    ],
+    roteiroDemo:{
+      passo0:"Antes de clicar, preveja: com os dados embaralhados no disco, um comando malicioso escrito no formulário do site é barrado?",
+      passos:[
+        {acao:"Escolha o ataque 'Senha vazada', deixe só o embaralhamento ligado e clique em 'Lançar ataque'.", ve:"A animação mostra o ataque atravessando camada por camada até o dado.", significa:"Embaralhar o disco não impede entrada com credencial válida."},
+        {acao:"Ligue a segunda etapa de login e lance o mesmo ataque de novo.", ve:"A animação para na primeira camada, com quadro verde.", significa:"Cada camada barra um tipo específico de ataque."},
+        {acao:"Troque para 'Comando malicioso no formulário' e teste com e sem o firewall de aplicação.", ve:"O ponto onde o ataque para muda de camada.", significa:"A pilha precisa ser variada, não apenas grande."}
+      ]
+    },
+    demo:{
+      tipo:"camadas", titulo:"O ataque atravessando as camadas",
+      config:{
+        camadas:[
+          {id:"mfa", nome:"🚪 Segunda etapa de login (MFA)", barra:["senha"], detecta:false, inicial:false,
+            txtBarra:"A senha vazada não bastou: o código do celular foi exigido. Foi essa camada que faltou no caso da Colonial Pipeline (oleoduto de combustíveis dos Estados Unidos).",
+            txtNeutra:"A segunda etapa está ligada, mas este ataque não passa pela tela de login: ele explora o formulário do site.",
+            txtOff:"Sem segunda etapa, uma senha vazada é tudo o que o invasor precisa para entrar."},
+          {id:"waf", nome:"🧱 Firewall de aplicação (WAF)", barra:["injecao"], detecta:false, inicial:false,
+            txtBarra:"O guarda dos formulários reconheceu o comando escondido e bloqueou o pedido antes de chegar ao banco.",
+            txtNeutra:"O firewall está ligado, mas este ataque não usa formulário malicioso: ele já chegou com credencial ou pela rede interna.",
+            txtOff:"Sem firewall de aplicação, o comando escrito no formulário segue direto para o banco de dados."},
+          {id:"rede", nome:"🕸️ Rede separada em pedaços (segmentação)", barra:["resgate"], detecta:false, inicial:false,
+            txtBarra:"A praga tentou pular para os servidores e encontrou a rede separada: ficou presa em um pedaço só.",
+            txtNeutra:"A segmentação está ligada e limita o alcance, mas este ataque não precisa se espalhar pela rede para causar dano.",
+            txtOff:"Com a rede inteira ligada, a praga alcança todos os servidores a partir de uma única máquina."},
+          {id:"cifra", nome:"🔐 Dados embaralhados no disco", barra:[], detecta:false, inicial:false,
+            txtBarra:"",
+            txtNeutra:"O embaralhamento protege contra furto do disco. Para o aplicativo que lê legitimamente, o dado aparece legível — por isso essa camada não barra este ataque.",
+            txtOff:"Sem embaralhamento, quem levar o disco ou a cópia do armazenamento lê tudo em texto claro."},
+          {id:"alerta", nome:"👀 Alarme de comportamento estranho", barra:[], detecta:true, inicial:false,
+            txtBarra:"",
+            txtNeutra:"O alarme percebeu o movimento estranho e avisou a equipe: não barra, mas encurta muito o tempo até a descoberta.",
+            txtOff:"Sem alarme, o invasor trabalha em silêncio; o prejuízo cresce até alguém perceber por acaso."}
+        ],
+        ataques:[
+          {id:"senha", nome:"Senha vazada", seBarrado:"A entrada foi barrada antes de alcançar qualquer dado.", sePassou:"O invasor entrou como se fosse um funcionário e leu o que a conta permitia.", exemplo:"Caso real: a Colonial Pipeline (empresa de oleoduto de combustíveis nos Estados Unidos) parou após entrada por conta de acesso remoto sem segunda etapa de login."},
+          {id:"injecao", nome:"Comando malicioso no formulário", seBarrado:"O pedido malicioso foi bloqueado antes de tocar o banco de dados.", sePassou:"O banco executou o comando escondido e entregou dados que não deveriam sair.", exemplo:"Caso real: a Equifax (agência de crédito dos Estados Unidos) sofreu vazamento por falha conhecida e não corrigida em um componente do site."},
+          {id:"resgate", nome:"Programa de resgate (ransomware)", seBarrado:"A praga ficou contida em um pedaço da rede e a operação continuou.", sePassou:"A praga alcançou os servidores e embaralhou os arquivos da operação.", exemplo:"Caso real: prefeituras e hospitais já pararam o atendimento por dias após programa de resgate se espalhar por rede sem separação."}
+        ],
+        observa:[
+          "O ataque sempre percorre as camadas na mesma ordem; o que muda é onde ele para.",
+          "Camadas ligadas que não barram aquele ataque deixam passar — e isso é normal, não é defeito.",
+          "O alarme nunca barra: ele reduz o tempo até alguém descobrir."
+        ]
+      },
+      legenda:[
+        "MFA = segunda etapa de login (senha mais código do celular).",
+        "WAF = guarda que inspeciona o que chega nos formulários do site.",
+        "🛑 = a camada barrou o ataque · ➖ = está ligada mas não barra este tipo · ⚠️ = desligada, o ataque passou · 🔔 = percebeu e avisou.",
+        "Embaralhamento no disco protege contra furto físico, não contra uso legítimo do aplicativo."
+      ]
+    },
+    termosQuiz:"MFA = segunda etapa de login, senha mais código do celular · WAF = guarda que inspeciona os formulários do site · injeção de comando (SQL injection) = comando de banco escondido em um campo do formulário · segmentação = rede dividida em pedaços separados · ransomware = praga que embaralha arquivos e cobra pela chave · defesa em profundidade = várias camadas independentes.",
+    quiz:[
+      {q:"Um funcionário teve a senha vazada. Qual camada impede que ela sozinha abra a porta?",
+       alts:[
+         {t:"A segunda etapa de login (MFA)", ok:true, fb:"Com a segunda etapa, a senha não basta: falta o código do celular. Foi exatamente essa camada que faltou na conta de acesso remoto do caso da Colonial Pipeline."},
+         {t:"O embaralhamento dos dados no disco", ok:false, fb:"O invasor entra pela porta da frente com credencial válida e o aplicativo entrega o dado legível. Embaralhamento protege contra furto do disco, não contra login válido."},
+         {t:"A cópia de segurança diária", ok:false, fb:"Cópia ajuda a recuperar depois do estrago; ela não impede a entrada de quem tem a senha."}
+       ]},
+      {q:"Alguém escreveu um comando de banco dentro de um campo do formulário (injeção de comando). Qual camada foi feita para barrar isso?",
+       alts:[
+         {t:"O firewall de aplicação (WAF)", ok:true, fb:"Ele examina o que chega no formulário e bloqueia pedidos maliciosos antes de tocarem o banco. É o guarda da portaria que confere o pacote."},
+         {t:"A segunda etapa de login", ok:false, fb:"A segunda etapa protege a entrada de contas. O comando malicioso pode chegar em uma página pública, sem login nenhum."},
+         {t:"O embaralhamento do disco", ok:false, fb:"O banco lê o dado legítimo de forma legível para o aplicativo; o comando executado dentro dessa leitura não é barrado pelo embaralhamento."}
+       ]},
+      {q:"Por que usar várias camadas diferentes em vez de reforçar uma só?",
+       alts:[
+         {t:"Porque cada camada barra um tipo de ataque e nenhuma barra todos", ok:true, fb:"Defesa em profundidade: quando uma falha, a próxima segura. Cachorro, cerca e alarme fazem trabalhos diferentes e se complementam."},
+         {t:"Porque camadas repetidas deixam o sistema mais rápido", ok:false, fb:"Camadas costumam custar algum tempo de processamento. O ganho é em segurança, não em velocidade."},
+         {t:"Porque assim dá para dispensar correções de segurança", ok:false, fb:"Correção continua sendo camada essencial: no caso da Equifax, a falha explorada já tinha correção disponível e não aplicada."}
+       ]}
+    ],
+    aprofundar:[
+      {rotulo:"🔎 Busca no Google (português)", url:"https://www.google.com/search?hl=pt-BR&q=defesa+em+profundidade+seguran%C3%A7a+em+nuvem"},
+      {rotulo:"🎓 Pesquisa científica (Google Scholar, português)", url:"https://scholar.google.com/scholar?hl=pt-BR&q=defesa+em+profundidade+seguran%C3%A7a+em+nuvem"},
+      {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)", url:"https://www.youtube.com/results?search_query=defesa+em+profundidade+seguran%C3%A7a+em+nuvem+aula"}
+    ],
+    mitoOuVerdade:{afirmacao:"Se os dados estão embaralhados no disco, um invasor que entre com senha válida não consegue lê-los.", verdade:false,
+      explicacao:"Mito. O aplicativo autorizado lê o dado de forma legível; quem entra com credencial válida recebe essa mesma leitura. O embaralhamento em repouso protege contra furto do disco ou cópia do armazenamento — por isso ele é uma camada, não a solução inteira."}
+  },
+
+  {
+    id:"aba-5", rotulo:"Observabilidade", estudoProprio:false,
+    titulo:"Monitoramento de performance e observabilidade",
+    missao:"Distinguir monitoramento de observabilidade, escolher a pista certa para cada pergunta e explicar o que fazer quando o orçamento de erro acaba.",
+    narrativa:"O painel do carro avisa que o óleo está baixo; para descobrir de onde vem o vazamento, é preciso abrir o capô. Monitoramento é o painel: mostra que algo saiu do normal. Observabilidade é conseguir abrir o capô e entender por quê, usando três tipos de pista: medidas, registros e rastros.",
+    mundoReal:[
+      "Quando um serviço de vídeo como a Netflix (empresa de assinatura de filmes e séries) fica lento em uma região, as equipes comparam medidas por região, leem registros de erro e seguem o rastro de um pedido específico até achar o componente culpado.",
+      "O Google popularizou a prática do SRE (do inglês Site Reliability Engineering; em português, Engenharia de Confiabilidade de Sites): definir meta de disponibilidade e gastar um orçamento de erro controlado, em vez de perseguir cem por cento impossível."
+    ],
+    ferramentas:[
+      "Prometheus (programa livre que coleta e guarda medidas dos sistemas) e Grafana (programa livre que desenha os painéis com essas medidas).",
+      "Datadog (serviço pago de monitoramento que reúne medidas, registros e rastros em um lugar só).",
+      "Alarmes com limite combinado: avisar a equipe quando a lentidão ou o erro passam do ponto aceito."
+    ],
+    dicionario:[
+      {termo:"Monitoramento", def:"Acompanhar sinais conhecidos para saber que algo saiu do normal."},
+      {termo:"Observabilidade", def:"Conseguir explicar por que o sistema se comportou assim, usando as pistas que ele deixa."},
+      {termo:"Métrica (medida)", def:"Número acompanhado ao longo do tempo, como pedidos por minuto ou tempo de resposta."},
+      {termo:"Registro (log)", def:"Anotação de um acontecimento, com hora e detalhes, escrita pelo próprio programa."},
+      {termo:"Rastro (trace)", def:"O caminho completo de um pedido, mostrando por onde passou e quanto tempo levou em cada etapa."},
+      {termo:"Latência p95", def:"O tempo de resposta que 95% dos pedidos conseguem igualar ou melhorar; mostra a experiência da maioria, incluindo os mais lentos."},
+      {termo:"SLO (Service Level Objective; Objetivo de Nível de Serviço)", def:"A meta interna de disponibilidade, por exemplo 99,9% do mês no ar."},
+      {termo:"Orçamento de erro", def:"Quanto de indisponibilidade ainda pode ser gasto no mês sem furar a meta."}
+    ],
+    conceitos:[
+      {titulo:"Três pistas, três perguntas diferentes",
+       texto:"A medida responde 'o quanto e desde quando'. O registro responde 'o que exatamente aconteceu naquele momento'. O rastro responde 'por onde esse pedido andou e onde travou'. Sem as três, a equipe fica discutindo opinião em vez de olhar evidência.",
+       analogia:"💡 Investigar um acidente: a medida é a velocidade registrada, o registro é o depoimento, o rastro é o vídeo do trajeto quarteirão por quarteirão.",
+       exemploReal:"Equipes que usam o Grafana (programa que desenha painéis) com o Prometheus (programa que coleta medidas) costumam saltar do pico no gráfico para o registro da mesma hora e depois para o rastro do pedido lento."},
+      {titulo:"Meta de disponibilidade e orçamento de erro",
+       texto:"Disponibilidade = (tempo no ar ÷ tempo total) × 100. Em palavras: das horas do mês, quantas por cento o serviço ficou utilizável. Uma meta de 99,9% ao mês permite cerca de 43 minutos fora do ar. Esse tempo é o orçamento de erro: quando acaba, a equipe para de lançar novidade e trabalha em estabilidade.",
+       analogia:"💡 É a mesada: dá para gastar em coisas arriscadas até acabar; depois disso, só o essencial.",
+       exemploReal:"A prática veio do SRE do Google (Site Reliability Engineering; Engenharia de Confiabilidade de Sites, o jeito do Google de operar serviços com metas): congelar novidades quando o orçamento acaba, em vez de discutir se o erro foi grave."}
+    ],
+    roteiroDemo:{
+      passo0:"Antes de clicar, preveja: ao dobrar o número de usuários sem aumentar servidores, a lentidão cresce na mesma proporção ou muito mais rápido?",
+      passos:[
+        {acao:"Aumente o controle de usuários simultâneos até passar da capacidade e observe as três medidas.", ve:"A lentidão e a taxa de erro sobem muito mais rápido do que a carga.", significa:"Sistema saturado não degrada em linha reta: ele desaba."},
+        {acao:"Clique em 'Avançar 5 minutos' várias vezes com erro acima do limite.", ve:"O orçamento de erro do mês vai sendo consumido até zerar.", significa:"Pequenos períodos ruins somam e furam a meta do mês."},
+        {acao:"Use os três botões de investigação: medidas, registros e rastros.", ve:"Cada um responde uma pergunta diferente sobre o mesmo problema.", significa:"Observabilidade é escolher a pista certa, não acumular gráficos."}
+      ]
+    },
+    demo:{
+      tipo:"observa", titulo:"Sala de monitoramento ao vivo",
+      config:{
+        orcamentoMin:43, meta:"99,9%",
+        tabela:[
+          {nivel:"99%", tempo:"cerca de 7 h 12 min por mês"},
+          {nivel:"99,9%", tempo:"cerca de 43 minutos por mês"},
+          {nivel:"99,99%", tempo:"cerca de 4 minutos e 19 segundos por mês"}
+        ],
+        inspecoes:{
+          metricas:"A medida mostra o quadro geral e desde quando o problema começou. Exemplo real: painéis do Grafana (programa livre que desenha gráficos) com dados do Prometheus (programa livre que coleta medidas).",
+          registros:"O registro mostra a mensagem exata escrita pelo programa na hora da falha, como 'tempo esgotado ao consultar o banco'. Exemplo real: equipes leem registros no Datadog (serviço pago que reúne medidas, registros e rastros).",
+          rastros:"O rastro segue um pedido específico e mostra em qual etapa ele travou: no site, no banco ou no serviço de pagamento. Exemplo real: é assim que a Netflix (empresa de assinatura de vídeo) descobre qual componente interno ficou lento."
+        },
+        observa:[
+          "Compare a carga com a capacidade: a partir de certa ocupação, erro e lentidão disparam.",
+          "O orçamento de erro é mensal e não se renova no meio do mês: cada período ruim gasta um pedaço.",
+          "Cada botão de investigação responde uma pergunta diferente; nenhum substitui os outros."
+        ]
+      },
+      legenda:[
+        "Latência p95 (ms) = tempo de resposta que 95% dos pedidos igualam ou melhoram; ms = milésimos de segundo.",
+        "Taxa de erro (%) = porcentagem de pedidos que falharam.",
+        "Saturação (%) = quanto da capacidade instalada está ocupada.",
+        "Orçamento de erro (min) = minutos fora do ar ainda permitidos no mês para cumprir a meta de 99,9%.",
+        "Disponibilidade = (tempo no ar ÷ tempo total) × 100. Em palavras: a fatia do mês em que o serviço esteve utilizável."
+      ]
+    },
+    termosQuiz:"Métrica (medida) = número acompanhado no tempo · registro (log) = anotação do que aconteceu, com hora · rastro (trace) = caminho completo de um pedido · latência p95 = tempo que 95% dos pedidos igualam ou melhoram · SLO = meta interna de disponibilidade · orçamento de erro = minutos fora do ar ainda permitidos no mês.",
+    quiz:[
+      {q:"Um cliente reclama que o pedido dele demorou muito. Qual pista mostra por onde esse pedido passou e onde travou?",
+       alts:[
+         {t:"O rastro (trace) daquele pedido", ok:true, fb:"O rastro é o vídeo do trajeto: mostra cada etapa e o tempo gasto nela, apontando exatamente onde travou."},
+         {t:"A média de pedidos por minuto", ok:false, fb:"Essa medida mostra o volume geral, não o caminho de um pedido específico. Ela diz 'quanto', não 'por onde'."},
+         {t:"O número de servidores ligados", ok:false, fb:"Saber quantos servidores estão ligados não revela em qual etapa aquele pedido perdeu tempo."}
+       ]},
+      {q:"O painel mostra latência p95 de 900 ms. O que isso quer dizer?",
+       alts:[
+         {t:"95% dos pedidos respondem em até 900 ms", ok:true, fb:"Isso: p95 é o tempo que 95% dos pedidos igualam ou melhoram; os 5% restantes são ainda mais lentos. Ele mostra a experiência da maioria sem esconder os casos ruins."},
+         {t:"Todos os pedidos demoram exatamente 900 ms", ok:false, fb:"Não é valor fixo nem média: é um ponto de corte. Parte responde bem mais rápido e uma pequena parte responde mais devagar."},
+         {t:"O servidor tem 900 ms de memória disponível", ok:false, fb:"Milésimos de segundo medem tempo de resposta, não memória. Memória se mede em unidades de armazenamento."}
+       ]},
+      {q:"O orçamento de erro do mês acabou e ainda faltam duas semanas. Qual atitude combina com a prática de confiabilidade?",
+       alts:[
+         {t:"Segurar novidades e priorizar estabilidade até o mês virar", ok:true, fb:"É a prática do SRE do Google (Engenharia de Confiabilidade de Sites): o orçamento é a mesada; acabou, só o essencial até renovar."},
+         {t:"Aumentar a meta para 100% e seguir lançando", ok:false, fb:"Meta de cem por cento não é realista e não devolve o tempo já gasto. Mudar o número no papel não muda a experiência de quem usa."},
+         {t:"Desligar os alarmes para não gerar alertas", ok:false, fb:"Desligar o alarme apaga o aviso, não o problema. É tirar a lâmpada do painel do carro para não ver o óleo baixo."}
+       ]}
+    ],
+    aprofundar:[
+      {rotulo:"🔎 Busca no Google (português)", url:"https://www.google.com/search?hl=pt-BR&q=observabilidade+e+monitoramento+em+nuvem"},
+      {rotulo:"🎓 Pesquisa científica (Google Scholar, português)", url:"https://scholar.google.com/scholar?hl=pt-BR&q=observabilidade+e+monitoramento+em+nuvem"},
+      {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)", url:"https://www.youtube.com/results?search_query=observabilidade+e+monitoramento+em+nuvem+aula"}
+    ],
+    mitoOuVerdade:{afirmacao:"Monitoramento e observabilidade são duas palavras para a mesma coisa.", verdade:false,
+      explicacao:"Mito. Monitoramento avisa que algo conhecido saiu do normal, como o painel do carro. Observabilidade é conseguir explicar por que aconteceu, inclusive para situações nunca vistas, usando medidas, registros e rastros."}
+  },
+
+  {
+    id:"aba-6", rotulo:"Manutenção", estudoProprio:true,
+    titulo:"Manutenção, atualização e continuidade operacional",
+    missao:"Escolher a estratégia de atualização que mantém o serviço no ar e explicar por que plano de continuidade precisa ser ensaiado.",
+    narrativa:"Trocar pneu com o carro parado no acostamento é fácil; o desafio é manter o caixa da farmácia funcionando enquanto o sistema é atualizado. Atualizar em lotes pequenos, com caminho de volta pronto, virou regra depois de casos famosos de atualização defeituosa que pararam empresas inteiras.",
+    mundoReal:[
+      "Uma atualização defeituosa do CrowdStrike Falcon (programa da empresa CrowdStrike que vigia computadores corporativos) travou máquinas Windows em 2024 e atingiu companhias aéreas, hospitais e emissoras. O caso mostrou por que liberar atualização em lotes pequenos importa.",
+      "Serviços como a Netflix (assinatura de filmes e séries) e o iFood (aplicativo brasileiro de entrega de comida) publicam pequenas mudanças com frequência, em vez de uma virada enorme por semestre: cada mudança é menor e mais fácil de desfazer."
+    ],
+    ferramentas:[
+      "Entrega contínua, o CI/CD (do inglês Continuous Integration e Continuous Delivery; em português, Integração e Entrega Contínuas): a esteira automática que testa e publica cada mudança.",
+      "Interruptores de recurso (feature flags): ligar e desligar uma novidade sem publicar tudo de novo.",
+      "Plano de reversão e ensaio de continuidade: o caminho de volta escrito e treinado antes de ser necessário."
+    ],
+    dicionario:[
+      {termo:"Ambiente azul-verde (blue-green)", def:"Duas cópias completas do sistema: uma atendendo e outra pronta; o tráfego é trocado de uma vez e pode voltar rápido."},
+      {termo:"Liberação canário (canary)", def:"A novidade vai primeiro para poucos usuários e cresce só se estiver saudável."},
+      {termo:"Atualização gradual (rolling)", def:"Atualizar um servidor por vez, mantendo os outros atendendo."},
+      {termo:"Reversão (rollback)", def:"Voltar para a versão anterior quando a nova dá problema."},
+      {termo:"Janela de manutenção", def:"Horário combinado, de menor movimento, para mexer no sistema."},
+      {termo:"CI/CD (Continuous Integration e Continuous Delivery; Integração e Entrega Contínuas)", def:"Esteira automática que testa e publica cada mudança pequena."},
+      {termo:"Interruptor de recurso (feature flag)", def:"Chave que liga ou desliga uma novidade sem publicar o sistema de novo."}
+    ],
+    conceitos:[
+      {titulo:"Lotes pequenos, volta rápida",
+       texto:"Quanto maior a mudança, mais difícil achar o culpado e mais demorada a volta. Azul-verde mantém duas cópias e troca o tráfego de uma vez, com volta imediata. Canário começa com poucos usuários e cresce devagar. Gradual atualiza um servidor por vez. Todas compartilham a mesma ideia: erro pequeno e reversível.",
+       analogia:"💡 Provar a comida antes de servir o banquete inteiro: se o sal passou do ponto, você estraga uma concha, não a panela.",
+       exemploReal:"A atualização defeituosa do CrowdStrike Falcon (programa de segurança corporativa) que travou máquinas Windows em 2024 atingiu tudo de uma vez; liberações em lotes menores existem justamente para limitar esse alcance."},
+      {titulo:"Continuidade se ensaia, não se escreve",
+       texto:"Plano de continuidade é o roteiro do que fazer quando o serviço cai: quem decide, quem executa, em que ordem e em quanto tempo. Plano que nunca foi ensaiado costuma falhar em detalhes bobos, como senha guardada em lugar inacessível ou pessoa-chave de férias sem substituto.",
+       analogia:"💡 É o ensaio de incêndio da escola: no dia real, ninguém lê o cartaz pela primeira vez.",
+       exemploReal:"Empresas que ensaiam a volta para a versão anterior conseguem reverter em minutos; organizações sem ensaio descobrem no incidente que a reversão não estava prevista para o banco de dados."}
+    ],
+    roteiroDemo:{
+      passo0:"Antes de clicar, preveja: para testar uma novidade com poucos usuários antes de liberar a todos, qual estratégia você escolheria?",
+      passos:[
+        {acao:"Leia a situação da rede de farmácias e escolha uma estratégia.", ve:"A escolha errada fica vermelha com explicação; as outras continuam liberadas.", significa:"Cada estratégia resolve um problema diferente; não existe a melhor para tudo."},
+        {acao:"Avance para a situação do aplicativo de entregas.", ve:"O quadro verde explica por que começar pequeno protege a maioria.", significa:"Canário limita o alcance do erro."},
+        {acao:"Resolva a situação do hospital e leia o resumo.", ve:"A regra comum às três estratégias aparece no fim.", significa:"O que importa é erro pequeno e caminho de volta pronto."}
+      ]
+    },
+    demo:{
+      tipo:"cenario", titulo:"Qual estratégia de atualização?",
+      config:{
+        rodadas:[
+          {situacao:"Uma rede de farmácias precisa atualizar o sistema de vendas em horário de pico. A equipe tem duas cópias completas do ambiente e quer poder voltar em segundos se algo der errado.",
+           pergunta:"Qual estratégia combina com esse cenário?",
+           opcoes:[
+             {t:"Ambiente azul-verde: troca o tráfego para a cópia nova", ok:true, fb:"Com duas cópias prontas, a troca é rápida e a volta também. É ter dois palcos montados: se o novo falhar, o anterior ainda está de pé."},
+             {t:"Atualizar tudo de uma vez no ambiente que está no ar", ok:false, fb:"Se der problema, todo o caixa para junto e não há cópia pronta para receber o tráfego. É o cenário que a equipe quer evitar."},
+             {t:"Desligar o sistema e atualizar de madrugada", ok:false, fb:"Farmácia de plantão não pode esperar até de madrugada. Além disso, o requisito do enunciado é poder voltar em segundos, não parar o serviço."}
+           ]},
+          {situacao:"Um aplicativo de entregas quer testar a nova tela de pagamento com uma pequena parte dos usuários antes de liberar para todos.",
+           pergunta:"Qual estratégia foi feita para isso?",
+           opcoes:[
+             {t:"Liberação canário: começa em poucos e cresce se estiver saudável", ok:true, fb:"O nome vem do canário levado às minas de carvão: o grupo pequeno avisa primeiro. Se a novidade falhar, poucos usuários sentem."},
+             {t:"Atualização gradual servidor a servidor", ok:false, fb:"A atualização gradual espalha a versão por todos os servidores, só que em etapas. Ela não separa um grupo pequeno de usuários para observar o comportamento."},
+             {t:"Publicar para todos e observar as reclamações", ok:false, fb:"Aí o teste é feito com todos os clientes ao mesmo tempo. Foi o que aconteceu na atualização defeituosa do CrowdStrike Falcon (programa de segurança corporativa) em 2024."}
+           ]},
+          {situacao:"Um hospital precisa atualizar os servidores do prontuário sem janela de parada: o atendimento não pode interromper em nenhum momento.",
+           pergunta:"Qual estratégia mantém o serviço no ar durante toda a atualização?",
+           opcoes:[
+             {t:"Atualização gradual: um servidor por vez, os outros atendendo", ok:true, fb:"Enquanto um servidor reinicia, os demais seguram o atendimento. É trocar o pneu com o carro andando, um de cada vez."},
+             {t:"Parar todos os servidores por uma hora", ok:false, fb:"Uma hora de prontuário fora do ar em hospital é risco assistencial, não apenas inconveniente."},
+             {t:"Adiar a atualização até alguém reclamar de lentidão", ok:false, fb:"Adiar deixa falhas conhecidas abertas. Correção não aplicada foi justamente o problema no caso da Equifax (agência de crédito dos Estados Unidos)."}
+           ]}
+        ],
+        resumo:"Regra de bolso: escolha pelo tamanho do erro aceitável e pela velocidade da volta. Azul-verde dá volta imediata, canário limita quantos usuários sentem, gradual evita parada total. Exemplo real: a atualização defeituosa do CrowdStrike Falcon em 2024 mostrou o custo de liberar tudo de uma vez."
+      }
+    },
+    termosQuiz:"Azul-verde (blue-green) = duas cópias completas, troca de uma vez e volta rápida · canário (canary) = novidade primeiro para poucos usuários · gradual (rolling) = um servidor por vez · reversão (rollback) = voltar à versão anterior · janela de manutenção = horário combinado de menor movimento.",
+    quiz:[
+      {q:"A equipe quer que só uma pequena parte dos usuários receba a novidade primeiro. Qual estratégia é essa?",
+       alts:[
+         {t:"Liberação canário", ok:true, fb:"Começa pequeno e cresce se estiver saudável, como o canário que avisava o perigo nas minas de carvão antes de todos entrarem."},
+         {t:"Ambiente azul-verde", ok:false, fb:"No azul-verde a troca vale para todos de uma vez; a vantagem é a volta rápida, não a exposição gradual."},
+         {t:"Janela de manutenção", ok:false, fb:"Janela é o horário combinado para mexer no sistema, não uma forma de escolher quem recebe a novidade."}
+       ]},
+      {q:"Qual é a principal vantagem de manter duas cópias completas do ambiente (azul-verde)?",
+       alts:[
+         {t:"Voltar para a versão anterior quase imediatamente", ok:true, fb:"A cópia antiga continua de pé: basta devolver o tráfego para ela. É ter o palco anterior montado nos bastidores."},
+         {t:"Gastar menos com servidores", ok:false, fb:"Manter duas cópias custa mais durante a troca. O ganho é segurança da mudança, não economia."},
+         {t:"Dispensar os testes antes de publicar", ok:false, fb:"Testes continuam obrigatórios. A cópia reserva reduz o impacto do erro, não a chance de ele existir."}
+       ]},
+      {q:"Um plano de continuidade nunca foi ensaiado. Qual é o risco mais provável no dia do incidente?",
+       alts:[
+         {t:"Descobrir na hora que um passo essencial não funciona", ok:true, fb:"Senha inacessível, restauração que não completa, pessoa-chave sem substituto: só o ensaio revela isso antes da emergência, como o ensaio de incêndio da escola."},
+         {t:"O plano ficar grande demais para imprimir", ok:false, fb:"Tamanho do documento não é o problema. Plano curto e ensaiado vale mais que plano longo nunca testado."},
+         {t:"O provedor cancelar o contrato", ok:false, fb:"Contrato trata de serviço e pagamento. Falta de ensaio é risco operacional interno, não cláusula contratual."}
+       ]}
+    ],
+    aprofundar:[
+      {rotulo:"🔎 Busca no Google (português)", url:"https://www.google.com/search?hl=pt-BR&q=manuten%C3%A7%C3%A3o+de+sistemas+em+nuvem"},
+      {rotulo:"🎓 Pesquisa científica (Google Scholar, português)", url:"https://scholar.google.com/scholar?hl=pt-BR&q=manuten%C3%A7%C3%A3o+de+sistemas+em+nuvem"},
+      {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)", url:"https://www.youtube.com/results?search_query=manuten%C3%A7%C3%A3o+de+sistemas+em+nuvem+aula"}
+    ],
+    mitoOuVerdade:{afirmacao:"Atualização bem testada em ambiente de homologação nunca causa problema em produção.", verdade:false,
+      explicacao:"Mito. Homologação (o ambiente de ensaio) nunca reproduz todo o movimento real. Por isso existem liberação em lotes pequenos e caminho de volta: a atualização defeituosa do CrowdStrike Falcon (programa de segurança corporativa) em 2024 passou por processos comuns e ainda assim travou máquinas no mundo inteiro."}
+  },
+
+  {
+    id:"aba-7", rotulo:"Automação e resiliência", estudoProprio:true,
+    titulo:"Automação operacional e resiliência de serviços",
+    missao:"Explicar o ciclo perceber-decidir-agir e calcular, em palavras, quanto tempo fora do ar e quanto dado recente perdido o negócio aceita.",
+    narrativa:"Sistema resiliente é aquele que se cuida sozinho até a equipe chegar: percebe a falha, decide o que fazer e age. Isso se monta com verificação de saúde, escalonamento automático e uma segunda região de prontidão. Sem automação, cada minuto de recuperação depende de alguém acordar, abrir o notebook e digitar.",
+    mundoReal:[
+      "Quando uma região inteira da AWS (a nuvem da Amazon) fica indisponível, serviços que tinham cópia em outra região continuam atendendo; os que dependiam de uma só ficam fora do ar até a região voltar.",
+      "Lojas virtuais em datas de pico, como a Black Friday (dia de promoções que lota o comércio eletrônico), usam escalonamento automático para criar servidores conforme a fila cresce e desligá-los quando o movimento cai."
+    ],
+    ferramentas:[
+      "Grupos de escalonamento automático: criam e desligam servidores conforme regras de ocupação.",
+      "Verificador de saúde e balanceador de carga: conferem quem está respondendo e distribuem os pedidos só entre os saudáveis.",
+      "Roteiros automatizados de recuperação (runbooks): procedimentos escritos que um programa executa sozinho, sem depender de digitação humana."
+    ],
+    dicionario:[
+      {termo:"Resiliência", def:"Capacidade de continuar atendendo mesmo com peças quebradas."},
+      {termo:"Escalonamento automático (auto scaling)", def:"Criar ou desligar servidores sozinho, conforme o movimento."},
+      {termo:"Verificação de saúde (health check)", def:"Pergunta periódica 'você está respondendo?' feita a cada servidor."},
+      {termo:"Balanceador de carga", def:"O guarda de trânsito que distribui os pedidos entre os servidores saudáveis."},
+      {termo:"Failover (transferência automática)", def:"Passar o atendimento para a cópia de reserva quando a principal falha."},
+      {termo:"RTO (Recovery Time Objective; Objetivo de Tempo de Recuperação)", def:"Quanto tempo o serviço pode ficar fora do ar até voltar."},
+      {termo:"RPO (Recovery Point Objective; Objetivo de Ponto de Recuperação)", def:"Quanto de dado recente a empresa aceita perder, medido em tempo."},
+      {termo:"Região e zona", def:"Região é um conjunto de data centers em uma área geográfica; zona é um grupo independente dentro dela."}
+    ],
+    conceitos:[
+      {titulo:"Perceber, decidir, agir — sem esperar ninguém",
+       texto:"A verificação de saúde percebe que um servidor parou de responder. O balanceador decide tirar aquele servidor da fila. O escalonamento automático age criando substitutos. Quando esse ciclo é automático, a recuperação leva segundos; quando é manual, leva o tempo de alguém notar, entender e digitar.",
+       analogia:"💡 É a diferença entre o sprinkler que dispara sozinho com o calor e o extintor que depende de alguém correr até ele.",
+       exemploReal:"Serviços que sobreviveram a quedas de região inteira da AWS (a nuvem da Amazon) tinham verificação de saúde e segunda região configuradas antes do incidente, não durante."},
+      {titulo:"RTO e RPO: quanto tempo e quanto dado",
+       texto:"RTO é o tempo aceitável fora do ar; RPO é quanto de dado recente se pode perder. Em palavras: se a última cópia dos dados tem 15 minutos, uma queda agora perde até 15 minutos de pedidos. Cópia em tempo real derruba o RPO para perto de zero, mas custa mais. Esses dois números definem a arquitetura, não o contrário.",
+       analogia:"💡 RTO é quanto tempo a padaria aceita ficar fechada; RPO é quantos pedidos anotados no caderno ela aceita perder se o caderno sumir.",
+       exemploReal:"Um serviço de pagamentos aceita perder praticamente nenhum pedido, então replica os dados em tempo real; um blog pode aceitar perder as últimas horas e usa cópia periódica, que é mais barata."}
+    ],
+    roteiroDemo:{
+      passo0:"Antes de clicar, preveja: com verificação de saúde ligada, mas sem segunda região, o serviço volta sozinho quando a região principal cai?",
+      passos:[
+        {acao:"Deixe só a verificação de saúde ligada e clique em 'Derrubar a região principal'.", ve:"A animação mostra a falha sendo percebida, mas os pedidos continuam batendo na região caída.", significa:"Perceber sem ter para onde ir não resolve: o tempo fora do ar continua alto."},
+        {acao:"Ligue a segunda região e repita a queda.", ve:"O balanceador desvia o tráfego e o tempo de recuperação despenca.", significa:"Failover precisa de destino pronto, não só de alarme."},
+        {acao:"Ligue a cópia de dados em tempo real e compare o RPO.", ve:"O número de minutos de dados perdidos vai a zero.", significa:"RTO e RPO são escolhas de negócio que viram configuração."}
+      ]
+    },
+    demo:{
+      tipo:"failover", titulo:"A queda da região principal, passo a passo",
+      config:{
+        chaves:[
+          {id:"saude", nome:"🩺 Verificação de saúde automática", inicial:true},
+          {id:"segunda", nome:"🌎 Segunda região em espera", inicial:false},
+          {id:"auto", nome:"🤖 Escalonamento automático", inicial:false},
+          {id:"replica", nome:"🗄️ Cópia dos dados em tempo real", inicial:false}
+        ],
+        etapas:[
+          {on:"O verificador de saúde percebeu a queda em segundos e avisou o balanceador de carga.", off:"Sem verificador de saúde ninguém é avisado: a equipe só descobre quando o telefone toca."},
+          {on:"O balanceador mandou os novos pedidos para a segunda região, que já estava de pé.", off:"Não existe segunda região: os pedidos continuam batendo na região caída."},
+          {on:"O escalonamento automático criou servidores extras para absorver o movimento.", off:"Sem automação, alguém precisa criar servidores na mão, um por um."},
+          {on:"A cópia em tempo real permitiu assumir sem perder pedidos recentes.", off:"A cópia dos dados é periódica: os últimos minutos de pedidos se perdem."}
+        ],
+        exemplo:"Caso real: em quedas de uma região inteira da AWS (a nuvem da Amazon), serviços com segunda região pronta continuaram atendendo enquanto os de região única esperaram o provedor voltar.",
+        observa:[
+          "Ligar só o alarme não recupera nada: é preciso ter para onde transferir o atendimento.",
+          "Cada chave desligada acrescenta minutos ao tempo fora do ar.",
+          "A cópia em tempo real muda o dado perdido, não o tempo de volta: são dois números diferentes."
+        ]
+      },
+      legenda:[
+        "RTO (Recovery Time Objective; Objetivo de Tempo de Recuperação) = minutos até voltar ao ar.",
+        "RPO (Recovery Point Objective; Objetivo de Ponto de Recuperação) = minutos de dados recentes perdidos.",
+        "Failover = transferência automática do atendimento para a reserva.",
+        "Em palavras: RTO é quanto tempo a loja fica fechada; RPO é quantos pedidos anotados se perdem."
+      ]
+    },
+    termosQuiz:"Verificação de saúde (health check) = pergunta periódica 'você está respondendo?' · balanceador = distribui pedidos entre servidores saudáveis · escalonamento automático = criar e desligar servidores sozinho · failover = transferir o atendimento para a reserva · RTO = minutos até voltar ao ar · RPO = minutos de dados recentes perdidos.",
+    quiz:[
+      {q:"A última cópia dos dados tem 15 minutos e a região caiu agora. O que esses 15 minutos representam?",
+       alts:[
+         {t:"O dado recente que pode ser perdido (RPO)", ok:true, fb:"RPO mede perda em tempo: tudo que foi gravado depois da última cópia pode não voltar. É o caderno de pedidos que sumiu com as últimas anotações."},
+         {t:"O tempo até o serviço voltar ao ar (RTO)", ok:false, fb:"Tempo de volta é o RTO, outro número. Ele depende de ter reserva pronta e automação, não do intervalo da cópia."},
+         {t:"O tempo de resposta de cada pedido", ok:false, fb:"Tempo de resposta é latência, medida em milésimos de segundo. Aqui estamos falando de perda de dados, não de lentidão."}
+       ]},
+      {q:"Um servidor parou de responder. Qual combinação tira ele da fila automaticamente?",
+       alts:[
+         {t:"Verificação de saúde mais balanceador de carga", ok:true, fb:"A verificação percebe e o balanceador decide: os pedidos vão só para quem responde. É o ciclo perceber-decidir-agir funcionando sozinho."},
+         {t:"Cópia de segurança diária mais versionamento", ok:false, fb:"Esses dois recuperam dados depois do estrago; não retiram da fila um servidor que parou de responder agora."},
+         {t:"Embaralhamento do disco mais segunda etapa de login", ok:false, fb:"São camadas de segurança, não de disponibilidade. Protegem o dado e a conta, mas não detectam servidor fora do ar."}
+       ]},
+      {q:"Em uma data de pico, o movimento triplica em minutos. Qual recurso acompanha isso sem depender de alguém digitar?",
+       alts:[
+         {t:"Escalonamento automático", ok:true, fb:"Ele cria servidores conforme a ocupação e desliga quando o movimento cai, como lojas virtuais fazem na Black Friday (dia de promoções do comércio eletrônico)."},
+         {t:"Aumentar manualmente o número de servidores à noite", ok:false, fb:"O pico chega em minutos; a decisão manual chega depois do estrago. Além disso, manter tudo ligado à noite custa caro sem necessidade."},
+         {t:"Reiniciar os servidores a cada hora", ok:false, fb:"Reiniciar não cria capacidade e ainda derruba pedidos em andamento. Capacidade se resolve adicionando servidores, não reiniciando os mesmos."}
+       ]}
+    ],
+    aprofundar:[
+      {rotulo:"🔎 Busca no Google (português)", url:"https://www.google.com/search?hl=pt-BR&q=resili%C3%AAncia+e+recupera%C3%A7%C3%A3o+de+desastres+em+nuvem"},
+      {rotulo:"🎓 Pesquisa científica (Google Scholar, português)", url:"https://scholar.google.com/scholar?hl=pt-BR&q=resili%C3%AAncia+e+recupera%C3%A7%C3%A3o+de+desastres+em+nuvem"},
+      {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)", url:"https://www.youtube.com/results?search_query=resili%C3%AAncia+e+recupera%C3%A7%C3%A3o+de+desastres+em+nuvem+aula"}
+    ],
+    mitoOuVerdade:{afirmacao:"Ter verificação de saúde ligada já garante que o serviço continue no ar se a região inteira cair.", verdade:false,
+      explicacao:"Mito. A verificação só percebe o problema. Sem segunda região pronta e sem balanceador transferindo o atendimento, os pedidos continuam indo para o lugar que caiu. Perceber, decidir e agir precisam existir juntos."}
+  }
+  ],
+  revisao:{
+    mapa:[
+      "1. Governança — quem cuida de quê: o provedor protege a nuvem, você protege o que coloca dentro dela (termos na cola rápida).",
+      "2. Criptografia — embaralhar o dado parado, viajando e em uso, e guardar a chave longe do dado (termos na cola rápida).",
+      "3. Bancos e arquivos — fechar as portas, embaralhar o que está gravado e ter cópia que já foi restaurada em ensaio.",
+      "4. Defesa em camadas — proteções diferentes e independentes, porque cada uma barra um tipo de ataque.",
+      "5. Observabilidade — medidas, registros e rastros para explicar o que aconteceu, com meta e orçamento de erro.",
+      "6. Manutenção (aba de estudo em casa) — atualizar em lotes pequenos, com caminho de volta ensaiado.",
+      "7. Automação e resiliência (aba de estudo em casa) — perceber, decidir e agir sozinho, com metas de tempo e de perda de dados.",
+      "Fio condutor: segurança é configuração sua; monitoramento mostra o problema; resiliência é o plano para continuar atendendo."
+    ],
+    cola:[
+      {termo:"Governança", linha:"Regras escritas de quem decide, quem aprova e como se confere."},
+      {termo:"Responsabilidade compartilhada", linha:"O provedor cuida da estrutura; você cuida das contas, das permissões e dos dados."},
+      {termo:"IaaS", linha:"Alugar a máquina virtual crua; o sistema dentro dela é seu."},
+      {termo:"PaaS", linha:"Usar uma plataforma pronta, como banco administrado; o provedor corrige o motor."},
+      {termo:"SaaS", linha:"Usar o programa pronto pela internet; você cuida de quem acessa o quê."},
+      {termo:"IAM", linha:"A lista de quem pode fazer o quê dentro da conta."},
+      {termo:"Cifrar", linha:"Embaralhar o dado com uma chave; só quem tem a chave desembaralha."},
+      {termo:"AES", linha:"Método de embaralhamento mais usado; a mesma chave tranca e abre."},
+      {termo:"TLS", linha:"Túnel embaralhado por onde o dado viaja até o servidor."},
+      {termo:"KMS (cofre de chaves)", linha:"Lugar separado que guarda as chaves e anota cada uso."},
+      {termo:"Hash (carimbo digital)", linha:"Resumo curto do arquivo; muda inteiro se o arquivo mudar."},
+      {termo:"Bucket (pasta de objetos)", linha:"Pasta de arquivos alugada na nuvem; cada arquivo tem endereço próprio."},
+      {termo:"Backup (cópia de segurança)", linha:"Cópia separada para recuperar; precisa ser restaurada em ensaio."},
+      {termo:"Réplica", linha:"Cópia viva para o serviço não parar; copia também os erros."},
+      {termo:"MFA (segunda etapa)", linha:"Senha mais um código do celular para entrar."},
+      {termo:"WAF (guarda dos formulários)", linha:"Filtro que bloqueia pedidos maliciosos antes de chegarem ao banco."},
+      {termo:"Injeção de comando", linha:"Comando de banco escondido em um campo do formulário."},
+      {termo:"Segmentação de rede", linha:"Rede dividida em pedaços para o problema não se espalhar."},
+      {termo:"Defesa em profundidade", linha:"Várias camadas diferentes; se uma falha, a próxima segura."},
+      {termo:"Métrica (medida)", linha:"Número acompanhado no tempo: quanto e desde quando."},
+      {termo:"Registro (log)", linha:"Anotação com hora do que o programa viu acontecer."},
+      {termo:"Rastro (trace)", linha:"Caminho completo de um pedido, etapa por etapa."},
+      {termo:"Latência p95", linha:"Tempo de resposta que 95% dos pedidos igualam ou melhoram."},
+      {termo:"SLO e orçamento de erro", linha:"Meta de disponibilidade e os minutos fora do ar ainda permitidos no mês."},
+      {termo:"Azul-verde (blue-green)", linha:"Duas cópias prontas; troca de uma vez e volta rápida."},
+      {termo:"Canário (canary)", linha:"Novidade primeiro para poucos; cresce se estiver saudável."},
+      {termo:"Gradual (rolling)", linha:"Atualizar um servidor por vez, sem parar o atendimento."},
+      {termo:"Reversão (rollback)", linha:"Voltar à versão anterior quando a nova dá problema."},
+      {termo:"Verificação de saúde", linha:"Pergunta periódica 'você está respondendo?' a cada servidor."},
+      {termo:"Balanceador de carga", linha:"Distribui os pedidos só entre os servidores saudáveis."},
+      {termo:"Escalonamento automático", linha:"Criar e desligar servidores sozinho conforme o movimento."},
+      {termo:"Failover", linha:"Transferir o atendimento para a reserva quando a principal falha."},
+      {termo:"RTO", linha:"Minutos aceitáveis até o serviço voltar ao ar."},
+      {termo:"RPO", linha:"Minutos de dados recentes que a empresa aceita perder."}
+    ],
+    desafio:"🐉 CHEFÃO — Você foi chamado para revisar a nuvem de uma rede de farmácias que usa três serviços reais: máquinas virtuais no Amazon EC2 (computadores virtuais alugados da Amazon), banco administrado no Amazon RDS (banco de dados que a Amazon mantém corrigido) e pastas de arquivos no Amazon S3 (armazenamento de arquivos da Amazon). Entregue uma frase por item: (1) quem aplica a correção do sistema em cada serviço (responsabilidade compartilhada, na cola rápida); (2) como o dado é embaralhado parado, viajando e em uso, e onde a chave fica guardada (cofre de chaves, na cola rápida); (3) quais três camadas você liga primeiro e por quê (defesa em profundidade, na cola rápida); (4) qual pista você olha primeiro quando o caixa fica lento — medida, registro ou rastro (na cola rápida); (5) qual estratégia evita parar o balcão na próxima atualização (canário ou azul-verde, na cola rápida); (6) quanto tempo fora do ar e quanto dado recente perdido você aceita, usando as duas metas de recuperação (RTO e RPO, na cola rápida). Justifique cada escolha com um caso real análogo: a Colonial Pipeline (empresa de oleoduto de combustíveis dos Estados Unidos que parou após ataque de resgate), a atualização defeituosa do CrowdStrike Falcon (programa de segurança corporativa que travou máquinas Windows em 2024) ou os vazamentos de pastas públicas em armazenamento de objetos."
+  }
+};
+
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id);};
+var esc=function(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');};
+var num=function(n){return Number(n).toLocaleString('pt-BR',{maximumFractionDigits:3});};
+var ABAS=AULA_DADOS.abas;
+var IDS=ABAS.map(function(a){return a.id;}).concat(['revisao']);
+var CTX={}, acertos={}, selos=[], xpTotal=0, toastT=null;
+ABAS.forEach(function(a){acertos[a.id]=[false,false,false];});
+var TOTAL=ABAS.length*3;
+
+function embaralhar(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function toast(msg){var t=$('toast');t.textContent=msg;t.hidden=false;if(toastT)clearTimeout(toastT);toastT=setTimeout(function(){t.hidden=true;},1900);}
+function xp(n){xpTotal+=n;$('xp').textContent=num(xpTotal);toast('+'+n+' XP');}
+
+/* ---------- RENDERIZAÇÃO ---------- */
+function painelAba(aba,i){
+  var cfg=aba.demo, passos=aba.roteiroDemo.passos, h='';
+  h+='<section class="painel" id="'+aba.id+'" role="tabpanel" aria-labelledby="tab-'+aba.id+'" tabindex="0" hidden>';
+  h+='<h2>'+(i+1)+'. '+esc(aba.titulo)+'</h2>';
+  if(aba.estudoProprio){h+='<p class="fora">🏠 Aba de estudo em casa: fica fora dos 30 minutos de sala, mas conta para XP, selos e Chefão.</p>';}
+  h+='<div class="missao"><strong>🎯 Missão:</strong> '+esc(aba.missao)+'</div>';
+  h+='<p class="narrativa">'+esc(aba.narrativa)+'</p>';
+  h+='<div class="dupla"><div class="cartao real"><h3>🌍 No mundo real</h3><ul>'+aba.mundoReal.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';
+  h+='<div class="cartao ferr"><h3>🧰 Ferramentas usadas no mercado</h3><ul>'+aba.ferramentas.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div></div>';
+  h+='<section class="demo"><h3>🧪 Demo: '+esc(cfg.titulo)+'</h3>';
+  h+='<div class="prever">🔮 '+esc(aba.roteiroDemo.passo0)+'</div>';
+  h+='<div class="instrucoes"><h4>📋 INSTRUÇÕES PASSO A PASSO</h4><ol>'+passos.map(function(p){return '<li>'+esc(p.acao)+'</li>';}).join('')+'</ol></div>';
+  if(cfg.legenda){h+='<div class="legenda"><strong>🔑 Legenda:</strong><ul>'+cfg.legenda.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';}
+  h+='<div class="palco" id="palco-'+aba.id+'"></div>';
+  h+='<div class="botoes-demo"><button class="btn" type="button" id="reset-'+aba.id+'">🔄 Reiniciar demo</button></div>';
+  h+='<div class="log" id="log-'+aba.id+'" aria-live="polite" aria-label="Resultado da demo"></div>';
+  h+='<details class="roteiro"><summary>🎤 Roteiro do apresentador</summary><p><strong>Passo 0:</strong> '+esc(aba.roteiroDemo.passo0)+'</p><ol>'+passos.map(function(p){return '<li><strong>'+esc(p.acao)+'</strong><br>Você vê: '+esc(p.ve)+'<br>Significa: '+esc(p.significa)+'</li>';}).join('')+'</ol></details></section>';
+  h+='<section class="quiz"><h3>🧠 Quiz da aba</h3><div class="termos">🔑 <strong>Termos deste quiz:</strong> '+esc(aba.termosQuiz)+'</div>';
+  aba.quiz.forEach(function(q,qi){
+    var alts=embaralhar(q.alts.slice());
+    h+='<div class="pergunta" data-aba="'+aba.id+'" data-q="'+qi+'"><p class="enun"><strong>'+(qi+1)+')</strong> '+esc(q.q)+'</p><div class="alts">';
+    alts.forEach(function(a){h+='<button type="button" class="alt" data-ok="'+(a.ok?'1':'0')+'" data-fb="'+esc(a.fb)+'">'+esc(a.t)+'</button>';});
+    h+='</div><div class="fb" aria-live="polite"></div></div>';
+  });
+  h+='</section>';
+  h+='<details class="aprof dicio"><summary>📖 Mini-dicionário desta aba</summary><dl>'+aba.dicionario.map(function(d){return '<dt>'+esc(d.termo)+'</dt><dd>'+esc(d.def)+'</dd>';}).join('')+'</dl></details>';
+  h+='<details class="aprof conceitos"><summary>🧩 Conceitos longos (para ler em casa)</summary>'+aba.conceitos.map(function(c){return '<div class="conceito"><h4>'+esc(c.titulo)+'</h4><p>'+esc(c.texto)+'</p><p class="analogia">'+esc(c.analogia)+'</p><p class="exreal"><strong>Exemplo real:</strong> '+esc(c.exemploReal)+'</p></div>';}).join('')+'</details>';
+  h+='<details class="aprof mito"><summary>🤔 Mito ou verdade?</summary><p><strong>'+esc(aba.mitoOuVerdade.afirmacao)+'</strong></p><p>🔮 Antes de clicar, preveja: isso é mito ou verdade?</p><button type="button" class="btn mito-btn" data-aba="'+aba.id+'">🔍 Conferir resposta</button><div class="fb" aria-live="polite"></div></details>';
+  h+='<details class="aprof buscas"><summary>🔎 Aprofundar: 3 buscas em português</summary><ul class="links">'+aba.aprofundar.map(function(l){return '<li><a href="'+esc(l.url)+'" target="_blank" rel="noopener">'+esc(l.rotulo)+'</a></li>';}).join('')+'</ul><p class="nota">Estes três links são os únicos que precisam de internet. Toda a aula funciona offline.</p></details>';
+  h+='</section>';
+  return h;
+}
+function painelRevisao(){
+  var r=AULA_DADOS.revisao, h='';
+  h+='<section class="painel" id="revisao" role="tabpanel" aria-labelledby="tab-revisao" tabindex="0" hidden>';
+  h+='<h2>🗺️ Revisão da aula</h2>';
+  h+='<div class="cartao"><h3>🗺️ Mapa da aula</h3><ol class="mapa">'+r.mapa.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ol></div>';
+  h+='<div class="cartao"><h3>🧾 Cola rápida (o glossário da revisão)</h3><table class="cola"><thead><tr><th>Termo</th><th>Em linguagem plana</th></tr></thead><tbody>'+r.cola.map(function(c){return '<tr><td><strong>'+esc(c.termo)+'</strong></td><td>'+esc(c.linha)+'</td></tr>';}).join('')+'</tbody></table></div>';
+  h+='<div class="chefao"><h3>🐉 Chefão</h3><p>'+esc(r.desafio)+'</p><p><label for="resp-chefao"><strong>Sua resposta (uma frase por item):</strong></label></p><textarea id="resp-chefao" rows="8" placeholder="Escreva aqui seus seis itens..."></textarea><button type="button" class="btn" id="btn-chefao">✔ Concluí o Chefão</button><div class="fb" id="fb-chefao" aria-live="polite"></div></div>';
+  h+='</section>';
+  return h;
+}
+function renderAbas(){
+  var tabs='',pans='';
+  ABAS.forEach(function(aba,i){
+    var badge=aba.estudoProprio?'<span class="selo-estudo">📖 Estudo próprio</span>':'';
+    tabs+='<button type="button" class="aba" role="tab" id="tab-'+aba.id+'" aria-controls="'+aba.id+'" aria-selected="false" tabindex="-1" data-alvo="'+aba.id+'"><span class="num">'+(i+1)+'</span>'+esc(aba.rotulo)+badge+'</button>';
+    pans+=painelAba(aba,i);
+  });
+  tabs+='<button type="button" class="aba" role="tab" id="tab-revisao" aria-controls="revisao" aria-selected="false" tabindex="-1" data-alvo="revisao">🗺️ Revisão</button>';
+  pans+=painelRevisao();
+  $('faixa').innerHTML=tabs;
+  $('paineis').innerHTML=pans;
+}
+
+/* ---------- NAVEGAÇÃO ---------- */
+function ativar(id,mudaHash){
+  if(IDS.indexOf(id)<0){id=ABAS[0].id;}
+  var bs=document.querySelectorAll('.aba');
+  for(var i=0;i<bs.length;i++){
+    var on=bs[i].getAttribute('data-alvo')===id;
+    bs[i].setAttribute('aria-selected',on?'true':'false');
+    bs[i].tabIndex=on?0:-1;
+    bs[i].classList.toggle('ativa',on);
+  }
+  var ps=document.querySelectorAll('.painel');
+  for(var j=0;j<ps.length;j++){
+    var ativo=ps[j].id===id;
+    ps[j].classList.toggle('ativo',ativo);
+    ps[j].hidden=!ativo;
+  }
+  if(mudaHash && location.hash!=='#'+id){location.hash=id;}
+  var b=$('tab-'+id);
+  if(b && b.scrollIntoView){b.scrollIntoView({block:'nearest',inline:'center'});}
+}
+function vizinho(passo){
+  var atual=location.hash.replace('#','');
+  var k=IDS.indexOf(atual); if(k<0){k=0;}
+  var novo=(k+passo+IDS.length)%IDS.length;
+  ativar(IDS[novo],true);
+  var b=$('tab-'+IDS[novo]); if(b){b.focus();}
+}
+
+/* ---------- QUIZ ---------- */
+function responderQuiz(btn){
+  var p=btn.closest('.pergunta');
+  if(!p||p.dataset.travada==='1'||btn.disabled){return;}
+  var fb=p.querySelector('.fb');
+  if(btn.dataset.ok==='1'){
+    btn.classList.add('certa');
+    btn.appendChild(document.createTextNode(' ✓'));
+    p.dataset.travada='1';
+    var todos=p.querySelectorAll('.alt');
+    for(var i=0;i<todos.length;i++){todos[i].disabled=true;}
+    fb.className='fb ok';
+    fb.innerHTML='✅ <strong>Por que esta está certa:</strong> '+esc(btn.dataset.fb);
+    xp(p.dataset.errou==='1'?5:10);
+    acertos[p.dataset.aba][Number(p.dataset.q)]=true;
+    progresso();
+  }else{
+    btn.classList.add('errada');
+    btn.appendChild(document.createTextNode(' ✗'));
+    btn.disabled=true;
+    p.dataset.errou='1';
+    fb.className='fb erro';
+    fb.innerHTML='❌ <strong>Por que esta está errada:</strong> '+esc(btn.dataset.fb)+'<br><em>As outras alternativas continuam liberadas: tente de novo.</em>';
+  }
+}
+function abrirMito(btn){
+  var aba=null;
+  for(var i=0;i<ABAS.length;i++){if(ABAS[i].id===btn.dataset.aba){aba=ABAS[i];}}
+  if(!aba){return;}
+  var box=btn.parentNode.querySelector('.fb');
+  var m=aba.mitoOuVerdade;
+  box.className='fb ok';
+  box.innerHTML=(m.verdade?'✅ <strong>Verdade.</strong> ':'🚫 <strong>Mito.</strong> ')+esc(m.explicacao);
+  btn.disabled=true;
+}
+function chefao(){
+  var txt=$('resp-chefao').value.trim();
+  var fb=$('fb-chefao');
+  if(txt.length<40){
+    fb.className='fb erro';
+    fb.innerHTML='❌ <strong>Ainda não:</strong> escreva pelo menos uma frase para cada um dos seis itens. Use a cola rápida logo acima para conferir os termos.';
+    return;
+  }
+  fb.className='fb ok';
+  fb.innerHTML='✅ <strong>Chefão registrado.</strong> Confira sua resposta com a cola rápida: cada item precisa citar quem executa a tarefa e um caso real. Leve este texto para a discussão em sala.';
+  addSelo('🐉 Chefão enfrentado');
+}
+function addSelo(s){
+  if(selos.indexOf(s)>=0){return;}
+  selos.push(s);
+  var alvo=$('selos');
+  alvo.innerHTML=selos.map(function(x){return '<span class="selo">'+esc(x)+'</span>';}).join('');
+  toast('🏅 Novo selo: '+s);
+}
+function progresso(){
+  var feitos=0,i,j;
+  for(i=0;i<ABAS.length;i++){
+    var a=ABAS[i],c=0;
+    for(j=0;j<3;j++){if(acertos[a.id][j]){c++;feitos++;}}
+    if(c===3){addSelo('🏅 '+a.rotulo);}
+  }
+  $('progTexto').textContent='Progresso: '+num(feitos)+' de '+num(TOTAL)+' perguntas';
+  $('progBarra').style.width=(feitos/TOTAL*100)+'%';
+  var sala=true,casa=true;
+  for(i=0;i<ABAS.length;i++){
+    var ok=acertos[ABAS[i].id][0]&&acertos[ABAS[i].id][1]&&acertos[ABAS[i].id][2];
+    if(i<5&&!ok){sala=false;}
+    if(i>=5&&!ok){casa=false;}
+  }
+  if(sala){addSelo('🏁 Trilha de sala completa');}
+  if(casa){addSelo('📚 Estudioso');}
+}
+
+/* ---------- DEMOS ---------- */
+function novoEstado(aba){
+  var cfg=aba.demo.config;
+  switch(aba.demo.tipo){
+    case 'cenario': return {r:0,errou:false,feita:false,erradas:[],historico:[],fim:false};
+    case 'cripto': return {texto:cfg.mensagem,repouso:false,transito:false,cofre:true,carimbo:false};
+    case 'bucket':
+      var st={inc:-1};
+      cfg.chaves.forEach(function(c){st[c.id]=c.inicial;});
+      return st;
+    case 'camadas':
+      var s2={ataque:'senha',passo:-1,rodando:false,trilha:[],fim:null};
+      cfg.camadas.forEach(function(c){s2[c.id]=c.inicial;});
+      return s2;
+    case 'observa': return {carga:1200,servidores:3,minutos:0,orcamento:cfg.orcamentoMin,alerta:true,inspecoes:[]};
+    case 'failover':
+      var s3={passo:-1,rodando:false,fim:null};
+      cfg.chaves.forEach(function(c){s3[c.id]=c.inicial;});
+      return s3;
+  }
+  return {};
+}
+function logar(ctx,tipo,titulo,texto){
+  var d=document.createElement('div');
+  d.className='msg '+tipo;
+  d.innerHTML='<strong>'+esc(titulo)+'</strong> '+esc(texto);
+  ctx.log.appendChild(d);
+  while(ctx.log.children.length>14){ctx.log.removeChild(ctx.log.firstChild);}
+  ctx.log.scrollTop=ctx.log.scrollHeight;
+}
+function limparTimers(ctx){for(var i=0;i<ctx.timers.length;i++){clearTimeout(ctx.timers[i]);}ctx.timers=[];}
+function tog(act,id,nome,on){
+  return '<button type="button" class="btn tog'+(on?' on':'')+'" data-act="'+act+'" data-arg="'+id+'" aria-pressed="'+(on?'true':'false')+'">'+(on?'✅ ':'⬜ ')+esc(nome)+'</button>';
+}
+function guia(cfg){
+  if(!cfg.observa){return '';}
+  return '<div class="observa"><strong>👀 O que observar:</strong><ul>'+cfg.observa.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';
+}
+function cifrar(txt){
+  var s=String(txt),out=[],i;
+  for(i=0;i<s.length&&i<40;i++){out.push(s.charCodeAt(i).toString(16));}
+  return out.join(' ')+(s.length>40?' …':'');
+}
+function carimbo(txt){
+  var h=5381,i;
+  for(i=0;i<txt.length;i++){h=((h*33)^txt.charCodeAt(i))>>>0;}
+  return h.toString(16).toUpperCase();
+}
+/* --- cenário --- */
+function pintaCenario(ctx){
+  var cfg=ctx.aba.demo.config,st=ctx.st,h='';
+  st.historico.forEach(function(it){
+    h+='<div class="msg ok">✅ <strong>'+esc(it.s)+'</strong><br>Resposta registrada: '+esc(it.e)+'</div>';
+  });
+  if(st.fim){return h+'<div class="msg ok">🏁 '+esc(cfg.resumo)+'</div>';}
+  var r=cfg.rodadas[st.r];
+  h+='<p><strong>Situação '+(st.r+1)+' de '+cfg.rodadas.length+':</strong> '+esc(r.situacao)+'</p>';
+  h+='<p><strong>'+esc(r.pergunta)+'</strong></p><div class="alts">';
+  r.opcoes.forEach(function(o,i){
+    var usada=st.erradas.indexOf(i)>=0, classe='alt', sufixo='';
+    if(usada){classe+=' errada';sufixo=' ✗';}
+    if(st.feita&&o.ok){classe+=' certa';sufixo=' ✓';}
+    h+='<button type="button" class="'+classe+'" data-act="responder" data-arg="'+i+'" data-fb="'+esc(o.fb)+'"'+((usada||st.feita)?' disabled':'')+'>'+esc(o.t)+sufixo+'</button>';
+  });
+  h+='</div>';
+  if(st.feita){h+='<button type="button" class="btn" data-act="proxima">Próxima situação ▶</button>';}
+  return h;
+}
+/* --- cripto --- */
+function saidasCripto(ctx){
+  var st=ctx.st,txt=st.texto;
+  var disco=(!st.repouso||!st.cofre)?txt:cifrar(txt);
+  var rede=st.transito?cifrar(txt+'|tunel'):txt;
+  var h='';
+  h+='<div class="pacote"><strong>👩‍💼 Aplicativo autorizado (tem a chave legítima):</strong><br><code>'+esc(txt)+'</code></div>';
+  h+='<div class="pacote"><strong>🕵️ Quem espia a rede:</strong><br><code>'+esc(rede)+'</code></div>';
+  h+='<div class="pacote"><strong>🗄️ Quem copia o disco ou a pasta:</strong><br><code>'+esc(disco)+'</code></div>';
+  h+='<div class="pacote"><strong>🧾 Carimbo de integridade:</strong> '+(st.carimbo?esc(carimbo(txt)):'não gerado')+'</div>';
+  h+='<div class="pacote"><strong>🗝️ Onde está a chave:</strong> '+(st.cofre?'no cofre separado (KMS), com registro de uso':'dentro da mesma pasta do dado — chave na maçaneta')+'</div>';
+  return h;
+}
+function pintaCripto(ctx){
+  var cfg=ctx.aba.demo.config,st=ctx.st,h='';
+  h+='<label class="rotulo-slider" for="texto-'+ctx.aba.id+'">Conteúdo do arquivo (edite para ver o carimbo mudar):</label>';
+  h+='<input type="text" id="texto-'+ctx.aba.id+'" data-campo="texto" value="'+esc(st.texto)+'">';
+  h+='<div style="margin-top:10px">';
+  h+=tog('toggle','repouso',cfg.rotulos.repouso,st.repouso);
+  h+=tog('toggle','transito',cfg.rotulos.transito,st.transito);
+  h+=tog('toggle','cofre',cfg.rotulos.cofre,st.cofre);
+  h+='<button type="button" class="btn" data-act="carimbo">'+esc(cfg.rotulos.carimbo)+'</button>';
+  h+='</div><div id="saida-'+ctx.aba.id+'">'+saidasCripto(ctx)+'</div>'+guia(cfg);
+  return h;
+}
+/* --- bucket --- */
+function riscoBucket(st){
+  var r=0;
+  if(st.publico){r+=20;} if(!st.cifra){r+=15;} if(!st.versao){r+=15;}
+  if(!st.backup){r+=25;} if(!st.privada){r+=25;}
+  return r;
+}
+function pintaBucket(ctx){
+  var cfg=ctx.aba.demo.config,st=ctx.st,h='';
+  cfg.chaves.forEach(function(c){h+=tog('toggle',c.id,c.nome,st[c.id]);});
+  var r=riscoBucket(st);
+  h+='<div class="grade"><div class="metrica"><b>'+num(r)+'</b>Medidor de risco (0 a 100)</div></div>';
+  h+='<div class="barra"><i style="width:'+r+'%"></i></div>';
+  h+='<p><button type="button" class="btn" data-act="incidente">⚡ Simular incidente</button></p>';
+  if(st.inc>=0){
+    var inc=cfg.incidentes[st.inc],bom;
+    if(st.inc===0){bom=!st.publico;}
+    else if(st.inc===1){bom=(st.versao||st.backup);}
+    else{bom=st.backup;}
+    h+='<div class="msg '+(bom?'ok':'erro')+'"><strong>'+esc(inc.nome)+'</strong><br>'+esc(bom?inc.bom:inc.ruim)+'<br><em>'+esc(inc.extra)+'</em></div>';
+    if(st.inc===0&&!st.privada){h+='<div class="msg erro"><strong>🧱 Banco exposto:</strong> '+esc(cfg.incidentes[0].extra)+'</div>';}
+  }
+  h+=guia(cfg);
+  return h;
+}
+/* --- camadas --- */
+function pintaCamadas(ctx){
+  var cfg=ctx.aba.demo.config,st=ctx.st,h='';
+  h+='<p><strong>Escolha o ataque:</strong> ';
+  cfg.ataques.forEach(function(a){
+    h+='<button type="button" class="btn tog'+(st.ataque===a.id?' on':'')+'" data-act="ataque" data-arg="'+a.id+'"'+(st.rodando?' disabled':'')+'>'+esc(a.nome)+'</button>';
+  });
+  h+='</p><p><strong>Ligue as camadas:</strong> ';
+  cfg.camadas.forEach(function(c){h+=tog('toggle',c.id,c.nome,st[c.id]);});
+  h+='</p><p><button type="button" class="btn" data-act="lancar"'+(st.rodando?' disabled':'')+'>▶ Lançar ataque</button></p>';
+  cfg.camadas.forEach(function(c,i){
+    var estado='',classe='camada';
+    for(var k=0;k<st.trilha.length;k++){
+      if(st.trilha[k].nome===c.nome){estado=st.trilha[k].estado;}
+    }
+    if(estado==='barrou'){classe+=' barrou';}
+    if(estado==='desligada'){classe+=' passou';}
+    if(st.rodando&&st.passo===i){classe+=' atual';}
+    var marca=estado==='barrou'?'🛑':(estado==='alertou'?'🔔':(estado==='desligada'?'⚠️':(estado==='nao-barra'?'➖':'⬜')));
+    h+='<div class="'+classe+'">'+marca+' '+esc(c.nome)+(estado?' — '+esc(estado):'')+'</div>';
+  });
+  h+='<div class="camada'+(st.fim&&st.fim.tipo==='erro'?' passou':'')+'">🗄️ O dado no fim do caminho</div>';
+  if(st.fim){h+='<div class="msg '+st.fim.tipo+'"><strong>'+esc(st.fim.titulo)+'</strong> '+esc(st.fim.texto)+'<br><em>'+esc(st.fim.exemplo)+'</em></div>';}
+  h+=guia(cfg);
+  return h;
+}
+function lancar(ctx){
+  if(ctx.st.rodando){return;}
+  limparTimers(ctx);
+  ctx.st.rodando=true;ctx.st.passo=0;ctx.st.trilha=[];ctx.st.fim=null;
+  ctx.pinta();
+  logar(ctx,'info','▶ Ataque lançado.','Acompanhe camada por camada: cada uma barra um tipo diferente de ataque.');
+  var cams=ctx.aba.demo.config.camadas;
+  function passo(){
+    var st=ctx.st,i=st.passo;
+    if(i>=cams.length){finalCamadas(ctx,null);return;}
+    var c=cams[i],ligada=!!st[c.id];
+    if(ligada&&c.barra.indexOf(st.ataque)>=0){
+      st.trilha.push({nome:c.nome,estado:'barrou'});
+      logar(ctx,'ok','🛑 '+c.nome+' barrou.',c.txtBarra);
+      ctx.pinta();finalCamadas(ctx,c);return;
+    }
+    if(ligada&&c.detecta){
+      st.trilha.push({nome:c.nome,estado:'alertou'});
+      logar(ctx,'info','🔔 '+c.nome+' percebeu.',c.txtNeutra);
+    }else if(ligada){
+      st.trilha.push({nome:c.nome,estado:'nao-barra'});
+      logar(ctx,'info','➖ '+c.nome+' não barra este ataque.',c.txtNeutra);
+    }else{
+      st.trilha.push({nome:c.nome,estado:'desligada'});
+      logar(ctx,'erro','⚠️ '+c.nome+' desligada.',c.txtOff);
+    }
+    st.passo=i+1;ctx.pinta();
+    ctx.timers.push(setTimeout(passo,850));
+  }
+  ctx.timers.push(setTimeout(passo,450));
+}
+function finalCamadas(ctx,camada){
+  limparTimers(ctx);
+  var st=ctx.st,cfg=ctx.aba.demo.config,at=null;
+  cfg.ataques.forEach(function(a){if(a.id===st.ataque){at=a;}});
+  st.rodando=false;st.passo=-1;
+  st.fim={tipo:camada?'ok':'erro',titulo:camada?'Contido na camada: '+camada.nome:'O ataque alcançou o dado.',texto:camada?at.seBarrado:at.sePassou,exemplo:at.exemplo};
+  logar(ctx,st.fim.tipo,st.fim.titulo,st.fim.texto+' '+at.exemplo);
+  ctx.pinta();
+}
+/* --- observabilidade --- */
+function calcObs(st){
+  var cap=st.servidores*800,sat=st.carga/cap;
+  var lat=120+Math.pow(Math.min(sat,2.2),3)*380;
+  var erro=sat<=0.85?0.05:Math.min(40,(sat-0.85)*30);
+  return {cap:cap,sat:sat,lat:lat,erro:erro};
+}
+function saidaObserva(ctx){
+  var st=ctx.st,cfg=ctx.aba.demo.config,m=calcObs(st),h='';
+  var estado=m.erro>1?'🔴 Fora da meta':(m.lat>500?'🟡 Atenção: lentidão alta':'🟢 Dentro da meta');
+  h+='<div class="grade">';
+  h+='<div class="metrica"><b>'+num(Math.round(m.lat))+' ms</b>Latência p95</div>';
+  h+='<div class="metrica"><b>'+num(m.erro)+'%</b>Taxa de erro</div>';
+  h+='<div class="metrica"><b>'+num(m.sat*100)+'%</b>Saturação</div>';
+  h+='<div class="metrica"><b>'+num(st.orcamento)+' min</b>Orçamento de erro do mês</div>';
+  h+='</div><div class="barra"><i style="width:'+(st.orcamento/cfg.orcamentoMin*100)+'%"></i></div>';
+  h+='<p><strong>'+estado+'</strong> · Meta de disponibilidade: '+esc(cfg.meta)+' · Minutos observados: '+num(st.minutos)+'</p>';
+  if(st.orcamento<=0){h+='<div class="msg erro"><strong>Orçamento de erro esgotado.</strong> A prática de confiabilidade manda segurar novidades e trabalhar em estabilidade até o mês virar. Exemplo real: é assim que o SRE do Google (Engenharia de Confiabilidade de Sites) trata o orçamento estourado.</div>';}
+  if(st.alerta&&m.lat>500){h+='<div class="msg info"><strong>🔔 Alarme disparou:</strong> a equipe foi avisada antes de o cliente reclamar. Sem alarme, a descoberta dependeria do telefone tocar.</div>';}
+  st.inspecoes.slice(-3).forEach(function(x){h+='<div class="msg info">'+esc(x)+'</div>';});
+  return h;
+}
+function pintaObserva(ctx){
+  var st=ctx.st,cfg=ctx.aba.demo.config,h='';
+  h+='<label class="rotulo-slider" for="carga-'+ctx.aba.id+'">Usuários simultâneos: '+num(st.carga)+'</label>';
+  h+='<input type="range" id="carga-'+ctx.aba.id+'" data-slider="carga" min="200" max="6000" step="100" value="'+st.carga+'">';
+  h+='<label class="rotulo-slider" for="serv-'+ctx.aba.id+'">Servidores ligados: '+num(st.servidores)+' (capacidade de '+num(st.servidores*800)+' usuários com folga)</label>';
+  h+='<input type="range" id="serv-'+ctx.aba.id+'" data-slider="servidores" min="1" max="10" step="1" value="'+st.servidores+'">';
+  h+='<p>'+tog('toggle','alerta','🔔 Alarme automático de lentidão',st.alerta);
+  h+='<button type="button" class="btn" data-act="avancar">⏱️ Avançar 5 minutos</button></p>';
+  h+='<p><button type="button" class="btn" data-act="inspecionar" data-arg="metricas">📈 Investigar com medidas</button>';
+  h+='<button type="button" class="btn" data-act="inspecionar" data-arg="registros">📜 Investigar com registros</button>';
+  h+='<button type="button" class="btn" data-act="inspecionar" data-arg="rastros">🧭 Investigar com rastros</button></p>';
+  h+='<div id="saida-'+ctx.aba.id+'">'+saidaObserva(ctx)+'</div>';
+  h+='<table><thead><tr><th>Meta de disponibilidade</th><th>Tempo fora do ar permitido</th></tr></thead><tbody>';
+  cfg.tabela.forEach(function(l){h+='<tr><td>'+esc(l.nivel)+'</td><td>'+esc(l.tempo)+'</td></tr>';});
+  h+='</tbody></table>'+guia(cfg);
+  return h;
+}
+/* --- failover --- */
+function pintaFailover(ctx){
+  var cfg=ctx.aba.demo.config,st=ctx.st,h='';
+  cfg.chaves.forEach(function(c){h+=tog('toggle',c.id,c.nome,st[c.id]);});
+  h+='<p><button type="button" class="btn" data-act="derrubar"'+(st.rodando?' disabled':'')+'>💥 Derrubar a região principal</button></p>';
+  var nomes=['🩺 Verificação de saúde','🌎 Transferência para a segunda região','🤖 Escalonamento automático','🗄️ Cópia dos dados'];
+  nomes.forEach(function(n,i){
+    var cls='camada';
+    if(st.passo>i){cls+=(cfg.chaves[i]&&st[cfg.chaves[i].id])?' barrou':' passou';}
+    if(st.rodando&&st.passo===i){cls+=' atual';}
+    h+='<div class="'+cls+'">'+(st.passo>i?'✔️ ':'⬜ ')+esc(n)+'</div>';
+  });
+  if(st.fim){
+    h+='<div class="msg '+st.fim.tipo+'"><strong>'+esc(st.fim.titulo)+'</strong> '+esc(st.fim.texto)+'</div>';
+    h+='<div class="grade"><div class="metrica"><b>'+num(st.fim.rto)+' min</b>RTO: tempo até voltar ao ar</div>';
+    h+='<div class="metrica"><b>'+num(st.fim.rpo)+' min</b>RPO: dados recentes perdidos</div></div>';
+    h+='<p><em>Em palavras: RTO é quanto tempo a loja fica fechada; RPO é quantos minutos de pedidos anotados se perdem.</em></p>';
+    h+='<div class="msg info">'+esc(cfg.exemplo)+'</div>';
+  }
+  h+=guia(cfg);
+  return h;
+}
+function derrubar(ctx){
+  if(ctx.st.rodando){return;}
+  limparTimers(ctx);
+  ctx.st.rodando=true;ctx.st.passo=0;ctx.st.fim=null;ctx.pinta();
+  logar(ctx,'erro','💥 A região principal parou de responder.','Todos os pedidos em andamento falharam. Veja o que o sistema faz sozinho a partir de agora.');
+  var cfg=ctx.aba.demo.config;
+  function passo(){
+    var st=ctx.st,i=st.passo;
+    if(i>=cfg.etapas.length){finalFail(ctx);return;}
+    var chave=cfg.chaves[i].id,lig=!!st[chave],et=cfg.etapas[i];
+    logar(ctx,lig?'ok':'erro',(lig?'✔️ ':'⚠️ ')+cfg.chaves[i].nome,lig?et.on:et.off);
+    st.passo=i+1;ctx.pinta();
+    ctx.timers.push(setTimeout(passo,900));
+  }
+  ctx.timers.push(setTimeout(passo,600));
+}
+function finalFail(ctx){
+  limparTimers(ctx);
+  var st=ctx.st,rto;
+  if(st.saude&&st.segunda){rto=st.auto?2:8;}
+  else{rto=1+(st.saude?0:25)+(st.segunda?0:40)+(st.auto?0:10);}
+  var rpo=st.replica?0:15;
+  st.rodando=false;
+  var bom=(rto<=10&&rpo===0);
+  st.fim={tipo:bom?'ok':'erro',rto:rto,rpo:rpo,
+    titulo:bom?'Serviço restabelecido automaticamente.':'Recuperação lenta e com perda de dados.',
+    texto:bom?'O ciclo perceber-decidir-agir funcionou sozinho e quase nenhum pedido se perdeu.':'Cada chave desligada virou minutos de espera ou dados perdidos. Ligue as opções e repita a queda para comparar.'};
+  logar(ctx,st.fim.tipo,st.fim.titulo,'Tempo até voltar ao ar: '+num(rto)+' minutos. Dados recentes perdidos: '+num(rpo)+' minutos.');
+  ctx.pinta();
+}
+function pintaDemo(ctx){
+  switch(ctx.aba.demo.tipo){
+    case 'cenario': return pintaCenario(ctx);
+    case 'cripto': return pintaCripto(ctx);
+    case 'bucket': return pintaBucket(ctx);
+    case 'camadas': return pintaCamadas(ctx);
+    case 'observa': return pintaObserva(ctx);
+    case 'failover': return pintaFailover(ctx);
+  }
+  return '';
+}
+function parcial(ctx){
+  var t=ctx.aba.demo.tipo;
+  if(t==='observa'){var a=$('saida-'+ctx.aba.id);if(a){a.innerHTML=saidaObserva(ctx);return;}}
+  if(t==='cripto'){var b=$('saida-'+ctx.aba.id);if(b){b.innerHTML=saidasCripto(ctx);return;}}
+  ctx.pinta();
+}
+function agir(ctx,act,arg){
+  var st=ctx.st,cfg=ctx.aba.demo.config,tipo=ctx.aba.demo.tipo;
+  if(act==='toggle'){
+    st[arg]=!st[arg];
+    if(tipo==='cripto'){logar(ctx,'info','Configuração alterada.',cfg.exemplos[arg]);}
+    if(tipo==='bucket'){logar(ctx,'info','Configuração alterada.','Medidor de risco agora em '+num(riscoBucket(st))+' de 100. Simule um incidente para ver o efeito.');}
+    if(tipo==='observa'){logar(ctx,'info','Alarme '+(st.alerta?'ligado':'desligado')+'.',st.alerta?'A equipe será avisada quando a lentidão passar de 500 ms.':'Sem alarme, a descoberta depende de alguém reclamar: é apagar a lâmpada do painel do carro.');}
+    ctx.pinta();return;
+  }
+  if(act==='responder'&&tipo==='cenario'){
+    var r=cfg.rodadas[st.r],o=r.opcoes[Number(arg)];
+    if(o.ok){
+      st.feita=true;
+      logar(ctx,'ok','✅ Por que esta está certa:',o.fb);
+      xp(st.errou?5:10);
+    }else{
+      if(st.erradas.indexOf(Number(arg))<0){st.erradas.push(Number(arg));}
+      st.errou=true;
+      logar(ctx,'erro','❌ Por que esta está errada:',o.fb+' As outras opções continuam liberadas.');
+    }
+    ctx.pinta();return;
+  }
+  if(act==='proxima'){
+    var rr=cfg.rodadas[st.r],certa='';
+    rr.opcoes.forEach(function(o){if(o.ok){certa=o.t;}});
+    st.historico.push({s:rr.situacao,e:certa});
+    st.r++;st.errou=false;st.feita=false;st.erradas=[];
+    if(st.r>=cfg.rodadas.length){st.fim=true;logar(ctx,'ok','🏁 Resumo da demo.',cfg.resumo);}
+    ctx.pinta();return;
+  }
+  if(act==='carimbo'){
+    st.carimbo=true;
+    logar(ctx,'info','🧾 Carimbo gerado: '+carimbo(st.texto),cfg.exemplos.carimbo);
+    ctx.pinta();return;
+  }
+  if(act==='incidente'){
+    st.inc=(st.inc+1)%cfg.incidentes.length;
+    var inc=cfg.incidentes[st.inc];
+    logar(ctx,'info','⚡ Incidente: '+inc.nome,'Leia o quadro no painel: o final depende das chaves que você ligou.');
+    ctx.pinta();return;
+  }
+  if(act==='ataque'){st.ataque=arg;st.trilha=[];st.fim=null;ctx.pinta();return;}
+  if(act==='lancar'){lancar(ctx);return;}
+  if(act==='avancar'){
+    var m=calcObs(st);
+    st.minutos+=5;
+    if(m.erro>1){st.orcamento=Math.max(0,st.orcamento-5);}
+    logar(ctx,m.erro>1?'erro':'ok','⏱️ Mais 5 minutos observados.','Erro em '+num(m.erro)+'% e latência p95 em '+num(Math.round(m.lat))+' ms. Orçamento restante: '+num(st.orcamento)+' minutos. Exemplo real: equipes de confiabilidade acompanham esse consumo para decidir se congelam novidades.');
+    parcial(ctx);ctx.pinta();return;
+  }
+  if(act==='inspecionar'){
+    var mm=calcObs(st);
+    var texto=cfg.inspecoes[arg]+' Neste momento: latência p95 de '+num(Math.round(mm.lat))+' ms, erro de '+num(mm.erro)+'% e saturação de '+num(mm.sat*100)+'%.';
+    st.inspecoes.push(texto);
+    logar(ctx,'info','🔎 Investigação.',texto);
+    parcial(ctx);return;
+  }
+  if(act==='derrubar'){derrubar(ctx);return;}
+}
+function ligarDemos(){
+  ABAS.forEach(function(aba){
+    var ctx={aba:aba,st:novoEstado(aba),palco:$('palco-'+aba.id),log:$('log-'+aba.id),timers:[]};
+    ctx.pinta=function(){ctx.palco.innerHTML=pintaDemo(ctx);};
+    CTX[aba.id]=ctx;
+    ctx.palco.addEventListener('click',function(e){
+      var b=e.target.closest('[data-act]');
+      if(!b||b.disabled){return;}
+      agir(ctx,b.getAttribute('data-act'),b.getAttribute('data-arg'));
+    });
+    ctx.palco.addEventListener('input',function(e){
+      var s=e.target;
+      if(s.hasAttribute&&s.hasAttribute('data-slider')){ctx.st[s.getAttribute('data-slider')]=Number(s.value);parcial(ctx);}
+      else if(s.hasAttribute&&s.hasAttribute('data-campo')){ctx.st[s.getAttribute('data-campo')]=s.value;parcial(ctx);}
+    });
+    $('reset-'+aba.id).addEventListener('click',function(){
+      limparTimers(ctx);
+      ctx.st=novoEstado(aba);
+      ctx.log.innerHTML='';
+      ctx.pinta();
+      logar(ctx,'info','🔄 Demo reiniciada.','Antes de clicar, preveja de novo: mude uma escolha e compare o resultado com o da rodada anterior.');
+    });
+    ctx.pinta();
+  });
+}
+
+/* ---------- MODOS ---------- */
+function ligarModos(){
+  var apresentacao=false,escuroAntes=false;
+  $('btnModo').addEventListener('click',function(){
+    apresentacao=!apresentacao;
+    document.body.classList.toggle('apresentacao',apresentacao);
+    this.textContent=apresentacao?'📖 Leitura':'🎤 Apresentação';
+    this.setAttribute('aria-pressed',apresentacao?'true':'false');
+    var rs=document.querySelectorAll('details.roteiro');
+    for(var i=0;i<rs.length;i++){rs[i].open=apresentacao;}
+    if(apresentacao){
+      escuroAntes=document.body.classList.contains('escuro');
+      document.body.classList.remove('escuro');
+      $('btnEscuro').disabled=true;
+      $('btnEscuro').setAttribute('aria-pressed','false');
+      toast('🎤 Modo Apresentação: fonte maior, roteiros abertos, setas navegam');
+    }else{
+      $('btnEscuro').disabled=false;
+      if(escuroAntes){document.body.classList.add('escuro');$('btnEscuro').setAttribute('aria-pressed','true');}
+      toast('📖 Modo Leitura');
+    }
+  });
+  $('btnEscuro').addEventListener('click',function(){
+    var on=!document.body.classList.contains('escuro');
+    document.body.classList.toggle('escuro',on);
+    this.textContent=on?'☀️ Claro':'🌙 Escuro';
+    this.setAttribute('aria-pressed',on?'true':'false');
+  });
+}
+
+/* ---------- INIT ---------- */
+function init(){
+  renderAbas();
+  ligarDemos();
+  ligarModos();
+  $('paineis').addEventListener('click',function(e){
+    var alt=e.target.closest('.alt');
+    if(alt&&alt.closest('.pergunta')){responderQuiz(alt);return;}
+    var mb=e.target.closest('.mito-btn');
+    if(mb){abrirMito(mb);return;}
+    if(e.target.closest('#btn-chefao')){chefao();}
+  });
+  $('faixa').addEventListener('click',function(e){
+    var b=e.target.closest('.aba');
+    if(!b){return;}
+    ativar(b.getAttribute('data-alvo'),true);
+  });
+  document.addEventListener('keydown',function(e){
+    var t=e.target,tag=t.tagName;
+    if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||t.isContentEditable){return;}
+    if(e.key==='ArrowRight'){vizinho(1);e.preventDefault();}
+    else if(e.key==='ArrowLeft'){vizinho(-1);e.preventDefault();}
+    else if(e.key==='Home'){ativar(IDS[0],true);e.preventDefault();}
+    else if(e.key==='End'){ativar(IDS[IDS.length-1],true);e.preventDefault();}
+  });
+  window.addEventListener('hashchange',function(){
+    var id=location.hash.replace('#','');
+    if(IDS.indexOf(id)>=0){ativar(id,false);}
+  });
+  var inicial=location.hash.replace('#','');
+  if(IDS.indexOf(inicial)<0){inicial=ABAS[0].id;}
+  ativar(inicial,false);
+  progresso();
+}
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init);}else{init();}
+})();
+</script>
+</body>
+</html>
