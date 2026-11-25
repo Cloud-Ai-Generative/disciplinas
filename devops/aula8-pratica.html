@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DEVOPS — Aula 8: Gestão de Riscos e Ferramentas de Gerenciamento</title>
+<!-- HTMLearning v2.18-beta.5 (20/11/2026) — Todos os campos de metadados foram informados (disciplina, aula, unidade, páginas). Dados do professor(a) não informados (campo opcional): linha A2 omitida. O sumário traz 8 subtópicos: os 7 primeiros viraram abas; o subtópico 'Aplicação prática e estudos de caso' foi condensado em caixa de aprofundamento dentro da aba 7 (mais relacionada), conforme a regra de no máximo 7 abas. Nenhum conteúdo pedagógico foi inventado. -->
+<style>
+*{box-sizing:border-box}
+:root{
+  --acento:#1B5E3A; --fundo:#f0f4f1; --painel:#ffffff; --tinta:#12211a; --suave:#55665c;
+  --borda:#cddbd2; --ok:#166534; --erro:#9b1c1c; --real:#f2f8f4; --ferr:#f7f4ee; --link:#1B5E3A;
+}
+body.escuro{
+  --fundo:#0f1512; --painel:#18221c; --tinta:#e8f1eb; --suave:#a9c0b3; --borda:#2c3a32;
+  --ok:#1f7a44; --erro:#a52a2a; --real:#1b2a22; --ferr:#241f18; --link:#86dfab;
+}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--fundo);color:var(--tinta);font-size:18px;line-height:1.55;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+body.apresentacao{font-size:22px}
+[hidden]{display:none !important}
+a{color:var(--link)}
+:focus-visible{outline:3px solid #d97706;outline-offset:2px}
+.envolve{max-width:1180px;margin:0 auto;padding:0 14px 40px}
+.modos{position:fixed;top:10px;right:10px;z-index:60;display:flex;gap:8px}
+.modos button{font-size:.78em;padding:8px 12px;border-radius:99px;border:2px solid var(--acento);
+  background:var(--acento);color:#fff;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.25)}
+.modos button:disabled{opacity:.5;cursor:not-allowed}
+header.topo{background:var(--acento);color:#fff;padding:22px 18px;border-radius:0 0 18px 18px;margin-bottom:14px}
+header.topo h1{margin:0 0 6px;font-size:1.5em;line-height:1.25}
+header.topo p{margin:2px 0;font-size:.9em}
+.hud{display:flex;flex-wrap:wrap;gap:12px;align-items:center;background:var(--painel);border:3px solid var(--borda);
+  border-radius:14px;padding:12px 14px;margin-bottom:14px;box-shadow:0 4px 0 rgba(0,0,0,.07)}
+.hud .caixa{font-weight:700}
+.barra{flex:1;min-width:180px;height:16px;background:var(--borda);border-radius:99px;overflow:hidden}
+.barra i{display:block;height:100%;width:0;background:var(--acento);transition:width .3s}
+.selos{width:100%;display:flex;flex-wrap:wrap;gap:6px}
+.selo{background:var(--acento);color:#fff;border-radius:99px;padding:4px 12px;font-size:.78em;font-weight:700}
+.selo.vazio{background:var(--borda);color:var(--tinta)}
+.faixa-abas{position:sticky;top:0;z-index:30;display:flex;gap:6px;overflow-x:auto;padding:10px 6px 0;
+  background:var(--fundo);border-bottom:3px solid var(--acento);scrollbar-width:thin}
+.aba{flex:0 0 auto;white-space:nowrap;border:3px solid var(--acento);border-bottom:none;border-radius:14px 14px 0 0;
+  background:var(--acento);color:#fff;padding:10px 16px;font-size:.86em;font-weight:700;cursor:pointer;margin-bottom:-3px}
+.aba .num{display:inline-block;background:rgba(255,255,255,.25);border-radius:99px;padding:0 8px;margin-right:6px}
+.aba.ativa{background:var(--painel);color:var(--tinta);border-bottom:3px solid var(--painel);position:relative;z-index:31}
+.aba.ativa .num{background:var(--acento);color:#fff}
+.selo-estudo{display:inline-block;margin-left:8px;background:#8a5a00;color:#fff;border-radius:99px;padding:1px 9px;font-size:.82em}
+.paineis{background:var(--painel);border:3px solid var(--acento);border-top:none;border-radius:0 0 18px 18px;padding:20px 18px 26px}
+.painel{display:none}
+.painel.ativo{display:block}
+.painel h2{margin:.1em 0 .5em;font-size:1.35em}
+.painel h3{font-size:1.08em;margin:1.2em 0 .5em}
+.painel h4{font-size:1em;margin:.6em 0 .3em}
+.fora{background:var(--ferr);border-left:8px solid #8a5a00;padding:8px 12px;border-radius:8px;font-size:.9em}
+.missao{background:var(--acento);color:#fff;border-radius:12px;padding:12px 16px;margin-bottom:12px}
+.dupla{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:820px){.dupla{grid-template-columns:1fr}}
+.cartao{border:3px solid var(--borda);border-radius:14px;padding:12px 16px;background:var(--painel);
+  box-shadow:0 4px 0 rgba(0,0,0,.07);margin:12px 0}
+.cartao.real{background:var(--real)}
+.cartao.ferr{background:var(--ferr)}
+.cartao ul{margin:.3em 0;padding-left:1.2em}
+.cartao li{margin:.45em 0}
+.demo{border:3px solid var(--acento);border-radius:16px;padding:14px 16px;margin:18px 0;background:var(--painel)}
+.prever{background:#fff4cf;color:#3a2a05;border:3px solid #b45309;border-radius:12px;padding:12px 14px;font-weight:600}
+body.escuro .prever{background:#3b2f10;color:#ffeec2}
+.instrucoes{background:#fff9e6;color:#3a2f0c;border:3px solid #d9a441;border-radius:12px;padding:10px 16px;margin:12px 0}
+body.escuro .instrucoes{background:#2c2513;color:#f6e6bd}
+.instrucoes ol{margin:.3em 0;padding-left:1.3em}
+.legenda{background:#eef3ff;color:#141f3a;border:3px solid #2b4cb0;border-radius:12px;padding:10px 16px;margin:12px 0}
+body.escuro .legenda{background:#171d33;color:#d8e0f7}
+.legenda ul{margin:.3em 0;padding-left:1.2em}
+.palco{border:3px dashed var(--acento);border-radius:14px;padding:14px;background:var(--real);margin:12px 0}
+.btn{background:var(--acento);color:#fff;border:2px solid var(--acento);border-radius:10px;padding:10px 16px;
+  font-size:.92em;font-weight:700;cursor:pointer;margin:4px 6px 4px 0}
+.btn:hover{filter:brightness(1.3)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn.tog{background:var(--painel);color:var(--tinta);border:2px solid var(--borda);font-weight:600}
+.btn.tog.on{background:var(--acento);color:#fff;border-color:var(--acento)}
+.log{max-height:280px;overflow:auto;border-left:8px solid var(--acento);padding:6px 12px;background:var(--painel);margin-top:10px}
+.msg{border:2px solid var(--borda);border-radius:10px;padding:8px 12px;margin:6px 0;font-size:.94em}
+.msg.ok{border-color:var(--ok)}
+.msg.erro{border-color:var(--erro)}
+.msg.info{border-color:var(--acento)}
+.observa{background:var(--ferr);border:2px dashed var(--suave);border-radius:10px;padding:8px 14px;margin:10px 0;font-size:.92em}
+.grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:10px 0}
+.metrica{border:3px solid var(--borda);border-radius:12px;padding:10px;background:var(--painel);text-align:center}
+.metrica b{display:block;font-size:1.25em}
+.no{border:3px solid var(--borda);border-radius:10px;padding:8px 12px;margin:6px 0;background:var(--painel);font-size:.92em}
+.no.atual{border-color:#d97706;font-weight:700}
+.no.ok{border-color:var(--ok)}
+.no.erro{border-color:var(--erro)}
+.colunas{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:700px){.colunas{grid-template-columns:1fr}}
+.coluna{border:3px solid var(--borda);border-radius:12px;padding:8px;background:var(--painel);min-height:90px}
+.coluna h5{margin:.2em 0 .5em;font-size:.95em}
+.tarja{border:2px solid var(--borda);border-radius:8px;padding:6px 8px;margin:4px 0;font-size:.85em;background:var(--real)}
+.rotulo-slider{display:block;font-weight:600;margin-top:8px;font-size:.92em}
+input[type=range]{width:100%}
+textarea{width:100%;padding:10px;border:2px solid var(--borda);border-radius:10px;background:var(--painel);color:var(--tinta);font-family:inherit;font-size:.95em}
+.quiz{border:3px solid var(--borda);border-radius:16px;padding:14px 16px;margin:18px 0;background:var(--real)}
+.termos{background:#eef3ff;color:#141f3a;border:3px solid #2b4cb0;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:.93em}
+body.escuro .termos{background:#171d33;color:#d8e0f7}
+.pergunta{border-top:2px dashed var(--borda);padding-top:12px;margin-top:12px}
+.pergunta:first-of-type{border-top:none}
+.enun{font-weight:600}
+.alts{display:flex;flex-direction:column;gap:8px}
+.alt{text-align:left;background:var(--painel);color:var(--tinta);border:3px solid var(--borda);border-radius:10px;
+  padding:11px 14px;font-size:.95em;font-family:inherit;cursor:pointer}
+.alt:hover:not(:disabled){border-color:var(--acento)}
+.alt:disabled{cursor:not-allowed}
+.alt.certa{background:var(--ok);color:#fff;border-color:var(--ok);font-weight:700}
+.alt.errada{background:var(--erro);color:#fff;border-color:var(--erro)}
+.fb{margin-top:10px;border-radius:10px;padding:10px 14px;font-size:.95em;display:none}
+.fb.ok{display:block;background:var(--painel);border:3px solid var(--ok)}
+.fb.erro{display:block;background:var(--painel);border:3px solid var(--erro)}
+details.aprof,details.roteiro{border:3px solid var(--borda);border-radius:12px;padding:10px 16px;margin:12px 0;background:var(--real)}
+details.roteiro{background:#fff7e6}
+body.escuro details.roteiro{background:#2a2317}
+details.dicio{background:#eef3ff}
+body.escuro details.dicio{background:#171d33}
+details.conceitos{background:#eefaf1}
+body.escuro details.conceitos{background:#152a1e}
+details.casos{background:#fff1f0}
+body.escuro details.casos{background:#2b1c1c}
+details.buscas{background:#f3f0ff}
+body.escuro details.buscas{background:#201d2e}
+details.mito{background:#fdf2f8}
+body.escuro details.mito{background:#2a1a24}
+summary{cursor:pointer;font-weight:700}
+dt{font-weight:700;margin-top:.6em}
+dd{margin:.15em 0 .4em 0}
+.conceito{border-bottom:2px dashed var(--borda);padding-bottom:10px;margin-bottom:10px}
+.analogia{background:var(--painel);border-left:6px solid #d97706;padding:8px 12px;border-radius:8px}
+.links li{margin:.5em 0}
+.nota{font-size:.85em;color:var(--suave)}
+table{border-collapse:collapse;width:100%;margin:10px 0;font-size:.93em}
+th,td{border:2px solid var(--borda);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--acento);color:#fff}
+table.matriz td{text-align:center;padding:6px}
+td.cx-b{border-color:var(--ok)}
+td.cx-m{border-color:#b45309}
+td.cx-a{border-color:var(--erro)}
+td.cx-sel{background:var(--acento);color:#fff;font-weight:700}
+.chefao{border:4px solid #8a5a00;border-radius:16px;padding:14px 16px;background:var(--ferr);margin-top:16px}
+.mapa li{margin:.5em 0}
+.cola td:first-child{width:32%}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:var(--acento);color:#fff;
+  padding:10px 20px;border-radius:99px;font-weight:700;z-index:80;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.rodape{max-width:1180px;margin:26px auto 0;padding:0 16px 30px;font-size:.82em;color:var(--suave);line-height:1.5}
+.rodape h4{color:var(--tinta);font-size:1.05em;margin:.4em 0 .5em}
+.rodape hr{border:none;border-top:2px solid var(--borda);margin:18px 0}
+.rodape ul{padding-left:1.1em;margin:.3em 0}
+.rodape .contatos div{margin:.25em 0;word-break:break-all}
+body.apresentacao .roteiro{border-color:#8a5a00}
+@media(max-width:640px){
+  body{font-size:17px}
+  header.topo h1{font-size:1.25em;padding-right:70px}
+  .modos button{font-size:.68em;padding:7px 9px}
+  .painel h2{font-size:1.15em}
+}
+</style>
+</head>
+<body>
+<div class="modos">
+  <button id="btnModo" type="button" aria-pressed="false">🎤 Apresentação</button>
+  <button id="btnEscuro" type="button" aria-pressed="false">🌙 Escuro</button>
+</div>
+
+<header class="topo">
+  <h1>🛡️ DEVOPS — Aula 8: Gestão de Riscos e Ferramentas de Gerenciamento</h1>
+  <p>Unidade 3 · Páginas 33 a 59 · Aula interativa offline (arquivo único)</p>
+  <p>Trilha de sala: 30 minutos nas abas 1 a 5 · Abas 6 e 7 para estudo em casa · Revisão com mapa, cola rápida e Chefão</p>
+</header>
+
+<div class="envolve">
+  <div class="hud">
+    <span class="caixa">⭐ XP: <span id="xp">0</span></span>
+    <span class="caixa" id="progTexto">Progresso: 0 de 21 perguntas</span>
+    <span class="barra"><i id="progBarra"></i></span>
+    <span class="selos" id="selos"><span class="selo vazio">Nenhum selo ainda: complete o quiz de uma aba</span></span>
+  </div>
+  <nav class="faixa-abas" id="faixa" role="tablist" aria-label="Abas da aula"></nav>
+  <main class="paineis" id="paineis"></main>
+  <noscript><p style="padding:16px">Esta aula interativa precisa de JavaScript ativado no navegador.</p></noscript>
+</div>
+
+<footer class="rodape">
+  <h4>📋 FICHA TÉCNICA DA AULA</h4>
+  <div>DEVOPS — Aula 8, Unidade 3, págs. 33–59 · Gerado em 25/11/2026 · 7 abas · 21 perguntas · 7 demos · cor #1B5E3A</div>
+  <hr>
+  <h4>🪄 SOBRE O HTMLearning · v2.18-beta.5 (20/11/2026)</h4>
+  <div>Transformar o sumário de qualquer disciplina em uma classe interativa em HTML único e offline, com previsão antes do clique, tentativa e erro guiado e exemplos reais.</div>
+  <ul>
+    <li>O que é: metodologia e arquitetura de prompts que converte sumários em aulas interativas em minutos, com IAs gratuitas.</li>
+    <li>O que entrega: 5 a 7 abas + Revisão, simulações com previsão, quiz com retry sem revelar gabarito, linguagem plana, Modos Apresentação/Leitura.</li>
+    <li>Por que é inclusivo: um único .html leve, 100% offline, roda em PC e celular e viaja em pen drive para escolas desconectadas ou áreas rurais.</li>
+  </ul>
+  <div>Idealizador do projeto: Professor Wellington Dimas da Cruz</div>
+  <div>Apoiadora do projeto: Prof.ª Dr.ª Mariella Berger Andrade (IFES / CEFOR)</div>
+  <div class="contatos">
+    <div><strong>Contatos e links do projeto:</strong></div>
+    <div>E-mail do idealizador: <a href="mailto:cloud.ai-generative@outlook.com">cloud.ai-generative@outlook.com</a></div>
+    <div>Repositório GitHub do idealizador: <a href="https://github.com/cloud-ai-Generative" target="_blank" rel="noopener">https://github.com/cloud-ai-Generative</a></div>
+    <div>Currículo Lattes do idealizador: <a href="https://lattes.cnpq.br/6801791839011321" target="_blank" rel="noopener">https://lattes.cnpq.br/6801791839011321</a></div>
+    <div>Currículo Lattes da apoiadora: <a href="https://lattes.cnpq.br/3929645439848570" target="_blank" rel="noopener">https://lattes.cnpq.br/3929645439848570</a></div>
+    <div>Site oficial do projeto: <a href="https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html" target="_blank" rel="noopener">https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html</a></div>
+  </div>
+  <div>Licença do HTMLearning (metodologia e prompt): <a href="https://creativecommons.org/licenses/by/4.0/deed.pt-br" target="_blank" rel="noopener">CC BY 4.0 (Creative Commons Atribuição 4.0 Internacional)</a>. O conteúdo da aula pertence ao professor da disciplina.</div>
+</footer>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const AULA_DADOS = {
+  abas:[
+  {
+    id:"aba-1", rotulo:"Introdução a riscos", estudoProprio:false,
+    titulo:"Risco não é problema: a diferença que muda o plano",
+    missao:"Distinguir risco de problema já acontecido e explicar por que cuidar de riscos faz parte da rotina de quem trabalha em DevOps.",
+    narrativa:"Risco é o que ainda pode acontecer; problema é o que já aconteceu. Gerenciar risco é gastar pouco agora para não gastar muito depois: enxergar antes, escolher uma resposta e deixar alguém responsável. Em DevOps, onde se publica toda semana, isso vira rotina da equipe, e não documento guardado na gaveta.",
+    mundoReal:[
+      "A Knight Capital (corretora de valores dos Estados Unidos) teve um prejuízo enorme em menos de uma hora, em 2012, depois de uma implantação defeituosa: o risco de publicar sem caminho de volta era conhecido e não tinha sido tratado.",
+      "O GitLab (plataforma de código com esteira de testes e entregas) publicou em 2017 o relato de um incidente em que dados de produção foram apagados e as cópias de segurança não funcionaram como se esperava: o risco estava no papel, mas nunca tinha sido ensaiado."
+    ],
+    ferramentas:[
+      "Registro de riscos: uma lista viva com o que pode acontecer, quem cuida e o que será feito, revisada a cada ciclo.",
+      "Análise depois do incidente (postmortem: o relato do que aconteceu, sem caça a culpados): transforma um problema real em risco conhecido para o futuro."
+    ],
+    dicionario:[
+      {termo:"Risco", def:"Evento incerto que, se acontecer, atrapalha um objetivo do projeto."},
+      {termo:"Problema (incidente)", def:"O que já aconteceu e está causando dano agora."},
+      {termo:"Causa, evento e efeito", def:"De onde vem, o que pode acontecer e o que estraga se acontecer."},
+      {termo:"Exposição", def:"Quanto o risco pesa, combinando chance de acontecer e tamanho do estrago."},
+      {termo:"Dono do risco", def:"A pessoa, com nome e sobrenome, responsável por acompanhar e agir."},
+      {termo:"Apetite de risco", def:"Quanto risco a organização aceita correr para entregar mais rápido."},
+      {termo:"DevOps (do inglês Development e Operations; em português, Desenvolvimento e Operações)", def:"Jeito de trabalhar em que quem constrói e quem opera cuidam juntos do serviço."}
+    ],
+    conceitos:[
+      {titulo:"Antes custa barato; depois custa caro",
+       texto:"Tratar um risco cedo é uma conversa e uma tarefa no quadro. Tratar depois virou incidente: plantão de madrugada, cliente parado e reputação arranhada. O custo de corrigir cresce muito depois que a mudança chega a quem usa.",
+       analogia:"💡 Trocar o pneu careca na oficina é barato e tranquilo; trocar na chuva, no acostamento, sai caro e é perigoso.",
+       exemploReal:"No caso da Knight Capital (corretora de valores dos Estados Unidos), uma implantação sem caminho de volta testado virou prejuízo enorme em minutos — o mesmo cuidado, feito antes, custaria um ensaio."},
+      {titulo:"Risco tem dono, não tem culpado",
+       texto:"Cada risco precisa de alguém que acompanhe, decida e aja. Sem dono, a lista cresce e nada acontece. E a cultura precisa ser sem caça às bruxas: se reportar um risco gera punição, as pessoas param de reportar e a equipe fica cega.",
+       analogia:"💡 O extintor do prédio tem etiqueta com o nome de quem conferiu e a data da conferência.",
+       exemploReal:"O GitLab (plataforma de código) publicou abertamente o relato do incidente de 2017, com foco em corrigir o processo e não em punir a pessoa que executou o comando."}
+    ],
+    roteiroDemo:{
+      passo0:"Antes de clicar, preveja: uma falha que já derrubou o sistema ontem é um risco ou um problema?",
+      passos:[
+        {acao:"Leia a situação 1, sobre a queda de ontem, e clique em uma das três respostas.", ve:"A errada fica vermelha com ✗ e um quadro explica o motivo; as outras continuam clicáveis.", significa:"O que já aconteceu pede correção, não plano preventivo."},
+        {acao:"Acerte e avance para a situação 2, sobre publicar na sexta-feira sem plantão.", ve:"O quadro verde ✅ mostra por que aquilo é risco.", significa:"Evento futuro e incerto: ainda dá tempo de mudar o plano."},
+        {acao:"Resolva a situação 3, sobre a lista sem nomes, e leia o resumo.", ve:"A regra do dono aparece no fim.", significa:"Risco sem dono é risco sem cuidado."}
+      ]
+    },
+    demo:{
+      tipo:"cenario", titulo:"Risco, problema ou falta de dono?",
+      config:{
+        rodadas:[
+          {situacao:"O sistema caiu ontem à noite e continua fora do ar neste momento; os clientes estão ligando.",
+           pergunta:"Como classificar essa situação?",
+           opcoes:[
+             {t:"Risco: pode acontecer de novo", ok:false, fb:"Pode até virar um risco futuro de reincidência, mas o que está na sua frente agora já aconteceu: é incidente, e pede correção imediata."},
+             {t:"Problema (incidente): já aconteceu e está causando dano", ok:true, fb:"Incidente é o presente. A gestão de risco usa o incidente como aprendizado para o futuro, mas primeiro se apaga o incêndio."},
+             {t:"Nem um nem outro: é azar", ok:false, fb:"Azar não é categoria de gestão. Todo incidente tem causa e vira insumo para o registro de riscos, como no relato público do GitLab (plataforma de código)."}
+           ]},
+          {situacao:"A equipe pretende publicar uma mudança grande na sexta-feira à tarde, e não há ninguém de plantão no fim de semana.",
+           pergunta:"Como classificar essa situação?",
+           opcoes:[
+             {t:"Risco: evento futuro e incerto, ainda evitável", ok:true, fb:"Se a mudança falhar, ninguém estará disponível para corrigir. Ainda dá tempo de mudar a janela ou escalar o plantão: é exatamente aí que a gestão de risco atua."},
+             {t:"Problema: o sistema já está quebrado", ok:false, fb:"Nada quebrou ainda. Justamente por isso é risco: dá para agir antes, gastando pouco."},
+             {t:"Não é risco, porque publicar na sexta é normal", ok:false, fb:"Ser comum não torna seguro. A Knight Capital (corretora dos Estados Unidos) teve prejuízo enorme por uma implantação sem caminho de volta — hábito não é controle."}
+           ]},
+          {situacao:"A lista de riscos da equipe tem quarenta itens, todos bem escritos, e nenhum nome de responsável ao lado.",
+           pergunta:"Qual é a falha principal dessa lista?",
+           opcoes:[
+             {t:"Itens demais: era preciso ter no máximo cinco", ok:false, fb:"Quantidade não é o problema central. Uma lista longa com donos e prioridades funciona; uma lista curta sem dono também não anda."},
+             {t:"Falta dono: ninguém acompanha nem age", ok:true, fb:"Sem responsável, o risco vira decoração. Cada item precisa de nome, ação combinada e data de revisão, como a etiqueta do extintor do prédio."},
+             {t:"Falta colocar todos os riscos em vermelho", ok:false, fb:"Cor não resolve responsabilidade. Prioridade se define por chance e estrago, e ação se define por dono e prazo."}
+           ]}
+        ],
+        resumo:"Regra de bolso: risco é futuro e incerto (dá para agir antes); problema é presente (dá para corrigir agora); e todo risco precisa de dono. Exemplo real: o relato público do incidente do GitLab (plataforma de código) em 2017 virou risco conhecido e ensaiado por muitas equipes."
+      }
+    },
+    termosQuiz:"Risco = evento incerto que pode atrapalhar o objetivo · problema (incidente) = o que já aconteceu · dono do risco = pessoa responsável por acompanhar e agir · exposição = chance combinada com estrago · DevOps = quem constrói e quem opera cuidam juntos do serviço.",
+    quiz:[
+      {q:"Qual frase descreve um risco, e não um problema?",
+       alts:[
+         {t:"Pode faltar alguém para corrigir se a publicação de sexta falhar", ok:true, fb:"É futuro e incerto: ainda dá tempo de mudar a janela ou escalar plantão. Risco é exatamente isso."},
+         {t:"O servidor caiu ontem e segue fora do ar", ok:false, fb:"Isso já aconteceu: é incidente. Pede correção agora, e depois vira aprendizado para o registro de riscos."},
+         {t:"O cliente já recebeu a cobrança errada", ok:false, fb:"O dano já ocorreu. É problema em tratamento, não risco a prevenir."}
+       ]},
+      {q:"Para que serve nomear um dono para cada risco?",
+       alts:[
+         {t:"Para alguém acompanhar, decidir e agir sobre aquele item", ok:true, fb:"Sem dono, a lista cresce e nada acontece. É a etiqueta do extintor: nome de quem conferiu e data da conferência."},
+         {t:"Para saber a quem culpar quando o problema acontecer", ok:false, fb:"Cultura de culpa faz as pessoas esconderem riscos. O dono existe para cuidar antes, não para ser punido depois."},
+         {t:"Para transferir o risco para outra empresa", ok:false, fb:"Transferir é uma estratégia de resposta, e envolve contrato. Nomear dono é organização interna do acompanhamento."}
+       ]},
+      {q:"Por que tratar risco cedo costuma ser mais barato?",
+       alts:[
+         {t:"Porque antes é uma conversa e uma tarefa; depois vira plantão e cliente parado", ok:true, fb:"O custo de corrigir cresce depois que a mudança chega a quem usa, como mostrou o caso da Knight Capital (corretora dos Estados Unidos)."},
+         {t:"Porque riscos antigos desaparecem sozinhos", ok:false, fb:"Risco ignorado não some: ele continua lá, esperando a chance de virar incidente."},
+         {t:"Porque ferramentas de gestão são gratuitas no início do projeto", ok:false, fb:"O preço da ferramenta não é o ponto. A economia vem de agir antes do dano, não do valor da licença."}
+       ]}
+    ],
+    aprofundar:[
+      {rotulo:"🔎 Busca no Google (português)", url:"https://www.google.com/search?hl=pt-BR&q=gerenciamento+de+riscos+em+projetos+de+software"},
+      {rotulo:"🎓 Pesquisa científica (Google Scholar, português)", url:"https://scholar.google.com/scholar?hl=pt-BR&q=gerenciamento+de+riscos+em+projetos+de+software"},
+      {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)", url:"https://www.youtube.com/results?search_query=gerenciamento+de+riscos+em+projetos+de+software+aula"}
+    ],
+    mitoOuVerdade:{afirmacao:"Gestão de riscos é escrever um documento no começo do projeto e guardá-lo.", verdade:false,
+      explicacao:"Mito. Em DevOps a lista é viva: entra risco novo a cada ciclo, itens mudam de prioridade e o que virou incidente volta como aprendizado. O relato público do GitLab (plataforma de código) sobre o incidente de 2017 é um exemplo de risco que só ficou visível depois de virar problema."}
+  },
+
+  {
+    id:"aba-2", rotulo:"Identificação", estudoProprio:false,
+    titulo:"Identificação: transformar preocupação em risco escrito",
+    missao:"Escrever riscos na forma causa, evento e efeito, e usar categorias para não deixar ponto cego.",
+    narrativa:"Preocupação solta não vira ação. Identificar é escrever o risco em três partes: de onde vem (causa), o que pode acontecer (evento) e o que estraga (efeito). Quanto mais concreto o texto, mais fácil decidir o que fazer — e mais fácil perceber que duas pessoas estão falando do mesmo risco.",
+    mundoReal:[
+      "A Equifax (agência de crédito dos Estados Unidos que guarda histórico financeiro de consumidores) sofreu um vazamento enorme em 2017 por uma falha já conhecida e não corrigida: o risco era público, mas não tinha dono com prazo.",
+      "Quedas de uma região inteira da AWS (a nuvem da Amazon) já deixaram serviços fora do ar: para muitas equipes, fornecedor fora do ar é um risco de terceiros que precisa estar escrito no registro."
+    ],
+    ferramentas:[
+      "Levantamento rápido com a equipe e lista de verificação por categoria: pessoas, processo, tecnologia, terceiros e prazo.",
+      "Registro de riscos no quadro da equipe: cada risco vira um cartão com dono, categoria e data de revisão."
+    ],
+    dicionario:[
+      {termo:"Causa, evento e efeito", def:"A origem, o que pode acontecer e o prejuízo resultante; as três partes de um risco bem escrito."},
+      {termo:"Categoria de risco", def:"Família do risco: pessoas, processo, tecnologia, terceiros, prazo e escopo."},
+      {termo:"Risco de terceiros", def:"Dependência de fornecedor ou serviço que não está sob seu controle."},
+      {termo:"Dívida técnica", def:"Parte do código que ficou difícil de mexer e cobra juros em forma de lentidão e falhas."},
+      {termo:"Gatilho", def:"Sinal observável de que o risco está virando problema."},
+      {termo:"Lista de verificação (checklist)", def:"Roteiro de perguntas por categoria para não esquecer nenhum tipo de risco."}
+    ],
+    conceitos:[
+      {titulo:"Escreva na forma se... então...",
+       texto:"Um risco útil tem sujeito e consequência: se a única pessoa que conhece o serviço de pagamentos ficar indisponível, então uma falha de cobrança pode ficar horas sem correção. Frases vagas como o sistema é frágil não geram ação, porque ninguém sabe o que observar nem o que fazer.",
+       analogia:"💡 Se chover, então a festa muda de sala é um plano; o tempo está feio é só uma reclamação.",
+       exemploReal:"Antes do incidente de 2017, o risco do GitLab (plataforma de código) podia ser escrito assim: se as cópias nunca forem restauradas em ensaio, então uma apagada acidental pode não ter recuperação."},
+      {titulo:"Olhar por categorias evita ponto cego",
+       texto:"Equipes técnicas costumam listar só riscos de tecnologia e esquecem pessoas, processo, fornecedor e prazo. Passar por uma lista de categorias obriga a olhar o projeto inteiro, inclusive o que não é código: férias de quem sustenta o serviço, contrato de terceiro, escopo combinado sem estimativa.",
+       analogia:"💡 Revisar o carro antes de viajar: pneus, óleo, freios e documentos. A lista evita esquecer o estepe.",
+       exemploReal:"A falha não corrigida no caso da Equifax (agência de crédito dos Estados Unidos) é um risco de processo: existia correção, mas faltava alguém responsável por aplicá-la no prazo."}
+    ],
+    roteiroDemo:{
+      passo0:"Antes de clicar, preveja: a frase a equipe está desmotivada é um risco bem escrito?",
+      passos:[
+        {acao:"Clique em dois ou três cartões de preocupação para colocá-los no registro.", ve:"Cada cartão vira uma frase com causa, evento e efeito, e ganha uma categoria.", significa:"Escrever direito é o que transforma preocupação em item gerenciável."},
+        {acao:"Adicione cartões de categorias diferentes e observe os contadores.", ve:"Os contadores mostram quais famílias ainda estão vazias.", significa:"Categoria vazia é ponto cego: pessoas e terceiros costumam ficar de fora."},
+        {acao:"Complete o registro e leia o quadro final.", ve:"O registro mostra o conjunto equilibrado de riscos do projeto.", significa:"Identificação boa é ampla e concreta, não longa e vaga."}
+      ]
+    },
+    demo:{
+      tipo:"registro", titulo:"Da preocupação solta ao registro de riscos",
+      config:{
+        cartoes:[
+          {texto:"Só uma pessoa sabe mexer no serviço de pagamentos", categoria:"Pessoas",
+           causa:"conhecimento concentrado em uma única pessoa", evento:"ela ficar indisponível", efeito:"uma falha de cobrança ficar horas sem correção",
+           exemplo:"Exemplo real: equipes que perderam o mantenedor de um serviço crítico descobriram na hora do incidente que ninguém mais tinha acesso nem contexto."},
+          {texto:"As cópias de segurança nunca foram restauradas em ensaio", categoria:"Tecnologia",
+           causa:"cópias nunca testadas", evento:"uma apagada acidental acontecer", efeito:"não haver recuperação possível dos dados",
+           exemplo:"Exemplo real: no incidente de 2017 do GitLab (plataforma de código), as cópias existentes não serviram como se esperava."},
+          {texto:"O fornecedor de e-mail pode mudar preço e limite de envio", categoria:"Terceiros",
+           causa:"regras do fornecedor fora do nosso controle", evento:"o preço subir ou o limite cair", efeito:"o orçamento estourar ou os avisos aos clientes pararem",
+           exemplo:"Exemplo real: quando a rede social X (antiga rede social Twitter) mudou preços e regras de acesso, serviços de outras empresas ficaram inviáveis."},
+          {texto:"O prazo foi combinado antes de estimar o trabalho", categoria:"Prazo",
+           causa:"compromisso assumido sem estimativa", evento:"o escopo não caber na data", efeito:"cortes de teste e entrega com qualidade menor",
+           exemplo:"Exemplo real: projetos que cortam testes para cumprir data costumam pagar a conta depois, em incidentes e retrabalho."},
+          {texto:"A esteira não testa o caminho de volta da versão", categoria:"Processo",
+           causa:"reversão nunca ensaiada", evento:"uma publicação defeituosa chegar ao ar", efeito:"o serviço ficar fora do ar enquanto se improvisa a volta",
+           exemplo:"Exemplo real: a Knight Capital (corretora dos Estados Unidos) teve prejuízo enorme em minutos após uma implantação defeituosa em 2012."},
+          {texto:"O módulo de cobrança está difícil de alterar", categoria:"Tecnologia",
+           causa:"dívida técnica acumulada", evento:"uma mudança simples levar dias", efeito:"atrasos e novas falhas a cada alteração",
+           exemplo:"Exemplo real: sistemas legados de bancos exigem janelas longas de mudança justamente pelo custo de alterar código antigo."}
+        ],
+        observa:[
+          "Cada cartão vira uma frase com causa, evento e efeito: é isso que torna o risco gerenciável.",
+          "Os contadores por categoria revelam famílias que você ainda não olhou.",
+          "Nenhum cartão é reclamação vaga: todos dizem o que observar e o que aconteceria."
+        ]
+      },
+      legenda:[
+        "Formato do registro: SE (causa) ENTÃO (evento) E ISSO CAUSA (efeito).",
+        "Categorias usadas: Pessoas, Processo, Tecnologia, Terceiros e Prazo.",
+        "Dívida técnica = parte do código difícil de alterar, que cobra juros em lentidão e falhas."
+      ]
+    },
+    termosQuiz:"Causa = origem do risco · evento = o que pode acontecer · efeito = prejuízo resultante · categoria = família do risco (pessoas, processo, tecnologia, terceiros, prazo) · dívida técnica = código difícil de alterar · risco de terceiros = dependência de fornecedor.",
+    quiz:[
+      {q:"Qual frase está escrita como um risco gerenciável?",
+       alts:[
+         {t:"Se a única pessoa que conhece o pagamento se ausentar, uma falha pode ficar horas sem correção", ok:true, fb:"Tem causa, evento e efeito: dá para saber o que observar e o que fazer. É o formato que gera ação."},
+         {t:"O sistema é frágil e cheio de problemas", ok:false, fb:"É um desabafo, não um risco: não diz origem, nem evento, nem prejuízo. Ninguém sabe o que fazer com essa frase."},
+         {t:"A equipe precisa se dedicar mais", ok:false, fb:"Não há evento incerto nem efeito descrito. É uma opinião sobre comportamento, não um item de registro de riscos."}
+       ]},
+      {q:"Para que serve percorrer categorias (pessoas, processo, tecnologia, terceiros, prazo) ao identificar riscos?",
+       alts:[
+         {t:"Para não deixar pontos cegos fora da parte técnica", ok:true, fb:"Equipes técnicas tendem a listar só tecnologia. A lista de categorias obriga a olhar fornecedor, gente e prazo, como revisar pneus, óleo e documentos do carro."},
+         {t:"Para deixar o documento mais bonito", ok:false, fb:"Organização visual não é o objetivo. O ganho é cobertura: enxergar riscos que ninguém tinha mencionado."},
+         {t:"Para reduzir o número total de riscos identificados", ok:false, fb:"O objetivo não é ter menos itens, e sim ter os itens certos. Filtrar vem depois, na priorização."}
+       ]},
+      {q:"Depender de um serviço de outra empresa que pode mudar preço ou sair do ar é um risco de qual categoria?",
+       alts:[
+         {t:"Terceiros", ok:true, fb:"Está fora do seu controle. Quedas de região da AWS (a nuvem da Amazon) e mudanças de regras de APIs já mostraram esse risco na prática."},
+         {t:"Pessoas", ok:false, fb:"Pessoas trata de conhecimento, disponibilidade e rotatividade da equipe. Aqui a dependência é de um fornecedor externo."},
+         {t:"Não é risco, porque o contrato garante tudo", ok:false, fb:"Contrato define regras e compensações, mas não impede a interrupção. O risco continua existindo e precisa de plano."}
+       ]}
+    ],
+    aprofundar:[
+      {rotulo:"🔎 Busca no Google (português)", url:"https://www.google.com/search?hl=pt-BR&q=identifica%C3%A7%C3%A3o+de+riscos+em+projetos+de+software"},
+      {rotulo:"🎓 Pesquisa científica (Google Scholar, português)", url:"https://scholar.google.com/scholar?hl=pt-BR&q=identifica%C3%A7%C3%A3o+de+riscos+em+projetos+de+software"},
+      {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)", url:"https://www.youtube.com/results?search_query=identifica%C3%A7%C3%A3o+de+riscos+em+projetos+de+software+aula"}
+    ],
+    mitoOuVerdade:{afirmacao:"Identificar riscos é listar tudo que pode dar errado, sem filtro e sem forma.", verdade:false,
+      explicacao:"Mito. Lista infinita e vaga não gera ação. O que funciona é escrever causa, evento e efeito, cobrir as categorias e depois priorizar. No caso da Equifax (agência de crédito dos Estados Unidos), o risco era conhecido e específico: faltou dono e prazo, não faltou lista."}
+  },
+
+  {
+    id:"aba-3", rotulo:"Priorização", estudoProprio:false,
+    titulo:"Avaliação e priorização: chance vezes estrago",
+    missao:"Calcular a exposição de um risco, posicioná-lo na matriz e defender a ordem de atendimento da equipe.",
+    narrativa:"Nem todo risco merece a mesma atenção. Avaliar é estimar a chance de acontecer e o tamanho do estrago; priorizar é ordenar por essa combinação, para gastar o tempo da equipe onde importa. A conta é simples de propósito: serve para conversar e decidir, não para dar falsa precisão.",
+    mundoReal:[
+      "Empresas que operam serviços críticos tratam primeiro riscos de perda de dados e de parada total, mesmo raros, porque o estrago seria enorme.",
+      "No caso da Equifax (agência de crédito dos Estados Unidos), a falha explorada em 2017 já tinha correção disponível: alta chance de exploração e estrago enorme colocariam esse item no topo de qualquer matriz."
+    ],
+    ferramentas:[
+      "Matriz de probabilidade e impacto, de 1 a 5 em cada eixo, desenhada no quadro ou na planilha da equipe.",
+      "Valor esperado, para conversar com quem aprova orçamento: chance multiplicada pelo prejuízo estimado."
+    ],
+    dicionario:[
+      {termo:"Probabilidade", def:"Chance de o evento acontecer, aqui numa escala de 1 (raro) a 5 (quase certo)."},
+      {termo:"Impacto", def:"Tamanho do estrago se acontecer, de 1 (incômodo) a 5 (para o negócio)."},
+      {termo:"Exposição", def:"Probabilidade multiplicada pelo impacto; o número que ordena a fila."},
+      {termo:"Matriz de riscos", def:"Tabela que cruza chance e estrago e pinta as faixas de prioridade."},
+      {termo:"Valor esperado", def:"Chance em porcentagem multiplicada pelo prejuízo em dinheiro."},
+      {termo:"Risco residual", def:"O que sobra depois de aplicar a resposta escolhida."},
+      {termo:"Faixa de prioridade", def:"Classificação do resultado: baixo, médio ou alto, com ação combinada para cada faixa."}
+    ],
+    conceitos:[
+      {titulo:"A conta simples e o que fazer com ela",
+       texto:"Exposição = probabilidade × impacto. Em palavras: multiplique a chance pelo tamanho do estrago. Com escalas de 1 a 5, o resultado vai de 1 a 25; uma combinação comum é tratar 1 a 6 como baixo, 8 a 12 como médio e 15 a 25 como alto. Para dinheiro: valor esperado = chance (%) × prejuízo (R$). Em palavras: se algo tem 20% de chance de custar R$ 50.000, o valor esperado é R$ 10.000 — e gastar menos que isso para evitar já se justifica.",
+       analogia:"💡 Escolher o que arrumar primeiro em casa: um vazamento grande com torneira pingando todo dia passa na frente de uma lâmpada que talvez queime um dia.",
+       exemploReal:"Serviços de pagamento tratam primeiro o risco de cobrar errado, porque o estrago financeiro e de reputação é alto mesmo quando a chance é pequena."},
+      {titulo:"Raro e catastrófico não é prioridade baixa",
+       texto:"Chance pequena com estrago enorme pede plano, mesmo que fique fora do dia a dia: perda de dados, parada total, vazamento. Já os itens de alta chance e baixo impacto viram rotina de melhoria. Priorizar não é ignorar o resto: é definir ordem, prazo e tipo de resposta para cada faixa.",
+       analogia:"💡 Cinto de segurança: acidente é raro, o estrago é enorme — por isso o cinto existe mesmo assim.",
+       exemploReal:"Quedas de uma região inteira da AWS (a nuvem da Amazon) são raras, e ainda assim empresas mantêm segunda região pronta justamente pelo tamanho do impacto."}
+    ],
+    roteiroDemo:{
+      passo0:"Antes de clicar, preveja: um risco de chance baixa e estrago enorme deve ficar no fim da fila?",
+      passos:[
+        {acao:"Escolha um risco e mova os controles de probabilidade e impacto.", ve:"A célula correspondente acende na matriz e a nota de exposição muda.", significa:"A matriz é só a conta desenhada: chance vezes estrago."},
+        {acao:"Coloque a probabilidade em 1 e o impacto em 5 e observe a faixa.", ve:"A nota fica média mesmo com chance mínima.", significa:"Estrago enorme não deixa o item sumir da lista."},
+        {acao:"Compare a lista ordenada e o valor esperado em dinheiro.", ve:"A fila se reordena sozinha e o valor em reais aparece.", significa:"É esse número que se leva para a conversa de orçamento."}
+      ]
+    },
+    demo:{
+      tipo:"matriz", titulo:"Matriz de probabilidade e impacto",
+      config:{
+        riscos:[
+          {nome:"Publicação sem caminho de volta", p:4, i:5, prejuizo:120000},
+          {nome:"Cópias de segurança nunca ensaiadas", p:2, i:5, prejuizo:300000},
+          {nome:"Fornecedor de e-mail mudar o limite", p:3, i:2, prejuizo:20000},
+          {nome:"Atraso por escopo combinado sem estimativa", p:4, i:3, prejuizo:60000}
+        ],
+        observa:[
+          "A nota é chance vezes estrago: mexa nos dois controles e veja a célula acender.",
+          "Impacto 5 mantém o item relevante mesmo com chance 1: raro e catastrófico não é baixo.",
+          "O valor esperado em dinheiro é o argumento para pedir orçamento de mitigação."
+        ]
+      },
+      legenda:[
+        "Exposição = probabilidade × impacto. Em palavras: chance multiplicada pelo tamanho do estrago.",
+        "Escalas de 1 a 5: probabilidade 1 é raro e 5 é quase certo; impacto 1 é incômodo e 5 para o negócio.",
+        "Faixas: B = baixo (1 a 6) · M = médio (8 a 12) · A = alto (15 a 25).",
+        "Valor esperado = (probabilidade × 10)% × prejuízo em reais. Em palavras: quanto esse risco custa em média por ocorrência esperada.",
+        "Valores em reais são do modelo da demo, para exercício, e não estimativas de um caso real."
+      ]
+    },
+    termosQuiz:"Probabilidade = chance de acontecer (1 a 5) · impacto = tamanho do estrago (1 a 5) · exposição = probabilidade × impacto · matriz = tabela que cruza os dois · valor esperado = chance (%) × prejuízo em dinheiro · risco residual = o que sobra depois da resposta.",
+    quiz:[
+      {q:"Um risco tem probabilidade 4 e impacto 5 na escala de 1 a 5. Qual é a exposição e a faixa?",
+       alts:[
+         {t:"20, faixa alta", ok:true, fb:"Exposição = probabilidade × impacto = 4 × 5 = 20. Na combinação usada, 15 a 25 é faixa alta: entra no topo da fila."},
+         {t:"9, faixa média", ok:false, fb:"Somar os dois não é a conta. A exposição multiplica chance por estrago, justamente para dar peso maior a combinações graves."},
+         {t:"20, faixa baixa", ok:false, fb:"O número está certo, a faixa não. Com escala de 1 a 5, o máximo é 25; 20 está bem perto do topo."}
+       ]},
+      {q:"A equipe só tem tempo para tratar um risco nesta semana. Qual escolher?",
+       alts:[
+         {t:"O de maior exposição, combinando chance alta e estrago grande", ok:true, fb:"É para isso que serve a conta: ordenar a fila e gastar o tempo disponível onde o prejuízo esperado é maior."},
+         {t:"O mais fácil de resolver, para riscar um item da lista", ok:false, fb:"Riscar item dá sensação de progresso, mas pode deixar o risco grave intacto. Facilidade entra como desempate, não como critério principal."},
+         {t:"O mais antigo da lista, por ordem de chegada", ok:false, fb:"Antiguidade não mede prejuízo. Um risco antigo e pequeno não passa na frente de um recente e catastrófico."}
+       ]},
+      {q:"Um risco tem 20% de chance de gerar prejuízo de R$ 50.000. Qual é o valor esperado?",
+       alts:[
+         {t:"R$ 10.000", ok:true, fb:"Valor esperado = chance × prejuízo = 0,2 × 50.000. Gastar bem menos que isso para evitar já se justifica na conversa de orçamento."},
+         {t:"R$ 50.000", ok:false, fb:"Esse é o prejuízo se acontecer, não o valor esperado. Falta multiplicar pela chance de ocorrência."},
+         {t:"R$ 2.500", ok:false, fb:"Esse valor sairia de 5% de chance. Com 20%, a conta é 0,2 × 50.000, e não 0,05 × 50.000."}
+       ]}
+    ],
+    aprofundar:[
+      {rotulo:"🔎 Busca no Google (português)", url:"https://www.google.com/search?hl=pt-BR&q=matriz+de+probabilidade+e+impacto+gest%C3%A3o+de+riscos"},
+      {rotulo:"🎓 Pesquisa científica (Google Scholar, português)", url:"https://scholar.google.com/scholar?hl=pt-BR&q=matriz+de+probabilidade+e+impacto+gest%C3%A3o+de+riscos"},
+      {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)", url:"https://www.youtube.com/results?search_query=matriz+de+probabilidade+e+impacto+gest%C3%A3o+de+riscos+aula"}
+    ],
+    mitoOuVerdade:{afirmacao:"Risco de probabilidade baixa pode ser ignorado.", verdade:false,
+      explicacao:"Mito. Se o estrago for enorme, o item continua relevante: perda de dados e parada total entram no plano mesmo sendo raros. Empresas mantêm segunda região de nuvem pronta por causa de quedas raras da AWS (a nuvem da Amazon), não por causa da frequência."}
+  },
+
+  {
+    id:"aba-4", rotulo:"Mitigação", estudoProprio:false,
+    titulo:"Mitigação: escolher a resposta e deixar o plano pronto",
+    missao:"Escolher entre evitar, reduzir, transferir e aceitar, e montar um plano com dono, gatilho e ensaio.",
+    narrativa:"Depois de priorizar, é preciso decidir o que fazer. As quatro respostas clássicas são evitar, reduzir, transferir e aceitar. Cada uma tem custo e deixa um risco residual — o que sobra depois do tratamento. E resposta sem dono, sem gatilho e sem ensaio é só intenção.",
+    mundoReal:[
+      "A atualização defeituosa do CrowdStrike Falcon (programa da empresa CrowdStrike que vigia computadores corporativos) travou máquinas Windows em 2024: liberar em lotes pequenos é mitigação, porque reduz a chance e o alcance do estrago.",
+      "Usar um serviço gerenciado ou contratar seguro transfere parte do risco para outro, mas a responsabilidade com o seu cliente continua sua."
+    ],
+    ferramentas:[
+      "Plano de resposta no cartão do risco: o que será feito, quem faz, até quando e qual sinal dispara o plano alternativo.",
+      "Ensaio de contingência (simular a falha de propósito) e reversão da versão ensaiada antes de precisar dela."
+    ],
+    dicionario:[
+      {termo:"Evitar", def:"Mudar o plano para eliminar a causa: não fazer aquilo que cria o risco."},
+      {termo:"Reduzir (mitigar)", def:"Diminuir a chance ou o tamanho do estrago, mantendo a atividade."},
+      {termo:"Transferir", def:"Passar parte das consequências para outro, por contrato, seguro ou serviço gerenciado."},
+      {termo:"Aceitar", def:"Decidir conscientemente conviver com o risco, registrando dono, limite e sinal de alerta."},
+      {termo:"Risco residual", def:"O que sobra depois da resposta aplicada."},
+      {termo:"Plano de contingência", def:"O que fazer se o risco virar problema, escrito antes da emergência."},
+      {termo:"Gatilho", def:"Sinal observável que dispara o plano de contingência."},
+      {termo:"Lote pequeno (liberação gradual)", def:"Entregar a mudança para poucos primeiro, limitando o alcance de um erro."}
+    ],
+    conceitos:[
+      {titulo:"Quatro respostas, quatro custos",
+       texto:"Evitar elimina a causa, mas pode custar oportunidade. Reduzir mantém a atividade e diminui chance ou estrago. Transferir move parte da consequência para outro, com custo de contrato. Aceitar é decisão registrada, com dono e limite — não é esquecer. Sempre sobra risco residual, e ele também precisa ser conhecido.",
+       analogia:"💡 Estrada perigosa: não viajar (evitar), ir mais devagar (reduzir), contratar seguro (transferir) ou aceitar a chance de um atraso pequeno (aceitar).",
+       exemploReal:"Publicar em lotes pequenos, como fazem serviços de grande porte, é reduzir: se algo der errado, poucos usuários sentem e a volta é rápida."},
+      {titulo:"Plano que não foi ensaiado não é plano",
+       texto:"O plano precisa de três coisas: dono com nome, gatilho observável e um ensaio. Sem ensaio, descobrem-se detalhes bobos na hora da emergência: acesso que ninguém tem, cópia que não restaura, pessoa-chave sem substituto.",
+       analogia:"💡 Ensaio de incêndio da escola: no dia real ninguém lê o cartaz pela primeira vez.",
+       exemploReal:"No incidente de 2017 do GitLab (plataforma de código), as cópias existiam, mas o caminho de recuperação não tinha sido comprovado na prática."}
+    ],
+    roteiroDemo:{
+      passo0:"Antes de clicar, preveja: aceitar um risco é a mesma coisa que ignorar um risco?",
+      passos:[
+        {acao:"Leia a situação 1, da publicação de sexta sem plantão, e escolha uma resposta.", ve:"A errada fica vermelha com explicação; as outras continuam liberadas.", significa:"Quando dá para eliminar a causa, evitar costuma ser a melhor resposta."},
+        {acao:"Avance para a situação 2, sobre perda de dados com chance pequena.", ve:"O quadro verde mostra por que reduzir vence aceitar nesse caso.", significa:"Estrago enorme não se aceita só porque a chance é pequena."},
+        {acao:"Resolva a situação 3, do risco pequeno de fornecedor, e leia o resumo.", ve:"A diferença entre aceitar e ignorar aparece no fim.", significa:"Aceitar tem dono, limite e sinal de alerta registrados."}
+      ]
+    },
+    demo:{
+      tipo:"cenario", titulo:"Qual resposta para cada risco?",
+      config:{
+        rodadas:[
+          {situacao:"A equipe publica mudanças grandes toda sexta-feira à tarde, não há plantão no fim de semana e já houve incidentes nesse horário.",
+           pergunta:"Qual resposta faz mais sentido?",
+           opcoes:[
+             {t:"Evitar: mudar a janela de publicação para horário com equipe disponível", ok:true, fb:"Aqui dá para eliminar a causa com custo baixo: basta mudar o horário. Evitar é a resposta mais forte quando é viável."},
+             {t:"Aceitar, porque sempre foi assim", ok:false, fb:"Aceitar exige decisão registrada com dono e limite, e só faz sentido quando o custo da resposta supera o prejuízo esperado. Não é o caso: mudar o horário é barato."},
+             {t:"Transferir a responsabilidade para o cliente", ok:false, fb:"Não existe contrato que transfira a responsabilidade pelo seu serviço ao cliente. Transferir se faz com fornecedor ou seguro, e mesmo assim parcialmente."}
+           ]},
+          {situacao:"Existe chance pequena de perder os dados se o disco do servidor falhar, mas o negócio não sobrevive sem esses dados.",
+           pergunta:"Qual resposta faz mais sentido?",
+           opcoes:[
+             {t:"Aceitar, porque a chance é pequena", ok:false, fb:"Chance pequena com estrago fatal não se aceita. É o cinto de segurança: o acidente é raro e mesmo assim você usa."},
+             {t:"Reduzir: cópia isolada mais ensaio periódico de restauração", ok:true, fb:"Reduz o estrago e comprova que a recuperação funciona. Foi exatamente o que faltou no incidente de 2017 do GitLab (plataforma de código)."},
+             {t:"Evitar: parar de guardar dados", ok:false, fb:"Eliminar a atividade eliminaria o negócio. Evitar só é bom quando a causa pode ser removida sem destruir o objetivo."}
+           ]},
+          {situacao:"Um serviço de e-mail de terceiros pode reajustar o preço; o impacto estimado é pequeno no orçamento e não há alternativa óbvia no curto prazo.",
+           pergunta:"Qual resposta faz mais sentido?",
+           opcoes:[
+             {t:"Evitar: construir um serviço de e-mail próprio", ok:false, fb:"O custo de construir e manter seria muito maior que o risco. Evitar aqui troca um problema pequeno por um grande."},
+             {t:"Transferir: contratar um seguro para variação de preço", ok:false, fb:"Transferir tem custo de contrato e raramente cobre oscilação comercial de fornecedor. Não é a ferramenta adequada para esse risco."},
+             {t:"Aceitar e monitorar, com dono, limite de gasto e sinal de alerta", ok:true, fb:"Aceitar é decisão consciente e registrada: alguém acompanha, existe um limite e um gatilho para reavaliar. É diferente de simplesmente ignorar."}
+           ]}
+        ],
+        resumo:"Regra de bolso: evitar elimina a causa; reduzir diminui chance ou estrago; transferir move parte da consequência; aceitar é decisão registrada com dono, limite e gatilho. Sempre sobra risco residual. Exemplo real: liberar em lotes pequenos, como resposta ao risco de atualização defeituosa, é reduzir — o caso do CrowdStrike Falcon (programa de segurança corporativa) em 2024 mostrou o custo de não fazer isso."
+      }
+    },
+    termosQuiz:"Evitar = eliminar a causa mudando o plano · reduzir (mitigar) = diminuir chance ou estrago · transferir = passar parte da consequência a outro por contrato ou seguro · aceitar = conviver com o risco de forma registrada · risco residual = o que sobra depois da resposta · gatilho = sinal que dispara o plano alternativo · contingência = o que fazer se virar problema.",
+    quiz:[
+      {q:"Passar a publicar em lotes pequenos, para poucos usuários primeiro, é qual estratégia?",
+       alts:[
+         {t:"Reduzir", ok:true, fb:"A atividade continua, mas a chance de dano amplo e o alcance do erro diminuem. É mitigação, como resposta ao risco de atualização defeituosa."},
+         {t:"Evitar", ok:false, fb:"Evitar seria não publicar. Aqui você continua publicando, só que de forma mais segura."},
+         {t:"Transferir", ok:false, fb:"Ninguém de fora assumiu a consequência. O controle é interno e reduz o impacto, não o transfere."}
+       ]},
+      {q:"O que diferencia aceitar um risco de ignorar um risco?",
+       alts:[
+         {t:"Aceitar tem dono, limite e sinal de alerta registrados", ok:true, fb:"É uma decisão consciente e revisada. Ignorar é não ter ninguém olhando — e aí o risco vira surpresa."},
+         {t:"Aceitar significa que o risco desapareceu", ok:false, fb:"O risco continua lá, com a mesma chance. O que muda é a decisão de conviver com ele e monitorar."},
+         {t:"Aceitar é sempre a melhor resposta, porque não custa nada", ok:false, fb:"Aceitar custa o prejuízo se acontecer. Só é adequado quando o custo da resposta supera o prejuízo esperado."}
+       ]},
+      {q:"Um plano de contingência está escrito, mas nunca foi ensaiado. Qual é o risco disso?",
+       alts:[
+         {t:"Descobrir na emergência que um passo essencial não funciona", ok:true, fb:"Acesso que ninguém tem, cópia que não restaura, substituto inexistente: só o ensaio revela isso antes, como no incidente do GitLab (plataforma de código)."},
+         {t:"O documento ficar grande demais para imprimir", ok:false, fb:"Tamanho não é o problema. Plano curto e ensaiado vale mais que plano longo nunca testado."},
+         {t:"O fornecedor cancelar o contrato", ok:false, fb:"Falta de ensaio é risco operacional interno, não cláusula contratual com o fornecedor."}
+       ]}
+    ],
+    aprofundar:[
+      {rotulo:"🔎 Busca no Google (português)", url:"https://www.google.com/search?hl=pt-BR&q=estrat%C3%A9gias+de+mitiga%C3%A7%C3%A3o+de+riscos+em+projetos"},
+      {rotulo:"🎓 Pesquisa científica (Google Scholar, português)", url:"https://scholar.google.com/scholar?hl=pt-BR&q=estrat%C3%A9gias+de+mitiga%C3%A7%C3%A3o+de+riscos+em+projetos"},
+      {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)", url:"https://www.youtube.com/results?search_query=estrat%C3%A9gias+de+mitiga%C3%A7%C3%A3o+de+riscos+em+projetos+aula"}
+    ],
+    mitoOuVerdade:{afirmacao:"Transferir o risco elimina o risco.", verdade:false,
+      explicacao:"Mito. Transferir move parte das consequências para outro, por contrato ou seguro, e sempre deixa risco residual. A responsabilidade com o seu cliente continua sua, mesmo que o fornecedor indenize parte do prejuízo."}
+  },
+
+  {
+    id:"aba-5", rotulo:"Visão de ferramentas", estudoProprio:false,
+    titulo:"Visão geral: o que as ferramentas de gerenciamento fazem",
+    missao:"Reconhecer as famílias de ferramentas e explicar por que o valor está nas ligações entre elas.",
+    narrativa:"Ferramenta de gerenciamento não é só um quadro bonito: é onde o trabalho é combinado, acompanhado e ligado ao que acontece de verdade no código e no serviço. Em DevOps, o valor aparece quando o cartão da tarefa se conecta à mudança no código, à esteira que testou e ao painel que mostra o serviço no ar.",
+    mundoReal:[
+      "O Jira e o Trello (ferramentas de quadro de tarefas da empresa Atlassian) organizam o trabalho; o GitHub e o GitLab (plataformas de código com esteira de testes) guardam a mudança; o Grafana (programa que desenha painéis de medidas) mostra o serviço no ar.",
+      "Equipes que integram essas ferramentas respondem em segundos o que entrou no ar ontem e quem aprovou; equipes com planilha solta levam dias juntando pedaços de conversa e memória."
+    ],
+    ferramentas:[
+      "Quadro de tarefas: Jira, Trello e Azure DevOps (plataforma de planejamento e entregas da Microsoft).",
+      "Plataforma de código com esteira: GitHub Actions e GitLab CI (executam testes e publicações automaticamente), mais painéis como o Grafana."
+    ],
+    dicionario:[
+      {termo:"Quadro (Kanban)", def:"Painel visual com colunas que mostram em que etapa cada tarefa está."},
+      {termo:"Cartão", def:"A unidade de trabalho no quadro, com responsável, descrição e histórico."},
+      {termo:"Esteira (CI/CD, do inglês Continuous Integration e Continuous Delivery; Integração e Entrega Contínuas)", def:"Automação que testa e publica cada mudança pequena."},
+      {termo:"Rastreabilidade", def:"Conseguir ligar o cartão à mudança no código, à publicação e ao incidente."},
+      {termo:"Integração entre ferramentas", def:"Fazer uma ferramenta avisar a outra automaticamente, sem redigitação."},
+      {termo:"Planilha solta", def:"Controle paralelo, fora do sistema, que envelhece e divergindo do resto."},
+      {termo:"Painel de monitoramento", def:"Tela com medidas do serviço no ar, usada para perceber problemas."}
+    ],
+    conceitos:[
+      {titulo:"Quatro famílias que se completam",
+       texto:"Planejar e acompanhar (quadro de tarefas); construir e testar (plataforma de código com esteira); operar e observar (painéis e avisos de plantão); comunicar e documentar (mensagens e base de conhecimento). Nenhuma família sozinha resolve o projeto, e cada uma alimenta as outras.",
+       analogia:"💡 Oficina mecânica: a prancheta de serviços, a bancada de ferramentas e o painel de teste do motor. Cada um resolve uma parte do trabalho.",
+       exemploReal:"Um time típico usa Jira (quadro da Atlassian), GitHub (plataforma de código), GitHub Actions (esteira automática) e Grafana (painéis de medidas) — quatro famílias conversando."},
+      {titulo:"O valor está nas ligações, não nas telas",
+       texto:"Quando o cartão se liga à mudança no código e a esteira avisa o quadro, a informação anda sozinha e ninguém precisa perguntar em qual versão está tal correção. Sem ligação, cada passagem de bastão vira redigitação, e informação se perde no caminho.",
+       analogia:"💡 Ficha do paciente que acompanha ele do balcão ao exame: sem a ficha, cada setor pergunta tudo de novo.",
+       exemploReal:"Empresas sob auditoria precisam mostrar quem aprovou cada mudança; com ferramentas integradas isso sai do histórico, sem integração vira arqueologia de conversas."}
+    ],
+    roteiroDemo:{
+      passo0:"Antes de clicar, preveja: com ferramentas desligadas entre si, o que acontece com a informação de quem aprovou a mudança?",
+      passos:[
+        {acao:"Deixe as ferramentas desligadas e clique em Rodar entrega.", ve:"Cada estação exige um passo manual e o contador de informações perdidas sobe.", significa:"Sem integração, a informação se perde nas passagens de bastão."},
+        {acao:"Ligue a integração e rode a mesma entrega.", ve:"Os passos manuais caem e nenhuma informação se perde.", significa:"A ligação entre ferramentas é o que dá rastreabilidade."},
+        {acao:"Compare o quadro final dos dois modos.", ve:"O tempo total do modelo muda entre os dois cenários.", significa:"Integração não é luxo: é redução de retrabalho e de risco."}
+      ]
+    },
+    demo:{
+      tipo:"linha", titulo:"Uma entrega atravessando as ferramentas",
+      config:{
+        estacoes:["🗂️ Quadro de tarefas","💻 Código e revisão","⚙️ Esteira de testes","🚀 Publicação","📊 Painel do serviço"],
+        textos:[
+          "O cartão foi criado com responsável e critério de pronto.",
+          "A mudança foi revisada por outra pessoa e ligada ao cartão.",
+          "A esteira executou os testes e registrou o resultado.",
+          "A publicação entrou no ar com o número da versão registrado.",
+          "O painel passou a mostrar o comportamento do serviço após a mudança."
+        ],
+        manual:"Sem integração, alguém copiou a informação de uma ferramenta para outra na mão.",
+        perda:"Sem integração, o registro de quem aprovou se perdeu no caminho e precisará ser reconstruído depois.",
+        exemplo:"Caso real: equipes que ligam o quadro ao repositório de código conseguem responder quem aprovou e o que entrou no ar; com planilha solta, essa resposta vira arqueologia de conversas.",
+        observa:[
+          "Cada estação é uma família de ferramenta diferente, não um produto específico.",
+          "Os passos manuais só aparecem quando as ferramentas não conversam entre si.",
+          "Informação perdida é risco de auditoria e de investigação de incidente."
+        ]
+      },
+      legenda:[
+        "Passos manuais = quantas vezes alguém redigitou informação de uma ferramenta em outra.",
+        "Informações perdidas = registros que não chegaram ao fim da linha (por exemplo, quem aprovou).",
+        "Dias até concluir = tempo total neste modelo simplificado, não estimativa real de projeto."
+      ]
+    },
+    termosQuiz:"Quadro (Kanban) = painel visual com colunas de etapas · cartão = unidade de trabalho · esteira (CI/CD) = automação que testa e publica · rastreabilidade = ligar cartão, mudança, publicação e incidente · integração = uma ferramenta avisar a outra automaticamente · planilha solta = controle paralelo que diverge.",
+    quiz:[
+      {q:"Qual é o principal ganho de integrar o quadro de tarefas com a plataforma de código?",
+       alts:[
+         {t:"Ligar o cartão à mudança e saber o que entrou no ar e quem aprovou", ok:true, fb:"É a rastreabilidade: a informação anda sozinha, como a ficha do paciente que acompanha ele do balcão ao exame."},
+         {t:"Deixar as telas das ferramentas mais bonitas", ok:false, fb:"Aparência não é o ganho. O valor está na informação que passa automaticamente de uma para outra."},
+         {t:"Eliminar a necessidade de revisar o código", ok:false, fb:"Revisão continua sendo prática essential de qualidade. Integração registra a revisão, não a substitui."}
+       ]},
+      {q:"A equipe mantém uma planilha paralela porque não confia no quadro. O que isso indica?",
+       alts:[
+         {t:"Que a ferramenta não foi adotada de verdade e a informação vai divergir", ok:true, fb:"Dois lugares para a mesma verdade sempre divergem. Ou o quadro passa a ser a fonte única, ou a equipe trabalha duas vezes."},
+         {t:"Que a equipe é mais organizada que a média", ok:false, fb:"Redigitação é retrabalho e fonte de erro. Organização é ter uma fonte única confiável, não duas."},
+         {t:"Que a planilha deveria virar a ferramenta oficial de imediato", ok:false, fb:"Pode até ser, se atender melhor. O ponto é escolher uma fonte única e integrá-la, não manter as duas."}
+       ]},
+      {q:"Qual conjunto cobre melhor as quatro famílias de ferramentas de um time DevOps?",
+       alts:[
+         {t:"Quadro de tarefas, plataforma de código com esteira, painel de monitoramento e base de documentação", ok:true, fb:"Planejar, construir, operar e comunicar. Nenhuma família sozinha resolve, e cada uma alimenta as outras."},
+         {t:"Duas ferramentas de quadro de tarefas diferentes", ok:false, fb:"Duplicar a mesma família cria duas fontes de verdade e não cobre construir, operar nem documentar."},
+         {t:"Apenas um editor de texto compartilhado", ok:false, fb:"Documentar é uma família só. Sem quadro, esteira e monitoramento, o time perde acompanhamento e automação."}
+       ]}
+    ],
+    aprofundar:[
+      {rotulo:"🔎 Busca no Google (português)", url:"https://www.google.com/search?hl=pt-BR&q=ferramentas+de+gerenciamento+de+projetos+devops"},
+      {rotulo:"🎓 Pesquisa científica (Google Scholar, português)", url:"https://scholar.google.com/scholar?hl=pt-BR&q=ferramentas+de+gerenciamento+de+projetos+devops"},
+      {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)", url:"https://www.youtube.com/results?search_query=ferramentas+de+gerenciamento+de+projetos+devops+aula"}
+    ],
+    mitoOuVerdade:{afirmacao:"Uma boa ferramenta de gerenciamento substitui a conversa da equipe.", verdade:false,
+      explicacao:"Mito. A ferramenta registra e dá visibilidade ao que foi combinado; ela não combina nada sozinha. Equipes que só movem cartões, sem conversar sobre bloqueios e riscos, continuam entregando mal — com um quadro bonito."}
+  },
+
+  {
+    id:"aba-6", rotulo:"Funcionalidades", estudoProprio:true,
+    titulo:"Funcionalidades principais: quadro, limite e indicadores",
+    missao:"Explicar o núcleo comum das ferramentas e demonstrar, com números, o efeito de limitar o trabalho em progresso.",
+    narrativa:"Toda ferramenta séria oferece o mesmo núcleo: lista de trabalho, quadro com etapas, limite de trabalho em progresso, prazos, responsáveis e indicadores. O que muda entre elas é o acabamento. Entender o núcleo evita escolher pela aparência e ajuda a usar bem a que já se tem.",
+    mundoReal:[
+      "Equipes que usam quadros como os do Trello (ferramenta de quadros da empresa Atlassian) costumam limitar quantas tarefas ficam em andamento ao mesmo tempo: começar menos para terminar mais.",
+      "O Azure DevOps (plataforma da Microsoft) e o GitLab (plataforma de código com esteira) mostram indicadores de tempo de atravessamento e vazão, usados nas reuniões de melhoria do time."
+    ],
+    ferramentas:[
+      "Quadro com colunas e limite de trabalho em progresso configurável.",
+      "Indicadores de fluxo (tempo de atravessamento e vazão), automatizações e trilha de auditoria com permissões."
+    ],
+    dicionario:[
+      {termo:"WIP (Work In Progress; Trabalho em Progresso)", def:"Quantas tarefas estão sendo feitas ao mesmo tempo."},
+      {termo:"Limite de WIP", def:"Teto combinado de tarefas simultâneas em uma etapa do quadro."},
+      {termo:"Tempo de atravessamento (lead time)", def:"Quanto tempo uma tarefa leva do começo ao fim dentro do fluxo."},
+      {termo:"Vazão (throughput)", def:"Quantas tarefas a equipe conclui por período."},
+      {termo:"Gargalo", def:"Etapa onde o trabalho se acumula e trava o resto."},
+      {termo:"Bloqueio", def:"Tarefa parada esperando algo de fora, com o motivo registrado."},
+      {termo:"Trilha de auditoria", def:"Registro automático de quem fez o quê e quando."}
+    ],
+    conceitos:[
+      {titulo:"Começar menos, terminar mais",
+       texto:"Quando muita coisa fica aberta ao mesmo tempo, cada item demora mais para sair, porque a atenção se divide. A relação é direta: tempo de atravessamento = trabalho em progresso ÷ vazão. Em palavras: com a mesma capacidade de entrega, quanto mais coisa aberta, mais tempo cada uma leva. Limitar o trabalho em progresso não reduz a vazão; reduz o tempo de cada entrega.",
+       analogia:"💡 Caixa de supermercado: atender cinco filas ao mesmo tempo demora mais do que atender uma de cada vez, com a mesma velocidade de passar produtos.",
+       exemploReal:"Times que adotam quadro com limite, como os que usam Trello ou Jira (ferramentas da Atlassian), costumam ver o tempo de entrega cair sem contratar mais ninguém."},
+      {titulo:"Indicador serve para decidir, não para vigiar",
+       texto:"Medir fluxo serve para achar gargalo e melhorar o sistema: onde as tarefas param, quanto tempo esperam, o que bloqueia. Usar indicador como ranking de pessoas produz comportamento defensivo: cartões movidos sem trabalho real e bloqueios escondidos.",
+       analogia:"💡 Painel do carro: serve para você decidir parar e abastecer, não para julgar o motorista.",
+       exemploReal:"Reuniões de melhoria em times DevOps olham tempo de atravessamento e vazão do sistema, e usam incidentes como aprendizado, no estilo dos relatos públicos do GitLab (plataforma de código)."}
+    ],
+    roteiroDemo:{
+      passo0:"Antes de clicar, preveja: limitar o trabalho em progresso faz cada tarefa sair mais rápido ou mais devagar?",
+      passos:[
+        {acao:"Deixe o limite desligado e clique em Avançar dia várias vezes.", ve:"Todas as tarefas começam juntas e nenhuma termina por vários dias.", significa:"Muita coisa aberta divide a capacidade e alonga cada entrega."},
+        {acao:"Reinicie a demo, ligue o limite de duas tarefas e avance os dias de novo.", ve:"As tarefas terminam em poucos dias cada uma, e o tempo médio cai.", significa:"Mesma capacidade, menos trabalho simultâneo, entregas mais rápidas."},
+        {acao:"Compare o tempo médio das concluídas nos dois modos.", ve:"A vazão total é parecida, mas o tempo de cada tarefa muda muito.", significa:"Limitar não é produzir menos; é entregar cada coisa antes."}
+      ]
+    },
+    demo:{
+      tipo:"quadro", titulo:"Quadro com e sem limite de trabalho em progresso",
+      config:{
+        total:8, esforco:2, capacidade:2, limite:2,
+        observa:[
+          "Sem limite, tudo começa junto e nada termina: o tempo de cada tarefa dispara.",
+          "Com limite, a capacidade se concentra em poucas tarefas e elas saem antes.",
+          "A quantidade total concluída ao final é parecida; o que muda é o tempo de cada entrega."
+        ]
+      },
+      legenda:[
+        "Cada tarefa precisa de 2 unidades de trabalho; a equipe entrega 2 unidades por dia (modelo simplificado).",
+        "WIP (Work In Progress; Trabalho em Progresso) = tarefas na coluna Fazendo.",
+        "Tempo de atravessamento = dias entre entrar em Fazendo e chegar em Feito.",
+        "Tempo de atravessamento = trabalho em progresso ÷ vazão. Em palavras: mais coisa aberta, mais tempo por entrega."
+      ]
+    },
+    termosQuiz:"WIP (Trabalho em Progresso) = tarefas sendo feitas ao mesmo tempo · limite de WIP = teto combinado de simultâneas · tempo de atravessamento (lead time) = dias do começo ao fim · vazão (throughput) = tarefas concluídas por período · gargalo = etapa onde o trabalho acumula.",
+    quiz:[
+      {q:"A equipe tem capacidade fixa e oito tarefas abertas ao mesmo tempo. O que acontece com o tempo de cada entrega?",
+       alts:[
+         {t:"Aumenta, porque a capacidade se divide entre muitas tarefas", ok:true, fb:"Tempo de atravessamento = trabalho em progresso ÷ vazão. Com a mesma vazão, mais coisa aberta significa mais tempo por item."},
+         {t:"Diminui, porque todo mundo trabalha em tudo", ok:false, fb:"Dividir atenção não cria capacidade. É o caixa atendendo cinco filas ao mesmo tempo: cada cliente espera mais."},
+         {t:"Fica igual, porque a capacidade é a mesma", ok:false, fb:"A vazão total fica parecida, mas o tempo de cada item muda muito. É justamente essa a diferença que o limite controla."}
+       ]},
+      {q:"Para que serve configurar um limite de trabalho em progresso no quadro?",
+       alts:[
+         {t:"Para concentrar a capacidade e fazer cada tarefa terminar antes", ok:true, fb:"Começar menos para terminar mais. A vazão se mantém e o tempo de entrega cai, sem contratar ninguém."},
+         {t:"Para impedir que a equipe pegue trabalho novo", ok:false, fb:"O limite não bloqueia trabalho: assim que algo termina, entra o próximo. Ele controla simultâneas, não entrada."},
+         {t:"Para aumentar o número de tarefas em andamento", ok:false, fb:"É o oposto: o limite reduz simultâneas. Mais andamento é justamente o que alonga as entregas."}
+       ]},
+      {q:"Qual é o uso saudável dos indicadores de fluxo (tempo de atravessamento e vazão)?",
+       alts:[
+         {t:"Encontrar gargalos e melhorar o sistema de trabalho", ok:true, fb:"Indicador serve para decidir onde mexer, como o painel do carro. O alvo é o fluxo, não a pessoa."},
+         {t:"Montar um ranking de quem é mais produtivo", ok:false, fb:"Ranking gera comportamento defensivo: cartões movidos sem trabalho real e bloqueios escondidos, o que piora o fluxo."},
+         {t:"Substituir as conversas sobre bloqueios", ok:false, fb:"O número mostra onde olhar; a conversa explica por quê. Sem conversa, o time vê o gráfico e não entende a causa."}
+       ]}
+    ],
+    aprofundar:[
+      {rotulo:"🔎 Busca no Google (português)", url:"https://www.google.com/search?hl=pt-BR&q=quadro+kanban+limite+de+trabalho+em+progresso"},
+      {rotulo:"🎓 Pesquisa científica (Google Scholar, português)", url:"https://scholar.google.com/scholar?hl=pt-BR&q=quadro+kanban+limite+de+trabalho+em+progresso"},
+      {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)", url:"https://www.youtube.com/results?search_query=quadro+kanban+limite+de+trabalho+em+progresso+aula"}
+    ],
+    mitoOuVerdade:{afirmacao:"Quanto mais tarefas em andamento, mais rápido a equipe entrega.", verdade:false,
+      explicacao:"Mito. Com capacidade fixa, mais trabalho simultâneo só divide a atenção e alonga cada entrega. A vazão total permanece parecida; o tempo de cada tarefa dispara. É o caixa de supermercado tentando atender cinco filas ao mesmo tempo."}
+  },
+
+  {
+    id:"aba-7", rotulo:"Seleção e casos", estudoProprio:true,
+    titulo:"Avaliação, seleção e aplicação prática de ferramentas",
+    missao:"Aplicar critérios de seleção a um contexto real de equipe e extrair lições de casos conhecidos.",
+    narrativa:"Escolher ferramenta é decisão de risco: preço, dependência, curva de aprendizado, integração e o que acontece se você quiser sair. A escolha certa é a que a equipe realmente usa e a que se conecta ao que já existe — não a que tem a lista de recursos mais longa.",
+    mundoReal:[
+      "Muitas equipes pequenas começam com o Trello (quadro simples da empresa Atlassian) e migram para o Jira (ferramenta mais completa da mesma empresa) quando passam a precisar de relatórios e permissões.",
+      "Empresas sob auditoria escolhem ferramentas com trilha de auditoria (registro de quem fez o quê e quando), porque a pergunta do auditor é sempre quem aprovou esta mudança."
+    ],
+    ferramentas:[
+      "Lista de critérios com pesos, preenchida antes de assistir às demonstrações dos fornecedores.",
+      "Teste com o time por um ciclo completo e verificação de exportação dos dados, para saber como sair se precisar."
+    ],
+    dicionario:[
+      {termo:"Critério e peso", def:"O que importa na escolha e quanto cada item vale na nota final."},
+      {termo:"Custo total de uso", def:"Licença mais treinamento, integração e manutenção ao longo do tempo."},
+      {termo:"Curva de aprendizado", def:"Quanto tempo a equipe leva para usar a ferramenta direito."},
+      {termo:"Aprisionamento (lock-in)", def:"Dificuldade de sair da ferramenta levando seus dados e histórico."},
+      {termo:"Exportação de dados", def:"Conseguir tirar tudo em formato aberto, para migrar se necessário."},
+      {termo:"Trilha de auditoria", def:"Registro automático de quem fez o quê e quando."},
+      {termo:"SaaS (Software as a Service; Software como Serviço)", def:"Ferramenta usada pela internet, hospedada pelo fornecedor."},
+      {termo:"LGPD (Lei Geral de Proteção de Dados)", def:"Lei brasileira que regula o uso e a guarda de dados pessoais."}
+    ],
+    conceitos:[
+      {titulo:"Critérios antes da demonstração",
+       texto:"Defina pesos antes de ver o produto: integração com o que já existe, custo total de uso, permissões e trilha de auditoria, exportação dos dados e curva de aprendizado. Sem isso, a escolha vira preferência por interface bonita, e o custo aparece depois, em treinamento e retrabalho.",
+       analogia:"💡 Escolher carro pela estrada que você percorre todo dia, não pelo vídeo do comercial.",
+       exemploReal:"Times que já usam GitHub (plataforma de código) costumam preferir uma ferramenta que se ligue a ele, em vez de trocar todo o fluxo por um quadro mais vistoso."},
+      {titulo:"A melhor ferramenta é a que a equipe usa",
+       texto:"Adoção vale mais que recursos. Um piloto de um ciclo com o time inteiro revela se a ferramenta entra na rotina ou se todos mantêm uma planilha paralela. Se a planilha sobrevive, a ferramenta falhou — e o risco de duas fontes de verdade continua ativo.",
+       analogia:"💡 A academia mais moderna da cidade não serve se você não vai.",
+       exemploReal:"Migrações de Trello para Jira (ferramentas da Atlassian) funcionam quando a equipe precisa mesmo de relatórios e permissões; quando não precisa, a complexidade extra vira abandono."}
+    ],
+    roteiroDemo:{
+      passo0:"Antes de clicar, preveja: a ferramenta com mais recursos é sempre a melhor escolha para qualquer equipe?",
+      passos:[
+        {acao:"Leia o contexto da equipe pequena e escolha uma opção.", ve:"A errada fica vermelha com explicação; as outras continuam liberadas.", significa:"Contexto manda: tamanho, rotina e o que já existe."},
+        {acao:"Avance para o contexto com auditoria e depois para o time que já tem esteira.", ve:"Os quadros verdes mostram o critério decisivo em cada caso.", significa:"Cada contexto tem um critério que pesa mais que os outros."},
+        {acao:"Leia o resumo e abra a caixa de estudos de caso logo abaixo.", ve:"Três casos reais aparecem com a lição de cada um.", significa:"Seleção de ferramenta é gestão de risco aplicada."}
+      ]
+    },
+    demo:{
+      tipo:"cenario", titulo:"Qual ferramenta para qual equipe?",
+      config:{
+        rodadas:[
+          {situacao:"Equipe de cinco pessoas, presencial, sem exigência de auditoria, precisando apenas organizar tarefas e prazos nas próximas semanas.",
+           pergunta:"Qual escolha faz mais sentido?",
+           opcoes:[
+             {t:"Quadro simples, como o Trello (ferramenta de quadros da Atlassian)", ok:true, fb:"Baixa curva de aprendizado e adoção rápida. Para esse contexto, complexidade extra só atrasaria o time."},
+             {t:"Suíte completa com fluxos personalizados e muitos campos obrigatórios", ok:false, fb:"O custo de configuração e treinamento supera o benefício para cinco pessoas sem exigência de auditoria. É comprar caminhão para entregar pizza."},
+             {t:"Planilha compartilhada por mensagem", ok:false, fb:"Não tem responsável, histórico nem aviso. Vira duas fontes de verdade e o risco de perda de informação continua."}
+           ]},
+          {situacao:"Empresa regulada, auditada todo ano, precisa provar quem aprovou cada mudança e restringir quem pode alterar registros.",
+           pergunta:"Qual critério deve pesar mais na escolha?",
+           opcoes:[
+             {t:"Trilha de auditoria e permissões por perfil", ok:true, fb:"É o requisito que decide. Sem registro de quem fez o quê e quando, a empresa não consegue responder ao auditor."},
+             {t:"Interface mais bonita e temas de cores", ok:false, fb:"Aparência não atende exigência de auditoria. É critério de conforto, não de conformidade."},
+             {t:"Preço mais baixo entre todas as opções", ok:false, fb:"Economizar e depois pagar em retrabalho e não conformidade sai mais caro. Custo total de uso inclui esse risco."}
+           ]},
+          {situacao:"Time que já usa GitHub (plataforma de código) com esteira automática e quer que o quadro reflita o que entrou no ar.",
+           pergunta:"Qual caminho faz mais sentido?",
+           opcoes:[
+             {t:"Escolher a ferramenta que se integra ao que já existe", ok:true, fb:"Integração dá rastreabilidade sem trocar o fluxo inteiro. O ganho vem da ligação, não da troca."},
+             {t:"Trocar tudo pela ferramenta mais famosa do mercado", ok:false, fb:"Migrar sem necessidade cria curva de aprendizado e risco de perda de histórico, sem resolver o problema da ligação."},
+             {t:"Manter o quadro e pedir que alguém atualize na mão todo dia", ok:false, fb:"Redigitação diária é retrabalho e fonte de divergência. É exatamente o que a integração elimina."}
+           ]}
+        ],
+        resumo:"Regra de bolso: defina critérios e pesos antes da demonstração; some custo total de uso; confira integração, permissões e exportação; e teste com o time por um ciclo. A melhor ferramenta é a que a equipe usa de verdade. Exemplo real: migrações de Trello para Jira (ferramentas da Atlassian) funcionam quando a necessidade de relatórios e permissões é real."
+      }
+    },
+    casos:[
+      {titulo:"Knight Capital (corretora de valores dos Estados Unidos), 2012",
+       texto:"Uma implantação defeituosa colocou em produção um comportamento errado e gerou prejuízo enorme em menos de uma hora. Não havia caminho de volta ensaiado nem liberação gradual.",
+       licao:"Risco de publicação sem reversão: alta exposição. Resposta: reduzir, com lotes pequenos e reversão testada; e registrar tudo na ferramenta, com dono e prazo."},
+      {titulo:"GitLab (plataforma de código com esteira), 2017",
+       texto:"Durante uma manutenção, dados de produção foram apagados e as cópias de segurança não serviram como se esperava. A empresa publicou o relato completo do incidente.",
+       licao:"Risco de perda de dados: impacto máximo mesmo com chance baixa. Resposta: reduzir com cópia isolada e ensaio periódico de restauração, com dono nomeado."},
+      {titulo:"Equifax (agência de crédito dos Estados Unidos), 2017",
+       texto:"Uma falha já conhecida e com correção disponível não foi aplicada em um componente do site, e o vazamento expôs dados de milhões de pessoas.",
+       licao:"Risco de processo: correção sem dono e sem prazo. Resposta: priorização por exposição, dono nomeado e ferramenta com trilha de auditoria para cobrar o prazo."}
+    ],
+    termosQuiz:"Critério e peso = o que importa e quanto vale na nota · custo total de uso = licença mais treinamento, integração e manutenção · trilha de auditoria = registro de quem fez o quê e quando · aprisionamento (lock-in) = dificuldade de sair levando os dados · exportação = tirar os dados em formato aberto · SaaS = ferramenta hospedada pelo fornecedor.",
+    quiz:[
+      {q:"Antes de escolher uma ferramenta de gerenciamento, o que fazer primeiro?",
+       alts:[
+         {t:"Definir critérios e pesos com a equipe", ok:true, fb:"Sem critérios, a escolha vira preferência por interface. É escolher carro pela estrada que você percorre, não pelo comercial."},
+         {t:"Assistir a todas as demonstrações e escolher a mais impressionante", ok:false, fb:"Demonstração mostra o melhor caso do fornecedor. Sem critérios prévios, você compara recursos que talvez nem use."},
+         {t:"Escolher a que o concorrente usa", ok:false, fb:"O contexto do outro time é diferente: tamanho, auditoria e ferramentas já existentes mudam completamente a resposta."}
+       ]},
+      {q:"O que significa verificar a exportação de dados antes de contratar?",
+       alts:[
+         {t:"Saber se você consegue sair levando histórico e tarefas em formato aberto", ok:true, fb:"É reduzir o aprisionamento: se preço ou regras mudarem, existe caminho de saída. Escolher fornecedor sabendo a porta de saída."},
+         {t:"Conferir se a ferramenta tem relatório bonito em PDF", ok:false, fb:"Relatório é apresentação. Exportação é conseguir levar os dados brutos para outro sistema, o que é bem diferente."},
+         {t:"Garantir que a ferramenta nunca ficará fora do ar", ok:false, fb:"Disponibilidade é outro critério. Exportação trata de dependência e migração, não de tempo no ar."}
+       ]},
+      {q:"Depois de um ciclo de teste, a equipe continua mantendo uma planilha paralela. O que concluir?",
+       alts:[
+         {t:"A ferramenta não foi adotada e é preciso rever a escolha ou o modo de uso", ok:true, fb:"Duas fontes de verdade sempre divergem. A melhor ferramenta é a que o time usa; se a planilha sobrevive, algo não encaixou."},
+         {t:"A equipe está sendo mais cuidadosa que o necessário", ok:false, fb:"Redigitação é retrabalho e cria divergência. Cuidado é ter uma fonte única confiável."},
+         {t:"Basta proibir a planilha por comunicado", ok:false, fb:"Proibir sem resolver a causa faz a planilha virar escondida. É preciso entender o que faltou na ferramenta ou no processo."}
+       ]}
+    ],
+    aprofundar:[
+      {rotulo:"🔎 Busca no Google (português)", url:"https://www.google.com/search?hl=pt-BR&q=como+escolher+ferramenta+de+gerenciamento+de+projetos"},
+      {rotulo:"🎓 Pesquisa científica (Google Scholar, português)", url:"https://scholar.google.com/scholar?hl=pt-BR&q=como+escolher+ferramenta+de+gerenciamento+de+projetos"},
+      {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)", url:"https://www.youtube.com/results?search_query=como+escolher+ferramenta+de+gerenciamento+de+projetos+aula"}
+    ],
+    mitoOuVerdade:{afirmacao:"A ferramenta mais completa e mais cara é sempre a melhor escolha.", verdade:false,
+      explicacao:"Mito. Para uma equipe de cinco pessoas sem exigência de auditoria, um quadro simples como o Trello (ferramenta da Atlassian) resolve com adoção rápida. Complexidade sem necessidade vira treinamento, campos obrigatórios e abandono — e a planilha paralela volta."}
+  }
+  ],
+  revisao:{
+    mapa:[
+      "1. Introdução — risco é futuro e incerto; problema é presente; todo risco precisa de dono (termos na cola rápida).",
+      "2. Identificação — escrever causa, evento e efeito e percorrer categorias para não deixar ponto cego.",
+      "3. Priorização — chance vezes estrago ordena a fila; raro e catastrófico continua relevante (a conta está na cola rápida).",
+      "4. Mitigação — evitar, reduzir, transferir ou aceitar, sempre com dono, sinal de alerta e ensaio.",
+      "5. Visão de ferramentas — quatro famílias que se completam, e o valor está nas ligações entre elas.",
+      "6. Funcionalidades (aba de estudo em casa) — quadro, limite de trabalho simultâneo e indicadores de fluxo (na cola rápida).",
+      "7. Seleção e casos (aba de estudo em casa) — critérios com pesos, custo total, porta de saída e adoção real; três casos reais na caixa de estudos de caso da aba.",
+      "Fio condutor: gerenciar risco é decidir antes; a ferramenta é onde essa decisão fica visível, com dono e histórico."
+    ],
+    cola:[
+      {termo:"Risco", linha:"Evento incerto que pode atrapalhar o objetivo."},
+      {termo:"Problema (incidente)", linha:"O que já aconteceu e causa dano agora."},
+      {termo:"Dono do risco", linha:"Pessoa responsável por acompanhar e agir."},
+      {termo:"Causa, evento e efeito", linha:"Origem, o que pode acontecer e o prejuízo."},
+      {termo:"Categoria de risco", linha:"Família: pessoas, processo, tecnologia, terceiros, prazo."},
+      {termo:"Dívida técnica", linha:"Código difícil de mexer, que cobra juros em atraso."},
+      {termo:"Gatilho", linha:"Sinal de que o risco está virando problema."},
+      {termo:"Probabilidade", linha:"Chance de acontecer, de 1 (raro) a 5 (quase certo)."},
+      {termo:"Impacto", linha:"Tamanho do estrago, de 1 (incômodo) a 5 (para o negócio)."},
+      {termo:"Exposição", linha:"Probabilidade × impacto. Em palavras: chance vezes estrago."},
+      {termo:"Valor esperado", linha:"Chance (%) × prejuízo em dinheiro."},
+      {termo:"Risco residual", linha:"O que sobra depois da resposta aplicada."},
+      {termo:"Evitar", linha:"Mudar o plano para eliminar a causa."},
+      {termo:"Reduzir (mitigar)", linha:"Diminuir chance ou estrago, mantendo a atividade."},
+      {termo:"Transferir", linha:"Passar parte da consequência a outro por contrato."},
+      {termo:"Aceitar", linha:"Conviver com o risco, com dono, limite e alerta registrados."},
+      {termo:"Plano de contingência", linha:"O que fazer se virar problema, escrito antes."},
+      {termo:"Lote pequeno", linha:"Publicar para poucos primeiro, limitando o alcance do erro."},
+      {termo:"Postmortem (análise depois do incidente)", linha:"Relato do que aconteceu, para aprender sem culpar."},
+      {termo:"Quadro (Kanban)", linha:"Painel visual com colunas de etapas."},
+      {termo:"Cartão", linha:"Unidade de trabalho, com responsável e histórico."},
+      {termo:"Esteira (CI/CD)", linha:"Automação que testa e publica cada mudança."},
+      {termo:"Rastreabilidade", linha:"Ligar cartão, mudança, publicação e incidente."},
+      {termo:"WIP (Trabalho em Progresso)", linha:"Tarefas sendo feitas ao mesmo tempo."},
+      {termo:"Limite de WIP", linha:"Teto combinado de tarefas simultâneas."},
+      {termo:"Tempo de atravessamento", linha:"Dias do começo ao fim de uma tarefa."},
+      {termo:"Vazão (throughput)", linha:"Tarefas concluídas por período."},
+      {termo:"Conta do fluxo", linha:"Tempo de atravessamento = trabalho em progresso ÷ vazão."},
+      {termo:"Gargalo", linha:"Etapa onde o trabalho acumula e trava o resto."},
+      {termo:"Trilha de auditoria", linha:"Registro de quem fez o quê e quando."},
+      {termo:"Custo total de uso", linha:"Licença mais treinamento, integração e manutenção."},
+      {termo:"Aprisionamento (lock-in)", linha:"Dificuldade de sair levando dados e histórico."},
+      {termo:"Exportação de dados", linha:"Tirar tudo em formato aberto para migrar."}
+    ],
+    desafio:"🐉 CHEFÃO — Uma empresa fictícia de comércio eletrônico vai profissionalizar sua operação em DevOps (do inglês Development e Operations; Desenvolvimento e Operações: quem constrói e quem opera cuidam juntos do serviço). O cenário: publica toda sexta à tarde sem plantão, tem cópias de segurança nunca ensaiadas, usa uma planilha solta como quadro e precisa passar por auditoria no ano que vem. Entregue uma frase por item: (1) escreva dois riscos no formato causa, evento e efeito, de categorias diferentes (na cola rápida); (2) calcule a exposição de cada um e diga qual vem primeiro (a conta está na cola rápida); (3) escolha a resposta para cada risco entre as quatro estratégias e diga qual risco sobra (na cola rápida); (4) defina o sinal que dispara o plano alternativo e quem ensaia (na cola rápida); (5) escolha a família de ferramenta que resolve o quadro e diga qual critério pesa mais por causa da auditoria (na cola rápida); (6) explique o efeito de limitar o trabalho simultâneo no tempo de cada entrega (na cola rápida). Justifique cada item com um caso real análogo: a Knight Capital (corretora de valores dos Estados Unidos que teve prejuízo enorme após implantação defeituosa), o GitLab (plataforma de código que publicou o relato do incidente de 2017) ou a Equifax (agência de crédito dos Estados Unidos que sofreu vazamento por falha não corrigida)."
+  }
+};
+
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id);};
+var esc=function(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');};
+var num=function(n){return Number(n).toLocaleString('pt-BR',{maximumFractionDigits:3});};
+var ABAS=AULA_DADOS.abas;
+var IDS=ABAS.map(function(a){return a.id;}).concat(['revisao']);
+var acertos={},selos=[],xpTotal=0,toastT=null;
+ABAS.forEach(function(a){acertos[a.id]=[false,false,false];});
+var TOTAL=ABAS.length*3;
+
+function embaralhar(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function toast(m){var t=$('toast');t.textContent=m;t.hidden=false;if(toastT){clearTimeout(toastT);}toastT=setTimeout(function(){t.hidden=true;},1900);}
+function xp(n){xpTotal+=n;$('xp').textContent=num(xpTotal);toast('+'+n+' XP');}
+
+/* ---------- RENDER ---------- */
+function painelAba(aba,i){
+  var cfg=aba.demo,passos=aba.roteiroDemo.passos,h='';
+  h+='<section class="painel" id="'+aba.id+'" role="tabpanel" aria-labelledby="tab-'+aba.id+'" tabindex="0" hidden>';
+  h+='<h2>'+(i+1)+'. '+esc(aba.titulo)+'</h2>';
+  if(aba.estudoProprio){h+='<p class="fora">🏠 Aba de estudo em casa: fica fora dos 30 minutos de sala, mas conta para XP, selos e Chefão.</p>';}
+  h+='<div class="missao"><strong>🎯 Missão:</strong> '+esc(aba.missao)+'</div>';
+  h+='<p>'+esc(aba.narrativa)+'</p>';
+  h+='<div class="dupla"><div class="cartao real"><h3>🌍 No mundo real</h3><ul>'+aba.mundoReal.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';
+  h+='<div class="cartao ferr"><h3>🧰 Ferramentas usadas no mercado</h3><ul>'+aba.ferramentas.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div></div>';
+  h+='<section class="demo"><h3>🧪 Demo: '+esc(cfg.titulo)+'</h3>';
+  h+='<div class="prever">🔮 '+esc(aba.roteiroDemo.passo0)+'</div>';
+  h+='<div class="instrucoes"><h4>📋 INSTRUÇÕES PASSO A PASSO</h4><ol>'+passos.map(function(p){return '<li>'+esc(p.acao)+'</li>';}).join('')+'</ol></div>';
+  if(cfg.legenda){h+='<div class="legenda"><strong>🔑 Legenda:</strong><ul>'+cfg.legenda.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';}
+  h+='<div class="palco" id="palco-'+aba.id+'"></div>';
+  h+='<div><button class="btn" type="button" id="reset-'+aba.id+'">🔄 Reiniciar demo</button></div>';
+  h+='<div class="log" id="log-'+aba.id+'" aria-live="polite" aria-label="Resultado da demo"></div>';
+  h+='<details class="roteiro"><summary>🎤 Roteiro do apresentador</summary><p><strong>Passo 0:</strong> '+esc(aba.roteiroDemo.passo0)+'</p><ol>'+passos.map(function(p){return '<li><strong>'+esc(p.acao)+'</strong><br>Você vê: '+esc(p.ve)+'<br>Significa: '+esc(p.significa)+'</li>';}).join('')+'</ol></details></section>';
+  h+='<section class="quiz"><h3>🧠 Quiz da aba</h3><div class="termos">🔑 <strong>Termos deste quiz:</strong> '+esc(aba.termosQuiz)+'</div>';
+  aba.quiz.forEach(function(q,qi){
+    var alts=embaralhar(q.alts.slice());
+    h+='<div class="pergunta" data-aba="'+aba.id+'" data-q="'+qi+'"><p class="enun"><strong>'+(qi+1)+')</strong> '+esc(q.q)+'</p><div class="alts">';
+    alts.forEach(function(a){h+='<button type="button" class="alt" data-ok="'+(a.ok?'1':'0')+'" data-fb="'+esc(a.fb)+'">'+esc(a.t)+'</button>';});
+    h+='</div><div class="fb" aria-live="polite"></div></div>';
+  });
+  h+='</section>';
+  h+='<details class="aprof dicio"><summary>📖 Mini-dicionário desta aba</summary><dl>'+aba.dicionario.map(function(d){return '<dt>'+esc(d.termo)+'</dt><dd>'+esc(d.def)+'</dd>';}).join('')+'</dl></details>';
+  h+='<details class="aprof conceitos"><summary>🧩 Conceitos longos (para ler em casa)</summary>'+aba.conceitos.map(function(c){return '<div class="conceito"><h4>'+esc(c.titulo)+'</h4><p>'+esc(c.texto)+'</p><p class="analogia">'+esc(c.analogia)+'</p><p><strong>Exemplo real:</strong> '+esc(c.exemploReal)+'</p></div>';}).join('')+'</details>';
+  if(Array.isArray(aba.casos)){
+    h+='<details class="aprof casos"><summary>📚 Aplicação prática e estudos de caso</summary>'+aba.casos.map(function(c){return '<div class="conceito"><h4>'+esc(c.titulo)+'</h4><p>'+esc(c.texto)+'</p><p class="analogia"><strong>Lição para o registro de riscos:</strong> '+esc(c.licao)+'</p></div>';}).join('')+'</details>';
+  }
+  h+='<details class="aprof mito"><summary>🤔 Mito ou verdade?</summary><p><strong>'+esc(aba.mitoOuVerdade.afirmacao)+'</strong></p><p>🔮 Antes de clicar, preveja: isso é mito ou verdade?</p><button type="button" class="btn mito-btn" data-aba="'+aba.id+'">🔍 Conferir resposta</button><div class="fb" aria-live="polite"></div></details>';
+  h+='<details class="aprof buscas"><summary>🔎 Aprofundar: 3 buscas em português</summary><ul class="links">'+aba.aprofundar.map(function(l){return '<li><a href="'+esc(l.url)+'" target="_blank" rel="noopener">'+esc(l.rotulo)+'</a></li>';}).join('')+'</ul><p class="nota">Estes três links são os únicos que precisam de internet. Toda a aula funciona offline.</p></details>';
+  h+='</section>';
+  return h;
+}
+function painelRevisao(){
+  var r=AULA_DADOS.revisao,h='';
+  h+='<section class="painel" id="revisao" role="tabpanel" aria-labelledby="tab-revisao" tabindex="0" hidden>';
+  h+='<h2>🗺️ Revisão da aula</h2>';
+  h+='<div class="cartao"><h3>🗺️ Mapa da aula</h3><ol class="mapa">'+r.mapa.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ol></div>';
+  h+='<div class="cartao"><h3>🧾 Cola rápida (o glossário da revisão)</h3><table class="cola"><thead><tr><th>Termo</th><th>Em linguagem plana</th></tr></thead><tbody>'+r.cola.map(function(c){return '<tr><td><strong>'+esc(c.termo)+'</strong></td><td>'+esc(c.linha)+'</td></tr>';}).join('')+'</tbody></table></div>';
+  h+='<div class="chefao"><h3>🐉 Chefão</h3><p>'+esc(r.desafio)+'</p><p><label for="resp-chefao"><strong>Sua resposta (uma frase por item):</strong></label></p><textarea id="resp-chefao" rows="8" placeholder="Escreva aqui seus seis itens..."></textarea><button type="button" class="btn" id="btn-chefao">✔ Concluí o Chefão</button><div class="fb" id="fb-chefao" aria-live="polite"></div></div>';
+  h+='</section>';
+  return h;
+}
+function renderAbas(){
+  var tabs='',pans='';
+  ABAS.forEach(function(aba,i){
+    var badge=aba.estudoProprio?'<span class="selo-estudo">📖 Estudo próprio</span>':'';
+    tabs+='<button type="button" class="aba" role="tab" id="tab-'+aba.id+'" aria-controls="'+aba.id+'" aria-selected="false" tabindex="-1" data-alvo="'+aba.id+'"><span class="num">'+(i+1)+'</span>'+esc(aba.rotulo)+badge+'</button>';
+    pans+=painelAba(aba,i);
+  });
+  tabs+='<button type="button" class="aba" role="tab" id="tab-revisao" aria-controls="revisao" aria-selected="false" tabindex="-1" data-alvo="revisao">🗺️ Revisão</button>';
+  pans+=painelRevisao();
+  $('faixa').innerHTML=tabs;
+  $('paineis').innerHTML=pans;
+}
+
+/* ---------- NAVEGAÇÃO ---------- */
+function ativar(id,mudaHash){
+  if(IDS.indexOf(id)<0){id=ABAS[0].id;}
+  var bs=document.querySelectorAll('.aba'),i;
+  for(i=0;i<bs.length;i++){
+    var on=bs[i].getAttribute('data-alvo')===id;
+    bs[i].setAttribute('aria-selected',on?'true':'false');
+    bs[i].tabIndex=on?0:-1;
+    bs[i].classList.toggle('ativa',on);
+  }
+  var ps=document.querySelectorAll('.painel');
+  for(i=0;i<ps.length;i++){
+    var ativo=ps[i].id===id;
+    ps[i].classList.toggle('ativo',ativo);
+    ps[i].hidden=!ativo;
+  }
+  if(mudaHash&&location.hash!=='#'+id){location.hash=id;}
+  var b=$('tab-'+id);
+  if(b&&b.scrollIntoView){b.scrollIntoView({block:'nearest',inline:'center'});}
+}
+function vizinho(p){
+  var k=IDS.indexOf(location.hash.replace('#',''));
+  if(k<0){k=0;}
+  var n=(k+p+IDS.length)%IDS.length;
+  ativar(IDS[n],true);
+  var b=$('tab-'+IDS[n]);if(b){b.focus();}
+}
+
+/* ---------- QUIZ ---------- */
+function responderQuiz(btn){
+  var p=btn.closest('.pergunta');
+  if(!p||p.dataset.travada==='1'||btn.disabled){return;}
+  var fb=p.querySelector('.fb');
+  if(btn.dataset.ok==='1'){
+    btn.classList.add('certa');
+    btn.appendChild(document.createTextNode(' ✓'));
+    p.dataset.travada='1';
+    var ts=p.querySelectorAll('.alt');
+    for(var i=0;i<ts.length;i++){ts[i].disabled=true;}
+    fb.className='fb ok';
+    fb.innerHTML='✅ <strong>Por que esta está certa:</strong> '+esc(btn.dataset.fb);
+    xp(p.dataset.errou==='1'?5:10);
+    acertos[p.dataset.aba][Number(p.dataset.q)]=true;
+    progresso();
+  }else{
+    btn.classList.add('errada');
+    btn.appendChild(document.createTextNode(' ✗'));
+    btn.disabled=true;
+    p.dataset.errou='1';
+    fb.className='fb erro';
+    fb.innerHTML='❌ <strong>Por que esta está errada:</strong> '+esc(btn.dataset.fb)+'<br><em>As outras alternativas continuam liberadas: tente de novo.</em>';
+  }
+}
+function abrirMito(btn){
+  var aba=null,i;
+  for(i=0;i<ABAS.length;i++){if(ABAS[i].id===btn.dataset.aba){aba=ABAS[i];}}
+  if(!aba){return;}
+  var box=btn.parentNode.querySelector('.fb'),m=aba.mitoOuVerdade;
+  box.className='fb ok';
+  box.innerHTML=(m.verdade?'✅ <strong>Verdade.</strong> ':'🚫 <strong>Mito.</strong> ')+esc(m.explicacao);
+  btn.disabled=true;
+}
+function chefao(){
+  var txt=$('resp-chefao').value.trim(),fb=$('fb-chefao');
+  if(txt.length<40){
+    fb.className='fb erro';
+    fb.innerHTML='❌ <strong>Ainda não:</strong> escreva ao menos uma frase para cada um dos seis itens. Use a cola rápida logo acima para conferir os termos.';
+    return;
+  }
+  fb.className='fb ok';
+  fb.innerHTML='✅ <strong>Chefão registrado.</strong> Confira com a cola rápida: cada item precisa ter risco escrito, conta de exposição, resposta com dono e um caso real. Leve este texto para a discussão em sala.';
+  addSelo('🐉 Chefão enfrentado');
+}
+function addSelo(s){
+  if(selos.indexOf(s)>=0){return;}
+  selos.push(s);
+  $('selos').innerHTML=selos.map(function(x){return '<span class="selo">'+esc(x)+'</span>';}).join('');
+  toast('🏅 Novo selo: '+s);
+}
+function progresso(){
+  var feitos=0,i,j;
+  for(i=0;i<ABAS.length;i++){
+    var a=ABAS[i],c=0;
+    for(j=0;j<3;j++){if(acertos[a.id][j]){c++;feitos++;}}
+    if(c===3){addSelo('🏅 '+a.rotulo);}
+  }
+  $('progTexto').textContent='Progresso: '+num(feitos)+' de '+num(TOTAL)+' perguntas';
+  $('progBarra').style.width=(feitos/TOTAL*100)+'%';
+  var sala=true,casa=true;
+  for(i=0;i<ABAS.length;i++){
+    var ok=acertos[ABAS[i].id][0]&&acertos[ABAS[i].id][1]&&acertos[ABAS[i].id][2];
+    if(i<5&&!ok){sala=false;}
+    if(i>=5&&!ok){casa=false;}
+  }
+  if(sala){addSelo('🏁 Trilha de sala completa');}
+  if(casa){addSelo('📚 Estudioso');}
+}
+
+/* ---------- DEMOS ---------- */
+function novoEstado(aba){
+  var cfg=aba.demo.config,i;
+  switch(aba.demo.tipo){
+    case 'cenario': return {r:0,errou:false,feita:false,erradas:[],historico:[],fim:false};
+    case 'registro': return {add:[]};
+    case 'matriz':
+      var rs=[];
+      for(i=0;i<cfg.riscos.length;i++){rs.push({p:cfg.riscos[i].p,i:cfg.riscos[i].i});}
+      return {sel:0,riscos:rs};
+    case 'linha': return {integrado:false,passo:-1,rodando:false,manuais:0,perdas:0,fim:null};
+    case 'quadro':
+      var t=[];
+      for(i=0;i<cfg.total;i++){t.push({id:i+1,restante:cfg.esforco,inicio:null,fim:null});}
+      return {dia:0,limite:true,tarefas:t,concluidas:[]};
+  }
+  return {};
+}
+function logar(ctx,tipo,titulo,texto){
+  var d=document.createElement('div');
+  d.className='msg '+tipo;
+  d.innerHTML='<strong>'+esc(titulo)+'</strong> '+esc(texto);
+  ctx.log.appendChild(d);
+  while(ctx.log.children.length>14){ctx.log.removeChild(ctx.log.firstChild);}
+  ctx.log.scrollTop=ctx.log.scrollHeight;
+}
+function limparTimers(ctx){for(var i=0;i<ctx.timers.length;i++){clearTimeout(ctx.timers[i]);}ctx.timers=[];}
+function tog(act,id,nome,on,dis){
+  return '<button type="button" class="btn tog'+(on?' on':'')+'" data-act="'+act+'" data-arg="'+id+'" aria-pressed="'+(on?'true':'false')+'"'+(dis?' disabled':'')+'>'+(on?'✅ ':'⬜ ')+esc(nome)+'</button>';
+}
+function guia(cfg){
+  if(!cfg.observa){return '';}
+  return '<div class="observa"><strong>👀 O que observar:</strong><ul>'+cfg.observa.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';
+}
+/* cenário */
+function pintaCenario(ctx){
+  var cfg=ctx.aba.demo.config,st=ctx.st,h='';
+  st.historico.forEach(function(it){h+='<div class="msg ok">✅ <strong>'+esc(it.s)+'</strong><br>Resposta registrada: '+esc(it.e)+'</div>';});
+  if(st.fim){return h+'<div class="msg ok">🏁 '+esc(cfg.resumo)+'</div>';}
+  var r=cfg.rodadas[st.r];
+  h+='<p><strong>Situação '+(st.r+1)+' de '+cfg.rodadas.length+':</strong> '+esc(r.situacao)+'</p>';
+  h+='<p><strong>'+esc(r.pergunta)+'</strong></p><div class="alts">';
+  r.opcoes.forEach(function(o,i){
+    var usada=st.erradas.indexOf(i)>=0,cl='alt',sf='';
+    if(usada){cl+=' errada';sf=' ✗';}
+    if(st.feita&&o.ok){cl+=' certa';sf=' ✓';}
+    h+='<button type="button" class="'+cl+'" data-act="responder" data-arg="'+i+'" data-fb="'+esc(o.fb)+'"'+((usada||st.feita)?' disabled':'')+'>'+esc(o.t)+sf+'</button>';
+  });
+  h+='</div>';
+  if(st.feita){h+='<button type="button" class="btn" data-act="proxima">Próxima situação ▶</button>';}
+  return h;
+}
+/* registro de riscos */
+function pintaRegistro(ctx){
+  var cfg=ctx.aba.demo.config,st=ctx.st,h='';
+  var cats={'Pessoas':0,'Processo':0,'Tecnologia':0,'Terceiros':0,'Prazo':0};
+  st.add.forEach(function(i){cats[cfg.cartoes[i].categoria]++;});
+  h+='<div class="grade">';
+  Object.keys(cats).forEach(function(k){h+='<div class="metrica"><b>'+num(cats[k])+'</b>'+esc(k)+'</div>';});
+  h+='</div><h4>💭 Preocupações soltas (clique para registrar):</h4>';
+  var restantes=0;
+  cfg.cartoes.forEach(function(c,i){
+    if(st.add.indexOf(i)<0){
+      restantes++;
+      h+='<button type="button" class="btn tog" data-act="add" data-arg="'+i+'">➕ '+esc(c.texto)+'</button>';
+    }
+  });
+  if(!restantes){h+='<p class="nota">Todas as preocupações já foram registradas.</p>';}
+  h+='<h4>📒 Registro de riscos:</h4>';
+  if(!st.add.length){h+='<p class="nota">Vazio. Registre ao menos um item para ver o formato causa, evento e efeito.</p>';}
+  st.add.forEach(function(i){
+    var c=cfg.cartoes[i];
+    h+='<div class="no ok"><strong>['+esc(c.categoria)+']</strong> SE '+esc(c.causa)+' ENTÃO '+esc(c.evento)+' E ISSO CAUSA '+esc(c.efeito)+'.</div>';
+  });
+  if(st.add.length===cfg.cartoes.length){
+    h+='<div class="msg ok"><strong>Registro completo e equilibrado.</strong> Há riscos de pessoas, processo, tecnologia, terceiros e prazo — cada um com causa, evento e efeito. Exemplo real: o risco de cópia nunca ensaiada estava no papel antes do incidente de 2017 do GitLab (plataforma de código); escrevê-lo assim é o que permite agir antes.</div>';
+  }
+  return h+guia(cfg);
+}
+/* matriz */
+function faixa(n){return n>=15?'A':(n>=8?'M':'B');}
+function pintaMatriz(ctx){
+  var cfg=ctx.aba.demo.config,st=ctx.st,h='',i,j;
+  h+='<p><strong>Escolha o risco:</strong> ';
+  cfg.riscos.forEach(function(r,k){h+='<button type="button" class="btn tog'+(st.sel===k?' on':'')+'" data-act="sel" data-arg="'+k+'">'+esc(r.nome)+'</button>';});
+  h+='</p>';
+  var cur=st.riscos[st.sel],ref=cfg.riscos[st.sel];
+  h+='<label class="rotulo-slider" for="p-'+ctx.aba.id+'">Probabilidade (1 raro a 5 quase certo): '+num(cur.p)+'</label>';
+  h+='<input type="range" id="p-'+ctx.aba.id+'" data-slider="p" min="1" max="5" step="1" value="'+cur.p+'">';
+  h+='<label class="rotulo-slider" for="i-'+ctx.aba.id+'">Impacto (1 incômodo a 5 para o negócio): '+num(cur.i)+'</label>';
+  h+='<input type="range" id="i-'+ctx.aba.id+'" data-slider="i" min="1" max="5" step="1" value="'+cur.i+'">';
+  var nota=cur.p*cur.i;
+  h+='<div class="grade"><div class="metrica"><b>'+num(nota)+'</b>Exposição (chance × estrago)</div>';
+  h+='<div class="metrica"><b>'+faixa(nota)+'</b>Faixa (B baixo, M médio, A alto)</div>';
+  h+='<div class="metrica"><b>R$ '+num(cur.p*10/100*ref.prejuizo)+'</b>Valor esperado</div></div>';
+  h+='<p class="nota">Em palavras: chance de '+num(cur.p*10)+'% sobre um prejuízo de R$ '+num(ref.prejuizo)+' neste modelo de exercício.</p>';
+  h+='<table class="matriz"><thead><tr><th>Impacto ↓ / Chance →</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr></thead><tbody>';
+  for(i=5;i>=1;i--){
+    h+='<tr><th>'+i+'</th>';
+    for(j=1;j<=5;j++){
+      var v=i*j,cl='cx-'+(v>=15?'a':(v>=8?'m':'b'));
+      if(cur.i===i&&cur.p===j){cl+=' cx-sel';}
+      h+='<td class="'+cl+'">'+num(v)+' '+faixa(v)+'</td>';
+    }
+    h+='</tr>';
+  }
+  h+='</tbody></table>';
+  var ord=[];
+  cfg.riscos.forEach(function(r,k){ord.push({nome:r.nome,nota:st.riscos[k].p*st.riscos[k].i});});
+  ord.sort(function(a,b){return b.nota-a.nota;});
+  h+='<h4>📋 Fila de atendimento (maior exposição primeiro):</h4><ol>';
+  ord.forEach(function(o){h+='<li>'+esc(o.nome)+' — exposição '+num(o.nota)+' ('+faixa(o.nota)+')</li>';});
+  h+='</ol>';
+  return h+guia(cfg);
+}
+/* linha de ferramentas */
+function pintaLinha(ctx){
+  var cfg=ctx.aba.demo.config,st=ctx.st,h='';
+  h+='<p>'+tog('toggle','integrado','🔗 Ferramentas integradas entre si',st.integrado,st.rodando)+'</p>';
+  h+='<p><button type="button" class="btn" data-act="rodar"'+(st.rodando?' disabled':'')+'>▶ Rodar entrega</button></p>';
+  cfg.estacoes.forEach(function(e,i){
+    var cl='no';
+    if(st.passo===i){cl+=' atual';}
+    else if(st.passo>i){cl+=(!st.integrado&&(i===2||i===3))?' erro':' ok';}
+    h+='<div class="'+cl+'">'+(st.passo===i?'👉 ':(st.passo>i?'✔️ ':'⬜ '))+esc(e)+'</div>';
+  });
+  h+='<div class="grade"><div class="metrica"><b>'+num(st.manuais)+'</b>Passos manuais</div>';
+  h+='<div class="metrica"><b>'+num(st.perdas)+'</b>Informações perdidas</div>';
+  h+='<div class="metrica"><b>'+(st.fim?num(st.fim.dias):'—')+'</b>Dias até concluir</div></div>';
+  if(st.fim){h+='<div class="msg '+st.fim.k+'"><strong>'+esc(st.fim.t)+'</strong> '+esc(st.fim.x)+'<br><em>'+esc(cfg.exemplo)+'</em></div>';}
+  return h+guia(cfg);
+}
+function rodarLinha(ctx){
+  if(ctx.st.rodando){return;}
+  limparTimers(ctx);
+  var st=ctx.st,cfg=ctx.aba.demo.config;
+  st.rodando=true;st.passo=0;st.manuais=0;st.perdas=0;st.fim=null;ctx.pinta();
+  logar(ctx,'info','▶ Entrega iniciada.','A tarefa vai atravessar as cinco famílias de ferramentas até o painel do serviço.');
+  function passo(){
+    var s=ctx.st,i=s.passo;
+    if(i>=cfg.estacoes.length){fimLinha(ctx);return;}
+    if(!s.integrado){
+      s.manuais++;
+      logar(ctx,'erro','✍️ '+cfg.estacoes[i],cfg.textos[i]+' '+cfg.manual);
+      if(i===2||i===3){s.perdas++;logar(ctx,'erro','🧩 Informação perdida.',cfg.perda);}
+    }else{
+      logar(ctx,'ok','🔗 '+cfg.estacoes[i],cfg.textos[i]);
+    }
+    s.passo=i+1;ctx.pinta();
+    ctx.timers.push(setTimeout(passo,850));
+  }
+  ctx.timers.push(setTimeout(passo,450));
+}
+function fimLinha(ctx){
+  limparTimers(ctx);
+  var st=ctx.st;
+  st.rodando=false;st.passo=-1;
+  var dias=st.integrado?2:6;
+  st.fim={k:st.integrado?'ok':'erro',dias:dias,
+    t:st.integrado?'Entrega concluída com rastreabilidade.':'Entrega concluída, mas com retrabalho e informação perdida.',
+    x:st.integrado?'Nenhum passo manual e nenhum registro perdido: dá para responder o que entrou no ar e quem aprovou.':'Foram '+num(st.manuais)+' passos manuais e '+num(st.perdas)+' registros perdidos no caminho. Ligue a integração e rode de novo para comparar.'};
+  logar(ctx,st.fim.k,st.fim.t,st.fim.x);
+  ctx.pinta();
+}
+/* quadro kanban */
+function pintaQuadro(ctx){
+  var cfg=ctx.aba.demo.config,st=ctx.st,h='';
+  var espera=[],fazendo=[],feito=[];
+  st.tarefas.forEach(function(t){
+    if(t.fim!==null){feito.push(t);}
+    else if(t.inicio!==null){fazendo.push(t);}
+    else{espera.push(t);}
+  });
+  h+='<p>'+tog('toggle','limite','🚧 Limite de '+num(cfg.limite)+' tarefas em progresso',st.limite);
+  h+='<button type="button" class="btn" data-act="dia"'+(feito.length===cfg.total?' disabled':'')+'>▶ Avançar dia</button></p>';
+  var media=0;
+  if(st.concluidas.length){
+    var soma=0;
+    st.concluidas.forEach(function(c){soma+=c.dias;});
+    media=soma/st.concluidas.length;
+  }
+  h+='<div class="grade"><div class="metrica"><b>'+num(st.dia)+'</b>Dia</div>';
+  h+='<div class="metrica"><b>'+num(fazendo.length)+'</b>Em progresso (WIP)</div>';
+  h+='<div class="metrica"><b>'+num(feito.length)+' de '+num(cfg.total)+'</b>Concluídas</div>';
+  h+='<div class="metrica"><b>'+(st.concluidas.length?num(media):'—')+'</b>Tempo médio (dias)</div></div>';
+  h+='<div class="colunas">';
+  h+='<div class="coluna"><h5>📥 A fazer ('+num(espera.length)+')</h5>';
+  espera.forEach(function(t){h+='<div class="tarja">Tarefa '+num(t.id)+'</div>';});
+  h+='</div><div class="coluna"><h5>🔨 Fazendo ('+num(fazendo.length)+')</h5>';
+  fazendo.forEach(function(t){h+='<div class="tarja">Tarefa '+num(t.id)+' — falta '+num(t.restante)+' de trabalho</div>';});
+  h+='</div><div class="coluna"><h5>✅ Feito ('+num(feito.length)+')</h5>';
+  st.concluidas.forEach(function(c){h+='<div class="tarja">Tarefa '+num(c.id)+' — '+num(c.dias)+' dias na esteira</div>';});
+  h+='</div></div>';
+  if(feito.length===cfg.total){
+    h+='<div class="msg ok"><strong>Fluxo concluído.</strong> Tempo médio de '+num(media)+' dias por tarefa com o limite '+(st.limite?'ligado':'desligado')+'. Reinicie a demo, troque o limite e compare: a quantidade entregue é a mesma, o que muda é quanto tempo cada tarefa espera. Exemplo real: times que adotam limite no quadro, como os que usam Trello ou Jira (ferramentas da Atlassian), veem o tempo de entrega cair sem contratar ninguém.</div>';
+  }
+  return h+guia(cfg);
+}
+function avancaDia(ctx){
+  var st=ctx.st,cfg=ctx.aba.demo.config;
+  st.dia++;
+  var fazendo=[],espera=[];
+  st.tarefas.forEach(function(t){
+    if(t.fim!==null){return;}
+    if(t.inicio!==null){fazendo.push(t);}else{espera.push(t);}
+  });
+  var vagas=st.limite?Math.max(0,cfg.limite-fazendo.length):espera.length;
+  var entrou=Math.min(vagas,espera.length);
+  for(var i=0;i<entrou;i++){espera[i].inicio=st.dia;fazendo.push(espera[i]);}
+  var terminou=0;
+  if(fazendo.length){
+    var cada=cfg.capacidade/fazendo.length;
+    fazendo.forEach(function(t){
+      t.restante=Math.max(0,Math.round((t.restante-cada)*1000)/1000);
+      if(t.restante<=0){t.fim=st.dia;st.concluidas.push({id:t.id,dias:t.fim-t.inicio+1});terminou++;}
+    });
+  }
+  logar(ctx,terminou?'ok':'info','📅 Dia '+num(st.dia),'Entraram '+num(entrou)+' tarefas, '+num(fazendo.length)+' ficaram em progresso e '+num(terminou)+' terminaram. Capacidade do dia dividida entre as tarefas abertas: '+num(cfg.capacidade/Math.max(1,fazendo.length))+' por tarefa.');
+  ctx.pinta();
+}
+function pintaDemo(ctx){
+  switch(ctx.aba.demo.tipo){
+    case 'cenario': return pintaCenario(ctx);
+    case 'registro': return pintaRegistro(ctx);
+    case 'matriz': return pintaMatriz(ctx);
+    case 'linha': return pintaLinha(ctx);
+    case 'quadro': return pintaQuadro(ctx);
+  }
+  return '';
+}
+function agir(ctx,act,arg){
+  var st=ctx.st,cfg=ctx.aba.demo.config,tipo=ctx.aba.demo.tipo;
+  if(act==='responder'&&tipo==='cenario'){
+    var r=cfg.rodadas[st.r],o=r.opcoes[Number(arg)];
+    if(o.ok){st.feita=true;logar(ctx,'ok','✅ Por que esta está certa:',o.fb);xp(st.errou?5:10);}
+    else{
+      if(st.erradas.indexOf(Number(arg))<0){st.erradas.push(Number(arg));}
+      st.errou=true;
+      logar(ctx,'erro','❌ Por que esta está errada:',o.fb+' As outras opções continuam liberadas.');
+    }
+    ctx.pinta();return;
+  }
+  if(act==='proxima'){
+    var rr=cfg.rodadas[st.r],certa='';
+    rr.opcoes.forEach(function(o){if(o.ok){certa=o.t;}});
+    st.historico.push({s:rr.situacao,e:certa});
+    st.r++;st.errou=false;st.feita=false;st.erradas=[];
+    if(st.r>=cfg.rodadas.length){st.fim=true;logar(ctx,'ok','🏁 Resumo da demo.',cfg.resumo);}
+    ctx.pinta();return;
+  }
+  if(act==='add'){
+    var idx=Number(arg);
+    if(st.add.indexOf(idx)<0){st.add.push(idx);}
+    var c=cfg.cartoes[idx];
+    logar(ctx,'ok','📒 Risco registrado ('+c.categoria+')','SE '+c.causa+' ENTÃO '+c.evento+' E ISSO CAUSA '+c.efeito+'. '+c.exemplo);
+    ctx.pinta();return;
+  }
+  if(act==='sel'){st.sel=Number(arg);ctx.pinta();return;}
+  if(act==='toggle'&&tipo==='linha'){
+    st.integrado=!st.integrado;st.passo=-1;st.fim=null;st.manuais=0;st.perdas=0;
+    logar(ctx,'info','Integração '+(st.integrado?'ligada':'desligada')+'.','Rode a entrega e compare passos manuais, informações perdidas e dias até concluir.');
+    ctx.pinta();return;
+  }
+  if(act==='rodar'){rodarLinha(ctx);return;}
+  if(act==='toggle'&&tipo==='quadro'){
+    st.limite=!st.limite;
+    logar(ctx,'info','Limite de trabalho em progresso '+(st.limite?'ligado':'desligado')+'.',st.limite?'No máximo '+num(cfg.limite)+' tarefas simultâneas: a capacidade se concentra e cada tarefa sai antes.':'Sem teto: tudo começa junto e cada tarefa demora mais. Reinicie para comparar do zero.');
+    ctx.pinta();return;
+  }
+  if(act==='dia'){avancaDia(ctx);return;}
+}
+function ligarDemos(){
+  ABAS.forEach(function(aba){
+    var ctx={aba:aba,st:novoEstado(aba),palco:$('palco-'+aba.id),log:$('log-'+aba.id),timers:[]};
+    ctx.pinta=function(){ctx.palco.innerHTML=pintaDemo(ctx);};
+    ctx.palco.addEventListener('click',function(e){
+      var b=e.target.closest('[data-act]');
+      if(!b||b.disabled){return;}
+      agir(ctx,b.getAttribute('data-act'),b.getAttribute('data-arg'));
+    });
+    ctx.palco.addEventListener('input',function(e){
+      var s=e.target;
+      if(s.hasAttribute&&s.hasAttribute('data-slider')){
+        var k=s.getAttribute('data-slider');
+        ctx.st.riscos[ctx.st.sel][k]=Number(s.value);
+        ctx.pinta();
+        var alvo=document.getElementById(s.id);
+        if(alvo){alvo.focus();}
+      }
+    });
+    $('reset-'+aba.id).addEventListener('click',function(){
+      limparTimers(ctx);
+      ctx.st=novoEstado(aba);
+      ctx.log.innerHTML='';
+      ctx.pinta();
+      logar(ctx,'info','🔄 Demo reiniciada.','Antes de clicar, preveja de novo: mude uma escolha e compare o resultado com o da rodada anterior.');
+    });
+    ctx.pinta();
+  });
+}
+
+/* ---------- MODOS ---------- */
+function ligarModos(){
+  var apresentacao=false,escuroAntes=false;
+  $('btnModo').addEventListener('click',function(){
+    apresentacao=!apresentacao;
+    document.body.classList.toggle('apresentacao',apresentacao);
+    this.textContent=apresentacao?'📖 Leitura':'🎤 Apresentação';
+    this.setAttribute('aria-pressed',apresentacao?'true':'false');
+    var rs=document.querySelectorAll('details.roteiro');
+    for(var i=0;i<rs.length;i++){rs[i].open=apresentacao;}
+    if(apresentacao){
+      escuroAntes=document.body.classList.contains('escuro');
+      document.body.classList.remove('escuro');
+      $('btnEscuro').disabled=true;
+      $('btnEscuro').setAttribute('aria-pressed','false');
+      toast('🎤 Modo Apresentação: fonte maior, roteiros abertos, setas navegam');
+    }else{
+      $('btnEscuro').disabled=false;
+      if(escuroAntes){document.body.classList.add('escuro');$('btnEscuro').setAttribute('aria-pressed','true');}
+      toast('📖 Modo Leitura');
+    }
+  });
+  $('btnEscuro').addEventListener('click',function(){
+    var on=!document.body.classList.contains('escuro');
+    document.body.classList.toggle('escuro',on);
+    this.textContent=on?'☀️ Claro':'🌙 Escuro';
+    this.setAttribute('aria-pressed',on?'true':'false');
+  });
+}
+
+/* ---------- INIT ---------- */
+function init(){
+  renderAbas();
+  ligarDemos();
+  ligarModos();
+  $('paineis').addEventListener('click',function(e){
+    var alt=e.target.closest('.alt');
+    if(alt&&alt.closest('.pergunta')){responderQuiz(alt);return;}
+    var mb=e.target.closest('.mito-btn');
+    if(mb){abrirMito(mb);return;}
+    if(e.target.closest('#btn-chefao')){chefao();}
+  });
+  $('faixa').addEventListener('click',function(e){
+    var b=e.target.closest('.aba');
+    if(!b){return;}
+    ativar(b.getAttribute('data-alvo'),true);
+  });
+  document.addEventListener('keydown',function(e){
+    var t=e.target,tag=t.tagName;
+    if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||t.isContentEditable){return;}
+    if(e.key==='ArrowRight'){vizinho(1);e.preventDefault();}
+    else if(e.key==='ArrowLeft'){vizinho(-1);e.preventDefault();}
+    else if(e.key==='Home'){ativar(IDS[0],true);e.preventDefault();}
+    else if(e.key==='End'){ativar(IDS[IDS.length-1],true);e.preventDefault();}
+  });
+  window.addEventListener('hashchange',function(){
+    var id=location.hash.replace('#','');
+    if(IDS.indexOf(id)>=0){ativar(id,false);}
+  });
+  var inicial=location.hash.replace('#','');
+  if(IDS.indexOf(inicial)<0){inicial=ABAS[0].id;}
+  ativar(inicial,false);
+  progresso();
+}
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init);}else{init();}
+})();
+</script>
+</body>
+</html>
