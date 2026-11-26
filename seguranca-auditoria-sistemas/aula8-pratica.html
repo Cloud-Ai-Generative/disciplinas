@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Segurança e Auditoria de Sistemas — Aula 8: Ferramentas de Defesa e Segurança em SO/Apps</title>
+<!-- HTMLearning v2.18-beta.5 (20/11/2026) — Todos os campos de metadados foram informados (disciplina, aula, unidade, páginas). Dados do professor(a) não informados (campo opcional): linha A2 omitida. Nenhum conteúdo pedagógico foi inventado: as 6 abas correspondem, uma a uma, aos seis subtópicos do sumário colado. -->
+<style>
+*{box-sizing:border-box}
+:root{
+  --acento:#1F4E79; --fundo:#eef2f6; --painel:#ffffff; --tinta:#101c26; --suave:#526470;
+  --borda:#ccd8e0; --ok:#166534; --erro:#9b1c1c; --real:#f2f7fa; --ferr:#f7f4ee; --link:#1F4E79;
+}
+body.escuro{
+  --fundo:#0e141a; --painel:#16202a; --tinta:#e6eef4; --suave:#a7bcc9; --borda:#2b3a46;
+  --ok:#1f7a44; --erro:#a52a2a; --real:#1a2731; --ferr:#241f18; --link:#8fc6f0;
+}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--fundo);color:var(--tinta);font-size:18px;line-height:1.55;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+body.apresentacao{font-size:22px}
+[hidden]{display:none !important}
+a{color:var(--link)}
+:focus-visible{outline:3px solid #b45309;outline-offset:2px}
+.envolve{max-width:1180px;margin:0 auto;padding:0 14px 40px}
+.modos{position:fixed;top:10px;right:10px;z-index:60;display:flex;gap:8px}
+.modos button{font-size:.78em;padding:8px 12px;border-radius:99px;border:2px solid var(--acento);
+  background:var(--acento);color:#fff;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.25)}
+.modos button:disabled{opacity:.5;cursor:not-allowed}
+header.topo{background:var(--acento);color:#fff;padding:22px 18px;border-radius:0 0 18px 18px;margin-bottom:14px}
+header.topo h1{margin:0 0 6px;font-size:1.5em;line-height:1.25}
+header.topo p{margin:2px 0;font-size:.9em}
+.hud{display:flex;flex-wrap:wrap;gap:12px;align-items:center;background:var(--painel);border:3px solid var(--borda);
+  border-radius:14px;padding:12px 14px;margin-bottom:14px;box-shadow:0 4px 0 rgba(0,0,0,.07)}
+.hud .caixa{font-weight:700}
+.barra{flex:1;min-width:180px;height:16px;background:var(--borda);border-radius:99px;overflow:hidden}
+.barra i{display:block;height:100%;width:0;background:var(--acento);transition:width .25s}
+.selos{width:100%;display:flex;flex-wrap:wrap;gap:6px}
+.selo{background:var(--acento);color:#fff;border-radius:99px;padding:4px 12px;font-size:.78em;font-weight:700}
+.selo.vazio{background:var(--borda);color:var(--tinta)}
+.faixa-abas{position:sticky;top:0;z-index:30;display:flex;gap:6px;overflow-x:auto;padding:10px 6px 0;
+  background:var(--fundo);border-bottom:3px solid var(--acento);scrollbar-width:thin}
+.aba{flex:0 0 auto;white-space:nowrap;border:3px solid var(--acento);border-bottom:none;border-radius:14px 14px 0 0;
+  background:var(--acento);color:#fff;padding:10px 16px;font-size:.86em;font-weight:700;cursor:pointer;margin-bottom:-3px}
+.aba .num{display:inline-block;background:rgba(255,255,255,.25);border-radius:99px;padding:0 8px;margin-right:6px}
+.aba.ativa{background:var(--painel);color:var(--tinta);border-bottom:3px solid var(--painel);position:relative;z-index:31}
+.aba.ativa .num{background:var(--acento);color:#fff}
+.selo-estudo{display:inline-block;margin-left:8px;background:#8a5a00;color:#fff;border-radius:99px;padding:1px 9px;font-size:.82em}
+.paineis{background:var(--painel);border:3px solid var(--acento);border-top:none;border-radius:0 0 18px 18px;padding:20px 18px 26px}
+.painel{display:none}
+.painel.ativo{display:block}
+.painel h2{margin:.1em 0 .5em;font-size:1.35em}
+.painel h3{font-size:1.08em;margin:1.2em 0 .5em}
+.painel h4{font-size:1em;margin:.6em 0 .3em}
+.fora{background:var(--ferr);border-left:8px solid #8a5a00;padding:8px 12px;border-radius:8px;font-size:.9em}
+.missao{background:var(--acento);color:#fff;border-radius:12px;padding:12px 16px;margin-bottom:12px}
+.dupla{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:820px){.dupla{grid-template-columns:1fr}}
+.cartao{border:3px solid var(--borda);border-radius:14px;padding:12px 16px;background:var(--painel);
+  box-shadow:0 4px 0 rgba(0,0,0,.07);margin:12px 0}
+.cartao.real{background:var(--real)}
+.cartao.ferr{background:var(--ferr)}
+.cartao ul{margin:.3em 0;padding-left:1.2em}
+.cartao li{margin:.45em 0}
+.demo{border:3px solid var(--acento);border-radius:16px;padding:14px 16px;margin:18px 0;background:var(--painel)}
+.prever{background:#fff4cf;color:#3a2a05;border:3px solid #b45309;border-radius:12px;padding:12px 14px;font-weight:600}
+body.escuro .prever{background:#3b2f10;color:#ffeec2}
+.instrucoes{background:#fff9e6;color:#3a2f0c;border:3px solid #d9a441;border-radius:12px;padding:10px 16px;margin:12px 0}
+body.escuro .instrucoes{background:#2c2513;color:#f6e6bd}
+.instrucoes ol{margin:.3em 0;padding-left:1.3em}
+.legenda{background:#eef3ff;color:#141f3a;border:3px solid #2b4cb0;border-radius:12px;padding:10px 16px;margin:12px 0}
+body.escuro .legenda{background:#171d33;color:#d8e0f7}
+.legenda ul{margin:.3em 0;padding-left:1.2em}
+.palco{border:3px dashed var(--acento);border-radius:14px;padding:14px;background:var(--real);margin:12px 0}
+.btn{background:var(--acento);color:#fff;border:2px solid var(--acento);border-radius:10px;padding:10px 16px;
+  font-size:.92em;font-weight:700;cursor:pointer;margin:4px 6px 4px 0}
+.btn:hover{filter:brightness(1.3)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn.tog{background:var(--painel);color:var(--tinta);border:2px solid var(--borda);font-weight:600}
+.btn.tog.on{background:var(--acento);color:#fff;border-color:var(--acento)}
+.btn.peq{font-size:.82em;padding:7px 11px}
+.log{max-height:280px;overflow:auto;border-left:8px solid var(--acento);padding:6px 12px;background:var(--painel);margin-top:10px}
+.msg{border:2px solid var(--borda);border-radius:10px;padding:8px 12px;margin:6px 0;font-size:.94em}
+.msg.ok{border-color:var(--ok)}
+.msg.erro{border-color:var(--erro)}
+.msg.info{border-color:var(--acento)}
+.observa{background:var(--ferr);border:2px dashed var(--suave);border-radius:10px;padding:8px 14px;margin:10px 0;font-size:.92em}
+.grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:10px 0}
+.metrica{border:3px solid var(--borda);border-radius:12px;padding:10px;background:var(--painel);text-align:center}
+.metrica b{display:block;font-size:1.25em}
+.no{border:3px solid var(--borda);border-radius:10px;padding:8px 12px;margin:6px 0;background:var(--painel);font-size:.92em}
+.no.atual{border-color:#b45309;font-weight:700}
+.no.ok{border-color:var(--ok)}
+.no.erro{border-color:var(--erro)}
+.no.casou{border-color:var(--acento);font-weight:700}
+textarea{width:100%;padding:10px;border:2px solid var(--borda);border-radius:10px;background:var(--painel);color:var(--tinta);font-family:inherit;font-size:.95em}
+.quiz{border:3px solid var(--borda);border-radius:16px;padding:14px 16px;margin:18px 0;background:var(--real)}
+.termos{background:#eef3ff;color:#141f3a;border:3px solid #2b4cb0;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:.93em}
+body.escuro .termos{background:#171d33;color:#d8e0f7}
+.pergunta{border-top:2px dashed var(--borda);padding-top:12px;margin-top:12px}
+.pergunta:first-of-type{border-top:none}
+.enun{font-weight:600}
+.alts{display:flex;flex-direction:column;gap:8px}
+.alt{text-align:left;background:var(--painel);color:var(--tinta);border:3px solid var(--borda);border-radius:10px;
+  padding:11px 14px;font-size:.95em;font-family:inherit;cursor:pointer}
+.alt:hover:not(:disabled){border-color:var(--acento)}
+.alt:disabled{cursor:not-allowed}
+.alt.certa{background:var(--ok);color:#fff;border-color:var(--ok);font-weight:700}
+.alt.errada{background:var(--erro);color:#fff;border-color:var(--erro)}
+.fb{margin-top:10px;border-radius:10px;padding:10px 14px;font-size:.95em;display:none}
+.fb.ok{display:block;background:var(--painel);border:3px solid var(--ok)}
+.fb.erro{display:block;background:var(--painel);border:3px solid var(--erro)}
+details.aprof,details.roteiro{border:3px solid var(--borda);border-radius:12px;padding:10px 16px;margin:12px 0;background:var(--real)}
+details.roteiro{background:#fff7e6}
+body.escuro details.roteiro{background:#2a2317}
+details.dicio{background:#eef3ff}
+body.escuro details.dicio{background:#171d33}
+details.conceitos{background:#eefaf1}
+body.escuro details.conceitos{background:#152a1e}
+details.buscas{background:#f3f0ff}
+body.escuro details.buscas{background:#201d2e}
+details.mito{background:#fdf2f8}
+body.escuro details.mito{background:#2a1a24}
+summary{cursor:pointer;font-weight:700}
+dt{font-weight:700;margin-top:.6em}
+dd{margin:.15em 0 .4em 0}
+.conceito{border-bottom:2px dashed var(--borda);padding-bottom:10px;margin-bottom:10px}
+.analogia{background:var(--painel);border-left:6px solid #b45309;padding:8px 12px;border-radius:8px}
+.links li{margin:.5em 0}
+.nota{font-size:.85em;color:var(--suave)}
+table{border-collapse:collapse;width:100%;margin:10px 0;font-size:.9em}
+th,td{border:2px solid var(--borda);padding:7px 9px;text-align:left;vertical-align:top}
+th{background:var(--acento);color:#fff}
+tr.grave td{border-color:var(--erro)}
+.chefao{border:4px solid #8a5a00;border-radius:16px;padding:14px 16px;background:var(--ferr);margin-top:16px}
+.mapa li{margin:.5em 0}
+.cola td:first-child{width:32%}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:var(--acento);color:#fff;
+  padding:10px 20px;border-radius:99px;font-weight:700;z-index:80;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.rodape{max-width:1180px;margin:26px auto 0;padding:0 16px 30px;font-size:.82em;color:var(--suave);line-height:1.5}
+.rodape h4{color:var(--tinta);font-size:1.05em;margin:.4em 0 .5em}
+.rodape hr{border:none;border-top:2px solid var(--borda);margin:18px 0}
+.rodape ul{padding-left:1.1em;margin:.3em 0}
+.rodape .contatos div{margin:.25em 0;word-break:break-all}
+body.apresentacao .roteiro{border-color:#8a5a00}
+@media(max-width:640px){
+  body{font-size:17px}
+  header.topo h1{font-size:1.25em;padding-right:70px}
+  .modos button{font-size:.68em;padding:7px 9px}
+  .painel h2{font-size:1.15em}
+}
+</style>
+</head>
+<body>
+<div class="modos">
+  <button id="btnModo" type="button" aria-pressed="false">🎤 Apresentação</button>
+  <button id="btnEscuro" type="button" aria-pressed="false">🌙 Escuro</button>
+</div>
+
+<header class="topo">
+  <h1>🛡️ Segurança e Auditoria de Sistemas — Aula 8: Ferramentas de Defesa e Segurança em SO/Apps</h1>
+  <p>Unidade 3 · Páginas 46 a 81 · Aula interativa offline (arquivo único)</p>
+  <p>Trilha de sala: 30 minutos nas abas 1 a 5 · Aba 6 para estudo em casa · Revisão com mapa, cola rápida e Chefão</p>
+</header>
+
+<div class="envolve">
+  <div class="hud">
+    <span class="caixa">⭐ XP: <span id="xp">0</span></span>
+    <span class="caixa" id="progTexto">Progresso: 0 de 18 perguntas</span>
+    <span class="barra"><i id="progBarra"></i></span>
+    <span class="selos" id="selos"><span class="selo vazio">Nenhum selo ainda: complete o quiz de uma aba</span></span>
+  </div>
+  <nav class="faixa-abas" id="faixa" role="tablist" aria-label="Abas da aula"></nav>
+  <main class="paineis" id="paineis"></main>
+  <noscript><p style="padding:16px">Esta aula interativa precisa de JavaScript ativado no navegador.</p></noscript>
+</div>
+
+<footer class="rodape">
+  <h4>📋 FICHA TÉCNICA DA AULA</h4>
+  <div>Segurança e Auditoria de Sistemas — Aula 8, Unidade 3, págs. 46–81 · Gerado em 25/11/2026 · 6 abas · 18 perguntas · 6 demos · cor #1F4E79</div>
+  <hr>
+  <h4>🪄 SOBRE O HTMLearning · v2.18-beta.5 (20/11/2026)</h4>
+  <div>Transformar o sumário de qualquer disciplina em uma classe interativa em HTML único e offline, com previsão antes do clique, tentativa e erro guiado e exemplos reais.</div>
+  <ul>
+    <li>O que é: metodologia e arquitetura de prompts que converte sumários em aulas interativas em minutos, com IAs gratuitas.</li>
+    <li>O que entrega: 5 a 7 abas + Revisão, simulações com previsão, quiz com retry sem revelar gabarito, linguagem plana, Modos Apresentação/Leitura.</li>
+    <li>Por que é inclusivo: um único .html leve, 100% offline, roda em PC e celular e viaja em pen drive para escolas desconectadas ou áreas rurais.</li>
+  </ul>
+  <div>Idealizador do projeto: Professor Wellington Dimas da Cruz</div>
+  <div>Apoiadora do projeto: Prof.ª Dr.ª Mariella Berger Andrade (IFES / CEFOR)</div>
+  <div class="contatos">
+    <div><strong>Contatos e links do projeto:</strong></div>
+    <div>E-mail do idealizador: <a href="mailto:cloud.ai-generative@outlook.com">cloud.ai-generative@outlook.com</a></div>
+    <div>Repositório GitHub do idealizador: <a href="https://github.com/cloud-ai-Generative" target="_blank" rel="noopener">https://github.com/cloud-ai-Generative</a></div>
+    <div>Currículo Lattes do idealizador: <a href="https://lattes.cnpq.br/6801791839011321" target="_blank" rel="noopener">https://lattes.cnpq.br/6801791839011321</a></div>
+    <div>Currículo Lattes da apoiadora: <a href="https://lattes.cnpq.br/3929645439848570" target="_blank" rel="noopener">https://lattes.cnpq.br/3929645439848570</a></div>
+    <div>Site oficial do projeto: <a href="https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html" target="_blank" rel="noopener">https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html</a></div>
+  </div>
+  <div>Licença do HTMLearning (metodologia e prompt): <a href="https://creativecommons.org/licenses/by/4.0/deed.pt-br" target="_blank" rel="noopener">CC BY 4.0 (Creative Commons Atribuição 4.0 Internacional)</a>. O conteúdo da aula pertence ao professor da disciplina.</div>
+</footer>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const AULA_DADOS = {
+  abas:[
+  {
+    id:"aba-1", rotulo:"Firewall e IDS/IPS", estudoProprio:false,
+    titulo:"Firewall, IDS e IPS: a portaria, a câmera e o segurança",
+    missao:"Ler uma lista de regras na ordem correta e explicar a diferença entre detectar e impedir.",
+    narrativa:"Três papéis diferentes na porta de entrada: o firewall é a portaria, que decide quem entra com base numa lista de regras; o sistema de detecção é a câmera, que percebe e avisa; o sistema de prevenção é o segurança, que percebe e age. Confundir os três é achar que está protegido quando só está sendo filmado.",
+    mundoReal:[
+      "O Windows Defender Firewall (o firewall que já vem no sistema da Microsoft) e o pfSense (programa livre de firewall usado em redes de pequenas empresas) aplicam listas de regras do mesmo jeito: de cima para baixo, e a primeira que casar decide.",
+      "O Snort e o Suricata (programas livres de detecção de intrusão) observam o tráfego e reconhecem padrões de ataque, como uma varredura de portas, mesmo quando cada pacote isolado parece permitido."
+    ],
+    ferramentas:[
+      "Firewall de host e de borda: Windows Defender Firewall, pfSense e as tabelas de regras do Linux (nftables).",
+      "Detecção e prevenção de intrusão: Snort e Suricata, em modo de observação ou em linha com o tráfego."
+    ],
+    dicionario:[
+      {termo:"Firewall", def:"Filtro que decide permitir ou bloquear tráfego segundo uma lista ordenada de regras."},
+      {termo:"Regra", def:"Uma condição (origem, porta, protocolo) mais uma ação (permitir ou bloquear)."},
+      {termo:"Porta", def:"Número que identifica qual serviço está sendo procurado na máquina, como 443 para navegação segura."},
+      {termo:"IDS (Intrusion Detection System; Sistema de Detecção de Intrusão)", def:"Observa o tráfego, reconhece padrões suspeitos e registra alerta; não bloqueia."},
+      {termo:"IPS (Intrusion Prevention System; Sistema de Prevenção de Intrusão)", def:"Fica em linha com o tráfego, reconhece o padrão e bloqueia na hora."},
+      {termo:"Negar por padrão", def:"Regra final que bloqueia tudo que não casou com nenhuma regra anterior."},
+      {termo:"Regra sombra", def:"Regra ampla colocada acima que casa primeiro e torna as de baixo inúteis."},
+      {termo:"Varredura de portas", def:"Tentativa de descobrir quais serviços estão abertos, testando várias portas em sequência."}
+    ],
+    conceitos:[
+      {titulo:"A ordem das regras decide o resultado",
+       texto:"O firewall lê a lista de cima para baixo e para na primeira regra que casar. Uma regra ampla no topo, como permitir tudo, engole todas as outras: elas continuam na tela, mas nunca são alcançadas. No fim, a regra de negar por padrão garante que o que ninguém autorizou explicitamente não passe.",
+       analogia:"💡 Portaria com lista de autorizações: se a primeira linha diz liberar todo mundo, o resto da lista vira enfeite.",
+       exemploReal:"Configurações de firewall em redes corporativas costumam ser revisadas justamente para achar regras amplas antigas que sombreiam bloqueios criados depois."},
+      {titulo:"Detectar não é impedir",
+       texto:"O sistema de detecção olha o comportamento, não só a porta: uma sequência de tentativas em várias portas é suspeita mesmo que cada porta seja permitida. Em modo de detecção, o alerta é registrado e o tráfego passa. Em modo de prevenção, o equipamento está no caminho e derruba a conexão.",
+       analogia:"💡 Câmera que grava o assalto versus segurança que segura o assaltante: os dois veem, só um age.",
+       exemploReal:"Ferramentas como o Suricata (programa livre de detecção) podem operar copiando o tráfego, só observando, ou em linha, bloqueando — a escolha muda o que acontece no momento do ataque."}
+    ],
+    roteiroDemo:{
+      passo0:"Antes de clicar, preveja: uma varredura que usa apenas portas permitidas é barrada pelo firewall?",
+      passos:[
+        {acao:"Escolha o pacote de área de trabalho remota vinda de fora e clique em Avaliar pacote.", ve:"A trilha mostra regra por regra até a negação final.", significa:"Negar por padrão fecha o que ninguém autorizou."},
+        {acao:"Ligue a regra ampla 'permitir tudo' no topo e avalie de novo.", ve:"A primeira regra casa e as outras nem são consultadas.", significa:"Regra sombra anula os bloqueios de baixo."},
+        {acao:"Escolha a varredura discreta e alterne entre detecção desligada, IDS e IPS.", ve:"O destino do pacote muda conforme o modo.", significa:"Ver e agir são coisas diferentes."}
+      ]
+    },
+    demo:{
+      tipo:"regras", titulo:"Mesa de regras do firewall com IDS e IPS",
+      config:{
+        regras:[
+          {id:"r0", nome:"Regra ampla: permitir tudo de qualquer origem", inicial:false},
+          {id:"r1", nome:"Permitir tudo que vem da rede interna", inicial:true},
+          {id:"r2", nome:"Permitir navegação segura (porta 443) de qualquer origem", inicial:true},
+          {id:"r3", nome:"Bloquear Telnet (porta 23), o acesso remoto sem cifra", inicial:true},
+          {id:"r4", nome:"Bloquear SSH (porta 22) vindo de fora", inicial:true}
+        ],
+        pacotes:[
+          {nome:"Navegação segura da rede interna", origem:"interna", porta:443, varredura:false},
+          {nome:"Navegação segura vinda de fora", origem:"externa", porta:443, varredura:false},
+          {nome:"Telnet vindo de fora", origem:"externa", porta:23, varredura:false},
+          {nome:"SSH vindo de fora", origem:"externa", porta:22, varredura:false},
+          {nome:"Área de trabalho remota vinda de fora", origem:"externa", porta:3389, varredura:false},
+          {nome:"Varredura discreta usando portas permitidas", origem:"externa", porta:443, varredura:true}
+        ],
+        modos:[
+          {id:"off", nome:"🚫 Sem detecção"},
+          {id:"ids", nome:"📹 IDS (detecta e registra)"},
+          {id:"ips", nome:"🛑 IPS (detecta e bloqueia)"}
+        ],
+        explica:{
+          permitir:"O tráfego passou pela portaria.",
+          bloquear:"O tráfego foi barrado.",
+          varreduraOff:"A varredura usou portas permitidas e passou sem ninguém perceber: cada pacote isolado parecia normal.",
+          varreduraIds:"O IDS reconheceu o padrão de varredura e registrou alerta, mas o tráfego continuou passando.",
+          varreduraIps:"O IPS reconheceu o padrão e derrubou a conexão na hora, mesmo com a porta permitida."
+        },
+        exemplo:"Exemplo real: o Snort e o Suricata (programas livres de detecção de intrusão) reconhecem padrões como varredura e exploração de falhas, algo que uma regra de porta sozinha não enxerga.",
+        observa:[
+          "A trilha mostra a ordem: a primeira regra que casa encerra a avaliação.",
+          "A regra ampla no topo torna todas as outras inalcançáveis.",
+          "Com portas permitidas, só a detecção de padrão percebe a varredura."
+        ]
+      },
+      legenda:[
+        "Porta 443 = navegação segura (HTTPS) · porta 23 = Telnet, acesso remoto antigo sem cifra · porta 22 = SSH, acesso remoto cifrado · porta 3389 = área de trabalho remota do Windows.",
+        "Origem interna = rede da própria empresa; origem externa = internet.",
+        "A avaliação para na primeira regra ligada que casar; se nenhuma casar, vale a regra final de negar por padrão.",
+        "IDS = detecta e registra · IPS = detecta e bloqueia."
+      ]
+    },
+    termosQuiz:"Firewall = filtro com lista ordenada de regras · porta = número que identifica o serviço procurado · IDS = detecta e registra, sem bloquear · IPS = detecta e bloqueia em linha · negar por padrão = bloquear o que não foi autorizado · regra sombra = regra ampla no topo que anula as de baixo · varredura de portas = testar várias portas para achar serviços abertos.",
+    quiz:[
+      {q:"Uma regra 'permitir tudo' foi colocada no topo da lista. O que acontece com os bloqueios abaixo dela?",
+       alts:[
+         {t:"Nunca são alcançados, porque a primeira regra casa antes", ok:true, fb:"A avaliação para na primeira regra que casa. Os bloqueios continuam na tela, mas viram enfeite: é a regra sombra."},
+         {t:"Continuem valendo, porque bloqueio tem prioridade", ok:false, fb:"Não existe prioridade automática de bloqueio: quem manda é a ordem da lista, de cima para baixo."},
+         {t:"O firewall avisa e ignora a regra ampla", ok:false, fb:"O equipamento aplica o que está configurado. Alguns painéis alertam sobre conflito, mas a regra continua valendo."}
+       ]},
+      {q:"Qual é a diferença prática entre IDS e IPS?",
+       alts:[
+         {t:"O IDS registra o alerta; o IPS bloqueia o tráfego no momento", ok:true, fb:"Câmera que grava versus segurança que age. O IPS fica em linha com o tráfego, e por isso consegue derrubar a conexão."},
+         {t:"O IDS é mais moderno que o IPS", ok:false, fb:"Não é geração, é papel. Os dois podem usar as mesmas assinaturas e regras de detecção."},
+         {t:"O IPS só funciona em redes sem firewall", ok:false, fb:"Costumam trabalhar juntos: o firewall decide por porta e origem, e o IPS olha o conteúdo e o padrão."}
+       ]},
+      {q:"Para que serve a regra final de negar por padrão?",
+       alts:[
+         {t:"Bloquear tudo que não foi explicitamente autorizado antes", ok:true, fb:"É a lista de autorizações da portaria: quem não está na lista não entra. Sem ela, o que ninguém previu passa livre."},
+         {t:"Deixar a lista de regras mais curta", ok:false, fb:"Ela não encurta nada; fecha o comportamento padrão. O ganho é segurança, não tamanho."},
+         {t:"Permitir tráfego novo enquanto se decide a regra", ok:false, fb:"É o oposto: nega até que alguém autorize. Permitir por padrão é o que deixa serviços expostos sem ninguém notar."}
+       ]}
+    ],
+    aprofundar:[
+      {rotulo:"🔎 Busca no Google (português)", url:"https://www.google.com/search?hl=pt-BR&q=firewall+ids+ips+diferen%C3%A7a+regras"},
+      {rotulo:"🎓 Pesquisa científica (Google Scholar, português)", url:"https://scholar.google.com/scholar?hl=pt-BR&q=firewall+ids+ips+diferen%C3%A7a+regras"},
+      {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)", url:"https://www.youtube.com/results?search_query=firewall+ids+ips+diferen%C3%A7a+regras+aula"}
+    ],
+    mitoOuVerdade:{afirmacao:"Ter firewall configurado já impede qualquer ataque que venha pela rede.", verdade:false,
+      explicacao:"Mito. O firewall decide por origem, porta e protocolo. Um ataque que usa uma porta permitida, como o tráfico de navegação segura, passa pela portaria. É por isso que existem detecção de padrão, proteção da aplicação e correções em dia."}
+  },
+
+  {
+    id:"aba-2", rotulo:"Cifra e acesso", estudoProprio:false,
+    titulo:"Criptografia e controle de acesso: quem pode abrir o quê",
+    missao:"Montar uma matriz de permissões pelo menor privilégio e explicar o que a cifra protege mesmo quando a permissão falha.",
+    narrativa:"Duas perguntas diferentes: quem tem autorização para abrir este dado, e o que acontece com o dado se alguém levar o disco embora. Controle de acesso responde a primeira; criptografia responde a segunda. Um não substitui o outro, e os dois precisam ser configurados.",
+    mundoReal:[
+      "Vazamentos de pastas em armazenamento de objetos, como o Amazon S3 (serviço de arquivos da Amazon), quase sempre nasceram de permissão ampla demais, não de invasão sofisticada.",
+      "O BitLocker (criptografia de disco do Windows) e o FileVault (criptografia de disco dos computadores da Apple) protegem o notebook perdido ou roubado: sem a chave, o disco levado é um monte de símbolos."
+    ],
+    ferramentas:[
+      "Controle de acesso por papel (RBAC) e listas de permissão por arquivo e por pasta.",
+      "Cofre de chaves, como o AWS KMS (serviço da Amazon que guarda chaves e registra cada uso), separado dos dados."
+    ],
+    dicionario:[
+      {termo:"Autenticação", def:"Conferir quem é você: senha, segunda etapa, biometria."},
+      {termo:"Autorização", def:"Conferir o que você pode fazer depois de entrar."},
+      {termo:"RBAC (Role-Based Access Control; Controle de Acesso Baseado em Papéis)", def:"Permissões atribuídas ao cargo, e não à pessoa: quem muda de função muda de papel."},
+      {termo:"Menor privilégio", def:"Cada um recebe só o acesso necessário para a sua tarefa, nada além."},
+      {termo:"Cifrar em repouso", def:"Embaralhar o dado gravado, para que a cópia do disco não revele conteúdo."},
+      {termo:"Cofre de chaves (KMS)", def:"Lugar separado que guarda as chaves e anota quem usou cada uma."},
+      {termo:"LGPD (Lei Geral de Proteção de Dados)", def:"Lei brasileira que regula o uso e a guarda de dados pessoais."},
+      {termo:"Perfil de acesso", def:"Conjunto de permissões de um tipo de usuário, como visitante, atendente ou administrador."}
+    ],
+    conceitos:[
+      {titulo:"Permissão ampla é risco silencioso",
+       texto:"Quando o atendente consegue abrir a folha de pagamento, não é porque alguém invadiu: é porque a matriz de permissões foi configurada com excesso. O menor privilégio reduz o estrago de uma conta comprometida e também o erro honesto de quem clica no lugar errado.",
+       analogia:"💡 Cartão de hotel: abre o seu quarto, não a casa de máquinas. Se o cartão for roubado, o estrago é pequeno.",
+       exemploReal:"Empresas sob a LGPD (Lei Geral de Proteção de Dados) revisam matrizes de acesso justamente para limitar quem vê dados pessoais ao mínimo necessário para a função."},
+      {titulo:"A cifra protege o que a permissão não alcança",
+       texto:"A permissão vale enquanto o sistema está no controle. Se alguém leva o disco, monta a máquina com outro sistema ou copia a pasta inteira, a permissão do aplicativo não é consultada. Nesse cenário, quem protege é o embaralhamento em repouso — desde que a chave não esteja guardada junto do dado.",
+       analogia:"💡 Trancar a porta protege de quem entra pela porta; o cofre protege mesmo se levarem a casa inteira.",
+       exemploReal:"Notebooks corporativos com BitLocker (criptografia de disco do Windows) viram peso de papel para quem os furta; sem cifra, o disco retirado é lido em qualquer outro computador."}
+    ],
+    roteiroDemo:{
+      passo0:"Antes de clicar, preveja: se o atendente tem permissão para a folha de pagamento, a criptografia do disco impede que ele abra o arquivo?",
+      passos:[
+        {acao:"Escolha o perfil Atendente e o recurso Folha de pagamento e clique em Tentar acesso.", ve:"O acesso é permitido e o contador de excesso de permissões aparece.", significa:"A cifra não corrige permissão mal configurada."},
+        {acao:"Desligue essa permissão na matriz e tente de novo.", ve:"O acesso passa a ser negado e o excesso cai.", significa:"Menor privilégio se aplica na matriz, não no discurso."},
+        {acao:"Ligue e desligue o embaralhamento e o cofre de chaves, observando a janela de quem copia o disco.", ve:"Só a combinação de cifra com chave no cofre esconde o conteúdo.", significa:"Cifra e chave separada protegem o cenário que a permissão não cobre."}
+      ]
+    },
+    demo:{
+      tipo:"matriz", titulo:"Matriz de permissões e o caminho do disco",
+      config:{
+        perfis:["Visitante","Atendente","Administrador"],
+        recursos:["Catálogo público","Cadastro de clientes","Folha de pagamento"],
+        minimo:[[true,false,false],[true,true,false],[true,true,true]],
+        inicial:[[true,false,false],[true,true,true],[true,true,true]],
+        exemplo:"Exemplo real: vazamentos de pastas em armazenamento de objetos, como o Amazon S3 (serviço de arquivos da Amazon), nasceram de permissão ampla; e notebooks com BitLocker (criptografia de disco do Windows) protegem o dado mesmo quando o aparelho é furtado.",
+        observa:[
+          "O contador mostra quantas permissões estão além do mínimo recomendado para cada papel.",
+          "A janela do usuário autorizado e a de quem copia o disco respondem perguntas diferentes.",
+          "Cifra sem chave separada não protege quem leva a pasta inteira."
+        ]
+      },
+      legenda:[
+        "Matriz: linhas são perfis (papéis) e colunas são recursos; cada célula diz se aquele papel pode abrir aquele recurso.",
+        "Excesso de permissões = células liberadas além do mínimo recomendado para o papel.",
+        "Cifrar em repouso = embaralhar o que está gravado; cofre de chaves = guardar a chave longe do dado.",
+        "Sequências de símbolos na janela de quem copia o disco representam conteúdo embaralhado."
+      ]
+    },
+    termosQuiz:"Autenticação = conferir quem é você · autorização = conferir o que pode fazer · RBAC = permissões por papel · menor privilégio = só o acesso necessário · cifrar em repouso = embaralhar o dado gravado · cofre de chaves (KMS) = guardar a chave separada do dado · excesso de permissões = acessos além do mínimo do papel.",
+    quiz:[
+      {q:"O atendente consegue abrir a folha de pagamento pelo sistema, e o disco é criptografado. O que a cifra faz nesse caso?",
+       alts:[
+         {t:"Nada: o acesso é legítimo e o aplicativo entrega o dado legível", ok:true, fb:"A cifra protege contra cópia do disco, não contra permissão mal configurada. Quem corrige isso é a matriz de acesso."},
+         {t:"Bloqueia a abertura, porque folha de pagamento é sensível", ok:false, fb:"A cifra não sabe o cargo de quem pede. Ela embaralha o que está gravado; a decisão de abrir é do controle de acesso."},
+         {t:"Pede uma segunda senha automaticamente", ok:false, fb:"Isso seria autenticação adicional, outra camada. O embaralhamento em repouso não cria etapas de login."}
+       ]},
+      {q:"O que significa aplicar o menor privilégio?",
+       alts:[
+         {t:"Dar a cada papel só o acesso necessário para a tarefa", ok:true, fb:"É o cartão de hotel que abre um quarto, não a casa de máquinas. Limita o estrago de conta comprometida e de erro honesto."},
+         {t:"Dar acesso total aos administradores e nada aos demais", ok:false, fb:"É grosseiro demais: o atendente precisa do cadastro de clientes para trabalhar. O critério é necessidade, não hierarquia."},
+         {t:"Trocar as senhas com frequência", ok:false, fb:"Isso é higiene de credenciais, outro assunto. Menor privilégio trata do alcance das permissões."}
+       ]},
+      {q:"Um notebook criptografado é furtado e o ladrão retira o disco. O que ele consegue ler?",
+       alts:[
+         {t:"Só símbolos embaralhados, se a chave não estava junto", ok:true, fb:"A permissão do sistema não é consultada nesse cenário; quem protege é o embaralhamento com chave guardada separadamente."},
+         {t:"Tudo, porque ele está com o disco físico", ok:false, fb:"Estar com a mídia não dá a chave. Sem ela, o conteúdo permanece embaralhado."},
+         {t:"Tudo, se ele iniciar por outro sistema operacional", ok:false, fb:"Trocar o sistema contorna as permissões do sistema original, mas não desfaz o embaralhamento do disco."}
+       ]}
+    ],
+    aprofundar:[
+      {rotulo:"🔎 Busca no Google (português)", url:"https://www.google.com/search?hl=pt-BR&q=controle+de+acesso+menor+privil%C3%A9gio+criptografia+em+repouso"},
+      {rotulo:"🎓 Pesquisa científica (Google Scholar, português)", url:"https://scholar.google.com/scholar?hl=pt-BR&q=controle+de+acesso+menor+privil%C3%A9gio+criptografia+em+repouso"},
+      {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)", url:"https://www.youtube.com/results?search_query=controle+de+acesso+menor+privil%C3%A9gio+criptografia+em+repouso+aula"}
+    ],
+    mitoOuVerdade:{afirmacao:"Se o dado está criptografado, não preciso me preocupar com permissões de acesso.", verdade:false,
+      explicacao:"Mito. O aplicativo autorizado lê o dado de forma legível; quem entra com uma conta com permissão ampla recebe esse mesmo conteúdo. A cifra cobre outro cenário: cópia do disco ou da pasta. São camadas complementares."}
+  },
+
+  {
+    id:"aba-3", rotulo:"Antimalware", estudoProprio:false,
+    titulo:"Antimalware e monitoramento: assinatura, comportamento e resposta",
+    missao:"Explicar por que a assinatura sozinha não basta e montar a cadeia que contém uma ameaça nova.",
+    narrativa:"O antivírus clássico compara o arquivo com um catálogo de pragas conhecidas. Contra uma amostra nova, esse catálogo não ajuda. Por isso as ferramentas modernas olham também o comportamento, e o monitoramento transforma a detecção em resposta antes que a praga se espalhe.",
+    mundoReal:[
+      "O WannaCry (programa de resgate que se espalhou em 2017) atingiu hospitais e empresas usando uma falha do Windows para a qual já existia correção publicada: assinatura e correção são camadas diferentes.",
+      "O VirusTotal (serviço que consulta um arquivo em dezenas de antivírus ao mesmo tempo) mostra na prática como uma amostra nova é reconhecida por poucos motores no começo e por muitos depois."
+    ],
+    ferramentas:[
+      "Antivírus de assinatura, como o Windows Defender (antivírus da Microsoft), e detecção por comportamento.",
+      "EDR (Endpoint Detection and Response; Detecção e Resposta em Endpoints), como o CrowdStrike Falcon (programa que vigia computadores corporativos), que registra ações e permite isolar a máquina."
+    ],
+    dicionario:[
+      {termo:"Assinatura", def:"Trecho característico de uma praga conhecida, usado para reconhecê-la."},
+      {termo:"Detecção por comportamento", def:"Observar o que o programa faz: embaralhar arquivos em massa, apagar cópias, se espalhar."},
+      {termo:"Quarentena", def:"Isolar o arquivo em local onde ele não pode ser executado."},
+      {termo:"EDR (Endpoint Detection and Response; Detecção e Resposta em Endpoints)", def:"Ferramenta que registra ações no computador e permite responder, como isolar a máquina da rede."},
+      {termo:"Falso positivo", def:"Alerta sobre algo que era legítimo; atrapalha o trabalho e gera descrédito."},
+      {termo:"Ransomware (programa de resgate)", def:"Praga que embaralha os arquivos da vítima e cobra pela chave."},
+      {termo:"Janela de exposição", def:"Tempo entre a ameaça aparecer e a proteção passar a reconhecê-la."}
+    ],
+    conceitos:[
+      {titulo:"Assinatura olha o passado; comportamento olha o agora",
+       texto:"A assinatura é rápida e barata para o que já é conhecido, mas existe uma janela entre a criação da amostra e a atualização do catálogo. A detecção por comportamento cobre essa janela observando ações típicas: embaralhar muitos arquivos, apagar cópias de segurança, tentar alcançar outras máquinas.",
+       analogia:"💡 Portaria com foto de procurados versus porteiro que percebe alguém arrombando a porta agora.",
+       exemploReal:"Ferramentas de EDR, como o CrowdStrike Falcon (programa de vigilância de computadores corporativos), registraram ações de programas de resgate mesmo quando o arquivo era novo para os catálogos."},
+      {titulo:"Detectar sem responder é meio caminho",
+       texto:"O valor do monitoramento está em encurtar o tempo até a ação: quarentena automática, isolamento da máquina da rede e alerta para a equipe. Sem isso, o alerta aparece no painel e a praga continua trabalhando enquanto ninguém olha.",
+       analogia:"💡 Alarme de incêndio que toca numa sala vazia: o barulho não apaga o fogo.",
+       exemploReal:"No WannaCry (programa de resgate de 2017), organizações com correções aplicadas e cópias isoladas sofreram muito menos que as que dependiam só do antivírus."}
+    ],
+    roteiroDemo:{
+      passo0:"Antes de clicar, preveja: um antivírus atualizado reconhece um arquivo malicioso criado hoje, que ainda não está no catálogo?",
+      passos:[
+        {acao:"Deixe só a assinatura ligada e clique em Simular amostra nova.", ve:"A execução passa e os arquivos começam a ser embaralhados.", significa:"Catálogo nenhum conhece o que acabou de ser criado."},
+        {acao:"Ligue a detecção por comportamento e a quarentena, e rode de novo.", ve:"A ação suspeita é percebida e o arquivo é isolado.", significa:"Comportamento cobre a janela da assinatura."},
+        {acao:"Desligue as correções automáticas e compare o contador de máquinas afetadas.", ve:"O espalhamento aumenta mesmo com a detecção ligada.", significa:"Correção fecha a porta; detecção só percebe quem já entrou."}
+      ]
+    },
+    demo:{
+      tipo:"infec", titulo:"Uma amostra nova atravessando as defesas",
+      config:{
+        protecoes:[
+          {id:"assinatura", nome:"📇 Antivírus por assinatura", inicial:true},
+          {id:"comportamento", nome:"👁️ Detecção por comportamento", inicial:false},
+          {id:"quarentena", nome:"📦 Quarentena automática", inicial:false},
+          {id:"atualiza", nome:"🔄 Correções do sistema em dia", inicial:true}
+        ],
+        etapas:[
+          {nome:"📧 Chegada do arquivo", txt:"Um anexo malicioso criado hoje chegou por e-mail; a assinatura dele ainda não existe nos catálogos."},
+          {nome:"🦠 Execução",
+           bom:"A detecção por comportamento percebeu ações típicas de programa de resgate e alertou.",
+           ruim:"Sem detecção por comportamento, o programa executou livremente: o catálogo não conhecia essa amostra nova."},
+          {nome:"🗄️ Ação sobre os arquivos",
+           bom:"A quarentena automática isolou o arquivo antes de embaralhar os dados.",
+           ruim:"Sem quarentena automática, o programa começou a embaralhar arquivos e a exigir resgate."},
+          {nome:"🌐 Espalhamento pela rede",
+           bom:"As correções em dia fecharam a porta usada para alcançar outras máquinas.",
+           ruim:"Sem correções aplicadas, a praga usou uma falha conhecida para alcançar outras máquinas da rede."},
+          {nome:"🚨 Resposta da equipe",
+           bom:"O alerta chegou ao painel e a equipe isolou a máquina rapidamente.",
+           ruim:"Sem alerta, a equipe só descobriu quando os usuários ligaram reclamando."}
+        ],
+        exemplo:"Caso real: o WannaCry (programa de resgate de 2017) usou uma falha do Windows que já tinha correção publicada; quem estava corrigido ficou de fora do espalhamento, mesmo com o antivírus surdo para a amostra nova.",
+        observa:[
+          "A assinatura atualizada não reconhece uma amostra criada hoje.",
+          "Comportamento e quarentena juntos contêm; só um dos dois deixa o estrago começar.",
+          "Correções em dia são o que impede o espalhamento, não a detecção."
+        ]
+      },
+      legenda:[
+        "Assinatura = trecho característico de praga conhecida · comportamento = ações suspeitas observadas.",
+        "Quarentena = arquivo isolado, sem poder executar.",
+        "Máquinas afetadas neste modelo: 1 se não houve quarentena, mais 6 se as correções estavam atrasadas (números de exercício).",
+        "EDR = ferramenta que registra ações e permite isolar a máquina da rede."
+      ]
+    },
+    termosQuiz:"Assinatura = reconhecimento por catálogo de pragas conhecidas · detecção por comportamento = observar ações suspeitas · quarentena = isolar o arquivo · EDR = registrar ações e responder no computador · ransomware = praga que embaralha arquivos e cobra · falso positivo = alerta sobre algo legítimo.",
+    quiz:[
+      {q:"Por que um antivírus atualizado pode não reconhecer uma praga criada hoje?",
+       alts:[
+         {t:"Porque a assinatura dela ainda não entrou no catálogo", ok:true, fb:"Existe uma janela entre a criação da amostra e a atualização do catálogo. É o retrato de procurados que ainda não tem a foto do sujeito novo."},
+         {t:"Porque antivírus só funciona em arquivos antigos", ok:false, fb:"Ele funciona em qualquer arquivo; o limite é conhecer ou não aquele padrão específico."},
+         {t:"Porque a atualização desliga a proteção por alguns minutos", ok:false, fb:"Atualizar catálogo não desliga a proteção. O problema é o que ainda não está no catálogo."}
+       ]},
+      {q:"O que a detecção por comportamento observa?",
+       alts:[
+         {t:"Ações típicas de ataque, como embaralhar muitos arquivos e apagar cópias", ok:true, fb:"É o porteiro que vê alguém arrombando a porta agora, mesmo sem ter a foto do sujeito."},
+         {t:"O tamanho do arquivo baixado", ok:false, fb:"Tamanho sozinho não indica nada: programas legítimos também são grandes."},
+         {t:"A data de criação do arquivo", ok:false, fb:"Data pode ser falsificada e não descreve ação. O valor está no que o programa faz ao rodar."}
+       ]},
+      {q:"A ferramenta detectou e gerou alerta, mas não há quarentena nem isolamento. O que acontece?",
+       alts:[
+         {t:"A ameaça continua agindo até alguém responder", ok:true, fb:"Alarme que toca em sala vazia não apaga o fogo. O ganho do monitoramento está em encurtar o tempo até a ação."},
+         {t:"O alerta por si só interrompe o programa", ok:false, fb:"Registrar não é bloquear. Sem quarentena ou isolamento, o processo continua executando."},
+         {t:"O sistema operacional apaga o arquivo automaticamente", ok:false, fb:"Não há apagamento automático por padrão. A resposta precisa estar configurada, como na quarentena."}
+       ]}
+    ],
+    aprofundar:[
+      {rotulo:"🔎 Busca no Google (português)", url:"https://www.google.com/search?hl=pt-BR&q=antimalware+assinatura+comportamento+edr+monitoramento"},
+      {rotulo:"🎓 Pesquisa científica (Google Scholar, português)", url:"https://scholar.google.com/scholar?hl=pt-BR&q=antimalware+assinatura+comportamento+edr+monitoramento"},
+      {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)", url:"https://www.youtube.com/results?search_query=antimalware+assinatura+comportamento+edr+monitoramento+aula"}
+    ],
+    mitoOuVerdade:{afirmacao:"Manter o antivírus atualizado já protege contra qualquer programa malicioso.", verdade:false,
+      explicacao:"Mito. A atualização cobre o que já é conhecido. Amostras novas passam pela assinatura, e o WannaCry (programa de resgate de 2017) mostrou outro ponto: mesmo detectado, o espalhamento só é contido quando as correções do sistema estão aplicadas."}
+  },
+
+  {
+    id:"aba-4", rotulo:"Segurança do SO", estudoProprio:false,
+    titulo:"Princípios de segurança em sistemas operacionais",
+    missao:"Aplicar endurecimento básico no sistema e explicar quanto cada escolha reduz a superfície de exposição.",
+    narrativa:"O sistema operacional é o chão onde tudo roda. Se ele está frouxo, nenhuma ferramenta de cima compensa: conta administrativa para tudo, correção atrasada, serviço esquecido ligado e disco sem cifra formam a maior parte dos incidentes reais. Endurecer é fechar o que não precisa estar aberto.",
+    mundoReal:[
+      "A Colonial Pipeline (empresa de oleoduto de combustíveis dos Estados Unidos) parou a operação em 2021 depois de entrada por uma conta de acesso remoto sem segunda etapa de login.",
+      "A Equifax (agência de crédito dos Estados Unidos) sofreu vazamento enorme em 2017 por uma falha já conhecida e com correção disponível, que não tinha sido aplicada em um componente do site."
+    ],
+    ferramentas:[
+      "Contas separadas: usuário comum no dia a dia e conta administrativa só quando necessário, com o aviso de elevação do sistema.",
+      "Controles de acesso obrigatório do Linux, como AppArmor e SELinux, que limitam o que cada programa pode fazer mesmo se for comprometido."
+    ],
+    dicionario:[
+      {termo:"Endurecimento (hardening)", def:"Conjunto de ajustes que reduzem o que pode ser atacado no sistema."},
+      {termo:"Superfície de ataque", def:"Soma dos pontos por onde alguém pode tentar entrar: serviços, contas, portas, programas."},
+      {termo:"Conta administrativa", def:"Conta que pode mudar tudo no sistema; usada no dia a dia, amplia o estrago de qualquer erro."},
+      {termo:"Menor privilégio", def:"Rodar com a permissão mínima necessária, elevando só quando preciso."},
+      {termo:"Correção (patch)", def:"Atualização que fecha uma falha conhecida."},
+      {termo:"MFA (Multi-Factor Authentication; Autenticação de Múltiplos Fatores)", def:"Segunda etapa de login: senha mais código do celular ou chave física."},
+      {termo:"Serviço desnecessário", def:"Programa que fica escutando na rede sem ser usado, mantendo uma porta aberta à toa."},
+      {termo:"Cifra de disco", def:"Embaralhamento do conteúdo gravado, protegendo o equipamento perdido ou roubado."}
+    ],
+    conceitos:[
+      {titulo:"Cada porta aberta é uma chance a mais",
+       texto:"Superfície de ataque é a soma dos pontos de entrada. Desligar serviço que ninguém usa, tirar conta administrativa do uso diário e aplicar correções reduz essa soma sem comprar nada. É por isso que endurecimento vem antes de ferramenta cara.",
+       analogia:"💡 Casa com dez janelas abertas: trancar sete é mais eficaz do que comprar um alarme melhor para as três que sobraram.",
+       exemploReal:"Guias de endurecimento de sistemas, publicados por fabricantes e por órgãos de segurança, começam exatamente por serviços, contas e correções."},
+      {titulo:"Correção e segunda etapa são as duas que mais salvam",
+       texto:"Grande parte dos incidentes conhecidos entrou por falha já corrigida ou por senha vazada sem segunda etapa. As duas medidas são baratas e cobrem os caminhos mais usados. Cifra de disco entra para o cenário físico: perda e furto do equipamento.",
+       analogia:"💡 Trocar a fechadura quebrada e não deixar a chave debaixo do tapete resolve a maioria dos roubos oportunistas.",
+       exemploReal:"No caso da Equifax (agência de crédito dos Estados Unidos), a correção existia; no caso da Colonial Pipeline (oleoduto dos Estados Unidos), faltava a segunda etapa em uma conta."}
+    ],
+    roteiroDemo:{
+      passo0:"Antes de clicar, preveja: qual medida derruba mais a exposição — cifra de disco ou correções em dia?",
+      passos:[
+        {acao:"Observe o painel com a configuração inicial e leia a lista de caminhos abertos.", ve:"Cada item desligado aparece com o caminho que deixa aberto.", significa:"Exposição é soma de pontos de entrada, não uma nota abstrata."},
+        {acao:"Ligue as correções automáticas e a segunda etapa de login.", ve:"O medidor cai de forma acentuada.", significa:"São os dois caminhos mais usados em incidentes reais."},
+        {acao:"Ligue conta comum, serviços desligados e cifra de disco, e compare o resultado.", ve:"O medidor chega perto de zero e a lista muda de perfil.", significa:"Endurecimento é conjunto, não uma bala de prata."}
+      ]
+    },
+    demo:{
+      tipo:"so", titulo:"Painel de endurecimento do sistema",
+      config:{
+        itens:[
+          {id:"conta", nome:"👤 Conta comum no dia a dia (admin só quando precisa)", peso:25, inicial:false,
+            aberto:"Uso diário com conta administrativa: qualquer programa que rodar herda poder total sobre o sistema.",
+            fechado:"Uso diário com conta comum: um programa malicioso fica limitado ao que essa conta pode fazer."},
+          {id:"atualiza", nome:"🔄 Correções automáticas aplicadas", peso:30, inicial:true,
+            aberto:"Correções atrasadas: falhas já conhecidas e com solução publicada continuam exploráveis, como no caso da Equifax (agência de crédito dos Estados Unidos).",
+            fechado:"Correções em dia: as falhas conhecidas mais exploradas já estão fechadas."},
+          {id:"servicos", nome:"🧹 Serviços desnecessários desligados", peso:15, inicial:false,
+            aberto:"Serviços esquecidos escutando na rede: portas abertas que ninguém usa nem monitora.",
+            fechado:"Só o necessário escutando na rede: menos pontos para tentar entrar."},
+          {id:"mfa", nome:"🚪 Segunda etapa de login (MFA)", peso:15, inicial:false,
+            aberto:"Só senha: uma credencial vazada abre a porta, como na conta de acesso remoto da Colonial Pipeline (oleoduto dos Estados Unidos).",
+            fechado:"Senha mais segunda etapa: a credencial vazada sozinha não basta."},
+          {id:"cifra", nome:"🔐 Disco cifrado", peso:15, inicial:false,
+            aberto:"Disco sem cifra: equipamento perdido ou furtado tem o conteúdo lido em qualquer outro computador.",
+            fechado:"Disco cifrado: sem a chave, o conteúdo levado é um monte de símbolos."}
+        ],
+        observa:[
+          "O medidor soma os pesos dos itens desligados: é a superfície de exposição do modelo.",
+          "Correções e segunda etapa concentram a maior parte do ganho.",
+          "Cifra de disco protege o cenário físico, não o acesso remoto."
+        ]
+      },
+      legenda:[
+        "Exposição = soma dos pesos dos itens desligados, de 0 a 100 (modelo de exercício, não medida real).",
+        "MFA = segunda etapa de login · hardening = endurecimento, ajustes que reduzem o que pode ser atacado.",
+        "Superfície de ataque = soma dos pontos por onde alguém pode tentar entrar."
+      ]
+    },
+    termosQuiz:"Endurecimento (hardening) = ajustes que reduzem pontos de ataque · superfície de ataque = soma dos pontos de entrada · conta administrativa = pode mudar tudo no sistema · correção (patch) = atualização que fecha falha conhecida · MFA = segunda etapa de login · cifra de disco = embaralhar o conteúdo gravado.",
+    quiz:[
+      {q:"Por que usar conta comum no dia a dia reduz risco?",
+       alts:[
+         {t:"Um programa malicioso herda só as permissões daquela conta", ok:true, fb:"É o menor privilégio aplicado ao uso diário: o estrago fica limitado, e a elevação acontece só quando você decide."},
+         {t:"A conta comum deixa o computador mais rápido", ok:false, fb:"Desempenho não é o ponto. O ganho é limitar o alcance de erro e de código malicioso."},
+         {t:"A conta comum impede qualquer infecção", ok:false, fb:"Não impede: limita. O programa ainda pode agir sobre o que aquela conta alcança, como os documentos do usuário."}
+       ]},
+      {q:"Um serviço antigo está ligado e escutando na rede, mas ninguém o usa. O que fazer?",
+       alts:[
+         {t:"Desligar o serviço, reduzindo a superfície de ataque", ok:true, fb:"Janela aberta sem uso só oferece chance a mais. Endurecimento começa por fechar o que não é necessário."},
+         {t:"Deixar ligado, porque não custa nada", ok:false, fb:"Custa superfície de ataque e manutenção de correções. Serviço parado também recebe tentativa de exploração."},
+         {t:"Trocar a porta do serviço para escondê-lo", ok:false, fb:"Porta diferente não é proteção: varreduras encontram o serviço do mesmo jeito. É esconder a janela, não trancá-la."}
+       ]},
+      {q:"Qual combinação cobre os dois caminhos mais usados em incidentes conhecidos?",
+       alts:[
+         {t:"Correções aplicadas e segunda etapa de login", ok:true, fb:"Falha conhecida não corrigida e senha vazada sem segunda etapa aparecem repetidamente, como nos casos da Equifax e da Colonial Pipeline."},
+         {t:"Cifra de disco e papel de parede personalizado", ok:false, fb:"Cifra protege o cenário físico; papel de parede não tem relação com segurança."},
+         {t:"Antivírus e mais memória no servidor", ok:false, fb:"Antivírus é uma camada, e memória é capacidade. Nenhum dos dois fecha falha conhecida nem credencial vazada."}
+       ]}
+    ],
+    aprofundar:[
+      {rotulo:"🔎 Busca no Google (português)", url:"https://www.google.com/search?hl=pt-BR&q=hardening+de+sistema+operacional+princ%C3%ADpios+de+seguran%C3%A7a"},
+      {rotulo:"🎓 Pesquisa científica (Google Scholar, português)", url:"https://scholar.google.com/scholar?hl=pt-BR&q=hardening+de+sistema+operacional+princ%C3%ADpios+de+seguran%C3%A7a"},
+      {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)", url:"https://www.youtube.com/results?search_query=hardening+de+sistema+operacional+princ%C3%ADpios+de+seguran%C3%A7a+aula"}
+    ],
+    mitoOuVerdade:{afirmacao:"Se o servidor tem um bom antivírus, posso adiar as correções do sistema operacional.", verdade:false,
+      explicacao:"Mito. O antivírus não fecha a falha do sistema; ele tenta reconhecer o que explora a falha. No caso da Equifax (agência de crédito dos Estados Unidos), a correção existia e não foi aplicada — nenhuma ferramenta de cima compensou esse atraso."}
+  },
+
+  {
+    id:"aba-5", rotulo:"Proteção de apps", estudoProprio:false,
+    titulo:"Proteção de aplicativos e softwares contra ameaças",
+    missao:"Escolher a proteção adequada para cada tipo de falha de aplicação e justificar com um caso real.",
+    narrativa:"Aplicativo tem portas próprias: campos de formulário, endereços que recebem parâmetros, bibliotecas de terceiros e o processo de publicação. Cada uma dessas portas tem uma proteção específica. Um firewall de rede não conserta um formulário que aceita comando de banco de dados escondido.",
+    mundoReal:[
+      "A falha apelidada de Log4Shell, catalogada no CVE (do inglês Common Vulnerabilities and Exposures; em português, Vulnerabilidades e Exposições Comuns) com o código 2021-44228, recebeu nota 10 no CVSS (do inglês Common Vulnerability Scoring System; em português, Sistema Comum de Pontuação de Vulnerabilidades): a escala de 0 a 10 que mede gravidade. Ela estava em uma biblioteca de registro usada por milhares de aplicações.",
+      "A SolarWinds (empresa de programas de monitoramento de redes) teve o próprio processo de publicação comprometido em 2020, e clientes instalaram uma atualização assinada que continha código malicioso: a confiança na assinatura não bastou."
+    ],
+    ferramentas:[
+      "WAF (Web Application Firewall; Firewall de Aplicações Web), como o da Cloudflare (empresa de proteção de sites), que inspeciona o que chega nos formulários e endereços.",
+      "Análise de dependências e testes de segurança na esteira de publicação, guiados por listas como o OWASP Top 10 (as falhas mais comuns em aplicações web, mantidas pela OWASP, organização sem fins lucrativos de segurança de software)."
+    ],
+    dicionario:[
+      {termo:"Injeção de comando (SQL injection)", def:"Escrever um comando de banco dentro de um campo do formulário para o sistema executá-lo sem querer."},
+      {termo:"XSS (Cross-Site Scripting; execução de código entre sites)", def:"Fazer o navegador de outra pessoa executar código enviado por você, geralmente por um campo de comentário."},
+      {termo:"Validação de entrada", def:"Conferir e limitar o que chega antes de usar: tipo, tamanho, formato."},
+      {termo:"Consulta parametrizada", def:"Separar o comando fixo dos dados digitados, para o texto do usuário nunca virar comando."},
+      {termo:"Dependência", def:"Biblioteca de terceiros que a aplicação usa e que precisa ser acompanhada e atualizada."},
+      {termo:"WAF (Web Application Firewall; Firewall de Aplicações Web)", def:"Filtro que examina as requisições da aplicação e bloqueia pedidos maliciosos."},
+      {termo:"Assinatura de código", def:"Selo que comprova quem publicou o programa e que ele não foi alterado no caminho."},
+      {termo:"Sandbox (caixa de areia)", def:"Ambiente isolado onde o programa roda com acesso limitado ao resto do sistema."}
+    ],
+    conceitos:[
+      {titulo:"Cada porta da aplicação tem sua proteção",
+       texto:"Campo que vira comando pede consulta parametrizada; texto que volta para a tela de outra pessoa pede escaping, isto é, tratar o conteúdo como texto e não como código; biblioteca de terceiros pede inventário e atualização; publicação pede assinatura e verificação. Nenhuma dessas medidas substitui as outras.",
+       analogia:"💡 Casa: fechadura na porta, grade na janela, cofre para as joias. Cada abertura tem sua proteção.",
+       exemploReal:"O OWASP Top 10 (lista das falhas mais comuns em aplicações web) existe justamente para organizar essas portas e as defesas correspondentes."},
+      {titulo:"A cadeia de suprimento também é superfície",
+       texto:"A aplicação não é só o código que você escreve: é também o que você importa e o caminho por onde o programa chega ao cliente. Log4Shell mostrou o risco de uma biblioteca muito usada; SolarWinds mostrou o risco do processo de publicação. Inventário de dependências e verificação da esteira são parte da defesa.",
+       analogia:"💡 Restaurante: além da sua cozinha, importa a procedência dos ingredientes e quem transportou até você.",
+       exemploReal:"Depois da Log4Shell (falha de 2021 em biblioteca de registro), muitas equipes descobriram que usavam a biblioteca sem saber, porque ela vinha embutida em outros programas."}
+    ],
+    roteiroDemo:{
+      passo0:"Antes de clicar, preveja: um firewall de rede bem configurado impede que um comando escondido em um campo de formulário chegue ao banco de dados?",
+      passos:[
+        {acao:"Leia a situação do formulário e escolha uma proteção.", ve:"A errada fica vermelha com explicação; as outras continuam liberadas.", significa:"A falha está na aplicação, não na rede."},
+        {acao:"Avance para a situação da biblioteca de terceiros.", ve:"O quadro verde mostra o papel do inventário e da atualização.", significa:"Você é responsável pelo que importa, mesmo sem ter escrito."},
+        {acao:"Resolva a situação da publicação e leia o resumo.", ve:"A regra comum às três aparece no fim.", significa:"Cada porta pede sua própria proteção."}
+      ]
+    },
+    demo:{
+      tipo:"cenario", titulo:"Qual proteção para cada porta da aplicação?",
+      config:{
+        rodadas:[
+          {situacao:"Um campo de busca do site aceita texto livre, e a equipe percebeu que dá para escrever um comando de banco ali dentro e fazê-lo executar.",
+           pergunta:"Qual é a correção adequada?",
+           opcoes:[
+             {t:"Usar consulta parametrizada, separando comando fixo dos dados digitados", ok:true, fb:"Assim o texto do usuário nunca vira comando: ele é tratado como dado. É a correção na raiz, dentro da aplicação."},
+             {t:"Reforçar o firewall de rede", ok:false, fb:"O pedido chega por uma porta permitida, com aparência de uso normal. O firewall de rede não lê a intenção do campo."},
+             {t:"Aumentar o tamanho mínimo da senha dos usuários", ok:false, fb:"Senha não tem relação com essa falha: o comando entra pelo campo público, sem precisar de conta."}
+           ]},
+          {situacao:"A aplicação usa uma biblioteca de registro de mensagens muito comum, e saiu um aviso público de falha grave nela, com correção disponível.",
+           pergunta:"Qual é a resposta adequada?",
+           opcoes:[
+             {t:"Inventariar onde a biblioteca é usada e atualizar para a versão corrigida", ok:true, fb:"Foi o desafio da Log4Shell (falha de 2021 em biblioteca de registro): muita gente usava sem saber, porque vinha embutida em outros programas."},
+             {t:"Esperar o próximo lançamento grande do sistema", ok:false, fb:"A falha é pública e explorável agora. Adiar mantém a porta aberta enquanto o aviso já circula."},
+             {t:"Trocar o antivírus dos servidores", ok:false, fb:"O antivírus não corrige a biblioteca. Ele pode até reconhecer explorações, mas a falha continua no código."}
+           ]},
+          {situacao:"A empresa distribui um programa instalado pelos clientes e quer garantir que o arquivo recebido é o mesmo que ela publicou.",
+           pergunta:"Qual medida atende a esse objetivo?",
+           opcoes:[
+             {t:"Assinar o código e publicar o carimbo para verificação", ok:true, fb:"A assinatura comprova a origem e que o arquivo não foi alterado no caminho. É o lacre da encomenda."},
+             {t:"Disponibilizar o arquivo em um endereço difícil de adivinhar", ok:false, fb:"Endereço escondido não comprova origem nem integridade. Foi assim que atualizações comprometidas circularam no caso da SolarWinds (empresa de monitoramento de redes)."},
+             {t:"Comprimir o arquivo para reduzir o tamanho", ok:false, fb:"Compressão não protege nada: qualquer um pode comprimir de novo depois de alterar o conteúdo."}
+           ]}
+        ],
+        resumo:"Regra de bolso: cada porta da aplicação pede sua proteção — consulta parametrizada para campos que viram comando, tratamento de texto para o que volta à tela, inventário e atualização para dependências, assinatura e verificação para a publicação. Exemplo real: Log4Shell (falha de 2021 em biblioteca de registro) e SolarWinds (processo de publicação comprometido em 2020) mostraram que a cadeia inteira é superfície de ataque."
+      }
+    },
+    termosQuiz:"Injeção de comando = comando de banco escondido em um campo · consulta parametrizada = separar comando fixo dos dados digitados · XSS = fazer o navegador de outra pessoa executar código · validação de entrada = conferir tipo, tamanho e formato · dependência = biblioteca de terceiros usada pela aplicação · WAF = filtro que inspeciona requisições da aplicação · assinatura de código = comprova origem e integridade.",
+    quiz:[
+      {q:"Qual medida corrige na raiz a injeção de comando por um campo de formulário?",
+       alts:[
+         {t:"Consulta parametrizada, tratando o texto digitado como dado", ok:true, fb:"O comando fica fixo e o dado entra separado. Assim o texto do usuário nunca é interpretado como instrução."},
+         {t:"Bloquear o endereço de quem tentou", ok:false, fb:"Bloquear um endereço não fecha a falha: o próximo tenta de outro lugar. É enxugar gelo."},
+         {t:"Instalar um antivírus no servidor do banco", ok:false, fb:"O comando chega como consulta legítima do aplicativo. Antivírus não distingue essa intenção."}
+       ]},
+      {q:"Por que manter um inventário das bibliotecas usadas pela aplicação?",
+       alts:[
+         {t:"Para saber rapidamente onde uma falha pública afeta você", ok:true, fb:"Na Log4Shell (falha de 2021 em biblioteca de registro), muitas equipes não sabiam que usavam a biblioteca, porque vinha embutida em outros programas."},
+         {t:"Para reduzir o tamanho do programa", ok:false, fb:"Inventário não emagrece código. Ele dá visibilidade para responder rápido a um aviso de falha."},
+         {t:"Porque bibliotecas de terceiros são sempre inseguras", ok:false, fb:"Não são: são úteis e amplamente testadas. O risco está em não acompanhar avisos e atualizações."}
+       ]},
+      {q:"O que a assinatura de código garante?",
+       alts:[
+         {t:"Quem publicou e que o arquivo não foi alterado no caminho", ok:true, fb:"É o lacre da encomenda: comprova origem e integridade. Não garante, porém, que o processo de publicação não tenha sido comprometido."},
+         {t:"Que o programa não tem nenhuma falha", ok:false, fb:"Assinatura não analisa qualidade nem segurança do código; um programa assinado pode ter falhas."},
+         {t:"Que o programa roda mais rápido", ok:false, fb:"Não tem efeito em desempenho. É um mecanismo de confiança, não de otimização."}
+       ]}
+    ],
+    aprofundar:[
+      {rotulo:"🔎 Busca no Google (português)", url:"https://www.google.com/search?hl=pt-BR&q=prote%C3%A7%C3%A3o+de+aplica%C3%A7%C3%B5es+owasp+top+10+inje%C3%A7%C3%A3o+de+sql"},
+      {rotulo:"🎓 Pesquisa científica (Google Scholar, português)", url:"https://scholar.google.com/scholar?hl=pt-BR&q=prote%C3%A7%C3%A3o+de+aplica%C3%A7%C3%B5es+owasp+top+10+inje%C3%A7%C3%A3o+de+sql"},
+      {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)", url:"https://www.youtube.com/results?search_query=prote%C3%A7%C3%A3o+de+aplica%C3%A7%C3%B5es+owasp+top+10+inje%C3%A7%C3%A3o+de+sql+aula"}
+    ],
+    mitoOuVerdade:{afirmacao:"Se o programa está assinado pelo fornecedor, ele é seguro.", verdade:false,
+      explicacao:"Mito. A assinatura comprova origem e integridade, não ausência de falha nem idoneidade do processo de publicação. No caso da SolarWinds (empresa de monitoramento de redes, 2020), clientes instalaram uma atualização assinada que continha código malicioso."}
+  },
+
+  {
+    id:"aba-6", rotulo:"Auditoria e registros", estudoProprio:true,
+    titulo:"Auditoria e monitoramento de segurança: ler os registros e provar o que aconteceu",
+    missao:"Usar filtros e correlação para transformar registros soltos em uma história de incidente, e proteger a trilha contra apagamento.",
+    narrativa:"Registro é a memória do sistema. Sozinho, cada evento parece banal; juntos e na ordem, eles contam o que aconteceu. Auditoria é conseguir reconstruir essa história depois — e provar que ela não foi editada. Sem registro guardado fora da máquina, o invasor apaga o próprio rastro.",
+    mundoReal:[
+      "O vazamento da Equifax (agência de crédito dos Estados Unidos) demorou meses para ser percebido: correlação de registros e alertas existem para encurtar esse tempo.",
+      "O Wazuh (programa livre de monitoramento de segurança) e serviços como o Splunk (plataforma paga de análise de registros) reúnem eventos de várias máquinas em um lugar só, justamente para que ninguém apague a trilha local e suma com a prova."
+    ],
+    ferramentas:[
+      "SIEM (Security Information and Event Management; Gerenciamento de Eventos e Informações de Segurança): reúne, correlaciona e alerta sobre eventos de várias fontes.",
+      "Armazenamento de registros fora da máquina de origem, com retenção definida e verificação de integridade por carimbo."
+    ],
+    dicionario:[
+      {termo:"Registro (log)", def:"Anotação automática de um acontecimento, com hora, usuário e ação."},
+      {termo:"Trilha de auditoria", def:"Conjunto de registros que permite reconstruir quem fez o quê e quando."},
+      {termo:"Correlação", def:"Ligar eventos de fontes diferentes para revelar uma sequência que sozinha não aparece."},
+      {termo:"SIEM (Security Information and Event Management; Gerenciamento de Eventos e Informações de Segurança)", def:"Plataforma que centraliza registros, correlaciona e dispara alertas."},
+      {termo:"Retenção", def:"Por quanto tempo os registros são guardados antes de descartados."},
+      {termo:"Integridade do registro", def:"Garantia de que o registro não foi alterado, geralmente por carimbo ou assinatura."},
+      {termo:"Falso positivo", def:"Alerta sobre atividade legítima; em excesso, faz a equipe ignorar alertas."},
+      {termo:"Cadeia de custódia", def:"Registro de quem teve acesso à prova e quando, para sustentar seu valor em investigação."}
+    ],
+    conceitos:[
+      {titulo:"Evento solto é ruído; sequência é evidência",
+       texto:"Uma falha de login acontece todo dia. Doze falhas seguidas, um login aceito logo depois, uma leitura de milhares de registros e uma exportação grande, tudo de madrugada e com a mesma conta de serviço: isso é uma história. Correlação é o trabalho de juntar essas peças por conta, tempo e origem.",
+       analogia:"💡 Pegadas isoladas não dizem nada; a trilha delas até a janela arrombada conta o que houve.",
+       exemploReal:"Plataformas de SIEM, como o Wazuh (programa livre de monitoramento), aplicam regras que disparam quando vários eventos casam dentro de uma janela de tempo."},
+      {titulo:"A trilha precisa sobreviver ao invasor",
+       texto:"Se o registro fica só na máquina comprometida, quem tem privilégio ali pode desligar a auditoria e apagar o histórico. Por isso os eventos são enviados em tempo real para um servidor separado, com retenção definida e verificação de integridade. Isso também sustenta a cadeia de custódia numa investigação.",
+       analogia:"💡 Câmera que grava na nuvem em vez de gravar no cartão que o ladrão leva embora.",
+       exemploReal:"Requisitos de auditoria em normas e na LGPD (Lei Geral de Proteção de Dados) pressupõem registros protegidos e guardados por prazo definido, não apenas ativados na máquina."}
+    ],
+    roteiroDemo:{
+      passo0:"Antes de clicar, preveja: olhando só os eventos de login aceito, você percebe o incidente desta madrugada?",
+      passos:[
+        {acao:"Aplique o filtro de eventos de login e observe a tabela.", ve:"Aparecem falhas repetidas e um aceite logo depois, todos de madrugada.", significa:"A conta de serviço foi alvo de tentativa repetida até conseguir entrar."},
+        {acao:"Troque para o filtro de acesso a dados e depois para fora do horário.", ve:"Leitura em massa e exportação grande aparecem na mesma janela de tempo.", significa:"O que parecia manutenção vira extração de dados."},
+        {acao:"Clique em Correlacionar eventos e leia a sequência completa.", ve:"A história aparece em ordem, incluindo a auditoria desativada.", significa:"Correlação transforma ruído em evidência — e mostra por que guardar a trilha fora da máquina importa."}
+      ]
+    },
+    demo:{
+      tipo:"reg", titulo:"Mesa de registros: filtrar e correlacionar",
+      config:{
+        eventos:[
+          {hora:"02:14", usuario:"svc_backup", evento:"Falha de login (senha incorreta)", tipo:"login", grave:false, fora:true},
+          {hora:"02:14", usuario:"svc_backup", evento:"Doze falhas de login em sequência", tipo:"login", grave:true, fora:true},
+          {hora:"02:16", usuario:"svc_backup", evento:"Login aceito", tipo:"login", grave:true, fora:true},
+          {hora:"02:17", usuario:"svc_backup", evento:"Leitura de 4.200 registros de clientes", tipo:"dados", grave:true, fora:true},
+          {hora:"02:19", usuario:"svc_backup", evento:"Exportação de arquivo grande para fora da rede", tipo:"dados", grave:true, fora:true},
+          {hora:"02:20", usuario:"svc_backup", evento:"Registro de auditoria desativado", tipo:"config", grave:true, fora:true},
+          {hora:"09:02", usuario:"maria", evento:"Login aceito no horário normal", tipo:"login", grave:false, fora:false},
+          {hora:"09:05", usuario:"maria", evento:"Consulta a 3 registros de clientes", tipo:"dados", grave:false, fora:false}
+        ],
+        filtros:[
+          {id:"todos", nome:"📋 Todos os eventos", mostra:"Sem filtro, o volume esconde o padrão: oito eventos parecem rotina."},
+          {id:"login", nome:"🔑 Só eventos de login", mostra:"As falhas repetidas seguidas de um aceite na mesma conta saltam aos olhos: é o desenho de tentativa de senha até acertar."},
+          {id:"dados", nome:"🗄️ Só acesso a dados", mostra:"A leitura em massa e a exportação grande contrastam com a consulta de três registros feita no horário normal."},
+          {id:"fora", nome:"🌙 Só fora do horário comercial", mostra:"Tudo que importa aconteceu de madrugada, com uma conta de serviço que não deveria estar sendo usada por gente."},
+          {id:"graves", nome:"🚨 Só gravidade alta", mostra:"Os eventos graves formam uma sequência contínua em seis minutos: entrada, coleta, saída e apagamento do rastro."}
+        ],
+        historia:"Sequência do incidente: doze tentativas de senha na conta de serviço de cópia (02:14), login aceito (02:16), leitura de 4.200 registros de clientes (02:17), exportação para fora da rede (02:19) e auditoria desativada (02:20). Se os registros estivessem só nesta máquina, o último passo teria apagado os anteriores.",
+        exemplo:"Exemplo real: o vazamento da Equifax (agência de crédito dos Estados Unidos) demorou meses para ser percebido; enviar registros para um servidor separado, como fazem instalações do Wazuh (programa livre de monitoramento), evita que o invasor apague a própria trilha.",
+        observa:[
+          "Cada filtro responde uma pergunta diferente sobre os mesmos eventos.",
+          "A conta de serviço é o fio que liga todos os eventos suspeitos.",
+          "O último evento é sobre a própria auditoria: é o que denuncia a tentativa de sumir com a prova."
+        ]
+      },
+      legenda:[
+        "svc_backup = conta de serviço usada pela rotina de cópia; não deveria ser usada por uma pessoa de madrugada.",
+        "Horário comercial neste modelo: das 08:00 às 18:00.",
+        "Gravidade alta = evento que, isolado ou em sequência, justifica alerta imediato.",
+        "Correlacionar = juntar eventos por conta, hora e origem para revelar a sequência."
+      ]
+    },
+    termosQuiz:"Registro (log) = anotação automática de um acontecimento · trilha de auditoria = registros que permitem reconstruir quem fez o quê · correlação = ligar eventos para revelar a sequência · SIEM = plataforma que centraliza e correlaciona registros · retenção = por quanto tempo guardar · integridade do registro = garantia de que não foi alterado · cadeia de custódia = controle de quem teve acesso à prova.",
+    quiz:[
+      {q:"Doze falhas de login seguidas de um aceite, de madrugada, na mesma conta de serviço. O que isso sugere?",
+       alts:[
+         {t:"Tentativa repetida de senha até conseguir entrar", ok:true, fb:"É o desenho clássico de força bruta: falhas em sequência e um sucesso logo depois, fora do horário de uso daquela conta."},
+         {t:"Manutenção programada da rotina de cópia", ok:false, fb:"Rotina de cópia não erra senha doze vezes seguidas. A sequência de falhas antes do aceite é o sinal que descaracteriza manutenção."},
+         {t:"Problema de rede sem relação com segurança", ok:false, fb:"Falha de rede não gera aceite logo depois nem leitura em massa de registros. A sequência completa aponta acesso indevido."}
+       ]},
+      {q:"Por que enviar os registros para um servidor separado da máquina de origem?",
+       alts:[
+         {t:"Para que o invasor não consiga apagar a própria trilha", ok:true, fb:"É a câmera que grava fora do alcance de quem entra. No exemplo da demo, o último evento foi desativar a auditoria local."},
+         {t:"Para deixar a máquina original mais rápida", ok:false, fb:"Pode até aliviar disco, mas o motivo é preservação da prova e capacidade de correlacionar várias fontes."},
+         {t:"Porque registro local não pode ser lido", ok:false, fb:"Pode ser lido, sim. O problema é que ele pode ser alterado ou apagado por quem comprometeu a máquina."}
+       ]},
+      {q:"O que é correlação de eventos?",
+       alts:[
+         {t:"Ligar eventos por conta, tempo e origem para revelar uma sequência", ok:true, fb:"Pegadas isoladas não dizem nada; a trilha até a janela arrombada conta a história. É o trabalho central de um SIEM."},
+         {t:"Apagar eventos repetidos para economizar espaço", ok:false, fb:"Repetição é justamente um sinal importante, como as doze falhas de login. Deduplicar sem critério destrói evidência."},
+         {t:"Traduzir os registros para outro idioma", ok:false, fb:"Normalizar formato ajuda, mas correlacionar é relacionar eventos entre si, não traduzir texto."}
+       ]}
+    ],
+    aprofundar:[
+      {rotulo:"🔎 Busca no Google (português)", url:"https://www.google.com/search?hl=pt-BR&q=auditoria+de+sistemas+registros+siem+correla%C3%A7%C3%A3o+de+eventos"},
+      {rotulo:"🎓 Pesquisa científica (Google Scholar, português)", url:"https://scholar.google.com/scholar?hl=pt-BR&q=auditoria+de+sistemas+registros+siem+correla%C3%A7%C3%A3o+de+eventos"},
+      {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)", url:"https://www.youtube.com/results?search_query=auditoria+de+sistemas+registros+siem+correla%C3%A7%C3%A3o+de+eventos+aula"}
+    ],
+    mitoOuVerdade:{afirmacao:"Ativar os registros na própria máquina já garante uma auditoria confiável.", verdade:false,
+      explicacao:"Mito. Quem compromete a máquina com privilégio pode desativar a auditoria e apagar o histórico, como no último evento da demo. Auditoria confiável exige envio em tempo real para servidor separado, retenção definida e verificação de integridade."}
+  }
+  ],
+  revisao:{
+    mapa:[
+      "1. Firewall, IDS e IPS — portaria, câmera e segurança: a ordem das regras decide, e detectar não é impedir (termos na cola rápida).",
+      "2. Cifra e acesso — quem pode abrir o quê, e o que protege quando levam o disco (na cola rápida).",
+      "3. Antimalware — catálogo olha o passado, comportamento olha o agora, e resposta encurta o estrago.",
+      "4. Segurança do SO — fechar o que não precisa estar aberto; correção e segunda etapa são as que mais salvam.",
+      "5. Proteção de apps — cada porta da aplicação tem sua proteção, inclusive as bibliotecas e a publicação.",
+      "6. Auditoria e registros (aba de estudo em casa) — evento solto é ruído, sequência é evidência, e a trilha precisa sobreviver ao invasor.",
+      "Fio condutor: defesa é camadas independentes; auditoria é a memória que prova o que as camadas deixaram passar."
+    ],
+    cola:[
+      {termo:"Firewall", linha:"Filtro que permite ou bloqueia segundo uma lista ordenada de regras."},
+      {termo:"Porta", linha:"Número que identifica o serviço procurado na máquina."},
+      {termo:"IDS", linha:"Detecta e registra alerta; não bloqueia."},
+      {termo:"IPS", linha:"Detecta e bloqueia, por estar em linha com o tráfego."},
+      {termo:"Negar por padrão", linha:"Bloquear tudo que não foi autorizado antes."},
+      {termo:"Regra sombra", linha:"Regra ampla no topo que torna as de baixo inalcançáveis."},
+      {termo:"Varredura de portas", linha:"Testar várias portas para descobrir serviços abertos."},
+      {termo:"Autenticação e autorização", linha:"Conferir quem é você e depois o que pode fazer."},
+      {termo:"RBAC", linha:"Permissões por papel, não por pessoa."},
+      {termo:"Menor privilégio", linha:"Só o acesso necessário para a tarefa."},
+      {termo:"Cifrar em repouso", linha:"Embaralhar o que está gravado no disco."},
+      {termo:"Cofre de chaves (KMS)", linha:"Guardar a chave longe do dado e registrar cada uso."},
+      {termo:"Assinatura (antimalware)", linha:"Trecho característico de praga conhecida."},
+      {termo:"Detecção por comportamento", linha:"Observar ações suspeitas, mesmo em arquivo novo."},
+      {termo:"Quarentena", linha:"Isolar o arquivo para que não execute."},
+      {termo:"EDR", linha:"Registrar ações no computador e permitir responder."},
+      {termo:"Ransomware", linha:"Praga que embaralha arquivos e cobra pela chave."},
+      {termo:"Falso positivo", linha:"Alerta sobre algo legítimo."},
+      {termo:"Endurecimento (hardening)", linha:"Ajustes que reduzem o que pode ser atacado."},
+      {termo:"Superfície de ataque", linha:"Soma dos pontos por onde alguém pode tentar entrar."},
+      {termo:"Correção (patch)", linha:"Atualização que fecha falha conhecida."},
+      {termo:"MFA (segunda etapa)", linha:"Senha mais código do celular ou chave física."},
+      {termo:"Injeção de comando", linha:"Comando de banco escondido em um campo do formulário."},
+      {termo:"Consulta parametrizada", linha:"Comando fixo separado dos dados digitados."},
+      {termo:"XSS", linha:"Fazer o navegador de outra pessoa executar código."},
+      {termo:"Dependência", linha:"Biblioteca de terceiros que a aplicação usa."},
+      {termo:"WAF", linha:"Filtro que inspeciona as requisições da aplicação."},
+      {termo:"Assinatura de código", linha:"Comprova quem publicou e que o arquivo não mudou."},
+      {termo:"Registro (log)", linha:"Anotação automática com hora, usuário e ação."},
+      {termo:"Trilha de auditoria", linha:"Registros que permitem reconstruir quem fez o quê."},
+      {termo:"Correlação", linha:"Ligar eventos por conta, tempo e origem."},
+      {termo:"SIEM", linha:"Plataforma que centraliza registros, correlaciona e alerta."},
+      {termo:"Retenção e integridade", linha:"Por quanto tempo guardar e como provar que não foi alterado."},
+      {termo:"Cadeia de custódia", linha:"Controle de quem teve acesso à prova."},
+      {termo:"LGPD", linha:"Lei brasileira que regula o uso e a guarda de dados pessoais."}
+    ],
+    desafio:"🐉 CHEFÃO — Uma empresa fictícia de comércio eletrônico sofreu um incidente e você foi chamado para revisar a defesa e a auditoria. O cenário: o firewall tem uma regra antiga de permitir tudo no topo; o atendente consegue abrir a folha de pagamento; o antivírus é só de assinatura; os servidores têm correções atrasadas; o site aceita texto livre em um campo de busca; e os registros ficam apenas na própria máquina. Entregue uma frase por item: (1) o que corrigir primeiro na lista de regras e por quê (na cola rápida); (2) qual ajuste de permissão aplicar e o que a cifra do disco cobre que a permissão não cobre (na cola rápida); (3) o que acrescentar à detecção de pragas e qual resposta automática configurar (na cola rápida); (4) quais dois ajustes do sistema operacional mais reduzem a exposição (na cola rápida); (5) qual correção na aplicação fecha o campo de busca e por que o firewall de rede não resolve (na cola rápida); (6) para onde mandar os registros e como provar que não foram alterados (na cola rápida). Justifique cada item com um caso real análogo: a Equifax (agência de crédito dos Estados Unidos que sofreu vazamento por falha não corrigida), a Colonial Pipeline (oleoduto dos Estados Unidos que parou após entrada por conta sem segunda etapa), a SolarWinds (empresa de monitoramento cujo processo de publicação foi comprometido) ou o WannaCry (programa de resgate que se espalhou por falha já corrigida)."
+  }
+};
+
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id);};
+var esc=function(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');};
+var num=function(n){return Number(n).toLocaleString('pt-BR',{maximumFractionDigits:3});};
+var ABAS=AULA_DADOS.abas;
+var IDS=ABAS.map(function(a){return a.id;}).concat(['revisao']);
+var acertos={},selos=[],xpTotal=0,toastT=null;
+ABAS.forEach(function(a){acertos[a.id]=[false,false,false];});
+var TOTAL=ABAS.length*3;
+
+function embaralhar(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function toast(m){var t=$('toast');t.textContent=m;t.hidden=false;if(toastT){clearTimeout(toastT);}toastT=setTimeout(function(){t.hidden=true;},1900);}
+function xp(n){xpTotal+=n;$('xp').textContent=num(xpTotal);toast('+'+n+' XP');}
+
+/* ---------- RENDER ---------- */
+function painelAba(aba,i){
+  var cfg=aba.demo,passos=aba.roteiroDemo.passos,h='';
+  h+='<section class="painel" id="'+aba.id+'" role="tabpanel" aria-labelledby="tab-'+aba.id+'" tabindex="0" hidden>';
+  h+='<h2>'+(i+1)+'. '+esc(aba.titulo)+'</h2>';
+  if(aba.estudoProprio){h+='<p class="fora">🏠 Aba de estudo em casa: fica fora dos 30 minutos de sala, mas conta para XP, selos e Chefão.</p>';}
+  h+='<div class="missao"><strong>🎯 Missão:</strong> '+esc(aba.missao)+'</div>';
+  h+='<p>'+esc(aba.narrativa)+'</p>';
+  h+='<div class="dupla"><div class="cartao real"><h3>🌍 No mundo real</h3><ul>'+aba.mundoReal.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';
+  h+='<div class="cartao ferr"><h3>🧰 Ferramentas usadas no mercado</h3><ul>'+aba.ferramentas.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div></div>';
+  h+='<section class="demo"><h3>🧪 Demo: '+esc(cfg.titulo)+'</h3>';
+  h+='<div class="prever">🔮 '+esc(aba.roteiroDemo.passo0)+'</div>';
+  h+='<div class="instrucoes"><h4>📋 INSTRUÇÕES PASSO A PASSO</h4><ol>'+passos.map(function(p){return '<li>'+esc(p.acao)+'</li>';}).join('')+'</ol></div>';
+  if(cfg.legenda){h+='<div class="legenda"><strong>🔑 Legenda:</strong><ul>'+cfg.legenda.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';}
+  h+='<div class="palco" id="palco-'+aba.id+'"></div>';
+  h+='<div><button class="btn" type="button" id="reset-'+aba.id+'">🔄 Reiniciar demo</button></div>';
+  h+='<div class="log" id="log-'+aba.id+'" aria-live="polite" aria-label="Resultado da demo"></div>';
+  h+='<details class="roteiro"><summary>🎤 Roteiro do apresentador</summary><p><strong>Passo 0:</strong> '+esc(aba.roteiroDemo.passo0)+'</p><ol>'+passos.map(function(p){return '<li><strong>'+esc(p.acao)+'</strong><br>Você vê: '+esc(p.ve)+'<br>Significa: '+esc(p.significa)+'</li>';}).join('')+'</ol></details></section>';
+  h+='<section class="quiz"><h3>🧠 Quiz da aba</h3><div class="termos">🔑 <strong>Termos deste quiz:</strong> '+esc(aba.termosQuiz)+'</div>';
+  aba.quiz.forEach(function(q,qi){
+    var alts=embaralhar(q.alts.slice());
+    h+='<div class="pergunta" data-aba="'+aba.id+'" data-q="'+qi+'"><p class="enun"><strong>'+(qi+1)+')</strong> '+esc(q.q)+'</p><div class="alts">';
+    alts.forEach(function(a){h+='<button type="button" class="alt" data-ok="'+(a.ok?'1':'0')+'" data-fb="'+esc(a.fb)+'">'+esc(a.t)+'</button>';});
+    h+='</div><div class="fb" aria-live="polite"></div></div>';
+  });
+  h+='</section>';
+  h+='<details class="aprof dicio"><summary>📖 Mini-dicionário desta aba</summary><dl>'+aba.dicionario.map(function(d){return '<dt>'+esc(d.termo)+'</dt><dd>'+esc(d.def)+'</dd>';}).join('')+'</dl></details>';
+  h+='<details class="aprof conceitos"><summary>🧩 Conceitos longos (para ler em casa)</summary>'+aba.conceitos.map(function(c){return '<div class="conceito"><h4>'+esc(c.titulo)+'</h4><p>'+esc(c.texto)+'</p><p class="analogia">'+esc(c.analogia)+'</p><p><strong>Exemplo real:</strong> '+esc(c.exemploReal)+'</p></div>';}).join('')+'</details>';
+  h+='<details class="aprof mito"><summary>🤔 Mito ou verdade?</summary><p><strong>'+esc(aba.mitoOuVerdade.afirmacao)+'</strong></p><p>🔮 Antes de clicar, preveja: isso é mito ou verdade?</p><button type="button" class="btn mito-btn" data-aba="'+aba.id+'">🔍 Conferir resposta</button><div class="fb" aria-live="polite"></div></details>';
+  h+='<details class="aprof buscas"><summary>🔎 Aprofundar: 3 buscas em português</summary><ul class="links">'+aba.aprofundar.map(function(l){return '<li><a href="'+esc(l.url)+'" target="_blank" rel="noopener">'+esc(l.rotulo)+'</a></li>';}).join('')+'</ul><p class="nota">Estes três links são os únicos que precisam de internet. Toda a aula funciona offline.</p></details>';
+  h+='</section>';
+  return h;
+}
+function painelRevisao(){
+  var r=AULA_DADOS.revisao,h='';
+  h+='<section class="painel" id="revisao" role="tabpanel" aria-labelledby="tab-revisao" tabindex="0" hidden>';
+  h+='<h2>🗺️ Revisão da aula</h2>';
+  h+='<div class="cartao"><h3>🗺️ Mapa da aula</h3><ol class="mapa">'+r.mapa.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ol></div>';
+  h+='<div class="cartao"><h3>🧾 Cola rápida (o glossário da revisão)</h3><table class="cola"><thead><tr><th>Termo</th><th>Em linguagem plana</th></tr></thead><tbody>'+r.cola.map(function(c){return '<tr><td><strong>'+esc(c.termo)+'</strong></td><td>'+esc(c.linha)+'</td></tr>';}).join('')+'</tbody></table></div>';
+  h+='<div class="chefao"><h3>🐉 Chefão</h3><p>'+esc(r.desafio)+'</p><p><label for="resp-chefao"><strong>Sua resposta (uma frase por item):</strong></label></p><textarea id="resp-chefao" rows="8" placeholder="Escreva aqui seus seis itens..."></textarea><button type="button" class="btn" id="btn-chefao">✔ Concluí o Chefão</button><div class="fb" id="fb-chefao" aria-live="polite"></div></div>';
+  h+='</section>';
+  return h;
+}
+function renderAbas(){
+  var tabs='',pans='';
+  ABAS.forEach(function(aba,i){
+    var badge=aba.estudoProprio?'<span class="selo-estudo">📖 Estudo próprio</span>':'';
+    tabs+='<button type="button" class="aba" role="tab" id="tab-'+aba.id+'" aria-controls="'+aba.id+'" aria-selected="false" tabindex="-1" data-alvo="'+aba.id+'"><span class="num">'+(i+1)+'</span>'+esc(aba.rotulo)+badge+'</button>';
+    pans+=painelAba(aba,i);
+  });
+  tabs+='<button type="button" class="aba" role="tab" id="tab-revisao" aria-controls="revisao" aria-selected="false" tabindex="-1" data-alvo="revisao">🗺️ Revisão</button>';
+  pans+=painelRevisao();
+  $('faixa').innerHTML=tabs;
+  $('paineis').innerHTML=pans;
+}
+
+/* ---------- NAVEGAÇÃO ---------- */
+function ativar(id,mudaHash){
+  if(IDS.indexOf(id)<0){id=ABAS[0].id;}
+  var bs=document.querySelectorAll('.aba'),i;
+  for(i=0;i<bs.length;i++){
+    var on=bs[i].getAttribute('data-alvo')===id;
+    bs[i].setAttribute('aria-selected',on?'true':'false');
+    bs[i].tabIndex=on?0:-1;
+    bs[i].classList.toggle('ativa',on);
+  }
+  var ps=document.querySelectorAll('.painel');
+  for(i=0;i<ps.length;i++){
+    var ativo=ps[i].id===id;
+    ps[i].classList.toggle('ativo',ativo);
+    ps[i].hidden=!ativo;
+  }
+  if(mudaHash&&location.hash!=='#'+id){location.hash=id;}
+  var b=$('tab-'+id);
+  if(b&&b.scrollIntoView){b.scrollIntoView({block:'nearest',inline:'center'});}
+}
+function vizinho(p){
+  var k=IDS.indexOf(location.hash.replace('#',''));
+  if(k<0){k=0;}
+  var n=(k+p+IDS.length)%IDS.length;
+  ativar(IDS[n],true);
+  var b=$('tab-'+IDS[n]);if(b){b.focus();}
+}
+
+/* ---------- QUIZ ---------- */
+function responderQuiz(btn){
+  var p=btn.closest('.pergunta');
+  if(!p||p.dataset.travada==='1'||btn.disabled){return;}
+  var fb=p.querySelector('.fb');
+  if(btn.dataset.ok==='1'){
+    btn.classList.add('certa');
+    btn.appendChild(document.createTextNode(' ✓'));
+    p.dataset.travada='1';
+    var ts=p.querySelectorAll('.alt');
+    for(var i=0;i<ts.length;i++){ts[i].disabled=true;}
+    fb.className='fb ok';
+    fb.innerHTML='✅ <strong>Por que esta está certa:</strong> '+esc(btn.dataset.fb);
+    xp(p.dataset.errou==='1'?5:10);
+    acertos[p.dataset.aba][Number(p.dataset.q)]=true;
+    progresso();
+  }else{
+    btn.classList.add('errada');
+    btn.appendChild(document.createTextNode(' ✗'));
+    btn.disabled=true;
+    p.dataset.errou='1';
+    fb.className='fb erro';
+    fb.innerHTML='❌ <strong>Por que esta está errada:</strong> '+esc(btn.dataset.fb)+'<br><em>As outras alternativas continuam liberadas: tente de novo.</em>';
+  }
+}
+function abrirMito(btn){
+  var aba=null,i;
+  for(i=0;i<ABAS.length;i++){if(ABAS[i].id===btn.dataset.aba){aba=ABAS[i];}}
+  if(!aba){return;}
+  var box=btn.parentNode.querySelector('.fb'),m=aba.mitoOuVerdade;
+  box.className='fb ok';
+  box.innerHTML=(m.verdade?'✅ <strong>Verdade.</strong> ':'🚫 <strong>Mito.</strong> ')+esc(m.explicacao);
+  btn.disabled=true;
+}
+function chefao(){
+  var txt=$('resp-chefao').value.trim(),fb=$('fb-chefao');
+  if(txt.length<40){
+    fb.className='fb erro';
+    fb.innerHTML='❌ <strong>Ainda não:</strong> escreva ao menos uma frase para cada um dos seis itens. Use a cola rápida logo acima para conferir os termos.';
+    return;
+  }
+  fb.className='fb ok';
+  fb.innerHTML='✅ <strong>Chefão registrado.</strong> Confira com a cola rápida: cada item precisa dizer o ajuste, a camada que ele cobre e um caso real. Leve este texto para a discussão em sala.';
+  addSelo('🐉 Chefão enfrentado');
+}
+function addSelo(s){
+  if(selos.indexOf(s)>=0){return;}
+  selos.push(s);
+  $('selos').innerHTML=selos.map(function(x){return '<span class="selo">'+esc(x)+'</span>';}).join('');
+  toast('🏅 Novo selo: '+s);
+}
+function progresso(){
+  var feitos=0,i,j;
+  for(i=0;i<ABAS.length;i++){
+    var a=ABAS[i],c=0;
+    for(j=0;j<3;j++){if(acertos[a.id][j]){c++;feitos++;}}
+    if(c===3){addSelo('🏅 '+a.rotulo);}
+  }
+  $('progTexto').textContent='Progresso: '+num(feitos)+' de '+num(TOTAL)+' perguntas';
+  $('progBarra').style.width=(feitos/TOTAL*100)+'%';
+  var sala=true,casa=true;
+  for(i=0;i<ABAS.length;i++){
+    var ok=acertos[ABAS[i].id][0]&&acertos[ABAS[i].id][1]&&acertos[ABAS[i].id][2];
+    if(i<5&&!ok){sala=false;}
+    if(i>=5&&!ok){casa=false;}
+  }
+  if(sala){addSelo('🏁 Trilha de sala completa');}
+  if(casa){addSelo('📚 Estudioso');}
+}
+
+/* ---------- DEMOS ---------- */
+function novoEstado(aba){
+  var cfg=aba.demo.config,i,j;
+  switch(aba.demo.tipo){
+    case 'regras':
+      var rs={};
+      for(i=0;i<cfg.regras.length;i++){rs[cfg.regras[i].id]=cfg.regras[i].inicial;}
+      return {regras:rs,pacote:4,modo:'off',res:null};
+    case 'matriz':
+      var m=[];
+      for(i=0;i<cfg.inicial.length;i++){m.push(cfg.inicial[i].slice());}
+      return {perfil:1,recurso:2,perms:m,cifra:true,cofre:true,res:null};
+    case 'infec':
+      var pr={};
+      for(i=0;i<cfg.protecoes.length;i++){pr[cfg.protecoes[i].id]=cfg.protecoes[i].inicial;}
+      return {prot:pr,passo:-1,rodando:false,fim:null,maquinas:0};
+    case 'so':
+      var st={};
+      for(i=0;i<cfg.itens.length;i++){st[cfg.itens[i].id]=cfg.itens[i].inicial;}
+      return {itens:st};
+    case 'cenario': return {r:0,errou:false,feita:false,erradas:[],historico:[],fim:false};
+    case 'reg': return {filtro:'todos',correl:false};
+  }
+  return {};
+}
+function logar(ctx,tipo,titulo,texto){
+  var d=document.createElement('div');
+  d.className='msg '+tipo;
+  d.innerHTML='<strong>'+esc(titulo)+'</strong> '+esc(texto);
+  ctx.log.appendChild(d);
+  while(ctx.log.children.length>14){ctx.log.removeChild(ctx.log.firstChild);}
+  ctx.log.scrollTop=ctx.log.scrollHeight;
+}
+function limparTimers(ctx){for(var i=0;i<ctx.timers.length;i++){clearTimeout(ctx.timers[i]);}ctx.timers=[];}
+function tog(act,id,nome,on,dis){
+  return '<button type="button" class="btn tog'+(on?' on':'')+'" data-act="'+act+'" data-arg="'+id+'" aria-pressed="'+(on?'true':'false')+'"'+(dis?' disabled':'')+'>'+(on?'✅ ':'⬜ ')+esc(nome)+'</button>';
+}
+function guia(cfg){
+  if(!cfg.observa){return '';}
+  return '<div class="observa"><strong>👀 O que observar:</strong><ul>'+cfg.observa.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';
+}
+/* --- firewall --- */
+function casaRegra(id,p){
+  if(id==='r0'){return true;}
+  if(id==='r1'){return p.origem==='interna';}
+  if(id==='r2'){return p.porta===443;}
+  if(id==='r3'){return p.porta===23;}
+  if(id==='r4'){return p.porta===22&&p.origem==='externa';}
+  return false;
+}
+function acaoRegra(id){return (id==='r3'||id==='r4')?'bloquear':'permitir';}
+function avaliar(st,cfg){
+  var p=cfg.pacotes[st.pacote],trilha=[],i;
+  var decisao='bloquear',casada='Regra final: negar por padrão';
+  for(i=0;i<cfg.regras.length;i++){
+    var r=cfg.regras[i];
+    if(!st.regras[r.id]){trilha.push({nome:r.nome,estado:'desligada'});continue;}
+    if(casaRegra(r.id,p)){
+      trilha.push({nome:r.nome,estado:'casou'});
+      decisao=acaoRegra(r.id);casada=r.nome;break;
+    }
+    trilha.push({nome:r.nome,estado:'nao casou'});
+  }
+  var fw=decisao,alerta=false,extra='';
+  if(p.varredura&&fw==='permitir'){
+    if(st.modo==='ips'){decisao='bloquear';alerta=true;extra=cfg.explica.varreduraIps;}
+    else if(st.modo==='ids'){alerta=true;extra=cfg.explica.varreduraIds;}
+    else{extra=cfg.explica.varreduraOff;}
+  }
+  return {fw:fw,decisao:decisao,casada:casada,alerta:alerta,extra:extra,trilha:trilha,pacote:p};
+}
+function pintaRegras(ctx){
+  var cfg=ctx.aba.demo.config,st=ctx.st,h='',i;
+  h+='<p><strong>Regras, na ordem em que são lidas:</strong></p>';
+  for(i=0;i<cfg.regras.length;i++){
+    h+=tog('regra',cfg.regras[i].id,(i+1)+'. '+cfg.regras[i].nome,st.regras[cfg.regras[i].id]);
+  }
+  h+='<div class="no">🚫 Regra final (sempre ativa): negar por padrão — bloqueia o que não casou com nenhuma regra acima.</div>';
+  h+='<p><strong>Pacote que chega:</strong> ';
+  cfg.pacotes.forEach(function(p,k){
+    h+='<button type="button" class="btn tog peq'+(st.pacote===k?' on':'')+'" data-act="pacote" data-arg="'+k+'">'+esc(p.nome)+'</button>';
+  });
+  h+='</p><p><strong>Detecção de padrão:</strong> ';
+  cfg.modos.forEach(function(m){
+    h+='<button type="button" class="btn tog'+(st.modo===m.id?' on':'')+'" data-act="modo" data-arg="'+m.id+'">'+esc(m.nome)+'</button>';
+  });
+  h+='</p><p><button type="button" class="btn" data-act="avaliar">▶ Avaliar pacote</button></p>';
+  if(st.res){
+    h+='<h4>🔍 Trilha de avaliação:</h4>';
+    st.res.trilha.forEach(function(t){
+      var marca=t.estado==='casou'?'✔️':(t.estado==='desligada'?'⬜':'➖');
+      h+='<div class="no'+(t.estado==='casou'?' casou':'')+'">'+marca+' '+esc(t.nome)+' — '+esc(t.estado)+'</div>';
+    });
+    var bloq=st.res.decisao==='bloquear';
+    h+='<div class="msg '+(bloq?'ok':'erro')+'"><strong>'+(bloq?'🛑 Pacote bloqueado.':'⚠️ Pacote permitido.')+'</strong> Regra decisiva: '+esc(st.res.casada)+'. '+(st.res.extra?esc(st.res.extra):esc(bloq?cfg.explica.bloquear:cfg.explica.permitir))+(st.res.alerta?' <strong>Alerta registrado.</strong>':'')+'<br><em>'+esc(cfg.exemplo)+'</em></div>';
+  }
+  return h+guia(cfg);
+}
+/* --- matriz de acesso --- */
+function cifrarTexto(txt){
+  var s=String(txt),out=[],i;
+  for(i=0;i<s.length&&i<32;i++){out.push(s.charCodeAt(i).toString(16));}
+  return out.join(' ')+(s.length>32?' …':'');
+}
+function pintaMatriz(ctx){
+  var cfg=ctx.aba.demo.config,st=ctx.st,h='',i,j;
+  h+='<p><strong>Matriz de permissões (clique para liberar ou negar):</strong></p><table><thead><tr><th>Perfil</th>';
+  cfg.recursos.forEach(function(r){h+='<th>'+esc(r)+'</th>';});
+  h+='</tr></thead><tbody>';
+  for(i=0;i<cfg.perfis.length;i++){
+    h+='<tr><td><strong>'+esc(cfg.perfis[i])+'</strong></td>';
+    for(j=0;j<cfg.recursos.length;j++){
+      var on=st.perms[i][j];
+      h+='<td><button type="button" class="btn tog peq'+(on?' on':'')+'" data-act="perm" data-arg="'+i+'|'+j+'" aria-pressed="'+(on?'true':'false')+'">'+(on?'✅ pode':'⬜ negado')+'</button></td>';
+    }
+    h+='</tr>';
+  }
+  h+='</tbody></table>';
+  var excesso=0;
+  for(i=0;i<cfg.perfis.length;i++){
+    for(j=0;j<cfg.recursos.length;j++){
+      if(st.perms[i][j]&&!cfg.minimo[i][j]){excesso++;}
+    }
+  }
+  h+='<div class="grade"><div class="metrica"><b>'+num(excesso)+'</b>Permissões além do mínimo</div></div>';
+  h+='<p><strong>Quem tenta abrir:</strong> ';
+  cfg.perfis.forEach(function(p,k){h+='<button type="button" class="btn tog peq'+(st.perfil===k?' on':'')+'" data-act="perfil" data-arg="'+k+'">'+esc(p)+'</button>';});
+  h+='</p><p><strong>O que tenta abrir:</strong> ';
+  cfg.recursos.forEach(function(r,k){h+='<button type="button" class="btn tog peq'+(st.recurso===k?' on':'')+'" data-act="recurso" data-arg="'+k+'">'+esc(r)+'</button>';});
+  h+='</p><p>'+tog('toggle','cifra','🔐 Disco cifrado em repouso',st.cifra)+tog('toggle','cofre','🗝️ Chave guardada no cofre separado',st.cofre)+'</p>';
+  h+='<p><button type="button" class="btn" data-act="tentar">▶ Tentar acesso</button></p>';
+  if(st.res){
+    var dado='conteúdo de '+cfg.recursos[st.recurso];
+    var disco=(st.cifra&&st.cofre)?cifrarTexto(dado):dado;
+    h+='<div class="msg '+(st.res.permitido?'erro':'ok')+'"><strong>'+(st.res.permitido?'⚠️ Acesso permitido pelo sistema.':'🛑 Acesso negado pelo sistema.')+'</strong> '+esc(st.res.texto)+'</div>';
+    h+='<div class="no"><strong>👤 O que o usuário vê:</strong> '+esc(st.res.permitido?dado:'mensagem de acesso negado')+'</div>';
+    h+='<div class="no'+((st.cifra&&st.cofre)?' ok':' erro')+'"><strong>🗄️ O que vê quem copia o disco:</strong> '+esc(disco)+'</div>';
+    h+='<div class="msg info"><em>'+esc(cfg.exemplo)+'</em></div>';
+  }
+  return h+guia(cfg);
+}
+function tentarAcesso(ctx){
+  var st=ctx.st,cfg=ctx.aba.demo.config;
+  var permitido=st.perms[st.perfil][st.recurso];
+  var texto;
+  if(permitido){
+    texto='A conta tem permissão para este recurso, então o aplicativo entrega o conteúdo legível. A cifra do disco não interfere nesse caminho.';
+    if(!cfg.minimo[st.perfil][st.recurso]){texto+=' Atenção: esta permissão está além do mínimo recomendado para o papel — é excesso de privilégio.';}
+  }else{
+    texto='A matriz negou o acesso: o aplicativo não entrega o conteúdo. Menor privilégio funcionando.';
+  }
+  st.res={permitido:permitido,texto:texto};
+  logar(ctx,permitido?'erro':'ok',cfg.perfis[st.perfil]+' → '+cfg.recursos[st.recurso],texto);
+  ctx.pinta();
+}
+/* --- infecção --- */
+function pintaInfec(ctx){
+  var cfg=ctx.aba.demo.config,st=ctx.st,h='';
+  h+='<p>';
+  cfg.protecoes.forEach(function(p){h+=tog('prot',p.id,p.nome,st.prot[p.id],st.rodando);});
+  h+='</p><p><button type="button" class="btn" data-act="rodar"'+(st.rodando?' disabled':'')+'>▶ Simular amostra nova</button></p>';
+  cfg.etapas.forEach(function(e,i){
+    var cl='no';
+    if(st.passo===i){cl+=' atual';}
+    else if(st.passo>i){cl+=etapaRuim(st,i)?' erro':' ok';}
+    h+='<div class="'+cl+'">'+(st.passo===i?'👉 ':(st.passo>i?'✔️ ':'⬜ '))+esc(e.nome)+'</div>';
+  });
+  h+='<div class="grade"><div class="metrica"><b>'+num(st.maquinas)+'</b>Máquinas afetadas</div></div>';
+  if(st.fim){h+='<div class="msg '+st.fim.k+'"><strong>'+esc(st.fim.t)+'</strong> '+esc(st.fim.x)+'<br><em>'+esc(cfg.exemplo)+'</em></div>';}
+  return h+guia(cfg);
+}
+function etapaRuim(st,i){
+  if(i===1){return !st.prot.comportamento;}
+  if(i===2){return !st.prot.quarentena;}
+  if(i===3){return !st.prot.atualiza;}
+  if(i===4){return !(st.prot.comportamento||st.prot.quarentena);}
+  return false;
+}
+function rodarInfec(ctx){
+  if(ctx.st.rodando){return;}
+  limparTimers(ctx);
+  var st=ctx.st,cfg=ctx.aba.demo.config;
+  st.rodando=true;st.passo=0;st.fim=null;st.maquinas=0;ctx.pinta();
+  logar(ctx,'info','▶ Amostra nova chegando.','O arquivo foi criado hoje: nenhuma assinatura dele existe nos catálogos.');
+  function passo(){
+    var s=ctx.st,i=s.passo;
+    if(i>=cfg.etapas.length){fimInfec(ctx);return;}
+    var e=cfg.etapas[i],txt=e.txt,ruim=false;
+    if(i>0){ruim=etapaRuim(s,i);txt=ruim?e.ruim:e.bom;}
+    if(i===2&&ruim){s.maquinas+=1;}
+    if(i===3&&ruim){s.maquinas+=6;}
+    logar(ctx,ruim?'erro':(i===0?'info':'ok'),e.nome,txt);
+    s.passo=i+1;ctx.pinta();
+    ctx.timers.push(setTimeout(passo,900));
+  }
+  ctx.timers.push(setTimeout(passo,450));
+}
+function fimInfec(ctx){
+  limparTimers(ctx);
+  var st=ctx.st,cfg=ctx.aba.demo.config;
+  st.rodando=false;st.passo=cfg.etapas.length;
+  var contido=(st.prot.comportamento&&st.prot.quarentena);
+  st.fim={k:(contido&&st.prot.atualiza)?'ok':'erro',
+    t:contido?'Ameaça contida na primeira máquina.':'Ameaça não contida a tempo.',
+    x:contido?(st.prot.atualiza?'Comportamento mais quarentena seguraram o arquivo, e as correções em dia fecharam a porta de espalhamento.':'Comportamento e quarentena seguraram o arquivo, mas as correções atrasadas deixaram a porta de espalhamento aberta para outras amostras.'):'Sem detecção por comportamento ou sem quarentena, a amostra nova executou e agiu antes de qualquer resposta. Ligue as duas e rode de novo.'};
+  logar(ctx,st.fim.k,st.fim.t,st.fim.x+' Máquinas afetadas neste modelo: '+num(st.maquinas)+'.');
+  ctx.pinta();
+}
+/* --- endurecimento do SO --- */
+function pintaSO(ctx){
+  var cfg=ctx.aba.demo.config,st=ctx.st,h='',exp=0;
+  h+='<p>';
+  cfg.itens.forEach(function(it){h+=tog('item',it.id,it.nome,st.itens[it.id]);});
+  h+='</p>';
+  cfg.itens.forEach(function(it){if(!st.itens[it.id]){exp+=it.peso;}});
+  h+='<div class="grade"><div class="metrica"><b>'+num(exp)+'</b>Exposição (0 a 100)</div>';
+  h+='<div class="metrica"><b>'+num(100-exp)+'</b>Redução obtida</div></div>';
+  h+='<div class="barra"><i style="width:'+exp+'%"></i></div>';
+  h+='<h4>🚪 Caminhos abertos agora:</h4>';
+  var abertos=0;
+  cfg.itens.forEach(function(it){
+    if(!st.itens[it.id]){abertos++;h+='<div class="no erro">'+esc(it.aberto)+'</div>';}
+  });
+  if(!abertos){h+='<div class="no ok">Nenhum caminho aberto neste modelo: conta comum, correções em dia, só serviços necessários, segunda etapa e disco cifrado.</div>';}
+  h+='<h4>✅ O que já está fechado:</h4>';
+  var fechados=0;
+  cfg.itens.forEach(function(it){
+    if(st.itens[it.id]){fechados++;h+='<div class="no ok">'+esc(it.fechado)+'</div>';}
+  });
+  if(!fechados){h+='<p class="nota">Nada fechado ainda. Ligue os itens acima e observe o medidor.</p>';}
+  return h+guia(cfg);
+}
+/* --- cenário --- */
+function pintaCenario(ctx){
+  var cfg=ctx.aba.demo.config,st=ctx.st,h='';
+  st.historico.forEach(function(it){h+='<div class="msg ok">✅ <strong>'+esc(it.s)+'</strong><br>Resposta registrada: '+esc(it.e)+'</div>';});
+  if(st.fim){return h+'<div class="msg ok">🏁 '+esc(cfg.resumo)+'</div>';}
+  var r=cfg.rodadas[st.r];
+  h+='<p><strong>Situação '+(st.r+1)+' de '+cfg.rodadas.length+':</strong> '+esc(r.situacao)+'</p>';
+  h+='<p><strong>'+esc(r.pergunta)+'</strong></p><div class="alts">';
+  r.opcoes.forEach(function(o,i){
+    var usada=st.erradas.indexOf(i)>=0,cl='alt',sf='';
+    if(usada){cl+=' errada';sf=' ✗';}
+    if(st.feita&&o.ok){cl+=' certa';sf=' ✓';}
+    h+='<button type="button" class="'+cl+'" data-act="responder" data-arg="'+i+'" data-fb="'+esc(o.fb)+'"'+((usada||st.feita)?' disabled':'')+'>'+esc(o.t)+sf+'</button>';
+  });
+  h+='</div>';
+  if(st.feita){h+='<button type="button" class="btn" data-act="proxima">Próxima situação ▶</button>';}
+  return h;
+}
+/* --- registros --- */
+function pintaReg(ctx){
+  var cfg=ctx.aba.demo.config,st=ctx.st,h='';
+  h+='<p><strong>Filtro:</strong> ';
+  cfg.filtros.forEach(function(f){
+    h+='<button type="button" class="btn tog peq'+(st.filtro===f.id?' on':'')+'" data-act="filtro" data-arg="'+f.id+'">'+esc(f.nome)+'</button>';
+  });
+  h+='</p>';
+  var visiveis=cfg.eventos.filter(function(e){
+    if(st.filtro==='todos'){return true;}
+    if(st.filtro==='login'){return e.tipo==='login';}
+    if(st.filtro==='dados'){return e.tipo==='dados';}
+    if(st.filtro==='fora'){return e.fora;}
+    if(st.filtro==='graves'){return e.grave;}
+    return true;
+  });
+  var textoFiltro='';
+  cfg.filtros.forEach(function(f){if(f.id===st.filtro){textoFiltro=f.mostra;}});
+  h+='<div class="msg info"><strong>O que esta visão mostra:</strong> '+esc(textoFiltro)+'</div>';
+  h+='<div class="grade"><div class="metrica"><b>'+num(visiveis.length)+' de '+num(cfg.eventos.length)+'</b>Eventos visíveis</div></div>';
+  h+='<table><thead><tr><th>Hora</th><th>Conta</th><th>Evento</th></tr></thead><tbody>';
+  visiveis.forEach(function(e){
+    h+='<tr'+(e.grave?' class="grave"':'')+'><td>'+esc(e.hora)+'</td><td>'+esc(e.usuario)+'</td><td>'+esc(e.evento)+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  h+='<p><button type="button" class="btn" data-act="correl">🔗 Correlacionar eventos</button></p>';
+  if(st.correl){
+    h+='<div class="msg erro"><strong>🧩 História revelada:</strong> '+esc(cfg.historia)+'<br><em>'+esc(cfg.exemplo)+'</em></div>';
+  }
+  return h+guia(cfg);
+}
+function pintaDemo(ctx){
+  switch(ctx.aba.demo.tipo){
+    case 'regras': return pintaRegras(ctx);
+    case 'matriz': return pintaMatriz(ctx);
+    case 'infec': return pintaInfec(ctx);
+    case 'so': return pintaSO(ctx);
+    case 'cenario': return pintaCenario(ctx);
+    case 'reg': return pintaReg(ctx);
+  }
+  return '';
+}
+function agir(ctx,act,arg){
+  var st=ctx.st,cfg=ctx.aba.demo.config,tipo=ctx.aba.demo.tipo;
+  if(act==='regra'){
+    st.regras[arg]=!st.regras[arg];st.res=null;
+    logar(ctx,'info','Regra alterada.','Avalie o pacote de novo: a ordem da lista decide qual regra é alcançada.');
+    ctx.pinta();return;
+  }
+  if(act==='pacote'){st.pacote=Number(arg);st.res=null;ctx.pinta();return;}
+  if(act==='modo'&&tipo==='regras'){
+    st.modo=arg;st.res=null;
+    logar(ctx,'info','Modo de detecção alterado.','IDS registra e deixa passar; IPS bloqueia em linha. Avalie a varredura para comparar.');
+    ctx.pinta();return;
+  }
+  if(act==='avaliar'){
+    var r=avaliar(st,cfg);
+    st.res=r;
+    logar(ctx,r.decisao==='bloquear'?'ok':'erro',(r.decisao==='bloquear'?'🛑 Bloqueado: ':'⚠️ Permitido: ')+r.pacote.nome,'Regra decisiva: '+r.casada+'. '+(r.extra||(r.decisao==='bloquear'?cfg.explica.bloquear:cfg.explica.permitir)));
+    ctx.pinta();return;
+  }
+  if(act==='perm'){
+    var partes=arg.split('|'),pi=Number(partes[0]),rj=Number(partes[1]);
+    st.perms[pi][rj]=!st.perms[pi][rj];st.res=null;
+    logar(ctx,'info',cfg.perfis[pi]+' × '+cfg.recursos[rj],st.perms[pi][rj]?'Permissão liberada. Confira se ela é necessária para o papel.':'Permissão negada. Menor privilégio aplicado.');
+    ctx.pinta();return;
+  }
+  if(act==='perfil'){st.perfil=Number(arg);st.res=null;ctx.pinta();return;}
+  if(act==='recurso'){st.recurso=Number(arg);st.res=null;ctx.pinta();return;}
+  if(act==='toggle'){
+    st[arg]=!st[arg];st.res=null;
+    logar(ctx,'info','Configuração de cifra alterada.','Tente o acesso de novo e compare a janela de quem copia o disco.');
+    ctx.pinta();return;
+  }
+  if(act==='tentar'){tentarAcesso(ctx);return;}
+  if(act==='prot'){
+    st.prot[arg]=!st.prot[arg];
+    logar(ctx,'info','Proteção alterada.','Rode a simulação e compare onde a amostra nova é contida.');
+    ctx.pinta();return;
+  }
+  if(act==='rodar'){rodarInfec(ctx);return;}
+  if(act==='item'){
+    st.itens[arg]=!st.itens[arg];
+    var nome='',txt='';
+    cfg.itens.forEach(function(it){if(it.id===arg){nome=it.nome;txt=st.itens[arg]?it.fechado:it.aberto;}});
+    logar(ctx,st.itens[arg]?'ok':'erro',nome+(st.itens[arg]?' ligado.':' desligado.'),txt);
+    ctx.pinta();return;
+  }
+  if(act==='responder'&&tipo==='cenario'){
+    var rd=cfg.rodadas[st.r],o=rd.opcoes[Number(arg)];
+    if(o.ok){st.feita=true;logar(ctx,'ok','✅ Por que esta está certa:',o.fb);xp(st.errou?5:10);}
+    else{
+      if(st.erradas.indexOf(Number(arg))<0){st.erradas.push(Number(arg));}
+      st.errou=true;
+      logar(ctx,'erro','❌ Por que esta está errada:',o.fb+' As outras opções continuam liberadas.');
+    }
+    ctx.pinta();return;
+  }
+  if(act==='proxima'){
+    var rr=cfg.rodadas[st.r],certa='';
+    rr.opcoes.forEach(function(o){if(o.ok){certa=o.t;}});
+    st.historico.push({s:rr.situacao,e:certa});
+    st.r++;st.errou=false;st.feita=false;st.erradas=[];
+    if(st.r>=cfg.rodadas.length){st.fim=true;logar(ctx,'ok','🏁 Resumo da demo.',cfg.resumo);}
+    ctx.pinta();return;
+  }
+  if(act==='filtro'){
+    st.filtro=arg;
+    var mostra='';
+    cfg.filtros.forEach(function(f){if(f.id===arg){mostra=f.mostra;}});
+    logar(ctx,'info','Filtro aplicado.',mostra);
+    ctx.pinta();return;
+  }
+  if(act==='correl'){
+    st.correl=true;
+    logar(ctx,'erro','🧩 Correlação concluída.',cfg.historia);
+    ctx.pinta();return;
+  }
+}
+function ligarDemos(){
+  ABAS.forEach(function(aba){
+    var ctx={aba:aba,st:novoEstado(aba),palco:$('palco-'+aba.id),log:$('log-'+aba.id),timers:[]};
+    ctx.pinta=function(){ctx.palco.innerHTML=pintaDemo(ctx);};
+    ctx.palco.addEventListener('click',function(e){
+      var b=e.target.closest('[data-act]');
+      if(!b||b.disabled){return;}
+      agir(ctx,b.getAttribute('data-act'),b.getAttribute('data-arg'));
+    });
+    $('reset-'+aba.id).addEventListener('click',function(){
+      limparTimers(ctx);
+      ctx.st=novoEstado(aba);
+      ctx.log.innerHTML='';
+      ctx.pinta();
+      logar(ctx,'info','🔄 Demo reiniciada.','Antes de clicar, preveja de novo: mude uma escolha e compare o resultado com o da rodada anterior.');
+    });
+    ctx.pinta();
+  });
+}
+
+/* ---------- MODOS ---------- */
+function ligarModos(){
+  var apresentacao=false,escuroAntes=false;
+  $('btnModo').addEventListener('click',function(){
+    apresentacao=!apresentacao;
+    document.body.classList.toggle('apresentacao',apresentacao);
+    this.textContent=apresentacao?'📖 Leitura':'🎤 Apresentação';
+    this.setAttribute('aria-pressed',apresentacao?'true':'false');
+    var rs=document.querySelectorAll('details.roteiro');
+    for(var i=0;i<rs.length;i++){rs[i].open=apresentacao;}
+    if(apresentacao){
+      escuroAntes=document.body.classList.contains('escuro');
+      document.body.classList.remove('escuro');
+      $('btnEscuro').disabled=true;
+      $('btnEscuro').setAttribute('aria-pressed','false');
+      toast('🎤 Modo Apresentação: fonte maior, roteiros abertos, setas navegam');
+    }else{
+      $('btnEscuro').disabled=false;
+      if(escuroAntes){document.body.classList.add('escuro');$('btnEscuro').setAttribute('aria-pressed','true');}
+      toast('📖 Modo Leitura');
+    }
+  });
+  $('btnEscuro').addEventListener('click',function(){
+    var on=!document.body.classList.contains('escuro');
+    document.body.classList.toggle('escuro',on);
+    this.textContent=on?'☀️ Claro':'🌙 Escuro';
+    this.setAttribute('aria-pressed',on?'true':'false');
+  });
+}
+
+/* ---------- INIT ---------- */
+function init(){
+  renderAbas();
+  ligarDemos();
+  ligarModos();
+  $('paineis').addEventListener('click',function(e){
+    var alt=e.target.closest('.alt');
+    if(alt&&alt.closest('.pergunta')){responderQuiz(alt);return;}
+    var mb=e.target.closest('.mito-btn');
+    if(mb){abrirMito(mb);return;}
+    if(e.target.closest('#btn-chefao')){chefao();}
+  });
+  $('faixa').addEventListener('click',function(e){
+    var b=e.target.closest('.aba');
+    if(!b){return;}
+    ativar(b.getAttribute('data-alvo'),true);
+  });
+  document.addEventListener('keydown',function(e){
+    var t=e.target,tag=t.tagName;
+    if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||t.isContentEditable){return;}
+    if(e.key==='ArrowRight'){vizinho(1);e.preventDefault();}
+    else if(e.key==='ArrowLeft'){vizinho(-1);e.preventDefault();}
+    else if(e.key==='Home'){ativar(IDS[0],true);e.preventDefault();}
+    else if(e.key==='End'){ativar(IDS[IDS.length-1],true);e.preventDefault();}
+  });
+  window.addEventListener('hashchange',function(){
+    var id=location.hash.replace('#','');
+    if(IDS.indexOf(id)>=0){ativar(id,false);}
+  });
+  var inicial=location.hash.replace('#','');
+  if(IDS.indexOf(inicial)<0){inicial=ABAS[0].id;}
+  ativar(inicial,false);
+  progresso();
+}
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init);}else{init();}
+})();
+</script>
+</body>
+</html>
