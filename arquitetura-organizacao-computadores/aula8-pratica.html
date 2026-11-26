@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arquitetura e Organização de Computadores — Aula 8: Sistemas Embarcados e de Tempo Real</title>
+<!-- HTMLearning v2.18-beta.5 (20/11/2026) — Todos os campos de metadados foram informados (disciplina, aula, unidade, páginas). Dados do professor(a) não informados (campo opcional): linha A2 omitida. Nenhum conteúdo pedagógico foi inventado: as 6 abas desdobram os três itens do sumário colado. REVISÃO CORRIGIDA: referência inexistente em pintaPrazo sanada; sliders com atualização parcial; etapas do firmware preservadas ao final; variável de cor duplicada removida. -->
+<style>
+*{box-sizing:border-box}
+:root{
+  --acento:#8A4B08; --fundo:#f6f2ec; --painel:#ffffff; --tinta:#241a10; --suave:#6b5c4a;
+  --borda:#ded2c2; --ok:#166534; --erro:#9b1c1c; --real:#faf6f0; --ferr:#f7f4ee; --link:#8A4B08;
+}
+body.escuro{
+  --fundo:#16120c; --painel:#211b13; --tinta:#f2ece2; --suave:#c4b6a3; --borda:#3a3126;
+  --ok:#1f7a44; --erro:#a52a2a; --real:#262017; --ferr:#241f18; --link:#ffbf7a;
+}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--fundo);color:var(--tinta);font-size:18px;line-height:1.55;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+body.apresentacao{font-size:22px}
+[hidden]{display:none !important}
+a{color:var(--link)}
+:focus-visible{outline:3px solid #2b4cb0;outline-offset:2px}
+.envolve{max-width:1180px;margin:0 auto;padding:0 14px 40px}
+.modos{position:fixed;top:10px;right:10px;z-index:60;display:flex;gap:8px}
+.modos button{font-size:.78em;padding:8px 12px;border-radius:99px;border:2px solid var(--acento);
+  background:var(--acento);color:#fff;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.25)}
+.modos button:disabled{opacity:.5;cursor:not-allowed}
+header.topo{background:var(--acento);color:#fff;padding:22px 18px;border-radius:0 0 18px 18px;margin-bottom:14px}
+header.topo h1{margin:0 0 6px;font-size:1.5em;line-height:1.25}
+header.topo p{margin:2px 0;font-size:.9em}
+.hud{display:flex;flex-wrap:wrap;gap:12px;align-items:center;background:var(--painel);border:3px solid var(--borda);
+  border-radius:14px;padding:12px 14px;margin-bottom:14px;box-shadow:0 4px 0 rgba(0,0,0,.07)}
+.hud .caixa{font-weight:700}
+.barra{flex:1;min-width:180px;height:16px;background:var(--borda);border-radius:99px;overflow:hidden}
+.barra i{display:block;height:100%;width:0;background:var(--acento);transition:width .2s}
+.selos{width:100%;display:flex;flex-wrap:wrap;gap:6px}
+.selo{background:var(--acento);color:#fff;border-radius:99px;padding:4px 12px;font-size:.78em;font-weight:700}
+.selo.vazio{background:var(--borda);color:var(--tinta)}
+.faixa-abas{position:sticky;top:0;z-index:30;display:flex;gap:6px;overflow-x:auto;padding:10px 6px 0;
+  background:var(--fundo);border-bottom:3px solid var(--acento);scrollbar-width:thin}
+.aba{flex:0 0 auto;white-space:nowrap;border:3px solid var(--acento);border-bottom:none;border-radius:14px 14px 0 0;
+  background:var(--acento);color:#fff;padding:10px 16px;font-size:.86em;font-weight:700;cursor:pointer;margin-bottom:-3px}
+.aba .num{display:inline-block;background:rgba(255,255,255,.25);border-radius:99px;padding:0 8px;margin-right:6px}
+.aba.ativa{background:var(--painel);color:var(--tinta);border-bottom:3px solid var(--painel);position:relative;z-index:31}
+.aba.ativa .num{background:var(--acento);color:#fff}
+.selo-estudo{display:inline-block;margin-left:8px;background:#2b4cb0;color:#fff;border-radius:99px;padding:1px 9px;font-size:.82em}
+.paineis{background:var(--painel);border:3px solid var(--acento);border-top:none;border-radius:0 0 18px 18px;padding:20px 18px 26px}
+.painel{display:none}
+.painel.ativo{display:block}
+.painel h2{margin:.1em 0 .5em;font-size:1.35em}
+.painel h3{font-size:1.08em;margin:1.2em 0 .5em}
+.painel h4{font-size:1em;margin:.6em 0 .3em}
+.fora{background:var(--ferr);border-left:8px solid #2b4cb0;padding:8px 12px;border-radius:8px;font-size:.9em}
+.missao{background:var(--acento);color:#fff;border-radius:12px;padding:12px 16px;margin-bottom:12px}
+.dupla{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:820px){.dupla{grid-template-columns:1fr}}
+.cartao{border:3px solid var(--borda);border-radius:14px;padding:12px 16px;background:var(--painel);
+  box-shadow:0 4px 0 rgba(0,0,0,.07);margin:12px 0}
+.cartao.real{background:var(--real)}
+.cartao.ferr{background:var(--ferr)}
+.cartao ul{margin:.3em 0;padding-left:1.2em}
+.cartao li{margin:.45em 0}
+.demo{border:3px solid var(--acento);border-radius:16px;padding:14px 16px;margin:18px 0;background:var(--painel)}
+.prever{background:#fff4cf;color:#3a2a05;border:3px solid #b45309;border-radius:12px;padding:12px 14px;font-weight:600}
+body.escuro .prever{background:#3b2f10;color:#ffeec2}
+.instrucoes{background:#fff9e6;color:#3a2f0c;border:3px solid #d9a441;border-radius:12px;padding:10px 16px;margin:12px 0}
+body.escuro .instrucoes{background:#2c2513;color:#f6e6bd}
+.instrucoes ol{margin:.3em 0;padding-left:1.3em}
+.legenda{background:#eef3ff;color:#141f3a;border:3px solid #2b4cb0;border-radius:12px;padding:10px 16px;margin:12px 0}
+body.escuro .legenda{background:#171d33;color:#d8e0f7}
+.legenda ul{margin:.3em 0;padding-left:1.2em}
+.palco{border:3px dashed var(--acento);border-radius:14px;padding:14px;background:var(--real);margin:12px 0}
+.btn{background:var(--acento);color:#fff;border:2px solid var(--acento);border-radius:10px;padding:10px 16px;
+  font-size:.92em;font-weight:700;cursor:pointer;margin:4px 6px 4px 0}
+.btn:hover{filter:brightness(1.2)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn.tog{background:var(--painel);color:var(--tinta);border:2px solid var(--borda);font-weight:600}
+.btn.tog.on{background:var(--acento);color:#fff;border-color:var(--acento)}
+.log{max-height:280px;overflow:auto;border-left:8px solid var(--acento);padding:6px 12px;background:var(--painel);margin-top:10px}
+.msg{border:2px solid var(--borda);border-radius:10px;padding:8px 12px;margin:6px 0;font-size:.94em}
+.msg.ok{border-color:var(--ok)}
+.msg.erro{border-color:var(--erro)}
+.msg.info{border-color:var(--acento)}
+.observa{background:var(--ferr);border:2px dashed var(--suave);border-radius:10px;padding:8px 14px;margin:10px 0;font-size:.92em}
+.grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:10px 0}
+.metrica{border:3px solid var(--borda);border-radius:12px;padding:10px;background:var(--painel);text-align:center}
+.metrica b{display:block;font-size:1.25em}
+.no{border:3px solid var(--borda);border-radius:10px;padding:8px 12px;margin:6px 0;background:var(--painel);font-size:.92em}
+.no.atual{border-color:#b45309;font-weight:700}
+.no.ok{border-color:var(--ok)}
+.no.erro{border-color:var(--erro)}
+.linha-tempo{display:flex;flex-wrap:wrap;gap:4px;margin:10px 0}
+.tique{width:42px;height:42px;border:2px solid var(--borda);border-radius:8px;display:flex;align-items:center;
+  justify-content:center;font-size:.72em;font-weight:700;background:var(--painel);color:var(--suave)}
+.tique.a{background:var(--acento);color:#fff;border-color:var(--acento)}
+.tique.b{background:#2b4cb0;color:#fff;border-color:#2b4cb0}
+.tique.perda{border:3px solid var(--erro)}
+.rotulo-slider{display:block;font-weight:600;margin-top:8px;font-size:.92em}
+input[type=range]{width:100%}
+textarea{width:100%;padding:10px;border:2px solid var(--borda);border-radius:10px;background:var(--painel);color:var(--tinta);font-family:inherit;font-size:.95em}
+.quiz{border:3px solid var(--borda);border-radius:16px;padding:14px 16px;margin:18px 0;background:var(--real)}
+.termos{background:#eef3ff;color:#141f3a;border:3px solid #2b4cb0;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:.93em}
+body.escuro .termos{background:#171d33;color:#d8e0f7}
+.pergunta{border-top:2px dashed var(--borda);padding-top:12px;margin-top:12px}
+.pergunta:first-of-type{border-top:none}
+.enun{font-weight:600}
+.alts{display:flex;flex-direction:column;gap:8px}
+.alt{text-align:left;background:var(--painel);color:var(--tinta);border:3px solid var(--borda);border-radius:10px;
+  padding:11px 14px;font-size:.95em;font-family:inherit;cursor:pointer}
+.alt:hover:not(:disabled){border-color:var(--acento)}
+.alt:disabled{cursor:not-allowed}
+.alt.certa{background:var(--ok);color:#fff;border-color:var(--ok);font-weight:700}
+.alt.errada{background:var(--erro);color:#fff;border-color:var(--erro)}
+.fb{margin-top:10px;border-radius:10px;padding:10px 14px;font-size:.95em;display:none}
+.fb.ok{display:block;background:var(--painel);border:3px solid var(--ok)}
+.fb.erro{display:block;background:var(--painel);border:3px solid var(--erro)}
+details.aprof,details.roteiro{border:3px solid var(--borda);border-radius:12px;padding:10px 16px;margin:12px 0;background:var(--real)}
+details.roteiro{background:#fff7e6}
+body.escuro details.roteiro{background:#2a2317}
+details.dicio{background:#eef3ff}
+body.escuro details.dicio{background:#171d33}
+details.conceitos{background:#eefaf1}
+body.escuro details.conceitos{background:#152a1e}
+details.buscas{background:#f3f0ff}
+body.escuro details.buscas{background:#201d2e}
+details.mito{background:#fdf2f8}
+body.escuro details.mito{background:#2a1a24}
+summary{cursor:pointer;font-weight:700}
+dt{font-weight:700;margin-top:.6em}
+dd{margin:.15em 0 .4em 0}
+.conceito{border-bottom:2px dashed var(--borda);padding-bottom:10px;margin-bottom:10px}
+.analogia{background:var(--painel);border-left:6px solid #b45309;padding:8px 12px;border-radius:8px}
+.links li{margin:.5em 0}
+.nota{font-size:.85em;color:var(--suave)}
+table{border-collapse:collapse;width:100%;margin:10px 0;font-size:.93em}
+th,td{border:2px solid var(--borda);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--acento);color:#fff}
+.chefao{border:4px solid #2b4cb0;border-radius:16px;padding:14px 16px;background:var(--ferr);margin-top:16px}
+.mapa li{margin:.5em 0}
+.cola td:first-child{width:32%}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:var(--acento);color:#fff;
+  padding:10px 20px;border-radius:99px;font-weight:700;z-index:80;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.rodape{max-width:1180px;margin:26px auto 0;padding:0 16px 30px;font-size:.82em;color:var(--suave);line-height:1.5}
+.rodape h4{color:var(--tinta);font-size:1.05em;margin:.4em 0 .5em}
+.rodape hr{border:none;border-top:2px solid var(--borda);margin:18px 0}
+.rodape ul{padding-left:1.1em;margin:.3em 0}
+.rodape .contatos div{margin:.25em 0;word-break:break-all}
+body.apresentacao .roteiro{border-color:#2b4cb0}
+@media(max-width:640px){
+  body{font-size:17px}
+  header.topo h1{font-size:1.25em;padding-right:70px}
+  .modos button{font-size:.68em;padding:7px 9px}
+  .painel h2{font-size:1.15em}
+  .tique{width:36px;height:36px}
+}
+</style>
+</head>
+<body>
+<div class="modos">
+  <button id="btnModo" type="button" aria-pressed="false">🎤 Apresentação</button>
+  <button id="btnEscuro" type="button" aria-pressed="false">🌙 Escuro</button>
+</div>
+
+<header class="topo">
+  <h1>🔧 Arquitetura e Organização de Computadores — Aula 8: Sistemas Embarcados e de Tempo Real</h1>
+  <p>Unidade 4 · Páginas 9 a 22 · Aula interativa offline (arquivo único)</p>
+  <p>Trilha de sala: 30 minutos nas abas 1 a 5 · Aba 6 para estudo em casa · Revisão com mapa, cola rápida e Chefão</p>
+</header>
+
+<div class="envolve">
+  <div class="hud">
+    <span class="caixa">⭐ XP: <span id="xp">0</span></span>
+    <span class="caixa" id="progTexto">Progresso: 0 de 18 perguntas</span>
+    <span class="barra"><i id="progBarra"></i></span>
+    <span class="selos" id="selos"><span class="selo vazio">Nenhum selo ainda: complete o quiz de uma aba</span></span>
+  </div>
+  <nav class="faixa-abas" id="faixa" role="tablist" aria-label="Abas da aula"></nav>
+  <main class="paineis" id="paineis"></main>
+  <noscript><p style="padding:16px">Esta aula interativa precisa de JavaScript ativado no navegador.</p></noscript>
+</div>
+
+<footer class="rodape">
+  <h4>📋 FICHA TÉCNICA DA AULA</h4>
+  <div>Arquitetura e Organização de Computadores — Aula 8, Unidade 4, págs. 9–22 · Gerado em 25/11/2026 · 6 abas · 18 perguntas · 6 demos · cor #8A4B08</div>
+  <hr>
+  <h4>🪄 SOBRE O HTMLearning · v2.18-beta.5 (20/11/2026)</h4>
+  <div>Transformar o sumário de qualquer disciplina em uma classe interativa em HTML único e offline, com previsão antes do clique, tentativa e erro guiado e exemplos reais.</div>
+  <ul>
+    <li>O que é: metodologia e arquitetura de prompts que converte sumários em aulas interativas em minutos, com IAs gratuitas.</li>
+    <li>O que entrega: 5 a 7 abas + Revisão, simulações com previsão, quiz com retry sem revelar gabarito, linguagem plana, Modos Apresentação/Leitura.</li>
+    <li>Por que é inclusivo: um único .html leve, 100% offline, roda em PC e celular e viaja em pen drive para escolas desconectadas ou áreas rurais.</li>
+  </ul>
+  <div>Idealizador do projeto: Professor Wellington Dimas da Cruz</div>
+  <div>Apoiadora do projeto: Prof.ª Dr.ª Mariella Berger Andrade (IFES / CEFOR)</div>
+  <div class="contatos">
+    <div><strong>Contatos e links do projeto:</strong></div>
+    <div>E-mail do idealizador: <a href="mailto:cloud.ai-generative@outlook.com">cloud.ai-generative@outlook.com</a></div>
+    <div>Repositório GitHub do idealizador: <a href="https://github.com/cloud-ai-Generative" target="_blank" rel="noopener">https://github.com/cloud-ai-Generative</a></div>
+    <div>Currículo Lattes do idealizador: <a href="https://lattes.cnpq.br/6801791839011321" target="_blank" rel="noopener">https://lattes.cnpq.br/6801791839011321</a></div>
+    <div>Currículo Lattes da apoiadora: <a href="https://lattes.cnpq.br/3929645439848570" target="_blank" rel="noopener">https://lattes.cnpq.br/3929645439848570</a></div>
+    <div>Site oficial do projeto: <a href="https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html" target="_blank" rel="noopener">https://cloud-ai-generative.github.io/disciplinas/projeto-htmlearning/index.html</a></div>
+  </div>
+  <div>Licença do HTMLearning (metodologia e prompt): <a href="https://creativecommons.org/licenses/by/4.0/deed.pt-br" target="_blank" rel="noopener">CC BY 4.0 (Creative Commons Atribuição 4.0 Internacional)</a>. O conteúdo da aula pertence ao professor da disciplina.</div>
+</footer>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const AULA_DADOS = {
+  abas:[
+  {
+    id:"aba-1", rotulo:"O que é embarcado", estudoProprio:false,
+    titulo:"Sistema embarcado: o computador que mora dentro do produto",
+    missao:"Reconhecer um sistema embarcado e listar as características que o separam de um computador de propósito geral.",
+    narrativa:"Você usa computadores todo dia sem chamar de computador: a máquina de lavar, o roteador, o controle do ar-condicionado, o freio do carro. Sistema embarcado é o computador que mora dentro de um produto e faz poucas tarefas muito bem, com pouca memória, pouca energia e um preço apertado.",
+    mundoReal:[
+      "Um roteador doméstico da TP-Link (fabricante de equipamentos de rede) é um computador completo, com processador, memória e sistema, mas ninguém instala programas nele: ele só faz o trabalho de rede.",
+      "O Arduino (placa de prototipagem muito usada em ensino) e o ESP32 (chip barato com rádio Wi-Fi da empresa Espressif) são a porta de entrada: custam pouco, têm pouquíssima memória e mesmo assim controlam sensores e motores."
+    ],
+    ferramentas:[
+      "Placas de prototipagem: Arduino e Raspberry Pi Pico (placa pequena da Fundação Raspberry Pi).",
+      "Folha de dados do componente (datasheet: o documento do fabricante com pinos, limites elétricos e consumo)."
+    ],
+    dicionario:[
+      {termo:"Sistema embarcado", def:"Computador dedicado que fica dentro de um produto e cumpre poucas funções específicas."},
+      {termo:"Firmware", def:"O programa gravado na memória do dispositivo, escrito para aquela tarefa."},
+      {termo:"Propósito geral", def:"Máquina feita para rodar programas variados, escolhidos pelo usuário, como um notebook."},
+      {termo:"Microcontrolador", def:"Chip que junta processador, memória e periféricos num pacote só."},
+      {termo:"Restrição de projeto", def:"Limite que não pode ser estourado: energia, memória, custo, tamanho ou temperatura."},
+      {termo:"Confiabilidade", def:"Funcionar por anos sem alguém para reiniciar ou consertar."},
+      {termo:"GPIO (General Purpose Input/Output; Entrada e Saída de Uso Geral)", def:"Pinos que o programa liga, desliga ou lê, como um interruptor controlado por software."}
+    ],
+    conceitos:[
+      {titulo:"Dedicado, restrito e invisível",
+       texto:"O sistema embarcado faz uma função (ou um conjunto pequeno delas), cabe num orçamento apertado de memória e energia, e some aos olhos de quem usa: a pessoa aperta um botão da máquina de lavar, não abre um programa. Ele precisa funcionar por anos sem manutenção.",
+       analogia:"💡 Máquina de café versus oficina: a máquina só faz café, mas faz todo dia sem reclamar; a oficina faz qualquer coisa, mas precisa de gente cuidando.",
+       exemploReal:"O módulo de controle de uma máquina de lavar Brastemp (marca de eletrodomésticos) repete o mesmo ciclo milhares de vezes ao longo de anos, sem tela de instalação nem atualização escolhida pelo usuário."},
+      {titulo:"Pouca memória muda o jeito de programar",
+       texto:"Aqui a memória é medida em quilobytes, não em gigabytes. Isso muda decisões: evitar criar e destruir objetos o tempo todo, preferir tamanhos fixos, medir o consumo de cada rotina e conhecer o pior caso. O programa precisa caber e sobrar espaço para o inesperado.",
+       analogia:"💡 Cozinhar num trailer de comida: pouco espaço obriga a organizar cada gaveta e a não comprar ingredientes demais.",
+       exemploReal:"O ESP32 (chip barato com rádio da Espressif) tem memória de trabalho medida em centenas de quilobytes, enquanto um celular tem gigabytes: uma diferença de milhares de vezes."}
+    ],
+    roteiroDemo:{
+      passo0:"Antes de clicar, preveja: um notebook usado apenas para navegar e ver vídeos é um sistema embarcado?",
+      passos:[
+        {acao:"Leia a situação 1, do notebook, e clique em uma das três respostas.", ve:"A errada fica vermelha com ✗ e um quadro explica o motivo; as outras continuam clicáveis.", significa:"O uso não define a classe: o que define é ser dedicado ou de propósito geral."},
+        {acao:"Acerte e avance para a situação 2, do módulo do airbag.", ve:"O quadro verde ✅ mostra as marcas de um embarcado.", significa:"Função dedicada, recursos contados e nenhuma instalação pelo usuário."},
+        {acao:"Resolva a situação 3, do roteador, e leia o resumo.", ve:"A regra final aparece.", significa:"Ter sistema operacional não descaracteriza um embarcado."}
+      ]
+    },
+    demo:{
+      tipo:"cenario", titulo:"É embarcado ou de propósito geral?",
+      config:{
+        rodadas:[
+          {situacao:"Uma pessoa usa o notebook apenas para navegar e ver vídeos, e nunca instala nada além do navegador.",
+           pergunta:"Esse notebook é um sistema embarcado?",
+           opcoes:[
+             {t:"Sim, porque só serve para uma coisa na prática", ok:false, fb:"O uso é limitado por hábito, não por projeto. A máquina continua podendo rodar qualquer programa: isso é propósito geral."},
+             {t:"Não: é de propósito geral, mesmo com uso restrito", ok:true, fb:"O que define é o projeto da máquina: hardware e sistema feitos para rodar programas variados, escolhidos pelo usuário."},
+             {t:"Sim, porque tem tela e teclado", ok:false, fb:"Ter tela e teclado não define nada. Caixas eletrônicos e painéis industriais têm os dois e são embarcados."}
+           ]},
+          {situacao:"Um módulo dentro do carro lê sensores de colisão e decide inflar o airbag em poucos milésimos de segundo.",
+           pergunta:"Como classificar esse módulo?",
+           opcoes:[
+             {t:"Sistema embarcado de tempo real", ok:true, fb:"Função dedicada, recursos contados, prazo apertado e nenhuma escolha de programa pelo usuário: é o retrato do embarcado."},
+             {t:"Computador de propósito geral", ok:false, fb:"Ninguém instala programas nesse módulo, e ele não faz outra coisa além da função de segurança."},
+             {t:"Não é computador, é só um sensor", ok:false, fb:"Há processador, memória e programa gravado tomando decisões. Sensor sozinho não decide nada."}
+           ]},
+          {situacao:"Um roteador doméstico executa um sistema gravado pelo fabricante e só cuida da rede da casa.",
+           pergunta:"Ele é um sistema embarcado?",
+           opcoes:[
+             {t:"Não, porque tem sistema operacional", ok:false, fb:"Muitos embarcados têm sistema, inclusive sistemas de tempo real. Ter sistema não transforma a máquina em propósito geral."},
+             {t:"Sim: função dedicada, programa do fabricante, recursos contados", ok:true, fb:"É um computador completo dedicado a uma tarefa, como o roteador da TP-Link (fabricante de equipamentos de rede) da sua sala."},
+             {t:"Só se tiver tela de configuração", ok:false, fb:"A interface não define a classe. Embarcados podem não ter tela nenhuma e ainda assim ser computadores completos."}
+           ]}
+        ],
+        resumo:"Regra de bolso: embarcado é dedicado (faz poucas funções), restrito (memória, energia e custo contados) e invisível (o usuário não instala programas). Exemplo real: o roteador da TP-Link (fabricante de equipamentos de rede) e o módulo do airbag são embarcados; o notebook é de propósito geral, mesmo quando a pessoa só navega."
+      }
+    },
+    termosQuiz:"Sistema embarcado = computador dedicado dentro de um produto · firmware = programa gravado no dispositivo · propósito geral = máquina que roda programas variados escolhidos pelo usuário · microcontrolador = chip com processador, memória e periféricos juntos · restrição = limite de energia, memória, custo ou tamanho.",
+    quiz:[
+      {q:"Qual característica é típica de um sistema embarcado?",
+       alts:[
+         {t:"Função dedicada com recursos contados de memória e energia", ok:true, fb:"É o retrato: faz poucas coisas, cabe num orçamento apertado e funciona anos sem manutenção."},
+         {t:"Liberdade para o usuário instalar qualquer programa", ok:false, fb:"Isso é propósito geral. No embarcado, o programa é gravado pelo fabricante e o usuário não escolhe o que roda."},
+         {t:"Memória sobrando para não precisar medir consumo", ok:false, fb:"É o contrário: memória em quilobytes obriga a medir e planejar, como cozinhar num trailer de comida."}
+       ]},
+      {q:"Onde fica o firmware de um produto embarcado?",
+       alts:[
+         {t:"Gravado na memória do próprio dispositivo", ok:true, fb:"Firmware é o programa que mora no aparelho e executa assim que ele liga, sem instalação pelo usuário."},
+         {t:"Num servidor na internet, baixado a cada uso", ok:false, fb:"Alguns produtos atualizam pela internet, mas o programa roda localmente. Sem rede, a máquina de lavar continua lavando."},
+         {t:"No teclado ou na tela do produto", ok:false, fb:"Periféricos de entrada e saída não guardam o programa principal; ele fica na memória do microcontrolador."}
+       ]},
+      {q:"Um roteador doméstico executa um sistema operacional do fabricante. Isso o descaracteriza como embarcado?",
+       alts:[
+         {t:"Não: muitos embarcados têm sistema, inclusive de tempo real", ok:true, fb:"O critério é ser dedicado e restrito, não a ausência de sistema. Roteadores são o exemplo clássico."},
+         {t:"Sim: embarcado não pode ter sistema operacional", ok:false, fb:"Sistemas de tempo real como o FreeRTOS (sistema livre usado em muitos dispositivos) rodam justamente em embarcados."},
+         {t:"Sim, porque ele se conecta à internet", ok:false, fb:"Conexão não define classe. Geladeiras, lâmpadas e medidores conectados são embarcados."}
+       ]}
+    ],
+    aprofundar:[
+      {rotulo:"🔎 Busca no Google (português)", url:"https://www.google.com/search?hl=pt-BR&q=sistemas+embarcados+caracter%C3%ADsticas+e+defini%C3%A7%C3%A3o"},
+      {rotulo:"🎓 Pesquisa científica (Google Scholar, português)", url:"https://scholar.google.com/scholar?hl=pt-BR&q=sistemas+embarcados+caracter%C3%ADsticas+e+defini%C3%A7%C3%A3o"},
+      {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)", url:"https://www.youtube.com/results?search_query=sistemas+embarcados+caracter%C3%ADsticas+e+defini%C3%A7%C3%A3o+aula"}
+    ],
+    mitoOuVerdade:{afirmacao:"Sistema embarcado é sempre um computador simples e fraco.", verdade:false,
+      explicacao:"Mito. Muitos são pequenos, como o ESP32 (chip barato com rádio da Espressif), mas um carro moderno tem dezenas de módulos, alguns com processadores potentes, e aeronaves usam embarcados complexos e redundantes. O que define é a dedicação e as restrições, não a fraqueza."}
+  },
+
+  {
+    id:"aba-2", rotulo:"Tempo real", estudoProprio:false,
+    titulo:"Tempo real: chegar tarde é o mesmo que errar",
+    missao:"Diferenciar tempo real duro de suave e explicar por que previsibilidade vale mais que velocidade média.",
+    narrativa:"Em sistema de tempo real, o resultado certo na hora errada é resultado errado. O que importa não é ser rápido na média: é ser previsível e cumprir o prazo sempre, inclusive no pior caso. Um sistema que responde depressa quase sempre, mas às vezes demora, pode ser inútil para certas tarefas.",
+    mundoReal:[
+      "O airbag precisa inflar em poucos milésimos de segundo depois da colisão: chegar tarde não é lento, é inútil. É tempo real duro.",
+      "Numa chamada de vídeo, um atraso grande atrapalha, mas o mundo não acaba: a imagem trava e depois segue. É tempo real suave."
+    ],
+    ferramentas:[
+      "Analisador lógico e osciloscópio (aparelhos que mostram os sinais elétricos ao longo do tempo) para medir o atraso real.",
+      "Sistema de tempo real e medição do pior caso de execução, em vez de olhar só a média."
+    ],
+    dicionario:[
+      {termo:"Prazo (deadline)", def:"Instante limite para a resposta ficar pronta."},
+      {termo:"Tempo real duro (hard)", def:"Perder o prazo é falha grave, com dano físico ou risco à vida."},
+      {termo:"Tempo real suave (soft)", def:"Perder o prazo degrada a experiência, mas não é catastrófico."},
+      {termo:"Determinismo", def:"Comportamento previsível no tempo: dá para garantir o pior caso."},
+      {termo:"Latência", def:"Tempo entre o estímulo acontecer e a resposta sair."},
+      {termo:"Jitter (variação de atraso)", def:"Oscilação do tempo de resposta entre uma execução e outra."},
+      {termo:"Pior caso de execução (WCET, Worst-Case Execution Time)", def:"O maior tempo que a tarefa pode levar, considerando tudo que pode atrapalhar."}
+    ],
+    conceitos:[
+      {titulo:"Rápido não é o mesmo que previsível",
+       texto:"Um sistema pode ter média excelente e ainda assim falhar, porque o prazo é cumprido por execução, não por média. Memórias intermediárias, interrupções e tarefas concorrentes criam variação. Em tempo real duro, mede-se o pior caso e projeta-se com folga.",
+       analogia:"💡 Ônibus que chega em média em dez minutos, mas às vezes em quarenta, não serve para quem tem prova às oito.",
+       exemploReal:"O sistema de freios ABS (que evita o travamento das rodas) precisa agir dentro de uma janela curta em toda frenagem, não apenas na maioria delas."},
+      {titulo:"Duro e suave mudam o projeto inteiro",
+       texto:"No duro, o projeto usa margens, redundância e evita recursos de tempo imprevisível. No suave, aceita-se degradação: uma reserva de dados adiantados amortece atrasos. Classificar errado custa caro: tratar vídeo como duro encarece sem necessidade; tratar freio como suave é perigoso.",
+       analogia:"💡 Freio de carro versus filme pela internet: um não pode atrasar nunca; o outro pode engasgar e continuar.",
+       exemploReal:"Um marca-passo (dispositivo implantado que regula o batimento do coração), como os da Medtronic (fabricante de dispositivos médicos), é tempo real duro; a reprodução de vídeo é tempo real suave."}
+    ],
+    roteiroDemo:{
+      passo0:"Antes de clicar, preveja: um sistema que responde muito rápido na média, mas às vezes demora, serve para um airbag?",
+      passos:[
+        {acao:"Escolha o cenário do airbag e deixe a variação de atraso baixa.", ve:"O pior caso cabe no prazo e o quadro fica verde.", significa:"Com folga, o prazo é cumprido em toda execução."},
+        {acao:"Aumente a variação de atraso até o pior caso passar do prazo.", ve:"O quadro muda e a consequência do cenário duro aparece.", significa:"Não basta a média: uma execução atrasada já é falha."},
+        {acao:"Troque para o cenário do vídeo e repita com a mesma variação.", ve:"A mesma ultrapassagem gera outra consequência.", significa:"Duro e suave têm custos de falha muito diferentes."}
+      ]
+    },
+    demo:{
+      tipo:"prazo", titulo:"Prazo, atraso típico e variação",
+      config:{
+        cenarios:[
+          {nome:"🚗 Airbag (duro)", prazo:20, tipo:"duro",
+           cumpre:"O pior caso cabe dentro do prazo: a bolsa infla a tempo em toda colisão.",
+           fura:"O pior caso estoura o prazo: em alguma colisão a bolsa infla tarde demais. Em tempo real duro isso é falha grave, não lentidão.",
+           exemplo:"Exemplo real: módulos de airbag são projetados com folga e verificados no pior caso, porque a janela entre colisão e proteção é de poucos milésimos de segundo."},
+          {nome:"🎬 Chamada de vídeo (suave)", prazo:100, tipo:"suave",
+           cumpre:"O pior caso cabe no prazo: a conversa flui sem travadas.",
+           fura:"O pior caso estoura o prazo: a imagem trava e o áudio engasga, mas a chamada continua. É degradação, não catástrofe.",
+           exemplo:"Exemplo real: aplicativos de chamada guardam alguns instantes adiantados na memória justamente para amortecer essas variações."},
+          {nome:"🌡️ Sensor de temperatura (folgado)", prazo:1000, tipo:"folgado",
+           cumpre:"O pior caso cabe com muita folga: a leitura chega antes do próximo ciclo.",
+           fura:"Mesmo com prazo folgado, o pior caso estourou: a leitura chega depois do ciclo seguinte e o registro fica desalinhado.",
+           exemplo:"Exemplo real: sensores de campo que medem a cada segundo toleram atrasos grandes, e por isso podem dormir quase o tempo todo para poupar bateria."}
+        ],
+        observa:[
+          "O que decide é o pior caso (atraso típico mais variação), não o atraso típico.",
+          "A mesma ultrapassagem tem consequências diferentes em cenário duro e suave.",
+          "Aumentar a folga é mais barato do que tentar deixar tudo mais rápido."
+        ]
+      },
+      legenda:[
+        "ms = milésimos de segundo.",
+        "Pior caso = atraso típico + variação de atraso (jitter). Em palavras: o tempo mais demorado que pode acontecer.",
+        "Folga = prazo − pior caso. Em palavras: quanto tempo sobra antes do limite.",
+        "Valores de prazo desta demo são um modelo de exercício, não especificação de um produto real."
+      ]
+    },
+    termosQuiz:"Prazo (deadline) = instante limite da resposta · tempo real duro = perder o prazo é falha grave · tempo real suave = perder o prazo degrada, mas segue · latência = tempo entre estímulo e resposta · jitter (variação de atraso) = oscilação entre execuções · pior caso (WCET) = maior tempo possível.",
+    quiz:[
+      {q:"O que caracteriza um sistema de tempo real duro?",
+       alts:[
+         {t:"Perder o prazo é falha grave, não apenas lentidão", ok:true, fb:"O resultado certo na hora errada é resultado errado. É o caso do airbag e do marca-passo (dispositivo que regula o batimento do coração)."},
+         {t:"Ele é o mais rápido possível em qualquer situação", ok:false, fb:"Velocidade máxima não é o critério. Um sistema pode ser modesto e previsível, e isso basta para cumprir o prazo."},
+         {t:"Ele nunca usa memória intermediária", ok:false, fb:"Pode usar, desde que o efeito no tempo seja conhecido. O problema é o imprevisível, não a existência de memória."}
+       ]},
+      {q:"Um sistema responde em 5 ms na média, mas às vezes leva 60 ms, e o prazo é 20 ms. Ele serve?",
+       alts:[
+         {t:"Não: o pior caso estoura o prazo", ok:true, fb:"Prazo se cumpre por execução. Uma única execução de 60 ms já é falha, mesmo com média excelente."},
+         {t:"Sim: a média está bem abaixo do prazo", ok:false, fb:"Média não garante nada em tempo real. É o ônibus que chega em média em dez minutos, mas às vezes em quarenta."},
+         {t:"Sim, desde que a maioria das execuções seja rápida", ok:false, fb:"Em tempo real duro, a exceção é justamente o que mata. Projeto se faz pelo pior caso, com folga."}
+       ]},
+      {q:"Qual é um exemplo típico de tempo real suave?",
+       alts:[
+         {t:"Reprodução de vídeo, que pode travar e continuar", ok:true, fb:"Atraso degrada a experiência, mas não causa dano físico. Por isso dá para amortecer com reserva de dados adiantados."},
+         {t:"Disparo do airbag durante uma colisão", ok:false, fb:"Atraso aqui significa proteção que não chega: é tempo real duro."},
+         {t:"Comando de frenagem do ABS", ok:false, fb:"O controle de frenagem precisa agir dentro da janela em toda frenagem: é duro."}
+       ]}
+    ],
+    aprofundar:[
+      {rotulo:"🔎 Busca no Google (português)", url:"https://www.google.com/search?hl=pt-BR&q=sistemas+de+tempo+real+duro+e+suave+prazo"},
+      {rotulo:"🎓 Pesquisa científica (Google Scholar, português)", url:"https://scholar.google.com/scholar?hl=pt-BR&q=sistemas+de+tempo+real+duro+e+suave+prazo"},
+      {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)", url:"https://www.youtube.com/results?search_query=sistemas+de+tempo+real+duro+e+suave+prazo+aula"}
+    ],
+    mitoOuVerdade:{afirmacao:"Tempo real significa deixar o sistema o mais rápido possível.", verdade:false,
+      explicacao:"Mito. Tempo real significa cumprir prazo de forma previsível, inclusive no pior caso. Um sistema modesto e determinista pode atender um prazo apertado melhor do que um sistema veloz, mas cheio de variações imprevisíveis."}
+  },
+
+  {
+    id:"aba-3", rotulo:"Hardware e energia", estudoProprio:false,
+    titulo:"O hardware do embarcado: microcontrolador, periféricos e energia",
+    missao:"Escolher os periféricos certos para um projeto e calcular o consumo médio que define a duração da bateria.",
+    narrativa:"Um microcontrolador junta num chip só o processador, a memória e os periféricos que conversam com o mundo: pinos, conversores, temporizadores e rádios. Escolher o chip é escolher quais periféricos o projeto precisa — e quanto de energia ele pode gastar por dia.",
+    mundoReal:[
+      "O ESP32 (chip barato com rádio Wi-Fi e Bluetooth da empresa Espressif) virou padrão em projetos de objetos conectados porque junta rádio, pinos e conversores por um preço baixo.",
+      "Um relógio inteligente passa dias ligado porque o chip dorme a maior parte do tempo e acorda em intervalos: o que define a bateria é o consumo médio, não o consumo de pico."
+    ],
+    ferramentas:[
+      "Placa de desenvolvimento com a folha de dados do fabricante ao lado.",
+      "Multímetro ou medidor de corrente para conferir quanto o aparelho gasta dormindo e acordado."
+    ],
+    dicionario:[
+      {termo:"Microcontrolador", def:"Chip com processador, memória e periféricos juntos, feito para controlar coisas."},
+      {termo:"Microprocessador", def:"Chip que é só o processador; memória e periféricos ficam fora, em outros chips."},
+      {termo:"Memória flash", def:"Guarda o programa mesmo sem energia; é onde o firmware fica gravado."},
+      {termo:"RAM (Random Access Memory; Memória de Acesso Aleatório)", def:"Memória de trabalho, apagada quando desliga."},
+      {termo:"ADC (Analog-to-Digital Converter; Conversor Analógico-Digital)", def:"Transforma uma tensão variável, como a de um sensor de temperatura, em número."},
+      {termo:"PWM (Pulse Width Modulation; Modulação por Largura de Pulso)", def:"Liga e desliga muito rápido para simular potência intermediária, como meio brilho de um LED."},
+      {termo:"Temporizador (timer)", def:"Relógio interno do chip que conta tempo e dispara eventos com precisão."},
+      {termo:"UART, SPI e I2C", def:"Três formas comuns de o chip conversar com outros chips: UART é a porta serial simples; SPI e I2C são ligações curtas para sensores e memórias."},
+      {termo:"Modo de sono (deep sleep)", def:"Estado em que quase tudo desliga e o consumo cai a uma fração."}
+    ],
+    conceitos:[
+      {titulo:"Periférico certo evita gambiarra",
+       texto:"Ler um sensor analógico pede conversor analógico-digital; controlar brilho ou velocidade pede modulação por largura de pulso; medir tempo exato pede temporizador; conversar com outro chip pede uma porta de comunicação. Fazer tudo por software, na força, gasta processador e energia e costuma sair impreciso.",
+       analogia:"💡 Ter a ferramenta certa na caixa: dá para abrir parafuso com faca, mas você estraga a faca e o parafuso.",
+       exemploReal:"Placas como o ESP32 (chip da Espressif) e a Raspberry Pi Pico (placa pequena da Fundação Raspberry Pi) trazem esses blocos prontos, e é por isso que projetos pequenos ficam viáveis."},
+      {titulo:"Energia é orçamento, e o rádio é o vilão",
+       texto:"Consumo médio = (corrente acordado × segundos acordado + corrente dormindo × segundos dormindo) ÷ tempo total. Em palavras: o que pesa é quanto tempo o aparelho fica acordado, não só o quanto ele gasta quando acorda. O rádio é o bloco mais caro; dormir mais tempo é a maior economia disponível.",
+       analogia:"💡 Torneira pingando a noite toda: cada pingo é pequeno, mas o mês inteiro paga a conta.",
+       exemploReal:"Sensores de campo que medem a cada poucos minutos e dormem no resto do tempo funcionam anos com a mesma bateria, enquanto o mesmo chip com rádio ligado direto duraria horas."}
+    ],
+    roteiroDemo:{
+      passo0:"Antes de clicar, preveja: para ler um sensor de temperatura analógico, basta um pino comum de entrada e saída?",
+      passos:[
+        {acao:"Escolha um projeto e ligue apenas os pinos comuns.", ve:"O painel avisa o que ainda não é possível fazer.", significa:"Pino comum lê ligado ou desligado; sensor analógico pede conversor."},
+        {acao:"Ligue os blocos que o projeto pede e observe as capacidades.", ve:"Cada bloco habilita uma função nova.", significa:"Periférico é ferramenta: escolher certo evita gambiarra."},
+        {acao:"Ligue o rádio e mova o controle de tempo acordado por minuto.", ve:"O consumo médio sobe e a estimativa de bateria despenca.", significa:"O que define a bateria é o tempo acordado e o rádio, não o pico."}
+      ]
+    },
+    demo:{
+      tipo:"placa", titulo:"Montando a placa: periféricos e bateria",
+      config:{
+        projetos:[
+          {nome:"🌡️ Estação de temperatura com aviso", precisa:["gpio","adc","timer"], desc:"Ler o sensor analógico em intervalos exatos e acender um LED de aviso."},
+          {nome:"💡 Luminária com brilho regulável", precisa:["gpio","pwm","timer"], desc:"Controlar o brilho do LED sem desperdiçar energia em resistor."},
+          {nome:"📡 Sensor conectado que envia leitura", precisa:["gpio","adc","timer","radio"], desc:"Ler o sensor e mandar a leitura para outro sistema sem fio."}
+        ],
+        blocos:[
+          {id:"gpio", nome:"🔌 Pinos comuns (GPIO)", faz:"ler botões e acender LEDs"},
+          {id:"adc", nome:"📈 Conversor analógico-digital (ADC)", faz:"transformar a tensão do sensor em número"},
+          {id:"pwm", nome:"🌗 Modulação por largura de pulso (PWM)", faz:"regular brilho e velocidade"},
+          {id:"timer", nome:"⏱️ Temporizador", faz:"medir intervalos com precisão"},
+          {id:"uart", nome:"🔗 Porta serial (UART)", faz:"conversar com outro chip ou com o computador"},
+          {id:"radio", nome:"📶 Rádio sem fio", faz:"enviar dados sem cabo, ao custo de muita energia"}
+        ],
+        bateria:1000, sono:0.05, acordadoSemRadio:40, acordadoComRadio:120,
+        observa:[
+          "Cada bloco ligado habilita uma capacidade; o aviso mostra o que ainda falta para o projeto escolhido.",
+          "O rádio muda o consumo de forma muito maior que os outros blocos.",
+          "Dormir mais tempo reduz o consumo médio mesmo sem trocar o chip."
+        ]
+      },
+      legenda:[
+        "mA = miliampère, unidade de corrente elétrica; mAh = miliampère-hora, capacidade da bateria.",
+        "Consumo médio = (corrente acordado × segundos acordado + corrente dormindo × segundos dormindo) ÷ 60. Em palavras: média ponderada pelo tempo em cada estado.",
+        "Dias de bateria = capacidade ÷ consumo médio ÷ 24. Em palavras: quanto a bateria aguenta nesse ritmo.",
+        "Valores deste modelo: 40 mA acordado sem rádio, 120 mA com rádio, 0,05 mA dormindo e bateria de 1000 mAh — números de exercício, não de um produto real."
+      ]
+    },
+    termosQuiz:"Microcontrolador = chip com processador, memória e periféricos · GPIO = pinos de uso geral · ADC (conversor analógico-digital) = transforma tensão em número · PWM (modulação por largura de pulso) = liga e desliga rápido para regular potência · temporizador = relógio interno do chip · modo de sono = estado de consumo mínimo · mA e mAh = corrente e capacidade de bateria.",
+    quiz:[
+      {q:"Qual é a diferença entre microcontrolador e microprocessador?",
+       alts:[
+         {t:"O microcontrolador já traz memória e periféricos no mesmo chip", ok:true, fb:"É o computadorzinho completo num pacote só. O microprocessador é só o processador e precisa de chips externos, como num notebook."},
+         {t:"O microcontrolador é sempre mais rápido", ok:false, fb:"Costuma ser mais modesto. A diferença é integração, não velocidade."},
+         {t:"O microprocessador não consegue executar programas", ok:false, fb:"Executa, sim, e muito. Ele só depende de memória e periféricos externos para isso."}
+       ]},
+      {q:"Você precisa ler um sensor cuja tensão varia continuamente. Qual bloco usar?",
+       alts:[
+         {t:"O conversor analógico-digital (ADC)", ok:true, fb:"Ele transforma a tensão em número. Pino comum só distingue ligado de desligado e não mede valores intermediários."},
+         {t:"Um pino comum de entrada e saída (GPIO)", ok:false, fb:"O pino comum lê dois estados. Para valores contínuos, é preciso converter a tensão em número."},
+         {t:"A modulação por largura de pulso (PWM)", ok:false, fb:"Essa serve para saída: regular brilho ou velocidade. Ela não mede a tensão de um sensor."}
+       ]},
+      {q:"O que mais aumenta a duração da bateria de um sensor que mede de vez em quando?",
+       alts:[
+         {t:"Passar a maior parte do tempo em modo de sono", ok:true, fb:"Consumo médio é ponderado pelo tempo em cada estado. Dormir quase sempre derruba a média, mesmo com pico alto quando acorda."},
+         {t:"Deixar o rádio ligado o tempo todo para não perder dados", ok:false, fb:"O rádio é o bloco mais caro. Ligado direto, transforma dias de bateria em horas."},
+         {t:"Aumentar a velocidade do processador", ok:false, fb:"Pode até ajudar em tarefas curtas, mas o ganho principal vem do tempo dormindo, não do clock."}
+       ]}
+    ],
+    aprofundar:[
+      {rotulo:"🔎 Busca no Google (português)", url:"https://www.google.com/search?hl=pt-BR&q=microcontrolador+perif%C3%A9ricos+gpio+adc+pwm+consumo"},
+      {rotulo:"🎓 Pesquisa científica (Google Scholar, português)", url:"https://scholar.google.com/scholar?hl=pt-BR&q=microcontrolador+perif%C3%A9ricos+gpio+adc+pwm+consumo"},
+      {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)", url:"https://www.youtube.com/results?search_query=microcontrolador+perif%C3%A9ricos+gpio+adc+pwm+consumo+aula"}
+    ],
+    mitoOuVerdade:{afirmacao:"Microcontrolador e microprocessador são duas palavras para a mesma peça.", verdade:false,
+      explicacao:"Mito. O microcontrolador junta processador, memória e periféricos no mesmo chip, como o ESP32 (chip da Espressif). O microprocessador é apenas o processador e depende de chips externos, como nos notebooks. A escolha muda custo, tamanho e consumo."}
+  },
+
+  {
+    id:"aba-4", rotulo:"Firmware", estudoProprio:false,
+    titulo:"Desenvolvimento e implementação: do código ao dispositivo",
+    missao:"Descrever o ciclo do firmware e escolher as proteções que evitam que um travamento vire produto inutilizado.",
+    narrativa:"Programar embarcado tem uma diferença prática: o código é escrito num computador e executado em outro, menor. Isso é compilação cruzada. Depois vem gravar, testar no aparelho real, prever travamento e planejar como atualizar quando o produto já estiver na casa do cliente.",
+    mundoReal:[
+      "A sonda Mars Pathfinder (sonda da NASA que pousou em Marte em 1997) reiniciava sozinha por um conflito de prioridades no software; o cão de guarda reiniciava o sistema e preservava a missão, e a correção foi enviada à distância.",
+      "O foguete Ariane 5 (lançador europeu) se autodestruiu no primeiro voo, em 1996, por um erro de conversão de número em software reaproveitado do modelo anterior: reuso sem teste no novo contexto é risco."
+    ],
+    ferramentas:[
+      "Compilação cruzada e gravação por USB ou por gravador dedicado.",
+      "Depuração no alvo (JTAG e SWD: ligações que permitem inspecionar o chip por dentro) e registro de mensagens pela porta serial."
+    ],
+    dicionario:[
+      {termo:"Compilação cruzada (cross-compilation)", def:"Gerar num computador o programa que vai rodar em outro tipo de chip."},
+      {termo:"Bootloader (carregador inicial)", def:"Rotina que permite regravar o firmware sem abrir o produto."},
+      {termo:"Laço principal (super loop)", def:"Repetir para sempre as mesmas etapas, uma depois da outra."},
+      {termo:"Interrupção", def:"Parar o que está sendo feito para atender um evento urgente e depois voltar."},
+      {termo:"Watchdog (cão de guarda)", def:"Contador que reinicia o aparelho se o programa parar de dar sinal de vida."},
+      {termo:"Estado seguro", def:"Condição para a qual o aparelho vai ao reiniciar, sem causar dano."},
+      {termo:"Atualização remota (OTA, Over-The-Air; pelo ar)", def:"Trocar o firmware do produto sem fio, depois que ele já está com o cliente."},
+      {termo:"Depuração no alvo", def:"Investigar o programa rodando no aparelho real, não só no simulador."}
+    ],
+    conceitos:[
+      {titulo:"Laço principal, interrupção ou sistema de tempo real",
+       texto:"O laço principal resolve projetos simples: lê sensor, decide, atua, repete. Quando existe evento urgente, entra a interrupção, que atende na hora e devolve o controle. Quando há muitas tarefas com prazos diferentes, um sistema de tempo real passa a decidir quem usa o processador.",
+       analogia:"💡 Cozinheiro sozinho: faz tudo em ordem (laço), atende a campainha quando toca (interrupção) ou comanda uma equipe com responsáveis por prato (sistema de tempo real).",
+       exemploReal:"O FreeRTOS (sistema de tempo real livre mantido pela AWS, a nuvem da Amazon) é usado em muitos dispositivos pequenos justamente para organizar tarefas com prioridades."},
+      {titulo:"Travar vai acontecer: planeje a volta",
+       texto:"Todo produto embarcado encontra uma condição não prevista. O cão de guarda reinicia o aparelho se ele parar de responder, e o estado seguro garante que reiniciar não cause dano. A atualização remota precisa de caminho de volta: se a nova versão falhar, o produto volta à anterior em vez de virar peso de papel.",
+       analogia:"💡 Disjuntor que desarma sozinho e pode ser religado, em vez de deixar a casa inteira queimar.",
+       exemploReal:"Na Mars Pathfinder (sonda da NASA em Marte), o cão de guarda reiniciava o sistema e mantinha a missão viva até a correção chegar da Terra."}
+    ],
+    roteiroDemo:{
+      passo0:"Antes de clicar, preveja: se o firmware travar em campo e não houver cão de guarda, o que acontece com o produto?",
+      passos:[
+        {acao:"Deixe todas as proteções desligadas e clique em Gravar e rodar.", ve:"A animação chega ao travamento e o produto fica parado.", significa:"Sem cão de guarda, o travamento vira visita técnica."},
+        {acao:"Ligue o cão de guarda e rode de novo.", ve:"O aparelho reinicia sozinho e volta ao estado seguro.", significa:"Foi o que preservou a missão da sonda marciana."},
+        {acao:"Ligue o teste no alvo e a atualização com caminho de volta, e compare o quadro final.", ve:"O resultado final muda de vermelho para verde.", significa:"Proteções são baratas antes e caríssimas depois da entrega."}
+      ]
+    },
+    demo:{
+      tipo:"firmware", titulo:"Do código ao produto na casa do cliente",
+      config:{
+        etapas:[
+          {nome:"⚙️ Compilação cruzada", txt:"O código foi compilado no computador para o chip do produto."},
+          {nome:"💾 Gravação do firmware", txt:"O programa foi gravado na memória do aparelho pelo carregador inicial."},
+          {nome:"🔬 Execução e teste",
+           bom:"O comportamento foi conferido no aparelho real, com sinais medidos nos pinos.",
+           ruim:"O primeiro teste de verdade está acontecendo agora, no produto do cliente: o simulador não reproduziu o mundo real."},
+          {nome:"⚠️ Evento: o laço travou",
+           bom:"O cão de guarda percebeu a falta de sinal de vida e reiniciou o aparelho em estado seguro.",
+           ruim:"Sem cão de guarda, o aparelho ficou travado até alguém desligar da tomada — ou até uma visita técnica."},
+          {nome:"📡 Atualização em campo",
+           bom:"A correção foi enviada pelo ar com caminho de volta: se a nova versão falhar, a anterior assume.",
+           ruim:"A correção foi enviada sem caminho de volta: se falhar, o produto fica inutilizado e precisa voltar para a fábrica."}
+        ],
+        exemplo:"Caso real: na Mars Pathfinder (sonda da NASA em Marte, 1997), o cão de guarda reiniciava o sistema e a correção foi enviada à distância; no Ariane 5 (foguete europeu, 1996), software reaproveitado sem teste no novo contexto levou à perda do veículo.",
+        observa:[
+          "As três proteções são independentes: teste no alvo, cão de guarda e caminho de volta.",
+          "O travamento acontece em todos os cenários desta demo; o que muda é a recuperação.",
+          "Atualizar sem caminho de volta transforma um erro pequeno em produto perdido."
+        ]
+      },
+      legenda:[
+        "Compilação cruzada = compilar num computador para outro tipo de chip.",
+        "Watchdog (cão de guarda) = contador que reinicia o aparelho se o programa parar de responder.",
+        "Estado seguro = condição sem dano para a qual o aparelho vai ao reiniciar.",
+        "OTA (Over-The-Air; pelo ar) = atualização do firmware sem fio."
+      ]
+    },
+    termosQuiz:"Compilação cruzada = gerar num computador o programa de outro chip · firmware = programa gravado no aparelho · watchdog (cão de guarda) = reinicia se travar · estado seguro = condição sem dano ao reiniciar · OTA (atualização pelo ar) = trocar o firmware à distância · caminho de volta = poder retornar à versão anterior.",
+    quiz:[
+      {q:"Por que se usa compilação cruzada em sistemas embarcados?",
+       alts:[
+         {t:"Porque o programa é escrito num computador e roda em outro tipo de chip", ok:true, fb:"O aparelho é pequeno demais para compilar o próprio código. Compila-se no computador, gerando instruções para o chip alvo."},
+         {t:"Porque assim o código fica mais rápido", ok:false, fb:"Velocidade depende do código e do chip. A compilação cruzada resolve onde se compila, não a velocidade."},
+         {t:"Porque o embarcado não entende linguagem de programação", ok:false, fb:"Ele executa instruções de máquina como qualquer processador. A questão é gerar as instruções certas para aquele chip."}
+       ]},
+      {q:"Para que serve o cão de guarda (watchdog)?",
+       alts:[
+         {t:"Reiniciar o aparelho se o programa parar de dar sinal de vida", ok:true, fb:"É o disjuntor do software. Na sonda Mars Pathfinder (NASA, Marte), ele manteve a missão viva até a correção chegar da Terra."},
+         {t:"Impedir que o programa tenha erros", ok:false, fb:"Ele não evita o erro: limita o dano. O travamento continua acontecendo, mas o aparelho volta sozinho."},
+         {t:"Aumentar a velocidade do processador quando necessário", ok:false, fb:"Não tem relação com velocidade. Ele vigia o sinal de vida e reinicia quando o sinal some."}
+       ]},
+      {q:"Qual é o risco de uma atualização remota sem caminho de volta?",
+       alts:[
+         {t:"Uma versão defeituosa inutiliza o produto na casa do cliente", ok:true, fb:"Sem poder voltar à versão anterior, o aparelho pode parar de vez e exigir retorno à fábrica. É por isso que se grava uma cópia boa."},
+         {t:"A atualização fica mais lenta", ok:false, fb:"Velocidade não é o risco principal. O problema é não haver recuperação se a nova versão falhar."},
+         {t:"O produto perde a garantia automaticamente", ok:false, fb:"Garantia é assunto comercial. O risco técnico é ficar sem caminho de recuperação."}
+       ]}
+    ],
+    aprofundar:[
+      {rotulo:"🔎 Busca no Google (português)", url:"https://www.google.com/search?hl=pt-BR&q=desenvolvimento+de+firmware+sistemas+embarcados+watchdog"},
+      {rotulo:"🎓 Pesquisa científica (Google Scholar, português)", url:"https://scholar.google.com/scholar?hl=pt-BR&q=desenvolvimento+de+firmware+sistemas+embarcados+watchdog"},
+      {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)", url:"https://www.youtube.com/results?search_query=desenvolvimento+de+firmware+sistemas+embarcados+watchdog+aula"}
+    ],
+    mitoOuVerdade:{afirmacao:"Se o programa funciona no simulador, vai funcionar igual no aparelho.", verdade:false,
+      explicacao:"Mito. O simulador não reproduz ruído elétrico, tempo real dos pinos, temperatura nem variações de energia. O caso do Ariane 5 (foguete europeu, 1996) mostrou o custo de reaproveitar software sem testar no novo contexto."}
+  },
+
+  {
+    id:"aba-5", rotulo:"Setores e casos", estudoProprio:false,
+    titulo:"Aplicações e casos de uso em diferentes setores",
+    missao:"Identificar a restrição dominante de cada setor e escolher a decisão de projeto correspondente.",
+    narrativa:"O mesmo tipo de computador dedicado aparece em setores muito diferentes, e cada setor impõe uma restrição que manda no projeto: no carro, prazo e segurança; no hospital, segurança e certificação; na indústria, robustez e vida longa; no consumo, custo e bateria; no espaço, tolerância a falhas e impossibilidade de conserto.",
+    mundoReal:[
+      "Um carro moderno tem dezenas de unidades de controle (ECU, do inglês Electronic Control Unit; Unidade de Controle Eletrônico), cada uma cuidando de freio, motor, airbag e painel, conversando por uma rede interna.",
+      "A Therac-25 (máquina de radioterapia dos anos 1980) aplicou doses erradas por falhas de software que antes eram impedidas por travas físicas: confiar só no software custou vidas."
+    ],
+    ferramentas:[
+      "Normas de segurança funcional por setor, como a ISO 26262 (norma de segurança para sistemas elétricos e eletrônicos de automóveis).",
+      "Rede interna do veículo (CAN, do inglês Controller Area Network; Rede de Área de Controladores) e protocolos usados na indústria."
+    ],
+    dicionario:[
+      {termo:"ECU (Electronic Control Unit; Unidade de Controle Eletrônico)", def:"Módulo embarcado do carro responsável por uma função, como freio ou injeção."},
+      {termo:"CAN (Controller Area Network; Rede de Área de Controladores)", def:"A rede interna que liga os módulos do veículo."},
+      {termo:"PLC (Programmable Logic Controller; Controlador Lógico Programável)", def:"Computador industrial feito para chão de fábrica, robusto e de vida longa."},
+      {termo:"Segurança funcional", def:"Projeto que continua seguro mesmo quando alguma parte falha."},
+      {termo:"Certificação", def:"Verificação formal por norma ou órgão antes de poder vender para aquele setor."},
+      {termo:"Redundância", def:"Ter mais de um elemento capaz de cumprir a mesma função crítica."},
+      {termo:"Trava física (interlock)", def:"Proteção em hardware que impede a ação perigosa mesmo se o software errar."},
+      {termo:"Vida útil longa", def:"Exigência de funcionar e ter reposição por muitos anos, comum na indústria."}
+    ],
+    conceitos:[
+      {titulo:"Cada setor tem uma restrição que manda",
+       texto:"Automotivo: prazo duro e segurança funcional. Médico: segurança, certificação e bateria em dispositivos implantados. Industrial: robustez a ruído, calor e vibração, com vida útil de décadas. Consumo: custo por unidade e bateria. Espacial: tolerância a falhas e radiação, sem possibilidade de conserto.",
+       analogia:"💡 Mesmo motor em veículos diferentes: ambulância, trator e kart. Cada uso muda o que precisa ser reforçado.",
+       exemploReal:"Um PLC da Siemens (empresa alemã de automação industrial) é feito para durar décadas no chão de fábrica; um relógio inteligente é feito para custar pouco e durar dias na bateria."},
+      {titulo:"Quando o software vira questão de vida",
+       texto:"Em equipamento que pode ferir alguém, não basta o software estar certo: precisa haver trava física, redundância e revisão independente. O caso da Therac-25 mostrou o que acontece quando proteções de hardware são removidas porque o software supostamente já cuida de tudo.",
+       analogia:"💡 Elevador tem freio mecânico além do controle eletrônico: se a eletrônica errar, o mecânico ainda segura.",
+       exemploReal:"Na Therac-25 (máquina de radioterapia), a remoção das travas físicas deixou toda a segurança nas mãos do software, e falhas de concorrência resultaram em doses erradas em pacientes."}
+    ],
+    roteiroDemo:{
+      passo0:"Antes de clicar, preveja: num marca-passo implantado, o que pesa mais — velocidade máxima ou bateria e confiabilidade?",
+      passos:[
+        {acao:"Leia o contexto do dispositivo implantado e escolha uma opção.", ve:"A errada fica vermelha com explicação; as outras continuam liberadas.", significa:"Cada setor tem uma restrição dominante."},
+        {acao:"Avance para o contexto do freio e depois para o do sensor de campo.", ve:"Os quadros verdes mostram o critério decisivo de cada setor.", significa:"A mesma tecnologia muda de projeto conforme o setor."},
+        {acao:"Leia o resumo final.", ve:"A regra de escolher pela restrição dominante aparece.", significa:"Copiar projeto de outro setor é criar risco."}
+      ]
+    },
+    demo:{
+      tipo:"cenario", titulo:"Qual restrição manda em cada setor?",
+      config:{
+        rodadas:[
+          {situacao:"Dispositivo implantado no corpo, como um marca-passo da Medtronic (fabricante de dispositivos médicos), que precisa funcionar anos sem troca de bateria e sem falhar.",
+           pergunta:"Qual combinação de restrições manda no projeto?",
+           opcoes:[
+             {t:"Consumo mínimo, confiabilidade e certificação", ok:true, fb:"Trocar bateria significa cirurgia, e falhar significa risco à vida. Por isso o projeto prioriza energia, redundância e comprovação formal."},
+             {t:"Velocidade máxima de processamento", ok:false, fb:"Velocidade além do necessário só gasta bateria. O prazo precisa ser cumprido com folga, e não ser o menor possível."},
+             {t:"Tela de alta resolução e interface bonita", ok:false, fb:"O dispositivo é implantado e não tem tela. A prioridade é energia e segurança, com certificação."}
+           ]},
+          {situacao:"Módulo de freio ABS de um automóvel, que precisa agir dentro de uma janela curta em toda frenagem, inclusive em pane de um sensor.",
+           pergunta:"Qual decisão de projeto é a mais adequada?",
+           opcoes:[
+             {t:"Prazo duro garantido no pior caso e degradação segura em caso de pane", ok:true, fb:"É segurança funcional: cumprir prazo sempre e, se algo falhar, ir para um estado seguro (o freio convencional continua funcionando)."},
+             {t:"Otimizar para o caso médio de uso", ok:false, fb:"Em frenagem de emergência, o caso médio não protege ninguém. Projeto se faz pelo pior caso."},
+             {t:"Confiar apenas no software, sem trava de hardware", ok:false, fb:"Foi essa lógica que agravou o caso da Therac-25 (máquina de radioterapia). Em sistema que pode ferir, hardware e software se protegem mutuamente."}
+           ]},
+          {situacao:"Sensor de umidade em lavoura, alimentado por bateria, que mede a cada dez minutos e envia a leitura por rádio.",
+           pergunta:"Qual decisão aumenta mais a vida útil do equipamento no campo?",
+           opcoes:[
+             {t:"Dormir entre as medições e ligar o rádio só no envio", ok:true, fb:"O consumo médio é ponderado pelo tempo em cada estado. Dormir quase sempre e usar rádio em rajadas é o que faz a bateria durar estações inteiras."},
+             {t:"Manter o rádio ligado para não perder nenhuma leitura", ok:false, fb:"O rádio é o bloco mais caro. Ligado direto, transforma meses em horas e obriga a trocar bateria toda semana."},
+             {t:"Medir mil vezes por segundo para ter dados melhores", ok:false, fb:"Umidade do solo muda devagar. Medir demais gasta energia sem melhorar a decisão de irrigação."}
+           ]}
+        ],
+        resumo:"Regra de bolso: descubra a restrição dominante do setor antes de escolher peça e arquitetura. Médico implantado pede energia e certificação; automotivo pede prazo duro e estado seguro; campo pede consumo médio baixo; indústria pede robustez e vida longa. Exemplo real: um PLC da Siemens (empresa de automação industrial) e um relógio inteligente usam a mesma ideia de computador dedicado, com projetos opostos."
+      }
+    },
+    termosQuiz:"ECU (Unidade de Controle Eletrônico) = módulo do carro com uma função · CAN = rede interna do veículo · PLC (Controlador Lógico Programável) = computador industrial robusto · segurança funcional = continuar seguro mesmo com falha · trava física (interlock) = proteção em hardware · redundância = mais de um elemento para a mesma função crítica · certificação = comprovação formal por norma.",
+    quiz:[
+      {q:"Por que equipamentos médicos e automotivos exigem travas físicas além do software?",
+       alts:[
+         {t:"Porque uma falha de software pode ferir alguém se não houver outra proteção", ok:true, fb:"É o freio mecânico do elevador. O caso da Therac-25 (máquina de radioterapia) mostrou o custo de deixar toda a segurança no software."},
+         {t:"Porque o software desses setores é sempre de má qualidade", ok:false, fb:"Não é questão de qualidade, e sim de consequência da falha. Mesmo software bem feito encontra condições não previstas."},
+         {t:"Porque travas físicas deixam o produto mais barato", ok:false, fb:"Costumam encarecer. Elas existem pelo risco à vida, não pelo custo."}
+       ]},
+      {q:"Qual restrição é típica da indústria, em comparação com o consumo?",
+       alts:[
+         {t:"Robustez a ruído, calor e vibração, com vida útil de décadas", ok:true, fb:"Um PLC da Siemens (empresa de automação industrial) precisa funcionar anos no chão de fábrica e ter reposição disponível."},
+         {t:"Menor custo por unidade a qualquer preço", ok:false, fb:"Essa é a pressão típica do consumo. Na indústria, parada de linha custa muito mais que a peça."},
+         {t:"Troca de modelo a cada lançamento", ok:false, fb:"É o oposto: a indústria valoriza estabilidade e compatibilidade por muitos anos."}
+       ]},
+      {q:"Um sensor de campo a bateria mede a cada dez minutos. Qual escolha combina com esse setor?",
+       alts:[
+         {t:"Dormir entre medições e usar o rádio apenas em rajadas", ok:true, fb:"O consumo médio depende do tempo acordado. Essa escolha faz a bateria durar estações inteiras."},
+         {t:"Deixar o rádio ligado permanentemente", ok:false, fb:"O rádio é o maior consumidor. Ligado direto, exige troca de bateria constante em local de difícil acesso."},
+         {t:"Colocar um processador de notebook para sobrar desempenho", ok:false, fb:"Desempenho sobrando não resolve nada aqui e destrói a bateria. A restrição dominante é energia."}
+       ]}
+    ],
+    aprofundar:[
+      {rotulo:"🔎 Busca no Google (português)", url:"https://www.google.com/search?hl=pt-BR&q=aplica%C3%A7%C3%B5es+de+sistemas+embarcados+automotivo+m%C3%A9dico+industrial"},
+      {rotulo:"🎓 Pesquisa científica (Google Scholar, português)", url:"https://scholar.google.com/scholar?hl=pt-BR&q=aplica%C3%A7%C3%B5es+de+sistemas+embarcados+automotivo+m%C3%A9dico+industrial"},
+      {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)", url:"https://www.youtube.com/results?search_query=aplica%C3%A7%C3%B5es+de+sistemas+embarcados+automotivo+m%C3%A9dico+industrial+aula"}
+    ],
+    mitoOuVerdade:{afirmacao:"Um projeto embarcado bem feito serve para qualquer setor, basta trocar a caixa.", verdade:false,
+      explicacao:"Mito. Cada setor tem restrição dominante e exigências de certificação diferentes. O caso do Ariane 5 (foguete europeu, 1996) nasceu justamente de reaproveitar software de outro contexto sem verificar as novas condições."}
+  },
+
+  {
+    id:"aba-6", rotulo:"RTOS e prazos", estudoProprio:true,
+    titulo:"Sistema de tempo real: tarefas, prioridades e o caso de Marte",
+    missao:"Explicar preempção e prioridade por período, e reconhecer a inversão de prioridade que quase custou uma missão espacial.",
+    narrativa:"Quando há várias tarefas com prazos diferentes, entra um sistema de tempo real: ele decide quem usa o processador a cada instante. A regra mais comum é dar prioridade à tarefa de período mais curto e permitir que ela interrompa a mais longa — o que se chama preempção.",
+    mundoReal:[
+      "A Mars Pathfinder (sonda da NASA que pousou em Marte em 1997) sofria reinícios por inversão de prioridade: uma tarefa pouco importante segurava um recurso de que a mais importante precisava. A correção foi enviada da Terra.",
+      "O FreeRTOS (sistema de tempo real livre mantido pela AWS, a nuvem da Amazon) roda em muitos dispositivos pequenos e oferece exatamente isso: tarefas, prioridades e preempção."
+    ],
+    ferramentas:[
+      "Sistemas de tempo real como FreeRTOS e Zephyr (sistema livre para dispositivos pequenos).",
+      "Cálculo de utilização do processador e medição do pior caso de cada tarefa."
+    ],
+    dicionario:[
+      {termo:"Tarefa", def:"Um trabalho que se repete, com período e duração conhecidos."},
+      {termo:"Período", def:"De quanto em quanto tempo a tarefa precisa rodar de novo."},
+      {termo:"Duração", def:"Quanto tempo de processador a tarefa consome por execução."},
+      {termo:"Preempção", def:"Interromper a tarefa em execução para colocar outra mais prioritária."},
+      {termo:"Prioridade por período (rate monotonic)", def:"Regra fixa: período menor recebe prioridade maior."},
+      {termo:"Prazo mais próximo primeiro (EDF, Earliest Deadline First)", def:"Regra dinâmica: roda quem tem o prazo mais perto."},
+      {termo:"Inversão de prioridade", def:"Tarefa importante esperando por uma menos importante que segura um recurso."},
+      {termo:"Herança de prioridade", def:"Solução: quem segura o recurso empresta temporariamente a prioridade alta."},
+      {termo:"Utilização", def:"Fração do processador ocupada: soma de duração dividida pelo período de cada tarefa."}
+    ],
+    conceitos:[
+      {titulo:"Interromper para cumprir prazo",
+       texto:"Sem preempção, uma tarefa longa que começou segura o processador até terminar, e a tarefa curta de prazo apertado perde a vez. Com preempção por período, a curta interrompe a longa e volta depois. Antes de tudo, verifica-se a utilização: U = soma de (duração ÷ período). Em palavras: se a soma passar de 1, não existe escalonador que salve.",
+       analogia:"💡 Cozinha: o prato que sai em dois minutos passa na frente do assado de três horas, senão o cliente da entrada espera a sobremesa dos outros.",
+       exemploReal:"O FreeRTOS (sistema de tempo real mantido pela AWS) usa prioridades com preempção exatamente para garantir esse comportamento em dispositivos pequenos."},
+      {titulo:"Inversão de prioridade e o conserto em Marte",
+       texto:"A inversão acontece quando uma tarefa de baixa prioridade segura um recurso compartilhado, uma de prioridade média entra e roda, e a de prioridade alta fica esperando indiretamente pela média. A solução é a herança de prioridade: quem segura o recurso herda temporariamente a prioridade alta e termina rápido.",
+       analogia:"💡 Banheiro único: alguém sem pressa ocupa, e a pessoa com voo marcado fica na fila enquanto outras sem pressa passam na frente.",
+       exemploReal:"Na Mars Pathfinder (sonda da NASA em Marte), o cão de guarda reiniciava o sistema e mascarava o problema; a equipe identificou a inversão e ativou a herança de prioridade por comando enviado da Terra."}
+    ],
+    roteiroDemo:{
+      passo0:"Antes de clicar, preveja: sem interrupção entre tarefas, a tarefa curta de prazo apertado consegue cumprir o prazo?",
+      passos:[
+        {acao:"Escolha o modo sem preempção e clique em Rodar 24 tiques.", ve:"A tarefa longa ocupa os primeiros tiques e a curta perde o prazo.", significa:"Sem interrupção, a ordem de chegada manda mais que o prazo."},
+        {acao:"Troque para o modo com preempção por período e rode de novo.", ve:"A curta interrompe a longa e nenhuma perda aparece.", significa:"Prioridade por período protege quem tem prazo apertado."},
+        {acao:"Compare a tabela dos dois modos e a utilização calculada.", ve:"A mesma carga cabe ou não conforme a política.", significa:"Antes de escolher peça mais rápida, escolha a política certa."}
+      ]
+    },
+    demo:{
+      tipo:"rtos", titulo:"Linha do tempo do escalonador",
+      config:{
+        tiques:24, ordem:["B","A"],
+        tarefas:[
+          {id:"A", nome:"Tarefa curta: ler sensor de frenagem", p:4, e:1},
+          {id:"B", nome:"Tarefa longa: redesenhar o painel", p:12, e:5}
+        ],
+        modos:[
+          {id:"fifo", nome:"🚫 Sem preempção (termina e depois troca)"},
+          {id:"preemp", nome:"⚡ Com preempção por período"}
+        ],
+        observa:[
+          "Cada quadradinho é um tique de processador; a letra diz qual tarefa rodou.",
+          "A borda vermelha marca o tique em que um prazo estourou.",
+          "A carga total é a mesma nos dois modos: o que muda é a política de decisão."
+        ]
+      },
+      legenda:[
+        "A = tarefa curta (período 4, duração 1) · B = tarefa longa (período 12, duração 5) · traço = processador ocioso.",
+        "Prazo de cada execução = instante de chegada + período.",
+        "Quando o prazo estoura, aquela execução é descartada e contada como perda.",
+        "Utilização U = soma de (duração ÷ período). Em palavras: fatia do processador que as tarefas pedem; acima de 1 é impossível atender todas.",
+        "Rate monotonic = prioridade fixa pelo período · EDF = prioridade dinâmica pelo prazo mais próximo."
+      ]
+    },
+    termosQuiz:"Tarefa = trabalho que se repete · período = de quanto em quanto tempo roda · duração = tempo de processador por execução · preempção = interromper para dar vez a outra · prioridade por período (rate monotonic) = período menor, prioridade maior · inversão de prioridade = tarefa importante esperando por uma menos importante · utilização = soma de duração ÷ período.",
+    quiz:[
+      {q:"Uma tarefa longa está rodando e chega uma tarefa curta com prazo apertado. O que a preempção faz?",
+       alts:[
+         {t:"Interrompe a longa, roda a curta e depois retoma a longa", ok:true, fb:"É o prato de dois minutos passando na frente do assado de três horas. A longa continua de onde parou."},
+         {t:"Espera a longa terminar para não perder trabalho", ok:false, fb:"Isso é justamente o modo sem preempção, que faz a curta perder o prazo. Nada se perde ao interromper: o estado é guardado."},
+         {t:"Cancela a longa e a reinicia do zero depois", ok:false, fb:"Preempção pausa e retoma, não descarta. Reiniciar do zero desperdiçaria todo o trabalho já feito."}
+       ]},
+      {q:"Duas tarefas pedem, juntas, mais tempo do que o processador tem (utilização maior que 1). O que resolver?",
+       alts:[
+         {t:"Nenhum escalonador resolve: é preciso reduzir carga ou aumentar capacidade", ok:true, fb:"Se a soma de duração ÷ período passa de 1, falta tempo físico. Trocar a política não cria tiques que não existem."},
+         {t:"Trocar para prazo mais próximo primeiro (EDF)", ok:false, fb:"Essa política aproveita melhor a capacidade, mas não ultrapassa 100% do processador."},
+         {t:"Aumentar a prioridade de todas as tarefas", ok:false, fb:"Se todas sobem, a ordem relativa continua igual. Prioridade organiza a fila, não amplia o tempo disponível."}
+       ]},
+      {q:"Como se resolve a inversão de prioridade, como a que ocorreu na sonda marciana?",
+       alts:[
+         {t:"Herança de prioridade: quem segura o recurso herda a prioridade alta temporariamente", ok:true, fb:"Assim a tarefa de baixa prioridade termina rápido e libera o recurso. Foi a correção enviada da Terra para a Mars Pathfinder (sonda da NASA)."},
+         {t:"Reiniciar o aparelho sempre que acontecer", ok:false, fb:"Era o que o cão de guarda fazia, e isso só mascarava o problema: a missão reiniciava e perdia trabalho."},
+         {t:"Dar a mesma prioridade para todas as tarefas", ok:false, fb:"Isso elimina a noção de prioridade e coloca as tarefas críticas na mesma fila das demais, piorando o cumprimento de prazos."}
+       ]}
+    ],
+    aprofundar:[
+      {rotulo:"🔎 Busca no Google (português)", url:"https://www.google.com/search?hl=pt-BR&q=escalonamento+de+tarefas+tempo+real+freertos+prioridade"},
+      {rotulo:"🎓 Pesquisa científica (Google Scholar, português)", url:"https://scholar.google.com/scholar?hl=pt-BR&q=escalonamento+de+tarefas+tempo+real+freertos+prioridade"},
+      {rotulo:"🎬 Vídeos-aula no YouTube (busca em português)", url:"https://www.youtube.com/results?search_query=escalonamento+de+tarefas+tempo+real+freertos+prioridade+aula"}
+    ],
+    mitoOuVerdade:{afirmacao:"Inversão de prioridade se resolve aumentando a prioridade de todas as tarefas.", verdade:false,
+      explicacao:"Mito. Se todas sobem, a ordem relativa não muda. A solução é a herança de prioridade: quem segura o recurso compartilhado recebe temporariamente a prioridade da tarefa importante que espera por ele — correção aplicada à distância na Mars Pathfinder (sonda da NASA em Marte)."}
+  }
+  ],
+  revisao:{
+    mapa:[
+      "1. O que é embarcado — computador dedicado dentro do produto, com recursos contados (termos na cola rápida).",
+      "2. Tempo real — chegar tarde é errar; o que vale é o pior caso, não a média (na cola rápida).",
+      "3. Hardware e energia — periférico certo para cada tarefa e consumo médio definindo a bateria.",
+      "4. Firmware — compilar para outro chip, gravar, testar no aparelho e planejar a volta (na cola rápida).",
+      "5. Setores e casos — cada setor tem uma restrição que manda no projeto.",
+      "6. RTOS e prazos (aba de estudo em casa) — interromper para cumprir prazo e evitar a inversão de prioridade (na cola rápida).",
+      "Fio condutor: embarcado é escolher sob restrição — de tempo, de energia, de memória e de segurança — e comprovar que a escolha funciona no pior caso."
+    ],
+    cola:[
+      {termo:"Sistema embarcado", linha:"Computador dedicado dentro de um produto."},
+      {termo:"Firmware", linha:"Programa gravado na memória do aparelho."},
+      {termo:"Propósito geral", linha:"Máquina que roda programas escolhidos pelo usuário."},
+      {termo:"Microcontrolador", linha:"Chip com processador, memória e periféricos juntos."},
+      {termo:"Microprocessador", linha:"Só o processador; o resto fica em outros chips."},
+      {termo:"GPIO", linha:"Pinos que o programa liga, desliga ou lê."},
+      {termo:"ADC (conversor analógico-digital)", linha:"Transforma tensão variável em número."},
+      {termo:"PWM (modulação por largura de pulso)", linha:"Liga e desliga rápido para regular potência."},
+      {termo:"Temporizador", linha:"Relógio interno que dispara eventos com precisão."},
+      {termo:"Modo de sono", linha:"Estado em que quase tudo desliga e o consumo cai."},
+      {termo:"Consumo médio", linha:"Corrente ponderada pelo tempo acordado e dormindo."},
+      {termo:"mA e mAh", linha:"Corrente elétrica e capacidade da bateria."},
+      {termo:"Prazo (deadline)", linha:"Instante limite para a resposta ficar pronta."},
+      {termo:"Tempo real duro", linha:"Perder o prazo é falha grave."},
+      {termo:"Tempo real suave", linha:"Perder o prazo degrada, mas o serviço segue."},
+      {termo:"Latência", linha:"Tempo entre estímulo e resposta."},
+      {termo:"Jitter (variação de atraso)", linha:"Oscilação do tempo de resposta entre execuções."},
+      {termo:"Pior caso (WCET)", linha:"Maior tempo que a tarefa pode levar."},
+      {termo:"Determinismo", linha:"Tempo previsível, que dá para garantir."},
+      {termo:"Compilação cruzada", linha:"Compilar num computador para outro tipo de chip."},
+      {termo:"Watchdog (cão de guarda)", linha:"Reinicia o aparelho se o programa travar."},
+      {termo:"Estado seguro", linha:"Condição sem dano para onde o aparelho vai ao reiniciar."},
+      {termo:"OTA (atualização pelo ar)", linha:"Trocar o firmware à distância."},
+      {termo:"Caminho de volta", linha:"Poder retornar à versão anterior se a nova falhar."},
+      {termo:"ECU (Unidade de Controle Eletrônico)", linha:"Módulo do carro com uma função específica."},
+      {termo:"CAN", linha:"Rede interna que liga os módulos do veículo."},
+      {termo:"PLC (Controlador Lógico Programável)", linha:"Computador industrial robusto e de vida longa."},
+      {termo:"Segurança funcional", linha:"Continuar seguro mesmo quando algo falha."},
+      {termo:"Trava física (interlock)", linha:"Proteção em hardware contra ação perigosa."},
+      {termo:"Tarefa, período e duração", linha:"Trabalho repetido, de quanto em quanto tempo e por quanto tempo."},
+      {termo:"Preempção", linha:"Interromper uma tarefa para dar vez a outra."},
+      {termo:"Prioridade por período", linha:"Período menor recebe prioridade maior."},
+      {termo:"Utilização", linha:"Soma de duração ÷ período; acima de 1 não cabe."},
+      {termo:"Inversão de prioridade", linha:"Tarefa importante esperando por uma menos importante."},
+      {termo:"Herança de prioridade", linha:"Quem segura o recurso herda a prioridade alta por um tempo."}
+    ],
+    desafio:"🐉 CHEFÃO — Uma equipe vai projetar um dispositivo fictício de segurança para uma ambulância: ele lê um sensor analógico de batimento, decide em poucos milésimos de segundo se aciona um alarme crítico, mostra informação numa tela e envia dados por rádio quando há rede. Entregue uma frase por item: (1) por que esse projeto é embarcado e de tempo real, e se o prazo é duro ou suave (na cola rápida); (2) quais periféricos do microcontrolador você usa para ler o sensor, medir o tempo e acionar o alarme (na cola rápida); (3) como você garante o prazo olhando o pior caso, e não a média (na cola rápida); (4) como organiza as duas tarefas — a curta crítica e a longa da tela — para que a crítica nunca perca a vez (na cola rápida); (5) quais proteções você coloca contra travamento e contra atualização defeituosa (na cola rápida); (6) qual restrição do setor da saúde muda o projeto em relação a um produto de consumo (na cola rápida). Justifique cada item com um caso real análogo: a Mars Pathfinder (sonda da NASA que pousou em Marte em 1997), o Ariane 5 (foguete europeu que se autodestruiu em 1996) ou a Therac-25 (máquina de radioterapia que aplicou doses erradas por falha de software)."
+  }
+};
+
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id);};
+var esc=function(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');};
+var num=function(n){return Number(n).toLocaleString('pt-BR',{maximumFractionDigits:3});};
+var ABAS=AULA_DADOS.abas;
+var IDS=ABAS.map(function(a){return a.id;}).concat(['revisao']);
+var acertos={},selos=[],xpTotal=0,toastT=null;
+ABAS.forEach(function(a){acertos[a.id]=[false,false,false];});
+var TOTAL=ABAS.length*3;
+
+function embaralhar(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function toast(m){var t=$('toast');t.textContent=m;t.hidden=false;if(toastT){clearTimeout(toastT);}toastT=setTimeout(function(){t.hidden=true;},1900);}
+function xp(n){xpTotal+=n;$('xp').textContent=num(xpTotal);toast('+'+n+' XP');}
+
+/* ---------- RENDER ---------- */
+function painelAba(aba,i){
+  var cfg=aba.demo,passos=aba.roteiroDemo.passos,h='';
+  h+='<section class="painel" id="'+aba.id+'" role="tabpanel" aria-labelledby="tab-'+aba.id+'" tabindex="0" hidden>';
+  h+='<h2>'+(i+1)+'. '+esc(aba.titulo)+'</h2>';
+  if(aba.estudoProprio){h+='<p class="fora">🏠 Aba de estudo em casa: fica fora dos 30 minutos de sala, mas conta para XP, selos e Chefão.</p>';}
+  h+='<div class="missao"><strong>🎯 Missão:</strong> '+esc(aba.missao)+'</div>';
+  h+='<p>'+esc(aba.narrativa)+'</p>';
+  h+='<div class="dupla"><div class="cartao real"><h3>🌍 No mundo real</h3><ul>'+aba.mundoReal.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';
+  h+='<div class="cartao ferr"><h3>🧰 Ferramentas usadas no mercado</h3><ul>'+aba.ferramentas.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div></div>';
+  h+='<section class="demo"><h3>🧪 Demo: '+esc(cfg.titulo)+'</h3>';
+  h+='<div class="prever">🔮 '+esc(aba.roteiroDemo.passo0)+'</div>';
+  h+='<div class="instrucoes"><h4>📋 INSTRUÇÕES PASSO A PASSO</h4><ol>'+passos.map(function(p){return '<li>'+esc(p.acao)+'</li>';}).join('')+'</ol></div>';
+  if(cfg.legenda){h+='<div class="legenda"><strong>🔑 Legenda:</strong><ul>'+cfg.legenda.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';}
+  h+='<div class="palco" id="palco-'+aba.id+'"></div>';
+  h+='<div><button class="btn" type="button" id="reset-'+aba.id+'">🔄 Reiniciar demo</button></div>';
+  h+='<div class="log" id="log-'+aba.id+'" aria-live="polite" aria-label="Resultado da demo"></div>';
+  h+='<details class="roteiro"><summary>🎤 Roteiro do apresentador</summary><p><strong>Passo 0:</strong> '+esc(aba.roteiroDemo.passo0)+'</p><ol>'+passos.map(function(p){return '<li><strong>'+esc(p.acao)+'</strong><br>Você vê: '+esc(p.ve)+'<br>Significa: '+esc(p.significa)+'</li>';}).join('')+'</ol></details></section>';
+  h+='<section class="quiz"><h3>🧠 Quiz da aba</h3><div class="termos">🔑 <strong>Termos deste quiz:</strong> '+esc(aba.termosQuiz)+'</div>';
+  aba.quiz.forEach(function(q,qi){
+    var alts=embaralhar(q.alts.slice());
+    h+='<div class="pergunta" data-aba="'+aba.id+'" data-q="'+qi+'"><p class="enun"><strong>'+(qi+1)+')</strong> '+esc(q.q)+'</p><div class="alts">';
+    alts.forEach(function(a){h+='<button type="button" class="alt" data-ok="'+(a.ok?'1':'0')+'" data-fb="'+esc(a.fb)+'">'+esc(a.t)+'</button>';});
+    h+='</div><div class="fb" aria-live="polite"></div></div>';
+  });
+  h+='</section>';
+  h+='<details class="aprof dicio"><summary>📖 Mini-dicionário desta aba</summary><dl>'+aba.dicionario.map(function(d){return '<dt>'+esc(d.termo)+'</dt><dd>'+esc(d.def)+'</dd>';}).join('')+'</dl></details>';
+  h+='<details class="aprof conceitos"><summary>🧩 Conceitos longos (para ler em casa)</summary>'+aba.conceitos.map(function(c){return '<div class="conceito"><h4>'+esc(c.titulo)+'</h4><p>'+esc(c.texto)+'</p><p class="analogia">'+esc(c.analogia)+'</p><p><strong>Exemplo real:</strong> '+esc(c.exemploReal)+'</p></div>';}).join('')+'</details>';
+  h+='<details class="aprof mito"><summary>🤔 Mito ou verdade?</summary><p><strong>'+esc(aba.mitoOuVerdade.afirmacao)+'</strong></p><p>🔮 Antes de clicar, preveja: isso é mito ou verdade?</p><button type="button" class="btn mito-btn" data-aba="'+aba.id+'">🔍 Conferir resposta</button><div class="fb" aria-live="polite"></div></details>';
+  h+='<details class="aprof buscas"><summary>🔎 Aprofundar: 3 buscas em português</summary><ul class="links">'+aba.aprofundar.map(function(l){return '<li><a href="'+esc(l.url)+'" target="_blank" rel="noopener">'+esc(l.rotulo)+'</a></li>';}).join('')+'</ul><p class="nota">Estes três links são os únicos que precisam de internet. Toda a aula funciona offline.</p></details>';
+  h+='</section>';
+  return h;
+}
+function painelRevisao(){
+  var r=AULA_DADOS.revisao,h='';
+  h+='<section class="painel" id="revisao" role="tabpanel" aria-labelledby="tab-revisao" tabindex="0" hidden>';
+  h+='<h2>🗺️ Revisão da aula</h2>';
+  h+='<div class="cartao"><h3>🗺️ Mapa da aula</h3><ol class="mapa">'+r.mapa.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ol></div>';
+  h+='<div class="cartao"><h3>🧾 Cola rápida (o glossário da revisão)</h3><table class="cola"><thead><tr><th>Termo</th><th>Em linguagem plana</th></tr></thead><tbody>'+r.cola.map(function(c){return '<tr><td><strong>'+esc(c.termo)+'</strong></td><td>'+esc(c.linha)+'</td></tr>';}).join('')+'</tbody></table></div>';
+  h+='<div class="chefao"><h3>🐉 Chefão</h3><p>'+esc(r.desafio)+'</p><p><label for="resp-chefao"><strong>Sua resposta (uma frase por item):</strong></label></p><textarea id="resp-chefao" rows="8" placeholder="Escreva aqui seus seis itens..."></textarea><button type="button" class="btn" id="btn-chefao">✔ Concluí o Chefão</button><div class="fb" id="fb-chefao" aria-live="polite"></div></div>';
+  h+='</section>';
+  return h;
+}
+function renderAbas(){
+  var tabs='',pans='';
+  ABAS.forEach(function(aba,i){
+    var badge=aba.estudoProprio?'<span class="selo-estudo">📖 Estudo próprio</span>':'';
+    tabs+='<button type="button" class="aba" role="tab" id="tab-'+aba.id+'" aria-controls="'+aba.id+'" aria-selected="false" tabindex="-1" data-alvo="'+aba.id+'"><span class="num">'+(i+1)+'</span>'+esc(aba.rotulo)+badge+'</button>';
+    pans+=painelAba(aba,i);
+  });
+  tabs+='<button type="button" class="aba" role="tab" id="tab-revisao" aria-controls="revisao" aria-selected="false" tabindex="-1" data-alvo="revisao">🗺️ Revisão</button>';
+  pans+=painelRevisao();
+  $('faixa').innerHTML=tabs;
+  $('paineis').innerHTML=pans;
+}
+
+/* ---------- NAVEGAÇÃO ---------- */
+function ativar(id,mudaHash){
+  if(IDS.indexOf(id)<0){id=ABAS[0].id;}
+  var bs=document.querySelectorAll('.aba'),i;
+  for(i=0;i<bs.length;i++){
+    var on=bs[i].getAttribute('data-alvo')===id;
+    bs[i].setAttribute('aria-selected',on?'true':'false');
+    bs[i].tabIndex=on?0:-1;
+    bs[i].classList.toggle('ativa',on);
+  }
+  var ps=document.querySelectorAll('.painel');
+  for(i=0;i<ps.length;i++){
+    var ativo=ps[i].id===id;
+    ps[i].classList.toggle('ativo',ativo);
+    ps[i].hidden=!ativo;
+  }
+  if(mudaHash&&location.hash!=='#'+id){location.hash=id;}
+  var b=$('tab-'+id);
+  if(b&&b.scrollIntoView){b.scrollIntoView({block:'nearest',inline:'center'});}
+}
+function vizinho(p){
+  var k=IDS.indexOf(location.hash.replace('#',''));
+  if(k<0){k=0;}
+  var n=(k+p+IDS.length)%IDS.length;
+  ativar(IDS[n],true);
+  var b=$('tab-'+IDS[n]);if(b){b.focus();}
+}
+
+/* ---------- QUIZ ---------- */
+function responderQuiz(btn){
+  var p=btn.closest('.pergunta');
+  if(!p||p.dataset.travada==='1'||btn.disabled){return;}
+  var fb=p.querySelector('.fb');
+  if(btn.dataset.ok==='1'){
+    btn.classList.add('certa');
+    btn.appendChild(document.createTextNode(' ✓'));
+    p.dataset.travada='1';
+    var ts=p.querySelectorAll('.alt');
+    for(var i=0;i<ts.length;i++){ts[i].disabled=true;}
+    fb.className='fb ok';
+    fb.innerHTML='✅ <strong>Por que esta está certa:</strong> '+esc(btn.dataset.fb);
+    xp(p.dataset.errou==='1'?5:10);
+    acertos[p.dataset.aba][Number(p.dataset.q)]=true;
+    progresso();
+  }else{
+    btn.classList.add('errada');
+    btn.appendChild(document.createTextNode(' ✗'));
+    btn.disabled=true;
+    p.dataset.errou='1';
+    fb.className='fb erro';
+    fb.innerHTML='❌ <strong>Por que esta está errada:</strong> '+esc(btn.dataset.fb)+'<br><em>As outras alternativas continuam liberadas: tente de novo.</em>';
+  }
+}
+function abrirMito(btn){
+  var aba=null,i;
+  for(i=0;i<ABAS.length;i++){if(ABAS[i].id===btn.dataset.aba){aba=ABAS[i];}}
+  if(!aba){return;}
+  var box=btn.parentNode.querySelector('.fb'),m=aba.mitoOuVerdade;
+  box.className='fb ok';
+  box.innerHTML=(m.verdade?'✅ <strong>Verdade.</strong> ':'🚫 <strong>Mito.</strong> ')+esc(m.explicacao);
+  btn.disabled=true;
+}
+function chefao(){
+  var txt=$('resp-chefao').value.trim(),fb=$('fb-chefao');
+  if(txt.length<40){
+    fb.className='fb erro';
+    fb.innerHTML='❌ <strong>Ainda não:</strong> escreva ao menos uma frase para cada um dos seis itens. Use a cola rápida logo acima para conferir os termos.';
+    return;
+  }
+  fb.className='fb ok';
+  fb.innerHTML='✅ <strong>Chefão registrado.</strong> Confira com a cola rápida: cada item precisa dizer a restrição, a escolha de projeto e um caso real. Leve este texto para a discussão em sala.';
+  addSelo('🐉 Chefão enfrentado');
+}
+function addSelo(s){
+  if(selos.indexOf(s)>=0){return;}
+  selos.push(s);
+  $('selos').innerHTML=selos.map(function(x){return '<span class="selo">'+esc(x)+'</span>';}).join('');
+  toast('🏅 Novo selo: '+s);
+}
+function progresso(){
+  var feitos=0,i,j;
+  for(i=0;i<ABAS.length;i++){
+    var a=ABAS[i],c=0;
+    for(j=0;j<3;j++){if(acertos[a.id][j]){c++;feitos++;}}
+    if(c===3){addSelo('🏅 '+a.rotulo);}
+  }
+  $('progTexto').textContent='Progresso: '+num(feitos)+' de '+num(TOTAL)+' perguntas';
+  $('progBarra').style.width=(feitos/TOTAL*100)+'%';
+  var sala=true,casa=true;
+  for(i=0;i<ABAS.length;i++){
+    var ok=acertos[ABAS[i].id][0]&&acertos[ABAS[i].id][1]&&acertos[ABAS[i].id][2];
+    if(i<5&&!ok){sala=false;}
+    if(i>=5&&!ok){casa=false;}
+  }
+  if(sala){addSelo('🏁 Trilha de sala completa');}
+  if(casa){addSelo('📚 Estudioso');}
+}
+
+/* ---------- DEMOS ---------- */
+function novoEstado(aba){
+  var cfg=aba.demo.config,i;
+  switch(aba.demo.tipo){
+    case 'cenario': return {r:0,errou:false,feita:false,erradas:[],historico:[],fim:false};
+    case 'prazo': return {cen:0,tipico:8,jitter:4};
+    case 'placa':
+      var b={};
+      for(i=0;i<cfg.blocos.length;i++){b[cfg.blocos[i].id]=(cfg.blocos[i].id==='gpio');}
+      return {proj:0,blocos:b,acordado:5};
+    case 'firmware': return {teste:false,watchdog:false,volta:false,passo:-1,rodando:false,fim:null};
+    case 'rtos': return {modo:'fifo',cells:[],perdas:0,rodado:false,resultados:[]};
+  }
+  return {};
+}
+function logar(ctx,tipo,titulo,texto){
+  var d=document.createElement('div');
+  d.className='msg '+tipo;
+  d.innerHTML='<strong>'+esc(titulo)+'</strong> '+esc(texto);
+  ctx.log.appendChild(d);
+  while(ctx.log.children.length>14){ctx.log.removeChild(ctx.log.firstChild);}
+  ctx.log.scrollTop=ctx.log.scrollHeight;
+}
+function limparTimers(ctx){for(var i=0;i<ctx.timers.length;i++){clearTimeout(ctx.timers[i]);}ctx.timers=[];}
+function tog(act,id,nome,on,dis){
+  return '<button type="button" class="btn tog'+(on?' on':'')+'" data-act="'+act+'" data-arg="'+id+'" aria-pressed="'+(on?'true':'false')+'"'+(dis?' disabled':'')+'>'+(on?'✅ ':'⬜ ')+esc(nome)+'</button>';
+}
+function guia(cfg){
+  if(!cfg.observa){return '';}
+  return '<div class="observa"><strong>👀 O que observar:</strong><ul>'+cfg.observa.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';
+}
+/* cenário */
+function pintaCenario(ctx){
+  var cfg=ctx.aba.demo.config,st=ctx.st,h='';
+  st.historico.forEach(function(it){h+='<div class="msg ok">✅ <strong>'+esc(it.s)+'</strong><br>Resposta registrada: '+esc(it.e)+'</div>';});
+  if(st.fim){return h+'<div class="msg ok">🏁 '+esc(cfg.resumo)+'</div>';}
+  var r=cfg.rodadas[st.r];
+  h+='<p><strong>Situação '+(st.r+1)+' de '+cfg.rodadas.length+':</strong> '+esc(r.situacao)+'</p>';
+  h+='<p><strong>'+esc(r.pergunta)+'</strong></p><div class="alts">';
+  r.opcoes.forEach(function(o,i){
+    var usada=st.erradas.indexOf(i)>=0,cl='alt',sf='';
+    if(usada){cl+=' errada';sf=' ✗';}
+    if(st.feita&&o.ok){cl+=' certa';sf=' ✓';}
+    h+='<button type="button" class="'+cl+'" data-act="responder" data-arg="'+i+'" data-fb="'+esc(o.fb)+'"'+((usada||st.feita)?' disabled':'')+'>'+esc(o.t)+sf+'</button>';
+  });
+  h+='</div>';
+  if(st.feita){h+='<button type="button" class="btn" data-act="proxima">Próxima situação ▶</button>';}
+  return h;
+}
+/* prazo: controles fixos + saída parcial (permite arrastar sem interrupção) */
+function saidaPrazo(ctx){
+  var cfg=ctx.aba.demo.config,st=ctx.st,c=cfg.cenarios[st.cen],h='';
+  var pior=st.tipico+st.jitter,folga=c.prazo-pior,cumpre=pior<=c.prazo;
+  h+='<div class="grade"><div class="metrica"><b>'+num(c.prazo)+' ms</b>Prazo do cenário</div>';
+  h+='<div class="metrica"><b>'+num(pior)+' ms</b>Pior caso</div>';
+  h+='<div class="metrica"><b>'+num(folga)+' ms</b>Folga (pode ser negativa)</div></div>';
+  h+='<div class="barra"><i style="width:'+Math.min(100,pior/c.prazo*100)+'%"></i></div>';
+  h+='<p class="nota">A barra mostra quanto do prazo o pior caso ocupa. Passar de 100% significa prazo estourado.</p>';
+  h+='<div class="msg '+(cumpre?'ok':'erro')+'"><strong>'+(cumpre?'✅ Prazo cumprido no pior caso.':'❌ Prazo estourado no pior caso.')+'</strong> '+esc(cumpre?c.cumpre:c.fura)+'<br><em>'+esc(c.exemplo)+'</em></div>';
+  return h+guia(cfg);
+}
+function pintaPrazo(ctx){
+  var cfg=ctx.aba.demo.config,st=ctx.st,h='';
+  h+='<p><strong>Escolha o cenário:</strong> ';
+  cfg.cenarios.forEach(function(x,i){h+='<button type="button" class="btn tog'+(st.cen===i?' on':'')+'" data-act="cen" data-arg="'+i+'">'+esc(x.nome)+'</button>';});
+  h+='</p>';
+  h+='<label class="rotulo-slider" for="tip-'+ctx.aba.id+'">Atraso típico: <span id="val-tip-'+ctx.aba.id+'">'+num(st.tipico)+'</span> ms</label>';
+  h+='<input type="range" id="tip-'+ctx.aba.id+'" data-slider="tipico" min="1" max="120" step="1" value="'+st.tipico+'">';
+  h+='<label class="rotulo-slider" for="jit-'+ctx.aba.id+'">Variação de atraso (jitter): <span id="val-jit-'+ctx.aba.id+'">'+num(st.jitter)+'</span> ms</label>';
+  h+='<input type="range" id="jit-'+ctx.aba.id+'" data-slider="jitter" min="0" max="60" step="1" value="'+st.jitter+'">';
+  h+='<div id="saida-'+ctx.aba.id+'">'+saidaPrazo(ctx)+'</div>';
+  return h;
+}
+/* placa: controles fixos + saída parcial */
+function saidaPlaca(ctx){
+  var cfg=ctx.aba.demo.config,st=ctx.st,h='';
+  var faz=[],falta=[];
+  cfg.blocos.forEach(function(b){if(st.blocos[b.id]){faz.push(b.faz);}});
+  cfg.projetos[st.proj].precisa.forEach(function(id){
+    if(!st.blocos[id]){
+      cfg.blocos.forEach(function(b){if(b.id===id){falta.push(b.nome);}});
+    }
+  });
+  h+='<div class="no ok"><strong>O que a placa já consegue fazer:</strong> '+esc(faz.length?faz.join('; '):'nada ainda')+'</div>';
+  if(falta.length){h+='<div class="no erro"><strong>Para este projeto ainda falta:</strong> '+esc(falta.join('; '))+'. Sem esses blocos, a função teria de ser improvisada por software, gastando processador e energia.</div>';}
+  else{h+='<div class="no ok"><strong>Todos os blocos do projeto estão ligados.</strong> O projeto escolhido pode ser implementado com periféricos adequados.</div>';}
+  var mA=st.blocos.radio?cfg.acordadoComRadio:cfg.acordadoSemRadio;
+  var medio=(mA*st.acordado+cfg.sono*(60-st.acordado))/60;
+  var dias=cfg.bateria/medio/24;
+  h+='<div class="grade"><div class="metrica"><b>'+num(mA)+' mA</b>Corrente acordado</div>';
+  h+='<div class="metrica"><b>'+num(medio)+' mA</b>Consumo médio</div>';
+  h+='<div class="metrica"><b>'+num(dias)+' dias</b>Bateria de '+num(cfg.bateria)+' mAh</div></div>';
+  h+='<p><em>Em palavras: o consumo médio é a corrente acordado pesada pelo tempo acordado, mais a corrente dormindo pesada pelo tempo dormindo.</em></p>';
+  return h+guia(cfg);
+}
+function pintaPlaca(ctx){
+  var cfg=ctx.aba.demo.config,st=ctx.st,h='';
+  h+='<p><strong>Projeto:</strong> ';
+  cfg.projetos.forEach(function(p,k){h+='<button type="button" class="btn tog'+(st.proj===k?' on':'')+'" data-act="proj" data-arg="'+k+'">'+esc(p.nome)+'</button>';});
+  h+='</p><p class="nota">'+esc(cfg.projetos[st.proj].desc)+'</p><p>';
+  cfg.blocos.forEach(function(b){h+=tog('bloco',b.id,b.nome,st.blocos[b.id]);});
+  h+='</p>';
+  h+='<label class="rotulo-slider" for="ac-'+ctx.aba.id+'">Tempo acordado por minuto: <span id="val-ac-'+ctx.aba.id+'">'+num(st.acordado)+'</span> s (o resto dormindo)</label>';
+  h+='<input type="range" id="ac-'+ctx.aba.id+'" data-slider="acordado" min="1" max="60" step="1" value="'+st.acordado+'">';
+  h+='<div id="saida-'+ctx.aba.id+'">'+saidaPlaca(ctx)+'</div>';
+  return h;
+}
+/* firmware */
+function pintaFirmware(ctx){
+  var cfg=ctx.aba.demo.config,st=ctx.st,h='';
+  h+='<p>'+tog('toggle','teste','🔬 Teste no aparelho real antes de entregar',st.teste,st.rodando);
+  h+=tog('toggle','watchdog','🐕 Cão de guarda (watchdog) ligado',st.watchdog,st.rodando);
+  h+=tog('toggle','volta','↩️ Atualização com caminho de volta',st.volta,st.rodando)+'</p>';
+  h+='<p><button type="button" class="btn" data-act="rodar"'+(st.rodando?' disabled':'')+'>▶ Gravar e rodar</button></p>';
+  cfg.etapas.forEach(function(e,i){
+    var cl='no';
+    if(st.passo===i){cl+=' atual';}
+    else if(st.passo>i){
+      var ruim=(i===2&&!st.teste)||(i===3&&!st.watchdog)||(i===4&&!st.volta);
+      cl+=ruim?' erro':' ok';
+    }
+    h+='<div class="'+cl+'">'+(st.passo===i?'👉 ':(st.passo>i?'✔️ ':'⬜ '))+esc(e.nome)+'</div>';
+  });
+  if(st.fim){h+='<div class="msg '+st.fim.k+'"><strong>'+esc(st.fim.t)+'</strong> '+esc(st.fim.x)+'<br><em>'+esc(cfg.exemplo)+'</em></div>';}
+  return h+guia(cfg);
+}
+function rodarFirmware(ctx){
+  if(ctx.st.rodando){return;}
+  limparTimers(ctx);
+  var st=ctx.st,cfg=ctx.aba.demo.config;
+  st.rodando=true;st.passo=0;st.fim=null;ctx.pinta();
+  logar(ctx,'info','▶ Ciclo iniciado.','Acompanhe da compilação cruzada até a atualização em campo.');
+  function passo(){
+    var s=ctx.st,i=s.passo;
+    if(i>=cfg.etapas.length){fimFirmware(ctx);return;}
+    var e=cfg.etapas[i],txt=e.txt,ruim=false;
+    if(i===2){ruim=!s.teste;txt=ruim?e.ruim:e.bom;}
+    if(i===3){ruim=!s.watchdog;txt=ruim?e.ruim:e.bom;}
+    if(i===4){ruim=!s.volta;txt=ruim?e.ruim:e.bom;}
+    logar(ctx,ruim?'erro':'ok',e.nome,txt);
+    s.passo=i+1;ctx.pinta();
+    ctx.timers.push(setTimeout(passo,900));
+  }
+  ctx.timers.push(setTimeout(passo,450));
+}
+function fimFirmware(ctx){
+  limparTimers(ctx);
+  var st=ctx.st,cfg=ctx.aba.demo.config;
+  st.rodando=false;
+  st.passo=cfg.etapas.length;
+  var pontos=(st.teste?1:0)+(st.watchdog?1:0)+(st.volta?1:0);
+  st.fim={k:pontos===3?'ok':'erro',
+    t:pontos===3?'Produto protegido de ponta a ponta.':'Produto entregue com '+num(3-pontos)+' proteção(ões) faltando.',
+    x:pontos===3?'Testado no alvo, com cão de guarda e caminho de volta: o travamento vira um reinício, e a atualização defeituosa vira um retorno à versão anterior.':'Cada proteção desligada é um caminho para o produto parar na casa do cliente. Ligue as três e rode de novo para comparar.'};
+  logar(ctx,st.fim.k,st.fim.t,st.fim.x);
+  ctx.pinta();
+}
+/* rtos */
+function simulaRTOS(cfg,modo){
+  var ts=[],i,t;
+  for(i=0;i<cfg.tarefas.length;i++){
+    ts.push({id:cfg.tarefas[i].id,p:cfg.tarefas[i].p,e:cfg.tarefas[i].e,rest:0,dl:0,chegada:-1,ativa:false});
+  }
+  var cells=[],perdas=0,atual=null;
+  for(t=0;t<cfg.tiques;t++){
+    for(i=0;i<ts.length;i++){
+      if(t%ts[i].p===0){ts[i].rest=ts[i].e;ts[i].dl=t+ts[i].p;ts[i].chegada=t;ts[i].ativa=true;}
+    }
+    var escolhida=null;
+    if(modo==='preemp'){
+      for(i=0;i<ts.length;i++){
+        if(ts[i].ativa&&ts[i].rest>0){if(!escolhida||ts[i].p<escolhida.p){escolhida=ts[i];}}
+      }
+    }else{
+      if(atual&&atual.rest>0&&atual.ativa){escolhida=atual;}
+      else{
+        for(i=0;i<ts.length;i++){
+          var x=ts[i];
+          if(x.ativa&&x.rest>0){
+            if(!escolhida||x.chegada<escolhida.chegada||(x.chegada===escolhida.chegada&&cfg.ordem.indexOf(x.id)<cfg.ordem.indexOf(escolhida.id))){escolhida=x;}
+          }
+        }
+      }
+    }
+    var cell={t:t,id:escolhida?escolhida.id:null,perda:false};
+    if(escolhida){escolhida.rest--;atual=escolhida;}
+    for(i=0;i<ts.length;i++){
+      if(ts[i].ativa&&ts[i].rest>0&&ts[i].dl===t+1){
+        perdas++;cell.perda=true;ts[i].ativa=false;
+        if(atual===ts[i]){atual=null;}
+      }
+    }
+    cells.push(cell);
+  }
+  return {cells:cells,perdas:perdas};
+}
+function pintaRTOS(ctx){
+  var cfg=ctx.aba.demo.config,st=ctx.st,h='';
+  h+='<p><strong>Política do escalonador:</strong> ';
+  cfg.modos.forEach(function(m){h+='<button type="button" class="btn tog'+(st.modo===m.id?' on':'')+'" data-act="modo" data-arg="'+m.id+'">'+esc(m.nome)+'</button>';});
+  h+='</p><p><button type="button" class="btn" data-act="rodar">▶ Rodar '+num(cfg.tiques)+' tiques</button></p>';
+  h+='<ul>';
+  cfg.tarefas.forEach(function(x){h+='<li><strong>'+esc(x.id)+'</strong> — '+esc(x.nome)+': período '+num(x.p)+', duração '+num(x.e)+'</li>';});
+  h+='</ul>';
+  var u=0;
+  cfg.tarefas.forEach(function(x){u+=x.e/x.p;});
+  h+='<div class="grade"><div class="metrica"><b>'+num(u*100)+'%</b>Utilização pedida</div>';
+  h+='<div class="metrica"><b>'+(st.rodado?num(st.perdas):'—')+'</b>Prazos perdidos</div></div>';
+  h+='<p class="nota">Em palavras: utilização é a soma de duração ÷ período. Abaixo de 100% ainda existe tempo; a política decide se ele é bem aproveitado.</p>';
+  if(st.rodado){
+    h+='<div class="linha-tempo">';
+    st.cells.forEach(function(c){
+      var cl='tique'+(c.id?' '+c.id.toLowerCase():'')+(c.perda?' perda':'');
+      h+='<div class="'+cl+'" title="tique '+num(c.t)+'">'+(c.id||'–')+'</div>';
+    });
+    h+='</div>';
+    h+='<div class="msg '+(st.perdas?'erro':'ok')+'"><strong>'+(st.perdas?'❌ '+num(st.perdas)+' prazo(s) perdido(s).':'✅ Nenhum prazo perdido.')+'</strong> '+
+      (st.perdas?'A tarefa curta esperou a longa terminar e estourou o prazo. Troque para o modo com preempção e compare.':
+      'A tarefa curta interrompeu a longa sempre que chegou, e as duas cumpriram seus prazos. Exemplo real: é assim que o FreeRTOS (sistema de tempo real mantido pela AWS) organiza tarefas por prioridade.')+'</div>';
+  }
+  if(st.resultados.length){
+    h+='<table><thead><tr><th>Política</th><th>Prazos perdidos em '+num(cfg.tiques)+' tiques</th></tr></thead><tbody>';
+    st.resultados.forEach(function(r){h+='<tr><td>'+esc(r.nome)+'</td><td>'+num(r.perdas)+'</td></tr>';});
+    h+='</tbody></table>';
+  }
+  return h+guia(cfg);
+}
+function rodarRTOS(ctx){
+  var st=ctx.st,cfg=ctx.aba.demo.config;
+  var r=simulaRTOS(cfg,st.modo);
+  st.cells=r.cells;st.perdas=r.perdas;st.rodado=true;
+  var nome='';
+  cfg.modos.forEach(function(m){if(m.id===st.modo){nome=m.nome;}});
+  var achou=false;
+  st.resultados.forEach(function(x){if(x.id===st.modo){x.perdas=r.perdas;achou=true;}});
+  if(!achou){st.resultados.push({id:st.modo,nome:nome,perdas:r.perdas});}
+  logar(ctx,r.perdas?'erro':'ok','▶ '+nome,r.perdas?'Foram '+num(r.perdas)+' execuções descartadas por prazo estourado. A borda vermelha marca onde aconteceu.':'Todas as execuções terminaram antes do prazo. A carga é a mesma do outro modo: o que mudou foi a política.');
+  ctx.pinta();
+}
+function pintaDemo(ctx){
+  switch(ctx.aba.demo.tipo){
+    case 'cenario': return pintaCenario(ctx);
+    case 'prazo': return pintaPrazo(ctx);
+    case 'placa': return pintaPlaca(ctx);
+    case 'firmware': return pintaFirmware(ctx);
+    case 'rtos': return pintaRTOS(ctx);
+  }
+  return '';
+}
+function agir(ctx,act,arg){
+  var st=ctx.st,cfg=ctx.aba.demo.config,tipo=ctx.aba.demo.tipo;
+  if(act==='responder'&&tipo==='cenario'){
+    var r=cfg.rodadas[st.r],o=r.opcoes[Number(arg)];
+    if(o.ok){st.feita=true;logar(ctx,'ok','✅ Por que esta está certa:',o.fb);xp(st.errou?5:10);}
+    else{
+      if(st.erradas.indexOf(Number(arg))<0){st.erradas.push(Number(arg));}
+      st.errou=true;
+      logar(ctx,'erro','❌ Por que esta está errada:',o.fb+' As outras opções continuam liberadas.');
+    }
+    ctx.pinta();return;
+  }
+  if(act==='proxima'){
+    var rr=cfg.rodadas[st.r],certa='';
+    rr.opcoes.forEach(function(o){if(o.ok){certa=o.t;}});
+    st.historico.push({s:rr.situacao,e:certa});
+    st.r++;st.errou=false;st.feita=false;st.erradas=[];
+    if(st.r>=cfg.rodadas.length){st.fim=true;logar(ctx,'ok','🏁 Resumo da demo.',cfg.resumo);}
+    ctx.pinta();return;
+  }
+  if(act==='cen'){
+    st.cen=Number(arg);
+    logar(ctx,'info','Cenário: '+cfg.cenarios[st.cen].nome,cfg.cenarios[st.cen].exemplo);
+    ctx.pinta();return;
+  }
+  if(act==='proj'){
+    st.proj=Number(arg);
+    logar(ctx,'info','Projeto escolhido.',cfg.projetos[st.proj].desc+' Ligue os blocos que ele pede e observe os avisos.');
+    ctx.pinta();return;
+  }
+  if(act==='bloco'){
+    st.blocos[arg]=!st.blocos[arg];
+    var nome='',faz='';
+    cfg.blocos.forEach(function(b){if(b.id===arg){nome=b.nome;faz=b.faz;}});
+    logar(ctx,'info',nome+(st.blocos[arg]?' ligado.':' desligado.'),'Este bloco serve para '+faz+'. Exemplo real: placas como o ESP32 (chip da Espressif) trazem esses blocos prontos.');
+    ctx.pinta();return;
+  }
+  if(act==='toggle'){
+    st[arg]=!st[arg];
+    logar(ctx,'info','Proteção alterada.','Rode o ciclo e compare o que acontece no travamento e na atualização em campo.');
+    ctx.pinta();return;
+  }
+  if(act==='rodar'&&tipo==='firmware'){rodarFirmware(ctx);return;}
+  if(act==='modo'){
+    st.modo=arg;st.rodado=false;st.cells=[];st.perdas=0;
+    logar(ctx,'info','Política alterada.','Rode os tiques e compare os prazos perdidos com a política anterior.');
+    ctx.pinta();return;
+  }
+  if(act==='rodar'&&tipo==='rtos'){rodarRTOS(ctx);return;}
+}
+function ligarDemos(){
+  ABAS.forEach(function(aba){
+    var ctx={aba:aba,st:novoEstado(aba),palco:$('palco-'+aba.id),log:$('log-'+aba.id),timers:[]};
+    ctx.pinta=function(){ctx.palco.innerHTML=pintaDemo(ctx);};
+    ctx.palco.addEventListener('click',function(e){
+      var b=e.target.closest('[data-act]');
+      if(!b||b.disabled){return;}
+      agir(ctx,b.getAttribute('data-act'),b.getAttribute('data-arg'));
+    });
+    ctx.palco.addEventListener('input',function(e){
+      var s=e.target;
+      if(!(s.hasAttribute&&s.hasAttribute('data-slider'))){return;}
+      var k=s.getAttribute('data-slider'),id=s.id;
+      ctx.st[k]=Number(s.value);
+      var span=document.getElementById('val-'+id);
+      if(span){span.textContent=num(ctx.st[k]);}
+      var out=document.getElementById('saida-'+ctx.aba.id);
+      if(out){
+        out.innerHTML=(ctx.aba.demo.tipo==='prazo')?saidaPrazo(ctx):saidaPlaca(ctx);
+      }else{
+        ctx.pinta();
+      }
+    });
+    $('reset-'+aba.id).addEventListener('click',function(){
+      limparTimers(ctx);
+      ctx.st=novoEstado(aba);
+      ctx.log.innerHTML='';
+      ctx.pinta();
+      logar(ctx,'info','🔄 Demo reiniciada.','Antes de clicar, preveja de novo: mude uma escolha e compare o resultado com o da rodada anterior.');
+    });
+    ctx.pinta();
+  });
+}
+
+/* ---------- MODOS ---------- */
+function ligarModos(){
+  var apresentacao=false,escuroAntes=false;
+  $('btnModo').addEventListener('click',function(){
+    apresentacao=!apresentacao;
+    document.body.classList.toggle('apresentacao',apresentacao);
+    this.textContent=apresentacao?'📖 Leitura':'🎤 Apresentação';
+    this.setAttribute('aria-pressed',apresentacao?'true':'false');
+    var rs=document.querySelectorAll('details.roteiro');
+    for(var i=0;i<rs.length;i++){rs[i].open=apresentacao;}
+    if(apresentacao){
+      escuroAntes=document.body.classList.contains('escuro');
+      document.body.classList.remove('escuro');
+      $('btnEscuro').disabled=true;
+      $('btnEscuro').setAttribute('aria-pressed','false');
+      toast('🎤 Modo Apresentação: fonte maior, roteiros abertos, setas navegam');
+    }else{
+      $('btnEscuro').disabled=false;
+      if(escuroAntes){document.body.classList.add('escuro');$('btnEscuro').setAttribute('aria-pressed','true');}
+      toast('📖 Modo Leitura');
+    }
+  });
+  $('btnEscuro').addEventListener('click',function(){
+    var on=!document.body.classList.contains('escuro');
+    document.body.classList.toggle('escuro',on);
+    this.textContent=on?'☀️ Claro':'🌙 Escuro';
+    this.setAttribute('aria-pressed',on?'true':'false');
+  });
+}
+
+/* ---------- INIT ---------- */
+function init(){
+  renderAbas();
+  ligarDemos();
+  ligarModos();
+  $('paineis').addEventListener('click',function(e){
+    var alt=e.target.closest('.alt');
+    if(alt&&alt.closest('.pergunta')){responderQuiz(alt);return;}
+    var mb=e.target.closest('.mito-btn');
+    if(mb){abrirMito(mb);return;}
+    if(e.target.closest('#btn-chefao')){chefao();}
+  });
+  $('faixa').addEventListener('click',function(e){
+    var b=e.target.closest('.aba');
+    if(!b){return;}
+    ativar(b.getAttribute('data-alvo'),true);
+  });
+  document.addEventListener('keydown',function(e){
+    var t=e.target,tag=t.tagName;
+    if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||t.isContentEditable){return;}
+    if(e.key==='ArrowRight'){vizinho(1);e.preventDefault();}
+    else if(e.key==='ArrowLeft'){vizinho(-1);e.preventDefault();}
+    else if(e.key==='Home'){ativar(IDS[0],true);e.preventDefault();}
+    else if(e.key==='End'){ativar(IDS[IDS.length-1],true);e.preventDefault();}
+  });
+  window.addEventListener('hashchange',function(){
+    var id=location.hash.replace('#','');
+    if(IDS.indexOf(id)>=0){ativar(id,false);}
+  });
+  var inicial=location.hash.replace('#','');
+  if(IDS.indexOf(inicial)<0){inicial=ABAS[0].id;}
+  ativar(inicial,false);
+  progresso();
+}
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init);}else{init();}
+})();
+</script>
+</body>
+</html>
