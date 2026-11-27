@@ -2,9 +2,9 @@
 
 Jogo de revisão de História para o 6º ano do Ensino Fundamental: Grécia Antiga, Roma Antiga e Idade Média.
 
-O aluno é um viajante do tempo cuja máquina quebrou. Para voltar para casa, ele recupera 15 engrenagens ajudando personagens fictícios de cada época, com cenários ilustrados, vidas, moedas, combos, dicas, sons (com botão de mudo), um Modo Desafio com cronômetro e uma fase final contra o relógio.
+O aluno é um viajante do tempo cuja máquina quebrou. Para voltar para casa, ele recupera 16 engrenagens ajudando personagens fictícios de cada época, com cenários ilustrados, vidas, moedas, combos, dicas, sons (com botão de mudo), um Modo Desafio com cronômetro e uma fase final contra o relógio.
 
-São 15 fases: 10 para as questões das atividades suplementares e 5 extras para as habilidades e capítulos que as questões não cobrem (período helenístico, cristianismo, mulheres na Antiguidade, reinos germânicos, e escravidão × servidão × trabalho livre). Em cada fase o aluno:
+São 16 fases: 10 para as questões das atividades suplementares, 5 extras para as habilidades e capítulos que as questões não cobrem (período helenístico, cristianismo, mulheres na Antiguidade, reinos germânicos, e escravidão × servidão × trabalho livre) e uma de tempo histórico (a.C./d.C. e séculos). Em cada fase o aluno:
 
 1. joga um minijogo (classificar, verdadeiro ou falso, ligar pares, ordenar ou quiz);
 2. ganha até 3 estrelas e desbloqueia palavras do **dicionário histórico**;
@@ -20,6 +20,11 @@ Além das fases:
 - **Feedback que ensina:** cada erro mostra uma pista específica, sem entregar a resposta.
 - **Revisar meus erros:** as perguntas erradas vão para uma revisão sem relógio, e o Desafio Final prioriza essas perguntas.
 - **Leitura apoiada:** palavras do dicionário aparecem sublinhadas nos textos e mostram o significado ao tocar; o botão 🔈 lê o texto em voz alta.
+- **Fontes históricas:** trechos adaptados (Péricles, Lei das Doze Tábuas, Adalberão de Laon, registro de obrigações feudais) com perguntas de interpretação.
+- **Mapa do Mediterrâneo:** na questão 5, o aluno arrasta os produtos até as regiões do mapa.
+- **Linha do tempo:** painel com os principais acontecimentos e a explicação de a.C., d.C. e séculos.
+- **Meu desempenho:** relatório de acertos por habilidade da BNCC e por fase, para imprimir.
+- **Acessibilidade:** botões de letra grande (Aa) e alto contraste (◐).
 - **Meu dicionário:** o aluno anota as palavras que não conhecia. Pode ser impresso.
 
 ## Como publicar no GitHub Pages
