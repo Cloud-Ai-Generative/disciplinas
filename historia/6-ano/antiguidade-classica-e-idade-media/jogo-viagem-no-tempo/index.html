@@ -943,7 +943,8 @@ function renderTitle(){
     <h1>Viagem no Tempo</h1><h2 style="color:#fff">da Pólis ao Feudo</h2>
     <p>Sua máquina do tempo quebrou e as <b>${NL} engrenagens</b> se espalharam pela Grécia, por Roma e pela Idade Média.</p>
     <p>Ajude as pessoas de cada época para recuperar as engrenagens. No final, enfrente o <b>Desafio da Máquina</b> para voltar para casa!</p>
-    <div class="row" style="justify-content:center"><button class="btn gold" onclick="SFX.win();go('map')">${gears()?"Continuar viagem ▶":"Começar viagem ▶"}</button></div>
+    <div class="row" style="justify-content:center"><button class="btn gold" onclick="SFX.win();go('map')">${gears()?"Continuar viagem ▶":"Começar viagem ▶"}</button>${gears()||S.coins?`<button class="btn sec" onclick="askReset()">↺ Começar do zero</button>`:""}</div>
+    ${gears()?`<p class="counter" style="color:#cfc4ee">Você já recuperou ${gears()} de ${NL} engrenagens.</p>`:""}
     <div class="card" style="text-align:left;margin-top:18px">
       <h3>Como jogar</h3>
       <p>❤️ Você tem <b>3 vidas</b> por fase. Cada erro custa uma.<br>
@@ -985,7 +986,7 @@ function renderMap(){
       ${gearIcon(S.boss)}<span><small>Fase final · perguntas das 3 eras contra o relógio</small><b>Religar a máquina do tempo</b></span>
       <span class="st">${S.boss?"🏆":(bossOk?"▶":"🔒")}</span>
       ${bossOk&&!S.boss?`<span class="traveler">${charSVG(TRAVELER,40)}</span>`:""}</button></div></section>
-  <div class="row" style="justify-content:center"><button class="btn sec" onclick="if(confirm('Apagar todo o progresso?')){S={stars:{},coins:0,sound:S.sound,desafio:false,boss:false};save();go('title')}">Recomeçar do zero</button></div>`;
+  <div class="row" style="justify-content:center"><button class="btn sec" onclick="askReset()">↺ Começar do zero</button></div>`;
   app.innerHTML=h;
   const c=document.querySelector(".node.cur"); if(c && gears()) c.scrollIntoView({block:"center"});
 }
@@ -1101,6 +1102,24 @@ function secondChance(){
     else gameOver(`Não foi dessa vez.`, missed);
   };
   ask();
+}
+function askReset(){
+  SFX.click();
+  const ov=document.createElement("div"); ov.className="overlay";
+  ov.innerHTML=`<div class="card pop"><div style="font-size:2.4rem;text-align:center">↺</div><h2 style="text-align:center">Começar do zero?</h2>
+    <p>Escolha o que você quer apagar:</p>
+    <div class="opts">
+      <button class="opt" data-m="game"><b>🎮 Só o jogo</b><br><span class="counter">Zera fases, estrelas, moedas, vidas reserva e erros. <b>Mantém</b> minhas respostas, meu dicionário e a trilha.</span></button>
+      <button class="opt" data-m="all"><b>🗑️ Apagar tudo</b><br><span class="counter">Zera o jogo <b>e também</b> as respostas escritas, o meu dicionário e a trilha. Bom para outro aluno usar este aparelho.</span></button>
+      <button class="opt" data-m="no">✖ Cancelar</button>
+    </div></div>`;
+  document.body.appendChild(ov);
+  ov.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+    const m=b.dataset.m; ov.remove(); if(m==="no") return;
+    const keep={sound:S.sound, big:S.big, hc:S.hc};
+    if(m==="game") Object.assign(keep,{resp:S.resp, mydict:S.mydict, check:S.check});
+    S=Object.assign({stars:{}, coins:0, desafio:false, boss:false}, keep); save(); SFX.win(); go("title");
+  });
 }
 function gameOver(why, missed){
   G.over=true; stopTimer(); SFX.lose();
