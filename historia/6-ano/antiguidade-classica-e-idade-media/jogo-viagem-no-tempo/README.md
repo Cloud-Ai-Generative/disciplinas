@@ -2,15 +2,20 @@
 
 Jogo de revisão de História para o 6º ano do Ensino Fundamental: Grécia Antiga, Roma Antiga e Idade Média.
 
-O aluno é um viajante do tempo cuja máquina quebrou. Para voltar para casa, ele recupera 10 engrenagens ajudando personagens fictícios de cada época, com cenários ilustrados, vidas, moedas, combos, dicas, sons (com botão de mudo), um Modo Desafio com cronômetro e uma fase final contra o relógio.
+O aluno é um viajante do tempo cuja máquina quebrou. Para voltar para casa, ele recupera 15 engrenagens ajudando personagens fictícios de cada época, com cenários ilustrados, vidas, moedas, combos, dicas, sons (com botão de mudo), um Modo Desafio com cronômetro e uma fase final contra o relógio.
 
-São 10 fases, uma para cada questão da trilha de estudos. Em cada fase o aluno:
+São 15 fases: 10 para as questões das atividades suplementares e 5 extras para as habilidades e capítulos que as questões não cobrem (período helenístico, cristianismo, mulheres na Antiguidade, reinos germânicos, e escravidão × servidão × trabalho livre). Em cada fase o aluno:
 
 1. joga um minijogo (classificar, verdadeiro ou falso, ligar pares, ordenar ou quiz);
 2. ganha até 3 estrelas e desbloqueia palavras do **dicionário histórico**;
 3. vê a questão original, um roteiro de como montar a resposta e um **exemplo de resposta** comentado, para depois escrever com as próprias palavras no caderno.
 
 Habilidades da BNCC: EF06HI09, EF06HI10, EF06HI12, EF06HI13, EF06HI15, EF06HI16, EF06HI17 e EF06HI19.
+
+Além das fases:
+
+- **Trilha:** checklist de cada capítulo (leitura, síntese, vídeos, questões do livro, Eureka e avaliações), com um roteiro de perguntas para a síntese.
+- **Meu dicionário:** o aluno anota as palavras que não conhecia. Pode ser impresso.
 
 ## Como publicar no GitHub Pages
 
