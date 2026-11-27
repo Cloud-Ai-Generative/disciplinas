@@ -121,6 +121,10 @@ button{font:inherit;cursor:pointer;touch-action:manipulation}
 @media print{.hud,footer,.btn,button{display:none!important}body{background:#fff}.card{box-shadow:none;border:1px solid #ccc}}
 .overlay{position:fixed;inset:0;z-index:90;background:#0009;display:grid;place-items:center;padding:14px}
 .overlay .card{max-width:520px;width:100%}
+.tt{border-bottom:2px dotted var(--roma);cursor:help;color:inherit}
+.ttbox{position:fixed;z-index:120;max-width:280px;background:var(--ink);color:#fff;border-radius:10px;padding:10px 12px;font-size:.92rem;box-shadow:0 8px 20px #0006}
+.ttbox b{display:block;color:var(--gold);font-family:Georgia,serif}
+button.say{float:right;margin:0 0 4px 8px;border:0;background:#f1e6cf;border-radius:999px;width:34px;height:34px;font-size:1rem;line-height:1}
 footer{color:#bfb3e0;text-align:center;font-size:.85rem;padding:24px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -493,7 +497,7 @@ function renderTrilha(){
   h+=`<div class="card"><h2>Revisão geral</h2>`+
     [["av","Refiz as Avaliações da Unidade e de Rede"],["sup","Respondi as 10 questões das atividades suplementares no caderno"]].map(([id,t])=>
     `<label style="display:flex;gap:10px;align-items:center;padding:6px 0"><input type="checkbox" style="width:22px;height:22px;flex-shrink:0" ${S.check[id]?"checked":""} onchange="S.check['${id}']=this.checked;save();SFX.click();renderTrilha()"> ${t}</label>`).join("")+
-    `</div><div class="row"><button class="btn sec" onclick="window.print()">🖨️ Imprimir</button><button class="btn gold" onclick="go('map')">Voltar ao mapa</button></div>`;
+    `</div>`+renderAnswers()+`<div class="row"><button class="btn sec" onclick="window.print()">🖨️ Imprimir</button><button class="btn gold" onclick="go('map')">Voltar ao mapa</button></div>`;
   app.innerHTML=h;
 }
 
@@ -506,6 +510,157 @@ function addWord(){
 }
 function delWord(k){ if(confirm("Apagar esta palavra?")){ S.mydict.splice(k,1); save(); renderDict(); } }
 const escH = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+
+/* ================= AJUSTES DIDÁTICOS ================= */
+const byNum = n => LEVELS.find(L=>L.num===n), byHab = h => LEVELS.find(L=>L.hab===h);
+// instruções curtas
+[[1,"Arraste cada herança para quem a criou."],[2,"Leia e decida: verdadeiro ou falso?"],[3,"Arraste cada pessoa: pode votar ou fica de fora?"],
+ [4,"Dica: as montanhas separavam as cidades. Agora, arraste cada característica para Atenas ou Esparta."],[5,"Ligue cada produto à região de onde vinha."],
+ [6,"Toque nos fatos do mais antigo ao mais recente."],[7,"Escolha o que Roma realmente fazia."],[8,"Arraste cada pessoa para o seu grupo."],
+ [9,"Arraste cada tarefa para o lugar onde acontecia."],[10,"Ligue cada termo ao seu significado."]].forEach(([n,t])=>byNum(n).intro=t);
+
+// dicas de erro (pistas, sem entregar a resposta) — itens de classificar
+const SORT_HINTS = {
+ 1:["Ele nasceu em festas para o deus Dioniso.","Sócrates e Platão falavam grego.","Nasceu na cidade de Atenas.","Começaram na cidade de Olímpia.","Pense na língua que deu origem ao português.","Os juristas que escreviam leis falavam latim.","Pense nos grandes engenheiros do Império.","A reforma foi feita por Júlio César."],
+ 3:["Ele cumpre todas as condições: homem, adulto, livre e filho de atenienses?","Mesmo nascidas em Atenas, as mulheres participavam da política?","Quem não era livre podia votar?","Pagar impostos tornava o estrangeiro cidadão?","Só adultos participavam das assembleias.","Ele é homem, adulto, livre e ateniense."],
+ 4:["Qual cidade era famosa por seus soldados?","Qual cidade valorizava a filosofia e as artes?","Onde nasceu a democracia?","Qual cidade tinha reis?","Qual das duas tinha um grande porto?","Qual cidade vivia para a guerra?"],
+ 8:["Quem rezava e cuidava dos livros?","Bispos são religiosos.","Quem lutava a cavalo?","Os donos de terras eram guerreiros.","Quem produzia os alimentos?","Quem trabalhava no campo?"],
+ 9:["Onde ficavam as plantações e os animais?","Quem fazia as roupas da família camponesa?","Quem cuidava das terras do senhor quando ele ia à guerra?","Onde havia criados e grandes estoques?","Onde viviam as freiras?","Os conventos tinham hortas de ervas e enfermarias."]
+};
+Object.entries(SORT_HINTS).forEach(([n,h])=>byNum(+n).itens.forEach((it,k)=>it[3]=h[k]));
+byHab("BNCC EF06HI19").itens.forEach((it,k)=>it[3]=["Em qual cidade grega as mulheres ficavam mais presas em casa?","Em qual cidade as meninas não iam à escola?","Qual cidade queria mães fortes para gerar soldados?","Em qual cidade os maridos passavam muito tempo na guerra?","Em qual cidade havia termas e grandes espetáculos?","\"Matrona\" é uma palavra latina."][k]);
+byHab("BNCC EF06HI17").itens.forEach((it,k)=>it[3]=["Quem podia ser vendido como mercadoria?","O que acontecia com os prisioneiros de guerra na Antiguidade?","Quem ficava preso à terra do feudo?","Corveia e talha eram obrigações de quem?","Quem tinha liberdade de escolha?","Quem recebia salário?"][k]);
+byNum(1).itens[7]=["Calendário juliano, base do calendário que usamos","Roma","Júlio César reorganizou o calendário com 365 dias e ano bissexto. Ele é a base do nosso calendário.","A reforma foi feita por Júlio César."];
+// pistas no verdadeiro/falso
+byNum(2).itens.forEach((it,k)=>it[3]=["Lembre dos egípcios, chineses e maias.","Os maias observavam muito o céu.","A palavra imitava um som que os gregos não entendiam.","Chamar alguém de bárbaro era um elogio?","Eurocentrismo: Europa no centro de tudo.","Como os egípcios construíram as pirâmides?"][k]);
+
+// quizzes com distratores plausíveis e explicação de cada erro: [pergunta, opções, certa, explicação, porQueErrado[]]
+byNum(7).itens=[
+ ["O que era um império no mundo antigo?",["Um Estado que domina muitos territórios e povos diferentes, sob um governo central","Uma cidade-Estado independente, com leis próprias","Uma república governada por cônsules eleitos"],0,"Um império reúne muitos povos e territórios sob um governo central.",[null,"Isso é a pólis grega, uma cidade só.","Roma teve cônsules na República, antes de virar Império."]],
+ ["Uma nova província foi conquistada. Como Roma garante sua parte da riqueza?",["Cobrando impostos dos povos conquistados, em dinheiro ou produtos","Dando cidadania romana a todos os moradores","Levando todos os moradores para Roma"],0,"Os povos conquistados pagavam impostos, por exemplo em trigo.",[null,"A cidadania era dada só a alguns, e não era assim que Roma recebia riqueza.","Roma precisava que eles continuassem produzindo nas províncias."]],
+ ["Há risco de revolta na província. O que Roma faz?",["Mantém legiões (exércitos) na região","Deixa a defesa só com o povo da província","Muda a capital para a província"],0,"As legiões ficavam nas províncias para impedir revoltas.",[null,"Roma não confiaria a defesa a quem queria se revoltar.","A capital continuava em Roma."]],
+ ["Como Roma ligava as províncias para mover tropas e mercadorias?",["Com estradas e rotas pelo Mar Mediterrâneo","Apenas com rios navegáveis","Com mensageiros a pé, sem estradas"],0,"Estradas e o Mare Nostrum ligavam todo o Império.",[null,"Os rios ajudavam, mas o principal eram as estradas e o mar.","Os romanos construíram milhares de quilômetros de estradas."]],
+ ["Como Roma conquistava o apoio dos líderes locais?",["Dando cidadania e cargos a algumas pessoas importantes","Proibindo a religião e a língua local","Tirando as terras de todos os líderes"],0,"Ganhar as elites locais facilitava o governo.",[null,"Roma costumava tolerar religiões locais, desde que respeitassem o imperador.","Isso causaria revoltas, e não apoio."]]
+];
+byHab("Período Helenístico").itens=[
+ ["Quem foi Alexandre, o Grande?",["Rei da Macedônia que conquistou um império da Grécia até a Índia","Rei de Esparta que venceu Atenas","Primeiro imperador de Roma"],0,"Alexandre formou um dos maiores impérios da Antiguidade.",[null,"Alexandre era da Macedônia, ao norte da Grécia.","O primeiro imperador romano foi Augusto, séculos depois."]],
+ ["O que foi a cultura helenística?",["A mistura da cultura grega com as culturas do Oriente","A cultura de Atenas no tempo da democracia","A cultura dos romanos depois de conquistar a Grécia"],0,"As conquistas de Alexandre misturaram a cultura grega com a oriental.",[null,"Esse é o período clássico, antes de Alexandre.","Helenístico vem de Alexandre, não de Roma."]],
+ ["Qual cidade, fundada por Alexandre no Egito, tinha uma biblioteca famosa?",["Alexandria","Atenas","Babilônia"],0,"A Biblioteca de Alexandria reunia milhares de textos.",[null,"Atenas fica na Grécia, não no Egito.","Babilônia fica na Mesopotâmia, e não foi fundada por Alexandre."]],
+ ["O que aconteceu com o império após a morte de Alexandre?",["Foi dividido entre os seus generais","Foi governado por seu filho por séculos","Virou uma democracia como Atenas"],0,"Os generais dividiram o império em vários reinos.",[null,"Não houve um herdeiro que mantivesse o império unido.","Os reinos que surgiram eram governados por reis."]]
+];
+// bônus com distratores plausíveis
+byNum(5).extra={q:"Por que os romanos preferiam transportar cargas pesadas pelo mar?",opts:["Era mais rápido e barato que por terra","As estradas romanas eram proibidas para comerciantes","O mar não tinha nenhum perigo"],certa:0,
+ exp:"Um navio levava muita carga de uma vez, de forma rápida e barata.",why:[null,"As estradas eram usadas por todos, inclusive comerciantes.","Havia tempestades e piratas; mesmo assim o mar compensava."]};
+byNum(8).extra={q:"Para que serviam os sinos das igrejas na vida medieval?",opts:["Marcavam as horas de trabalho e de oração","Anunciavam apenas os casamentos dos nobres","Avisavam só quando havia guerra"],certa:0,
+ exp:"O tempo do dia era organizado pela Igreja: os sinos marcavam trabalho, orações e festas.",why:[null,"Eles tocavam para toda a comunidade, todos os dias.","Podiam avisar perigos, mas tocavam principalmente para marcar as horas."]};
+byNum(10).extra={q:"Um servo podia ir embora do feudo quando quisesse?",opts:["Não: o servo ficava preso à terra","Sim, porque ele era um trabalhador livre","Sim, desde que pagasse a talha"],certa:0,
+ exp:"O servo não era escravo, mas estava preso à terra.",why:[null,"O servo não era livre: devia obrigações e não podia sair.","A talha era uma obrigação, não um pagamento para sair."]};
+byHab("Ascensão do cristianismo").extra.opts=["Porque pregava que todos eram iguais perante Deus","Porque o imperador obrigou todos a se converterem desde o início","Porque os cristãos recebiam terras ao se converter"];
+byHab("Ascensão do cristianismo").extra.why=[null,"No início, os cristãos eram perseguidos pelo imperador.","A conversão não dava terras."];
+byHab("BNCC EF06HI19").extra.opts=["Em nenhuma delas","Em Esparta, onde tinham mais liberdade","Em Roma, onde podiam sair de casa"];
+byHab("BNCC EF06HI19").extra.why=[null,"Mais liberdade não significava direito de votar.","Sair de casa não era o mesmo que ter direitos políticos."];
+byHab("Formação dos reinos medievais").extra.opts=["A queda do Império Romano do Ocidente","A coroação de Carlos Magno","O Édito de Milão"];
+byHab("Formação dos reinos medievais").extra.why=[null,"Carlos Magno foi coroado no ano 800.","O Édito de Milão foi em 313 e tratou do cristianismo."];
+
+/* ---------- registro de erros para revisão ---------- */
+function logMiss(o){ S.miss=S.miss||[]; if(!S.miss.some(m=>m.q===o.q)){ S.miss.push(o); if(S.miss.length>40) S.miss.shift(); save(); } }
+function clearMiss(q){ if(S.miss){ const n=S.miss.length; S.miss=S.miss.filter(m=>m.q!==q); if(S.miss.length!==n) save(); } }
+const qSort=(L,it)=>({q:`Onde se encaixa: “${it[0]}”?`, opts:L.bins, c:it[1], exp:it[2]});
+const qTF=it=>({q:`Verdadeiro ou falso: “${it[0]}”`, opts:["Verdadeiro","Falso"], c:it[1]?"Verdadeiro":"Falso", exp:it[2]});
+const qQuiz=it=>({q:it[0], opts:it[1], c:it[1][it[2]], exp:it[3]});
+const qPair=(L,p)=>({q:`Complete: “${p[0]}” →`, opts:L.pares.map(x=>x[1]), c:p[1], exp:p[2]});
+
+/* ---------- termos clicáveis ---------- */
+const ALLTERMS = (()=>{ const m=new Map(); LEVELS.forEach(L=>L.termos.forEach(([t,d])=>{ if(!m.has(t.toLowerCase())) m.set(t.toLowerCase(),[t,d]); })); return [...m.values()].sort((a,b)=>b[0].length-a[0].length); })();
+const TERM_RE = new RegExp("(?<![\\p{L}])("+ALLTERMS.map(([t])=>t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|")+")(?![\\p{L}])","giu");
+function decorate(root){
+  root.querySelectorAll(".bubble, .statement, .qbox, .model, .order-slot, #op .opt").forEach(el=>{
+    if(el.dataset.dec) return; el.dataset.dec=1;
+    const walker=document.createTreeWalker(el,NodeFilter.SHOW_TEXT); const nodes=[]; let n; while(n=walker.nextNode()) if(!n.parentElement.closest(".tt,button.say,b")) nodes.push(n);
+    const used=new Set();
+    nodes.forEach(tn=>{
+      const s=tn.nodeValue; TERM_RE.lastIndex=0; if(!TERM_RE.test(s)) return; TERM_RE.lastIndex=0;
+      const frag=document.createDocumentFragment(); let last=0, m;
+      while((m=TERM_RE.exec(s))){ const key=m[1].toLowerCase(); if(used.has(key)) continue; used.add(key);
+        frag.append(s.slice(last,m.index)); const sp=document.createElement("span"); sp.className="tt"; sp.textContent=m[1]; sp.dataset.k=key; frag.append(sp); last=m.index+m[1].length; }
+      frag.append(s.slice(last)); tn.replaceWith(frag);
+    });
+  });
+  root.querySelectorAll(".bubble, .statement, .qbox, .model").forEach(el=>{
+    if(el.querySelector(":scope > button.say")) return;
+    const b=document.createElement("button"); b.className="say"; b.type="button"; b.title="Ouvir"; b.setAttribute("aria-label","Ouvir o texto"); b.textContent="🔈";
+    b.onclick=e=>{ e.stopPropagation(); speak(el); }; el.prepend(b);
+  });
+}
+document.addEventListener("click",e=>{
+  const t=e.target.closest(".tt"); const old=document.querySelector(".ttbox"); if(old) old.remove();
+  if(!t) return; e.stopPropagation();
+  const [w,d]=ALLTERMS.find(([x])=>x.toLowerCase()===t.dataset.k)||[]; if(!w) return;
+  const r=t.getBoundingClientRect(), box=document.createElement("div"); box.className="ttbox";
+  box.innerHTML=`<b>${w}</b>${d}`; document.body.appendChild(box);
+  box.style.left=Math.max(8,Math.min(window.innerWidth-box.offsetWidth-8, r.left))+"px"; box.style.top=(r.bottom+6)+"px";
+},true);
+new MutationObserver(()=>requestAnimationFrame(()=>decorate(document.body))).observe(document.body,{childList:true,subtree:true});
+
+/* ---------- ouvir o texto ---------- */
+function speak(el){
+  try{
+    const ss=window.speechSynthesis; if(!ss) return;
+    if(ss.speaking){ ss.cancel(); return; }
+    const txt=el.innerText.replace(/🔈/g,"").replace(/[\u{1F300}-\u{1FAFF}☀-➿]/gu,"").trim();
+    const u=new SpeechSynthesisUtterance(txt); u.lang="pt-BR"; u.rate=.95;
+    const v=ss.getVoices().find(v=>v.lang&&v.lang.toLowerCase().startsWith("pt")); if(v) u.voice=v;
+    ss.speak(u);
+  }catch(e){}
+}
+function stopSpeak(){ try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(e){} }
+
+/* ---------- montar a resposta + escrever + autoavaliar ---------- */
+const plain = h => h.replace(/<[^>]+>/g,"");
+const splitSent = h => h.split(/(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚÂÊÔÃÕÇ<])/).filter(s=>s.trim());
+const respKey = L => L.num ? "q"+L.num : L.hab;
+function buildAnswerZone(L){
+  const sents=splitSent(L.modelo); let next=0;
+  const z=document.getElementById("answerZone");
+  z.innerHTML=`<h3 style="margin-top:16px">🧩 Monte a resposta</h3>
+    <p class="counter">Toque nas frases na ordem certa para montar uma resposta completa.</p>
+    <div class="order-list" id="mol"></div><div class="opts" id="mop">${shuffle(sents.map((_,k)=>k)).map(k=>`<button class="opt" data-k="${k}">${plain(sents[k])}</button>`).join("")}</div>
+    <div id="mfb" class="fb"></div><div id="afterBuild"></div>`;
+  z.querySelectorAll("#mop .opt").forEach(b=>b.onclick=()=>{
+    const k=+b.dataset.k, f=document.getElementById("mfb");
+    if(k===next){ SFX.ok(); document.getElementById("mol").insertAdjacentHTML("beforeend",`<div class="order-slot pop">${plain(sents[k])}</div>`); b.remove(); f.className="fb";
+      if(++next===sents.length){ SFX.win(); showModelAndWrite(L); } }
+    else { SFX.err(); b.classList.remove("shake"); void b.offsetWidth; b.classList.add("shake");
+      f.className="fb err"; f.innerHTML=next===0?"❌ Uma boa resposta começa apresentando a ideia principal da pergunta.":"❌ Essa frase vem depois. Qual continua a ideia anterior?"; }
+  });
+}
+function showModelAndWrite(L){
+  S.resp=S.resp||{}; const key=respKey(L), saved=S.resp[key]||{t:"",c:[]};
+  document.getElementById("afterBuild").innerHTML=`
+    <div class="fb ok" style="display:block">✅ Resposta montada! Veja abaixo as ideias que não podem faltar.</div>
+    <div class="model">${L.modelo}</div>
+    <p class="counter">As partes <mark>destacadas</mark> são as ideias-chave. Agora escreva <b>a sua</b> resposta, com as suas palavras. Não copie!</p>
+    <h3>✍️ Minha resposta</h3>
+    <textarea id="myAns" rows="6" maxlength="2000" placeholder="Escreva aqui a sua resposta…" style="width:100%;padding:12px;border-radius:12px;border:2px solid var(--ink);font:inherit">${escH(saved.t)}</textarea>
+    <h3>✔️ Confira a sua resposta</h3>
+    ${L.passos.map((p,k)=>`<label style="display:flex;gap:10px;align-items:flex-start;padding:5px 0"><input type="checkbox" data-c="${k}" style="width:22px;height:22px;flex-shrink:0" ${saved.c[k]?"checked":""}> <span>Minha resposta faz isto: ${plain(p)}</span></label>`).join("")}
+    <div id="selfOk" class="fb"></div>
+    <p class="counter">Sua resposta fica salva neste navegador. Você pode ver todas na 📋 Trilha e imprimir.</p>`;
+  const ta=document.getElementById("myAns"), cbs=[...document.querySelectorAll("[data-c]")];
+  const store=()=>{ S.resp[key]={t:ta.value, c:cbs.map(c=>c.checked)}; save();
+    const ok=document.getElementById("selfOk");
+    if(cbs.every(c=>c.checked) && ta.value.trim().split(/\s+/).length>=15){ ok.className="fb ok"; ok.innerHTML="🌟 Muito bem! Sua resposta está completa. Agora passe para o caderno."; }
+    else ok.className="fb"; };
+  ta.oninput=store; cbs.forEach(c=>c.onchange=()=>{ SFX.click(); store(); }); store();
+}
+function renderAnswers(){
+  S.resp=S.resp||{};
+  return `<div class="card"><h2>✍️ Minhas respostas</h2><p class="counter">As respostas que você escreveu no jogo. Revise e passe para o caderno.</p>`+
+    LEVELS.map(L=>{ const r=S.resp[respKey(L)]; return `<div style="margin:12px 0;padding-top:8px;border-top:1px solid var(--line)"><b>${L.num?"Questão "+L.num:"Revisão · "+L.hab}</b>
+      <p class="counter" style="margin:4px 0">${plain(L.pergunta)}</p>
+      <div style="white-space:pre-wrap;background:#fff;border-radius:8px;padding:8px;border:1px solid var(--line)">${r&&r.t.trim()?escH(r.t):'<span class="counter">Ainda não respondida.</span>'}</div></div>`; }).join("")+`</div>`;
+}
 
 /* ================= DESENHOS SVG ================= */
 function charSVG(p, w=72){
@@ -614,7 +769,8 @@ function floatText(txt, el){
 }
 
 function go(view, i){
-  stopTimer(); hud(); window.scrollTo(0,0);
+  stopTimer(); stopSpeak(); document.querySelector('.ttbox')?.remove(); hud(); window.scrollTo(0,0);
+  if(view==="review") return renderBoss(true);
   if(view==="title") return renderTitle();
   if(view==="map") return renderMap();
   if(view==="dict") return renderDict();
@@ -643,7 +799,7 @@ function renderTitle(){
       📖 Se as vidas acabarem, você tem uma <b>segunda chance</b>: responda o significado de 2 palavras do dicionário. Cada acerto vale 1 vida!<br>
       ⭐ As estrelas dependem dos erros: 0–1 erro = ★★★, 2–3 = ★★, 4 ou mais = ★.<br>
       ⏱️ Quer mais emoção? Ligue o <b>Modo Desafio</b> no mapa: cada fase ganha um cronômetro.<br>
-      ✍️ Ao fim de cada fase, você aprende a montar a resposta da questão para escrever no caderno.<br>📋 Na <b>Trilha</b>, marque as atividades que já fez e use o roteiro de síntese de cada capítulo.<br>📖 No <b>Dicionário</b>, anote também as suas próprias palavras.</p>
+      ✍️ Ao fim de cada fase, você aprende a montar a resposta da questão para escrever no caderno.<br>📋 Na <b>Trilha</b>, marque as atividades que já fez e use o roteiro de síntese de cada capítulo.<br>📖 No <b>Dicionário</b>, anote também as suas próprias palavras.<br>🔁 Errou? As perguntas vão para <b>Revisar meus erros</b>, no fim do mapa.<br>🔈 Toque no alto-falante para ouvir o texto. Palavras <span class="tt" data-k="pólis">sublinhadas</span> mostram o significado.</p>
     </div></div>`;
 }
 
@@ -667,6 +823,7 @@ function renderMap(){
   }
   const bossOk = gears()===NL;
   h+=`<section class="band boss"><h2>⚙️ Desafio da Máquina</h2><div class="nodes">
+    ${(S.miss||[]).length?`<button class="node" onclick="SFX.click();go('review')"><span style="font-size:2rem">🔁</span><span><small>Treine o que você errou · sem relógio</small><b>Revisar meus erros</b></span><span class="st">${S.miss.length}</span></button>`:""}
     <button class="node ${bossOk?"":"lock"} ${bossOk&&!S.boss?"cur":""}" ${bossOk?"":"disabled"} onclick="go('boss')">
       ${gearIcon(S.boss)}<span><small>Fase final · perguntas das 3 eras contra o relógio</small><b>Religar a máquina do tempo</b></span>
       <span class="st">${S.boss?"🏆":(bossOk?"▶":"🔒")}</span>
@@ -790,7 +947,7 @@ function secondChance(){
 }
 function gameOver(why, missed){
   G.over=true; stopTimer(); SFX.lose();
-  const retry = G.boss?"go('boss')":`go('play',${G.i})`;
+  const retry = G.review?"go('review')":G.boss?"go('boss')":`go('play',${G.i})`;
   app.innerHTML=`<div class="card" style="text-align:center"><div style="font-size:3rem">💥</div><h2>${why}</h2>
     <p>A engrenagem escapou desta vez. Mas cada tentativa te deixa mais preparado!</p>${missed&&missed.length?`<div class="terms" style="text-align:left;margin:10px 0">${missed.map(([t,d])=>`<div class="term"><b>${t}</b>${d}</div>`).join("")}</div>`:""}
     <p class="counter">Dica: as explicações que aparecem quando você acerta ajudam muito na próxima tentativa.</p>
@@ -799,7 +956,8 @@ function gameOver(why, missed){
 
 function renderLevel(i){
   const L=LEVELS[i];
-  app.innerHTML=frame(L.era, L.pers, (L.num?`Questão ${L.num}: `:"⭐ ")+L.titulo, L.pers.fala+`<br><span class="counter">${L.intro}</span>`);
+  app.innerHTML=frame(L.era, L.pers, (L.num?`Questão ${L.num}: `:"⭐ ")+L.titulo, L.pers.fala);
+  document.getElementById("game").insertAdjacentHTML("beforebegin",`<p style="margin:10px 0 0;font-weight:600">📌 ${L.intro}</p>`);
   startLevel({i, extraDone:!L.extra, time:S.desafio?150:0});
   ({sort:gSort, tf:gTF, match:gMatch, order:gOrder, quiz:gQuiz})[L.tipo](L);
 }
@@ -814,7 +972,7 @@ function mainDone(){
     document.querySelectorAll("#extra .opt").forEach(b=>b.onclick=()=>{
       if(G.extraDone||G.over) return;
       if(+b.dataset.k===x.certa){ b.classList.add("right"); G.extraDone=true; good(x.exp,b); setTimeout(finish,1600); }
-      else { b.classList.add("wrong"); b.disabled=true; bad("Ainda não. Pense de novo!",b); }
+      else { b.classList.add("wrong"); b.disabled=true; bad(x.why&&x.why[+b.dataset.k]?`Ainda não. ${x.why[+b.dataset.k]}`:"Ainda não. Pense de novo!",b); }
     });
     document.getElementById("extra").scrollIntoView({behavior:"smooth",block:"center"});
   } else setTimeout(finish,1300);
@@ -832,9 +990,9 @@ function gSort(L){
     const k=+chip.dataset.k, it=L.itens[k];
     if(L.bins[+bin.dataset.b]===it[1]){
       bin.querySelector("div").insertAdjacentHTML("beforeend",`<span class="chip done pop">${it[0]}</span>`);
-      chip.remove(); sel=null; left.delete(k); clearSel(); good(it[2],bin);
+      chip.remove(); sel=null; left.delete(k); clearSel(); clearMiss(qSort(L,it).q); good(it[2],bin);
       if(!left.size) mainDone();
-    } else { clearSel(); sel=null; bad(`"${it[0]}" não vai em "${L.bins[+bin.dataset.b]}". Tente outro grupo!`, bin); }
+    } else { clearSel(); sel=null; logMiss(qSort(L,it)); bad(`"${it[0]}" não vai em "${L.bins[+bin.dataset.b]}".${it[3]?" 💡 "+it[3]:" Tente outro grupo!"}`, bin); }
   }
   g.querySelectorAll("#pool .chip").forEach(c=>{
     c.addEventListener("pointerdown",e=>{
@@ -875,7 +1033,7 @@ function gTF(L){
       if(locked||G.over) return;
       if((b.dataset.v==="1")===it[1]){ locked=true; good(it[2],b); p++;
         setTimeout(()=>{ if(G.over) return; if(p<ord.length){document.getElementById("fb").className="fb";show();} else {g.innerHTML="";mainDone();} },1900);
-      } else bad("Hmm, releia com atenção e tente de novo.",b);
+      } else { logMiss(qTF(it)); bad(it[3]?`Ainda não. 💡 ${it[3]}`:"Hmm, releia com atenção e tente de novo.",b); }
     });
   }; show();
 }
@@ -893,7 +1051,7 @@ function gMatch(L){
     if(selA.dataset.k===b.dataset.k){ const p=L.pares[+b.dataset.k];
       [selA,b].forEach(x=>{x.classList.remove("pick");x.classList.add("right");x.disabled=true;}); selA=null; good(p[2],b);
       if(!--left) mainDone();
-    } else bad("Esse par não combina. Tente outro!",b);
+    } else { logMiss(qPair(L,L.pares[+selA.dataset.k])); bad(`“${L.pares[+selA.dataset.k][0]}” não combina com isso. Releia as duas partes e tente outro!`,b); }
   });
   G.hint=()=>{ const a=selA||g.querySelector("#ca .opt:not(:disabled)"); if(!a) return false; pick(a);
     const b=g.querySelector(`#cb .opt[data-k="${a.dataset.k}"]`); b.classList.add("glow"); setTimeout(()=>b.classList.remove("glow"),2500); fb(true,"💡 O par certo está brilhando."); };
@@ -923,7 +1081,7 @@ function gQuiz(L){
       if(ok||G.over) return;
       if(+b.dataset.k===it[2]){ ok=true; b.classList.add("right"); good(it[3],b); p++;
         setTimeout(()=>{ if(G.over) return; if(p<L.itens.length){document.getElementById("fb").className="fb";show();} else {g.innerHTML="";mainDone();} },1900);
-      } else { b.classList.add("wrong"); b.disabled=true; bad("Não era isso. Tente outra opção!",b); }
+      } else { b.classList.add("wrong"); b.disabled=true; logMiss(qQuiz(it)); bad(it[4]&&it[4][+b.dataset.k]?`Não. ${it[4][+b.dataset.k]}`:"Não era isso. Tente outra opção!",b); }
     });
   }; show();
 }
@@ -949,14 +1107,11 @@ function finish(){
     <h3 style="margin-top:16px">Como montar a resposta</h3>
     <ol class="steps">${L.passos.map(p=>`<li>${p}</li>`).join("")}</ol>
     <div class="warn">⚠️ <b>Atenção:</b> ${L.cuidado}</div>
-    <h3 style="margin-top:16px">Exemplo de resposta completa</h3>
-    <p class="counter">Tente pensar na sua resposta antes de abrir o exemplo.</p>
-    <div id="mdl"><button class="btn sec" onclick="SFX.click();this.parentNode.innerHTML=document.getElementById('mdlT').innerHTML">Mostrar exemplo de resposta</button></div>
-    <template id="mdlT"><div class="model">${L.modelo}</div>
-      <p class="counter">As partes <mark>destacadas</mark> são as ideias que não podem faltar. Agora escreva <b>com as suas palavras</b> no caderno. Não copie!</p></template>
+    <div id="answerZone"></div>
   </div>
   <div class="row"><button class="btn sec" onclick="go('play',${i})">Jogar de novo</button>
     ${i<NL-1?`<button class="btn gold" onclick="go('play',${i+1})">Próxima fase →</button>`:`<button class="btn gold" onclick="go('map')">Ir para o Desafio Final ⚙️</button>`}</div>`;
+  buildAnswerZone(L);
 }
 
 /* ================= FASE FINAL ================= */
@@ -969,13 +1124,17 @@ function bossPool(){
     if(L.tipo==="match") L.pares.forEach(p=>q.push({q:`Complete: “${p[0]}” →`, opts:L.pares.map(x=>x[1]), c:p[1], exp:p[2]}));
     if(L.tipo==="order") q.push({q:`Qual destes aconteceu PRIMEIRO? (${L.titulo})`, opts:L.itens.slice(0,4).map(x=>x[0]), c:L.itens[0][0], exp:L.itens[0][1]});
   });
-  return shuffle(q).slice(0,12);
+  const miss=shuffle(S.miss||[]).slice(0,6), rest=shuffle(q).filter(x=>!miss.some(m=>m.q===x.q));
+  return shuffle([...miss, ...rest.slice(0,12-miss.length)]);
 }
 const BOSS_PERS={nome:"Máquina do Tempo",pele:"#c9c2e6",roupa:"#5b4a8a",cabelo:"#e0a82e",acc:""};
-function renderBoss(){
-  const Q=bossPool(); let p=0;
-  app.innerHTML=frame("boss", BOSS_PERS, "⚙️ Desafio da Máquina", "BIP-BOP! Para religar, responda 12 perguntas das três eras antes que o tempo acabe. Você tem 3 vidas!");
-  startLevel({boss:true, time:180});
+function renderBoss(review){
+  const Q=review?shuffle(S.miss||[]).slice(0,10):bossPool(); let p=0;
+  if(!Q.length) return go('map');
+  app.innerHTML=review
+    ? frame("boss", BOSS_PERS, "🔁 Revisar meus erros", `BIP! Separei ${Q.length} perguntas que você errou antes. Sem relógio: leia com calma. Cada acerto sai da sua lista de erros!`)
+    : frame("boss", BOSS_PERS, "⚙️ Desafio da Máquina", "BIP-BOP! Para religar, responda 12 perguntas das três eras antes que o tempo acabe. Você tem 3 vidas! Perguntas que você já errou podem aparecer.");
+  startLevel(review?{boss:true, review:true, time:0}:{boss:true, time:180});
   const g=document.getElementById("game");
   const show=()=>{ const it=Q[p]; let ok=false;
     g.innerHTML=`<p class="counter">Pergunta ${p+1} de ${Q.length}</p><div class="statement">${it.q}</div><div class="opts">`+
@@ -983,11 +1142,18 @@ function renderBoss(){
     G.hint=()=>{ if(ok) return false; const w=[...g.querySelectorAll(".opt:not(.wrong)")].find(b=>b.textContent!==it.c); if(!w) return false; w.classList.add("wrong"); w.disabled=true; fb(true,"💡 Uma opção errada foi eliminada."); };
     g.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
       if(ok||G.over) return;
-      if(b.textContent===it.c){ ok=true; b.classList.add("right"); good(it.exp,b); p++;
-        setTimeout(()=>{ if(G.over) return; if(p<Q.length){document.getElementById("fb").className="fb";show();} else bossWin(); },1500);
-      } else { b.classList.add("wrong"); b.disabled=true; bad("Errou! A máquina soltou faísca. ⚡",b); }
+      if(b.textContent===it.c){ ok=true; b.classList.add("right"); clearMiss(it.q); good(it.exp,b); p++;
+        setTimeout(()=>{ if(G.over) return; if(p<Q.length){document.getElementById("fb").className="fb";show();} else (review?reviewWin():bossWin()); },1500);
+      } else { b.classList.add("wrong"); b.disabled=true; logMiss(it); bad(`Errou! A máquina soltou faísca. ⚡ 💡 Releia: ${it.exp}`,b); }
     });
   }; show();
+}
+function reviewWin(){
+  G.over=true; S.coins+=10; save(); hud(); SFX.win();
+  const n=(S.miss||[]).length;
+  app.innerHTML=`<div class="card" style="text-align:center"><div style="font-size:3rem">🔁</div><h2>Revisão concluída!</h2>
+    <p>${n?`Ainda restam <b>${n}</b> perguntas na sua lista de erros. Que tal revisar de novo?`:"Sua lista de erros está vazia. Excelente!"}</p><p class="counter">+10 🪙</p>
+    <div class="row" style="justify-content:center">${n?`<button class="btn sec" onclick="go('review')">Revisar de novo</button>`:""}<button class="btn gold" onclick="go('map')">Voltar ao mapa</button></div></div>`;
 }
 function bossWin(){
   G.over=true; stopTimer(); S.boss=true; S.coins+=30; save(); hud(); SFX.win(); setTimeout(SFX.win,600);

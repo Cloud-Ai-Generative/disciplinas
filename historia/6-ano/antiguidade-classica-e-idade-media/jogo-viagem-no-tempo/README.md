@@ -16,6 +16,10 @@ Além das fases:
 
 - **Trilha:** checklist de cada capítulo (leitura, síntese, vídeos, questões do livro, Eureka e avaliações), com um roteiro de perguntas para a síntese.
 - **Vidas extras:** comprar com moedas (15🪙, até 5 vidas), +1 vida a cada 5 acertos seguidos, coração reserva para quem termina uma fase sem erros, e segunda chance (responder o significado de 2 palavras do dicionário; cada acerto devolve 1 vida). As estrelas dependem dos erros, não das vidas.
+- **Monte a resposta:** antes de ver a resposta-modelo, o aluno ordena as frases que a formam. Depois escreve a sua própria resposta e confere com um checklist de autoavaliação. As respostas ficam salvas e aparecem na Trilha para imprimir.
+- **Feedback que ensina:** cada erro mostra uma pista específica, sem entregar a resposta.
+- **Revisar meus erros:** as perguntas erradas vão para uma revisão sem relógio, e o Desafio Final prioriza essas perguntas.
+- **Leitura apoiada:** palavras do dicionário aparecem sublinhadas nos textos e mostram o significado ao tocar; o botão 🔈 lê o texto em voz alta.
 - **Meu dicionário:** o aluno anota as palavras que não conhecia. Pode ser impresso.
 
 ## Como publicar no GitHub Pages
