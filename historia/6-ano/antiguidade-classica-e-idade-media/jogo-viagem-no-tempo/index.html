@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Viagem no Tempo: da Pólis ao Feudo</title>
+<meta name="description" content="Jogo de revisão de História para o 6º ano: Grécia, Roma e Idade Média.">
+<style>
+:root{
+  --bg:#1d1a2b; --paper:#fffaf0; --ink:#2b2118; --muted:#6f5f4f; --line:#e2d4bb;
+  --grecia:#2f6f9f; --roma:#a63d2f; --medieval:#4f6b3a; --gold:#e0a82e;
+  --ok:#2e7d4f; --err:#c0392b; --radius:16px;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg) radial-gradient(circle at 20% 0%,#3a2f5a 0,#1d1a2b 60%) fixed;color:var(--ink);line-height:1.5;min-height:100vh}
+h1,h2,h3{font-family:Georgia,"Times New Roman",serif;line-height:1.2;margin:.2em 0 .4em}
+button{font:inherit;cursor:pointer;touch-action:manipulation}
+.wrap{max-width:820px;margin:0 auto;padding:12px}
+/* HUD */
+.hud{position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 12px;background:rgba(20,16,32,.92);color:#fff;backdrop-filter:blur(4px)}
+.hud .grp{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.pill{background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:999px;padding:6px 11px;font-size:.9rem;white-space:nowrap}
+.pill.on{background:var(--gold);color:#2b2118;font-weight:700}
+.btn{border:0;border-radius:12px;padding:12px 18px;background:var(--ink);color:#fff;font-weight:700;box-shadow:0 4px 0 #000a;transition:transform .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #000a}
+.btn.gold{background:var(--gold);color:var(--ink)}
+.btn.sec{background:#fff;color:var(--ink);border:2px solid var(--ink)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.card{background:var(--paper);border-radius:var(--radius);padding:16px;margin:12px 0;box-shadow:0 6px 0 #0004}
+.title-screen{text-align:center;color:#fff;padding:20px 8px}
+.title-screen h1{font-size:2rem;color:var(--gold);text-shadow:0 3px 0 #000}
+.title-screen p{max-width:560px;margin:8px auto;color:#e6dcff}
+/* cena */
+.scene{position:relative;border-radius:var(--radius) var(--radius) 0 0;overflow:hidden;line-height:0}
+.scene svg{width:100%;height:auto;display:block}
+.dialog{display:flex;gap:10px;align-items:flex-end;background:var(--paper);padding:12px 14px;border-radius:0 0 var(--radius) var(--radius);box-shadow:0 6px 0 #0004}
+.dialog .who{flex:0 0 72px}
+.bubble{flex:1;background:#fff;border:2px solid var(--ink);border-radius:14px;padding:10px 12px;position:relative;font-size:.98rem}
+.bubble::before{content:"";position:absolute;left:-10px;bottom:14px;border:8px solid transparent;border-right-color:var(--ink)}
+.bubble b{display:block;font-family:Georgia,serif;color:var(--muted);font-size:.85rem}
+/* barra de status da fase */
+.status{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px}
+.hearts{font-size:1.4rem;letter-spacing:2px}
+.combo{font-weight:800;color:var(--roma)}
+.timer{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:8px}
+.timer i{display:block;height:100%;background:linear-gradient(90deg,var(--err),var(--gold));transition:width 1s linear}
+/* mapa */
+.trail{position:relative;padding:6px 0 20px}
+.band{border-radius:var(--radius);padding:12px 10px 18px;margin:12px 0;position:relative;overflow:hidden}
+.band h2{color:#fff;text-shadow:0 2px 0 #0006;margin:0 0 6px;font-size:1.25rem}
+.band.grecia{background:linear-gradient(#6fb3e0,#2f6f9f)}
+.band.roma{background:linear-gradient(#e0926f,#8e3226)}
+.band.medieval{background:linear-gradient(#9cc27a,#3f5a2e)}
+.band.boss{background:linear-gradient(#5b4a8a,#241c3d)}
+.nodes{display:flex;flex-direction:column;gap:10px}
+.node{display:flex;align-items:center;gap:10px;background:rgba(255,250,240,.95);border:0;border-radius:14px;padding:8px 12px;text-align:left;color:var(--ink);box-shadow:0 4px 0 #0003;width:85%;position:relative}
+.node:nth-child(even){align-self:flex-end}
+.node .gear{flex:0 0 40px;height:40px}
+.node small{display:block;color:var(--muted)}
+.node .st{margin-left:auto;color:var(--gold);font-size:1.05rem;white-space:nowrap}
+.node.lock{opacity:.55;cursor:not-allowed}
+.node.cur{outline:4px solid var(--gold);animation:pulse 1.4s infinite}
+@keyframes pulse{50%{outline-color:#fff6}}
+.traveler{position:absolute;right:-6px;top:-30px;width:40px;animation:bob 1s infinite alternate}
+@keyframes bob{to{transform:translateY(-5px)}}
+/* jogos */
+.pool{display:flex;flex-wrap:wrap;gap:8px;min-height:48px;padding:6px 0}
+.chip{border:2px solid var(--ink);background:#fff;border-radius:12px;padding:9px 12px;color:var(--ink);text-align:left;touch-action:none;user-select:none;box-shadow:0 3px 0 var(--ink)}
+.chip.sel{background:var(--ink);color:#fff}
+.chip.done{border-color:var(--ok);background:#e6f3ea;box-shadow:none;cursor:default}
+.ghost{position:fixed;z-index:99;pointer-events:none;opacity:.9;transform:translate(-50%,-50%) rotate(-3deg);box-shadow:0 10px 20px #0005}
+.bins{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-top:10px}
+.bin{border:3px dashed var(--muted);border-radius:14px;padding:10px;min-height:120px;background:#fff8ea;text-align:left;color:var(--ink);transition:transform .1s,background .1s}
+.bin h4{margin:0 0 6px;font-size:1rem}
+.bin .chip{font-size:.82rem;padding:4px 8px;margin:3px;display:inline-block;box-shadow:none}
+.bin.hint,.bin.over{border-color:var(--ink);background:#ffecc2}
+.bin.over{transform:scale(1.03)}
+.glow{animation:glow .8s 3}
+@keyframes glow{50%{box-shadow:0 0 0 6px var(--gold)}}
+.fb{border-radius:12px;padding:10px 12px;margin-top:12px;display:none}
+.fb.ok{display:block;background:#e6f3ea;color:#1d5236;border-left:6px solid var(--ok)}
+.fb.err{display:block;background:#fbe9e7;color:#7d2620;border-left:6px solid var(--err)}
+.shake{animation:sh .35s}
+@keyframes sh{25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+.tf{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.tf .btn{flex:1;min-width:120px}
+.statement{font-size:1.1rem;font-weight:600;padding:14px;background:#fff;border-radius:12px;border:2px solid var(--line)}
+.opts{display:grid;gap:8px;margin-top:10px}
+.opt{border:2px solid var(--ink);background:#fff;border-radius:12px;padding:11px;text-align:left;color:var(--ink);box-shadow:0 3px 0 var(--ink)}
+.opt.right{border-color:var(--ok);background:#e6f3ea;box-shadow:0 3px 0 var(--ok)}
+.opt.wrong{border-color:var(--err);background:#fbe9e7;box-shadow:none;opacity:.7}
+.opt.pick{background:var(--ink);color:#fff}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:560px){.cols{grid-template-columns:1fr}}
+.order-list{display:grid;gap:6px;counter-reset:n}
+.order-slot{background:#fff;border:2px solid var(--ok);border-radius:10px;padding:8px 12px}
+.order-slot::before{counter-increment:n;content:counter(n) ". ";font-weight:700;color:var(--ok)}
+.counter{color:var(--muted);font-size:.9rem}
+.float{position:fixed;z-index:100;font-weight:800;color:var(--gold);text-shadow:0 2px 0 #000;pointer-events:none;animation:up 1s forwards;font-size:1.2rem}
+@keyframes up{to{transform:translateY(-50px);opacity:0}}
+/* resultado */
+.qbox{background:#fff;border-left:6px solid var(--gold);padding:12px 14px;border-radius:8px}
+.steps{counter-reset:s;list-style:none;padding:0;margin:10px 0}
+.steps li{counter-increment:s;position:relative;padding:8px 8px 8px 42px;margin:6px 0;background:#fff;border-radius:10px;border:1px solid var(--line)}
+.steps li::before{content:counter(s);position:absolute;left:10px;top:8px;width:24px;height:24px;border-radius:50%;background:var(--gold);color:#fff;font-weight:700;display:grid;place-items:center;font-size:.85rem}
+.model{background:#f2f7ee;border:1px solid #cfe0c3;border-radius:10px;padding:14px;margin:10px 0}
+.model mark,.counter mark{background:#ffe9a8;padding:0 2px;border-radius:3px}
+.warn{background:#fff3d6;border-radius:10px;padding:10px 12px;font-size:.95rem}
+.terms{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+.term{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px}
+.term b{display:block;font-family:Georgia,serif}
+.term.locked{color:var(--muted);font-style:italic}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;align-items:center;margin-top:14px}
+.big-stars{font-size:2.6rem;color:var(--gold);text-align:center;letter-spacing:6px;text-shadow:0 3px 0 #0003}
+.spin{animation:spin 4s linear infinite;transform-origin:center;transform-box:fill-box}
+.spin.r{animation-direction:reverse}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pop{animation:pop .5s}
+@keyframes pop{0%{transform:scale(.4)}70%{transform:scale(1.1)}}
+footer{color:#bfb3e0;text-align:center;font-size:.85rem;padding:24px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="hud">
+  <div class="grp">
+    <button class="pill" onclick="go('map')">🗺️ Mapa</button>
+    <button class="pill" onclick="go('dict')">📖 Dicionário</button>
+  </div>
+  <div class="grp">
+    <span class="pill" id="hGears" title="Engrenagens">⚙️ 0/10</span>
+    <span class="pill" id="hCoins" title="Moedas">🪙 0</span>
+    <button class="pill" id="hSound" onclick="toggleSound()" aria-label="Som">🔊</button>
+  </div>
+</header>
+<main class="wrap" id="app" aria-live="polite"></main>
+<footer>Material de revisão · História · 6º ano · Grécia, Roma e Idade Média</footer>
+<script>
+const LEVELS = [
+/* ---------- 1 ---------- */
+{era:"grecia", cap:"Cap. 9", titulo:"Heranças que chegaram até nós",
+ tipo:"sort",
+ intro:"Gregos e romanos deixaram muitas coisas que usamos até hoje. Toque em uma herança e depois na civilização que a criou ou espalhou.",
+ bins:["Grécia","Roma"],
+ itens:[
+  ["Teatro (tragédia e comédia)","Grécia","O teatro nasceu nas festas gregas em honra ao deus Dioniso."],
+  ["Filosofia","Grécia","Sócrates, Platão e Aristóteles eram filósofos gregos."],
+  ["Democracia","Grécia","A democracia surgiu em Atenas, uma cidade grega."],
+  ["Jogos Olímpicos","Grécia","Os Jogos Olímpicos começaram em Olímpia, na Grécia."],
+  ["Língua latina (origem do português)","Roma","O latim era a língua dos romanos e deu origem ao português, ao espanhol, ao francês e ao italiano."],
+  ["Direito romano (leis escritas)","Roma","Muitas leis atuais se inspiram no direito criado pelos romanos."],
+  ["Aquedutos e estradas","Roma","Os romanos eram grandes engenheiros: construíram aquedutos para levar água e estradas por todo o Império."],
+  ["Calendário com 12 meses (juliano)","Roma","O calendário que usamos vem de uma reforma feita por Júlio César, de Roma."]
+ ],
+ termos:[["Antiguidade Clássica","Período da história da Grécia e de Roma antigas, cuja cultura influenciou muito o mundo ocidental."],["Herança cultural","Costume, ideia ou criação de um povo do passado que continua presente hoje."]],
+ pergunta:"CITE dois exemplos de heranças culturais da Grécia ou de Roma antigas que ainda podemos perceber nos dias de hoje.",
+ passos:["Escolha <b>duas</b> heranças (podem ser uma grega e uma romana).","Diga de qual civilização cada uma veio.","Explique <b>onde</b> ela aparece hoje, no nosso dia a dia."],
+ modelo:"Uma herança da <mark>Grécia Antiga</mark> é o <mark>teatro</mark>, que surgiu nas festas gregas e hoje continua presente em peças, novelas e filmes. Uma herança de <mark>Roma Antiga</mark> é o <mark>latim</mark>, língua que deu origem ao português, que falamos até hoje.",
+ cuidado:"A questão pede <b>dois</b> exemplos. Não basta citar: mostre onde eles aparecem hoje."
+},
+/* ---------- 2 ---------- */
+{era:"grecia", cap:"Cap. 9", titulo:"Só gregos e romanos?",
+ tipo:"tf",
+ intro:"Verdadeiro ou falso? Pense no que os historiadores dizem hoje sobre a Antiguidade.",
+ itens:[
+  ["Só gregos e romanos foram importantes na Antiguidade.",false,"Falso! Egípcios, chineses, maias, persas, cuxitas e muitos outros povos criaram escrita, cidades, ciência e arte nessa mesma época."],
+  ["Os maias, na América, criaram calendários e conhecimentos de astronomia.",true,"Verdadeiro! Os maias tinham calendários muito precisos."],
+  ["Para os gregos, 'bárbaro' era quem não falava grego.",true,"Verdadeiro! A palavra imitava o som de uma língua que os gregos não entendiam (\"bar-bar\")."],
+  ["Chamar outros povos de 'bárbaros' trata a cultura deles como inferior.",true,"Verdadeiro! É um olhar preconceituoso, que mede todos os povos pela régua grega ou romana."],
+  ["Olhar só para a Europa é chamado de eurocentrismo.",true,"Verdadeiro! Eurocentrismo é colocar a Europa como centro e modelo de toda a história."],
+  ["Os egípcios não tinham escrita nem conhecimentos de matemática.",false,"Falso! Os egípcios criaram os hieróglifos e usavam matemática para construir pirâmides e medir terras."]
+ ],
+ termos:[["Bárbaro","Nome que gregos e romanos davam aos povos que não falavam grego ou latim. Tinha sentido de 'inferior'."],["Eurocentrismo","Forma de ver o mundo que coloca a Europa como centro e modelo para todos os povos."]],
+ pergunta:"EXPLIQUE por que hoje os historiadores criticam a ideia de que apenas gregos e romanos foram importantes na Antiguidade e diga qual é o problema de chamar os povos que não falavam grego ou latim de \"bárbaros\".",
+ passos:["Explique a crítica: <b>outros povos</b> também foram importantes (dê exemplos).","Diga o que significava <b>\"bárbaro\"</b>.","Explique o <b>problema</b>: é um olhar preconceituoso, que considera outras culturas inferiores."],
+ modelo:"Os historiadores criticam essa ideia porque, na mesma época, <mark>outros povos também criaram grandes civilizações</mark>, como os egípcios, com a escrita e as pirâmides, os chineses e os maias, com seus calendários. Olhar só para Grécia e Roma é uma visão <mark>eurocêntrica</mark>. Chamar os outros povos de <mark>\"bárbaros\"</mark> é um problema porque essa palavra tratava como <mark>inferior</mark> qualquer cultura diferente, o que é <mark>preconceito</mark>.",
+ cuidado:"A questão tem <b>duas partes</b>: a crítica E o problema da palavra \"bárbaro\". Responda as duas."
+},
+/* ---------- 3 ---------- */
+{era:"grecia", cap:"Cap. 10", titulo:"Quem vota na Ágora?",
+ tipo:"sort",
+ intro:"É dia de assembleia em Atenas! Toque em cada pessoa e decida: ela pode votar na Ágora ou fica de fora?",
+ bins:["Cidadão: pode votar","Fica de fora"],
+ itens:[
+  ["Homem adulto, filho de pai e mãe atenienses","Cidadão: pode votar","Isso mesmo: só homens adultos, livres e filhos de atenienses eram cidadãos."],
+  ["Mulher ateniense","Fica de fora","As mulheres, mesmo nascidas em Atenas, não participavam da política."],
+  ["Pessoa escravizada","Fica de fora","Os escravizados não tinham nenhum direito político."],
+  ["Meteco (estrangeiro que mora em Atenas)","Fica de fora","Os metecos trabalhavam e pagavam impostos, mas não eram cidadãos."],
+  ["Criança ateniense","Fica de fora","Só os homens adultos participavam das assembleias."],
+  ["Soldado ateniense, homem livre e adulto","Cidadão: pode votar","Homem, adulto, livre e filho de atenienses: era cidadão."]
+ ],
+ termos:[["Democracia","'Governo do povo'. Surgiu em Atenas, mas só os cidadãos participavam."],["Ágora","Praça pública das cidades gregas, onde as pessoas se reuniam e debatiam."],["Meteco","Estrangeiro que morava em Atenas. Não era cidadão."]],
+ pergunta:"INDIQUE quem era considerado cidadão em Atenas e CITE dois grupos de pessoas que ficavam de fora das decisões políticas.",
+ passos:["Diga <b>quem</b> era cidadão (as três condições: homem, adulto, filho de atenienses, e livre).","Cite <b>dois grupos</b> excluídos."],
+ modelo:"Em Atenas, eram considerados cidadãos apenas os <mark>homens adultos, livres e filhos de pais atenienses</mark>. Ficavam de fora das decisões políticas, por exemplo, as <mark>mulheres</mark> e os <mark>escravizados</mark>. Os estrangeiros (metecos) também não participavam. Por isso, a democracia ateniense incluía só uma pequena parte da população.",
+ cuidado:"\"Todo mundo que morava em Atenas\" está errado. A maioria da população ficava de fora."
+},
+/* ---------- 4 ---------- */
+{era:"grecia", cap:"Cap. 10", titulo:"Atenas × Esparta",
+ tipo:"sort",
+ intro:"Primeiro, uma dica: a Grécia é cheia de montanhas, o que separava as cidades e fez cada uma ter suas próprias leis. Agora toque em cada característica e diga se é de Atenas ou de Esparta.",
+ bins:["Atenas","Esparta"],
+ itens:[
+  ["Meninos treinados para a guerra desde os 7 anos","Esparta","Em Esparta, o Estado educava os meninos para serem soldados."],
+  ["Educação com leitura, música, filosofia e esportes","Atenas","Em Atenas, a educação valorizava as artes, a escrita e o pensamento."],
+  ["Governo democrático, com assembleia de cidadãos","Atenas","Atenas desenvolveu a democracia."],
+  ["Governada por dois reis e um conselho de anciãos","Esparta","Esparta tinha um governo oligárquico, controlado por poucos."],
+  ["Cidade voltada para o comércio marítimo","Atenas","Atenas tinha um porto importante e uma forte frota de navios."],
+  ["Sociedade militarizada, com disciplina rígida","Esparta","Ser soldado era a principal função do cidadão espartano."]
+ ],
+ termos:[["Pólis","Cidade-Estado grega: tinha governo, leis e moeda próprios."],["Oligarquia","Governo controlado por poucas pessoas."]],
+ pergunta:"ANALISE como o relevo montanhoso da Grécia contribuiu para a formação dessas cidades independentes e compare uma característica importante da educação ou do governo de Atenas com uma de Esparta.",
+ passos:["Explique o <b>relevo</b>: as montanhas dificultavam a comunicação entre as regiões.","Diga a consequência: cada cidade se desenvolveu <b>separada</b>, com leis próprias (pólis).","Faça a <b>comparação</b>: uma característica de Atenas × uma de Esparta."],
+ modelo:"O relevo da Grécia é muito <mark>montanhoso</mark>, o que <mark>dificultava o contato</mark> entre as regiões. Por isso, cada comunidade se desenvolveu de forma separada, com <mark>governo, leis e moeda próprios</mark>, formando as pólis. Comparando a educação: em <mark>Atenas</mark>, os meninos aprendiam leitura, música, filosofia e esportes, para participar da vida da cidade; em <mark>Esparta</mark>, eram treinados desde os 7 anos para serem <mark>soldados</mark>.",
+ cuidado:"\"Compare\" pede os <b>dois lados</b>: diga como era em Atenas E como era em Esparta."
+},
+/* ---------- 5 ---------- */
+{era:"roma", cap:"Cap. 12", titulo:"Navegando no Mare Nostrum",
+ tipo:"match",
+ intro:"O Mar Mediterrâneo era a grande estrada de Roma. Ligue cada produto à região de onde ele vinha pelo mar.",
+ pares:[
+  ["Trigo","Egito","O Egito era o 'celeiro de Roma': de lá vinha muito do trigo que alimentava a cidade."],
+  ["Azeite e metais (prata)","Hispânia (atual Espanha)","A Hispânia exportava azeite e tinha minas de prata."],
+  ["Seda e especiarias","Oriente (Ásia)","Produtos de luxo do Oriente chegavam aos portos do Mediterrâneo."],
+  ["Vinho e cerâmica","Gália e Itália","Vinho e vasos de cerâmica circulavam por todo o Império."]
+ ],
+ extra:{q:"Por que os romanos preferiam transportar mercadorias pelo mar?",
+  opts:["Era mais rápido e barato do que levar cargas pesadas por terra","Porque não existiam estradas no Império","Porque era proibido viajar por terra"],
+  certa:0, exp:"Navios carregavam muita mercadoria de uma vez, de forma mais rápida e barata. As estradas existiam, mas o mar ligava todas as províncias."},
+ termos:[["Mare Nostrum","'Nosso Mar': nome que os romanos deram ao Mediterrâneo depois de conquistar todas as suas margens."],["Província","Território conquistado por Roma e governado por ela."]],
+ pergunta:"EXPLIQUE qual era a importância do Mar Mediterrâneo para o comércio e para o deslocamento de pessoas e mercadorias em Roma Antiga.",
+ passos:["Diga que o Mediterrâneo <b>ligava</b> Roma a todas as províncias.","Explique o <b>comércio</b>: exemplos de produtos que chegavam pelo mar.","Fale do <b>deslocamento</b> de pessoas (comerciantes, soldados, escravizados) e de culturas."],
+ modelo:"O Mar Mediterrâneo era muito importante porque <mark>ligava Roma a todas as províncias</mark> da Europa, da África e da Ásia. Por ele, os navios transportavam mercadorias de forma <mark>mais rápida e barata</mark>, como o <mark>trigo do Egito</mark> e o <mark>azeite da Hispânia</mark>. O mar também permitia o <mark>deslocamento de pessoas</mark>, como comerciantes, soldados e escravizados, o que ajudou a espalhar ideias, costumes e religiões pelo Império.",
+ cuidado:"Fale das <b>duas coisas</b> que a questão pede: comércio (mercadorias) e deslocamento de pessoas."
+},
+/* ---------- 6 ---------- */
+{era:"roma", cap:"Cap. 12", titulo:"A luta da plebe",
+ tipo:"order",
+ intro:"Os plebeus lutaram durante séculos por direitos. Toque nos acontecimentos na ordem em que aconteceram (do mais antigo ao mais recente).",
+ itens:[
+  ["Plebeus abandonam Roma e se recusam a lutar na guerra (revolta no Monte Sagrado)","Sem os plebeus, Roma ficava sem soldados e sem trabalhadores. Essa foi a grande pressão!"],
+  ["Criação dos Tribunos da Plebe, que podiam vetar leis contra os plebeus","Os tribunos eram representantes dos plebeus no governo."],
+  ["Lei das Doze Tábuas: as leis passam a ser escritas","Com as leis escritas, todos podiam conhecê-las e os patrícios não podiam mudá-las como quisessem."],
+  ["Permissão de casamento entre patrícios e plebeus","A Lei Canuleia acabou com a proibição desses casamentos."],
+  ["Plebeus passam a poder ser eleitos cônsules","Os plebeus chegaram aos cargos mais altos da República."],
+  ["Fim da escravidão por dívidas","Antes, um plebeu endividado podia virar escravo do credor."]
+ ],
+ termos:[["Patrício","Membro das famílias ricas e proprietárias de terras de Roma, com direitos políticos."],["Plebeu","Trabalhador, artesão ou pequeno agricultor romano. No início, não tinha direitos políticos."],["Tribuno da Plebe","Representante eleito pelos plebeus, que podia vetar leis prejudiciais a eles."]],
+ pergunta:"EXPLIQUE como os plebeus conseguiram conquistar mais direitos em Roma e CITE uma dessas conquistas importantes.",
+ passos:["Explique <b>como</b>: os plebeus se revoltaram e deixaram de trabalhar e de lutar na guerra.","Explique <b>por que funcionou</b>: Roma dependia deles.","<b>Cite</b> e explique uma conquista."],
+ modelo:"Os plebeus conquistaram direitos por meio de <mark>revoltas e pressão</mark>: eles chegaram a abandonar Roma e se recusaram a lutar na guerra. Como a cidade <mark>dependia deles</mark> como soldados e trabalhadores, os patrícios tiveram que ceder. Uma conquista importante foi a <mark>Lei das Doze Tábuas</mark>, que colocou as leis <mark>por escrito</mark>. Assim, todos podiam conhecê-las e os patrícios não podiam mais mudá-las como quisessem.",
+ cuidado:"Não basta citar a conquista: explique também <b>como</b> eles a conseguiram."
+},
+/* ---------- 7 ---------- */
+{era:"roma", cap:"Cap. 13", titulo:"Governando o Império",
+ tipo:"quiz",
+ intro:"Você é um governador romano! Em cada situação, escolha o que Roma realmente fazia para controlar os povos conquistados.",
+ itens:[
+  ["O que era um império no mundo antigo?",["Um Estado poderoso que domina muitos territórios e povos diferentes, sob um só governo","Uma cidade pequena e independente","Uma aliança entre cidades iguais"],0,"Um império reúne muitos povos e territórios sob o domínio de um governo central, como o imperador romano."],
+  ["Uma nova província foi conquistada. Como Roma garante sua parte da riqueza?",["Cobrando impostos dos povos conquistados","Dando dinheiro aos povos conquistados","Deixando a província sem nenhuma obrigação"],0,"Os povos conquistados pagavam impostos em dinheiro ou em produtos, como o trigo."],
+  ["Há risco de revolta na província. O que Roma faz?",["Mantém legiões (exércitos) na região","Retira todos os soldados","Pede ajuda a outro império"],0,"As legiões ficavam nas províncias para impedir revoltas e proteger as fronteiras."],
+  ["Como Roma ligava as províncias para mover tropas e mercadorias?",["Construindo estradas e usando o Mar Mediterrâneo","Proibindo viagens","Usando só caminhos de terra sem manutenção"],0,"'Todos os caminhos levam a Roma': as estradas e o mar ligavam o Império."],
+  ["Como Roma ganhava o apoio das elites locais?",["Dando cidadania romana e cargos a algumas pessoas importantes","Proibindo todos de serem cidadãos","Destruindo todas as cidades"],0,"Ganhar o apoio dos líderes locais ajudava Roma a governar com menos conflitos."]
+ ],
+ termos:[["Império","Estado que domina muitos territórios e povos diferentes, sob um governo central."],["Legião","Grande unidade do exército romano."]],
+ pergunta:"EXPLIQUE o que é um império no mundo antigo e diga como os romanos controlavam os povos conquistados.",
+ passos:["Dê o <b>conceito</b> de império.","Cite <b>pelo menos duas formas</b> de controle (impostos, exércitos, estradas, cidadania)."],
+ modelo:"Um <mark>império</mark> é um Estado que <mark>domina muitos territórios e povos diferentes</mark>, sob o comando de um governo central. Os romanos controlavam os povos conquistados <mark>cobrando impostos</mark>, em dinheiro ou em produtos, e <mark>mantendo exércitos (legiões) nas províncias</mark> para evitar revoltas. Eles também construíam <mark>estradas</mark> para levar tropas e mercadorias e davam cidadania a algumas elites locais para ganhar seu apoio.",
+ cuidado:"Comece com a <b>definição</b> de império. Muitos alunos pulam essa parte!"
+},
+/* ---------- 8 ---------- */
+{era:"medieval", cap:"Cap. 14", titulo:"Os que oram, guerreiam e trabalham",
+ tipo:"sort",
+ intro:"Na Idade Média, a Igreja ensinava que Deus havia escolhido o lugar de cada pessoa na sociedade. Toque em cada pessoa e coloque-a no seu grupo.",
+ bins:["Os que oram (clero)","Os que guerreiam (nobreza)","Os que trabalham (camponeses)"],
+ itens:[
+  ["Monge copiando livros no mosteiro","Os que oram (clero)","Os monges preservavam o conhecimento copiando livros à mão."],
+  ["Bispo","Os que oram (clero)","Bispos e padres faziam parte do clero."],
+  ["Cavaleiro","Os que guerreiam (nobreza)","A nobreza tinha a função de lutar e proteger."],
+  ["Senhor feudal, dono de terras","Os que guerreiam (nobreza)","Os senhores feudais eram nobres guerreiros."],
+  ["Servo que planta no feudo","Os que trabalham (camponeses)","Os servos produziam o alimento de toda a sociedade."],
+  ["Camponesa que tece e cuida dos animais","Os que trabalham (camponeses)","O trabalho no campo era feito por homens e mulheres."]
+ ],
+ extra:{q:"Para que serviam os sinos das igrejas na vida medieval?",
+  opts:["Marcavam as horas do dia, as rezas e avisavam a comunidade","Só enfeitavam as torres","Anunciavam a chegada dos reis estrangeiros"],
+  certa:0, exp:"O dia era organizado pelo tempo da Igreja: os sinos marcavam o trabalho, as orações e as festas religiosas."},
+ termos:[["Clero","Grupo dos religiosos: padres, bispos, monges e freiras."],["Mosteiro","Lugar onde viviam monges ou monjas, dedicados à oração e ao estudo."],["Sociedade estamental","Sociedade dividida em grupos fixos; era muito difícil mudar de grupo."]],
+ pergunta:"ANALISE como a religião cristã influenciava a vida diária, a cultura e a organização da sociedade medieval.",
+ passos:["<b>Vida diária</b>: sinos, missas, festas religiosas.","<b>Cultura</b>: mosteiros, cópia de livros, arte religiosa.","<b>Organização da sociedade</b>: a ideia de que Deus escolheu o lugar de cada um (os que oram, guerreiam e trabalham)."],
+ modelo:"A religião cristã estava presente em tudo. Na <mark>vida diária</mark>, os <mark>sinos das igrejas</mark> marcavam as horas de trabalho e de oração, e o calendário seguia as <mark>festas religiosas</mark>. Na <mark>cultura</mark>, os <mark>mosteiros</mark> eram centros de estudo, onde os monges copiavam livros à mão. Na <mark>organização da sociedade</mark>, a Igreja ensinava que <mark>Deus havia escolhido o lugar de cada pessoa</mark>: o clero rezava, a nobreza guerreava e os camponeses trabalhavam. Isso fazia as pessoas aceitarem sua posição sem questionar.",
+ cuidado:"A questão pede <b>três aspectos</b>: vida diária, cultura e organização social. Use um parágrafo para cada, se precisar."
+},
+/* ---------- 9 ---------- */
+{era:"medieval", cap:"Cap. 16", titulo:"Mulheres na Idade Média",
+ tipo:"sort",
+ intro:"As mulheres medievais tinham menos direitos, mas faziam trabalhos essenciais. Toque em cada tarefa e diga onde ela acontecia.",
+ bins:["No campo","No castelo","No mosteiro"],
+ itens:[
+  ["Ajudar na colheita e cuidar dos animais","No campo","As camponesas trabalhavam na terra ao lado dos homens."],
+  ["Fiar e tecer roupas","No campo","Fazer tecidos era uma tarefa muito importante das camponesas."],
+  ["Administrar o castelo quando o marido ia para a guerra","No castelo","As nobres cuidavam das terras e dos empregados na ausência do senhor."],
+  ["Organizar os criados e os estoques de alimentos","No castelo","A administração da casa nobre ficava com a senhora do castelo."],
+  ["Rezar, estudar e copiar livros como freira","No mosteiro","Nos conventos, algumas mulheres aprendiam a ler e escrever."],
+  ["Cuidar de doentes e preparar remédios com ervas","No mosteiro","Muitos conventos tinham enfermarias e hortas de plantas medicinais."]
+ ],
+ termos:[["Convento","Mosteiro onde viviam freiras (monjas)."],["Abadessa","Freira que dirigia um convento. Algumas eram muito respeitadas e cultas."]],
+ pergunta:"CITE duas tarefas ou papéis realizados pelas mulheres na Idade Média (seja no campo, nos castelos ou nos mosteiros).",
+ passos:["Escolha <b>duas</b> tarefas (de preferência de lugares diferentes).","Diga <b>quem</b> fazia (camponesa, nobre ou freira) e <b>onde</b>."],
+ modelo:"No <mark>campo</mark>, as camponesas <mark>ajudavam na colheita, cuidavam dos animais e teciam as roupas</mark> da família. Nos <mark>mosteiros</mark>, as freiras <mark>estudavam, copiavam livros e cuidavam de doentes</mark>. Mesmo com menos direitos que os homens, as mulheres tinham papéis muito importantes na sociedade medieval.",
+ cuidado:"Diga também <b>onde</b> e <b>quem</b> fazia a tarefa. Isso deixa a resposta completa."
+},
+/* ---------- 10 ---------- */
+{era:"medieval", cap:"Cap. 16", titulo:"O acordo do feudo",
+ tipo:"match",
+ intro:"No feudo, senhor e servo tinham obrigações um com o outro. Ligue cada termo ao que ele significa.",
+ pares:[
+  ["Corveia","Trabalhar alguns dias por semana nas terras do senhor, sem receber","A corveia era um trabalho obrigatório e gratuito."],
+  ["Talha","Entregar ao senhor parte do que o servo produzia na sua terra","A talha era paga com uma parte da colheita."],
+  ["Banalidades","Pagar para usar o moinho, o forno e outros bens do senhor","Até para fazer pão o servo precisava pagar!"],
+  ["O senhor oferecia","Proteção e um pedaço de terra para o servo viver e plantar","Era essa a 'troca': proteção e terra em troca de trabalho e produção."]
+ ],
+ extra:{q:"Um servo podia ir embora do feudo quando quisesse?",
+  opts:["Não: o servo ficava preso à terra","Sim, a qualquer momento","Só se fosse para outra cidade"],
+  certa:0, exp:"O servo não era escravo (não podia ser vendido), mas estava preso à terra: não podia sair do feudo livremente."},
+ termos:[["Feudo","Grande propriedade rural de um senhor feudal."],["Servo","Camponês preso à terra, que trabalhava para o senhor em troca de proteção. Não era escravo nem trabalhador livre."],["Corveia","Trabalho gratuito do servo nas terras do senhor."],["Talha","Parte da produção do servo entregue ao senhor."],["Banalidades","Taxas pagas pelo uso do moinho, do forno e de outros bens do senhor."]],
+ pergunta:"EXPLIQUE como funcionava a relação de troca entre o senhor feudal e o servo e CITE uma obrigação (imposto ou trabalho) que o servo precisava cumprir no feudo.",
+ passos:["Explique o que o <b>senhor dava</b> (proteção e terra).","Explique o que o <b>servo dava</b> em troca (trabalho e parte da produção).","<b>Cite e explique</b> uma obrigação: corveia, talha ou banalidades."],
+ modelo:"A relação era uma <mark>troca</mark>: o senhor feudal oferecia <mark>proteção e um pedaço de terra</mark> para o servo morar e plantar. Em troca, o servo tinha que <mark>trabalhar e entregar parte da sua produção</mark> ao senhor. Uma das obrigações era a <mark>corveia</mark>: o servo trabalhava alguns dias por semana nas terras do senhor <mark>sem receber nada</mark> por isso.",
+ cuidado:"Mostre os <b>dois lados</b> da troca: o que o senhor dava e o que o servo dava."
+}
+];
+
+/* ================= PERSONAGENS (fictícios) ================= */
+const PERS = [
+ {nome:"Aríston, ator de teatro", pele:"#e8b98f", roupa:"#f4f0e6", cabelo:"#3b2a1a", acc:"louro",
+  fala:"Viajante! Um vento misturou as heranças da Grécia e de Roma no meu teatro. Arraste cada uma para o lugar certo e a engrenagem é sua!"},
+ {nome:"Melissa, guardiã da biblioteca", pele:"#c98f65", roupa:"#d9e6f2", cabelo:"#1f1510", acc:"louro",
+  fala:"Achei um pergaminho dizendo que só gregos e romanos importavam. Será verdade? Me ajude a separar o verdadeiro do falso."},
+ {nome:"Níkos, guarda da Ágora", pele:"#d9a57a", roupa:"#3f78a8", cabelo:"#2a1d12", acc:"elmo-g",
+  fala:"Hoje tem assembleia! Só cidadãos entram para votar. Me ajude a separar quem pode votar de quem fica de fora."},
+ {nome:"Dáfne, mensageira", pele:"#e8b98f", roupa:"#f0d7a8", cabelo:"#6b3a1e", acc:"louro",
+  fala:"Corri por montanhas entre Atenas e Esparta e misturei minhas anotações! Qual característica é de qual cidade?"},
+ {nome:"Marco, capitão de navio", pele:"#c98f65", roupa:"#b5453a", cabelo:"#2a1d12", acc:"capa",
+  fala:"Ventos fortes no Mare Nostrum! Minha carga se misturou. Ligue cada produto ao porto de onde ele veio."},
+ {nome:"Júlia, plebeia", pele:"#e8b98f", roupa:"#c9b28a", cabelo:"#4a2c17", acc:"lenco",
+  fala:"Nós, plebeus, lutamos muito por direitos! Me ajude a contar nossa história na ordem certa."},
+ {nome:"Lúcio, governador de província", pele:"#d9a57a", roupa:"#8e2a22", cabelo:"#d9d0c0", acc:"elmo-r",
+  fala:"Acabei de chegar a uma província distante. Como faço para Roma manter o controle aqui? Escolha as melhores decisões."},
+ {nome:"Irmão Bento, monge copista", pele:"#e8b98f", roupa:"#6b4a2e", cabelo:"#8a6a4a", acc:"capuz",
+  fala:"Paz, viajante! Meus registros sobre os grupos da sociedade se embaralharam. Coloque cada pessoa no seu grupo."},
+ {nome:"Inês, camponesa", pele:"#c98f65", roupa:"#7a8f4e", cabelo:"#3b2a1a", acc:"lenco",
+  fala:"Ninguém lembra do trabalho das mulheres! Me ajude a mostrar onde cada tarefa acontecia."},
+ {nome:"Tomás, servo do feudo", pele:"#d9a57a", roupa:"#8a7a5a", cabelo:"#2a1d12", acc:"capuz",
+  fala:"O senhor diz que devo muitas coisas a ele, mas não entendo os nomes! Ligue cada termo ao seu significado."}
+];
+
+/* ================= DESENHOS SVG ================= */
+function charSVG(p, w=72){
+  const acc = {
+    "louro":`<path d="M22 22 q14 -10 28 0" stroke="#4f8a3a" stroke-width="4" fill="none"/><circle cx="24" cy="21" r="2.5" fill="#4f8a3a"/><circle cx="48" cy="21" r="2.5" fill="#4f8a3a"/>`,
+    "elmo-g":`<path d="M20 28 q16 -26 32 0 z" fill="#c9a23a"/><path d="M36 4 q12 2 14 14" stroke="#b33" stroke-width="5" fill="none"/>`,
+    "elmo-r":`<path d="M20 28 q16 -26 32 0 z" fill="#b9b9b9"/><rect x="33" y="2" width="6" height="12" fill="#c0392b"/>`,
+    "capa":`<path d="M18 54 l-6 44 h48 l-6 -44z" fill="#7d2a22"/>`,
+    "lenco":`<path d="M20 26 q16 -18 32 0 l2 8 h-36z" fill="#e6d3a3"/>`,
+    "capuz":`<path d="M16 40 q20 -44 40 0 v10 h-6 v-14 q-14 -22 -28 0 v14 h-6z" fill="${p.roupa}" opacity=".95"/>`
+  }[p.acc]||"";
+  return `<svg viewBox="0 0 72 100" width="${w}" aria-hidden="true">
+    ${p.acc==="capa"?acc:""}
+    <path d="M18 56 q18 -10 36 0 l6 44 h-48z" fill="${p.roupa}" stroke="#0003"/>
+    <rect x="31" y="44" width="10" height="10" fill="${p.pele}"/>
+    <circle cx="36" cy="32" r="15" fill="${p.pele}"/>
+    <path d="M21 30 q15 -22 30 0 q-6 -8 -15 -8 q-9 0 -15 8z" fill="${p.cabelo}"/>
+    <circle cx="31" cy="33" r="2" fill="#222"/><circle cx="41" cy="33" r="2" fill="#222"/>
+    <path d="M31 39 q5 4 10 0" stroke="#7a3b2a" stroke-width="2" fill="none" stroke-linecap="round"/>
+    ${p.acc!=="capa"?acc:""}
+  </svg>`;
+}
+const TRAVELER = {pele:"#e8b98f", roupa:"#5b4a8a", cabelo:"#2a1d12", acc:""};
+
+function sceneSVG(era){
+  if(era==="grecia") return `<svg viewBox="0 0 400 140" role="img" aria-label="Cenário: templo grego à beira-mar">
+    <defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fd0f5"/><stop offset="1" stop-color="#d9f1ff"/></linearGradient></defs>
+    <rect width="400" height="140" fill="url(#sg)"/><circle cx="340" cy="30" r="16" fill="#ffd45e"/>
+    <path d="M0 95 q60 -50 120 -10 q50 -40 110 5 q60 -45 170 0 v50 h-400z" fill="#9bbf7a"/>
+    <rect y="112" width="400" height="28" fill="#2f78b8"/><path d="M0 116 q20 -5 40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0" stroke="#bfe3ff" fill="none"/>
+    <g transform="translate(150 40)" fill="#f4efe2" stroke="#b9ad92">
+      <path d="M-10 18 l60 -18 l60 18z"/><rect x="-6" y="18" width="112" height="7"/>
+      ${[0,1,2,3,4,5].map(k=>`<rect x="${k*19}" y="25" width="9" height="40"/>`).join("")}
+      <rect x="-8" y="65" width="116" height="7"/></g>
+    <path d="M300 112 l14 -10 h30 l10 10z" fill="#7a4a2a"/><path d="M325 102 v-26 l14 18z" fill="#fff"/>
+  </svg>`;
+  if(era==="roma") return `<svg viewBox="0 0 400 140" role="img" aria-label="Cenário: Coliseu e aqueduto romanos">
+    <defs><linearGradient id="sr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7b27a"/><stop offset="1" stop-color="#ffe3c2"/></linearGradient></defs>
+    <rect width="400" height="140" fill="url(#sr)"/><circle cx="60" cy="35" r="18" fill="#fff0b0"/>
+    <rect y="110" width="400" height="30" fill="#c9a26b"/>
+    <g fill="#d9b98a" stroke="#a8875a"><path d="M200 110 v-64 q70 -14 150 0 v64z"/>
+      ${[0,1,2].map(r=>[0,1,2,3,4,5].map(c=>`<path d="M${210+c*23} ${104-r*20} v-10 a7 7 0 0 1 14 0 v10z" fill="#7a5a3a"/>`).join("")).join("")}</g>
+    <g fill="#bfa27a" stroke="#8f7350"><rect x="0" y="62" width="180" height="8"/>
+      ${[0,1,2,3,4].map(c=>`<path d="M${c*36} 70 h36 v40 h-8 v-20 a10 10 0 0 0 -20 0 v20 h-8z"/>`).join("")}</g>
+    <path d="M380 110 v-50" stroke="#5a4a2a" stroke-width="3"/><circle cx="380" cy="52" r="12" fill="#4f7a3a"/>
+  </svg>`;
+  if(era==="medieval") return `<svg viewBox="0 0 400 140" role="img" aria-label="Cenário: castelo medieval e campos">
+    <defs><linearGradient id="sm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a9c7e6"/><stop offset="1" stop-color="#e8f0f7"/></linearGradient></defs>
+    <rect width="400" height="140" fill="url(#sm)"/>
+    <path d="M0 100 q100 -30 200 0 t200 0 v40 h-400z" fill="#7fa35a"/>
+    ${[0,1,2,3,4,5].map(k=>`<path d="M${k*30} 125 l25 -12" stroke="#c9b25a" stroke-width="5"/>`).join("")}
+    <g fill="#a9a39a" stroke="#6f6a62"><rect x="230" y="50" width="110" height="60"/>
+      <rect x="215" y="30" width="30" height="80"/><rect x="325" y="30" width="30" height="80"/>
+      ${[0,1,2].map(k=>`<rect x="${215+k*10}" y="24" width="6" height="8"/><rect x="${325+k*10}" y="24" width="6" height="8"/>`).join("")}
+      <path d="M270 110 v-26 a15 15 0 0 1 30 0 v26z" fill="#5a3a22"/></g>
+    <path d="M230 30 v-20 l14 6 -14 6" fill="#c0392b" stroke="#333"/>
+    <g transform="translate(60 70)"><rect width="40" height="30" fill="#e6d3a3" stroke="#8a7a5a"/><path d="M-5 0 l25 -20 l25 20z" fill="#a0522d"/><path d="M20 -20 v-10 M15 -25 h10" stroke="#555" stroke-width="2"/></g>
+  </svg>`;
+  return `<svg viewBox="0 0 400 140" role="img" aria-label="Máquina do tempo">
+    <rect width="400" height="140" fill="#241c3d"/>${[...Array(30)].map((_,k)=>`<circle cx="${(k*67)%400}" cy="${(k*41)%140}" r="1.5" fill="#fff8"/>`).join("")}
+    <g transform="translate(200 72)">${gearSVG(48,"#e0a82e",true)}</g>
+    <g transform="translate(140 50)">${gearSVG(26,"#9a8cd0",true,true)}</g><g transform="translate(262 96)">${gearSVG(26,"#9a8cd0",true,true)}</g></svg>`;
+}
+function gearSVG(r,c,spin,rev){
+  const t=[...Array(8)].map((_,k)=>`<rect x="${-r*.14}" y="${-r}" width="${r*.28}" height="${r*.3}" transform="rotate(${k*45})"/>`).join("");
+  return `<g class="${spin?"spin":""} ${rev?"r":""}" fill="${c}">${t}<circle r="${r*.78}"/><circle r="${r*.3}" fill="#0005"/></g>`;
+}
+function gearIcon(on){ return `<svg viewBox="-24 -24 48 48" class="gear">${gearSVG(22,on?"#e0a82e":"#bbb",false)}</svg>`; }
+
+/* ================= SOM (gerado no código) ================= */
+let AC=null;
+function beep(notes,type="sine",dur=.12){
+  if(!S.sound) return;
+  try{
+    AC = AC || new (window.AudioContext||window.webkitAudioContext)();
+    notes.forEach((f,k)=>{
+      const o=AC.createOscillator(), g=AC.createGain(), t=AC.currentTime+k*dur;
+      o.type=type; o.frequency.value=f; g.gain.setValueAtTime(.12,t); g.gain.exponentialRampToValueAtTime(.001,t+dur*1.6);
+      o.connect(g).connect(AC.destination); o.start(t); o.stop(t+dur*1.7);
+    });
+  }catch(e){}
+}
+const SFX={ ok:()=>beep([660,880]), err:()=>beep([220,160],"square",.14), coin:()=>beep([988,1319],"triangle",.07),
+  win:()=>beep([523,659,784,1047],"triangle",.13), lose:()=>beep([392,330,262,196],"sawtooth",.18), click:()=>beep([440],"sine",.04) };
+
+/* ================= ESTADO ================= */
+let S = {stars:{}, coins:0, sound:true, desafio:false, boss:false};
+try{ Object.assign(S, JSON.parse(localStorage.getItem("vt-hist6b"))||{}); }catch(e){}
+function save(){ try{ localStorage.setItem("vt-hist6b", JSON.stringify(S)); }catch(e){} }
+const app = document.getElementById("app");
+const gears = () => Object.keys(S.stars).length;
+const unlocked = i => i===0 || S.stars[i-1]!==undefined;
+const shuffle = a => { a=[...a]; for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];} return a; };
+const starStr = n => "★".repeat(n)+"☆".repeat(3-n);
+const HINT_COST = 5;
+function hud(){
+  document.getElementById("hGears").textContent=`⚙️ ${gears()}/10`;
+  document.getElementById("hCoins").textContent=`🪙 ${S.coins}`;
+  document.getElementById("hSound").textContent=S.sound?"🔊":"🔇";
+}
+function toggleSound(){ S.sound=!S.sound; save(); hud(); SFX.click(); }
+function floatText(txt, el){
+  const r=(el||document.body).getBoundingClientRect(), d=document.createElement("div");
+  d.className="float"; d.textContent=txt; d.style.left=(r.left+r.width/2)+"px"; d.style.top=(el?r.top:120)+"px";
+  document.body.appendChild(d); setTimeout(()=>d.remove(),1000);
+}
+
+function go(view, i){
+  stopTimer(); hud(); window.scrollTo(0,0);
+  if(view==="title") return renderTitle();
+  if(view==="map") return renderMap();
+  if(view==="dict") return renderDict();
+  if(view==="play") return renderLevel(i);
+  if(view==="boss") return renderBoss();
+}
+
+/* ================= TELA INICIAL ================= */
+function renderTitle(){
+  app.innerHTML=`<div class="title-screen">
+    <div class="card" style="padding:0;overflow:hidden">${sceneSVG("boss")}</div>
+    <h1>Viagem no Tempo</h1><h2 style="color:#fff">da Pólis ao Feudo</h2>
+    <p>Sua máquina do tempo quebrou e as <b>10 engrenagens</b> se espalharam pela Grécia, por Roma e pela Idade Média.</p>
+    <p>Ajude as pessoas de cada época para recuperar as engrenagens. No final, enfrente o <b>Desafio da Máquina</b> para voltar para casa!</p>
+    <div class="row" style="justify-content:center"><button class="btn gold" onclick="SFX.win();go('map')">${gears()?"Continuar viagem ▶":"Começar viagem ▶"}</button></div>
+    <div class="card" style="text-align:left;margin-top:18px">
+      <h3>Como jogar</h3>
+      <p>❤️ Você tem <b>3 vidas</b> por fase. Cada erro custa uma.<br>
+      🪙 Cada acerto vale moedas. Acertos seguidos dão <b>combo</b> e moedas extras.<br>
+      💡 Gaste ${HINT_COST} moedas para pedir uma <b>dica</b>.<br>
+      ⏱️ Quer mais emoção? Ligue o <b>Modo Desafio</b> no mapa: cada fase ganha um cronômetro.<br>
+      ✍️ Ao fim de cada fase, você aprende a montar a resposta da questão para escrever no caderno.</p>
+    </div></div>`;
+}
+
+/* ================= MAPA ================= */
+function renderMap(){
+  const cur = LEVELS.findIndex((_,i)=>S.stars[i]===undefined);
+  let h=`<div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+    <div><b>Engrenagens: ${gears()}/10</b><br><span class="counter">Total de estrelas: ${Object.values(S.stars).reduce((a,b)=>a+b,0)}/30</span></div>
+    <button class="pill ${S.desafio?"on":""}" style="color:${S.desafio?"":"var(--ink)"};background:${S.desafio?"":"#eee"}" onclick="S.desafio=!S.desafio;save();SFX.click();renderMap()">⏱️ Modo Desafio: ${S.desafio?"LIGADO":"desligado"}</button></div>`;
+  for(const era of ["grecia","roma","medieval"]){
+    const nm={grecia:"🏛️ Grécia Antiga",roma:"🦅 Roma Antiga",medieval:"🏰 Idade Média"}[era];
+    h+=`<section class="band ${era}"><h2>${nm}</h2><div class="nodes">`;
+    LEVELS.forEach((L,i)=>{ if(L.era!==era) return;
+      const lock=!unlocked(i), st=S.stars[i];
+      h+=`<button class="node ${lock?"lock":""} ${i===cur?"cur":""}" ${lock?"disabled":""} onclick="SFX.click();go('play',${i})">
+        ${gearIcon(st!==undefined)}<span><small>Questão ${i+1} · ${L.cap}</small><b>${L.titulo}</b></span>
+        <span class="st">${st!==undefined?starStr(st):(lock?"🔒":"▶")}</span>
+        ${i===cur?`<span class="traveler">${charSVG(TRAVELER,40)}</span>`:""}</button>`;
+    });
+    h+=`</div></section>`;
+  }
+  const bossOk = gears()===10;
+  h+=`<section class="band boss"><h2>⚙️ Desafio da Máquina</h2><div class="nodes">
+    <button class="node ${bossOk?"":"lock"} ${bossOk&&!S.boss?"cur":""}" ${bossOk?"":"disabled"} onclick="go('boss')">
+      ${gearIcon(S.boss)}<span><small>Fase final · perguntas das 3 eras contra o relógio</small><b>Religar a máquina do tempo</b></span>
+      <span class="st">${S.boss?"🏆":(bossOk?"▶":"🔒")}</span>
+      ${bossOk&&!S.boss?`<span class="traveler">${charSVG(TRAVELER,40)}</span>`:""}</button></div></section>
+  <div class="row" style="justify-content:center"><button class="btn sec" onclick="if(confirm('Apagar todo o progresso?')){S={stars:{},coins:0,sound:S.sound,desafio:false,boss:false};save();go('title')}">Recomeçar do zero</button></div>`;
+  app.innerHTML=h;
+  const c=document.querySelector(".node.cur"); if(c && gears()) c.scrollIntoView({block:"center"});
+}
+
+/* ================= DICIONÁRIO ================= */
+function renderDict(){
+  let h=`<div class="card"><h1>📖 Dicionário histórico</h1><p class="counter">Complete as fases para desbloquear as palavras. Copie-as no seu caderno!</p><div class="terms">`;
+  LEVELS.forEach((L,i)=>L.termos.forEach(([t,d])=>{
+    h+= S.stars[i]!==undefined ? `<div class="term"><b>${t}</b>${d}</div>` : `<div class="term locked">🔒 Complete a questão ${i+1}</div>`;
+  }));
+  app.innerHTML=h+`</div></div><button class="btn gold" onclick="go('map')">Voltar ao mapa</button>`;
+}
+
+/* ================= MOTOR DA FASE ================= */
+let G, TMR=null;
+function stopTimer(){ if(TMR){clearInterval(TMR);TMR=null;} }
+function frame(era, pers, titulo, intro){
+  return `<div class="scene">${sceneSVG(era)}</div>
+  <div class="dialog"><div class="who">${charSVG(pers)}</div><div class="bubble"><b>${pers.nome}</b>${intro}</div></div>
+  <div class="card">
+    <h2>${titulo}</h2>
+    <div class="status"><span class="hearts" id="hearts"></span><span class="combo" id="combo"></span>
+      <button class="pill" style="background:var(--gold);color:var(--ink)" id="hintBtn">💡 Dica (${HINT_COST}🪙)</button></div>
+    <div class="timer" id="tbar" style="display:none"><i id="tfill" style="width:100%"></i></div>
+    <div id="game" style="margin-top:10px"></div><div id="fb" class="fb" role="status"></div><div id="extra"></div>
+  </div>
+  <div class="row"><button class="btn sec" onclick="go('map')">← Mapa</button><span class="counter" style="color:#ddd">Toque ou arraste os itens</span></div>`;
+}
+function startLevel(o){
+  G = Object.assign({lives:3, combo:0, over:false, hint:null}, o);
+  drawStatus();
+  document.getElementById("hintBtn").onclick=useHint;
+  if(G.time){
+    let left=G.time; const bar=document.getElementById("tbar"), f=document.getElementById("tfill");
+    bar.style.display="block";
+    TMR=setInterval(()=>{ left--; f.style.width=(left/G.time*100)+"%"; if(left<=0){stopTimer(); gameOver("O tempo acabou!");} },1000);
+  }
+}
+function drawStatus(){
+  document.getElementById("hearts").textContent="❤️".repeat(G.lives)+"🖤".repeat(3-G.lives);
+  document.getElementById("combo").textContent=G.combo>=2?`🔥 Combo x${G.combo}`:"";
+}
+function fb(ok,msg){ const f=document.getElementById("fb"); if(!f) return; f.className="fb "+(ok?"ok":"err"); f.innerHTML=(ok?"✅ ":"❌ ")+msg; }
+function good(msg, el){
+  if(G.over) return;
+  G.combo++; const gain = 1 + (G.combo>=3?1:0);
+  S.coins+=gain; save(); hud(); SFX.ok(); setTimeout(SFX.coin,150);
+  floatText(`+${gain}🪙${G.combo>=3?" 🔥":""}`, el); fb(true,msg); drawStatus();
+}
+function bad(msg, el){
+  if(G.over) return;
+  G.combo=0; G.lives--; SFX.err(); drawStatus();
+  if(el){el.classList.remove("shake");void el.offsetWidth;el.classList.add("shake");}
+  if(G.lives<=0) return gameOver("Suas vidas acabaram!");
+  fb(false,msg);
+}
+function useHint(){
+  if(G.over || !G.hint) return;
+  if(S.coins<HINT_COST){ SFX.err(); return fb(false,`Você precisa de ${HINT_COST} moedas para uma dica. Acerte mais para ganhar!`); }
+  if(G.hint()!==false){ S.coins-=HINT_COST; save(); hud(); SFX.coin(); floatText(`-${HINT_COST}🪙`, document.getElementById("hintBtn")); }
+}
+function gameOver(why){
+  G.over=true; stopTimer(); SFX.lose();
+  const retry = G.boss?"go('boss')":`go('play',${G.i})`;
+  app.innerHTML=`<div class="card" style="text-align:center"><div style="font-size:3rem">💥</div><h2>${why}</h2>
+    <p>A engrenagem escapou desta vez. Mas cada tentativa te deixa mais preparado!</p>
+    <p class="counter">Dica: as explicações que aparecem quando você acerta ajudam muito na próxima tentativa.</p>
+    <div class="row" style="justify-content:center"><button class="btn sec" onclick="go('map')">Mapa</button><button class="btn gold" onclick="${retry}">Tentar de novo ↻</button></div></div>`;
+}
+
+function renderLevel(i){
+  const L=LEVELS[i];
+  app.innerHTML=frame(L.era, PERS[i], `${i+1}. ${L.titulo}`, PERS[i].fala+`<br><span class="counter">${L.intro}</span>`);
+  startLevel({i, extraDone:!L.extra, time:S.desafio?150:0});
+  ({sort:gSort, tf:gTF, match:gMatch, order:gOrder, quiz:gQuiz})[L.tipo](L);
+}
+function mainDone(){
+  if(G.over) return;
+  const L=LEVELS[G.i];
+  if(L.extra && !G.extraDone){
+    const x=L.extra, ord=shuffle(x.opts.map((_,k)=>k));
+    document.getElementById("extra").innerHTML=`<h3 style="margin-top:18px">⭐ Pergunta bônus</h3><div class="statement">${x.q}</div><div class="opts">`+
+      ord.map(k=>`<button class="opt" data-k="${k}">${x.opts[k]}</button>`).join("")+`</div>`;
+    G.hint=()=>{ const w=[...document.querySelectorAll("#extra .opt:not(.wrong)")].find(b=>+b.dataset.k!==x.certa); if(!w) return false; w.classList.add("wrong"); w.disabled=true; };
+    document.querySelectorAll("#extra .opt").forEach(b=>b.onclick=()=>{
+      if(G.extraDone||G.over) return;
+      if(+b.dataset.k===x.certa){ b.classList.add("right"); G.extraDone=true; good(x.exp,b); setTimeout(finish,1600); }
+      else { b.classList.add("wrong"); b.disabled=true; bad("Ainda não. Pense de novo!",b); }
+    });
+    document.getElementById("extra").scrollIntoView({behavior:"smooth",block:"center"});
+  } else setTimeout(finish,1300);
+}
+
+/* ---------- classificar (arrastar ou tocar) ---------- */
+function gSort(L){
+  let sel=null; const left=new Set(L.itens.map((_,k)=>k)); const g=document.getElementById("game");
+  g.innerHTML=`<div class="pool" id="pool">`+shuffle([...left]).map(k=>`<button class="chip" data-k="${k}">${L.itens[k][0]}</button>`).join("")+`</div>
+    <div class="bins">`+L.bins.map((b,j)=>`<div class="bin" role="button" tabindex="0" data-b="${j}"><h4>${b}</h4><div></div></div>`).join("")+`</div>`;
+  const bins=[...g.querySelectorAll(".bin")];
+  const clearSel=()=>{ g.querySelectorAll("#pool .chip").forEach(x=>x.classList.remove("sel")); bins.forEach(b=>b.classList.remove("hint","over")); };
+  function drop(chip, bin){
+    if(G.over) return;
+    const k=+chip.dataset.k, it=L.itens[k];
+    if(L.bins[+bin.dataset.b]===it[1]){
+      bin.querySelector("div").insertAdjacentHTML("beforeend",`<span class="chip done pop">${it[0]}</span>`);
+      chip.remove(); sel=null; left.delete(k); clearSel(); good(it[2],bin);
+      if(!left.size) mainDone();
+    } else { clearSel(); sel=null; bad(`"${it[0]}" não vai em "${L.bins[+bin.dataset.b]}". Tente outro grupo!`, bin); }
+  }
+  g.querySelectorAll("#pool .chip").forEach(c=>{
+    c.addEventListener("pointerdown",e=>{
+      if(G.over) return;
+      const sx=e.clientX, sy=e.clientY; let ghost=null, moved=false;
+      c.setPointerCapture(e.pointerId);
+      const mv=ev=>{
+        if(!moved && Math.hypot(ev.clientX-sx,ev.clientY-sy)>8){ moved=true; ghost=c.cloneNode(true); ghost.classList.add("ghost"); document.body.appendChild(ghost); c.style.opacity=".3"; }
+        if(ghost){ ghost.style.left=ev.clientX+"px"; ghost.style.top=ev.clientY+"px";
+          const over=document.elementFromPoint(ev.clientX,ev.clientY)?.closest(".bin"); bins.forEach(b=>b.classList.toggle("over",b===over)); }
+      };
+      const up=ev=>{
+        c.removeEventListener("pointermove",mv); c.removeEventListener("pointerup",up); c.removeEventListener("pointercancel",up);
+        if(ghost){ ghost.remove(); c.style.opacity=""; const b=document.elementFromPoint(ev.clientX,ev.clientY)?.closest(".bin"); bins.forEach(x=>x.classList.remove("over")); if(b) drop(c,b); }
+        else { clearSel(); sel=c; c.classList.add("sel"); bins.forEach(b=>b.classList.add("hint")); SFX.click(); }
+      };
+      c.addEventListener("pointermove",mv); c.addEventListener("pointerup",up); c.addEventListener("pointercancel",up);
+    });
+  });
+  bins.forEach(b=>{ const act=()=>{ if(!sel) return fb(false,"Toque em um item (ou arraste-o) até um dos grupos."); drop(sel,b); };
+    b.onclick=act; b.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){e.preventDefault();act();} }; });
+  G.hint=()=>{
+    const c = sel || g.querySelector("#pool .chip"); if(!c) return false;
+    const target=bins.find(b=>L.bins[+b.dataset.b]===L.itens[+c.dataset.k][1]);
+    clearSel(); sel=c; c.classList.add("sel"); target.classList.add("glow"); setTimeout(()=>target.classList.remove("glow"),2500);
+    fb(true,`💡 "${L.itens[+c.dataset.k][0]}" vai no grupo destacado.`);
+  };
+}
+
+/* ---------- verdadeiro ou falso ---------- */
+function gTF(L){
+  const ord=shuffle(L.itens.map((_,k)=>k)); let p=0, locked=false; const g=document.getElementById("game");
+  const show=()=>{ const it=L.itens[ord[p]]; locked=false;
+    g.innerHTML=`<p class="counter">Afirmação ${p+1} de ${ord.length}</p><div class="statement">${it[0]}</div>
+      <div class="tf"><button class="btn" style="background:var(--ok)" data-v="1">👍 Verdadeiro</button><button class="btn" style="background:var(--err)" data-v="0">👎 Falso</button></div>`;
+    G.hint=()=>{ if(locked) return false; const b=g.querySelector(`.tf .btn[data-v="${it[1]?1:0}"]`); b.classList.add("glow"); fb(true,"💡 Olhe o botão que está brilhando."); };
+    g.querySelectorAll(".tf .btn").forEach(b=>b.onclick=()=>{
+      if(locked||G.over) return;
+      if((b.dataset.v==="1")===it[1]){ locked=true; good(it[2],b); p++;
+        setTimeout(()=>{ if(G.over) return; if(p<ord.length){document.getElementById("fb").className="fb";show();} else {g.innerHTML="";mainDone();} },1900);
+      } else bad("Hmm, releia com atenção e tente de novo.",b);
+    });
+  }; show();
+}
+
+/* ---------- ligar pares ---------- */
+function gMatch(L){
+  let selA=null, left=L.pares.length; const g=document.getElementById("game");
+  g.innerHTML=`<p class="counter">Toque em um item da esquerda e depois no seu par.</p><div class="cols">
+    <div class="opts" id="ca">`+shuffle(L.pares.map((_,k)=>k)).map(k=>`<button class="opt" data-k="${k}"><b>${L.pares[k][0]}</b></button>`).join("")+`</div>
+    <div class="opts" id="cb">`+shuffle(L.pares.map((_,k)=>k)).map(k=>`<button class="opt" data-k="${k}">${L.pares[k][1]}</button>`).join("")+`</div></div>`;
+  const pick=a=>{ g.querySelectorAll("#ca .opt").forEach(x=>x.classList.remove("pick")); selA=a; a.classList.add("pick"); SFX.click(); };
+  g.querySelectorAll("#ca .opt").forEach(a=>a.onclick=()=>{ if(!a.disabled) pick(a); });
+  g.querySelectorAll("#cb .opt").forEach(b=>b.onclick=()=>{
+    if(b.disabled||G.over) return; if(!selA) return fb(false,"Primeiro toque em um item da coluna da esquerda.");
+    if(selA.dataset.k===b.dataset.k){ const p=L.pares[+b.dataset.k];
+      [selA,b].forEach(x=>{x.classList.remove("pick");x.classList.add("right");x.disabled=true;}); selA=null; good(p[2],b);
+      if(!--left) mainDone();
+    } else bad("Esse par não combina. Tente outro!",b);
+  });
+  G.hint=()=>{ const a=selA||g.querySelector("#ca .opt:not(:disabled)"); if(!a) return false; pick(a);
+    const b=g.querySelector(`#cb .opt[data-k="${a.dataset.k}"]`); b.classList.add("glow"); setTimeout(()=>b.classList.remove("glow"),2500); fb(true,"💡 O par certo está brilhando."); };
+}
+
+/* ---------- ordenar ---------- */
+function gOrder(L){
+  let next=0; const g=document.getElementById("game");
+  g.innerHTML=`<div class="order-list" id="ol"></div><p class="counter" style="margin-top:12px">Toque no próximo acontecimento:</p>
+    <div class="opts" id="op">`+shuffle(L.itens.map((_,k)=>k)).map(k=>`<button class="opt" data-k="${k}">${L.itens[k][0]}</button>`).join("")+`</div>`;
+  g.querySelectorAll("#op .opt").forEach(b=>b.onclick=()=>{
+    if(G.over) return; const k=+b.dataset.k;
+    if(k===next){ document.getElementById("ol").insertAdjacentHTML("beforeend",`<div class="order-slot pop">${L.itens[k][0]}</div>`); b.remove(); good(L.itens[k][1],document.getElementById("ol").lastElementChild); if(++next===L.itens.length) mainDone(); }
+    else bad("Ainda não é a vez desse acontecimento. Qual veio antes?",b);
+  });
+  G.hint=()=>{ const b=g.querySelector(`#op .opt[data-k="${next}"]`); if(!b) return false; b.classList.add("glow"); setTimeout(()=>b.classList.remove("glow"),2500); fb(true,"💡 O próximo acontecimento está brilhando."); };
+}
+
+/* ---------- quiz ---------- */
+function gQuiz(L){
+  let p=0; const g=document.getElementById("game");
+  const show=()=>{ const it=L.itens[p], ord=shuffle(it[1].map((_,k)=>k)); let ok=false;
+    g.innerHTML=`<p class="counter">Situação ${p+1} de ${L.itens.length}</p><div class="statement">${it[0]}</div><div class="opts">`+
+      ord.map(k=>`<button class="opt" data-k="${k}">${it[1][k]}</button>`).join("")+`</div>`;
+    G.hint=()=>{ if(ok) return false; const w=[...g.querySelectorAll(".opt:not(.wrong)")].find(b=>+b.dataset.k!==it[2]); if(!w) return false; w.classList.add("wrong"); w.disabled=true; fb(true,"💡 Uma opção errada foi eliminada."); };
+    g.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+      if(ok||G.over) return;
+      if(+b.dataset.k===it[2]){ ok=true; b.classList.add("right"); good(it[3],b); p++;
+        setTimeout(()=>{ if(G.over) return; if(p<L.itens.length){document.getElementById("fb").className="fb";show();} else {g.innerHTML="";mainDone();} },1900);
+      } else { b.classList.add("wrong"); b.disabled=true; bad("Não era isso. Tente outra opção!",b); }
+    });
+  }; show();
+}
+
+/* ================= FIM DA FASE ================= */
+function finish(){
+  if(G.over) return; G.over=true; stopTimer();
+  const i=G.i, L=LEVELS[i], st=G.lives, novo=S.stars[i]===undefined;
+  const bonus = 5 + st*2; S.coins+=bonus;
+  S.stars[i]=Math.max(S.stars[i]||0,st); save(); hud(); SFX.win();
+  window.scrollTo(0,0);
+  app.innerHTML=`<div class="card" style="text-align:center">
+    <svg viewBox="-30 -30 60 60" width="90" class="pop">${gearSVG(26,"#e0a82e",true)}</svg>
+    <h2>${novo?"Engrenagem recuperada!":"Fase concluída!"}</h2>
+    <div class="big-stars" aria-label="${st} de 3 estrelas">${starStr(st)}</div>
+    <p class="counter">Vidas restantes: ${st} · Bônus: +${bonus} 🪙${st<3?" · Jogue de novo para conseguir 3 estrelas!":" · Perfeito!"}</p>
+  </div>
+  <div class="card"><h2>📖 ${novo?"Novas palavras no dicionário":"Palavras desta fase"}</h2><div class="terms">
+    ${L.termos.map(([t,d])=>`<div class="term"><b>${t}</b>${d}</div>`).join("")}</div></div>
+  <div class="card"><h2>✍️ Agora, a questão ${i+1}</h2>
+    <div class="qbox">${L.pergunta}</div>
+    <h3 style="margin-top:16px">Como montar a resposta</h3>
+    <ol class="steps">${L.passos.map(p=>`<li>${p}</li>`).join("")}</ol>
+    <div class="warn">⚠️ <b>Atenção:</b> ${L.cuidado}</div>
+    <h3 style="margin-top:16px">Exemplo de resposta completa</h3>
+    <p class="counter">Tente pensar na sua resposta antes de abrir o exemplo.</p>
+    <div id="mdl"><button class="btn sec" onclick="SFX.click();this.parentNode.innerHTML=document.getElementById('mdlT').innerHTML">Mostrar exemplo de resposta</button></div>
+    <template id="mdlT"><div class="model">${L.modelo}</div>
+      <p class="counter">As partes <mark>destacadas</mark> são as ideias que não podem faltar. Agora escreva <b>com as suas palavras</b> no caderno. Não copie!</p></template>
+  </div>
+  <div class="row"><button class="btn sec" onclick="go('play',${i})">Jogar de novo</button>
+    ${i<9?`<button class="btn gold" onclick="go('play',${i+1})">Próxima fase →</button>`:`<button class="btn gold" onclick="go('map')">Ir para o Desafio Final ⚙️</button>`}</div>`;
+}
+
+/* ================= FASE FINAL ================= */
+function bossPool(){
+  const q=[];
+  LEVELS.forEach(L=>{
+    if(L.tipo==="sort") L.itens.forEach(it=>q.push({q:`Onde se encaixa: “${it[0]}”?`, opts:L.bins, c:it[1], exp:it[2]}));
+    if(L.tipo==="tf") L.itens.forEach(it=>q.push({q:`Verdadeiro ou falso: “${it[0]}”`, opts:["Verdadeiro","Falso"], c:it[1]?"Verdadeiro":"Falso", exp:it[2]}));
+    if(L.tipo==="quiz") L.itens.forEach(it=>q.push({q:it[0], opts:it[1], c:it[1][it[2]], exp:it[3]}));
+    if(L.tipo==="match") L.pares.forEach(p=>q.push({q:`Complete: “${p[0]}” →`, opts:L.pares.map(x=>x[1]), c:p[1], exp:p[2]}));
+    if(L.tipo==="order") q.push({q:"Qual destas foi a PRIMEIRA ação dos plebeus para conquistar direitos?", opts:L.itens.slice(0,4).map(x=>x[0]), c:L.itens[0][0], exp:L.itens[0][1]});
+  });
+  return shuffle(q).slice(0,12);
+}
+const BOSS_PERS={nome:"Máquina do Tempo",pele:"#c9c2e6",roupa:"#5b4a8a",cabelo:"#e0a82e",acc:""};
+function renderBoss(){
+  const Q=bossPool(); let p=0;
+  app.innerHTML=frame("boss", BOSS_PERS, "⚙️ Desafio da Máquina", "BIP-BOP! Para religar, responda 12 perguntas das três eras antes que o tempo acabe. Você tem 3 vidas!");
+  startLevel({boss:true, time:180});
+  const g=document.getElementById("game");
+  const show=()=>{ const it=Q[p]; let ok=false;
+    g.innerHTML=`<p class="counter">Pergunta ${p+1} de ${Q.length}</p><div class="statement">${it.q}</div><div class="opts">`+
+      shuffle(it.opts).map(o=>`<button class="opt">${o}</button>`).join("")+`</div>`;
+    G.hint=()=>{ if(ok) return false; const w=[...g.querySelectorAll(".opt:not(.wrong)")].find(b=>b.textContent!==it.c); if(!w) return false; w.classList.add("wrong"); w.disabled=true; fb(true,"💡 Uma opção errada foi eliminada."); };
+    g.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+      if(ok||G.over) return;
+      if(b.textContent===it.c){ ok=true; b.classList.add("right"); good(it.exp,b); p++;
+        setTimeout(()=>{ if(G.over) return; if(p<Q.length){document.getElementById("fb").className="fb";show();} else bossWin(); },1500);
+      } else { b.classList.add("wrong"); b.disabled=true; bad("Errou! A máquina soltou faísca. ⚡",b); }
+    });
+  }; show();
+}
+function bossWin(){
+  G.over=true; stopTimer(); S.boss=true; S.coins+=30; save(); hud(); SFX.win(); setTimeout(SFX.win,600);
+  app.innerHTML=`<div class="card" style="padding:0;overflow:hidden">${sceneSVG("boss")}</div>
+  <div class="card" style="text-align:center"><h1>🏆 Máquina religada!</h1>
+    <p>Você atravessou a Grécia, Roma e a Idade Média e voltou para casa. Parabéns, viajante do tempo!</p>
+    <p><b>Última missão:</b> pegue o caderno e escreva as <b>10 respostas</b> com as suas palavras, usando os roteiros que você aprendeu.</p>
+    <div class="row" style="justify-content:center"><button class="btn sec" onclick="go('dict')">📖 Revisar dicionário</button><button class="btn gold" onclick="go('map')">Voltar ao mapa</button></div></div>`;
+}
+
+go("title");
+</script>
+</body>
+</html>
