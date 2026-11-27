@@ -15,7 +15,7 @@ Habilidades da BNCC: EF06HI09, EF06HI10, EF06HI12, EF06HI13, EF06HI15, EF06HI16,
 Além das fases:
 
 - **Trilha:** checklist de cada capítulo (leitura, síntese, vídeos, questões do livro, Eureka e avaliações), com um roteiro de perguntas para a síntese.
-- **Vidas extras:** comprar com moedas (15🪙, até 5 vidas), +1 vida a cada 5 acertos seguidos, coração reserva para quem termina uma fase sem erros, e segunda chance (acertar o significado de uma palavra do dicionário). As estrelas dependem dos erros, não das vidas.
+- **Vidas extras:** comprar com moedas (15🪙, até 5 vidas), +1 vida a cada 5 acertos seguidos, coração reserva para quem termina uma fase sem erros, e segunda chance (responder o significado de 2 palavras do dicionário; cada acerto devolve 1 vida). As estrelas dependem dos erros, não das vidas.
 - **Meu dicionário:** o aluno anota as palavras que não conhecia. Pode ser impresso.
 
 ## Como publicar no GitHub Pages
